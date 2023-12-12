@@ -21,8 +21,7 @@ class Region;
 
 class Simulation {
 public:
-  static Simulation & build(const std::string & in_name);
-  Simulation(const std::string & in_name); // public to allow make_unique, but should be created using build()
+  Simulation(const std::string & in_name);
   ~Simulation();
 
   void commit();
@@ -44,12 +43,6 @@ public:
 
   stk::diag::Timer & get_timer() const { return my_timer; }
   void print_performance_info() const;
-
-  static Simulation & get();
-  static void reset() { the_simulation.reset(); }
-
-private:
-  static std::unique_ptr<Simulation> the_simulation;
 
 private:
   std::string my_name;

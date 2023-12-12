@@ -95,3 +95,39 @@ TEST(StkString, char_label_traits_append)
   s_label.append("def");
   EXPECT_EQ("abc_def", s_label.s_str());
 }
+
+TEST(StkJoinString, emptyContainer)
+{
+  const std::set<sierra::String> emptyVect;
+  EXPECT_EQ("", stk::util::join(emptyVect, ", "));
+}
+
+TEST(StkJoinString, emptyIterRange)
+{
+  const std::set<sierra::String> emptyVect;
+  EXPECT_EQ("", stk::util::join(emptyVect.begin(), emptyVect.end(), ", "));
+}
+
+TEST(StkJoinString, containerContents)
+{
+  const std::vector<sierra::String> theVect{"a", "b", "c"};
+  EXPECT_EQ("a, b, c", stk::util::join(theVect, ", "));
+}
+
+TEST(StkJoinString, iterRangeContents)
+{
+  const std::vector<sierra::String> theVect{"a", "b", "c"};
+  EXPECT_EQ("a, b, c", stk::util::join(theVect.begin(), theVect.end(), ", "));
+}
+
+TEST(StkJoinString, containerNonString)
+{
+  const std::vector<int> theVect{0, 1, 2};
+  EXPECT_EQ("0, 1, 2", stk::util::join(theVect, ", "));
+}
+
+TEST(StkJoinString, iterRangeNonString)
+{
+  const std::vector<int> theVect{0, 1, 2};
+  EXPECT_EQ("0, 1, 2", stk::util::join(theVect.begin(), theVect.end(), ", "));
+}

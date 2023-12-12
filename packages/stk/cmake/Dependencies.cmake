@@ -12,12 +12,12 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Middle_mesh     stk_middle_mesh      EX  OPTIONAL
   Transfer        stk_transfer         PT  OPTIONAL
   Mesh            stk_mesh             PT  OPTIONAL
+  SearchUtil      stk_search_util      EX  OPTIONAL
+  TransferUtil    stk_transfer_util    EX  OPTIONAL
   IO              stk_io               PT  OPTIONAL
   Tools           stk_tools            PT  OPTIONAL
   Balance         stk_balance          PT  OPTIONAL
   Unit_test_utils stk_unit_test_utils  PT  OPTIONAL
-  SearchUtil      stk_search_util      EX  OPTIONAL
-  TransferUtil    stk_transfer_util    EX  OPTIONAL
   Unit_tests      stk_unit_tests       PT  OPTIONAL
   Doc_tests       stk_doc_tests        PT  OPTIONAL
   Emend           stk_emend            PT  OPTIONAL

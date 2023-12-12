@@ -55,44 +55,48 @@ struct OrdinalTraits {
 
 template <>
 struct OrdinalTraits<short int> {
-  static KOKKOS_INLINE_FUNCTION short int invalid() { return -1; }
+  static constexpr KOKKOS_INLINE_FUNCTION short int invalid() { return -1; }
 };
 
 template <>
 struct OrdinalTraits<unsigned short int> {
-  static KOKKOS_INLINE_FUNCTION unsigned short int invalid() {
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned short int invalid() {
     return USHRT_MAX;
   }
 };
 
 template <>
 struct OrdinalTraits<int> {
-  static KOKKOS_INLINE_FUNCTION int invalid() { return -1; }
+  static constexpr KOKKOS_INLINE_FUNCTION int invalid() { return -1; }
 };
 
 template <>
 struct OrdinalTraits<unsigned int> {
-  static KOKKOS_INLINE_FUNCTION unsigned int invalid() { return UINT_MAX; }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned int invalid() {
+    return UINT_MAX;
+  }
 };
 
 template <>
 struct OrdinalTraits<long> {
-  static KOKKOS_INLINE_FUNCTION long invalid() { return -1; }
+  static constexpr KOKKOS_INLINE_FUNCTION long invalid() { return -1; }
 };
 
 template <>
 struct OrdinalTraits<unsigned long> {
-  static KOKKOS_INLINE_FUNCTION unsigned long invalid() { return ULONG_MAX; }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned long invalid() {
+    return ULONG_MAX;
+  }
 };
 
 template <>
 struct OrdinalTraits<long long> {
-  static KOKKOS_INLINE_FUNCTION long long invalid() { return -1; }
+  static constexpr KOKKOS_INLINE_FUNCTION long long invalid() { return -1; }
 };
 
 template <>
 struct OrdinalTraits<unsigned long long> {
-  static KOKKOS_INLINE_FUNCTION unsigned long long invalid() {
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned long long invalid() {
     return ULLONG_MAX;
   }
 };

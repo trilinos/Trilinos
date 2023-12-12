@@ -292,77 +292,77 @@ void ProxGradientAlgorithm<Real>::run( Vector<Real>       &x,
 
 template<typename Real>
 void ProxGradientAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if (verbosity_ > 1) {
-    hist << std::string(109,'-') << std::endl;
-    hist << "Proximal gradient descent";
-    hist << " status output definitions" << std::endl << std::endl;
-    hist << "  iter     - Number of iterates (steps taken)" << std::endl;
-    hist << "  value    - Objective function value" << std::endl;
-    hist << "  gnorm    - Norm of the proximal gradient with parameter alpha" << std::endl;
-    hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  alpha    - Line search step length" << std::endl;
-    hist << "  #sval    - Cumulative number of times the smooth objective function was evaluated" << std::endl;
-    hist << "  #nval    - Cumulative number of times the nonsmooth objective function was evaluated" << std::endl;
-    hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
-    hist << "  #prox    - Cumulative number of times the proximal operator was computed" << std::endl; 
-    hist << std::string(109,'-') << std::endl;
+    os << std::string(109,'-') << std::endl;
+    os << "Proximal gradient descent";
+    os << " status output definitions" << std::endl << std::endl;
+    os << "  iter     - Number of iterates (steps taken)" << std::endl;
+    os << "  value    - Objective function value" << std::endl;
+    os << "  gnorm    - Norm of the proximal gradient with parameter alpha" << std::endl;
+    os << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  alpha    - Line search step length" << std::endl;
+    os << "  #sval    - Cumulative number of times the smooth objective function was evaluated" << std::endl;
+    os << "  #nval    - Cumulative number of times the nonsmooth objective function was evaluated" << std::endl;
+    os << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    os << "  #prox    - Cumulative number of times the proximal operator was computed" << std::endl; 
+    os << std::string(109,'-') << std::endl;
   }
 
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "alpha";
-  hist << std::setw(10) << std::left << "#sval";
-  hist << std::setw(10) << std::left << "#nval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "#nprox"; 
-  hist << std::endl;
-  os << hist.str();
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "alpha";
+  os << std::setw(10) << std::left << "#sval";
+  os << std::setw(10) << std::left << "#nval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "#nprox"; 
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void ProxGradientAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << "Proximal Gradient Descent with Bidirectional Line Search (Type P)" << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << "Proximal Gradient Descent with Bidirectional Line Search (Type P)" << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void ProxGradientAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(10) << std::left << state_->nsval;
-    hist << std::setw(10) << std::left << state_->nnval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << state_->nprox; 
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(10) << std::left << state_->nsval;
+    os << std::setw(10) << std::left << state_->nnval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << state_->nprox; 
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nsval;
-    hist << std::setw(10) << std::left << state_->nnval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << state_->nprox; 
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nsval;
+    os << std::setw(10) << std::left << state_->nnval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << state_->nprox; 
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 } // namespace TypeP

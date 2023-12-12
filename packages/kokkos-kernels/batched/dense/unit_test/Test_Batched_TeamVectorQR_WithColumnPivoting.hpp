@@ -35,6 +35,7 @@ namespace Test {
 template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename PivotViewType, typename WorkViewType, typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
+  using execution_space = typename DeviceType::execution_space;
   MatrixViewType _a;
   VectorViewType _x, _b, _t;
   PivotViewType _p;
@@ -108,7 +109,7 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();

@@ -5,11 +5,9 @@
 #include "mesh_scatter_spec.hpp"
 #include "mesh.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
-#include "stk_util/util/SortAndUnique.hpp"
+#include "stk_util/parallel/DataExchangeKnownPatternNonBlockingBuffer.hpp"
 #include "variable_size_field.hpp"
 #include "field.hpp"
-#include "edge_sharing_from_verts.hpp"
-#include "destination_field_gatherer.hpp"
 #include "entity_sorted_by_owner.hpp"
 
 namespace stk {
@@ -38,14 +36,10 @@ class MeshScatter
     
 
   private:
-    using EntityExchanger      = stk::DataExchangeUnknownPatternNonBlockingCommBuffer;
+    using EntityExchanger   = stk::DataExchangeUnknownPatternNonBlockingCommBuffer;
     using EntityIdExchanger = stk::DataExchangeKnownPatternNonBlockingBuffer<int>;
 
-    void check_mesh_comm_is_subset_of_union_comm();
-
-
-    int compute_dest_comm_size();
-    
+    void check_mesh_comm_is_subset_of_union_comm();    
 
     void send_verts(VariableSizeFieldPtr<int> destRanksOnUnionCommPtr);
 

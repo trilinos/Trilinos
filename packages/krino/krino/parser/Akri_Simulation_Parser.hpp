@@ -9,12 +9,13 @@
 #ifndef Akri_Simulation_Parser_h
 #define Akri_Simulation_Parser_h
 
+namespace krino { class Simulation; }
 namespace krino { namespace Parser { class Node; } }
 
 namespace krino {
 namespace Simulation_Parser {
 
-void parse(const Parser::Node & node);
+void parse(Simulation & simulation, const Parser::Node & node);
 
 }
 }

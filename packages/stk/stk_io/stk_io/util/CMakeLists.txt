@@ -39,16 +39,16 @@ SET(SOURCES "")
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_io_util
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS stk_io
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_io_util
+    NOINSTALLHEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS stk_io
   )
+else()
+  add_library(stk_io_util ${SOURCES})
+  target_link_libraries(stk_io_util PUBLIC stk_io)
+endif()
 
 target_include_directories(stk_io_util PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_io>
@@ -57,3 +57,7 @@ target_include_directories(stk_io_util PUBLIC
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/util/)
+
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_io_util DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

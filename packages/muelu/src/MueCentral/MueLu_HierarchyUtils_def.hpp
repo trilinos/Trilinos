@@ -125,7 +125,10 @@ namespace MueLu {
         for (ParameterList::ConstIterator levelListEntry = levelList.begin(); levelListEntry != levelList.end(); levelListEntry++) {
           const std::string& name = levelListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
-                                     name != "D0" && name != "M1" && name != "Ms" && name != "M0inv" &&
+                                     name != "D0" && name != "Dk_1" &&name != "Dk_2" &&
+                                     name != "Mk_one" && name != "Mk_1_one" && name != "M1_beta" && name != "M1_alpha" &&
+                                     name != "invMk_1_invBeta" && name != "invMk_2_invAlpha" &&
+                                     name != "M1" && name != "Ms" && name != "M0inv" &&
                                      name != "Pnodal" && name != "NodeMatrix" && name != "NodeAggMatrix" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
@@ -191,7 +194,11 @@ namespace MueLu {
               level->Set(name, mat, NoFactory::get());
             }
           }
-          else if (name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" || name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix") {
+          else if (name == "D0" || name == "Dk_1" ||name == "Dk_2" ||
+                   name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" ||
+                   name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" ||
+                   name == "M1" || name == "Ms" || name == "M0inv" ||
+                   name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             if (levelListEntry->second.isType<RCP<Operator> >())
               level->Set(name, Teuchos::getValue<RCP<Operator> >   (levelListEntry->second), NoFactory::get());
@@ -320,13 +327,22 @@ namespace MueLu {
         for (ParameterList::ConstIterator userListEntry = userList.begin(); userListEntry != userList.end(); userListEntry++) {
           const std::string& name = userListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
-                                     name != "D0" && name != "M1" && name != "Ms" && name != "M0inv" &&
+                                     name != "D0" && name != "Dk_1" &&name != "Dk_2" &&
+                                     name != "Mk_one" && name != "Mk_1_one" && name != "M1_beta" && name != "M1_alpha" &&
+                                     name != "invMk_1_invBeta" && name != "invMk_2_invAlpha" &&
+                                     name != "M1" && name != "Ms" && name != "M0inv" &&
+                                     name != "NodeMatrix" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      name != "output stream" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
-          if( name == "P" || name == "R" || name == "K" || name == "M" || name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" ) {
+          if( name == "P" || name == "R" || name == "K" || name == "M" ||
+              name == "D0" || name == "Dk_1" ||name == "Dk_2" ||
+              name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" ||
+              name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" ||
+              name == "M1" || name == "Ms" || name == "M0inv" ||
+              name == "NodeMatrix" ) {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<Matrix > >     (userListEntry->second), NoFactory::get());
           } else if (name == "Mdiag") {

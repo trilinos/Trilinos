@@ -154,6 +154,11 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", 0);
+  params.set("schwarz: num iterations", 1);
+  params.set("subdomain solver name", "");
+  Teuchos::ParameterList dummyListSubdomain;
+  params.set("subdomain solver parameters",dummyListSubdomain);
+  params.sublist("subdomain solver parameters").disableRecursiveValidation();
 
   // Ifpack2_BlockRelaxation.hpp
   // params.set("relaxation: type", "Jacobi"); // already set

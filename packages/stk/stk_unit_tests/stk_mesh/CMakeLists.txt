@@ -32,8 +32,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 FILE(GLOB SOURCES
    *.cpp
    change_parts/*.cpp
@@ -48,8 +46,8 @@ FILE(GLOB SOURCES
    ngp/*.cpp
 )
 
-IF(NOT Trilinos_ENABLE_STKIO)
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FieldBlas/UnitTestFieldBLAS.cpp")
+IF(NOT ${PROJECT_NAME}_ENABLE_STKIO)
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestFieldBLAS.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestAddNodeSharingWithInternalSideset.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestAura.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestAuraToShared.cpp")
@@ -151,13 +149,33 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/UnitTestNgpDebugFieldS
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/UnitTestNgpDebugFieldSync_PartialSync.cpp")
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_mesh_unit_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_mesh_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX
-    )
+  )
+else()
+  add_executable(stk_mesh_unit_tests ${SOURCES})
+  target_link_libraries(stk_mesh_unit_tests stk_unit_test_utils)
+
+  target_include_directories(stk_mesh_unit_tests PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  if(${PROJECT_NAME}_ENABLE_STKIO)
+    target_link_libraries(stk_mesh_unit_tests stk_io)
+  endif()
+  target_link_libraries(stk_mesh_unit_tests stk_mesh_fixtures)
+  target_link_libraries(stk_mesh_unit_tests stk_mesh_base)
+  target_link_libraries(stk_mesh_unit_tests stk_unit_main)
+
+  add_test(NAME "stk_mesh_unit_tests" COMMAND stk_mesh_unit_tests)
+endif()
 

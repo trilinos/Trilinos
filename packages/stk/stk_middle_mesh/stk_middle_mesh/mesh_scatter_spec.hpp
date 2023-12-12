@@ -4,6 +4,7 @@
 #include "mesh.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "utils.hpp"
+#include "variable_size_field.hpp"
 
 
 namespace stk {
@@ -15,7 +16,8 @@ class MeshScatterSpec {
 public:
   explicit MeshScatterSpec(MPI_Comm comm, std::shared_ptr<mesh::Mesh> mesh) :
     m_comm(comm),
-    m_mesh(mesh)
+    m_mesh(mesh),
+    m_destRanks(mesh ? create_variable_size_field<int>(mesh, FieldShape(0, 0, 1)) : nullptr)
   {}
 
   MPI_Comm get_comm() const { return m_comm; }
@@ -27,12 +29,9 @@ public:
   void get_destinations(mesh::MeshEntityPtr entity, std::vector<int>& destRanks);
 
 private:
-  using MapKey = std::pair<int, mesh::MeshEntityType>;
-  using MapValue = std::vector<int>;
-
   MPI_Comm m_comm;
   std::shared_ptr<mesh::Mesh> m_mesh;
-  std::map<MapKey, MapValue> m_entityProcMap;
+  VariableSizeFieldPtr<int> m_destRanks;
 };
 
 

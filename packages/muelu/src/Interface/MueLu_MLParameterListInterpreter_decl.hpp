@@ -85,6 +85,19 @@
 #include "MueLu_RebalanceMapFactory_fwd.hpp"
 #endif
 
+
+#ifdef HAVE_MUELU_DEPRECATED_CODE
+#ifndef TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS
+#warning "The header file MueLu_MLParameterListInterpreter.hpp is deprecated"
+#endif
+#else 
+#error "The header file MueLu_MLParameterListInterpreter.hpp is deprecated"
+#endif
+
+
+
+
+
 namespace MueLu {
 
   /*
@@ -227,6 +240,7 @@ namespace MueLu {
   }; // class MLParameterListInterpreter
 
 } // namespace MueLu
+
 
 #define MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #endif /* MUELU_MLPARAMETERLISTINTERPRETER_DECL_HPP */

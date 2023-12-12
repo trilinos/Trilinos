@@ -51,7 +51,7 @@
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TransPFactory;
+  class CombinePFactory;
 }
 
 #ifndef MUELU_COMBINEPFACTORY_SHORT

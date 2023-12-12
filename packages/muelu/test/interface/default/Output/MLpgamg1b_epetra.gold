@@ -8,29 +8,40 @@ smoother ->
  relaxation: damping factor = 1   [unused]
 
 Level 1
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+aggregation: use ml scaling of drop tol = 1
 lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 [empty list]
 Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0
@@ -43,29 +54,40 @@ smoother ->
  relaxation: damping factor = 1   [unused]
 
 Level 2
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+aggregation: use ml scaling of drop tol = 1
 lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 [empty list]
 Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0
@@ -78,29 +100,40 @@ smoother ->
  relaxation: damping factor = 1   [unused]
 
 Level 3
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+aggregation: use ml scaling of drop tol = 1
 lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 [empty list]
 Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0
@@ -113,29 +146,40 @@ smoother ->
  relaxation: damping factor = 1   [unused]
 
 Level 4
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
+aggregation: use ml scaling of drop tol = 1
 lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+Prolongator smoothing (MueLu::SaPFactory)
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
+matrixmatrix: kernel params -> 
+ [empty list]
 [empty list]
 Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0
@@ -151,7 +195,7 @@ smoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 5
 Operator complexity = 1.49
-Smoother complexity = 0.00
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

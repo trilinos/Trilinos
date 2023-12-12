@@ -1079,7 +1079,7 @@ lowCommunicationMakeColMapAndReindex (
   Kokkos::View<int*, DT> PIDList_view("PIDList", NumRemoteColGIDs);
   auto PIDList_host = Kokkos::create_mirror_view(PIDList_view);
   
-  Kokkos::View<int*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
+  Kokkos::View<GO*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
   // For each index in RemoteGIDs_map that contains a GID, use "update" to indicate the number of GIDs "before" this GID
@@ -1124,7 +1124,6 @@ lowCommunicationMakeColMapAndReindex (
   // Build back end, containing remote GIDs, first
   const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
   Kokkos::View<GO*, DT> ColIndices_view("ColIndices", numMyCols);
-  auto ColIndices_host = Kokkos::create_mirror_view(ColIndices_view);
   
   // We don't need to load the backend of ColIndices or sort if there are no remote GIDs
   if(NumRemoteColGIDs > 0) {
@@ -1254,7 +1253,7 @@ lowCommunicationMakeColMapAndReindex (
                                       const Kokkos::View<LocalOrdinal*,typename Node::device_type>  colind_LID_view,
                                       const Kokkos::View<GlobalOrdinal*,typename Node::device_type> colind_GID_view,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
-                                      const Teuchos::ArrayView<const int> &owningPIDs,
+                                      const Kokkos::View<int*,typename Node::device_type> owningPIDs_view,
                                       Teuchos::Array<int> &remotePIDs,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap)
 {
@@ -1270,10 +1269,6 @@ lowCommunicationMakeColMapAndReindex (
   execution_space exec;
   using team_policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>;
   typedef typename map_type::local_map_type local_map_type;
-
-  // Create device mirror and host mirror views from function parameters
-  // When we pass in views instead of Teuchos::ArrayViews, we can avoid copying views
-  auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(exec, owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
 
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
@@ -1316,7 +1311,6 @@ lowCommunicationMakeColMapAndReindex (
         const int PID = owningPIDs_view[j];
         auto outcome = RemoteGIDs_view_map.insert(GID, PID);
         if(outcome.success() && PID == -1) {
-          printf("Cannot figure out if ID is owned.\n");
           Kokkos::abort("Cannot figure out if ID is owned.\n");
         }
       }
@@ -1326,9 +1320,9 @@ lowCommunicationMakeColMapAndReindex (
   
   LO NumRemoteColGIDs = RemoteGIDs_view_map.size();
   
-  Kokkos::View<int*, DT> PIDList_view("PIDList", NumRemoteColGIDs);
+  Kokkos::View<int*, DT> PIDList_view("PIDList_d", NumRemoteColGIDs);
   
-  Kokkos::View<int*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
+  Kokkos::View<GO*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
   // For each index in RemoteGIDs_map that contains a GID, use "update" to indicate the number of GIDs "before" this GID
@@ -1372,7 +1366,6 @@ lowCommunicationMakeColMapAndReindex (
   // Build back end, containing remote GIDs, first
   const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
   Kokkos::View<GO*, DT> ColIndices_view("ColIndices", numMyCols);
-  auto ColIndices_host = Kokkos::create_mirror_view(ColIndices_view);
   
   // We don't need to load the backend of ColIndices or sort if there are no remote GIDs
   if(NumRemoteColGIDs > 0) {

@@ -2,7 +2,7 @@
 
 build_dir=${BUILD_DIR:-${PWD}}
 build_type=${CMAKE_BUILD_TYPE:-release}
-stk_src_dir=${STK_SRC_DIR:-/fgs/william/code_votd/stk}
+stk_src_dir=${STK_SRC_DIR:-/fgs/$USER/code_votd/stk}
 stk_install_dir=${STK_INSTALL_DIR:-${PWD}/../stk_install_dir}
 cmake_cxx_flags=${CMAKE_CXX_FLAGS}
 clear_cache=${CLEAR_CACHE:-ON}
@@ -25,6 +25,8 @@ cd ${build_dir}
 if [ "${clear_cache}" == "ON" ] ; then
   rm -rf stk_* STK_Trilinos_config.h Makefile cmake_install.cmake C*
 fi
+
+printf "calling cmake from run_cmake_stk_standalone_serial, stk_src_dir='${stk_src_dir}'...\n\n"
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=${stk_install_dir} \

@@ -390,6 +390,16 @@ getLocalElementList() const
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type
+BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
+getMyGlobalIndicesDevice() const
+{
+    return fullmap_->getMyGlobalIndicesDevice();
+}
+
+
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
 bool
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 isNodeLocalElement(LocalOrdinal localIndex) const

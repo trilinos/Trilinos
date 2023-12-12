@@ -94,8 +94,10 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
 void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
 {
     bulk.modification_begin();
+    bulk.m_bucket_repository.set_remove_mode_tracking();
     destroy_elements_no_mod_cycle(bulk, elementsToDestroy, orphansToDelete);
     bulk.modification_end();
+    bulk.m_bucket_repository.set_remove_mode_fill_and_sort();
 }
 
 void get_all_related_entities(BulkData& bulk, EntityVector& elements, const Selector& orphansToDelete, EntityVector& relatedEntities)
@@ -109,7 +111,8 @@ void get_all_related_entities(BulkData& bulk, EntityVector& elements, const Sele
 
   auto ifSharedOrRecvGhost = [&](Entity ent) { return bulk.is_valid(ent) && (bulk.in_shared(ent) || bulk.in_receive_ghost(ent)); };
 
-  impl::VisitUpwardClosureGeneral(bulk, relatedEntities.begin(), relatedEntities.end(), storeEntity, ifSharedOrRecvGhost);
+  const EntityRank endRank = static_cast<EntityRank>(bulk.mesh_meta_data().entity_rank_count());
+  impl::VisitUpwardClosureGeneral(bulk, relatedEntities.begin(), relatedEntities.end(), endRank, storeEntity, ifSharedOrRecvGhost);
   storeEntity.store_visited_entities_in_vec(relatedEntities);
   relatedEntities.insert(relatedEntities.end(), elements.begin(), elements.end());
 

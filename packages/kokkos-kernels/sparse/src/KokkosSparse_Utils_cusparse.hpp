@@ -168,6 +168,23 @@ inline cusparseIndexType_t cusparse_index_type_t_from<unsigned short>() {
 }
 #endif
 
+// Set the stream on the given cuSPARSE handle when this object
+// is constructed, and reset to the default stream when this object is
+// destructed.
+struct TemporarySetCusparseStream {
+  TemporarySetCusparseStream(cusparseHandle_t handle_,
+                             const Kokkos::Cuda& exec_)
+      : handle(handle_) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, exec_.cuda_stream()));
+  }
+
+  ~TemporarySetCusparseStream() {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, NULL));
+  }
+
+  cusparseHandle_t handle;
+};
+
 }  // namespace Impl
 
 }  // namespace KokkosSparse

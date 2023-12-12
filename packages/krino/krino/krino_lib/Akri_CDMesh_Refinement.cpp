@@ -9,6 +9,7 @@
 #include <Akri_AdaptivityHelpers.hpp>
 #include <Akri_CDFEM_Snapper.hpp>
 #include <Akri_CDMesh.hpp>
+#include <Akri_CDMesh_Refinement.hpp>
 #include <Akri_CDMesh_Utils.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_FieldRef.hpp>
@@ -229,15 +230,15 @@ mark_nearest_node_on_cut_edges(const stk::mesh::BulkData& mesh,
   stk::mesh::parallel_max(mesh, {&node_marker_field.field()});
 }
 
-int determine_refinement_marker(const bool haveCrossing, const int numRefinements, const int interfaceMinRefineLevel, const int elementRefineLevel)
+int determine_refinement_marker(const bool isElementIndicated, const int refinementIterCount, const int interfaceMinRefineLevel, const int elementRefineLevel)
 {
   int marker = Refinement_Marker::NOTHING;
-  const int targetRefineLevel = haveCrossing ? interfaceMinRefineLevel : 0;
+  const int targetRefineLevel = isElementIndicated ? interfaceMinRefineLevel : 0;
   if (elementRefineLevel < targetRefineLevel)
   {
     marker = Refinement_Marker::REFINE;
   }
-  else if (numRefinements < interfaceMinRefineLevel &&
+  else if (refinementIterCount < interfaceMinRefineLevel &&
       elementRefineLevel > targetRefineLevel)
   {
     // Stop coarsening after num_levels of refinement to avoid infinite looping
@@ -249,27 +250,36 @@ int determine_refinement_marker(const bool haveCrossing, const int numRefinement
 }
 
 void
+mark_given_elements(const stk::mesh::BulkData& mesh,
+      const RefinementInterface & refinement,
+      const RefinementSupport & refinementSupport,
+      const std::vector<stk::mesh::Entity> elementsToMark,
+      const int refinementIterCount)
+{
+  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
+  constexpr bool doMarkElement = true;
+
+  stk::mesh::field_fill(static_cast<int>(Refinement_Marker::COARSEN), elementMarkerField);
+
+  for( auto&& elem : elementsToMark )
+  {
+    int & marker = *field_data<int>(elementMarkerField, elem);
+    const int elementRefineLevel = refinement.fully_refined_level(elem);
+
+    marker = determine_refinement_marker(doMarkElement, refinementIterCount, interfaceMinRefineLevel, elementRefineLevel);
+  }
+}
+
+void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const RefinementSupport & refinementSupport,
-      const int numRefinements)
+      const int refinementIterCount)
 {
-  // This refinement strategy cuts elements by the user-specified number of adapt levels
-  // before the conformal decomposition.
-
-  const FieldRef elementMarkerField = refinement.get_marker_field();
-  const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
-
-  std::vector<stk::mesh::Entity> possibleCutElems = interfaceGeometry.get_possibly_cut_elements(mesh);
-  for( auto&& elem : possibleCutElems )
-  {
-    bool possibleCrossing = true;
-    const int elementRefineLevel = refinement.fully_refined_level(elem);
-
-    int & marker = *field_data<int>(elementMarkerField, elem);
-    marker = determine_refinement_marker(possibleCrossing, numRefinements, interfaceMinRefineLevel, elementRefineLevel);
-  }
+  const std::vector<stk::mesh::Entity> possiblyCutElems = interfaceGeometry.get_possibly_cut_elements(mesh);
+  mark_given_elements(mesh, refinement, refinementSupport, possiblyCutElems, refinementIterCount);
 }
 
 void
@@ -277,25 +287,11 @@ mark_elements_that_intersect_interval(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const RefinementSupport & refinementSupport,
-      const int numRefinements)
+      const int refinementIterCount)
 {
-  // This refinement strategy cuts elements by the user-specified number of adapt levels
-
-  const FieldRef elementMarkerField = refinement.get_marker_field();
-  const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
-
-  stk::mesh::field_fill(static_cast<int>(Refinement_Marker::COARSEN), elementMarkerField);
-
-  std::vector<stk::mesh::Entity> elements = interfaceGeometry.get_elements_that_intersect_interval(mesh, refinementSupport.get_refinement_interval());
-  for( auto&& elem : elements )
-  {
-    int & marker = *field_data<int>(elementMarkerField, elem);
-    const int elementRefineLevel = refinement.fully_refined_level(elem);
-    constexpr bool doesIntersectInterval = true;
-    marker = determine_refinement_marker(doesIntersectInterval, numRefinements, interfaceMinRefineLevel, elementRefineLevel);
-  }
+  const std::vector<stk::mesh::Entity> elementsInInterval = interfaceGeometry.get_elements_that_intersect_interval(mesh, refinementSupport.get_refinement_interval());
+  mark_given_elements(mesh, refinement, refinementSupport, elementsInInterval, refinementIterCount);
 }
-
 
 double compute_edge_length(const FieldRef coordsField, const stk::topology elemTopology, const stk::mesh::Entity * const elemNodes, const unsigned iEdge)
 {

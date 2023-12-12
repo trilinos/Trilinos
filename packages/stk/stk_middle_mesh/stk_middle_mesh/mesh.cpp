@@ -500,7 +500,7 @@ bool Mesh::does_face_exist(MeshEntityPtr edge1, MeshEntityPtr edge2, MeshEntityP
   return false;
 }
 
-int count_valid(const std::vector<MeshEntityPtr> entities)
+int count_valid(const std::vector<MeshEntityPtr>& entities)
 {
   int count = 0;
   for (auto e : entities)

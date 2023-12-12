@@ -67,7 +67,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.48
-Smoother complexity = 1.93
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

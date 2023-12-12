@@ -46,6 +46,7 @@ public:
   stk::mesh::Entity get_parent(const stk::mesh::Entity elem) const;
   std::pair<stk::mesh::EntityId,int> get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const;
   bool is_refined_edge_node(const stk::mesh::Entity node) const;
+
   std::array<stk::mesh::Entity,2> get_edge_parent_nodes(const stk::mesh::Entity edgeNode) const;
   std::tuple<const uint64_t *,unsigned> get_child_ids_and_num_children_when_fully_refined(const stk::mesh::Entity elem) const;
   unsigned get_num_children(const stk::mesh::Entity elem) const;
@@ -55,10 +56,17 @@ public:
   std::vector<stk::mesh::Entity> get_children(const stk::mesh::Entity elem) const;
   stk::mesh::Entity get_edge_child_node(const Edge edge) const { return myNodeRefiner.get_edge_child_node(edge); }
   size_t get_num_edges_to_refine() const { return myNodeRefiner.get_num_edges_to_refine(); }
-  std::string locally_check_leaf_children_have_parents_on_same_proc() const;
 
-  void do_refinement(const EdgeMarkerInterface & edgeMarker);
+  // Leaf children must remain on same proc as parents.  This means that there are constraints on rebalancing, and impact on how element weights are determined.
+  std::string locally_check_leaf_children_have_parents_on_same_proc() const;
+  bool has_parallel_owner_rebalance_constraint(const stk::mesh::Entity entity) const;
+  void fill_child_elements_that_must_stay_on_same_proc_as_parent(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const;
+  void update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const;
+  unsigned rebalance_element_count_incorporating_parallel_owner_constraints(const stk::mesh::Entity elem) const;
+
+  bool do_refinement(const EdgeMarkerInterface & edgeMarker);
   void do_uniform_refinement(const int numUniformRefinementLevels);
+  void delete_parent_elements(); // Only leafs will remain
 
   void restore_after_restart();
   void parallel_sync_child_element_ids_fields();

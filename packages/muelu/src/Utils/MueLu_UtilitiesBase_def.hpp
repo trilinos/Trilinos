@@ -806,10 +806,7 @@ namespace MueLu {
     // power iteration
     RCP<Vector> diagInvVec;
     if (scaleByDiag) {
-      RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
-      A.getLocalDiagCopy(*diagVec);
-      diagInvVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
-      diagInvVec->reciprocal(*diagVec);
+      diagInvVec = GetMatrixDiagonalInverse(A);      
     }
 
     Scalar lambda = PowerMethod(A, diagInvVec, niters, tolerance, verbose, seed);

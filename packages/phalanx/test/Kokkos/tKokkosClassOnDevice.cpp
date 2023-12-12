@@ -56,9 +56,9 @@ public:
   void KOKKOS_FUNCTION
   callInternalMethod1() const
   {
-    printf("b_[0]=%f\n",b_[0]);
-    printf("b_[1]=%f\n",b_[1]);
-    printf("b_[2]=%f\n",b_[2]);
+    Kokkos::printf("b_[0]=%f\n",b_[0]);
+    Kokkos::printf("b_[1]=%f\n",b_[1]);
+    Kokkos::printf("b_[2]=%f\n",b_[2]);
     a_(0)=b_[0];
     a_(1)=b_[1];
     a_(2)=b_[2];

@@ -136,19 +136,19 @@ TEST_F(TestCategory, sparse_ccs2crs) {
   std::srand(ticks);
 
   // Empty cases
-  doCcs2Crs<float, Kokkos::LayoutLeft, TestExecSpace>(1, 0, 1, 10);
-  doCcs2Crs<float, Kokkos::LayoutLeft, TestExecSpace>(0, 1, 1, 10);
+  doCcs2Crs<float, Kokkos::LayoutLeft, TestDevice>(1, 0, 1, 10);
+  doCcs2Crs<float, Kokkos::LayoutLeft, TestDevice>(0, 1, 1, 10);
 
-  doCcs2Crs<float, Kokkos::LayoutRight, TestExecSpace>(1, 0, 1, 10);
-  doCcs2Crs<float, Kokkos::LayoutRight, TestExecSpace>(0, 1, 1, 10);
+  doCcs2Crs<float, Kokkos::LayoutRight, TestDevice>(1, 0, 1, 10);
+  doCcs2Crs<float, Kokkos::LayoutRight, TestDevice>(0, 1, 1, 10);
 
-  doCcs2Crs<float, Kokkos::LayoutLeft, TestExecSpace>(0, 0, 1, 10);
-  doCcs2Crs<float, Kokkos::LayoutRight, TestExecSpace>(0, 0, 1, 10);
+  doCcs2Crs<float, Kokkos::LayoutLeft, TestDevice>(0, 0, 1, 10);
+  doCcs2Crs<float, Kokkos::LayoutRight, TestDevice>(0, 0, 1, 10);
 
   // Square cases
   for (size_t i = 4; i < 1024; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;
-    doAllCcs2crs<TestExecSpace>(dim, dim);
+    doAllCcs2crs<TestDevice>(dim, dim);
   }
 
   // Non-square cases
@@ -156,16 +156,16 @@ TEST_F(TestCategory, sparse_ccs2crs) {
     size_t m = (std::rand() % 511) + 1;
     size_t n = (std::rand() % 511) + 1;
     while (n == m) n = (std::rand() % 511) + 1;
-    doAllCcs2crs<TestExecSpace>(m, n);
+    doAllCcs2crs<TestDevice>(m, n);
   }
 
   // Fully sparse cases
-  doCcs2Crs<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
-  doCcs2Crs<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
+  doCcs2Crs<float, Kokkos::LayoutLeft, TestDevice>(5, 5, 1, 10, true);
+  doCcs2Crs<double, Kokkos::LayoutRight, TestDevice>(50, 10, 10, 100, true);
 
   // Test the convenience wrapper that accepts a ccs matrix
-  RandCsMatrix<double, Kokkos::LayoutRight, TestExecSpace> csMat(2, 2, 10, 10,
-                                                                 false);
+  RandCsMatrix<double, Kokkos::LayoutRight, TestDevice> csMat(2, 2, 10, 10,
+                                                              false);
   auto ccsMatrix = crs2ccs(csMat.get_dim1(), csMat.get_dim2(), csMat.get_nnz(),
                            csMat.get_vals(), csMat.get_map(), csMat.get_ids());
   auto crsMatrix = ccs2crs(ccsMatrix);

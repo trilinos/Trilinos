@@ -1,6 +1,7 @@
 #include "active_vert_data.hpp"
 #include "distortion_metric.hpp"
 #include "mesh_entity.hpp"
+#include "utils.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -181,6 +182,12 @@ int ActiveVertData::get_triangle_verts(mesh::MeshEntityPtr el, mesh::MeshEntityP
   }
 }
 
+void ActiveVertData::add_local_vert(mesh::MeshEntityPtr vert)
+{
+  m_localVertsUnique.push_back(vert);
+  m_allPointsOrig.push_back(vert->get_point_orig(0));
+  m_allPoints.push_back(vert->get_point_orig(0));  
+}
 
 void ActiveVertData::add_remote_vert(const mesh::RemoteSharedEntity& owner)
 {

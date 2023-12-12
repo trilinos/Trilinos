@@ -223,6 +223,178 @@ as_view_of_rank_n(View<T, Args...>);
 
 }
 
+namespace Experimental {
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 1))>::type* = nullptr);
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 2))>::type* = nullptr);
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 3))>::type* = nullptr);
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 4))>::type* = nullptr);
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 5))>::type* = nullptr);
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 6))>::type* = nullptr);
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 7))>::type* = nullptr);
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 1))>::type* = nullptr);
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 2))>::type* = nullptr);
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 3))>::type* = nullptr);
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 4))>::type* = nullptr);
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 5))>::type* = nullptr);
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 6))>::type* = nullptr);
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 7))>::type* = nullptr);
+
+}
+
 } // namespace Kokkos
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)

@@ -177,6 +177,8 @@ namespace Ifpack2 {
     typedef Tpetra::BlockCrsMatrix
     <scalar_type,local_ordinal_type,global_ordinal_type,node_type> block_crs_matrix_type;
 
+    const Teuchos::Array<Teuchos::Array<local_ordinal_type> > partitions_;
+
     /// \brief The (base class) type of the input matrix.
     ///
     /// The input matrix to the constructor must be a Tpetra::BlockCrsMatrix.
@@ -394,9 +396,7 @@ namespace Ifpack2 {
     
     // initialize distributed and local objects
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
-                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const Teuchos::RCP<const import_type> &importer,
-                       const int n_subparts_per_part,
                        const bool overlapCommAndComp,
                        const bool useSeqMethod);
 

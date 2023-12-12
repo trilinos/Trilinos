@@ -78,7 +78,8 @@ void remove_entities_not_in_list(const Entity* begin, const Entity* end, std::ve
 void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
 {
     for(unsigned i = 1; i < numNodes; ++i) {
-        remove_entities_not_in_list(mesh.begin(nodes[i], rank), mesh.end(nodes[i], rank), elementsInCommon);
+        const ConnectedEntities conn = mesh.get_connected_entities(nodes[i], rank);
+        remove_entities_not_in_list(conn.data(), conn.data()+conn.size(), elementsInCommon);
     }
 }
 
@@ -87,7 +88,8 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
     elementsInCommon.clear();
     if(numNodes > 0)
     {
-        elementsInCommon.assign(mesh.begin(nodes[0], rank), mesh.end(nodes[0], rank));
+        const ConnectedEntities conn = mesh.get_connected_entities(nodes[0], rank);
+        elementsInCommon.assign(conn.data(), conn.data()+conn.size());
         remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
     }
 }
@@ -99,10 +101,10 @@ void fill_owned_entities_with_larger_ids_connected_to_node(const BulkData& mesh,
                                    stk::mesh::EntityId id,
                                    std::vector<Entity>& elemsWithLargerIds)
 {
-    unsigned numElems = mesh.num_connectivity(node, rank);
+    const ConnectedEntities elems = mesh.get_connected_entities(node, rank);
+    unsigned numElems = elems.size();
     elemsWithLargerIds.reserve(numElems);
 
-    const Entity* elems = mesh.begin(node, rank);
     for(unsigned j = 0; j < numElems; ++j)
         if(mesh.identifier(elems[j]) > id && mesh.bucket(elems[j]).owned())
             elemsWithLargerIds.push_back(elems[j]);
@@ -187,18 +189,20 @@ int check_for_connected_nodes(const BulkData& mesh)
         return -1;
       }
       for(size_t j=0; j<bucket.size(); ++j) {
-        if (bucket.num_nodes(j) < 1) {
-          std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" has no connected nodes."<<std::endl;
-          return -1;
-        }
-        // NEED TO CHECK FOR EACH BUCKET INHABITANT THAT ALL ITS NODES ARE VALID.
-        unsigned num_nodes = bucket.num_nodes(j);
-        Entity const* nodes = bucket.begin_nodes(j);
-        for (unsigned k = 0; k < num_nodes; ++k) {
-          if (!mesh.is_valid(nodes[k])) {
-            std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" is connected to an invalid node."
-                      << " via node relation " << k << std::endl;
+        if (mesh.is_valid(bucket[j])) {
+          if(bucket.num_nodes(j) < 1) {
+            std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" has no connected nodes."<<std::endl;
             return -1;
+          }
+          // NEED TO CHECK FOR EACH BUCKET INHABITANT THAT ALL ITS NODES ARE VALID.
+          unsigned num_nodes = bucket.num_nodes(j);
+          Entity const* nodes = bucket.begin_nodes(j);
+          for (unsigned k = 0; k < num_nodes; ++k) {
+            if (!mesh.is_valid(nodes[k])) {
+              std::cerr << "Entity with rank="<<rank<<", identifier="<<mesh.identifier(bucket[j])<<" is connected to an invalid node."
+                        << " via node relation " << k << std::endl;
+              return -1;
+            }
           }
         }
       }

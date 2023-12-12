@@ -50,6 +50,7 @@
 
 
 namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class FacadeSimple;
 }
 

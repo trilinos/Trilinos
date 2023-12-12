@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     stk::unit_test_util::create_parallel_output(procId);
     if (stk::unit_test_util::has_option("-stk_coupling_version")) {
       int version = stk::unit_test_util::get_command_line_option("-stk_coupling_version", -1);
-      stk::util::impl::set_coupling_version(version);
+      stk::util::impl::set_coupling_version(stk::EnvData::instance().parallel_comm(), version);
     }
 #endif
 

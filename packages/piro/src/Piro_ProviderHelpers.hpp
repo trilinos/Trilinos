@@ -55,7 +55,7 @@ namespace Piro {
 //! \cond DETAILS
 
 template <typename T>
-struct ConstructorProviderFunctor : public ProviderFunctorBase<T> {
+struct ConstructorProviderFunctor {
 public:
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
     return Teuchos::rcp(new T(params));
@@ -63,7 +63,7 @@ public:
 };
 
 template <typename T>
-struct DefaultConstructorProviderFunctor : public ProviderFunctorBase<T> {
+struct DefaultConstructorProviderFunctor {
 public:
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &/*params*/) const {
     return Teuchos::rcp(new T);
@@ -71,7 +71,7 @@ public:
 };
 
 template <typename T>
-struct ReferenceAcceptingConstructorProviderFunctor : public ProviderFunctorBase<T> {
+struct ReferenceAcceptingConstructorProviderFunctor {
 public:
   Teuchos::RCP<T> operator()(const Teuchos::RCP<Teuchos::ParameterList> &params) const {
     return Teuchos::rcp(new T(*params));
@@ -80,7 +80,7 @@ public:
 
 
 template <typename T, typename F>
-class CachingProviderFunctor : public ProviderFunctorBase<T> {
+class CachingProviderFunctor {
 public:
   CachingProviderFunctor() :
     otherFunctor_(),
@@ -113,7 +113,7 @@ makeCachingProviderFunctor(F otherFunctor)
 
 
 template <typename T, typename NullaryFunctor>
-class NullaryProviderFunctorAdapter : public ProviderFunctorBase<T> {
+class NullaryProviderFunctorAdapter {
 public:
   NullaryProviderFunctorAdapter() :
     nullaryFunctor_()
@@ -141,7 +141,7 @@ makeNullaryProviderFunctorAdapter(NullaryFunctor nf)
 
 
 template <typename T, typename ReferenceAcceptingFunctor>
-class ReferenceAcceptingProviderFunctorAdapter : public ProviderFunctorBase<T> {
+class ReferenceAcceptingProviderFunctorAdapter {
 public:
   ReferenceAcceptingProviderFunctorAdapter() :
     referenceAcceptingFunctor_()

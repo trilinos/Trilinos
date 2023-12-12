@@ -106,8 +106,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test0, Scalar, LocalOrdinal, Glob
 
   using STS = Teuchos::ScalarTraits<Scalar>;
   using STM = typename STS::magnitudeType;
-  Kokkos::View<STM*, Kokkos::HostSpace> norms("Initial norms", 1);
-  Kokkos::View<STM*, Kokkos::HostSpace> lastNorms("previous norms", 1);
+  Kokkos::View<STM*, Kokkos::HostSpace> norms("Initial norms", x.getNumVectors());
+  Kokkos::View<STM*, Kokkos::HostSpace> lastNorms("previous norms", x.getNumVectors());
 
   x.norm2(norms);
   std::cout << "||x_init||=" << norms[0] << std::endl;

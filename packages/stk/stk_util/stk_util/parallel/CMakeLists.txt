@@ -72,7 +72,6 @@ ELSE()
 
   IF(STK_HAS_MPI)
     target_link_libraries(stk_util_parallel PUBLIC ${MPI_LIBRARIES})
-    message("MPI_C_LIBRARIES: ${MPI_C_LIBRARIES}")
     message("MPI_LIBRARIES: ${MPI_LIBRARIES}")
   ENDIF()
 

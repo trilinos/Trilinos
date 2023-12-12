@@ -26,6 +26,8 @@ Sandia National Laboratories, Albuquerque, NM, USA
 
 #if defined(TACHO_HAVE_METIS)
 #include "Tacho_Graph.hpp"
+
+#include "trilinos_amd.h"
 #include "metis.h"
 
 namespace Tacho {

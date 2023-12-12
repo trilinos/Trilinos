@@ -418,6 +418,10 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
       }
 }
 
+/* Temporarily disable:
+   https://github.com/kokkos/kokkos-tools/issues/224
+   https://github.com/trilinos/Trilinos/pull/11391
+
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
   PHX::set_enforce_no_default_stream_use();
   // Checks are only active for CUDA and HIP backends
@@ -426,6 +430,8 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
 #endif
   PHX::unset_enforce_no_default_stream_use();
 }
+
+*/
 
 // Make sure that an uninitialized ViewOviews3 can be default
 // constructed and destoryed. Happens in application unit tests.

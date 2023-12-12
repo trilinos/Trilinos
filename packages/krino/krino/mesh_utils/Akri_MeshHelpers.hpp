@@ -44,8 +44,13 @@ struct StkMeshEntities
     value_type operator[](int i) const { return *(mBegin + i); }
 };
 
+void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds);
+stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta);
+stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity);
+stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen);
 bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B);
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank);
+size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::Part & part);
 double compute_tri_volume(const std::array<stk::math::Vector2d,3> & elementNodeCoords);
 double compute_tri_volume(const std::array<stk::math::Vector3d,3> & elementNodeCoords);
 double compute_tri_volume(const stk::math::Vector3d * elementNodeCoords);
@@ -58,6 +63,8 @@ void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bu
 double compute_maximum_element_size(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector);
 double compute_maximum_size_of_selected_elements_using_node(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity node);
 void compute_element_quality(const stk::mesh::BulkData & mesh, double & minEdgeLength, double & maxEdgeLength, double & minVolume, double & maxVolume);
+double compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const std::vector<stk::mesh::Entity> & elementsToIntersect);
+double compute_global_average_edge_length_for_selected_elements(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector);
 void delete_all_entities_using_nodes_with_nodal_volume_below_threshold(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold);
 std::vector<unsigned> get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permutation);
 const stk::mesh::Part & find_element_part(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem);
@@ -68,13 +75,12 @@ void attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity ent
 void unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 void unpack_shared_entities(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & sharedEntities, stk::CommSparse &commSparse);
-void update_node_activation(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
+void activate_selected_entities_touching_active_elements(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Selector & entitySelector, stk::mesh::Part & activePart);
 void activate_all_entities(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
 void destroy_custom_ghostings(stk::mesh::BulkData & mesh);
 bool has_upward_connectivity(const stk::mesh::BulkData &mesh, const stk::mesh::Entity entity);
 void debug_print_selector_parts(const stk::mesh::Selector & selector);
 stk::mesh::PartVector filter_non_io_parts(const stk::mesh::PartVector & all_parts);
-void activate_selected_sides_touching_active_elements(stk::mesh::BulkData & mesh, const stk::mesh::Selector & side_selector, stk::mesh::Part & active_part);
 void get_partially_and_fully_coincident_elements(const stk::mesh::BulkData & mesh, stk::mesh::Entity elem, std::vector<stk::mesh::Entity> & coincident_elems);
 bool check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mesh::Part & exterior_boundary_part, const stk::mesh::Part & active_part);
 bool check_coincident_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Part & active_part);

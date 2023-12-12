@@ -7,15 +7,16 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_MasterElementDeterminer.hpp>
+#include <Akri_MasterElement.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_FieldRef.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_topology/topology.hpp>
-#include <Akri_MasterElementBasis.hpp>
-#include <Akri_DiagWriter.hpp>
 
 namespace krino {
+
+std::vector<std::unique_ptr<MasterElement>> MasterElementDeterminer::theMasterElements(stk::topology::BEGIN_TOPOLOGY + stk::topology::NUM_TOPOLOGIES);
 
 const MasterElement&
 MasterElementDeterminer::getMasterElement(stk::mesh::Bucket & bucket, FieldRef field)
@@ -49,57 +50,17 @@ MasterElementDeterminer::get_field_topology(const stk::mesh::Bucket & b, const F
 const MasterElement &
 MasterElementDeterminer::getMasterElement(stk::topology t)
 {
-  static std::vector<std::unique_ptr<MasterElement>> all_master_elems(stk::topology::BEGIN_TOPOLOGY + stk::topology::NUM_TOPOLOGIES);
-  std::unique_ptr<MasterElement> & master_elem = all_master_elems[t()];
+  std::unique_ptr<MasterElement> & master_elem = theMasterElements[t()];
   if (nullptr == master_elem.get())
   {
-    std::unique_ptr<Basis> basis;
-    switch(t())
-    {
-    case stk::topology::LINE_2:
-        basis = std::make_unique<Basis_LINE_2>();
-        break;
-    case stk::topology::LINE_3:
-        basis = std::make_unique<Basis_LINE_3>();
-        break;
-    case stk::topology::TRI_3:
-    case stk::topology::TRI_3_2D:
-        basis = std::make_unique<Basis_TRI_3>();
-        break;
-    case stk::topology::TRI_6:
-    case stk::topology::TRI_6_2D:
-        basis = std::make_unique<Basis_TRI_6>();
-        break;
-    case stk::topology::QUAD_4:
-    case stk::topology::QUAD_4_2D:
-        basis = std::make_unique<Basis_QUAD_4>();
-        break;
-    case stk::topology::QUAD_9:
-    case stk::topology::QUAD_9_2D:
-        basis = std::make_unique<Basis_QUAD_9>();
-        break;
-    case stk::topology::TET_4:
-        basis = std::make_unique<Basis_TET_4>();
-        break;
-    case stk::topology::TET_10:
-        basis = std::make_unique<Basis_TET_10>();
-        break;
-    case stk::topology::HEX_8:
-        basis = std::make_unique<Basis_HEX_8>();
-        break;
-    case stk::topology::HEX_27:
-        basis = std::make_unique<Basis_HEX_27>();
-        break;
-    case stk::topology::WEDGE_6:
-        basis = std::make_unique<Basis_WEDGE_6>();
-        break;
-    default:
-        ThrowRuntimeError("Element topology not found in MasterElementDeterminer::getMasterElement: " << t.name());
-        break;
-    }
-    master_elem = std::make_unique<MasterElement>(t, std::move(basis));
+    master_elem = std::make_unique<MasterElement>(t);
   }
   return *master_elem;
+}
+
+void MasterElementDeterminer::clear_master_elements()
+{
+  theMasterElements.clear();
 }
 
 } // namespace krino

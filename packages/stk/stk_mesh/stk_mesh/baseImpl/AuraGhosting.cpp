@@ -119,11 +119,13 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
     entityBelongsInAura.proc = entityProc.second;
     storeEntity.proc = entityProc.second;
     const EntityRank entityRank = bulkData.entity_rank(entityProc.first);
-    if (entityRank > stk::topology::ELEM_RANK) {
-      VisitClosureGeneral(bulkData, entityProc.first, entityRank, storeEntity, entityBelongsInAura);
-    }
-    else {
-      VisitClosureBelowEntityNoRecurse(bulkData, entityProc.first, entityRank, storeEntity, entityBelongsInAura);
+    if (entityRank > stk::topology::NODE_RANK) {
+      if (entityRank > stk::topology::ELEM_RANK) {
+        VisitClosureGeneral(bulkData, entityProc.first, entityRank, storeEntity, entityBelongsInAura);
+      }
+      else {
+        VisitClosureBelowEntityNoRecurse(bulkData, entityProc.first, entityRank, storeEntity, entityBelongsInAura);
+      }
     }
   }
 

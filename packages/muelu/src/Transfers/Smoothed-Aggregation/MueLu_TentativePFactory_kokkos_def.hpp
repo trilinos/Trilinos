@@ -393,6 +393,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Node Comm",          Teuchos::null, "Generating factory of the node level communicator");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -462,38 +463,41 @@ namespace MueLu {
     RCP<RealValuedMultiVector> coarseCoords;
 
     if(bTransferCoordinates_) {
-      ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
-      GO                  indexBase    = coarseMap->getIndexBase();
+      RCP<const Map> coarseCoordMap;
+      using array_type = typename Map::global_indices_array_device_type;
 
       LO blkSize = 1;
       if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
         blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
 
-      Array<GO>           elementList;
-      ArrayView<const GO> elementListView;
       if (blkSize == 1) {
         // Scalar system
-        // No amalgamation required
-        elementListView = elementAList;
-
+        // No amalgamation required, we can use the coarseMap
+        coarseCoordMap = coarseMap;
       } else {
+        // Vector system
+        // NOTE: There could be further optimizations here where we detect contiguous maps and then
+        // create a contiguous amalgamated maps, which bypasses the expense of the getMyGlobalIndicesDevice() 
+        // call (which is free for non-contiguous maps, but costs something if the map is contiguous).
+        using range_policy = Kokkos::RangePolicy<typename Node::execution_space>;         
+        array_type elementAList = coarseMap->getMyGlobalIndicesDevice();
+        GO indexBase = coarseMap->getIndexBase();        
         auto numElements = elementAList.size() / blkSize;
-
-        elementList.resize(numElements);
+        typename array_type::non_const_type elementList_nc("elementList",numElements);
 
         // Amalgamate the map
-        for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
-          elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
-
-        elementListView = elementList;
+        Kokkos::parallel_for("Amalgamate Element List",range_policy(0,numElements),KOKKOS_LAMBDA(LO i) {
+            elementList_nc[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+          });
+        array_type elementList = elementList_nc;
+        coarseCoordMap = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                           elementList, indexBase, coarseMap->getComm());
       }
 
-      auto uniqueMap      = fineCoords->getMap();
-      auto coarseCoordMap = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                              elementListView, indexBase, coarseMap->getComm());
       coarseCoords = RealValuedMultiVectorFactory::Build(coarseCoordMap, fineCoords->getNumVectors());
 
       // Create overlapped fine coordinates to reduce global communication
+      auto uniqueMap      = fineCoords->getMap();
       RCP<RealValuedMultiVector> ghostedCoords = fineCoords;
       if (aggregates->AggregatesCrossProcessors()) {
         auto nonUniqueMap = aggregates->GetMap();
@@ -564,6 +568,13 @@ namespace MueLu {
     if(bTransferCoordinates_) {
       Set(coarseLevel, "Coordinates", coarseCoords);
     }
+
+    // FIXME: We should remove the NodeComm on levels past the threshold
+    if(fineLevel.IsAvailable("Node Comm")) {
+      RCP<const Teuchos::Comm<int> > nodeComm = Get<RCP<const Teuchos::Comm<int> > >(fineLevel,"Node Comm");
+      Set<RCP<const Teuchos::Comm<int> > >(coarseLevel, "Node Comm", nodeComm);
+    }
+
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
 

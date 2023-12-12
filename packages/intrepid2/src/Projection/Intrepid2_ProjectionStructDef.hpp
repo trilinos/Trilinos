@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionStructDef.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionStruct containing definitions.
+    \brief  Header file for the Intrepid2::ProjectionStruct containing definitions.
     \author Created by Mauro Perego
  */
 #ifndef __INTREPID2_PROJECTIONSTRUCTDEF_HPP__
@@ -60,10 +60,6 @@
 
 
 namespace Intrepid2 {
-
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-#endif
 
 template<typename DeviceType, typename ValueType>
 template<typename BasisPtrType>
@@ -767,9 +763,7 @@ void ProjectionStruct<DeviceType,ValueType>::createHVolProjectionStruct(const Ba
   allBasisDerivEPoints = view_type("allBasisDerivPoints", numBasisDerivEvalPoints, dim);
   allTargetDerivEPoints = view_type("allTargetDerivPoints", numTargetDerivEvalPoints, dim);
 }
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
+
 }  // Intrepid2 namespace
 #endif
 

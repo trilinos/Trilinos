@@ -22,7 +22,8 @@
     <Parameter name="Use Sketching"                 type="bool"     value="false" />
     <Parameter name="State Rank"                    type="int"      value="10"    />
     <Parameter name="Adjoint Rank"                  type="int"      value="10"    />
-    <Parameter name="State Sensitvity Rank"         type="int"      value="10"    />
+    <Parameter name="State Sensitivity Rank"        type="int"      value="10"    />
+    <Parameter name="Adaptive Rank"                 type="bool"     value="false" />
     <Parameter name="Use Hessian"                   type="bool"     value="true"  />
     <Parameter name="Use Only Sketched Sensitivity" type="bool"     value="true"  />
   </ParameterList>
@@ -160,6 +161,7 @@
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />

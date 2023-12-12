@@ -1253,7 +1253,10 @@ namespace Tpetra {
     // as well.  Note that we only call fillLocalGraphAndMatrix() if
     // the matrix owns the graph, which means myGraph_ is not null.
 
-    typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
+    // NOTE: This does not work correctly w/ GCC 12.3 + CUDA due to a compiler bug.
+    // See: https://github.com/trilinos/Trilinos/issues/12237
+    //using row_entries_type = decltype (myGraph_->k_numRowEntries_); 
+    using row_entries_type = typename crs_graph_type::num_row_entries_type;
 
     typename Graph::local_graph_device_type::row_map_type curRowOffsets = 
                                                    myGraph_->rowPtrsUnpacked_dev_;
@@ -1643,7 +1646,10 @@ namespace Tpetra {
       requestOptimizedStorage = false;
     }
 
-    using row_entries_type = decltype (staticGraph_->k_numRowEntries_);
+    // NOTE: This does not work correctly w/ GCC 12.3 + CUDA due to a compiler bug.
+    // See: https://github.com/trilinos/Trilinos/issues/12237
+    //using row_entries_type = decltype (staticGraph_->k_numRowEntries_);
+    using row_entries_type = typename crs_graph_type::num_row_entries_type;
 
     // The matrix's values are currently
     // stored in a 1-D format.  However, this format is "unpacked";
@@ -7931,7 +7937,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // Owning PIDs
     Teuchos::Array<int> SourcePids;
-    Teuchos::Array<int> TargetPids;
 
     // Temp variables for sub-communicators
     RCP<const map_type> ReducedRowMap, ReducedColMap,
@@ -8460,6 +8465,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     Teuchos::Array<int> RemotePids;
     if (runOnHost) {
+      Teuchos::Array<int> TargetPids;
       // Backwards compatibility measure.  We'll use this again below.
   
       // TODO JHU Need to track down why numImportPacketsPerLID_ has not been corrently marked as modified on host (which it has been)
@@ -8686,6 +8692,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::View<GO*,device_type>     CSR_colind_GID_d;
       Kokkos::View<LO*,device_type>     CSR_colind_LID_d;
       Kokkos::View<impl_scalar_type*,device_type> CSR_vals_d;
+      Kokkos::View<int*,device_type>    TargetPids_d;
   
       Details::unpackAndCombineIntoCrsArrays(
                                      *this, 
@@ -8701,17 +8708,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                      CSR_colind_GID_d,
                                      CSR_vals_d,
                                      SourcePids(),
-                                     TargetPids);
+                                     TargetPids_d);
   
       Kokkos::resize (CSR_colind_LID_d, CSR_colind_GID_d.size());
   
-      // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
-      // owned entries.  Convert them to the actual PID.
-      // JHU FIXME This can be done within unpackAndCombineIntoCrsArrays with a parallel_for.
-      for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
-      {
-        if(TargetPids[i] == -1) TargetPids[i] = MyPID;
-      }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       tmCopySPRdata = Teuchos::null;
 #endif
@@ -8735,7 +8735,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                         CSR_colind_LID_d,
                                                         CSR_colind_GID_d,
                                                         BaseDomainMap,
-                                                        TargetPids,
+                                                        TargetPids_d,
                                                         RemotePids,
                                                         MyColMap);
       }

@@ -76,6 +76,8 @@ public:
   // If surface does return far_field_value instead of actual signed distance, the sign may be wrong.
   virtual bool truncated_distance_may_have_wrong_sign() const = 0;
 
+  virtual std::pair<int, double> compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double edgeCrossingTol) const;
+
   // for debugging memory usage
   virtual size_t storage_size() const = 0;
 

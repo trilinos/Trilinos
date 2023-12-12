@@ -89,10 +89,10 @@ namespace MueLuTests {
     #include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(MUELU_HAVE_IFPACK)
+#   if !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
 #   endif
-#   if !defined(MUELU_HAVE_IFPACK2)
+#   if !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
 #   endif
     out << "version: " << MueLu::Version() << std::endl;
@@ -134,7 +134,10 @@ namespace MueLuTests {
     UncoupledAggFact->SetMaxNeighAlreadySelected(0);
     UncoupledAggFact->SetOrdering("natural");
 
+    Teuchos::ParameterList sapParamList;
+    sapParamList.sublist("matrixmatrix: kernel params").set("compute global constants", true);
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
+    Pfact->SetParameterList(sapParamList);
     RCP<Factory>           Rfact = rcp( new GenericRFactory() );
     H->SetMaxCoarseSize(1);
 
@@ -150,6 +153,7 @@ namespace MueLuTests {
     RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
     M.SetFactory("P", Pfact);
     M.SetFactory("R", Rfact);
     M.SetFactory("Aggregates", UncoupledAggFact);
@@ -224,10 +228,10 @@ namespace MueLuTests {
     #include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-#   if !defined(MUELU_HAVE_IFPACK)
+#   if !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
 #   endif
-#   if !defined(MUELU_HAVE_IFPACK2)
+#   if !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
 #   endif
     out << "version: " << MueLu::Version() << std::endl;

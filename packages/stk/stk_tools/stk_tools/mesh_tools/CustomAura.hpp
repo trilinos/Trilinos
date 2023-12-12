@@ -249,7 +249,7 @@ inline void fill_list_of_entities_to_send_for_aura_like_ghosting(stk::mesh::Bulk
         if(bulkData.bucket(elements[i]).owned())
         {
           std::vector<int> comm_shared_procs;
-          bulkData.comm_shared_procs(bulkData.entity_key(shared_node), comm_shared_procs);
+          bulkData.comm_shared_procs(shared_node, comm_shared_procs);
           for(int proc : comm_shared_procs )
           {
             entitiesToGhost.push_back(stk::mesh::EntityProc(elements[i], proc));

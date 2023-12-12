@@ -82,18 +82,13 @@ TEST(MeshQualityImprover, AnnulusRotation)
 
     // std::cout << "creating mesh1" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, 0.5, 1.5, 0);
-    mesh::check_topology(mesh1);
 
     // std::cout << "\ncreating mesh2" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, 0.5, 1.5, i * dtheta);
-    mesh::check_topology(mesh1);
-
-    // printVertEdges("mesh_initial", mesh2);
 
     auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
 
-    // printVertEdges("mesh_snapped", mesh2);
     std::cout << "number of invalid points = " << bsnapper->get_mesh2_quality_improver()->count_invalid_points()
               << std::endl;
     EXPECT_EQ(bsnapper->get_mesh2_quality_improver()->count_invalid_points(), 0);
@@ -217,24 +212,15 @@ TEST(MeshQualityImprover, AnnulusRefining)
 
     auto errorFunc = [](const utils::Point& pt) { return utils::Point(pt.x, pt.y, 0); };
 
-    // std::cout << "creating mesh1" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(5, 5, 0.5, 1.5, 0);
 
-    // std::cout << "\ncreating mesh2" << std::endl;
     std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(5 + i, 5 + i, 0.5, 1.5, 0);
-
-    // printVertEdges("mesh1_initial", mesh1);
-    // printVertEdges("mesh2_initial", mesh2);
 
     std::cout << "initial mesh1 surface error: ";
     compute_surface_error(mesh1, errorFunc);
 
     std::cout << "initial mesh2 surface error: ";
     compute_surface_error(mesh2, errorFunc);
-
-    auto metric     = std::make_shared<RegularizedDistortionMetric<double>>(1e-1);
-    auto qualityObj = std::make_shared<PatchDistortionObjective>(metric);
-    MeshQualityStatistics qualityStatistics(mesh2, qualityObj);
 
     auto bsnapper = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD);
     bsnapper->snap();
@@ -245,23 +231,15 @@ TEST(MeshQualityImprover, AnnulusRefining)
     std::cout << "after snap mesh2 surface error: ";
     compute_surface_error(mesh2, errorFunc);
 
-    // printVertEdges("mesh1_snapped", mesh1);
-    // printVertEdges("mesh2_snapped", mesh2);
     std::cout << "number of invalid points = " << bsnapper->get_mesh2_quality_improver()->count_invalid_points()
               << std::endl;
-    // printVertEdges("mesh1_fixed", mesh1);
-    // printVertEdges("mesh2_fixed", mesh2);
+
 
     std::cout << "final mesh1 surface error: ";
     double maxError1 = compute_surface_error(mesh1, errorFunc);
 
     std::cout << "final mesh2 surface error: ";
     double maxError2 = compute_surface_error(mesh2, errorFunc);
-
-    auto stats = qualityStatistics.compute_statistics();
-    std::cout << "mesh " << i << ", mean, stddev, min, max = " << stats.mean << ", " << stats.stddev << ", "
-              << stats.min << ", " << stats.max << std::endl;
-    qualityStatistics.write_to_file(std::string("mesh") + std::to_string(i) + "_vert_qualities.txt");
 
     EXPECT_EQ(bsnapper->get_mesh2_quality_improver()->count_invalid_points(), 0);
     EXPECT_NEAR(maxError1, 0, 1e-13);
@@ -365,10 +343,10 @@ TEST(MeshQualityImprover, TorusRotation)
     std::cout << "dtheta = " << i * dtheta * 180.0 / pi << std::endl;
 
     // std::cout << "creating mesh1" << std::endl;
-    std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, radiusIn, radiusOut, 0, MPI_COMM_WORLD, func);
+    std::shared_ptr<mesh::Mesh> mesh1 = impl::make_annulus_mesh(10, 10, radiusIn, radiusOut, 0, MPI_COMM_WORLD, false, func);
 
     // std::cout << "\ncreating mesh2" << std::endl;
-    std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, radiusIn, radiusOut, i * dtheta, MPI_COMM_WORLD, func);
+    std::shared_ptr<mesh::Mesh> mesh2 = impl::make_annulus_mesh(13, 13, radiusIn, radiusOut, i * dtheta, MPI_COMM_WORLD, false, func);
 
     // printVertEdges("mesh_initial", mesh2);
 

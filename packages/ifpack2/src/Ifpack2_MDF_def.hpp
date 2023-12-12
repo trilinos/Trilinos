@@ -155,6 +155,7 @@ auto get_local_crs_row_matrix(
 template<class MatrixType>
 MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
+    Verbosity_(0),
     LevelOfFill_ (0),
     Overalloc_ (2.),
     isAllocated_ (false),
@@ -175,6 +176,7 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
 template<class MatrixType>
 MDF<MatrixType>::MDF (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
+    Verbosity_(0),
     LevelOfFill_ (0),
     Overalloc_ (2.),
     isAllocated_ (false),

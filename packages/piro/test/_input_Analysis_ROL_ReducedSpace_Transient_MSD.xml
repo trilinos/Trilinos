@@ -1,4 +1,7 @@
 <ParameterList>
+  <ParameterList name="Problem">
+    <Parameter name="Response Depends On Solution Time Derivative" type="bool" value="false" />
+  </ParameterList>
   <ParameterList name="Piro">
     <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
     <Parameter name="Explicit Adjoint Model Evaluator" type="bool" value="true" />
@@ -195,6 +198,8 @@
         <Parameter name="Bound Constrained" type="bool" value="true" />
 
         <Parameter name="Full Space" type="bool" value="false" />
+        <Parameter name="Tempus Driver" type="bool" value="false" />
+        <Parameter name="Response Depends Only On Final Time" type="bool" value="true" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
         <ParameterList name="ROL Options">

@@ -23,7 +23,21 @@ Bsr expand_crs_to_bsr(const Crs &crs, size_t blockSize) {
   using crs_row_map_type = typename Crs::row_map_type;
   using bsr_row_map_type =
       Kokkos::View<typename Bsr::row_map_type::non_const_data_type,
-                   bsr_device_type>;
+                   bsr_device_type>;  // need non-const version
+
+  using bsr_size_type = typename Bsr::non_const_size_type;
+
+  {
+    size_t nnz = crs.nnz() * blockSize * blockSize;
+    if (nnz > size_t(Kokkos::ArithTraits<bsr_size_type>::max())) {
+      std::stringstream ss;
+      ss << "expanding " << crs.nnz()
+         << " non-zeros of CrsMatrix into blocks of " << blockSize
+         << " would overflow size_type of requested BsrMatrix "
+         << Kokkos::ArithTraits<bsr_size_type>::name();
+      throw std::runtime_error(ss.str());
+    }
+  }
 
   // construct the Bsr row map
   bsr_row_map_type bsrRowMap("bsrRowMap", crs.graph.row_map.size());

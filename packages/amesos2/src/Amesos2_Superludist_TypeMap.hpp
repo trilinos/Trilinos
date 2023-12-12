@@ -69,10 +69,13 @@
 
 #include "Amesos2_TypeMap.hpp"
 
+#ifdef KOKKOS_ENABLE_CUDA
+  #include <cublas_v2.h>
+  #include <cuda_runtime_api.h>
+#endif
+
 
 namespace SLUD {
-
-extern "C" {
 
 #if SUPERLU_DIST_MAJOR_VERSION > 4
 // SuperLU_Dist before major version 5 does not contain the config file
@@ -108,10 +111,6 @@ extern "C" {
   }
 #endif  // HAVE_TEUCHOS_COMPLEX
 
-
-} // end extern "C"
-
-// Declare and specialize a std::binary_funtion class for
 // multiplication of SLUD types
 template <typename slu_scalar_t, typename slu_mag_t>
 struct slu_dist_mult {};
@@ -124,7 +123,7 @@ struct slu_dist_mult<T,T> : std::multiplies<T> {};
 // For namespace/macro reasons, we prefix our variables with amesos_*
 template <>
 struct slu_dist_mult<double,double>
-  : std::binary_function<double,double,double> {
+{
   double operator()(double a, double b) {
     return( a*b );
   }
@@ -134,7 +133,7 @@ struct slu_dist_mult<double,double>
 
   template <>
   struct slu_dist_mult<Z::doublecomplex,double>
-    : std::binary_function<Z::doublecomplex,double,Z::doublecomplex> {
+  {
     Z::doublecomplex operator()(Z::doublecomplex amesos_z, double amesos_d) {
       Z::doublecomplex amesos_zr;
       zd_mult(&amesos_zr, &amesos_z, amesos_d);	// zd_mult is a macro, so no namespacing
@@ -144,7 +143,7 @@ struct slu_dist_mult<double,double>
 
   template <>
   struct slu_dist_mult<Z::doublecomplex,Z::doublecomplex>
-    : std::binary_function<Z::doublecomplex,Z::doublecomplex,Z::doublecomplex> {
+  {
     Z::doublecomplex operator()(Z::doublecomplex amesos_z1, Z::doublecomplex amesos_z2) {
       Z::doublecomplex amesos_zr;
       zz_mult(&amesos_zr, &amesos_z1, &amesos_z2);    // zz_mult is a macro, so no namespacing

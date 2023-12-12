@@ -803,8 +803,8 @@ namespace Tpetra {
     using Details::ProfilingRegion;
 
     const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
-    const char funcNameHost[] = "Tpetra::DistObject::doTransfer[Host]";
-    const char funcNameDevice[] = "Tpetra::DistObject::doTransfer[Device]";
+    const char funcNameHost[] = "Tpetra::DistObject::beginTransfer[Host]";
+    const char funcNameDevice[] = "Tpetra::DistObject::beginTransfer[Device]";
     const char *funcName = commOnHost ? funcNameHost : funcNameDevice;
 
     ProfilingRegion region_doTransfer(funcName);
@@ -1162,8 +1162,8 @@ namespace Tpetra {
     using Details::ProfilingRegion;
 
     const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
-    const char funcNameHost[] = "Tpetra::DistObject::doTransfer[Host]";
-    const char funcNameDevice[] = "Tpetra::DistObject::doTransfer[Device]";
+    const char funcNameHost[] = "Tpetra::DistObject::endTransfer[Host]";
+    const char funcNameDevice[] = "Tpetra::DistObject::endTransfer[Device]";
     const char *funcName = commOnHost ? funcNameHost : funcNameDevice;
     ProfilingRegion region_doTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");

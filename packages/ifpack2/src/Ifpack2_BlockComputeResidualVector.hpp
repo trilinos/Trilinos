@@ -115,7 +115,7 @@ namespace Ifpack2 {
       local_ordinal_type_1d_view packptr; // npack+1
       local_ordinal_type_1d_view packptr_sub;
       local_ordinal_type_1d_view packindices_sub;
-      local_ordinal_type_1d_view packindices_schur;
+      local_ordinal_type_2d_view packindices_schur;
       // part2rowidx0_(i) is the flat row index of the start of the i'th part. It's
       // an alias of partptr_ in the case of no overlap.
       local_ordinal_type_1d_view part2rowidx0; // np+1
@@ -693,6 +693,7 @@ namespace Ifpack2 {
             ("ComputeResidual::RangePolicy::run<SeqTag>", policy, *this);
         }
         IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
       }
 
       // y = b - R (x , x_remote)
@@ -765,6 +766,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
         }
         IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
       }
 
       // y = b - R (y , y_remote)
@@ -852,6 +854,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
         }
         IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
+        IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
       }
     };
 

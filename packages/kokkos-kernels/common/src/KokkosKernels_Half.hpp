@@ -14,6 +14,7 @@
 //
 //@HEADER
 
+#if KOKKOS_VERSION < 40199
 #ifndef KOKKOSKERNELS_HALF_HPP
 #define KOKKOSKERNELS_HALF_HPP
 
@@ -61,3 +62,4 @@ namespace Experimental {
 }  // namespace Experimental
 }  // namespace KokkosKernels
 #endif  // KOKKOSKERNELS_HALF_HPP
+#endif  // KOKKOS_VERSION < 40199

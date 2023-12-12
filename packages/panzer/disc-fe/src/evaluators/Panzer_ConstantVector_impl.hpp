@@ -50,20 +50,28 @@ template<typename EvalT, typename Traits>
 ConstantVector<EvalT, Traits>::
 ConstantVector(
   const Teuchos::ParameterList& p) :
-  vector(p.get<std::string>("Name"), 
-         p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+  vec_(p.get<std::string>("Name"), 
+       p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 {
-  this->addEvaluatedField(vector);
+  this->addEvaluatedField(vec_);
 
-  int dim = vector.fieldTag().dataLayout().extent(2);
+  // Make this unshared so that it is not overwritten
+  this->addUnsharedField(vec_.fieldTag().clone());
 
-  vals[0] = ScalarT(p.get<double>("Value X"));
+  const int dim = vec_.fieldTag().dataLayout().extent(2);
+
+  vals_ = Kokkos::View<double*>("ConstantVector::vals",dim);
+  auto vals_host = Kokkos::create_mirror_view(Kokkos::HostSpace(),vals_);
+
+  vals_host(0) = p.get<double>("Value X");
   if(dim>1)
-    vals[1] = ScalarT(p.get<double>("Value Y"));
+    vals_host(1) = p.get<double>("Value Y");
   if(dim>2)
-    vals[2] = ScalarT(p.get<double>("Value Z"));
-  
-  std::string n = "ConstantVector: " + vector.fieldTag().name();
+    vals_host(2) = p.get<double>("Value Z");
+
+  Kokkos::deep_copy(vals_,vals_host);
+
+  std::string n = "ConstantVector: " + vec_.fieldTag().name();
   this->setName(n);
 }
 
@@ -71,26 +79,24 @@ ConstantVector(
 template<typename EvalT, typename Traits>
 void
 ConstantVector<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
+postRegistrationSetup(typename Traits::SetupData  /* worksets */,
+                      PHX::FieldManager<Traits>&  fm)
 {
-  using namespace PHX;
-  this->utils.setFieldData(vector,fm);
+  auto vals = this->vals_;
+  auto vec = this->vec_;
+  Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{static_cast<int64_t>(vec.extent(0)),
+        static_cast<int64_t>(vec.extent(1)),static_cast<int64_t>(vec.extent(2))});
+  Kokkos::parallel_for("panzer::ConstantVector",policy,KOKKOS_LAMBDA(const int c, const int p, const int d){
+    vec(c,p,d) = vals(d);
+  });
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void
 ConstantVector<EvalT, Traits>::
-evaluateFields(
-  typename Traits::EvalData  /* d */)
-{ 
-  for(int c=0;c<vector.extent_int(0);c++)
-    for(int p=0;p<vector.extent_int(1);p++)
-      for(int d=0;d<vector.extent_int(2);d++)
-        vector(c,p,d) = vals[d];
-}
+evaluateFields(typename Traits::EvalData  /* d */)
+{}
 
 //**********************************************************************
 

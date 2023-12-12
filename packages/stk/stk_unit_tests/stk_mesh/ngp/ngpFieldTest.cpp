@@ -49,6 +49,7 @@
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/util/StkNgpVector.hpp>
 #include "NgpUnitTestUtils.hpp"
@@ -117,28 +118,29 @@ public:
     stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
   }
 
+  template<typename T>
   void setup_two_fields_five_hex_three_block_mesh(const int numComponent1, const int numComponent2)
   {
     const unsigned bucketCapacity = 2;
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
 
-    stk::mesh::Field<int>& stkField1 = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "variableLengthField1", 1);
-    stk::mesh::Field<int>& stkField2 = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "variableLengthField2", 1);
+    stk::mesh::Field<T>& stkField1 = get_meta().declare_field<T>(stk::topology::ELEM_RANK, "variableLengthField1", 1);
+    stk::mesh::Field<T>& stkField2 = get_meta().declare_field<T>(stk::topology::ELEM_RANK, "variableLengthField2", 1);
 
     stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::HEX_8);
     stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
     get_meta().declare_part_with_topology("block_3", stk::topology::HEX_8);
 
-    const std::vector<int> init1(numComponent1, -1);
+    const std::vector<T> init1(numComponent1, -1);
     stk::mesh::put_field_on_mesh(stkField1, block1, numComponent1, init1.data());
 
-    const std::vector<int> init2(numComponent2, -2);
+    const std::vector<T> init2(numComponent2, -2);
     stk::mesh::put_field_on_mesh(stkField1, block2, numComponent2, init2.data());
 
-    const std::vector<int> init3(numComponent1, -1);
+    const std::vector<T> init3(numComponent1, -1);
     stk::mesh::put_field_on_mesh(stkField2, block1, numComponent1, init3.data());
 
-    const std::vector<int> init4(numComponent2, -2);
+    const std::vector<T> init4(numComponent2, -2);
     stk::mesh::put_field_on_mesh(stkField2, block2, numComponent2, init4.data());
 
     const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
@@ -174,11 +176,12 @@ public:
     get_bulk().modification_end();
   }
 
+  template<typename T>
   void copy_fields_on_device(stk::mesh::NgpMesh& ngpMesh, stk::mesh::FieldBase* inputField,
                              stk::mesh::FieldBase* outputField, const stk::mesh::Selector& selector)
   {
-    stk::mesh::NgpField<int> inputNgpField = stk::mesh::get_updated_ngp_field<int>(*inputField);
-    stk::mesh::NgpField<int> outputNgpField = stk::mesh::get_updated_ngp_field<int>(*outputField);
+    stk::mesh::NgpField<T> inputNgpField = stk::mesh::get_updated_ngp_field<T>(*inputField);
+    stk::mesh::NgpField<T> outputNgpField = stk::mesh::get_updated_ngp_field<T>(*outputField);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
@@ -1033,7 +1036,7 @@ TEST_F(NgpFieldFixture, InvalidModifyFlagCondition)
 
 TEST_F(NgpFieldFixture, PersistentModifyOnDeviceFlag)
 {
-  if (get_parallel_size() != 1) return;
+  if (get_parallel_size() != 1) GTEST_SKIP();
 
   setup_one_field_one_element_mesh();
 
@@ -1052,7 +1055,7 @@ TEST_F(NgpFieldFixture, PersistentModifyOnDeviceFlag)
 
 TEST_F(NgpFieldFixture, noOverwriteInVariableLengthFields)
 {
-  if (get_parallel_size() != 1) return;
+  if (get_parallel_size() != 1) GTEST_SKIP();
 
   setup_two_field_two_element_mesh();
 
@@ -1068,11 +1071,11 @@ TEST_F(NgpFieldFixture, noOverwriteInVariableLengthFields)
 
 TEST_F(NgpFieldFixture, FieldCopyVariableLengthField)
 {
-  if (get_parallel_size() != 1) return;
+  if (get_parallel_size() != 1) GTEST_SKIP();
 
   const int numComponent1 = 8;
   const int numComponent2 = 3;
-  setup_two_fields_five_hex_three_block_mesh(numComponent1, numComponent2);
+  setup_two_fields_five_hex_three_block_mesh<int>(numComponent1, numComponent2);
 
   auto ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   auto stkField1 = get_meta().get_field<int>(stk::topology::ELEM_RANK, "variableLengthField1");
@@ -1090,7 +1093,7 @@ TEST_F(NgpFieldFixture, FieldCopyVariableLengthField)
     inData4[c] = numComponent1 + 3 + c;
   }
 
-  copy_fields_on_device(ngpMesh, stkField1, stkField2, get_meta().universal_part());
+  copy_fields_on_device<int>(ngpMesh, stkField1, stkField2, get_meta().universal_part());
   stkField2->sync_to_host();
 
   int* outData2 = stk::mesh::field_data(*stkField2, elem2);
@@ -1103,6 +1106,62 @@ TEST_F(NgpFieldFixture, FieldCopyVariableLengthField)
     EXPECT_EQ(numComponent1 + 3 + c, outData4[c]);
   }
 }
+
+#ifdef STK_USE_DEVICE_MESH
+TEST_F(NgpFieldFixture, DeviceField_set_all_after_modified_on_host)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  const int numComponent1 = 8;
+  const int numComponent2 = 3;
+  setup_two_fields_five_hex_three_block_mesh<double>(numComponent1, numComponent2);
+
+  auto ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  auto stkField1 = get_meta().get_field<double>(stk::topology::ELEM_RANK, "variableLengthField1");
+
+  EXPECT_FALSE(stkField1->need_sync_to_host());
+  EXPECT_FALSE(stkField1->need_sync_to_device());
+
+  stk::mesh::NgpField<double> ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
+ 
+  ngpField1.modify_on_host();
+  EXPECT_TRUE(stkField1->need_sync_to_device());
+
+  ngpField1.set_all(ngpMesh, 97.9);
+
+  EXPECT_TRUE(ngpField1.need_sync_to_host());
+}
+
+TEST_F(NgpFieldFixture, blas_field_copy_device_to_device)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  const int numComponent1 = 8;
+  const int numComponent2 = 3;
+  setup_two_fields_five_hex_three_block_mesh<double>(numComponent1, numComponent2);
+
+  auto ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  auto stkField1 = get_meta().get_field<double>(stk::topology::ELEM_RANK, "variableLengthField1");
+  auto stkField2 = get_meta().get_field<double>(stk::topology::ELEM_RANK, "variableLengthField2");
+
+  EXPECT_FALSE(stkField1->need_sync_to_host());
+  EXPECT_FALSE(stkField2->need_sync_to_host());
+  EXPECT_FALSE(stkField1->need_sync_to_device());
+  EXPECT_FALSE(stkField2->need_sync_to_device());
+
+  stk::mesh::NgpField<double> ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
+  stk::mesh::NgpField<double> ngpField2 = stk::mesh::get_updated_ngp_field<double>(*stkField2);
+ 
+  ngpField1.set_all(ngpMesh, 97.9);
+
+  EXPECT_TRUE(ngpField1.need_sync_to_host());
+
+  stk::mesh::field_copy(*stkField1, *stkField2);
+
+  EXPECT_TRUE(stkField1->need_sync_to_host());
+  EXPECT_TRUE(stkField2->need_sync_to_host());
+}
+#endif
 
 void check_expected_num_elements(const stk::mesh::BulkData & bulk, unsigned numElements)
 {
@@ -1548,6 +1607,38 @@ TEST_F(NgpFieldFixture, updateBucketPtrView)
   add_3rd_element_to_2hex_3block_mesh();
 
   ngpField.update_bucket_pointer_view();
+}
+
+TEST_F(NgpFieldFixture, LateFieldUsage)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::Field<int> & stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  stk::io::fill_mesh("generated:1x1x1", get_bulk());
+
+  initialize_ngp_field(stkIntField);
+
+  get_meta().enable_late_fields();
+  stk::mesh::Field<int> & stkLateIntField = create_field<int>(stk::topology::ELEM_RANK, "lateIntField");
+
+  initialize_ngp_field(stkLateIntField);
+
+  int multiplier = 2;
+  modify_field_on_host(get_bulk(), stkIntField, multiplier);
+  modify_field_on_host(get_bulk(), stkLateIntField, multiplier);
+  check_field_on_host(get_bulk(), stkIntField, multiplier);
+  check_field_on_host(get_bulk(), stkLateIntField, multiplier);
+
+  sync_field_to_device(stkIntField);
+  sync_field_to_device(stkLateIntField);
+  modify_field_on_device(get_bulk(), stkIntField, multiplier);
+  modify_field_on_device(get_bulk(), stkLateIntField, multiplier);
+
+  sync_field_to_host(stkIntField);
+  sync_field_to_host(stkLateIntField);
+  check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
+  check_field_on_host(get_bulk(), stkLateIntField, multiplier*multiplier);
 }
 
 //   -------------------------        -------------------------

@@ -217,6 +217,28 @@ namespace Xpetra {
 
 
 
+#ifdef HAVE_XPETRA_TPETRA
+Teuchos::RCP<Map<int, int, EpetraNode> >
+MapFactory<int, int, EpetraNode>::
+Build(UnderlyingLib                                                         lib,
+      global_size_t                                                         numGlobalElements,
+      const Kokkos::View<const int*, typename Node::device_type>& indexList,
+      int                                                         indexBase,
+      const Teuchos::RCP<const Teuchos::Comm<int>>&                         comm)
+{
+    XPETRA_MONITOR("MapFactory::Build");
+    if(lib == UseTpetra)
+        return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, indexList, indexBase, comm));
+    if(lib == UseEpetra) {
+      Teuchos::ArrayView<const int> v(indexList.data(),indexList.size());      
+      return rcp(new EpetraMapT<int, Node>(numGlobalElements, v, indexBase, comm));
+    }
+    XPETRA_FACTORY_END;
+}
+#endif      // HAVE_XPETRA_TPETRA
+
+
+
     Teuchos::RCP< const Map<int, int, EpetraNode>  >
     MapFactory<int, int, EpetraNode>::
     createLocalMapWithNode(UnderlyingLib lib,
@@ -534,6 +556,29 @@ MapFactory<int,int,EpetraNode>::copyMapWithNewComm(const Teuchos::RCP<const Map<
 
       XPETRA_FACTORY_END;
     }
+
+#ifdef HAVE_XPETRA_TPETRA
+Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> >
+MapFactory<int, long long, EpetraNode>::
+Build(UnderlyingLib                                                         lib,
+      global_size_t                                                         numGlobalElements,
+      const Kokkos::View<const long long*, typename Node::device_type>& indexList,
+      long long                                                         indexBase,
+      const Teuchos::RCP<const Teuchos::Comm<int>>&                         comm)
+{
+    XPETRA_MONITOR("MapFactory::Build");
+    if(lib == UseTpetra)
+        return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, indexList, indexBase, comm));
+    if(lib == UseEpetra) {
+      Teuchos::ArrayView<const long long> v(indexList.data(),indexList.size());      
+      return rcp(new EpetraMapT<long long, Node>(numGlobalElements, v, indexBase, comm));
+    }
+    XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
+    XPETRA_FACTORY_END;
+}
+#endif      // HAVE_XPETRA_TPETRA
+
+
 
 
     Teuchos::RCP<const Map<int, long long, EpetraNode> >

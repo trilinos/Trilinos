@@ -1287,7 +1287,6 @@ namespace Tpetra {
 
     if (numRows > 0) { // reallocate k_numRowEntries_ & fill w/ 0s
       using Kokkos::ViewAllocateWithoutInitializing;
-      typedef decltype (k_numRowEntries_) row_ent_type;
       const char label[] = "Tpetra::CrsGraph::numRowEntries";
       if (verbose) {
         std::ostringstream os;
@@ -1295,7 +1294,7 @@ namespace Tpetra {
            << endl;
         std::cerr << os.str();
       }
-      row_ent_type numRowEnt (ViewAllocateWithoutInitializing (label), numRows);
+      num_row_entries_type numRowEnt (ViewAllocateWithoutInitializing (label), numRows);
       // DEEP_COPY REVIEW - VALUE-TO-HOSTMIRROR
       Kokkos::deep_copy (execution_space(), numRowEnt, static_cast<size_t> (0)); // fill w/ 0s
       Kokkos::fence("CrsGraph::allocateIndices"); // TODO: Need to understand downstream failure points and move this fence.
@@ -2788,7 +2787,7 @@ namespace Tpetra {
     // It makes sense to clear them out here, because at the end of
     // this method, the graph is allocated on the calling process.
     numAllocForAllRows_ = 0;
-    k_numAllocPerRow_ = decltype (k_numAllocPerRow_) ();
+    k_numAllocPerRow_ =  decltype (k_numAllocPerRow_) ();
 
     checkInternalState ();
   }
@@ -3500,7 +3499,6 @@ namespace Tpetra {
   fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using ::Tpetra::Details::computeOffsetsFromCounts;
-    typedef decltype (k_numRowEntries_) row_entries_type;
     typedef typename local_graph_device_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_graph_device_type::entries_type::non_const_type lclinds_1d_type;
@@ -3609,7 +3607,7 @@ namespace Tpetra {
 
         // It's ok that k_numRowEntries_ is a host View; the
         // function can handle this.
-        typename row_entries_type::const_type numRowEnt_h = k_numRowEntries_;
+        typename num_row_entries_type::const_type numRowEnt_h = k_numRowEntries_;
         if (debug_) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (size_t(numRowEnt_h.extent (0)) != lclNumRows,
@@ -3743,7 +3741,7 @@ namespace Tpetra {
 
       // Free graph data structures that are only needed for
       // unpacked 1-D storage.
-      k_numRowEntries_ = row_entries_type ();
+      k_numRowEntries_ = num_row_entries_type ();
 
       // Keep the new 1-D packed allocations.
       lclIndsUnpacked_wdv = lclIndsPacked_wdv;
@@ -4238,8 +4236,7 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef device_type DT;
     typedef typename local_graph_device_type::row_map_type::non_const_value_type offset_type;
-    typedef decltype (k_numRowEntries_) row_entries_type;
-    typedef typename row_entries_type::non_const_value_type num_ent_type;
+    typedef typename num_row_entries_type::non_const_value_type num_ent_type;
     const char tfecfFuncName[] = "makeIndicesLocal: ";
     ProfilingRegion regionMakeIndicesLocal ("Tpetra::CrsGraph::makeIndicesLocal");
 
@@ -4274,7 +4271,7 @@ namespace Tpetra {
 
     if (this->isGloballyIndexed () && lclNumRows != 0) {
       // This is a host-accessible View.
-      typename row_entries_type::const_type h_numRowEnt =
+      typename num_row_entries_type::const_type h_numRowEnt =
         this->k_numRowEntries_;
 
       auto rowPtrsUnpacked_host = this->getRowPtrsUnpackedHost();

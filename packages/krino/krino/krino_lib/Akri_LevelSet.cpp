@@ -34,6 +34,7 @@
 #include <stk_util/environment/RuntimeWarning.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_FastIterativeMethod.hpp>
+#include <Akri_NodalBoundingBox.hpp>
 #include <Akri_Surface_Manager.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <Akri_PatchInterpolator.hpp>
@@ -1143,30 +1144,9 @@ LevelSet::compute_nodal_bbox( const stk::mesh::Selector & selector,
   const FieldRef dField = get_distance_field();
 
   const stk::mesh::Selector active_field_selector = aux_meta().active_not_ghost_selector() & selector & stk::mesh::selectField(dField);
-  stk::mesh::BucketVector const& buckets = mesh().get_buckets( stk::topology::NODE_RANK, active_field_selector);
 
-  for ( auto && bucket : buckets )
-  {
-    const stk::mesh::Bucket & b = *bucket;
-
-    const size_t length = b.size();
-
-    double *x = field_data<double>(xField, b);
-
-    for (size_t i = 0; i < length; ++i)
-    {
-
-      stk::math::Vector3d x_bw(stk::math::Vector3d::ZERO);
-      for ( unsigned dim = 0; dim < spatial_dimension; ++dim )
-      {
-        int index = i*spatial_dimension+dim;
-        x_bw[dim] = x[index] - displacement[dim];
-      }
-
-      // incrementally size bounding box
-      node_bbox.accommodate( x_bw );
-    }
-  }  // end bucket loop
+  node_bbox = krino::compute_nodal_bbox(mesh(), active_field_selector, xField);
+  node_bbox.shift(-displacement);
 }
 
 //-----------------------------------------------------------------------------------
@@ -1832,44 +1812,11 @@ LevelSet::gradient_magnitude_error(void)
 }
 //--------------------------------------------------------------------------------
 
-double LevelSet::compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect)
-{
-  double sumAvgEdgeLengths = 0.0;
-
-  for ( auto && elem : elementsToIntersect )
-  {
-    ContourElement lsElem( mesh, elem, xField, isoField );
-    sumAvgEdgeLengths += lsElem.average_edge_length();
-  }
-
-  // communicate global sums
-  const int vec_length = 2;
-  std::vector <double> local_sum( vec_length );
-  std::vector <double> global_sum( vec_length );
-  local_sum[0] = sumAvgEdgeLengths;
-  local_sum[1] = 1.0*elementsToIntersect.size();
-
-  stk::all_reduce_sum(mesh.parallel(), &local_sum[0], &global_sum[0], vec_length);
-
-  const double h_avg = ( global_sum[1] != 0.0 ) ? global_sum[0]/global_sum[1] : 0.0;
-
-  return h_avg;
-}
-
-double
-LevelSet::compute_global_average_edge_length_for_selected_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const stk::mesh::Selector & elementSelector)
-{
-  std::vector< stk::mesh::Entity> elems;
-  stk::mesh::get_selected_entities( elementSelector, mesh.buckets( stk::topology::ELEMENT_RANK ), elems );
-
-  return compute_global_average_edge_length_for_elements(mesh, xField, isoField, elems);
-}
-
 double
 LevelSet::compute_average_edge_length() const
 {
   const stk::mesh::Selector activeFieldSelector = stk::mesh::selectField(get_isovar_field()) & aux_meta().active_locally_owned_selector();
-  return compute_global_average_edge_length_for_selected_elements(mesh(), get_coordinates_field(), get_isovar_field(), activeFieldSelector);
+  return compute_global_average_edge_length_for_selected_elements(mesh(), get_coordinates_field(), activeFieldSelector);
 }
 
 //--------------------------------------------------------------------------------

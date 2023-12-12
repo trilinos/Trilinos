@@ -124,19 +124,19 @@ TEST_F(TestCategory, sparse_csc2csr) {
   std::srand(ticks);
 
   // Empty cases
-  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(1, 0, 1, 10);
-  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(0, 1, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(1, 0, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(0, 1, 1, 10);
 
-  doCsc2Csr<float, Kokkos::LayoutRight, TestExecSpace>(1, 0, 1, 10);
-  doCsc2Csr<float, Kokkos::LayoutRight, TestExecSpace>(0, 1, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutRight, TestDevice>(1, 0, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutRight, TestDevice>(0, 1, 1, 10);
 
-  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(0, 0, 1, 10);
-  doCsc2Csr<float, Kokkos::LayoutRight, TestExecSpace>(0, 0, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(0, 0, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutRight, TestDevice>(0, 0, 1, 10);
 
   // Square cases
   for (size_t i = 4; i < 1024; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;
-    doAllCsc2csr<TestExecSpace>(dim, dim);
+    doAllCsc2csr<TestDevice>(dim, dim);
   }
 
   // Non-square cases
@@ -144,11 +144,11 @@ TEST_F(TestCategory, sparse_csc2csr) {
     size_t m = (std::rand() % 511) + 1;
     size_t n = (std::rand() % 511) + 1;
     while (n == m) n = (std::rand() % 511) + 1;
-    doAllCsc2csr<TestExecSpace>(m, n);
+    doAllCsc2csr<TestDevice>(m, n);
   }
 
   // Fully sparse cases
-  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
-  doCsc2Csr<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestDevice>(5, 5, 1, 10, true);
+  doCsc2Csr<double, Kokkos::LayoutRight, TestDevice>(50, 10, 10, 100, true);
 }
 }  // namespace Test

@@ -4,6 +4,7 @@
 #include "edge_tracer.hpp"
 #include "mesh_relational_data.hpp"
 #include "predicates/point_classifier_normal_wrapper.hpp"
+#include "bounding_box_search_opts.hpp"
 #include <set> //TODO: DEBUGGING
 #include <unordered_set>
 
@@ -20,7 +21,8 @@ class MeshProjectionCalculator
     MeshProjectionCalculator(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,
                              std::shared_ptr<MeshRelationalData> relationalData,
                              std::shared_ptr<predicates::impl::PointClassifierNormalWrapper> pointClassifier,
-                             const middle_mesh::impl::EdgeTracerTolerances& edgeTracerTolerances)
+                             const middle_mesh::impl::EdgeTracerTolerances& edgeTracerTolerances,
+                             const search::BoundingBoxSearchOpts& searchOpts = search::BoundingBoxSearchOpts())
       : m_mesh1(mesh1)
       , m_mesh2(mesh2)
       , m_pointClassifier(pointClassifier)
@@ -68,6 +70,7 @@ class MeshProjectionCalculator
     EdgeTracer m_edgeTracer;
     FakeVertGenerator m_fakeVertGen;
     std::shared_ptr<MeshRelationalData> m_relationalData;
+    search::BoundingBoxSearchOpts m_searchOpts;
 
     const bool m_output = false;
 };

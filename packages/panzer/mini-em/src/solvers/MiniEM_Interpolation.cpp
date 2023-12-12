@@ -26,12 +26,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   typedef PHX::Device DeviceSpace;
   typedef Kokkos::HostSpace HostSpace;
   typedef Intrepid2::OrientationTools<DeviceSpace> ots;
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  typedef Intrepid2::Experimental::LagrangianInterpolation<DeviceSpace> li;
-#else
   typedef Intrepid2::LagrangianInterpolation<DeviceSpace> li;
-#endif
-
   typedef Kokkos::DynRankView<double,DeviceSpace> DynRankDeviceView;
 
   // must be able to cast to a block linear object factory
@@ -158,6 +153,18 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     ep_domainmap = global_eloc->getMapForBlock(loBlockIndex);
     ep_rowmap    = global_eloc->getMapForBlock(hoBlockIndex);
     ep_colmap    = ghosted_eloc->getMapForBlock(loBlockIndex);
+
+    {
+      // loop over element blocks
+      std::vector<std::string> elementBlockIds;
+      blockedDOFMngr->getElementBlockIds(elementBlockIds);
+      for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
+
+        // loop over elements
+        std::vector<int> elementIds = ho_ugi->getElementBlock(elementBlockIds[blockIter]);
+        maxNumElementsPerBlock = std::max(maxNumElementsPerBlock, elementIds.size());
+      }
+    }
 
     // TODO: Fix this.
     size_t nnzPerRowEstimate = 25*loCardinality;

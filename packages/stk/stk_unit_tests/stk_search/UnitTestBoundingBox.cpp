@@ -44,7 +44,6 @@
 
 namespace {
 
-
 TEST( stk_search_bounding_box, Point)
 {
   using namespace stk::search;
@@ -63,7 +62,6 @@ TEST( stk_search_bounding_box, Point)
   EXPECT_EQ(p, Point<double>(1,2,3));
   EXPECT_NE(p, Point<double>());
 }
-
 
 TEST( stk_search_bounding_box, Sphere)
 {
@@ -283,7 +281,6 @@ void CheckIntersections(T1 obj1, T2 obj2, bool expectedResult) {
     EXPECT_EQ(intersects(obj2, obj1), expectedResult);
 }
 
-
 TEST( stk_search_bounding_box, intersects_point_point)
 {
   typedef stk::search::Point<double> Point;
@@ -295,7 +292,6 @@ TEST( stk_search_bounding_box, intersects_point_point)
   CheckIntersections(a, b, true);
   CheckIntersections(a, c, false);
 }
-
 
 TEST( stk_search_bounding_box, intersects_point_sphere)
 {

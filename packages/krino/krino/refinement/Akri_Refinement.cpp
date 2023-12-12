@@ -521,6 +521,46 @@ static void prolong_element_fields(const stk::mesh::BulkData & mesh,
   }
 }
 
+static void restrict_element_fields(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity parentElem,
+    const std::vector<stk::mesh::Entity> & childElems)
+{
+  const stk::mesh::FieldVector & allFields = mesh.mesh_meta_data().get_fields();
+  for ( auto && stkField : allFields )
+  {
+    const FieldRef field(stkField);
+    if( field.entity_rank() == stk::topology::ELEM_RANK && field.type_is<double>() )
+    {
+
+      auto * parentElemData = field_data<double>(field, parentElem);
+      if (nullptr != parentElemData)
+      {
+        const unsigned fieldLength = field.length();
+        std::vector<double> averagedChildElemData(fieldLength,0.);
+        double numActiveChildren = 0.0;
+        for(const auto & childElem : childElems)
+        {
+          auto * childElemData = field_data<double>(field, childElem);
+
+          if(!childElemData) continue;
+          numActiveChildren += 1.;
+          for (unsigned i = 0; i < fieldLength; ++i)
+          {
+            averagedChildElemData[i] += childElemData[i];
+          }
+        }
+        if (numActiveChildren > 0.)
+        {
+          for (unsigned i = 0; i < fieldLength; ++i)
+          {
+            parentElemData[i] = averagedChildElemData[i]/numActiveChildren;
+          }
+        }
+      }
+    }
+  }
+}
+
 void Refinement::refine_tri_3_and_append_sides_to_create(const stk::mesh::PartVector & childParts,
     const stk::mesh::Entity parentElem,
     const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
@@ -602,6 +642,7 @@ void Refinement::refine_element_if_it_has_refined_edges_and_append_sides_to_crea
     return;
 
   const std::vector<stk::mesh::Entity> existingChildrenToDelete = get_children(elem);
+  restrict_element_fields(mesh, elem, existingChildrenToDelete);
 
   switch(elemTopology())
     {
@@ -779,6 +820,89 @@ void Refinement::check_leaf_children_have_parents_on_same_proc() const
   RequireEmptyErrorMsg(myMeta.mesh_bulk_data().parallel(), locally_check_leaf_children_have_parents_on_same_proc(), "Leaf child without parent owned on same proc.");
 }
 
+unsigned Refinement::rebalance_element_count_incorporating_parallel_owner_constraints(const stk::mesh::Entity elem) const
+{
+  if(is_parent(elem))
+  {
+    std::vector<stk::mesh::Entity> elemDependents;
+    fill_child_elements_that_must_stay_on_same_proc_as_parent(elem, elemDependents);
+    return elemDependents.size(); // child cost
+  }
+
+  if(is_child(elem)) // if not a parent but is a child, must be leaf element -> cost included with parent
+    return 0;
+  return 1; // if not a parent or child, must be completed unadapted element. -> self cost
+}
+
+
+bool Refinement::has_parallel_owner_rebalance_constraint(const stk::mesh::Entity entity) const
+{
+  if(is_parent(entity))
+  {
+    //if a parent, check if any children are parents or invalid elements (already moved)
+    //if so, constrained. If not, not constrained
+    const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+    std::vector<stk::mesh::Entity> children;
+    fill_children(entity, children);
+    for(auto && child : children)
+      if (!mesh.is_valid(child) || is_parent(child))
+        return true;
+    return false;
+  }
+
+  if(is_child(entity)) //if not a parent but is a child, must be leaf element, constrained
+    return true;
+  return false; //if not a parent or child, must be completed unadapted element. No constraint
+}
+
+void Refinement::fill_child_elements_that_must_stay_on_same_proc_as_parent(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
+{
+  // For non-parents, this will correctly just produce an empty dependents vector
+  fill_children(parent, dependents);
+  if (!dependents.empty())
+  {
+    const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+    size_t iKeep = 0;
+    for(size_t i=0; i<dependents.size(); ++i)
+    {
+      const stk::mesh::Entity & child = dependents[i];
+      if (mesh.is_valid(child) && !is_parent(child))
+        dependents[iKeep++] = child;
+    }
+    dependents.resize(iKeep);
+  }
+}
+
+static void adjust_parent_and_child_rebalance_weights(stk::mesh::Field<double> & elemWtField, const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children)
+{
+  if (children.empty())
+    return;
+
+  double childWtSum = 0.;
+  for (auto && child : children)
+  {
+    double & childWt = *stk::mesh::field_data(elemWtField, child);
+    childWtSum += childWt;
+    childWt = 0.;
+  }
+  double & parentWt = *stk::mesh::field_data(elemWtField, parent);
+  parentWt += childWtSum;
+}
+
+void Refinement::update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  std::vector<stk::mesh::Entity> elemDependents;
+  for (auto && bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, stk::mesh::selectField(elemWtField) & myMeta.locally_owned_part()))
+  {
+    for (auto && elem : *bucketPtr)
+    {
+      fill_child_elements_that_must_stay_on_same_proc_as_parent(elem, elemDependents);
+      adjust_parent_and_child_rebalance_weights(elemWtField, elem, elemDependents);
+    }
+  }
+}
+
 void Refinement::create_refined_nodes_elements_and_sides(const EdgeMarkerInterface & edgeMarker)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
@@ -914,27 +1038,37 @@ bool Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
   bool didMakeAnyChanges = false;
   if(stk::is_true_on_any_proc(mesh.parallel(), edgeMarker.locally_have_elements_to_unrefine()))
   {
-    didMakeAnyChanges = true;
-
     std::vector<stk::mesh::Entity> childElementsToDeleteForUnrefinement;
     std::vector<stk::mesh::Entity> ownedParentElementsModifiedByUnrefinement;
     edgeMarker.fill_elements_modified_by_unrefinement(ownedParentElementsModifiedByUnrefinement, childElementsToDeleteForUnrefinement);
 
-    const std::vector<int> originatingProcForParentsBeingModified = get_originating_procs_for_elements(ownedParentElementsModifiedByUnrefinement);
+    if(stk::is_true_on_any_proc(mesh.parallel(), !childElementsToDeleteForUnrefinement.empty()))
+    {
 
-    mesh.modification_begin();
-    destroy_custom_ghostings();
-    stk::mesh::destroy_elements_no_mod_cycle(mesh, childElementsToDeleteForUnrefinement, mesh.mesh_meta_data().universal_part());
-    remove_parent_parts(ownedParentElementsModifiedByUnrefinement);
-    mesh.modification_end();
+      for (auto parentElement : ownedParentElementsModifiedByUnrefinement)
+      {
+        auto childElements = get_children(parentElement);
+        restrict_element_fields(mesh, parentElement, childElements);
+      }
 
-    fix_face_and_edge_ownership(mesh);
+      didMakeAnyChanges = true;
 
-    mark_already_refined_edges();
+      const std::vector<int> originatingProcForParentsBeingModified = get_originating_procs_for_elements(ownedParentElementsModifiedByUnrefinement);
 
-    create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(edgeMarker);
+      mesh.modification_begin();
+      destroy_custom_ghostings();
+      stk::mesh::destroy_elements_no_mod_cycle(mesh, childElementsToDeleteForUnrefinement, mesh.mesh_meta_data().universal_part());
+      remove_parent_parts(ownedParentElementsModifiedByUnrefinement);
+      mesh.modification_end();
 
-    respect_originating_proc_for_parents_modified_by_unrefinement(ownedParentElementsModifiedByUnrefinement, originatingProcForParentsBeingModified);
+      fix_face_and_edge_ownership(mesh);
+
+      mark_already_refined_edges();
+
+      create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(edgeMarker);
+
+      respect_originating_proc_for_parents_modified_by_unrefinement(ownedParentElementsModifiedByUnrefinement, originatingProcForParentsBeingModified);
+    }
   }
 
   check_leaf_children_have_parents_on_same_proc();
@@ -942,7 +1076,7 @@ bool Refinement::do_unrefinement(const EdgeMarkerInterface & edgeMarker)
   return didMakeAnyChanges;
 }
 
-void Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
+bool Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
@@ -968,13 +1102,15 @@ void Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
 
   if (didMakeAnyChanges && myActivePart)
   {
-      activate_selected_sides_touching_active_elements(mesh, myMeta.universal_part(), *myActivePart);
+      activate_selected_entities_touching_active_elements(mesh, myMeta.side_rank(), myMeta.universal_part(), *myActivePart);
       fix_node_owners_to_assure_active_owned_element_for_node(mesh, *myActivePart);
   }
 
   STK_ThrowAssertMsg(!have_any_hanging_refined_nodes(), "Mesh has hanging refined node.");
 
   check_leaf_children_have_parents_on_same_proc();
+
+  return didMakeAnyChanges;
 }
 
 void Refinement::do_uniform_refinement(const int numUniformRefinementLevels)
@@ -1003,6 +1139,24 @@ void Refinement::fully_unrefine_mesh()
   destroy_custom_ghostings();
   stk::mesh::destroy_elements_no_mod_cycle(mesh, allChildElems, mesh.mesh_meta_data().universal_part());
   mesh.change_entity_parts(ownedParentElems, addParts, stk::mesh::ConstPartVector{myParentPart});
+  mesh.modification_end();
+}
+
+void Refinement::delete_parent_elements()
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+
+  std::vector<stk::mesh::Entity> allParentElems;
+  stk::mesh::get_selected_entities( parent_part(), mesh.buckets(stk::topology::ELEMENT_RANK), allParentElems );
+
+  std::vector<stk::mesh::Entity> ownedChildElems;
+  stk::mesh::get_selected_entities(  mesh.mesh_meta_data().locally_owned_part() & child_part() & !parent_part(), mesh.buckets(stk::topology::ELEMENT_RANK), ownedChildElems );
+
+  mesh.modification_begin();
+  destroy_custom_ghostings();
+  stk::mesh::destroy_elements_no_mod_cycle(mesh, allParentElems, mesh.mesh_meta_data().universal_part());
+  stk::mesh::ConstPartVector addParts;
+  mesh.change_entity_parts(ownedChildElems, addParts, stk::mesh::ConstPartVector{myChildPart});
   mesh.modification_end();
 }
 

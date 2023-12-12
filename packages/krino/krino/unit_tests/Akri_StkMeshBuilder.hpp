@@ -101,6 +101,7 @@ private:
     std::map<unsigned,std::vector<int>> build_node_sharing_procs(const std::vector<std::array<unsigned, NPE>> &elementConn,
         const std::vector<int> &elementProcOwners) const;
     std::map<unsigned,std::vector<int>> build_node_sharing_procs_for_all_nodes_on_all_procs(const unsigned numNodes, const unsigned numProcs) const;
+    double time;
 };
 
 typedef std::pair<unsigned, std::vector<std::array<unsigned,3>>> SideIdAndTetSideNodes;

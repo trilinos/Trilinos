@@ -33,7 +33,7 @@
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_MLParameterListInterpreter_fwd.hpp"
+#include "MueLu_ParameterListInterpreter_fwd.hpp"
 
 namespace MueLu {
 

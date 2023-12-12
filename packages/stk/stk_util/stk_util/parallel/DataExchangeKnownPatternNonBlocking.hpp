@@ -164,7 +164,6 @@ void DataExchangeKnownPatternNonBlocking::complete_receives(std::vector< std::ve
     int idx;
     MPI_Waitany(m_recvReqs.size(), m_recvReqs.data(), &idx, MPI_STATUS_IGNORE);
 
-
     int rank = m_recvRankMap[idx];
     func(rank, recvLists[rank]);
   }

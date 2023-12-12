@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         if (mockModel=="MockModelEval_B_Tpetra" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient.xml") {
           continue;
         }
-        if (mockModel=="MassSpringDamperModel" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_MSD.xml") {
+        if (mockModel=="MassSpringDamperModel" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_MSD.xml" && inputFile != "input_Analysis_ROL_Tempus_Transient_MSD.xml" && inputFile != "input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD.xml") {
           continue;
         }
         if (mockModel=="MassSpringDamperModel" && appComm->getSize() > 1) {
@@ -239,10 +239,10 @@ int main(int argc, char *argv[]) {
         }
         else if (mockModel=="MassSpringDamperModel") {
           auto comm = appComm->createSubcommunicator(std::vector<int>({0}));
-          RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MassSpringDamperModel(comm,false,probParams,true));
+          RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MassSpringDamperModel(comm,false,probParams,true,probParams->get<bool>("Response Depends On Solution Time Derivative", false)));
           model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
           if(explicitAdjointME) {
-            RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MassSpringDamperModel(comm,true));
+            RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MassSpringDamperModel(comm,true,Teuchos::null,false,probParams->get<bool>("Response Depends On Solution Time Derivative", false)));
             adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
           }
           modelName = "MSD";

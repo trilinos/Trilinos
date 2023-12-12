@@ -68,7 +68,7 @@ namespace {
     else if (eid.type == DeviceType::HIP)          device_label+="HIP";
     else if (eid.type == DeviceType::OpenMPTarget) device_label+="OpenMPTarget";
     else if (eid.type == DeviceType::HPX)          device_label+="HPX";
-    else if (eid.type == DeviceType::Threads)      device_label+="Threats";
+    else if (eid.type == DeviceType::Threads)      device_label+="Threads";
     else if (eid.type == DeviceType::SYCL)         device_label+="SYCL";
     else if (eid.type == DeviceType::OpenACC)      device_label+="OpenACC";
     else if (eid.type == DeviceType::Unknown)      device_label+="Unknown";

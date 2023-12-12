@@ -54,11 +54,9 @@
 #endif
 
 #include "MueLu_TestHelpers.hpp"
-
-#include "MueLu_MLParameterListInterpreter.hpp"
 #include "MueLu_Exceptions.hpp"
-
 #include "MueLu_UseDefaultTypes.hpp"
+#include "MueLu_ParameterListUtils.hpp"
 
 namespace MueLuTests {
 

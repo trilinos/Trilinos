@@ -34,12 +34,10 @@ namespace mini_em {
 
   enum solverType {
     AUGMENTATION,
-    MUELU_REFMAXWELL,
-    MUELU_MAXWELL_HO,
-    ML_REFMAXWELL,
+    MUELU,
+    ML,
     CG,
-    GMRES,
-    MUELU_DARCY,
+    GMRES
   };
 
   void getMesh(Teuchos::ParameterList &mesh_pl,
@@ -59,7 +57,8 @@ namespace mini_em {
                                                            int dim,
                                                            Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,
                                                            Teuchos::RCP<Teuchos::FancyOStream> &out,
-                                                           std::string &xml);
+                                                           std::string &xml,
+                                                           int basis_order);
 
   void setClosureParameters(physicsType physics,
                             Teuchos::ParameterList &physicsEqSet,

@@ -17,6 +17,7 @@
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_Snap.hpp>
+#include <Akri_Unit_BoundingBoxMesh.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <gtest/gtest.h>
 #include <stk_io/IossBridge.hpp>
@@ -93,7 +94,7 @@ public:
           minIntPtWeightForEstimatingCutQuality,
           cdfemSupport.get_max_edge_snap());
     }
-    interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
+    interfaceGeometry.prepare_to_decompose_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
 
     krino_mesh->generate_nonconformal_elements();
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
@@ -189,7 +190,7 @@ protected:
     return domain;
   }
   double get_mesh_size() const { return 1./6.; }
-  Sphere mySphere{"test sphere",  stk::math::Vector3d::ZERO, 0.35};
+  Sphere mySphere{stk::math::Vector3d::ZERO, 0.35};
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> mySphereGeometry;
 };
 

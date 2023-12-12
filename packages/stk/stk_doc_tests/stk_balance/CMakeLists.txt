@@ -35,12 +35,20 @@
 
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_balance_doc_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_balance_doc_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1-4
-    )
+  )
+else()
+  add_executable(stk_balance_doc_tests ${SOURCES})
+  target_link_libraries(stk_balance_doc_tests stk_balance_lib)
+  target_link_libraries(stk_balance_doc_tests stk_unit_test_utils)
+  target_link_libraries(stk_balance_doc_tests stk_unit_main)
+
+  add_test("stk_balance_doc_tests" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_balance_doc_tests")
+endif()
 
