@@ -133,8 +133,9 @@ ParameterList& ParameterList::setParameters(const ParameterList& source)
     const ParameterEntry &entry_i = this->entry(i);
     if (entry_i.isList()) {
       ParameterList &pl = getValue<ParameterList>(entry_i);
-      this->sublist(name_i, pl.getModifier(), entry_i.docString())
-          .setParameters(pl);
+      ParameterList &this_pl = this->sublist(name_i, false, entry_i.docString());
+      this_pl.setParameters(pl);
+      this_pl.setModifier(pl.getModifier());
     } else {
       this->setEntry(name_i, entry_i);
     }
