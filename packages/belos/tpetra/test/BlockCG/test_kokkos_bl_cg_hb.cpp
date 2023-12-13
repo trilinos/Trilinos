@@ -1,11 +1,43 @@
-// @HEADER
-// *****************************************************************************
-//                 Belos: Block Linear Solvers Package
+//@HEADER
+// ************************************************************************
 //
-// Copyright 2004-2016 NTESS and the Belos contributors.
-// SPDX-License-Identifier: BSD-3-Clause
-// *****************************************************************************
-// @HEADER
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // The right-hand-side corresponds to a randomly generated solution.
@@ -13,14 +45,12 @@
 //
 // NOTE: No preconditioner is used in this case.
 //
-
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 
-#include <Tpetra_Core.hpp>
-#include <Tpetra_CrsMatrix.hpp>
 // I/O for Harwell-Boeing files
 #define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
 #include <Tpetra_MatrixIO.hpp>
@@ -29,38 +59,44 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
-template <typename ScalarType>
-int run(int argc, char *argv[])
-{
-  using ST = typename Tpetra::MultiVector<ScalarType>::scalar_type;
-  using OP = typename Tpetra::Operator<ST>;
-  using MV = typename Tpetra::MultiVector<ST>;
+using namespace Teuchos;
+using Tpetra::Operator;
+using Tpetra::CrsMatrix;
+using Tpetra::MultiVector;
+using std::endl;
+using std::cout;
+using std::vector;
+using Teuchos::tuple;
 
-  using SCT = typename Teuchos::ScalarTraits<ST>;
-  using MT = typename SCT::magnitudeType;
-  
-  using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+int main(int argc, char *argv[]) {
+  typedef Tpetra::MultiVector<>::scalar_type ST;
+  typedef ScalarTraits<ST>                SCT;
+  typedef Tpetra::MultiVector<>::impl_scalar_type IST;
+  typedef Kokkos::DualView<IST**,Kokkos::LayoutLeft> DM;
+  typedef SCT::magnitudeType               MT;
+  typedef Tpetra::Operator<ST>             OP;
+  typedef Tpetra::MultiVector<ST>          MV;
+  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
+  typedef Belos::MultiVecTraits<ST,MV>    MVT;
 
-  using Teuchos::Comm;
-  using Teuchos::RCP;
-  using Teuchos::rcpFromRef;
+  GlobalMPISession mpisess(&argc,&argv,&cout);
 
   bool success = false;
   bool verbose = false;
+  try {
+    const ST one  = SCT::one();
 
-  try
-  {
-    Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
+    int MyPID = 0;
+
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    int MyPID = rank(*comm);
 
-    const ST one = SCT::one();
-    
+    //
     // Get test parameters from command-line processor
+    //
     bool proc_verbose = false;
-    bool use_single_red = false;
     bool debug = false;
     int frequency = -1;  // how often residuals are printed by solver
     int numrhs = 1;      // total number of right-hand sides to solve for
@@ -69,7 +105,7 @@ int run(int argc, char *argv[])
     std::string filename("bcsstk14.hb");
     MT tol = 1.0e-5;     // relative residual tolerance
 
-    Teuchos::CommandLineProcessor cmdp(false,true);
+    CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
@@ -78,7 +114,6 @@ int run(int argc, char *argv[])
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
-    cmdp.setOption("use-single-red","use-standard-red",&use_single_red,"Use single-reduction CG iteration.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -89,13 +124,16 @@ int run(int argc, char *argv[])
       frequency = -1;  // reset frequency if test is not verbose
     }
 
+    MyPID = rank(*comm);
     proc_verbose = ( verbose && (MyPID==0) );
+
     if (proc_verbose) {
       std::cout << Belos::Belos_Version() << std::endl << std::endl;
     }
-    
+    //
     // Get the data from the HB file and build the Map,Matrix
-    RCP<Tpetra::CrsMatrix<ST> > A;
+    //
+    RCP<CrsMatrix<ST> > A;
     Tpetra::Utils::readHBMatrix(filename,comm,A);
     RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
@@ -107,19 +145,19 @@ int run(int argc, char *argv[])
     OPT::Apply( *A, *X, *B );
     MVT::MvInit( *X, 0.0 );
 
-    // Other information used by block solver (can be user specified)
+    //
+    // ********Other information used by block solver***********
+    // *****************(can be user specified)******************
+    //
     const int NumGlobalElements = B->getGlobalLength();
     if (maxiters == -1) {
       maxiters = NumGlobalElements - 1; // maximum number of iterations to run
     }
-
     //
-    Teuchos::ParameterList belosList;
+    ParameterList belosList;
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    if ((blocksize==1) && use_single_red)
-      belosList.set( "Use Single Reduction", use_single_red ); // Use single reduction CG iteration
     int verbLevel = Belos::Errors + Belos::Warnings;
     if (debug) {
       verbLevel += Belos::Debug;
@@ -133,8 +171,9 @@ int run(int argc, char *argv[])
         belosList.set( "Output Frequency", frequency );
       }
     }
-    
+    //
     // Construct an unpreconditioned linear problem instance.
+    //
     Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {
@@ -142,11 +181,16 @@ int run(int argc, char *argv[])
         std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return -1;
     }
-    
-    // Start the block CG iteration
-    Belos::BlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+    //
+    // *******************************************************************
+    // *************Start the block CG iteration***********************
+    // *******************************************************************
+    //
+    Belos::BlockCGSolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
-    // Print out information about problem
+    //
+    // **********Print out information about problem*******************
+    //
     if (proc_verbose) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
@@ -156,11 +200,13 @@ int run(int argc, char *argv[])
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
-    
+    //
     // Perform solve
+    //
     Belos::ReturnType ret = solver.solve();
-    
+    //
     // Compute actual residuals.
+    //
     bool badRes = false;
     std::vector<MT> actual_resids( numrhs );
     std::vector<MT> rhs_norm( numrhs );
@@ -194,11 +240,3 @@ int run(int argc, char *argv[])
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // end test_bl_cg_hb.cpp
-
-int main(int argc, char *argv[]) {
-  return run<double>(argc,argv);
-
-  // wrapped with a check: CMake option Trilinos_ENABLE_FLOAT=ON
-  // return run<float>(argc,argv);
-}
-

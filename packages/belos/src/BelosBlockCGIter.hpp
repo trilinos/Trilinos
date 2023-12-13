@@ -24,12 +24,9 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosTeuchosDenseAdapter.hpp"
 
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialSymDenseMatrix.hpp"
-#include "Teuchos_SerialSpdDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -325,7 +322,7 @@ public:
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
-  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+  const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
 
   //
   // Algorithmic parameters
@@ -457,6 +454,7 @@ public:
   void BlockCGIter<ScalarType,MV,OP,DM,true>::iterate()
   {
     const char prefix[] = "Belos::BlockCGIter::iterate: ";
+    typedef DenseMatTraits<ScalarType,DM>    DMT;
 
     //
     // Allocate/initialize data structures
@@ -464,21 +462,15 @@ public:
     if (initialized_ == false) {
       initialize();
     }
-    // Allocate data needed for LAPACK work.
-    int info = 0;
-    //char UPLO = 'U';
-    //(void) UPLO; // silence "unused variable" compiler warnings
-    bool uplo = true;
-    Teuchos::LAPACK<int,ScalarType> lapack;
 
     // Allocate memory for scalars.
-    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( blockSize_, blockSize_ );
-    Teuchos::SerialDenseMatrix<int,ScalarType> beta( blockSize_, blockSize_ );
-    Teuchos::SerialDenseMatrix<int,ScalarType> pAp( blockSize_, blockSize_ );
-    Teuchos::SerialSymDenseMatrix<int,ScalarType> pApHerm(Teuchos::View, uplo, pAp.values(), blockSize_, blockSize_);
+    Teuchos::RCP<DM> alpha = DMT::Create( blockSize_, blockSize_ );
+    Teuchos::RCP<DM> beta = DMT::Create( blockSize_, blockSize_ );
+    Teuchos::RCP<DM> pAp = DMT::Create( blockSize_, blockSize_ );
 
     // Create dense spd solver.
-    Teuchos::SerialSpdDenseSolver<int,ScalarType> lltSolver;
+    Teuchos::RCP<DenseSolver<ScalarType,DM>> lltSolver = DMT::createDenseSolver();
+    lltSolver->setSPD( true );
 
     // Create convenience variable for one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -510,31 +502,31 @@ public:
       // 2) Compute the Cholesky Factorization of pAp
       // 3) Back and forward solves to compute alpha
       //
-      MVT::MvTransMv( one, *P_, *R_, alpha );
-      MVT::MvTransMv( one, *P_, *AP_, pAp );
+      MVT::MvTransMv( one, *P_, *R_, *alpha );
+      MVT::MvTransMv( one, *P_, *AP_, *pAp );
 
       // Compute Cholesky factorization of pAp
-      lltSolver.setMatrix( Teuchos::rcp(&pApHerm, false) );
-      lltSolver.factorWithEquilibration( true );
-      info = lltSolver.factor();
+      lltSolver->setMatrix( pAp );
+      lltSolver->factorWithEquilibration( true );
+      int info = lltSolver->factor();
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, CGIterationLAPACKFailure,
          prefix << "Failed to compute Cholesky factorization using LAPACK routine POTRF.");
 
       // Compute alpha by performing a back and forward solve with the
       // Cholesky factorization in pAp.
-      lltSolver.setVectors (Teuchos::rcpFromRef (alpha), Teuchos::rcpFromRef (alpha));
-      info = lltSolver.solve();
+      lltSolver->setVectors (alpha, alpha);
+      info = lltSolver->solve();
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, CGIterationLAPACKFailure,
          prefix << "Failed to compute alpha using Cholesky factorization (POTRS).");
 
       // Update the solution std::vector X := X + alpha * P_
-      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
+      MVT::MvTimesMatAddMv( one, *P_, *alpha, one, *cur_soln_vec );
       lp_->updateSolution();
 
       // Compute the new residual R_ := R_ - alpha * AP_
-      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ );
+      MVT::MvTimesMatAddMv( -one, *AP_, *alpha, one, *R_ );
 
       // Compute the new preconditioned residual, Z_.
       if ( lp_->getLeftPrec() != Teuchos::null ) {
@@ -558,17 +550,17 @@ public:
       // 3) Back and forward solves to compute beta
 
       // Compute <AP_,Z>
-      MVT::MvTransMv( -one, *AP_, *Z_, beta );
+      MVT::MvTransMv( -one, *AP_, *Z_, *beta );
 
-      lltSolver.setVectors( Teuchos::rcp( &beta, false ), Teuchos::rcp( &beta, false ) );
-      info = lltSolver.solve();
+      lltSolver->setVectors( beta, beta );
+      info = lltSolver->solve();
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, CGIterationLAPACKFailure,
          prefix << "Failed to compute beta using Cholesky factorization (POTRS).");
 
       // Compute the new direction vectors P_ = Z_ + P_ * beta
       Teuchos::RCP<MV> Pnew = MVT::CloneCopy( *Z_ );
-      MVT::MvTimesMatAddMv(one, *P_, beta, one, *Pnew);
+      MVT::MvTimesMatAddMv(one, *P_, *beta, one, *Pnew);
       P_ = Pnew;
 
       // Compute orthonormal block of new direction vectors.
