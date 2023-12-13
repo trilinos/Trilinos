@@ -85,7 +85,8 @@ class Test_parse_args(unittest.TestCase):
                                          num_concurrent_tests=-1,
                                          ccache_enable=False,
                                          dry_run=False,
-                                         use_explicit_cachefile=False)
+                                         use_explicit_cachefile=False,
+                                         extra_configure_args="")
 
         self.default_stdout = dedent('''\
                 | - [R] source-repo-url             : /dev/null/source_repo
@@ -133,7 +134,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run]
+                                   [--enable-ccache] [--dry-run] [--extra-configure-args]
 
                 Parse the repo and build information
 
@@ -213,6 +214,9 @@ class Test_parse_args(unittest.TestCase):
                                         Default = False
                   --dry-run             Enable dry-run mode. Script will run but not execute
                                         the build steps. Default = False
+                  --extra-configure-args
+                                        Extra arguments that will be passed to CMake for
+                                        configuring Trilinos.
                 ''')
 
         self.usage_output = dedent('''\
@@ -235,7 +239,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run]
+                                   [--enable-ccache] [--dry-run] [--extra-configure-args]
                 programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
                 ''')
 
