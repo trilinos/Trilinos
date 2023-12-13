@@ -101,7 +101,6 @@ namespace Belos {
   class BlockCGSolMgr<ScalarType, MV, OP, DM, true> :
     public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, DM, true>
   {
-
   private:
     typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
