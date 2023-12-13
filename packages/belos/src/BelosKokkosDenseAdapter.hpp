@@ -129,7 +129,6 @@ namespace Belos {
     */
     int factor()
     {
-      //std::cout << "Calling DenseSolver<Kokkos> factor!" << std::endl;
       int INFO = 0;
 
       // Only factor matrix if it is new, otherwise factors have been computed
@@ -160,16 +159,6 @@ namespace Belos {
           else
             lapack.GEEQU (M, N, Aptr, LDA, &R_[0], &C_[0], &ROWCND, &COLCND, &AMAX, &INFO); 
 
-          //for (int i=0; i<M; ++i)
-            //std::cout << "R[ " << i << " ] = " << R_[i] << std::endl;
-          //std::cout << std::endl;
-          if (!spd_)
-          {
-          //for (int i=0; i<N; ++i)
-            //std::cout << "C[ " << i << " ] = " << C_[i] << std::endl;
-          //std::cout << std::endl;
-          }
-
           if (INFO)
             return INFO;
 
@@ -181,7 +170,6 @@ namespace Belos {
               Scalar s1 = R_[j];
               for (int i=0; i<=j; i++) {
                 *ptr = *ptr*s1*R_[i];
-                //std::cout << "A[ " << i << ", " << j << " ] = " << *ptr << std::endl;
                 ptr++;
               }
             }
@@ -219,15 +207,15 @@ namespace Belos {
     */
     int solve()
     {
-      //std::cout << "Calling DenseMatrix<Kokkos> solve!" << std::endl;
       bool transpose = (TRANS_ != Teuchos::NO_TRANS) ? true : false;
 
+      DMT::SyncDeviceToHost(*X_);
+
       // LAPACK overwrites RHS vector with solution vector, so copy if necessary
-      if (DMT::GetRawHostPtr(*B_) != DMT::GetRawHostPtr(*X_))
+      if (B_ != X_)
         DMT::Assign(*X_, *B_); // Copy B to X if needed
 
       // Since B_ = X_, perform operations on X_.
-      DMT::SyncHostToDevice(*X_);
 
       int M = DMT::GetNumRows(*X_); 
       int NRHS = DMT::GetNumCols(*X_);
@@ -245,7 +233,6 @@ namespace Belos {
           ptr = X + j*LDX;
           for (int i=0; i<M; i++) {
             *ptr = *ptr*R_tmp[i];
-            //std::cout << "B[ " << i << " ] = " << *ptr << std::endl; 
             ptr++;
           }
         } 
@@ -272,7 +259,6 @@ namespace Belos {
           ptr = X + j*LDX; 
             for (int i=0; i<M; i++) {
             *ptr = *ptr*R_[i];
-            //std::cout << "X[ " << i << " ] = " << *ptr << std::endl;
             ptr++;
           }
         }
