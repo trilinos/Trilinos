@@ -57,7 +57,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
-#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -75,7 +74,7 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>  
+template<class ScalarType, class MV, class OP, class DM>  
 class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:
