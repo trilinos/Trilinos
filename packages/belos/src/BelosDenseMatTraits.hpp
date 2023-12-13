@@ -52,6 +52,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+#include "BelosDenseSolver.hpp"
+
 namespace Belos {
 
 /*! \struct UndefinedDenseMatTraits
@@ -89,9 +91,7 @@ namespace Belos {
 
     \return Reference-counted pointer to a new dense matrix of type \c DM.
     */
-    //TODO: Remove RCP from dense traits interface. 
     static Teuchos::RCP<DM> Create()
-    //static DM Create()
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new empty \c DM containing \c numvecs columns.
@@ -238,7 +238,15 @@ View(const pointer_type &ptr, const IntType&... indices)
     //!  \brief Returns the one-norm of the dense matrix.
     static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType NormOne( DM& dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
     //@}
+    //@{ \name Solver methods
+
+    //!  \brief Returns a dense solver object for the dense matrix.
+    static Teuchos::RCP<DenseSolver<ScalarType, DM>> createDenseSolver()
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }
+    //@}
+ 
   };
 
 } // namespace Belos

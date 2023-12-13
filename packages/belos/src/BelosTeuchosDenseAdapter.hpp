@@ -51,9 +51,151 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseSolver.hpp"
+#include "Teuchos_SerialSpdDenseSolver.hpp"
+
 #include "BelosDenseMatTraits.hpp" 
+#include "BelosDenseSolver.hpp"
 
 namespace Belos {
+
+  //! Full specialization of Belos::DenseSolver for Teuchos::SerialDenseMatrix<int,ST>.
+  template<class ScalarType>
+  class TeuchosDenseSolver : public DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType> >
+  {
+  public:
+
+    //! @name Constructor/Destructor Methods
+    //@{
+    //! Default constructor; matrix should be set using setMatrix(), LHS and RHS set with setVectors().
+    TeuchosDenseSolver() {}
+
+    //! TeuchosDenseSolver destructor.
+    virtual ~TeuchosDenseSolver() {}
+    //@}
+
+    //! @name Set Methods
+    //@{
+    //! Sets the pointers for coefficient matrix
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::setMatrix;
+
+    //! Sets the pointers for left and right hand side vector(s).
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::setVectors;
+    //@}
+
+    //! @name Strategy Modifying Methods
+    //@{
+
+    //! Set if dense matrix is symmetric positive definite
+    //! \note This method must be called before the factorization is performed, otherwise it will have no effect.
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::setSPD;
+
+    //! Causes equilibration to be called just before the matrix factorization as part of the call to \c factor.
+    /*! \note This method must be called before the factorization is performed, otherwise it will have no effect.
+    */
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::factorWithEquilibration;
+
+    //! All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS, \c Teuchos::TRANS, and \c Teuchos::CONJ_TRANS).
+    /*! \note This interface will set correct transpose flag for matrix, including complex-valued linear systems.
+    */
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::solveWithTransposeFlag;
+    //@}
+
+    //! @name Factor/Solve Methods
+    //@{
+
+    //! Computes the in-place LU factorization of the matrix.
+    /*!
+      \return Integer error code, set to 0 if successful.
+    */
+    int factor() 
+    {
+       //std::cout << "Calling DenseMatrix<Teuchos> factor!" << std::endl;
+       // Create solver object if one doesn't exist.
+       if ( (dSolver_==Teuchos::null) && (spdSolver_==Teuchos::null) )
+       {
+         if (spd_)
+           spdSolver_ = Teuchos::rcp( new Teuchos::SerialSpdDenseSolver<int,ScalarType>() );
+         else
+           dSolver_ = Teuchos::rcp( new Teuchos::SerialDenseSolver<int,ScalarType>() );
+      }
+
+      int info = 0;
+
+      // Set the matrix and factor
+      if (spd_)
+      {
+        if (newMatrix_)
+        {
+          spdMatrix_ = Teuchos::rcp( new Teuchos::SerialSymDenseMatrix<int,ScalarType>(Teuchos::View, true, A_->values(),
+                                                                                       A_->numRows(), A_->numCols()) );
+        } 
+        spdSolver_->setMatrix( spdMatrix_ );
+        spdSolver_->factorWithEquilibration( equilibrate_ );
+        info = spdSolver_->factor();
+      }
+      else
+      {
+        dSolver_->setMatrix( A_ );
+        dSolver_->solveWithTransposeFlag( TRANS_ );
+        dSolver_->factorWithEquilibration( equilibrate_ );
+        info = dSolver_->factor();
+      }     
+
+      if (!info) 
+        newMatrix_ = false;
+      return info;
+    }
+
+    //! Computes the solution X to AX = B for the \e this matrix and the B provided.
+    /*!
+      \return Integer error code, set to 0 if successful.
+    */
+    int solve() 
+    {
+      //std::cout << "Calling DenseMatrix<Teuchos> solve!" << std::endl;
+      // Check if this is a new matrix that has not been factored.
+      if (newMatrix_)
+        factor();
+
+      int info = 0;
+
+      if (spd_)
+      {
+        spdSolver_->setVectors( X_, B_ );
+        info = spdSolver_->solve();
+      }
+      else
+      {
+        dSolver_->setVectors( X_, B_ );
+        info = dSolver_->solve();
+      }
+
+      return info;
+    }
+
+    //@}
+
+  private:
+
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::newMatrix_;
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::equilibrate_;
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::TRANS_;
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::spd_;
+
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::A_;
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::X_;
+    using DenseSolver<ScalarType,Teuchos::SerialDenseMatrix<int,ScalarType>>::B_;
+
+    // Pointer to dense solver for general linear systems
+    Teuchos::RCP<Teuchos::SerialDenseSolver<int,ScalarType>> dSolver_;
+
+    // Pointer to dense solver for SPD linear systems
+    Teuchos::RCP<Teuchos::SerialSymDenseMatrix<int,ScalarType>> spdMatrix_;
+    Teuchos::RCP<Teuchos::SerialSpdDenseSolver<int,ScalarType>> spdSolver_;
+
+  };
+
 
   //! Full specialization of Belos::DenseMatTraits for Teuchos::SerialDenseMatrix<int,ST>.
   template<class ScalarType>
@@ -219,8 +361,21 @@ namespace Belos {
       return dm.normOne();
     }
     //@}
+
+    //@{ \name Solver methods 
+    
+    //!  \brief Returns a dense solver object for the dense matrix.
+    static Teuchos::RCP<DenseSolver<ScalarType, Teuchos::SerialDenseMatrix<int,ScalarType>>> 
+      createDenseSolver() { 
+   
+      Teuchos::RCP<DenseSolver<ScalarType, Teuchos::SerialDenseMatrix<int,ScalarType>>> newSolver
+        = Teuchos::rcp( new TeuchosDenseSolver<ScalarType>() );
+      return newSolver;
+    }
+    //@}
+
   };
-  
+ 
 } // namespace Belos
 
 #endif // end file BELOS_TEUCHOS_DENSE_MAT_TRAITS_HPP

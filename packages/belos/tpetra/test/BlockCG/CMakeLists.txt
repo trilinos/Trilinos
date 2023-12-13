@@ -11,6 +11,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockCG_hb_test
   SOURCES test_bl_cg_hb.cpp
+  ARGS "--verbose"
+       "--verbose --use-single-red"
+       "--verbose --num-rhs=2 --block-size=2"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_BlockCG_hb_test
+  SOURCES test_kokkos_bl_cg_hb.cpp
+  ARGS "--verbose"
+       "--verbose --num-rhs=2 --block-size=2"
   COMM serial mpi
   ARGS
     "--verbose"
