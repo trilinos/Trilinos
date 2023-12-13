@@ -791,22 +791,53 @@ class EpetraCrsGraphT<int, EpetraNode>
 
 #ifdef HAVE_XPETRA_TPETRA
   typename local_graph_type::HostMirror getLocalGraphHost() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
-                               "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
-  }
-#else
-#ifdef __GNUC__
-#warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
-#endif
+    RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(getEpetra_CrsGraph());
 
-#ifdef HAVE_XPETRA_TPETRA
-  local_graph_type getLocalGraphDevice() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
-                               "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
+    using local_graph_type_host = typename local_graph_type::HostMirror;
+
+    const int numRows = graph->NumMyRows();
+    const int nnz     = graph->NumMyNonzeros();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!graph->StorageOptimized(), std::runtime_error, "Xpetra::CrsGraph<>::getLocalGraph: Epetra_CrsGraph not StorageOptimized");
+    const int *rowptr = graph->ExpertExtractIndexOffset().Values();
+    int *colind       = graph->ExpertExtractIndices().Values();
+
+    // Transform int* rowptr array to size_type* array
+    typename local_graph_type_host::row_map_type::non_const_type kokkosRowPtr(Kokkos::ViewAllocateWithoutInitializing("local row map"), numRows + 1);
+    for (size_t i = 0; i < kokkosRowPtr.size(); i++)
+      kokkosRowPtr(i) = Teuchos::asSafe<typename local_graph_type_host::row_map_type::value_type>(rowptr[i]);
+
+    // create Kokkos::Views
+    typename local_graph_type_host::entries_type kokkosColind(colind, nnz);
+
+    local_graph_type_host localGraph = local_graph_type_host(kokkosColind, kokkosRowPtr);
+
+    return localGraph;
   }
+
+  local_graph_type getLocalGraphDevice() const {
+    RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(getEpetra_CrsGraph());
+
+    const int numRows = graph->NumMyRows();
+    const int nnz     = graph->NumMyNonzeros();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!graph->StorageOptimized(), std::runtime_error, "Xpetra::CrsGraph<>::getLocalGraph: Epetra_CrsGraph not StorageOptimized");
+    const int *rowptr = graph->ExpertExtractIndexOffset().Values();
+    int *colind       = graph->ExpertExtractIndices().Values();
+
+    // Transform int* rowptr array to size_type* array
+    typename local_graph_type::row_map_type::non_const_type kokkosRowPtr(Kokkos::ViewAllocateWithoutInitializing("local row map"), numRows + 1);
+    for (size_t i = 0; i < kokkosRowPtr.size(); i++)
+      kokkosRowPtr(i) = Teuchos::asSafe<typename local_graph_type::row_map_type::value_type>(rowptr[i]);
+
+    // create Kokkos::Views
+    typename local_graph_type::entries_type kokkosColind(colind, nnz);
+
+    local_graph_type localGraph = local_graph_type(kokkosColind, kokkosRowPtr);
+
+    return localGraph;
+  }
+
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -1321,20 +1352,51 @@ class EpetraCrsGraphT<long long, EpetraNode>
 
 #ifdef HAVE_XPETRA_TPETRA
   typename local_graph_type::HostMirror getLocalGraphHost() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
-                               "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
+    RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(getEpetra_CrsGraph());
+
+    using local_graph_type_host = typename local_graph_type::HostMirror;
+
+    const int numRows = graph->NumMyRows();
+    const int nnz     = graph->NumMyNonzeros();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!graph->StorageOptimized(), std::runtime_error, "Xpetra::CrsGraph<>::getLocalGraph: Epetra_CrsGraph not StorageOptimized");
+    const int *rowptr = graph->ExpertExtractIndexOffset().Values();
+    int *colind       = graph->ExpertExtractIndices().Values();
+
+    // Transform int* rowptr array to size_type* array
+    typename local_graph_type_host::row_map_type::non_const_type kokkosRowPtr(Kokkos::ViewAllocateWithoutInitializing("local row map"), numRows + 1);
+    for (size_t i = 0; i < kokkosRowPtr.size(); i++)
+      kokkosRowPtr(i) = Teuchos::asSafe<typename local_graph_type_host::row_map_type::value_type>(rowptr[i]);
+
+    // create Kokkos::Views
+    typename local_graph_type_host::entries_type kokkosColind(colind, nnz);
+
+    local_graph_type_host localGraph = local_graph_type_host(kokkosColind, kokkosRowPtr);
+
+    return localGraph;
   }
-#else
-#ifdef __GNUC__
-#warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
-#endif
-#ifdef HAVE_XPETRA_TPETRA
+
   local_graph_type getLocalGraphDevice() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
-                               "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
+    RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(getEpetra_CrsGraph());
+
+    const int numRows = graph->NumMyRows();
+    const int nnz     = graph->NumMyNonzeros();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!graph->StorageOptimized(), std::runtime_error, "Xpetra::CrsGraph<>::getLocalGraph: Epetra_CrsGraph not StorageOptimized");
+    const int *rowptr = graph->ExpertExtractIndexOffset().Values();
+    int *colind       = graph->ExpertExtractIndices().Values();
+
+    // Transform int* rowptr array to size_type* array
+    typename local_graph_type::row_map_type::non_const_type kokkosRowPtr(Kokkos::ViewAllocateWithoutInitializing("local row map"), numRows + 1);
+    for (size_t i = 0; i < kokkosRowPtr.size(); i++)
+      kokkosRowPtr(i) = Teuchos::asSafe<typename local_graph_type::row_map_type::value_type>(rowptr[i]);
+
+    // create Kokkos::Views
+    typename local_graph_type::entries_type kokkosColind(colind, nnz);
+
+    local_graph_type localGraph = local_graph_type(kokkosColind, kokkosRowPtr);
+
+    return localGraph;
   }
 #else
 #ifdef __GNUC__
