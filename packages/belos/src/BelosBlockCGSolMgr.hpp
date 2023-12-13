@@ -29,14 +29,9 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_RCPDecl.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif
-#if defined(HAVE_TEUCHOSCORE_CXX11)
-#  include <type_traits>
-#endif // defined(HAVE_TEUCHOSCORE_CXX11)
 #include <algorithm>
 
 /** \example epetra/example/BlockCG/BlockCGEpetraExFile.cpp
@@ -102,25 +97,6 @@ namespace Belos {
   class BlockCGSolMgr<ScalarType, MV, OP, DM, true> :
     public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, DM, true>
   {
-    // This partial specialization is already chosen for those scalar types
-    // that support lapack, so we don't need to have an additional compile-time
-    // check that the scalar type is float/double/complex.
-// #if defined(HAVE_TEUCHOSCORE_CXX11)
-// #  if defined(HAVE_TEUCHOS_COMPLEX)
-//     static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
-//                    std::is_same<ScalarType, std::complex<double> >::value ||
-//                    std::is_same<ScalarType, float>::value ||
-//                    std::is_same<ScalarType, double>::value,
-//                    "Belos::GCRODRSolMgr: ScalarType must be one of the four "
-//                    "types (S,D,C,Z) supported by LAPACK.");
-// #  else
-//     static_assert (std::is_same<ScalarType, float>::value ||
-//                    std::is_same<ScalarType, double>::value,
-//                    "Belos::GCRODRSolMgr: ScalarType must be float or double.  "
-//                    "Complex arithmetic support is currently disabled.  To "
-//                    "enable it, set Teuchos_ENABLE_COMPLEX=ON.");
-// #  endif // defined(HAVE_TEUCHOS_COMPLEX)
-// #endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
   private:
     using MVT = MultiVecTraits<ScalarType, MV, DM>;
@@ -801,8 +777,6 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
 
-  Teuchos::LAPACK<int,ScalarType> lapack;
-
   TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
     BlockCGSolMgrLinearProblemFailure,
     "Belos::BlockCGSolMgr::solve(): Linear problem is not ready, setProblem() "
@@ -923,7 +897,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
             // At least one of the linear system(s) converged.
             //
             // Get the column indices of the linear systems that converged.
-            using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP>;
+            using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP, DM>;
             std::vector<int> convIdx =
               rcp_dynamic_cast<conv_test_type>(convTest_)->convIndices();
 
@@ -1068,7 +1042,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
   // Save the convergence test value ("achieved tolerance") for this solve.
   {
-    using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP>;
+    using conv_test_type = StatusTestGenResNorm<ScalarType, MV, OP, DM>;
     // testValues is nonnull and not persistent.
     const std::vector<MagnitudeType>* pTestValues =
       rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();

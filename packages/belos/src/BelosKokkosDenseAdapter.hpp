@@ -52,6 +52,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
 #include "BelosDenseMatTraits.hpp"
 
 #include "Kokkos_Random.hpp"
@@ -59,6 +60,8 @@
 //Kokkos BLAS files:
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_axpby.hpp"
+
+#include <vector>
 
 namespace Belos {
 
@@ -73,6 +76,233 @@ namespace Belos {
     });
   }
 
+  //! Full specialization of Belos::DenseMatSolver for Kokkos::DualView.
+  template<class Scalar>
+  class KokkosDenseSolver : public DenseSolver<Scalar, Kokkos::DualView<typename Kokkos::Details::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>
+  {
+  public:
+    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef DenseMatTraits<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>     DMT;
+ 
+    //! @name Constructor/Destructor Methods
+    //@{
+    //! Default constructor; matrix should be set using setMatrix(), LHS and RHS set with setVectors().
+    KokkosDenseSolver() {}
+
+    //! KokkosDenseSolver destructor.
+    virtual ~KokkosDenseSolver() {}
+    //@}
+
+    //! @name Set Methods
+    //@{
+    //! Sets the pointers for coefficient matrix
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::setMatrix;
+
+    //! Sets the pointers for left and right hand side vector(s).
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::setVectors;
+    //@}
+
+    //! @name Strategy Modifying Methods
+    //@{
+
+    //! Set if dense matrix is symmetric positive definite
+    //! \note This method must be called before the factorization is performed, otherwise it will have no effect.
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::setSPD;
+
+    //! Causes equilibration to be called just before the matrix factorization as part of the call to \c factor.
+    /*! \note This method must be called before the factorization is performed, otherwise it will have no effect.
+    */
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::factorWithEquilibration;
+
+    //! All subsequent function calls will work with the transpose-type set by this method (\c Teuchos::NO_TRANS, \c Teuchos::TRANS, and \c Teuchos::CONJ_TRANS).
+    /*! \note This interface will set correct transpose flag for matrix, including complex-valued linear systems.
+    */
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::solveWithTransposeFlag;
+    //@}
+
+    //! @name Factor/Solve Methods
+    //@{
+
+    //! Computes the in-place LU factorization of the matrix.
+    /*!
+      \return Integer error code, set to 0 if successful.
+    */
+    int factor()
+    {
+      //std::cout << "Calling DenseSolver<Kokkos> factor!" << std::endl;
+      int INFO = 0;
+
+      // Only factor matrix if it is new, otherwise factors have been computed
+      if (newMatrix_)
+      {
+        Teuchos::LAPACK<int,Scalar> lapack;
+
+        int M = DMT::GetNumRows(*A_);
+        int N = DMT::GetNumCols(*A_);
+        int Min_MN = TEUCHOS_MIN(M,N);
+        int LDA = DMT::GetStride(*A_);
+
+        IPIV_.resize( Min_MN );
+
+        DMT::SyncDeviceToHost(*A_);
+        Scalar * Aptr = DMT::GetRawHostPtr(*A_);
+
+        if (equilibrate_) 
+        {
+          // Compute equilibration scalings
+          R_.resize(M);
+          if (!spd_)
+            C_.resize(N);
+
+          MagnitudeType ROWCND, COLCND, AMAX;
+          if (spd_)
+            lapack.POEQU (M, Aptr, LDA, &R_[0], &ROWCND, &AMAX, &INFO);
+          else
+            lapack.GEEQU (M, N, Aptr, LDA, &R_[0], &C_[0], &ROWCND, &COLCND, &AMAX, &INFO); 
+
+          //for (int i=0; i<M; ++i)
+            //std::cout << "R[ " << i << " ] = " << R_[i] << std::endl;
+          //std::cout << std::endl;
+          if (!spd_)
+          {
+          //for (int i=0; i<N; ++i)
+            //std::cout << "C[ " << i << " ] = " << C_[i] << std::endl;
+          //std::cout << std::endl;
+          }
+
+          if (INFO)
+            return INFO;
+
+          // Apply equilibration to matrix
+          if (spd_) {
+            Scalar * ptr = 0;
+            for (int j=0; j<N; j++) {
+              ptr = Aptr + j*LDA;
+              Scalar s1 = R_[j];
+              for (int i=0; i<=j; i++) {
+                *ptr = *ptr*s1*R_[i];
+                //std::cout << "A[ " << i << ", " << j << " ] = " << *ptr << std::endl;
+                ptr++;
+              }
+            }
+          }
+          else {
+            Scalar * ptr = 0;
+            for (int j=0; j<N; j++) {
+              ptr = Aptr + j*LDA;
+              Scalar s1 = C_[j];
+              for (int i=0; i<M; i++) {
+                *ptr = *ptr*s1*R_[i];
+                ptr++;
+              }
+            }
+          }
+        }
+
+        // Compute LU factor
+        if (spd_) {
+          lapack.POTRF('U', M, Aptr, LDA, &INFO);
+        }
+        else {
+          lapack.GETRF(M, N, Aptr, LDA, &IPIV_[0], &INFO);
+        }
+
+        DMT::SyncHostToDevice(*A_);
+      }
+
+      return INFO;
+    }
+
+    //! Computes the solution X to AX = B for the \e this matrix and the B provided.
+    /*!
+      \return Integer error code, set to 0 if successful.
+    */
+    int solve()
+    {
+      //std::cout << "Calling DenseMatrix<Kokkos> solve!" << std::endl;
+      bool transpose = (TRANS_ != Teuchos::NO_TRANS) ? true : false;
+
+      // LAPACK overwrites RHS vector with solution vector, so copy if necessary
+      if (DMT::GetRawHostPtr(*B_) != DMT::GetRawHostPtr(*X_))
+        DMT::Assign(*X_, *B_); // Copy B to X if needed
+
+      // Since B_ = X_, perform operations on X_.
+      DMT::SyncHostToDevice(*X_);
+
+      int M = DMT::GetNumRows(*X_); 
+      int NRHS = DMT::GetNumCols(*X_);
+      int LDX = DMT::GetStride(*X_); 
+      Scalar * X = DMT::GetRawHostPtr(*X_);
+
+      if (equilibrate_) 
+      {
+        // Apply equilibration scalings to RHS vector
+        MagnitudeType * R_tmp = &R_[0];
+        if (transpose && !spd_) R_tmp = &C_[0];
+  
+        Scalar * ptr = 0;              
+        for (int j=0; j<NRHS; j++) {
+          ptr = X + j*LDX;
+          for (int i=0; i<M; i++) {
+            *ptr = *ptr*R_tmp[i];
+            //std::cout << "B[ " << i << " ] = " << *ptr << std::endl; 
+            ptr++;
+          }
+        } 
+      }
+
+      int INFO = 0;
+
+      int LDA = DMT::GetStride(*A_);
+      Scalar * Aptr = DMT::GetRawHostPtr(*A_);
+      Teuchos::LAPACK<int,Scalar> lapack;
+
+      if (spd_) {
+        lapack.POTRS('U', M, NRHS, Aptr, LDA, X, LDX, &INFO);
+      }
+      else {
+        lapack.GETRS(Teuchos::ETranspChar[TRANS_], M, NRHS, 
+                     Aptr, LDA, &IPIV_[0], X, LDX, &INFO);
+      }
+
+      if (equilibrate_)
+      {
+        Scalar * ptr = 0;
+        for (int j=0; j<NRHS; j++) {
+          ptr = X + j*LDX; 
+            for (int i=0; i<M; i++) {
+            *ptr = *ptr*R_[i];
+            //std::cout << "X[ " << i << " ] = " << *ptr << std::endl;
+            ptr++;
+          }
+        }
+      }
+
+      // Synchronize solution vector to the device
+      DMT::SyncHostToDevice(*X_);
+
+      return INFO;
+    }
+    //@}
+
+  private:
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagnitudeType;
+  
+    std::vector<int> IPIV_;
+    std::vector<MagnitudeType> R_, C_;
+
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::newMatrix_;
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::equilibrate_;
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::TRANS_;
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::spd_;
+
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::A_;
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::X_;
+    using DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>::B_;
+
+  };
+
   //! Full specialization of Belos::DenseMatTraits for Kokkos::DualView.
   //
   //TODO: It seems like all of Tpetra Details returning views 
@@ -82,7 +312,7 @@ namespace Belos {
   class DenseMatTraits<Scalar, Kokkos::DualView<typename Kokkos::Details::ArithTraits<Scalar>::val_type **,Kokkos::LayoutLeft>>{
 
   public:
-  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
+    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type IST; //Impl Scalar Type, as used in Tpetra
     
     //@{ \name Creation methods
 
@@ -405,6 +635,19 @@ namespace Belos {
       return KAT::abs(max_sum); //TODO: Check this impl is correct
     }
     //@}
+
+    //@{ \name Solver methods
+
+    //!  \brief Returns a dense solver object for the dense matrix.
+    static Teuchos::RCP<DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>>
+      createDenseSolver() {
+
+      Teuchos::RCP<DenseSolver<Scalar, Kokkos::DualView<IST**,Kokkos::LayoutLeft>>> newSolver
+        = Teuchos::rcp( new KokkosDenseSolver<Scalar>() );
+      return newSolver;
+    }
+    //@}
+
   };
 
 } // namespace Belos
