@@ -400,7 +400,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ApplyRowSumCriterion, Scalar
   auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
 
   const auto numRows = A->getLocalNumRows();
-  Kokkos::View<bool *, typename Node::device_type> dRows("", numRows);
+  Kokkos::View<bool *, typename Node::device_type::memory_space> dRows("", numRows);
 
   Utils::ApplyRowSumCriterion(*A, Magnitude(1.0), dRows);
   auto dRowsHost = Kokkos::create_mirror_view(dRows);
