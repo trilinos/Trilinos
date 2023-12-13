@@ -134,7 +134,8 @@ class Test_parse_args(unittest.TestCase):
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run] [--extra-configure-args]
+                                   [--enable-ccache] [--dry-run]
+                                   [--extra-configure-args EXTRA_CONFIGURE_ARGS]
 
                 Parse the repo and build information
 
@@ -214,7 +215,7 @@ class Test_parse_args(unittest.TestCase):
                                         Default = False
                   --dry-run             Enable dry-run mode. Script will run but not execute
                                         the build steps. Default = False
-                  --extra-configure-args
+                  --extra-configure-args EXTRA_CONFIGURE_ARGS
                                         Extra arguments that will be passed to CMake for
                                         configuring Trilinos.
                 ''')
@@ -239,7 +240,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run] [--extra-configure-args]
+                                   [--enable-ccache] [--dry-run] [--extra-configure-args EXTRA_CONFIGURE_ARGS]
                 programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
                 ''')
 
