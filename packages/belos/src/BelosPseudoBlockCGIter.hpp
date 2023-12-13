@@ -25,7 +25,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
-#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -76,9 +75,9 @@ namespace Belos {
     bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
       return CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors);
     }
-};
+  };
 
-  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+  template<class ScalarType, class MV, class OP, class DM>
   class PseudoBlockCGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:
