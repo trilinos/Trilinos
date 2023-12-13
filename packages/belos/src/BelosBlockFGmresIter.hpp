@@ -436,8 +436,6 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
           DMT::Reshape(*H_, newsd, newsd - blockSize_);
         }
 
-        // TODO:  Insert logic so that Hessenberg matrix can be saved and reduced matrix is stored in R_
-        //R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
         // Generate z_ only if it doesn't exist, otherwise resize it.
         if (z_ == Teuchos::null) {
           z_ = DMT::Create(newsd, blockSize_);
