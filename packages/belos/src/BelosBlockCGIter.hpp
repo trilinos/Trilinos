@@ -25,7 +25,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
-#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -76,8 +75,7 @@ namespace Belos {
 
 /// \brief Stub implementation of BlockCGIter, for ScalarType types
 ///   for which Teuchos::LAPACK does NOT have a valid implementation.
-template<class ScalarType, class MV, class OP, 
-         class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
+template<class ScalarType, class MV, class OP, class DM,
          const bool lapackSupportsScalarType =
          Belos::Details::LapackSupportsScalar<ScalarType>::value>
 class BlockCGIter : virtual public CGIteration<ScalarType, MV, OP, DM> {
