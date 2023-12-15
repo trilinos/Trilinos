@@ -46,18 +46,13 @@
 #ifndef MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_FWD_HPP
 #define MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class OnePtAggregationAlgorithm_kokkos;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class OnePtAggregationAlgorithm_kokkos;
 }
 
 #ifndef MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_SHORT
 #define MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_SHORT
 #endif
 
-
-
-#endif // MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_FWD_HPP
+#endif  // MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_FWD_HPP

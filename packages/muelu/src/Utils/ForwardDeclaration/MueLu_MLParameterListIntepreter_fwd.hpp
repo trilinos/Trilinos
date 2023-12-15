@@ -50,8 +50,8 @@
 #if defined(HAVE_MUELU_DEPRECATED_CODE)
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MLParameterListIntepreter;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MLParameterListIntepreter;
 }
 
 #ifndef MUELU_MLPARAMETERLISTINTEPRETER_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_MLPARAMETERLISTINTEPRETER_FWD_HPP
+#endif  // MUELU_MLPARAMETERLISTINTEPRETER_FWD_HPP

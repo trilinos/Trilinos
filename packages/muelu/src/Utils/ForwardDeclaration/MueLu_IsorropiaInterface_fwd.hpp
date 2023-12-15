@@ -50,8 +50,8 @@
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class IsorropiaInterface;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class IsorropiaInterface;
 }
 
 #ifndef MUELU_ISORROPIAINTERFACE_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_ISORROPIAINTERFACE_FWD_HPP
+#endif  // MUELU_ISORROPIAINTERFACE_FWD_HPP

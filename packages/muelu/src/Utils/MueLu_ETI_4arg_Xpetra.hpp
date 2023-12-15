@@ -9,29 +9,29 @@
 #include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
 #if defined(HAVE_MUELU_EPETRA)
-# include <Epetra_config.h>
+#include <Epetra_config.h>
 #endif
 
-#if   (defined(HAVE_MUELU_EPETRA) &&  defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT)))
-  // Epetra is enabled with OpenMP node, but Tpetra is a) not enabled, or b) is not instantiated on OpenMP, or c) is not instantiated on OpenMP with <double,int,int>
-  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode EpetraNode;
+#if (defined(HAVE_MUELU_EPETRA) && defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT)))
+// Epetra is enabled with OpenMP node, but Tpetra is a) not enabled, or b) is not instantiated on OpenMP, or c) is not instantiated on OpenMP with <double,int,int>
+typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode EpetraNode;
 #elif (defined(HAVE_MUELU_EPETRA) && !defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)))
-  // Epetra is enabled with Serial node, but Tpetra is a) not enabled, or b) is not instantiated on Serial, or c) is not instantiated on Serial with <double,int,int>
-  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode EpetraNode;
+// Epetra is enabled with Serial node, but Tpetra is a) not enabled, or b) is not instantiated on Serial, or c) is not instantiated on Serial with <double,int,int>
+typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode EpetraNode;
 #endif
 
 // Epetra = on, Tpetra = on
 #if defined(HAVE_MUELU_EPETRA)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP_TPETRA)
-# if((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP_TPETRA)
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
-  MUELU_ETI_GROUP_EPETRA(double,int,int,EpetraNode)
-# endif
+MUELU_ETI_GROUP_EPETRA(double, int, int, EpetraNode)
+#endif
 #endif
 
 // Epetra = off, Tpetra = on
 #if !defined(HAVE_MUELU_EPETRA)
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP_TPETRA)
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP_TPETRA)
 #endif
 
-#endif //ifndef MUELU_ETI_4ARGUMENT_HPP
+#endif  // ifndef MUELU_ETI_4ARGUMENT_HPP

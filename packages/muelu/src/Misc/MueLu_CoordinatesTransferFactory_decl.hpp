@@ -94,68 +94,67 @@ namespace MueLu {
   ----------|--------------|------------
   | Coordinates | CoordinatesTransferFactory   | coarse level coordinates
 */
-  template<class Scalar = DefaultScalar,
-           class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class CoordinatesTransferFactory : public TwoLevelFactoryBase {
-    public:
-    typedef Scalar                                              scalar_type;
-    typedef LocalOrdinal                                        local_ordinal_type;
-    typedef GlobalOrdinal                                       global_ordinal_type;
-    typedef typename Node::device_type                          DeviceType;
-    typedef typename DeviceType::execution_space                execution_space;
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class CoordinatesTransferFactory : public TwoLevelFactoryBase {
+ public:
+  typedef Scalar scalar_type;
+  typedef LocalOrdinal local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef typename Node::device_type DeviceType;
+  typedef typename DeviceType::execution_space execution_space;
 
-  private:
+ private:
 #undef MUELU_COORDINATESTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    /*! @brief Constructor.
+  /*! @brief Constructor.
 
-       @param vectorName The name of the quantity to be restricted.
-       @param restrictionName The name of the restriction Matrix.
+     @param vectorName The name of the quantity to be restricted.
+     @param restrictionName The name of the restriction Matrix.
 
-       The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
-       <tt>vectorName</tt>.
-    */
-    CoordinatesTransferFactory() { }
+     The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
+     <tt>vectorName</tt>.
+  */
+  CoordinatesTransferFactory() {}
 
-    //! Destructor.
-    virtual ~CoordinatesTransferFactory() { }
+  //! Destructor.
+  virtual ~CoordinatesTransferFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &finelevel, Level &coarseLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level &finelevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level & fineLevel, Level &coarseLevel) const;
+  //! Build an object with this factory.
+  void Build(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-  private:
+ private:
+};  // class CoordinatesTransferFactory
 
-  }; // class CoordinatesTransferFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_COORDINATESTRANSFERFACTORY_SHORT
-#endif // MUELU_COORDINATESTRANSFER_FACTORY_DECL_HPP
+#endif  // MUELU_COORDINATESTRANSFER_FACTORY_DECL_HPP

@@ -47,12 +47,12 @@
 #define MUELU_MATLABSMOOTHER_FWD_HPP
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatlabSmoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatlabSmoother;
 }
 
 #ifndef MUELU_MATLABSMOOTHER_SHORT
 #define MUELU_MATLABSMOOTHER_SHORT
 #endif
 
-#endif // MUELU_MATLABSMOOTHER_FWD_HPP
+#endif  // MUELU_MATLABSMOOTHER_FWD_HPP

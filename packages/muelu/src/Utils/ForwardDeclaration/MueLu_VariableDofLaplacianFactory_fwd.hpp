@@ -46,18 +46,13 @@
 #ifndef MUELU_VARIABLEDOFLAPLACIANFACTORY_FWD_HPP
 #define MUELU_VARIABLEDOFLAPLACIANFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class VariableDofLaplacianFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class VariableDofLaplacianFactory;
 }
 
 #ifndef MUELU_VARIABLEDOFLAPLACIANFACTORY_SHORT
 #define MUELU_VARIABLEDOFLAPLACIANFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_VARIABLEDOFLAPLACIANFACTORY_FWD_HPP
+#endif  // MUELU_VARIABLEDOFLAPLACIANFACTORY_FWD_HPP

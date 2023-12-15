@@ -51,12 +51,12 @@
 
 namespace MueLu {
 
-  void MueLu_AMGX_initialize();
-  void MueLu_AMGX_initialize_plugins();
+void MueLu_AMGX_initialize();
+void MueLu_AMGX_initialize_plugins();
 
-  void MueLu_AMGX_finalize();
-  void MueLu_AMGX_finalize_plugins();
-}
+void MueLu_AMGX_finalize();
+void MueLu_AMGX_finalize_plugins();
+}  // namespace MueLu
 
-#endif //HAVE_MUELU_AMGX
-#endif //ifndef MUELU_AMGX_SETUP_DEF_HPP
+#endif  // HAVE_MUELU_AMGX
+#endif  // ifndef MUELU_AMGX_SETUP_DEF_HPP

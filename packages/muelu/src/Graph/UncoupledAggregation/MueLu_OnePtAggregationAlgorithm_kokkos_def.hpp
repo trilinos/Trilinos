@@ -60,71 +60,67 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::OnePtAggregationAlgorithm_kokkos(RCP<const FactoryBase> const &/* graphFact */)
-  {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::OnePtAggregationAlgorithm_kokkos(RCP<const FactoryBase> const& /* graphFact */) {
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+    BuildAggregates(Teuchos::ParameterList const& /* params */,
+                    LWGraph_kokkos const& graph,
+                    Aggregates& aggregates,
+                    Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggstat,
+                    LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregates");
+
+  typename Kokkos::View<unsigned*, device_type>::HostMirror aggstatHost = Kokkos::create_mirror(aggstat);
+  Kokkos::deep_copy(aggstatHost, aggstat);
+  std::vector<unsigned> aggStat;
+  aggStat.resize(aggstatHost.extent(0));
+  for (size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
+    aggStat[idx] = aggstatHost(idx);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(Teuchos::ParameterList const & /* params */,
-                  LWGraph_kokkos const & graph,
-                  Aggregates & aggregates,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggstat,
-                  LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
+  const LocalOrdinal nRows = graph.GetNodeNumVertices();
+  const int myRank         = graph.GetComm()->getRank();
 
-    typename Kokkos::View<unsigned*, device_type>::HostMirror aggstatHost
-      = Kokkos::create_mirror(aggstat);
-    Kokkos::deep_copy(aggstatHost, aggstat);
-    std::vector<unsigned> aggStat;
-    aggStat.resize(aggstatHost.extent(0));
-    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
-      aggStat[idx] = aggstatHost(idx);
-    }
+  // vertex ids for output
+  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
-    const LocalOrdinal nRows = graph.GetNodeNumVertices();
-    const int myRank = graph.GetComm()->getRank();
+  // some internal variables
+  LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();  // number of local aggregates on current proc
+  LocalOrdinal iNode1           = 0;                              // current node
 
-    // vertex ids for output
-    Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+  // main loop over all local rows of graph(A)
+  while (iNode1 < nRows) {
+    if (aggStat[iNode1] == ONEPT) {
+      aggregates.SetIsRoot(iNode1);  // mark iNode1 as root node for new aggregate 'ag'
+      std::vector<int> aggList;
+      aggList.push_back(iNode1);
+      int aggIndex = nLocalAggregates++;
 
-    // some internal variables
-    LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();    // number of local aggregates on current proc
-    LocalOrdinal iNode1  = 0;        // current node
-
-    // main loop over all local rows of graph(A)
-    while (iNode1 < nRows) {
-
-      if (aggStat[iNode1] == ONEPT) {
-
-        aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
-        std::vector<int> aggList;
-        aggList.push_back(iNode1);
-        int aggIndex = nLocalAggregates++;
-
-        // finalize aggregate
-        for (size_t k = 0; k < aggList.size(); k++) {
-          aggStat[aggList[k]] = IGNORED;
-          vertex2AggId[aggList[k]] = aggIndex;
-          procWinner[aggList[k]] = myRank;
-        }
-        numNonAggregatedNodes -= aggList.size();
+      // finalize aggregate
+      for (size_t k = 0; k < aggList.size(); k++) {
+        aggStat[aggList[k]]      = IGNORED;
+        vertex2AggId[aggList[k]] = aggIndex;
+        procWinner[aggList[k]]   = myRank;
       }
-
-      iNode1++;
-    } // end while
-
-    for(size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
-      aggstatHost(idx) = aggStat[idx];
+      numNonAggregatedNodes -= aggList.size();
     }
-    Kokkos::deep_copy(aggstat, aggstatHost);
 
-    // update aggregate object
-    aggregates.SetNumAggregates(nLocalAggregates);
+    iNode1++;
+  }  // end while
+
+  for (size_t idx = 0; idx < aggstatHost.extent(0); ++idx) {
+    aggstatHost(idx) = aggStat[idx];
   }
+  Kokkos::deep_copy(aggstat, aggstatHost);
 
-} // end namespace
+  // update aggregate object
+  aggregates.SetNumAggregates(nLocalAggregates);
+}
 
-#endif // MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
+}  // namespace MueLu
+
+#endif  // MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_DEF_HPP

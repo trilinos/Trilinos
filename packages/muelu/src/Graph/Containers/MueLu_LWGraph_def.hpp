@@ -52,46 +52,45 @@
 
 namespace MueLu {
 
-  //! Print the object with some verbosity level to an FancyOStream object.
-  //using MueLu::Describable::describe; // overloading, not hiding
-  //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void LWGraph<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    //    MUELU_DESCRIBE;
+//! Print the object with some verbosity level to an FancyOStream object.
+// using MueLu::Describable::describe; // overloading, not hiding
+// void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void LWGraph<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  //    MUELU_DESCRIBE;
 
-    if (verbLevel & Parameters0) {
-      //out0 << "Prec. type: " << type_ << std::endl;
-    }
-
-    if (verbLevel & Parameters1) {
-      //out0 << "Linear Algebra: " << toString(lib_) << std::endl;
-      //out0 << "PrecType: " << type_ << std::endl;
-      //out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
-      //out0 << "Overlap: " << overlap_ << std::endl;
-    }
-
-    if (verbLevel & Debug) {
-      RCP<const Map> col_map = importMap_.is_null() ? domainMap_ : importMap_;
-
-      for (LO i = 0; i < rows_.size()-1; i++) {
-        for (LO j = rows_[i]; j < rows_[i+1]; j++)
-          out<< domainMap_->getGlobalElement(i) << " " << col_map->getGlobalElement(columns_[j])<<std::endl;
-      }
-    }
+  if (verbLevel & Parameters0) {
+    // out0 << "Prec. type: " << type_ << std::endl;
   }
 
+  if (verbLevel & Parameters1) {
+    // out0 << "Linear Algebra: " << toString(lib_) << std::endl;
+    // out0 << "PrecType: " << type_ << std::endl;
+    // out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+    // out0 << "Overlap: " << overlap_ << std::endl;
+  }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > LWGraph<LocalOrdinal, GlobalOrdinal, Node>::GetCrsGraph() const {
-      ArrayRCP<size_t> rowPtrs;
-      rowPtrs.resize(rows_.size());
-      for (size_t i=0; i<Teuchos::as<size_t>(rows_.size()); i++)
-        rowPtrs[i] = rows_[i];
-      auto graph =  Xpetra::CrsGraphFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(GetDomainMap(), GetImportMap(), rowPtrs, Teuchos::arcp_const_cast<LO>(getEntries()));
-      graph->fillComplete();
-      return graph;
+  if (verbLevel & Debug) {
+    RCP<const Map> col_map = importMap_.is_null() ? domainMap_ : importMap_;
+
+    for (LO i = 0; i < rows_.size() - 1; i++) {
+      for (LO j = rows_[i]; j < rows_[i + 1]; j++)
+        out << domainMap_->getGlobalElement(i) << " " << col_map->getGlobalElement(columns_[j]) << std::endl;
     }
-
+  }
 }
 
-#endif // MUELU_LWGRAPH_DEF_HPP
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > LWGraph<LocalOrdinal, GlobalOrdinal, Node>::GetCrsGraph() const {
+  ArrayRCP<size_t> rowPtrs;
+  rowPtrs.resize(rows_.size());
+  for (size_t i = 0; i < Teuchos::as<size_t>(rows_.size()); i++)
+    rowPtrs[i] = rows_[i];
+  auto graph = Xpetra::CrsGraphFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(GetDomainMap(), GetImportMap(), rowPtrs, Teuchos::arcp_const_cast<LO>(getEntries()));
+  graph->fillComplete();
+  return graph;
+}
+
+}  // namespace MueLu
+
+#endif  // MUELU_LWGRAPH_DEF_HPP

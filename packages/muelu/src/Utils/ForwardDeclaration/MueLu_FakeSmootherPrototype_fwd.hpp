@@ -46,18 +46,13 @@
 #ifndef MUELU_FAKESMOOTHERPROTOTYPE_FWD_HPP
 #define MUELU_FAKESMOOTHERPROTOTYPE_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class FakeSmootherPrototype;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class FakeSmootherPrototype;
 }
 
 #ifndef MUELU_FAKESMOOTHERPROTOTYPE_SHORT
 #define MUELU_FAKESMOOTHERPROTOTYPE_SHORT
 #endif
 
-
-
-#endif // MUELU_FAKESMOOTHERPROTOTYPE_FWD_HPP
+#endif  // MUELU_FAKESMOOTHERPROTOTYPE_FWD_HPP

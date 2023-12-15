@@ -57,64 +57,63 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
-namespace MueLu{
+namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class GeometricInterpolationPFactory : public PFactory {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class GeometricInterpolationPFactory : public PFactory {
 #undef MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  // Declare useful types
+  using real_type                  = typename Teuchos::ScalarTraits<SC>::coordinateType;
+  using realvaluedmultivector_type = Xpetra::MultiVector<real_type, LO, GO, Node>;
 
-    // Declare useful types
-    using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
-    using realvaluedmultivector_type = Xpetra::MultiVector<real_type,LO,GO,Node>;
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! Constructor
+  GeometricInterpolationPFactory() {}
 
-    //! Constructor
-    GeometricInterpolationPFactory() { }
+  //! Destructor.
+  virtual ~GeometricInterpolationPFactory() {}
+  //@}
 
-    //! Destructor.
-    virtual ~GeometricInterpolationPFactory() { }
-    //@}
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-    void Build (Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+ private:
+  void BuildConstantP(RCP<Matrix>& P, RCP<const CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
+  void BuildLinearP(Level& coarseLevel,
+                    RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
+                    RCP<realvaluedmultivector_type>& fineCoordinates,
+                    RCP<realvaluedmultivector_type>& ghostCoordinates,
+                    const int numDimensions, const bool keepD2,
+                    RCP<Matrix>& P) const;
+  void ComputeLinearInterpolationStencil(const int numDimensions, const int numInterpolationPoints,
+                                         const Array<Array<real_type> > coord,
+                                         Array<real_type>& stencil) const;
+  void GetInterpolationFunctions(const LO numDimensions,
+                                 const Teuchos::SerialDenseVector<LO, real_type> parametricCoordinates,
+                                 real_type functions[4][8]) const;
 
-  private:
-    void BuildConstantP(RCP<Matrix>& P, RCP<const CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
-    void BuildLinearP(Level& coarseLevel,
-                      RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
-                      RCP<realvaluedmultivector_type>& fineCoordinates,
-                      RCP<realvaluedmultivector_type>& ghostCoordinates,
-                      const int numDimensions, const bool keepD2,
-                      RCP<Matrix>& P) const;
-    void ComputeLinearInterpolationStencil(const int numDimensions, const int numInterpolationPoints,
-                                           const Array<Array<real_type> > coord,
-                                           Array<real_type>& stencil) const;
-    void GetInterpolationFunctions(const LO numDimensions,
-                                   const Teuchos::SerialDenseVector<LO,real_type> parametricCoordinates,
-                                   real_type functions[4][8]) const;
+};  // class GeometricInterpolationPFactory
 
-  }; // class GeometricInterpolationPFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
-#endif // MUELU_GEOMETRICINTERPOLATIONPFACTORY_DECL_HPP
+#endif  // MUELU_GEOMETRICINTERPOLATIONPFACTORY_DECL_HPP

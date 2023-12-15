@@ -53,7 +53,6 @@
 #ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_DEF_HPP_
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_DEF_HPP_
 
-
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -68,20 +67,20 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& /* params */, const GraphBase& graph, Aggregates& /* aggregates */, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& /* params */, const GraphBase& graph, Aggregates& /* aggregates */, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregates");
 
-    const LO  numRows = graph.GetNodeNumVertices();
+  const LO numRows = graph.GetNodeNumVertices();
 
-    // Remove all isolated nodes
-    for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).size() == 1) {
-        aggStat[i] = IGNORED;
-        numNonAggregatedNodes--;
-      }
-  }
+  // Remove all isolated nodes
+  for (LO i = 0; i < numRows; i++)
+    if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).size() == 1) {
+      aggStat[i] = IGNORED;
+      numNonAggregatedNodes--;
+    }
+}
 
-} // end namespace
+}  // namespace MueLu
 
 #endif /* MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_DEF_HPP_ */

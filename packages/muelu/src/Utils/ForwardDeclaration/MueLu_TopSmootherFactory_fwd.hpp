@@ -46,18 +46,13 @@
 #ifndef MUELU_TOPSMOOTHERFACTORY_FWD_HPP
 #define MUELU_TOPSMOOTHERFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TopSmootherFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class TopSmootherFactory;
 }
 
 #ifndef MUELU_TOPSMOOTHERFACTORY_SHORT
 #define MUELU_TOPSMOOTHERFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_TOPSMOOTHERFACTORY_FWD_HPP
+#endif  // MUELU_TOPSMOOTHERFACTORY_FWD_HPP

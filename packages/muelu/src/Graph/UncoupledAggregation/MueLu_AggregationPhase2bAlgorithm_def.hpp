@@ -60,91 +60,89 @@
 
 namespace MueLu {
 
-  // Try to stick unaggregated nodes into a neighboring aggregate if they are
-  // not already too big
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params , const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
-    bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2b");
+// Try to stick unaggregated nodes into a neighboring aggregate if they are
+// not already too big
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregates");
+  bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2b");
 
-    const LO  numRows = graph.GetNodeNumVertices();
-    const int myRank  = graph.GetComm()->getRank();
+  const LO numRows = graph.GetNodeNumVertices();
+  const int myRank = graph.GetComm()->getRank();
 
-    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+  ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
-    LO numLocalAggregates = aggregates.GetNumAggregates();
+  LO numLocalAggregates = aggregates.GetNumAggregates();
 
-    const int defaultConnectWeight = 100;
-    const int penaltyConnectWeight = 10;
+  const int defaultConnectWeight = 100;
+  const int penaltyConnectWeight = 10;
 
-    std::vector<int> aggWeight    (numLocalAggregates, 0);
-    std::vector<int> connectWeight(numRows, defaultConnectWeight);
-    std::vector<int> aggPenalties (numRows, 0);
+  std::vector<int> aggWeight(numLocalAggregates, 0);
+  std::vector<int> connectWeight(numRows, defaultConnectWeight);
+  std::vector<int> aggPenalties(numRows, 0);
 
-    // We do this cycle twice.
-    // I don't know why, but ML does it too
-    // taw: by running the aggregation routine more than once there is a chance that also
-    // non-aggregated nodes with a node distance of two are added to existing aggregates.
-    // Assuming that the aggregate size is 3 in each direction running the algorithm only twice
-    // should be sufficient.
-    for (int k = 0; k < 2; k++) {
-      for (LO i = 0; i < numRows; i++) {
-        if (aggStat[i] != READY)
-          continue;
+  // We do this cycle twice.
+  // I don't know why, but ML does it too
+  // taw: by running the aggregation routine more than once there is a chance that also
+  // non-aggregated nodes with a node distance of two are added to existing aggregates.
+  // Assuming that the aggregate size is 3 in each direction running the algorithm only twice
+  // should be sufficient.
+  for (int k = 0; k < 2; k++) {
+    for (LO i = 0; i < numRows; i++) {
+      if (aggStat[i] != READY)
+        continue;
 
-        ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
+      ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
 
-        for (int j = 0; j < neighOfINode.size(); j++) {
-          LO neigh = neighOfINode[j];
+      for (int j = 0; j < neighOfINode.size(); j++) {
+        LO neigh = neighOfINode[j];
 
-          // We don't check (neigh != i), as it is covered by checking (aggStat[neigh] == AGGREGATED)
-          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
-            aggWeight[vertex2AggId[neigh]] += connectWeight[neigh];
-        }
+        // We don't check (neigh != i), as it is covered by checking (aggStat[neigh] == AGGREGATED)
+        if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
+          aggWeight[vertex2AggId[neigh]] += connectWeight[neigh];
+      }
 
-        int bestScore   = -100000;
-        int bestAggId   = -1;
-        int bestConnect = -1;
+      int bestScore   = -100000;
+      int bestAggId   = -1;
+      int bestConnect = -1;
 
-        for (int j = 0; j < neighOfINode.size(); j++) {
-          LO neigh = neighOfINode[j];
-          int aggId = vertex2AggId[neigh];
+      for (int j = 0; j < neighOfINode.size(); j++) {
+        LO neigh  = neighOfINode[j];
+        int aggId = vertex2AggId[neigh];
 
-          // Note: The third condition is only relevant if the ML matching is enabled
-          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED 
-            && (!matchMLbehavior || aggWeight[aggId] != 0) ) {
+        // Note: The third condition is only relevant if the ML matching is enabled
+        if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED && (!matchMLbehavior || aggWeight[aggId] != 0)) {
+          int score = aggWeight[aggId] - aggPenalties[aggId];
 
-            int score = aggWeight[aggId] - aggPenalties[aggId];
+          if (score > bestScore) {
+            bestAggId   = aggId;
+            bestScore   = score;
+            bestConnect = connectWeight[neigh];
 
-            if (score > bestScore) {
-              bestAggId   = aggId;
-              bestScore   = score;
-              bestConnect = connectWeight[neigh];
-
-            } else if (aggId == bestAggId && connectWeight[neigh] > bestConnect) {
-              bestConnect = connectWeight[neigh];
-            }
-
-            // Reset the weights for the next loop
-            aggWeight[aggId] = 0;
+          } else if (aggId == bestAggId && connectWeight[neigh] > bestConnect) {
+            bestConnect = connectWeight[neigh];
           }
+
+          // Reset the weights for the next loop
+          aggWeight[aggId] = 0;
         }
+      }
 
-        if (bestScore >= 0) {
-          aggStat     [i] = AGGREGATED;
-          vertex2AggId[i] = bestAggId;
-          procWinner  [i] = myRank;
+      if (bestScore >= 0) {
+        aggStat[i]      = AGGREGATED;
+        vertex2AggId[i] = bestAggId;
+        procWinner[i]   = myRank;
 
-          numNonAggregatedNodes--;
+        numNonAggregatedNodes--;
 
-          aggPenalties[bestAggId]++;
-          connectWeight[i] = bestConnect - penaltyConnectWeight;
-        }
+        aggPenalties[bestAggId]++;
+        connectWeight[i] = bestConnect - penaltyConnectWeight;
       }
     }
   }
+}
 
-} // end namespace
+}  // namespace MueLu
 
 #endif /* MUELU_AGGREGATIONPHASE2BALGORITHM_DEF_HPP_ */

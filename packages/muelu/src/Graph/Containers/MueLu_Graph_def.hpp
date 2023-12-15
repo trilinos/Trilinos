@@ -54,51 +54,52 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Graph<LocalOrdinal,GlobalOrdinal,Node>::Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */) : graph_(graph) {
-      minLocalIndex_ = graph_->getDomainMap()->getMinLocalIndex();
-      maxLocalIndex_ = graph_->getDomainMap()->getMaxLocalIndex();
-    }
-
-#ifdef MUELU_UNUSED
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t Graph<LocalOrdinal, GlobalOrdinal, Node>::GetNodeNumGhost() const {
-    /*
-      Ray's comments about nGhost:
-      Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->MatrixDomainMap()->NumMyElements()
-      is basically right. But we've had some issues about how epetra handles empty columns.
-      Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right.
-    */
-    size_t nGhost = graph_->getColMap()->getLocalNumElements() - graph_->getDomainMap()->getLocalNumElements();
-    if (nGhost < 0) nGhost = 0; // FIXME: size_t is unsigned.
-
-    return nGhost;
-  }
-#endif
-
-  //! Print the object with some verbosity level to an FancyOStream object.
-  //using MueLu::Describable::describe; // overloading, not hiding
-  //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Graph<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    MUELU_DESCRIBE;
-
-    if (verbLevel & Parameters0) {
-      //out0 << "Prec. type: " << type_ << std::endl;
-    }
-
-    if (verbLevel & Parameters1) {
-      //out0 << "Linear Algebra: " << toString(lib_) << std::endl;
-      //out0 << "PrecType: " << type_ << std::endl;
-      //out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
-      //out0 << "Overlap: " << overlap_ << std::endl;
-    }
-
-    if (verbLevel & Debug) {
-      graph_->describe(out0, Teuchos::VERB_EXTREME);
-    }
-  }
-
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Graph<LocalOrdinal, GlobalOrdinal, Node>::Graph(const RCP<const CrsGraph> &graph, const std::string & /* objectLabel */)
+  : graph_(graph) {
+  minLocalIndex_ = graph_->getDomainMap()->getMinLocalIndex();
+  maxLocalIndex_ = graph_->getDomainMap()->getMaxLocalIndex();
 }
 
-#endif // MUELU_GRAPH_DEF_HPP
+#ifdef MUELU_UNUSED
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t Graph<LocalOrdinal, GlobalOrdinal, Node>::GetNodeNumGhost() const {
+  /*
+    Ray's comments about nGhost:
+    Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->MatrixDomainMap()->NumMyElements()
+    is basically right. But we've had some issues about how epetra handles empty columns.
+    Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right.
+  */
+  size_t nGhost = graph_->getColMap()->getLocalNumElements() - graph_->getDomainMap()->getLocalNumElements();
+  if (nGhost < 0) nGhost = 0;  // FIXME: size_t is unsigned.
+
+  return nGhost;
+}
+#endif
+
+//! Print the object with some verbosity level to an FancyOStream object.
+// using MueLu::Describable::describe; // overloading, not hiding
+// void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void Graph<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  MUELU_DESCRIBE;
+
+  if (verbLevel & Parameters0) {
+    // out0 << "Prec. type: " << type_ << std::endl;
+  }
+
+  if (verbLevel & Parameters1) {
+    // out0 << "Linear Algebra: " << toString(lib_) << std::endl;
+    // out0 << "PrecType: " << type_ << std::endl;
+    // out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+    // out0 << "Overlap: " << overlap_ << std::endl;
+  }
+
+  if (verbLevel & Debug) {
+    graph_->describe(out0, Teuchos::VERB_EXTREME);
+  }
+}
+
+}  // namespace MueLu
+
+#endif  // MUELU_GRAPH_DEF_HPP

@@ -47,7 +47,7 @@
 #include <fstream>
 #include "MueLu_Memory.hpp"
 
-#include <iostream> // TODO: remove
+#include <iostream>  // TODO: remove
 #include <unistd.h>
 #include <time.h>
 #ifdef MUELU_USE_MALLINFO
@@ -58,86 +58,80 @@
 
 namespace MueLu {
 
-  namespace MemUtils {
+namespace MemUtils {
 
-    std::string PrintMemoryUsage() {
-
-
+std::string PrintMemoryUsage() {
 #ifdef MUELU_USE_MALLINFO
-      struct mallinfo mem_stats = mallinfo();
-      double memory = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
+  struct mallinfo mem_stats = mallinfo();
+  double memory             = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
 
-      char memchar[128];
-      sprintf(memchar,"%12.1f MB",memory/1048576.0);
-      std::string mem(memchar);
+  char memchar[128];
+  sprintf(memchar, "%12.1f MB", memory / 1048576.0);
+  std::string mem(memchar);
 
-      return mem;
+  return mem;
 #else
-      std::ostringstream mem;
-      std::ifstream proc("/proc/self/status");
-      std::string s;
+  std::ostringstream mem;
+  std::ifstream proc("/proc/self/status");
+  std::string s;
 
-      mem << PrintMemoryInfo() << " ";
-      while(getline(proc, s), !proc.fail()) {
-        if(s.substr(0, 6) == "VmSize") {
-          mem << s;
-          return mem.str();
-        }
-      }
+  mem << PrintMemoryInfo() << " ";
+  while (getline(proc, s), !proc.fail()) {
+    if (s.substr(0, 6) == "VmSize") {
+      mem << s;
       return mem.str();
-#endif
-
     }
+  }
+  return mem.str();
+#endif
+}
 
-    std::string PrintMemoryInfo() {
-
+std::string PrintMemoryInfo() {
 #ifdef MUELU_USE_MALLINFO
-      struct mallinfo mem_stats = mallinfo();
-      double memory = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
+  struct mallinfo mem_stats = mallinfo();
+  double memory             = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
 
-      char memchar[128];
-      sprintf(memchar,"%12.1f MB",memory/1048576.0);
-      std::string mem(memchar);
+  char memchar[128];
+  sprintf(memchar, "%12.1f MB", memory / 1048576.0);
+  std::string mem(memchar);
 
-      return mem;
+  return mem;
 #else
-      std::ostringstream mem;
-      std::ifstream proc("/proc/meminfo");
-      std::string s;
-      while(getline(proc, s), !proc.fail()) {
-        if(s.substr(0, 7) == "MemFree") {
-          mem << s;
-          return mem.str();
-        }
-
-      }
+  std::ostringstream mem;
+  std::ifstream proc("/proc/meminfo");
+  std::string s;
+  while (getline(proc, s), !proc.fail()) {
+    if (s.substr(0, 7) == "MemFree") {
+      mem << s;
       return mem.str();
-#endif
     }
+  }
+  return mem.str();
+#endif
+}
 
-    void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm)
-    {
-      double maxTime=0,minTime=0,avgTime=0;
-      double localTime = timer.totalElapsedTime();
+void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm) {
+  double maxTime = 0, minTime = 0, avgTime = 0;
+  double localTime = timer.totalElapsedTime();
 #ifdef HAVE_MPI
-      int ntimers=1, root=0;
-      MPI_Reduce(&localTime,&maxTime,ntimers,MPI_DOUBLE,MPI_MAX,root,MPI_COMM_WORLD);
-      MPI_Reduce(&localTime,&minTime,ntimers,MPI_DOUBLE,MPI_MIN,root,MPI_COMM_WORLD);
-      MPI_Reduce(&localTime,&avgTime,ntimers,MPI_DOUBLE,MPI_SUM,root,MPI_COMM_WORLD);
+  int ntimers = 1, root = 0;
+  MPI_Reduce(&localTime, &maxTime, ntimers, MPI_DOUBLE, MPI_MAX, root, MPI_COMM_WORLD);
+  MPI_Reduce(&localTime, &minTime, ntimers, MPI_DOUBLE, MPI_MIN, root, MPI_COMM_WORLD);
+  MPI_Reduce(&localTime, &avgTime, ntimers, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
 #else
-      maxTime = localTime;
-      minTime = localTime;
-      avgTime = localTime;
+  maxTime = localTime;
+  minTime = localTime;
+  avgTime = localTime;
 #endif
-      avgTime /= Comm.getSize();
-      //std::cout << "(" << Comm.getRank() << ") " << localTime << std::endl;
-      if (Comm.getRank()==0) {
-        std::cout << "&&&" << timer.name()
-                 << " max=" << maxTime << " min=" << minTime << " avg=" << avgTime << std::endl;
-        std::cout << "&&&" << timer.name() << " " << MemUtils::PrintMemoryUsage() << std::endl;
-      }
-    } //ReportTimeAndMemory
+  avgTime /= Comm.getSize();
+  // std::cout << "(" << Comm.getRank() << ") " << localTime << std::endl;
+  if (Comm.getRank() == 0) {
+    std::cout << "&&&" << timer.name()
+              << " max=" << maxTime << " min=" << minTime << " avg=" << avgTime << std::endl;
+    std::cout << "&&&" << timer.name() << " " << MemUtils::PrintMemoryUsage() << std::endl;
+  }
+}  // ReportTimeAndMemory
 
-  } //namespace MemUtils
+}  // namespace MemUtils
 
-} //namespace MueLu
+}  // namespace MueLu

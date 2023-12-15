@@ -62,79 +62,77 @@
 
 namespace MueLu {
 
-  /*!
-    @class MatrixFreeTentativeP class.
-    @brief Matrix-free tentative restrictor operator.
-  */
-  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  // class MatrixFreeTentativeP;
+/*!
+  @class MatrixFreeTentativeP class.
+  @brief Matrix-free tentative restrictor operator.
+*/
+// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+// class MatrixFreeTentativeP;
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> {
-  public:
-    typedef LocalOrdinal                                             local_ordinal_type;
-    typedef GlobalOrdinal                                            global_ordinal_type;
-    typedef typename DeviceType::execution_space                     execution_space;
-    typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::MDRangePolicy<local_ordinal_type, execution_space, Kokkos::Rank<2>> md_range_type;
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>      node_type;
-    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType   real_type;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+class MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> {
+ public:
+  typedef LocalOrdinal local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef typename DeviceType::execution_space execution_space;
+  typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
+  typedef Kokkos::MDRangePolicy<local_ordinal_type, execution_space, Kokkos::Rank<2>> md_range_type;
+  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> node_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType real_type;
 
-  private:
-    // For compatibility
-    typedef node_type                                           Node;
+ private:
+  // For compatibility
+  typedef node_type Node;
 #undef MUELU_MATRIXFREETENTATIVEP_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor
-    MatrixFreeTentativeP(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates> aggregates)
-    : fine_map_(fine_map),
-      coarse_map_(coarse_map),
-      aggregates_(aggregates)
-    { }
+  //! Constructor
+  MatrixFreeTentativeP(Teuchos::RCP<const Map> coarse_map, Teuchos::RCP<const Map> fine_map, Teuchos::RCP<const Aggregates> aggregates)
+    : fine_map_(fine_map)
+    , coarse_map_(coarse_map)
+    , aggregates_(aggregates) {}
 
-    //! Destructor.
-    ~MatrixFreeTentativeP() = default;
-    //@}
+  //! Destructor.
+  ~MatrixFreeTentativeP() = default;
+  //@}
 
-    // compute the apply operator, Y = alpha*R*X + beta*Y
-    void apply(const MultiVector &X, MultiVector &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=Teuchos::ScalarTraits<Scalar>::one(), Scalar beta=Teuchos::ScalarTraits<Scalar>::zero()) const override;
+  // compute the apply operator, Y = alpha*R*X + beta*Y
+  void apply(const MultiVector &X, MultiVector &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS, Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(), Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const override;
 
-    // compute the residual
-    void residual (const MultiVector &X, const MultiVector &B, MultiVector &R) const override;
+  // compute the residual
+  void residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const override;
 
-    // get the range map
-    Teuchos::RCP<const Map> getRangeMap() const override {
-      return fine_map_;
-    }
+  // get the range map
+  Teuchos::RCP<const Map> getRangeMap() const override {
+    return fine_map_;
+  }
 
-    // get the domain map
-    Teuchos::RCP<const Map> getDomainMap() const override {
-      return coarse_map_;
-    }
+  // get the domain map
+  Teuchos::RCP<const Map> getDomainMap() const override {
+    return coarse_map_;
+  }
 
-    // get the aggregates
-    Teuchos::RCP<const Aggregates> getAggregates() const {
-      return aggregates_;
-    }
+  // get the aggregates
+  Teuchos::RCP<const Aggregates> getAggregates() const {
+    return aggregates_;
+  }
 
-  private:
+ private:
+  // the fine map
+  const Teuchos::RCP<const Map> fine_map_;
 
-    // the fine map
-    const Teuchos::RCP<const Map> fine_map_;
+  // the coarse map
+  const Teuchos::RCP<const Map> coarse_map_;
 
-    // the coarse map
-    const Teuchos::RCP<const Map> coarse_map_;
+  // the aggregates required for the grid transfer
+  const Teuchos::RCP<const Aggregates> aggregates_;
+};
 
-    // the aggregates required for the grid transfer
-    const Teuchos::RCP<const Aggregates> aggregates_;
-  };
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_MATRIXFREETENTATIVEP_SHORT
-#endif // MUELU_MATRIXFREETENTATIVEP_DECL_HPP
+#endif  // MUELU_MATRIXFREETENTATIVEP_DECL_HPP

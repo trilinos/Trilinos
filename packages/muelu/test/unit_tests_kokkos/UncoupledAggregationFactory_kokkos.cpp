@@ -62,184 +62,175 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #   include <MueLu_UseShortNames.hpp>
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
 
-      out << "version: " << MueLu::Version() << std::endl;
-      RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
-      TEST_EQUALITY(aggFact != Teuchos::null, true);
-      TEST_THROW(aggFact->SetOrdering("unknown_ordering"), Teuchos::Exceptions::InvalidParameterValue);
-      aggFact->SetOrdering("natural");
-      TEST_EQUALITY(aggFact->GetOrdering() == "natural", true);
-      aggFact->SetOrdering("graph");
-      TEST_EQUALITY(aggFact->GetOrdering() == "graph", true);
-      aggFact->SetOrdering("random");
-      TEST_EQUALITY(aggFact->GetOrdering() == "random", true);
+  out << "version: " << MueLu::Version() << std::endl;
+  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  TEST_EQUALITY(aggFact != Teuchos::null, true);
+  TEST_THROW(aggFact->SetOrdering("unknown_ordering"), Teuchos::Exceptions::InvalidParameterValue);
+  aggFact->SetOrdering("natural");
+  TEST_EQUALITY(aggFact->GetOrdering() == "natural", true);
+  aggFact->SetOrdering("graph");
+  TEST_EQUALITY(aggFact->GetOrdering() == "graph", true);
+  aggFact->SetOrdering("random");
+  TEST_EQUALITY(aggFact->GetOrdering() == "random", true);
 
-      aggFact->SetMaxNeighAlreadySelected(100);
-      TEST_EQUALITY(aggFact->GetMaxNeighAlreadySelected() == 100, true);
-      aggFact->SetMinNodesPerAggregate(10);
-      TEST_EQUALITY(aggFact->GetMinNodesPerAggregate() == 10, true);
+  aggFact->SetMaxNeighAlreadySelected(100);
+  TEST_EQUALITY(aggFact->GetMaxNeighAlreadySelected() == 100, true);
+  aggFact->SetMinNodesPerAggregate(10);
+  TEST_EQUALITY(aggFact->GetMinNodesPerAggregate() == 10, true);
 
-      auto validParamList = aggFact->GetValidParameterList();
-      TEST_EQUALITY(validParamList != Teuchos::null, true);
+  auto validParamList = aggFact->GetValidParameterList();
+  TEST_EQUALITY(validParamList != Teuchos::null, true);
 
+}  // Constructor
 
-  } // Constructor
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #   include <MueLu_UseShortNames.hpp>
-      MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-      out << "version: " << MueLu::Version() << std::endl;
-      RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+  // Make a Matrix with multiple degrees of freedom per node
+  GlobalOrdinal nx = 20, ny = 20;
 
-      // Make a Matrix with multiple degrees of freedom per node
-      GlobalOrdinal nx = 20, ny = 20;
+  // Describes the initial layout of matrix rows across processors.
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
 
-      // Describes the initial layout of matrix rows across processors.
-      Teuchos::ParameterList galeriList;
-      galeriList.set("nx", nx);
-      galeriList.set("ny", ny);
+  const GO nxx       = 200;
+  using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+  Teuchos::CommandLineProcessor clp(false);
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                    // manage parameters of xpetra
 
-      const GO nxx = 200;
-      using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
-      Teuchos::CommandLineProcessor clp(false);
-      Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-      Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+  RCP<Matrix> A      = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
+  RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
-      RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
-      RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
+  A->SetFixedBlockSize(2);
 
-      map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
-      A->SetFixedBlockSize(2);
+  Level aLevel;
+  TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
+  aLevel.Request("A");
+  aLevel.Set("A", A);
 
-      Level aLevel;
-      TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
-      aLevel.Request("A");
-      aLevel.Set("A",A);
+  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
-      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  aggFact->SetFactory("Graph", dropFact);
 
-      RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
-      aggFact->SetFactory("Graph", dropFact);
+  aLevel.Request(*aggFact);
 
-      aLevel.Request(*aggFact);
+  aggFact->Build(aLevel);
 
-      aggFact->Build(aLevel);
+}  // Build
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
-  } // Build
+  // Make a Matrix with multiple degrees of freedom per node
+  GlobalOrdinal nx = 20, ny = 20;
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #   include <MueLu_UseShortNames.hpp>
-      MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-      out << "version: " << MueLu::Version() << std::endl;
-      RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+  // Describes the initial layout of matrix rows across processors.
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
 
-      // Make a Matrix with multiple degrees of freedom per node
-      GlobalOrdinal nx = 20, ny = 20;
+  const GO nxx       = 200;
+  using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+  Teuchos::CommandLineProcessor clp(false);
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                    // manage parameters of xpetra
 
-      // Describes the initial layout of matrix rows across processors.
-      Teuchos::ParameterList galeriList;
-      galeriList.set("nx", nx);
-      galeriList.set("ny", ny);
+  RCP<Matrix> A      = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
+  RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
-      const GO nxx = 200;
-      using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
-      Teuchos::CommandLineProcessor clp(false);
-      Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-      Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+  map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
+  A->SetFixedBlockSize(2);
 
-      RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
-      RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  Level aLevel;
+  TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
+  aLevel.Request("A");
+  aLevel.Set("A", A);
 
-      map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
-      A->SetFixedBlockSize(2);
+  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-      Level aLevel;
-      TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
-      aLevel.Request("A");
-      aLevel.Set("A",A);
+  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  aggFact->SetFactory("Graph", dropFact);
+  aggFact->SetParameter("aggregation: coloring algorithm",
+                        Teuchos::ParameterEntry(std::string("mis2 coarsening")));
 
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
-      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  aLevel.Request(*aggFact);
 
-      RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
-      aggFact->SetFactory("Graph", dropFact);
-      aggFact->SetParameter("aggregation: coloring algorithm",
-          Teuchos::ParameterEntry(std::string("mis2 coarsening")));
+  aggFact->Build(aLevel);
 
-      aLevel.Request(*aggFact);
+}  // Build_MIS2_Coarsen
 
-      aggFact->Build(aLevel);
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
+  // Make a Matrix with multiple degrees of freedom per node
+  GlobalOrdinal nx = 20, ny = 20;
 
-  } // Build_MIS2_Coarsen
+  // Describes the initial layout of matrix rows across processors.
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #   include <MueLu_UseShortNames.hpp>
-      MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-      out << "version: " << MueLu::Version() << std::endl;
-      RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+  const GO nxx       = 200;
+  using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+  Teuchos::CommandLineProcessor clp(false);
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                    // manage parameters of xpetra
 
-      // Make a Matrix with multiple degrees of freedom per node
-      GlobalOrdinal nx = 20, ny = 20;
+  RCP<Matrix> A      = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
+  RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
-      // Describes the initial layout of matrix rows across processors.
-      Teuchos::ParameterList galeriList;
-      galeriList.set("nx", nx);
-      galeriList.set("ny", ny);
+  map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
+  A->SetFixedBlockSize(2);
 
-      const GO nxx = 200;
-      using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
-      Teuchos::CommandLineProcessor clp(false);
-      Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-      Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+  Level aLevel;
+  TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
+  aLevel.Request("A");
+  aLevel.Set("A", A);
 
-      RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nxx);
-      RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-      map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
-      A->SetFixedBlockSize(2);
+  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  aggFact->SetFactory("Graph", dropFact);
+  aggFact->SetParameter("aggregation: coloring algorithm",
+                        Teuchos::ParameterEntry(std::string("mis2 aggregation")));
 
-      Level aLevel;
-      TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
-      aLevel.Request("A");
-      aLevel.Set("A",A);
+  aLevel.Request(*aggFact);
 
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
-      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  aggFact->Build(aLevel);
 
-      RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
-      aggFact->SetFactory("Graph", dropFact);
-      aggFact->SetParameter("aggregation: coloring algorithm",
-          Teuchos::ParameterEntry(std::string("mis2 aggregation")));
+}  // Build_MIS2_Aggregate
 
-      aLevel.Request(*aggFact);
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Constructor, Scalar, LO, GO, Node)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build, Scalar, LO, GO, Node)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LO, GO, Node)
 
-      aggFact->Build(aLevel);
+#include <MueLu_ETI_4arg.hpp>
 
-
-  } // Build_MIS2_Aggregate
-
-  # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Constructor, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LO, GO, Node)
-
-# include <MueLu_ETI_4arg.hpp>
-
-} // namespace MueLuTests
-
+}  // namespace MueLuTests

@@ -124,8 +124,7 @@
  *  using block matrices
  */
 
-
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   typedef double Scalar;
   typedef int LocalOrdinal;
@@ -141,10 +140,10 @@ int main(int argc, char *argv[]) {
   using namespace Teuchos;
 
   oblackholestream blackhole;
-  GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  GlobalMPISession mpiSession(&argc, &argv, &blackhole);
   //
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
-  RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
+  RCP<FancyOStream> out      = fancyOStream(rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
@@ -155,10 +154,10 @@ int main(int argc, char *argv[]) {
   // custom parameters
   LocalOrdinal maxLevels = 3;
 
-  GlobalOrdinal maxCoarseSize=1; //FIXME clp doesn't like long long int
+  GlobalOrdinal maxCoarseSize = 1;  // FIXME clp doesn't like long long int
 
   int globalNumDofs = 1500;  // used for the maps
-  int nDofsPerNode = 3;      // used for generating the fine level null-space
+  int nDofsPerNode  = 3;     // used for generating the fine level null-space
 
   // build strided maps
   // striding information: 2 velocity dofs and 1 pressure dof = 3 dofs per node
@@ -171,33 +170,32 @@ int main(int argc, char *argv[]) {
   // xstridedfullmap: full map (velocity and pressure dof gids), continous
   // xstridedvelmap: only velocity dof gid maps (i.e. 0,1,3,4,6,7...)
   // xstridedpremap: only pressure dof gid maps (i.e. 2,5,8,...)
-  Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-  RCP<StridedMap> xstridedfullmap = StridedMapFactory::Build(lib,globalNumDofs,0,stridingInfo,comm,-1);
-  RCP<StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap,0);
-  RCP<StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap,1);
+  Xpetra::UnderlyingLib lib       = Xpetra::UseEpetra;
+  RCP<StridedMap> xstridedfullmap = StridedMapFactory::Build(lib, globalNumDofs, 0, stridingInfo, comm, -1);
+  RCP<StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap, 0);
+  RCP<StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap, 1);
 
   /////////////////////////////////////// transform Xpetra::Map objects to Epetra
   // this is needed for AztecOO
   const RCP<const Epetra_Map> fullmap = rcpFromRef(Xpetra::toEpetra(*xstridedfullmap));
-  RCP<const Epetra_Map>       velmap  = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
-  RCP<const Epetra_Map>       premap  = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
+  RCP<const Epetra_Map> velmap        = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
+  RCP<const Epetra_Map> premap        = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
 
   /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
   // read in problem
-  Epetra_CrsMatrix * ptrA = 0;
-  Epetra_Vector * ptrf = 0;
+  Epetra_CrsMatrix* ptrA    = 0;
+  Epetra_Vector* ptrf       = 0;
   Epetra_MultiVector* ptrNS = 0;
 
   *out << "Reading matrix market file" << std::endl;
 
-  EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",*fullmap,ptrf);
+  EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt", *fullmap, *fullmap, *fullmap, ptrA);
+  EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt", *fullmap, ptrf);
 
-  RCP<Epetra_CrsMatrix> epA = rcp(ptrA);
-  RCP<Epetra_Vector> epv = rcp(ptrf);
+  RCP<Epetra_CrsMatrix> epA    = rcp(ptrA);
+  RCP<Epetra_Vector> epv       = rcp(ptrf);
   RCP<Epetra_MultiVector> epNS = rcp(ptrNS);
-
 
   /////////////////////////////////////// split system into 2x2 block system
 
@@ -209,70 +207,70 @@ int main(int argc, char *argv[]) {
   RCP<Epetra_CrsMatrix> A21;
   RCP<Epetra_CrsMatrix> A22;
 
-  if(SplitMatrix2x2(epA,*velmap,*premap,A11,A12,A21,A22)==false)
-    *out << "Problem with splitting matrix"<< std::endl;
+  if (SplitMatrix2x2(epA, *velmap, *premap, A11, A12, A21, A22) == false)
+    *out << "Problem with splitting matrix" << std::endl;
 
   /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
   // build Xpetra objects from Epetra_CrsMatrix objects
-  RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A11));
-  RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A12));
-  RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A21));
-  RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A22));
+  RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal, Node>(A11));
+  RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal, Node>(A12));
+  RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal, Node>(A21));
+  RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal, Node>(A22));
 
   /////////////////////////////////////// generate MapExtractor object
 
-  std::vector<RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > xmaps;
+  std::vector<RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > xmaps;
   xmaps.push_back(xstridedvelmap);
   xmaps.push_back(xstridedpremap);
 
-  RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(xstridedfullmap,xmaps);
+  RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(xstridedfullmap, xmaps);
 
   /////////////////////////////////////// build blocked transfer operator
   // using the map extractor
-  RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map_extractor,map_extractor,10));
-  bOp->setMatrix(0,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA11)));
-  bOp->setMatrix(0,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA12)));
-  bOp->setMatrix(1,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA21)));
-  bOp->setMatrix(1,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA22)));
+  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map_extractor, map_extractor, 10));
+  bOp->setMatrix(0, 0, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA11)));
+  bOp->setMatrix(0, 1, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA12)));
+  bOp->setMatrix(1, 0, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA21)));
+  bOp->setMatrix(1, 1, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA22)));
 
   bOp->fillComplete();
 
   //////////////////////////////////////////////////// create Hierarchy
-  RCP<Hierarchy> H = rcp ( new Hierarchy() );
+  RCP<Hierarchy> H = rcp(new Hierarchy());
   H->setDefaultVerbLevel(VERB_HIGH);
-  //H->setDefaultVerbLevel(VERB_NONE);
+  // H->setDefaultVerbLevel(VERB_NONE);
   H->SetMaxCoarseSize(maxCoarseSize);
 
   //////////////////////////////////////////////////////// finest Level
   RCP<MueLu::Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(VERB_HIGH);
-  Finest->Set("A",rcp_dynamic_cast<Matrix>(bOp));
+  Finest->Set("A", rcp_dynamic_cast<Matrix>(bOp));
 
   /////////////////////////////////////////////// define subblocks of A
   // make A11 block and A22 block available as variable "A" generated
   // by A11Fact and A22Fact
   RCP<SubBlockAFactory> A11Fact = rcp(new SubBlockAFactory());
-  A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
-  A11Fact->SetParameter("block row",ParameterEntry(0));
-  A11Fact->SetParameter("block col",ParameterEntry(0));
+  A11Fact->SetFactory("A", MueLu::NoFactory::getRCP());
+  A11Fact->SetParameter("block row", ParameterEntry(0));
+  A11Fact->SetParameter("block col", ParameterEntry(0));
   RCP<SubBlockAFactory> A22Fact = rcp(new SubBlockAFactory());
-  A22Fact->SetFactory("A",MueLu::NoFactory::getRCP());
-  A22Fact->SetParameter("block row",ParameterEntry(1));
-  A22Fact->SetParameter("block col",ParameterEntry(1));
+  A22Fact->SetFactory("A", MueLu::NoFactory::getRCP());
+  A22Fact->SetParameter("block row", ParameterEntry(1));
+  A22Fact->SetParameter("block col", ParameterEntry(1));
 
   ////////////////////////////////////////// prepare null space for A11
   RCP<MultiVector> nullspace11 = MultiVectorFactory::Build(xstridedvelmap, 2);  // this is a 2D standard null space
 
-  for (int i=0; i<nDofsPerNode-1; ++i) {
+  for (int i = 0; i < nDofsPerNode - 1; ++i) {
     ArrayRCP<Scalar> nsValues = nullspace11->getDataNonConst(i);
-    int numBlocks = nsValues.size() / (nDofsPerNode - 1);
-    for (int j=0; j< numBlocks; ++j) {
-      nsValues[j*(nDofsPerNode - 1) + i] = 1.0;
+    int numBlocks             = nsValues.size() / (nDofsPerNode - 1);
+    for (int j = 0; j < numBlocks; ++j) {
+      nsValues[j * (nDofsPerNode - 1) + i] = 1.0;
     }
   }
 
-  Finest->Set("Nullspace1",nullspace11);
+  Finest->Set("Nullspace1", nullspace11);
 
   ///////////////////////////////////////// define CoalesceDropFactory and Aggregation for A11
   // set up amalgamation for A11. Note: we're using a default null space factory (null)
@@ -320,7 +318,7 @@ int main(int argc, char *argv[]) {
   RCP<TransPFactory> R11Fact = rcp(new TransPFactory());
 
   RCP<NullspaceFactory> nspFact11 = rcp(new NullspaceFactory("Nullspace1"));
-  nspFact11->SetFactory("Nullspace1",P11Fact);
+  nspFact11->SetFactory("Nullspace1", P11Fact);
 
   RCP<CoarseMapFactory> coarseMapFact11 = rcp(new CoarseMapFactory());
   coarseMapFact11->setStridingData(stridingInfo);
@@ -338,16 +336,16 @@ int main(int argc, char *argv[]) {
   M11->SetFactory("CoarseMap", coarseMapFact11);
   M11->SetFactory("Graph", dropFact11);
 #endif
-  M11->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
+  M11->SetIgnoreUserData(true);  // always use data from factories defined in factory manager
 
   ////////////////////////////////////////// prepare null space for A22
   RCP<MultiVector> nullspace22 = MultiVectorFactory::Build(xstridedpremap, 1);  // this is a 2D standard null space
-  ArrayRCP<Scalar> nsValues22 = nullspace22->getDataNonConst(0);
-  for (int j=0; j< nsValues22.size(); ++j) {
+  ArrayRCP<Scalar> nsValues22  = nullspace22->getDataNonConst(0);
+  for (int j = 0; j < nsValues22.size(); ++j) {
     nsValues22[j] = 1.0;
   }
 
-  Finest->Set("Nullspace2",nullspace22);
+  Finest->Set("Nullspace2", nullspace22);
 
   ///////////////////////////////////////// define transfer ops for A22
 #if 0
@@ -379,7 +377,7 @@ int main(int argc, char *argv[]) {
 #else
   // use TentativePFactory
   RCP<AmalgamationFactory> amalgFact22 = rcp(new AmalgamationFactory());
-  RCP<TentativePFactory> P22Fact = rcp(new TentativePFactory()); // check me (fed with A22) wrong column GIDS!!!
+  RCP<TentativePFactory> P22Fact       = rcp(new TentativePFactory());  // check me (fed with A22) wrong column GIDS!!!
 
   RCP<TransPFactory> R22Fact = rcp(new TransPFactory());
 
@@ -396,14 +394,14 @@ int main(int argc, char *argv[]) {
   M22->SetFactory("R", R22Fact);
   M22->SetFactory("Aggregates", CoupledAggFact11);
   M22->SetFactory("Nullspace", nspFact22);
-  M22->SetFactory("UnAmalgamationInfo", amalgFact22); // TODO oops what about that? it was M11 before?
+  M22->SetFactory("UnAmalgamationInfo", amalgFact22);  // TODO oops what about that? it was M11 before?
   M22->SetFactory("Ptent", P22Fact);
   M22->SetFactory("CoarseMap", coarseMapFact22);
-  M22->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
+  M22->SetIgnoreUserData(true);  // always use data from factories defined in factory manager
 #endif
 
   /////////////////////////////////////////// define blocked transfer ops
-  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory()); // use row map index base from bOp
+  RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory());  // use row map index base from bOp
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
@@ -419,56 +417,56 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////////////////////////
   // Smoothers
 
-  //Another factory manager for braes sarazin smoother
-  //Schur Complement Factory, using the factory to generate AcFact
-  SC omega = 1.3;
+  // Another factory manager for braes sarazin smoother
+  // Schur Complement Factory, using the factory to generate AcFact
+  SC omega                          = 1.3;
   RCP<SchurComplementFactory> SFact = rcp(new SchurComplementFactory());
   SFact->SetParameter("omega", ParameterEntry(omega));
   SFact->SetFactory("A", MueLu::NoFactory::getRCP());
 
-  //Smoother Factory, using SFact as a factory for A
+  // Smoother Factory, using SFact as a factory for A
   std::string ifpackSCType;
   ParameterList ifpackSCList;
-  ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
-  ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
+  ifpackSCList.set("relaxation: sweeps", (LocalOrdinal)3);
+  ifpackSCList.set("relaxation: damping factor", (Scalar)1.0);
   ifpackSCType = "RELAXATION";
   ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-  RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+  RCP<SmootherPrototype> smoProtoSC = rcp(new TrilinosSmoother(ifpackSCType, ifpackSCList, 0));
   smoProtoSC->SetFactory("A", SFact);
-  RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
+  RCP<SmootherFactory> SmooSCFact = rcp(new SmootherFactory(smoProtoSC));
 
-  RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
+  RCP<BraessSarazinSmoother> smootherPrototype = rcp(new BraessSarazinSmoother());
   smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
   smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
 
-  RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
+  RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(smootherPrototype));
 
-  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp( new BraessSarazinSmoother() );
+  RCP<BraessSarazinSmoother> coarseSolverPrototype = rcp(new BraessSarazinSmoother());
   coarseSolverPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
   coarseSolverPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
 
-  RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, null) );
+  RCP<SmootherFactory> coarseSolverFact = rcp(new SmootherFactory(coarseSolverPrototype, null));
 
   RCP<FactoryManager> MB = rcp(new FactoryManager());
-  MB->SetFactory("A",     SFact);
-  MB->SetFactory("Smoother",    SmooSCFact);
-  MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-  smootherPrototype->AddFactoryManager(MB,0);
-  coarseSolverPrototype->AddFactoryManager(MB,0);
+  MB->SetFactory("A", SFact);
+  MB->SetFactory("Smoother", SmooSCFact);
+  MB->SetIgnoreUserData(true);  // always use data from factories defined in factory manager
+  smootherPrototype->AddFactoryManager(MB, 0);
+  coarseSolverPrototype->AddFactoryManager(MB, 0);
 
   // main factory manager
   FactoryManager M;
-  M.SetFactory("A",            AcFact);
-  M.SetFactory("P",            PFact);
-  M.SetFactory("R",            RFact);
-  M.SetFactory("Smoother",     smootherFact); // TODO fix me
-  M.SetFactory("PreSmoother",     smootherFact); // TODO fix me
-  M.SetFactory("PostSmoother",     smootherFact); // TODO fix me
+  M.SetFactory("A", AcFact);
+  M.SetFactory("P", PFact);
+  M.SetFactory("R", RFact);
+  M.SetFactory("Smoother", smootherFact);      // TODO fix me
+  M.SetFactory("PreSmoother", smootherFact);   // TODO fix me
+  M.SetFactory("PostSmoother", smootherFact);  // TODO fix me
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
   //////////////////////////////////// setup multigrid
 
-  H->Setup(M,0,maxLevels);
+  H->Setup(M, 0, maxLevels);
 
   *out << std::endl;
   *out << "print content of multigrid levels:" << std::endl;
@@ -481,7 +479,7 @@ int main(int argc, char *argv[]) {
   RCP<Level> coarseLevel2 = H->GetLevel(2);
   coarseLevel2->print(*out);
 
-  RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
+  RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap, 1);
 
   // Use AMG directly as an iterative method
 #if 0
@@ -533,5 +531,5 @@ int main(int argc, char *argv[]) {
 #else
   std::cout << "Epetra (and/or EpetraExt) not enabled. Skip test." << std::endl;
   return EXIT_SUCCESS;
-#endif // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
+#endif  // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 }

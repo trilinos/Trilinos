@@ -101,25 +101,26 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
 class SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> : public PFactory {
-public:
+ public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef typename DeviceType::execution_space execution_space;
   typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
-private:
+ private:
   // For compatibility
   typedef node_type Node;
 
 #undef MUELU_SEMICOARSENPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-public:
+ public:
   //! @name Constructors/Destructors.
   //@{
 
   //! Constructor
-  SemiCoarsenPFactory_kokkos() : bTransferCoordinates_(false) {}
+  SemiCoarsenPFactory_kokkos()
+    : bTransferCoordinates_(false) {}
 
   //! Destructor.
   virtual ~SemiCoarsenPFactory_kokkos() = default;
@@ -152,9 +153,9 @@ public:
   // boolean which is true if coordinate information is available to be
   // transferred to coarse coordinate information
   mutable bool bTransferCoordinates_;
-}; // class SemiCoarsenPFactory_kokkos
+};  // class SemiCoarsenPFactory_kokkos
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_SEMICOARSENPFACTORY_KOKKOS_SHORT
-#endif // MUELU_SEMICOARSENPFACTORY_KOKKOS_DECL_HPP
+#endif  // MUELU_SEMICOARSENPFACTORY_KOKKOS_DECL_HPP

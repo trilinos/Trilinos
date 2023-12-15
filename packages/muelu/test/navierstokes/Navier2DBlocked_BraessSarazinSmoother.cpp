@@ -119,7 +119,7 @@
  *  using block matrices
  */
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   typedef double Scalar;
   typedef int LocalOrdinal;
@@ -135,13 +135,13 @@ int main(int argc, char *argv[]) {
   using namespace Teuchos;
 
   oblackholestream blackhole;
-  GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
   bool success = false;
   bool verbose = true;
   try {
     RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
-    RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
+    RCP<FancyOStream> out      = fancyOStream(rcpFromRef(std::cout));
     out->setOutputToRootOnly(0);
     *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
@@ -152,29 +152,29 @@ int main(int argc, char *argv[]) {
     // read in input parameters
 
     // default parameters
-    LO BS_nSweeps = 100;
-    Scalar BS_omega = 1.7;
-    LO SC_nSweeps = 1;
-    Scalar SC_omega = 1.0;
+    LO BS_nSweeps           = 100;
+    Scalar BS_omega         = 1.7;
+    LO SC_nSweeps           = 1;
+    Scalar SC_omega         = 1.0;
     int SC_bUseDirectSolver = 0;
 
     // Note: use --help to list available options.
     CommandLineProcessor clp(false);
-    clp.setOption("BraessSarazin_sweeps",&BS_nSweeps,"number of sweeps with BraessSarazin smoother");
-    clp.setOption("BraessSarazin_omega", &BS_omega,  "scaling factor for BraessSarazin smoother");
-    clp.setOption("SchurComp_sweeps",    &SC_nSweeps,"number of sweeps for BraessSarazin internal SchurComp solver/smoother (GaussSeidel)");
-    clp.setOption("SchurComp_omega",     &SC_omega,  "damping parameter for BraessSarazin internal SchurComp solver/smoother (GaussSeidel)");
-    clp.setOption("SchurComp_solver",    &SC_bUseDirectSolver,  "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother (=default)");
+    clp.setOption("BraessSarazin_sweeps", &BS_nSweeps, "number of sweeps with BraessSarazin smoother");
+    clp.setOption("BraessSarazin_omega", &BS_omega, "scaling factor for BraessSarazin smoother");
+    clp.setOption("SchurComp_sweeps", &SC_nSweeps, "number of sweeps for BraessSarazin internal SchurComp solver/smoother (GaussSeidel)");
+    clp.setOption("SchurComp_omega", &SC_omega, "damping parameter for BraessSarazin internal SchurComp solver/smoother (GaussSeidel)");
+    clp.setOption("SchurComp_solver", &SC_bUseDirectSolver, "if 1: use direct solver for SchurComp equation, otherwise use GaussSeidel smoother (=default)");
 
-    switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
     int globalNumDofs = 1500;  // used for the maps
-    //int nDofsPerNode = 3;      // used for generating the fine level null-space
+    // int nDofsPerNode = 3;      // used for generating the fine level null-space
 
     // build strided maps
     // striding information: 2 velocity dofs and 1 pressure dof = 3 dofs per node
@@ -187,33 +187,32 @@ int main(int argc, char *argv[]) {
     // xstridedfullmap: full map (velocity and pressure dof gids), continous
     // xstridedvelmap: only velocity dof gid maps (i.e. 0,1,3,4,6,7...)
     // xstridedpremap: only pressure dof gid maps (i.e. 2,5,8,...)
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-    RCP<StridedMap> xstridedfullmap = StridedMapFactory::Build(lib,globalNumDofs,0,stridingInfo,comm,-1);
-    RCP<StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap,0);
-    RCP<StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap,1);
+    Xpetra::UnderlyingLib lib       = Xpetra::UseEpetra;
+    RCP<StridedMap> xstridedfullmap = StridedMapFactory::Build(lib, globalNumDofs, 0, stridingInfo, comm, -1);
+    RCP<StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap, 0);
+    RCP<StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap, 1);
 
     /////////////////////////////////////// transform Xpetra::Map objects to Epetra
     // this is needed for our splitting routine
     const RCP<const Epetra_Map> fullmap = rcpFromRef(Xpetra::toEpetra(*xstridedfullmap));
-    RCP<const Epetra_Map>       velmap  = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
-    RCP<const Epetra_Map>       premap  = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
+    RCP<const Epetra_Map> velmap        = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
+    RCP<const Epetra_Map> premap        = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
 
     /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
     // read in problem
-    Epetra_CrsMatrix * ptrA = 0;
-    Epetra_Vector * ptrf = 0;
+    Epetra_CrsMatrix* ptrA    = 0;
+    Epetra_Vector* ptrf       = 0;
     Epetra_MultiVector* ptrNS = 0;
 
     *out << "Reading matrix market file" << std::endl;
 
-    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",*fullmap,ptrf);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt", *fullmap, *fullmap, *fullmap, ptrA);
+    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt", *fullmap, ptrf);
 
-    RCP<Epetra_CrsMatrix> epA = rcp(ptrA);
-    RCP<Epetra_Vector> epv = rcp(ptrf);
+    RCP<Epetra_CrsMatrix> epA    = rcp(ptrA);
+    RCP<Epetra_Vector> epv       = rcp(ptrf);
     RCP<Epetra_MultiVector> epNS = rcp(ptrNS);
-
 
     /////////////////////////////////////// split system into 2x2 block system
 
@@ -225,39 +224,39 @@ int main(int argc, char *argv[]) {
     RCP<Epetra_CrsMatrix> A21;
     RCP<Epetra_CrsMatrix> A22;
 
-    if(SplitMatrix2x2(epA,*velmap,*premap,A11,A12,A21,A22)==false)
-      *out << "Problem with splitting matrix"<< std::endl;
+    if (SplitMatrix2x2(epA, *velmap, *premap, A11, A12, A21, A22) == false)
+      *out << "Problem with splitting matrix" << std::endl;
 
     /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
     // build Xpetra objects from Epetra_CrsMatrix objects
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A11));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A12));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A21));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A22));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A11));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A12));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A21));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A22));
 
     /////////////////////////////////////// generate MapExtractor object
 
-    std::vector<RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
+    std::vector<RCP<const Xpetra::Map<LO, GO, Node> > > xmaps;
 
     xmaps.push_back(xstridedvelmap);
     xmaps.push_back(xstridedpremap);
 
-    RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(xstridedfullmap,xmaps);
+    RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar, LO, GO, Node>::Build(xstridedfullmap, xmaps);
 
     /////////////////////////////////////// build blocked transfer operator
     // using the map extractor
-    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(map_extractor,map_extractor,10));
-    bOp->setMatrix(0,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA11)));
-    bOp->setMatrix(0,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA12)));
-    bOp->setMatrix(1,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA21)));
-    bOp->setMatrix(1,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA22)));
+    RCP<Xpetra::BlockedCrsMatrix<Scalar, LO, GO, Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar, LO, GO, Node>(map_extractor, map_extractor, 10));
+    bOp->setMatrix(0, 0, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA11)));
+    bOp->setMatrix(0, 1, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA12)));
+    bOp->setMatrix(1, 0, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA21)));
+    bOp->setMatrix(1, 1, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA22)));
 
     bOp->fillComplete();
     //////////////////////////////////////////////////////// finest Level
     RCP<MueLu::Level> Finest = rcp(new Level());
     Finest->setDefaultVerbLevel(VERB_NONE);
-    Finest->Set("A",rcp_dynamic_cast<Matrix>(bOp));
+    Finest->Set("A", rcp_dynamic_cast<Matrix>(bOp));
 
     ///////////////////////////////////
     // Test Braess Sarazin Smoother as a solver
@@ -271,11 +270,11 @@ int main(int argc, char *argv[]) {
 
     // define BraessSarazin Smoother with BS_nSweeps and BS_omega as scaling factor
     // AFact_ = null (= default) for the 2x2 blocked operator
-    RCP<BraessSarazinSmoother> BraessSarazinSm = rcp( new BraessSarazinSmoother() );
+    RCP<BraessSarazinSmoother> BraessSarazinSm = rcp(new BraessSarazinSmoother());
     BraessSarazinSm->SetParameter("Sweeps", Teuchos::ParameterEntry(BS_nSweeps));
     BraessSarazinSm->SetParameter("Damping factor", Teuchos::ParameterEntry(BS_omega));
 
-    RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(BraessSarazinSm) );
+    RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(BraessSarazinSm));
 
     /*note that omega must be the same in the SchurComplementFactory and in the BraessSarazinSmoother*/
     // define SchurComplement Factory
@@ -285,55 +284,55 @@ int main(int argc, char *argv[]) {
     // Instead of F^{-1} it uses the approximation \hat{F}^{-1} with \hat{F} = diag(F)
     RCP<SchurComplementFactory> SFact = rcp(new SchurComplementFactory());
     SFact->SetParameter("omega", ParameterEntry(BS_omega));
-    SFact->SetFactory("A",MueLu::NoFactory::getRCP());
+    SFact->SetFactory("A", MueLu::NoFactory::getRCP());
 
     // define smoother/solver for BraessSarazin
     RCP<SmootherPrototype> smoProtoSC = null;
-    if(SC_bUseDirectSolver != 1) {
-      //Smoother Factory, using SFact as a factory for A
+    if (SC_bUseDirectSolver != 1) {
+      // Smoother Factory, using SFact as a factory for A
       std::string ifpackSCType;
       ParameterList ifpackSCList;
-      ifpackSCList.set("relaxation: sweeps", SC_nSweeps );
-      ifpackSCList.set("relaxation: damping factor", SC_omega );
+      ifpackSCList.set("relaxation: sweeps", SC_nSweeps);
+      ifpackSCList.set("relaxation: damping factor", SC_omega);
       ifpackSCType = "RELAXATION";
       ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-      smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+      smoProtoSC = rcp(new TrilinosSmoother(ifpackSCType, ifpackSCList, 0));
       smoProtoSC->SetFactory("A", SFact);
-    }
-    else {
+    } else {
       ParameterList ifpackDSList;
       std::string ifpackDSType;
-      smoProtoSC     = rcp( new DirectSolver(ifpackDSType,ifpackDSList) ); smoProtoSC->SetFactory("A", SFact);
+      smoProtoSC = rcp(new DirectSolver(ifpackDSType, ifpackDSList));
+      smoProtoSC->SetFactory("A", SFact);
     }
 
-    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
+    RCP<SmootherFactory> SmooSCFact = rcp(new SmootherFactory(smoProtoSC));
 
     // define temporary FactoryManager that is used as input for BraessSarazin smoother
     RCP<FactoryManager> MB = rcp(new FactoryManager());
-    MB->SetFactory("A",                 SFact);         // SchurComplement operator for correction step (defined as "A")
-    MB->SetFactory("Smoother",          SmooSCFact);    // solver/smoother for correction step
-    MB->SetFactory("PreSmoother",               SmooSCFact);
-    MB->SetFactory("PostSmoother",              SmooSCFact);
-    MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
-    BraessSarazinSm->AddFactoryManager(MB,0);  // set temporary factory manager in BraessSarazin smoother
+    MB->SetFactory("A", SFact);              // SchurComplement operator for correction step (defined as "A")
+    MB->SetFactory("Smoother", SmooSCFact);  // solver/smoother for correction step
+    MB->SetFactory("PreSmoother", SmooSCFact);
+    MB->SetFactory("PostSmoother", SmooSCFact);
+    MB->SetIgnoreUserData(true);                // always use data from factories defined in factory manager
+    BraessSarazinSm->AddFactoryManager(MB, 0);  // set temporary factory manager in BraessSarazin smoother
 
     // setup main factory manager
     RCP<FactoryManager> M = rcp(new FactoryManager());
-    M->SetFactory("A",               MueLu::NoFactory::getRCP()); // this is the 2x2 blocked operator
-    M->SetFactory("Smoother",        smootherFact);               // BraessSarazin block smoother
-    M->SetFactory("PreSmoother",     smootherFact);
-    M->SetFactory("PostSmoother",    smootherFact);
+    M->SetFactory("A", MueLu::NoFactory::getRCP());  // this is the 2x2 blocked operator
+    M->SetFactory("Smoother", smootherFact);         // BraessSarazin block smoother
+    M->SetFactory("PreSmoother", smootherFact);
+    M->SetFactory("PostSmoother", smootherFact);
 
     MueLu::SetFactoryManager SFMCoarse(Finest, M);
-    Finest->Request(MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M, "Smoother"));
+    Finest->Request(MueLu::TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>(M, "Smoother"));
 
     // call setup (= extract blocks and extract diagonal of F)
     BraessSarazinSm->Setup(*Finest);
 
-    RCP<MultiVector> xtest = MultiVectorFactory::Build(xstridedfullmap,1);
-    xtest->putScalar( (SC) 0.0);
+    RCP<MultiVector> xtest = MultiVectorFactory::Build(xstridedfullmap, 1);
+    xtest->putScalar((SC)0.0);
 
-    RCP<Vector> xR = rcp(new Xpetra::EpetraVectorT<GO,Node>(epv));
+    RCP<Vector> xR = rcp(new Xpetra::EpetraVectorT<GO, Node>(epv));
     // calculate initial (absolute) residual
     Array<ScalarTraits<SC>::magnitudeType> norms(1);
 
@@ -342,7 +341,7 @@ int main(int argc, char *argv[]) {
     *out << "Test: Applying Braess-Sarazin Smoother" << std::endl;
     *out << "Test: START DATA" << std::endl;
     *out << "iterations\tVelocity_residual\tPressure_residual" << std::endl;
-    BraessSarazinSm->Apply(*xtest,*xR);
+    BraessSarazinSm->Apply(*xtest, *xR);
     xtest->norm2(norms);
     *out << "Test: ||x_1|| = " << norms[0] << std::endl;
 
@@ -353,9 +352,9 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 #else
   std::cout << "Epetra (and/or EpetraExt) are not available. Skip test." << std::endl;
   return EXIT_SUCCESS;
-#endif // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
+#endif  // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 }

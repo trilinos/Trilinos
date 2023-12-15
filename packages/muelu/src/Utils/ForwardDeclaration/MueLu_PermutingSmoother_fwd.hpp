@@ -46,18 +46,13 @@
 #ifndef MUELU_PERMUTINGSMOOTHER_FWD_HPP
 #define MUELU_PERMUTINGSMOOTHER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class PermutingSmoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class PermutingSmoother;
 }
 
 #ifndef MUELU_PERMUTINGSMOOTHER_SHORT
 #define MUELU_PERMUTINGSMOOTHER_SHORT
 #endif
 
-
-
-#endif // MUELU_PERMUTINGSMOOTHER_FWD_HPP
+#endif  // MUELU_PERMUTINGSMOOTHER_FWD_HPP

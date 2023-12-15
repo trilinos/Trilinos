@@ -46,18 +46,13 @@
 #ifndef MUELU_COARSEMAPFACTORY_FWD_HPP
 #define MUELU_COARSEMAPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class CoarseMapFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class CoarseMapFactory;
 }
 
 #ifndef MUELU_COARSEMAPFACTORY_SHORT
 #define MUELU_COARSEMAPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_COARSEMAPFACTORY_FWD_HPP
+#endif  // MUELU_COARSEMAPFACTORY_FWD_HPP

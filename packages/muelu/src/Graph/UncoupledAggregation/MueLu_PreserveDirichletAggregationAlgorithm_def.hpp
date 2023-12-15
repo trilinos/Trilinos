@@ -60,37 +60,37 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
-    Monitor m(*this, "BuildAggregates");
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& params, GraphBase const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregates");
 
-    bool preserve = params.get<bool>("aggregation: preserve Dirichlet points");
+  bool preserve = params.get<bool>("aggregation: preserve Dirichlet points");
 
-    const LO  numRows = graph.GetNodeNumVertices();
-    const int myRank  = graph.GetComm()->getRank();
+  const LO numRows = graph.GetNodeNumVertices();
+  const int myRank = graph.GetComm()->getRank();
 
-    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+  ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
-    LO numLocalAggregates = aggregates.GetNumAggregates();
+  LO numLocalAggregates = aggregates.GetNumAggregates();
 
-    for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] == BOUNDARY) {
-        aggStat[i] = IGNORED;
-        numNonAggregatedNodes--;
+  for (LO i = 0; i < numRows; i++)
+    if (aggStat[i] == BOUNDARY) {
+      aggStat[i] = IGNORED;
+      numNonAggregatedNodes--;
 
-        if (preserve) {
-          aggregates.SetIsRoot(i);
+      if (preserve) {
+        aggregates.SetIsRoot(i);
 
-          vertex2AggId[i] = numLocalAggregates++;
-          procWinner  [i] = myRank;
-        }
+        vertex2AggId[i] = numLocalAggregates++;
+        procWinner[i]   = myRank;
       }
+    }
 
-    // update aggregate object
-    aggregates.SetNumAggregates(numLocalAggregates);
-  }
+  // update aggregate object
+  aggregates.SetNumAggregates(numLocalAggregates);
+}
 
-} // end namespace
+}  // namespace MueLu
 
 #endif /* MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_DEF_HPP_ */

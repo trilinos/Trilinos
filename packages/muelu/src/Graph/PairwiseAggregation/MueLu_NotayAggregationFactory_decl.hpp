@@ -48,10 +48,8 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
-
 
 #include <Xpetra_Matrix_fwd.hpp>
 
@@ -67,15 +65,15 @@
 
 namespace MueLu {
 
-template<class Scalar = DefaultScalar,
-         class LocalOrdinal = DefaultLocalOrdinal,
-         class GlobalOrdinal = DefaultGlobalOrdinal,
-         class Node = DefaultNode>
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
 class NotayAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_NOTAYAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-public:
+ public:
   //! @name typedefs
   //@{
   using local_matrix_type = typename Matrix::local_matrix_type;
@@ -86,15 +84,14 @@ public:
   using row_sum_type      = typename Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft, device_type>;
   //@}
 
-
   //! @name Constructors/Destructors.
   //@{
 
   //! Constructor.
-  NotayAggregationFactory() { };
+  NotayAggregationFactory(){};
 
   //! Destructor.
-  virtual ~NotayAggregationFactory() { }
+  virtual ~NotayAggregationFactory() {}
 
   RCP<const ParameterList> GetValidParameterList() const;
 
@@ -108,7 +105,7 @@ public:
   //! Input
   //@{
 
-  void DeclareInput(Level &currentLevel) const;
+  void DeclareInput(Level& currentLevel) const;
 
   //@}
 
@@ -116,7 +113,7 @@ public:
   //@{
 
   /*! @brief Build aggregates. */
-  void Build(Level &currentLevel) const;
+  void Build(Level& currentLevel) const;
 
   /*! @brief Initial aggregation phase. */
   void BuildInitialAggregates(const Teuchos::ParameterList& params,
@@ -131,7 +128,7 @@ public:
   /*! @brief Further aggregation phase increases coarsening rate by a factor of ~2 per iteration. */
   void BuildFurtherAggregates(const Teuchos::ParameterList& params,
                               const RCP<const Matrix>& A,
-                              const Teuchos::ArrayView<const LO> & orderingVector,
+                              const Teuchos::ArrayView<const LO>& orderingVector,
                               const local_matrix_type& coarseA,
                               const magnitude_type kappa,
                               const row_sum_type& rowSum,
@@ -160,13 +157,12 @@ public:
                    const std::string matrixLabel,
                    local_matrix_type& C) const;
 
-
   //@}
 
-private:
-}; // class NotayAggregationFactory
+ private:
+};  // class NotayAggregationFactory
 
-}
+}  // namespace MueLu
 
 #define MUELU_NOTAYAGGREGATIONFACTORY_SHORT
 #endif /* MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_ */

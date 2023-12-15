@@ -59,52 +59,51 @@
 
 namespace MueLu {
 
-  /*!
-    @class ThresholdAFilterFactory class.
-    @brief Factory for building a thresholded operator.
+/*!
+  @class ThresholdAFilterFactory class.
+  @brief Factory for building a thresholded operator.
 
-  */
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class ThresholdAFilterFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class ThresholdAFilterFactory : public SingleLevelFactoryBase {
 #undef MUELU_THRESHOLDAFILTERFACTORY_SHORT
-    #include "MueLu_UseShortNames.hpp"
+#include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    ThresholdAFilterFactory(const std::string& ename, const Scalar threshold, const bool keepDiagonal=true, const GlobalOrdinal expectedNNZperRow=-1);
+  //! Constructor.
+  ThresholdAFilterFactory(const std::string& ename, const Scalar threshold, const bool keepDiagonal = true, const GlobalOrdinal expectedNNZperRow = -1);
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level &currentLevel) const;
+  void DeclareInput(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-    //@{
-    //! @name Build methods.
+  //@{
+  //! @name Build methods.
 
-    //! Build an object with this factory.
-    void Build(Level & currentLevel) const;
+  //! Build an object with this factory.
+  void Build(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-  private:
-    std::string        varName_;   ///< name of input and output variable
-    const Scalar       threshold_; ///< threshold parameter
-    const bool         keepDiagonal_;
-    const GlobalOrdinal expectedNNZperRow_;
+ private:
+  std::string varName_;     ///< name of input and output variable
+  const Scalar threshold_;  ///< threshold parameter
+  const bool keepDiagonal_;
+  const GlobalOrdinal expectedNNZperRow_;
 
+};  // class ThresholdAFilterFactory
 
-  }; // class ThresholdAFilterFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_THRESHOLDAFILTERFACTORY_SHORT
-#endif // MUELU_THRESHOLDAFILTERFACTORY_DECL_HPP
+#endif  // MUELU_THRESHOLDAFILTERFACTORY_DECL_HPP

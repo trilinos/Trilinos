@@ -65,61 +65,60 @@
 
 namespace MueLu {
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class ClassicalPFactory : public PFactory {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class ClassicalPFactory : public PFactory {
 #undef MUELU_CLASSICALPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    // Defining types that require the short names included above
-    using point_type = typename ClassicalMapFactory::point_type;
+ public:
+  // Defining types that require the short names included above
+  using point_type = typename ClassicalMapFactory::point_type;
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor
-    ClassicalPFactory() { }
+  //! Constructor
+  ClassicalPFactory() {}
 
-    //! Destructor.
-    virtual ~ClassicalPFactory() { }
-    //@}
+  //! Destructor.
+  virtual ~ClassicalPFactory() {}
+  //@}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    void Build (Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
-    
-  private:
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-    // Utility algorithms
-    void GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong) const;
+ private:
+  // Utility algorithms
+  void GenerateStrengthFlags(const Matrix& A, const GraphBase& graph, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong) const;
 
-    // Ghosting Algorithms
-    void GhostCoarseMap(const Matrix &A,const Import & Importer, const ArrayRCP<const LO> myPointType,const RCP<const Map> & coarseMap, RCP<const Map> & coarseColMap) const;
+  // Ghosting Algorithms
+  void GhostCoarseMap(const Matrix& A, const Import& Importer, const ArrayRCP<const LO> myPointType, const RCP<const Map>& coarseMap, RCP<const Map>& coarseColMap) const;
 
-    // Coarsening algorithms
-    void Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<const Import> remoteOnlyImporter, RCP<Matrix> & P) const;
-    void Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const;
-    void Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const;
+  // Coarsening algorithms
+  void Coarsen_ClassicalModified(const Matrix& A, const RCP<const Matrix>& Aghost, const GraphBase& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<const Import> remoteOnlyImporter, RCP<Matrix>& P) const;
+  void Coarsen_Direct(const Matrix& A, const RCP<const Matrix>& Aghost, const GraphBase& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<Matrix>& P) const;
+  void Coarsen_Ext_Plus_I(const Matrix& A, const RCP<const Matrix>& Aghost, const GraphBase& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<Matrix>& P) const;
 
-    //@}
+  //@}
 
-  }; //class ClassicalPFactory
+};  // class ClassicalPFactory
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_CLASSICALPFACTORY_SHORT
-#endif // MUELU_CLASSICALPFACTORY_DECL_HPP
+#endif  // MUELU_CLASSICALPFACTORY_DECL_HPP
