@@ -57,7 +57,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
-#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -81,7 +80,7 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+template<class ScalarType, class MV, class OP, class DM>
 class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
 
   public:
