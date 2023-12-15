@@ -18,7 +18,6 @@
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 
 namespace Belos {
 
@@ -71,7 +70,7 @@ namespace Belos {
    *
    * This struct is utilized by PseudoBlockGmresIter::initialize() and PseudoBlockGmresIter::getState().
    */
-  template <class ScalarType, class MV>
+  template <class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
   struct PseudoBlockGmresIterState {
 
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -89,14 +88,14 @@ namespace Belos {
      * The \c curDim by \c curDim leading submatrix of H is the
      * projection of problem->getOperator() by the first \c curDim vectors in V.
      */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > H;
+    std::vector<Teuchos::RCP<const DM> > H;
     /*! \brief The current upper-triangular matrix from the QR reduction of H. */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > > R;
+    std::vector<Teuchos::RCP<const DM> > R;
     /*! \brief The current right-hand side of the least squares system RY = Z. */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > Z;
+    std::vector<Teuchos::RCP<const DM> > Z;
     /*! \brief The current Given's rotation coefficients. */
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > > sn;
-    std::vector<Teuchos::RCP<const Teuchos::SerialDenseVector<int,MagnitudeType> > > cs;
+    std::vector<Teuchos::RCP<const std::vector<ScalarType> > > sn;
+    std::vector<Teuchos::RCP<const std::vector<MagnitudeType> > > cs;
 
     PseudoBlockGmresIterState() : curDim(0), V(0),
                                   H(0), R(0), Z(0),
