@@ -1,8 +1,6 @@
 import importlib
-from types import SimpleNamespace
 
 from . getTypeName import getTypeName, getDefaultScalarType, ROL_classes, ROL_members
-
 
 __version__ = '0.1.0'
 def version():
@@ -19,10 +17,10 @@ def getWrapper(classname):
 defaultScalarType = getDefaultScalarType()
 
 supported_objects = {"Bounds", "Constraint", "LinearOperator",
-                     "LinearConstraint", "Objective", "Problem", "Solver", 
+                     "LinearConstraint", "Objective", "Problem", "Solver",
                      "Vector", "getCout", "getParametersFromXmlFile"}
 
-unsupported = SimpleNamespace()
+unsupported = importlib.import_module('.unsupported', 'pyrol')
 
 for classnameLong in ROL_members:
     class_obj, _ = ROL_members[classnameLong]
@@ -43,8 +41,5 @@ for classnameLong in ROL_members:
         setattr(unsupported, classname, getTypeName(classname, defaultScalarType))
         setattr(unsupported, classname + '_forScalar', getWrapper(classname))
 
-locals().update({'unsupported': unsupported})
-
-del importlib, SimpleNamespace, getTypeName, getDefaultScalarType, ROL_classes, ROL_members
+del importlib, getTypeName, getDefaultScalarType, ROL_classes, ROL_members
 del class_obj, classname, classnameLong, getWrapper, pos
-
