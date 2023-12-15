@@ -325,7 +325,7 @@ void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
 
     DenseVector workArray(14 * (aggSize + 1), false);
 
-    LO (*ptr2func)
+    LO(*ptr2func)
     (MT*, MT*, MT*);
     ptr2func  = NULL;
     LO* bwork = NULL;

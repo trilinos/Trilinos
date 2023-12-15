@@ -1569,10 +1569,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, Write, Scalar, LocalOrdinal, Global
   char t[]           = "XXXXXX";
   int filedescriptor = 0;
   if (comm->getRank() == 0)
-    filedescriptor = mkstemp(t);  // mkstemp() creates a temporary file. We use the name of that file as
-                                  // the suffix for the various data files produced by Hierarchy::Write().
-                                  // A better solution would be to write to a file stream, but this would
-                                  // involve writing new interfaces to Epetra's file I/O capabilities.
+    filedescriptor = mkstemp(t);        // mkstemp() creates a temporary file. We use the name of that file as
+                                        // the suffix for the various data files produced by Hierarchy::Write().
+                                        // A better solution would be to write to a file stream, but this would
+                                        // involve writing new interfaces to Epetra's file I/O capabilities.
   TEST_INEQUALITY(filedescriptor, -1);  // if the file descriptor is -1, it failed
   std::string tname(t);
   Teuchos::broadcast<int, char>(*comm, 0, tname.size(), &tname[0]);

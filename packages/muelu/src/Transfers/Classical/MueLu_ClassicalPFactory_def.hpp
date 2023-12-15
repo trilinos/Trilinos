@@ -607,8 +607,8 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           }
 
         } else {  // Case E
-          // Case E: Strong F-Point (adds to the first denominator if we don't share a
-          // a strong C-Point with i; adds to the second denominator otherwise)
+                  // Case E: Strong F-Point (adds to the first denominator if we don't share a
+                  // a strong C-Point with i; adds to the second denominator otherwise)
 #ifdef CMS_DEBUG
           printf("- A(%d,%d) is a strong F-Point\n", i, k);
 #endif

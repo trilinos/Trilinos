@@ -62,13 +62,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~DemoFactory() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & /* currentLevel */) const {
+void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& /* currentLevel */) const {
   // TODO: declare input for factory
   // Input(currentLevel, varName_);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & /* currentLevel */) const {
+void DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& /* currentLevel */) const {
   // TODO: implement factory
 }
 
