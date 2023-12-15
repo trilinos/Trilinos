@@ -75,7 +75,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
              ]
 
         if self.arg_extra_configure_args:
-            cmd.append(f"-DEXTRA_CONFIGURE_ARGS:STRING={';'.join(self.arg_extra_configure_args)}")
+            cmd.append(f"-DEXTRA_CONFIGURE_ARGS:STRING={self.arg_extra_configure_args}")
 
         self.message( "--- ctest version:")
         if not self.args.dry_run:
