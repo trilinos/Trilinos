@@ -38,6 +38,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verbose --filename=orsirr1.hb"
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_pseudo_gmres_hb
+  SOURCES test_kokkos_pseudo_gmres_hb.cpp
+  COMM serial mpi
+  ARGS "--verbose --filename=orsirr1.hb"
+  STANDARD_PASS_OUTPUT
+  )
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -85,6 +93,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_HybridGMRES_hb_test
   SOURCES test_hybrid_gmres_hb.cpp
+  ARGS "--verbose --max-degree=10 --poly-type=Arnoldi"
+       "--verbose --max-degree=10 --poly-type=Gmres"
+       "--verbose --max-degree=10 --poly-type=Roots"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_HybridGMRES_hb_test
+  SOURCES test_kokkos_hybrid_gmres_hb.cpp
   ARGS "--verbose --max-degree=10 --poly-type=Arnoldi"
        "--verbose --max-degree=10 --poly-type=Gmres"
        "--verbose --max-degree=10 --poly-type=Roots"

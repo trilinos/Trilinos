@@ -19,6 +19,7 @@
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
+#include "BelosDenseMatTraits.hpp"
 
 #include "BelosPseudoBlockGmresIter.hpp"
 #include "BelosOrthoManagerFactory.hpp"
@@ -93,6 +94,7 @@ namespace Belos {
   private:
     typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
@@ -684,7 +686,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     Teuchos::ParameterList userStatusTestsList = params->sublist("User Status Tests",true);
     if ( userStatusTestsList.numParams() > 0 ) {
       std::string userCombo_string = params->get<std::string>("User Status Tests Combo Type", "SEQ");
-      Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP>());
+      Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP,DM> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP,DM>());
       setUserConvStatusTest( testFactory->buildStatusTests(userStatusTestsList), testFactory->stringToComboType(userCombo_string) );
       taggedTests_ = testFactory->getTaggedTests();
       isSTSet_ = false;
@@ -746,7 +748,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     params_->set ("Orthogonalization Constant", orthoKappa_);
     if (orthoType_ == "DGKS") {
       if (orthoKappa_ > 0 && ! ortho_.is_null() && !changedOrthoType) {
-        typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
+        typedef DGKSOrthoManager<ScalarType, MV, OP, DM> ortho_type;
         rcp_dynamic_cast<ortho_type> (ortho_)->setDepTol (orthoKappa_);
       }
     }
@@ -754,7 +756,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Create orthogonalization manager if we need to.
   if (ortho_.is_null() || changedOrthoType) {
-    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Belos::OrthoManagerFactory<ScalarType, MV, OP, DM> factory;
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
       paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
@@ -1108,7 +1110,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
     // Check if this is a combination of several StatusTestResNorm objects
     Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(userConvStatusTest_);
     if (tmpComboTest != Teuchos::null) {
-      std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
+      std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > tmpVec = tmpComboTest->getStatusTests();
       comboType_ = tmpComboTest->getComboType();
       const int numResTests = static_cast<int>(tmpVec.size());
       auto newConvTest = Teuchos::rcp(new StatusTestCombo_t(comboType_));
@@ -1200,8 +1202,8 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
-  Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
-    = Teuchos::rcp( new PseudoBlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP,DM> > block_gmres_iter
+    = Teuchos::rcp( new PseudoBlockGmresIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist) );
 
   // Enter solve() iterations
   {
@@ -1226,7 +1228,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
       outputTest_->resetNumCalls();
 
       // Get a new state struct and initialize the solver.
-      PseudoBlockGmresIterState<ScalarType,MV> newState;
+      PseudoBlockGmresIterState<ScalarType,MV,DM> newState;
 
       // Create the first block in the current Krylov basis for each right-hand side.
       std::vector<int> index(1);
@@ -1238,8 +1240,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
         tmpV = MVT::CloneViewNonConst( *R_0, index );
 
         // Get a matrix to hold the orthonormalization coefficients.
-        Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > tmpZ
-          = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>( 1 ));
+        Teuchos::RCP<DM> tmpZ = DMT::Create( 1, 1 );
 
         // Orthonormalize the new V_0
         int rank = ortho_->normalize( *tmpV, tmpZ );
@@ -1292,13 +1293,13 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
               break;  // break from while(1){block_gmres_iter->iterate()}
 
             // Get a new state struct and initialize the solver.
-            PseudoBlockGmresIterState<ScalarType,MV> defState;
+            PseudoBlockGmresIterState<ScalarType,MV,DM> defState;
 
             // Inform the linear problem that we are finished with this current linear system.
             problem_->setCurrLS();
 
             // Get the state.
-            PseudoBlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
+            PseudoBlockGmresIterState<ScalarType,MV,DM> oldState = block_gmres_iter->getState();
             int curDim = oldState.curDim;
 
             // Get a new state struct and reset currRHSIdx to have the right-hand sides that
@@ -1319,10 +1320,10 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
               }
               else {
                 defState.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
-                defState.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
-                defState.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
-                defState.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
-                defState.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
+                defState.Z.push_back( Teuchos::rcp_const_cast<DM>( oldState.Z[i] ) );
+                defState.H.push_back( Teuchos::rcp_const_cast<DM>( oldState.H[i] ) );
+                defState.sn.push_back( Teuchos::rcp_const_cast<std::vector<ScalarType> >( oldState.sn[i] ) );
+                defState.cs.push_back( Teuchos::rcp_const_cast<std::vector<MagnitudeType> >(oldState.cs[i] ) );
                 currRHSIdx[have] = currRHSIdx[i];
                 have++;
               }
@@ -1381,10 +1382,10 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
             problem_->updateSolution( update, true );
 
             // Get the state.
-            PseudoBlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
+            PseudoBlockGmresIterState<ScalarType,MV,DM> oldState = block_gmres_iter->getState();
 
             // Set the new state.
-            PseudoBlockGmresIterState<ScalarType,MV> newstate;
+            PseudoBlockGmresIterState<ScalarType,MV,DM> newstate;
             newstate.V.resize(currRHSIdx.size());
             newstate.Z.resize(currRHSIdx.size());
 
@@ -1398,8 +1399,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
               tmpV = MVT::CloneViewNonConst( *R_0, index );
 
               // Get a matrix to hold the orthonormalization coefficients.
-              Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > tmpZ
-                = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>( 1 ));
+              Teuchos::RCP<DM> tmpZ = DMT::Create( 1, 1 );
 
               // Orthonormalize the new V_0
               int rank = ortho_->normalize( *tmpV, tmpZ );
