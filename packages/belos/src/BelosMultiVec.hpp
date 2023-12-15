@@ -55,7 +55,7 @@ namespace Belos {
 /// MultiVec<ScalarType>, where ScalarType is the type of entries in
 /// the multivector.  For example, a multivector with entries of type
 /// double would inherit from MultiVec<double>.
-template <class ScalarType>
+template <class ScalarType, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
 class MultiVec {
 public:
   //! @name Constructor/Destructor
@@ -72,11 +72,11 @@ public:
   
   /// \brief Create a new MultiVec with \c numvecs columns.
   /// \return Pointer to the new multivector with uninitialized values.
-  virtual MultiVec<ScalarType> * Clone ( const int numvecs ) const = 0;
+  virtual MultiVec<ScalarType,DM> * Clone ( const int numvecs ) const = 0;
   
   /// \brief Create a new MultiVec and copy contents of \c *this into it (deep copy).
   /// \return Pointer to the new multivector	
-  virtual MultiVec<ScalarType> * CloneCopy () const = 0;
+  virtual MultiVec<ScalarType,DM> * CloneCopy () const = 0;
   
   /*! \brief Creates a new %Belos::MultiVec and copies the selected contents of \c *this 
     into the new multivector (deep copy).  The copied 
@@ -84,7 +84,7 @@ public:
     
     \return Pointer to the new multivector	
   */
-  virtual MultiVec<ScalarType> * CloneCopy ( const std::vector<int>& index ) const = 0;
+  virtual MultiVec<ScalarType,DM> * CloneCopy ( const std::vector<int>& index ) const = 0;
   
   /*! \brief Creates a new %Belos::MultiVec that shares the selected contents of \c *this.
     The index of the \c numvecs vectors copied from \c *this are indicated by the
@@ -92,7 +92,7 @@ public:
     
     \return Pointer to the new multivector	
   */
-  virtual MultiVec<ScalarType> * CloneViewNonConst ( const std::vector<int>& index ) = 0;
+  virtual MultiVec<ScalarType,DM> * CloneViewNonConst ( const std::vector<int>& index ) = 0;
   
   /*! \brief Creates a new %Belos::MultiVec that shares the selected contents of \c *this.
     The index of the \c numvecs vectors copied from \c *this are indicated by the
@@ -100,7 +100,7 @@ public:
     
     \return Pointer to the new multivector	
   */
-  virtual const MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) const = 0;
+  virtual const MultiVec<ScalarType,DM> * CloneView ( const std::vector<int>& index ) const = 0;
 
   //@}
   //! @name Dimension information methods	
@@ -119,11 +119,14 @@ public:
   //! Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
   virtual void 
   MvTimesMatAddMv (const ScalarType alpha, 
-		   const MultiVec<ScalarType>& A, 
-		   const Teuchos::SerialDenseMatrix<int,ScalarType>& B, const ScalarType beta) = 0;
+		   const MultiVec<ScalarType,DM>& A, 
+		   const DM& B, const ScalarType beta) = 0;
   
   //! Replace \c *this with \c alpha * \c A + \c beta * \c B.
-  virtual void MvAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, const ScalarType beta, const MultiVec<ScalarType>& B ) = 0;
+  virtual void MvAddMv ( const ScalarType alpha, 
+                         const MultiVec<ScalarType,DM>& A, 
+                         const ScalarType beta, 
+                         const MultiVec<ScalarType,DM>& B ) = 0;
   
   //! Scale each element of the vectors in \c *this with \c alpha.
   virtual void MvScale ( const ScalarType alpha ) = 0;
@@ -134,14 +137,14 @@ public:
   /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply 
     \c alpha * \c A^T * (\c *this).
   */
-  virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const = 0;
+  virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType,DM>& A, DM& B) const = 0;
 
   /// \brief Compute the dot product of each column of *this with the corresponding column of A.
   ///
   /// Compute a vector \c b whose entries are the individual
   /// dot-products.  That is, <tt>b[i] = A[i]^H * (*this)[i]</tt>
   /// where <tt>A[i]</tt> is the i-th column of A.
-  virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>& b ) const = 0;
+  virtual void MvDot ( const MultiVec<ScalarType,DM>& A, std::vector<ScalarType>& b ) const = 0;
   
   //@}
   //! @name Norm method
@@ -162,7 +165,7 @@ public:
   ///
   /// The \c numvecs vectors in \c A are copied to a subset of vectors
   /// in \c *this indicated by the indices given in \c index.
-  virtual void SetBlock ( const MultiVec<ScalarType>& A, const std::vector<int>& index ) = 0;
+  virtual void SetBlock ( const MultiVec<ScalarType,DM>& A, const std::vector<int>& index ) = 0;
 
   //! Fill all the vectors in \c *this with random numbers.  
   virtual void MvRandom () = 0;
@@ -205,8 +208,8 @@ public:
   /// method if you intend to use TsqrOrthoManager or
   /// TsqrMatOrthoManager with your subclass of MultiVec.
   virtual void 
-  factorExplicit (MultiVec<ScalarType>& Q, 
-		  Teuchos::SerialDenseMatrix<int, ScalarType>& R,
+  factorExplicit (MultiVec<ScalarType,DM>& Q, 
+		  DM& R,
 		  const bool forceNonnegativeDiagonal=false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The Belos::MultiVec<" 
@@ -249,7 +252,7 @@ public:
   /// method if you intend to use TsqrOrthoManager or
   /// TsqrMatOrthoManager with your subclass of MultiVec.
   virtual int
-  revealRank (Teuchos::SerialDenseMatrix<int, ScalarType>& R,
+  revealRank (DM& R,
 	      const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& tol)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The Belos::MultiVec<" 
@@ -280,21 +283,20 @@ namespace details {
 ///
 /// This class is the TSQR adapter for MultiVec.  It merely calls 
 /// MultiVec's corresponding methods for TSQR functionality.
-template<class ScalarType>
+template<class ScalarType, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
 class MultiVecTsqrAdapter {
 public:
   typedef MultiVec<ScalarType> MV;
   typedef ScalarType scalar_type; 
   typedef int ordinal_type; // This doesn't matter either
   typedef int node_type; // Nor does this
-  typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
   
   //! Compute QR factorization A = QR, using TSQR.
   void
   factorExplicit (MV& A,
 		  MV& Q,
-		  dense_matrix_type& R,
+		  DM& R,
 		  const bool forceNonnegativeDiagonal=false)
   {
     A.factorExplicit (Q, R, forceNonnegativeDiagonal);
@@ -303,7 +305,7 @@ public:
   //! Compute rank-revealing decomposition using results of factorExplicit().
   int
   revealRank (MV& Q,
-	      dense_matrix_type& R,
+	      DM& R,
 	      const magnitude_type& tol)
   {
     return Q.revealRank (R, tol);
@@ -328,33 +330,33 @@ public:
   ///
   /// \tparam ScalarType The type of entries in the multivector; the
   ///   template parameter of MultiVec.
-  template<class ScalarType>
-  class MultiVecTraits<ScalarType,MultiVec<ScalarType>,Teuchos::SerialDenseMatrix<int,ScalarType> > {
+  template<class ScalarType, class DM>
+  class MultiVecTraits<ScalarType,MultiVec<ScalarType,DM>,DM> {
   public:
     //! @name Creation methods
     //@{ 
 
     /// \brief Create a new empty \c MultiVec containing \c numvecs columns.
     /// \return Reference-counted pointer to the new \c MultiVec.
-    static Teuchos::RCP<MultiVec<ScalarType> > 
-    Clone (const MultiVec<ScalarType>& mv, const int numvecs) {
-      return Teuchos::rcp (const_cast<MultiVec<ScalarType>&> (mv).Clone (numvecs)); 
+    static Teuchos::RCP<MultiVec<ScalarType,DM> > 
+    Clone (const MultiVec<ScalarType,DM>& mv, const int numvecs) {
+      return Teuchos::rcp (const_cast<MultiVec<ScalarType,DM>&> (mv).Clone (numvecs)); 
     }
     ///
-    static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
-    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy() ); }
+    static Teuchos::RCP<MultiVec<ScalarType,DM> > CloneCopy( const MultiVec<ScalarType,DM>& mv )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType,DM>&>(mv).CloneCopy() ); }
     ///
-    static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
-    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index) ); }
+    static Teuchos::RCP<MultiVec<ScalarType,DM> > CloneCopy( const MultiVec<ScalarType,DM>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType,DM>&>(mv).CloneCopy(index) ); }
     ///
-    static Teuchos::RCP<MultiVec<ScalarType> > 
-    CloneViewNonConst (MultiVec<ScalarType>& mv, const std::vector<int>& index)
+    static Teuchos::RCP<MultiVec<ScalarType,DM> > 
+    CloneViewNonConst (MultiVec<ScalarType,DM>& mv, const std::vector<int>& index)
     { 
       return Teuchos::rcp( mv.CloneViewNonConst(index) ); 
     }
 
-    static Teuchos::RCP<MultiVec<ScalarType> > 
-    CloneViewNonConst (MultiVec<ScalarType>& mv, const Teuchos::Range1D& index)
+    static Teuchos::RCP<MultiVec<ScalarType,DM> > 
+    CloneViewNonConst (MultiVec<ScalarType,DM>& mv, const Teuchos::Range1D& index)
     { 
       // mfh 02 Mar 2013: For now, we'll just use the above index
       // vector version of CloneViewNonConst to implement this, since
@@ -367,13 +369,13 @@ public:
     }
 
     ///
-    static Teuchos::RCP<const MultiVec<ScalarType> > 
-    CloneView (const MultiVec<ScalarType>& mv, const std::vector<int>& index) {
-      return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); 
+    static Teuchos::RCP<const MultiVec<ScalarType,DM> > 
+    CloneView (const MultiVec<ScalarType,DM>& mv, const std::vector<int>& index) {
+      return Teuchos::rcp( const_cast<MultiVec<ScalarType,DM>&>(mv).CloneView(index) ); 
     }
 
-    static Teuchos::RCP<const MultiVec<ScalarType> > 
-    CloneView (const MultiVec<ScalarType>& mv, const Teuchos::Range1D& index)
+    static Teuchos::RCP<const MultiVec<ScalarType,DM> > 
+    CloneView (const MultiVec<ScalarType,DM>& mv, const Teuchos::Range1D& index)
     { 
       // mfh 02 Mar 2013: For now, we'll just use the above index
       // vector version of CloneView to implement this, since that
@@ -386,41 +388,41 @@ public:
     }
 
     ///
-    static ptrdiff_t GetGlobalLength( const MultiVec<ScalarType>& mv )
+    static ptrdiff_t GetGlobalLength( const MultiVec<ScalarType,DM>& mv )
     { return mv.GetGlobalLength(); }
     ///
-    static int GetNumberVecs( const MultiVec<ScalarType>& mv )
+    static int GetNumberVecs( const MultiVec<ScalarType,DM>& mv )
     { return mv.GetNumberVecs(); }
     ///
-    static void MvTimesMatAddMv( ScalarType alpha, const MultiVec<ScalarType>& A, 
-				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
-				 ScalarType beta, MultiVec<ScalarType>& mv )
+    static void MvTimesMatAddMv( ScalarType alpha, const MultiVec<ScalarType,DM>& A, 
+				 const DM& B, 
+				 ScalarType beta, MultiVec<ScalarType,DM>& mv )
     { mv.MvTimesMatAddMv(alpha, A, B, beta); }
     ///
-    static void MvAddMv( ScalarType alpha, const MultiVec<ScalarType>& A, ScalarType beta, const MultiVec<ScalarType>& B, MultiVec<ScalarType>& mv )
+    static void MvAddMv( ScalarType alpha, const MultiVec<ScalarType,DM>& A, ScalarType beta, const MultiVec<ScalarType,DM>& B, MultiVec<ScalarType,DM>& mv )
     { mv.MvAddMv(alpha, A, beta, B); }
     ///
-    static void MvScale ( MultiVec<ScalarType>& mv, const ScalarType alpha )
+    static void MvScale ( MultiVec<ScalarType,DM>& mv, const ScalarType alpha )
     { mv.MvScale( alpha ); } 
 
-    static void MvScale ( MultiVec<ScalarType>& mv, const std::vector<ScalarType>& alpha )
+    static void MvScale ( MultiVec<ScalarType,DM>& mv, const std::vector<ScalarType>& alpha )
     { mv.MvScale(alpha); }
     ///
-    static void MvTransMv( const ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+    static void MvTransMv( const ScalarType alpha, const MultiVec<ScalarType,DM>& A, const MultiVec<ScalarType,DM>& mv, DM& B )
     { mv.MvTransMv(alpha, A, B); }
     ///
-    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>& b )
+    static void MvDot( const MultiVec<ScalarType,DM>& mv, const MultiVec<ScalarType,DM>& A, std::vector<ScalarType>& b )
     { mv.MvDot( A, b ); }
     ///
-    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm )
+    static void MvNorm( const MultiVec<ScalarType,DM>& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm )
     { mv.MvNorm(normvec,type); }
     ///
-    static void SetBlock( const MultiVec<ScalarType>& A, const std::vector<int>& index, MultiVec<ScalarType>& mv )
+    static void SetBlock( const MultiVec<ScalarType,DM>& A, const std::vector<int>& index, MultiVec<ScalarType,DM>& mv )
     { mv.SetBlock(A, index); }
 
     static void 
-    Assign (const MultiVec<ScalarType>& A, 
-	    MultiVec<ScalarType>& mv) 
+    Assign (const MultiVec<ScalarType,DM>& A, 
+	    MultiVec<ScalarType,DM>& mv) 
     {
       // mfh 02 Mar 2013: For now, we'll just use SetBlock to implement this,
       // since that doesn't require adding to the MultiVec interface.
@@ -443,13 +445,13 @@ public:
     }
 
     ///
-    static void MvRandom( MultiVec<ScalarType>& mv )
+    static void MvRandom( MultiVec<ScalarType, DM>& mv )
     { mv.MvRandom(); }
     ///
-    static void MvInit( MultiVec<ScalarType>& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
+    static void MvInit( MultiVec<ScalarType, DM>& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
     { mv.MvInit(alpha); }
     ///
-    static void MvPrint( const MultiVec<ScalarType>& mv, std::ostream& os )
+    static void MvPrint( const MultiVec<ScalarType, DM>& mv, std::ostream& os )
     { mv.MvPrint(os); }
 
 #ifdef HAVE_BELOS_TSQR
@@ -460,7 +462,7 @@ public:
     /// methods.  If you want to use TSQR with your MultiVec subclass,
     /// you must implement these methods yourself, as the default
     /// implementations throw std::logic_error.
-    typedef details::MultiVecTsqrAdapter<ScalarType> tsqr_adaptor_type;
+    typedef details::MultiVecTsqrAdapter<ScalarType,DM> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   };
 
