@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: DoozyX/clang-format-lint-action@v0.16.2
       with:
         source: './packages/muelu'
@@ -26,4 +26,4 @@ jobs:
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
         script: |
-          core.setFailed('Please download and apply the formatting patch!')
+          core.setFailed('Please download and apply the formatting patch! It is located at the bottom of the summary tab for this workflow.')
