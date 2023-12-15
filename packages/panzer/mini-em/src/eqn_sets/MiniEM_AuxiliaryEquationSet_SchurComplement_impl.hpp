@@ -200,6 +200,8 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraLinObjFactory;
 #endif
 
+   PANZER_FUNC_TIME_MONITOR_DIFF("mini_em::AuxEqSet_SchurComplement::buildAndRegisterScatterEvaluators()",scatter_eval);
+
    std::string fieldStr = (*this->m_dof_names)[0];
    const std::string residualField = "AUX_SCHURCOMPLEMENT_RESIDUAL_"+dof_name;
    int pFieldNum;
