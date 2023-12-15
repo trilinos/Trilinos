@@ -297,6 +297,46 @@ TEUCHOS_UNIT_TEST( ParameterList, set_get_int )
 }
 
 
+TEUCHOS_UNIT_TEST( ParameterList, setParametersWithModifier )
+{
+  using Teuchos::ParameterListModifier;
+  RCP<ParameterListModifier> modifier1 = rcp(new ParameterListModifier("Modifier 1"));
+  RCP<ParameterListModifier> modifier2 = rcp(new ParameterListModifier("Modifier 2"));
+  //pl1:
+  //  A: 1.0
+  //  SubA: # with `modifier1`
+  //    B: 2
+  ParameterList pl1("pl");
+  pl1.set("A", 1.0);
+  pl1.sublist("SubA", modifier1).set("B", 2);
+  ParameterList pl2("pl");
+  pl2.setParameters(pl1);
+  // Show that all values and the modifier were copied from `pl1` to `pl2`
+  TEST_EQUALITY(*pl2.sublist("SubA").getModifier(), *modifier1);
+  TEST_EQUALITY(pl1, pl2);
+  pl1.sublist("SubA").setModifier(Teuchos::null);
+  TEST_ASSERT(is_null(pl1.sublist("SubA").getModifier()));
+  TEST_EQUALITY(*pl2.sublist("SubA").getModifier(), *modifier1);
+  // Now test that `setParametersNotAlreadySet` has the correct behavior
+  pl1.sublist("SubA").setModifier(modifier1);
+  pl1.sublist("SubB", modifier2).set("C", 3);
+  pl2.setParametersNotAlreadySet(pl1);
+  TEST_EQUALITY(*pl2.sublist("SubB").getModifier(), *modifier2);
+  TEST_EQUALITY(pl1, pl2);
+  // Test that sublists with their modifiers and parameters are correctly
+  // overwritten in `setParameters`
+  pl1 = ParameterList();
+  pl1.sublist("SubA", modifier1).set("A", 1);
+  pl2 = ParameterList();
+  pl2.sublist("SubA", modifier2).set("B", 2);
+  pl2.setParameters(pl1);
+  // pl2 should look just like pl1 except with the extra "B" parameter
+  ParameterList pl_expected = ParameterList();
+  pl_expected.sublist("SubA", modifier1).set("B", 2).set("A", 1);
+  TEST_EQUALITY(pl_expected, pl2);
+}
+
+
 TEUCHOS_UNIT_TEST( ParameterList, param_isParameter_isSublist_isType )
 {
   ParameterList pl;
