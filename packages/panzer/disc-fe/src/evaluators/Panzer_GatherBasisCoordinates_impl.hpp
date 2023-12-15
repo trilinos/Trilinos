@@ -71,8 +71,9 @@ GatherBasisCoordinates(const panzer::PureBasis & basis)
   basisCoordinates_ = PHX::MDField<ScalarT,Cell,BASIS,Dim>(fieldName(basisName_),basis.coordinates);
 
   this->addEvaluatedField(basisCoordinates_);
+  this->addUnsharedField(Teuchos::rcp_const_cast<PHX::FieldTag>(basisCoordinates_.fieldTagPtr()));
 
-  this->setName("Gather "+fieldName(basisName_));
+  this->setName("GatherBasisCoordinates: "+fieldName(basisName_));
 }
 
 // **********************************************************************
@@ -82,6 +83,8 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 		      PHX::FieldManager<TRAITS>& /* fm */)
 {
   basisIndex_ = panzer::getPureBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+  // make sure to zero out derivative array as we only set the value for AD types in the loop below
+  Kokkos::deep_copy(basisCoordinates_.get_static_view(),0.0);
 }
 
 // **********************************************************************
@@ -95,11 +98,16 @@ evaluateFields(typename TRAITS::EvalData workset)
   // just copy the array
   auto d_basisCoordinates = basisCoordinates_.get_static_view();
   auto s_basis_coordinates = bv->basis_coordinates.get_static_view();
-  Kokkos::parallel_for("GatherBasisCoords",s_basis_coordinates.extent_int(0), KOKKOS_LAMBDA(int i) {
-    for(int j=0;j<s_basis_coordinates.extent_int(1);j++)
-      for(int k=0;k<s_basis_coordinates.extent_int(2);k++)
-          d_basisCoordinates(i,j,k)= s_basis_coordinates(i,j,k);
-    });
+
+  Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{int(workset.num_cells),s_basis_coordinates.extent_int(1),s_basis_coordinates.extent_int(2)});
+  Kokkos::parallel_for("GatherBasisCoords",policy, KOKKOS_LAMBDA(const int i, const int j, const int k) {
+    if constexpr(Sacado::IsADType<typename EvalT::ScalarT>::value) {
+      d_basisCoordinates(i,j,k).val() = s_basis_coordinates(i,j,k);
+    }
+    else {
+      d_basisCoordinates(i,j,k) = s_basis_coordinates(i,j,k);
+    }
+  });
   Kokkos::fence();
 }
 
