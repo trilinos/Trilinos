@@ -498,6 +498,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     //setup model evaluators
     RCP<panzer::ModelEvaluator<Scalar> > physicsME = rcp(new panzer::ModelEvaluator<Scalar> (linObjFactory, lowsFactory, globalData, true, 0.0));
     RCP<panzer::ModelEvaluator<Scalar> > auxPhysicsME = rcp(new panzer::ModelEvaluator<Scalar> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
+    physicsME->template disableEvaluationType<panzer::Traits::Tangent>();
+    auxPhysicsME->template disableEvaluationType<panzer::Traits::Tangent>();
 
     // add a volume response functionals
     std::map<int,std::string> responseIndexToName;

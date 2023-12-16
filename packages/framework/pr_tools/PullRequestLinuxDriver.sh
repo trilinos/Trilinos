@@ -107,7 +107,7 @@ sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReques
 
 if [[ ${on_kokkos_develop} == "1" ]]; then
     message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
-    "$SCRIPTPATH"/SetKokkosDevelop.sh
+    "${SCRIPTPATH}"/SetKokkosDevelop.sh
 else
     print_banner "Merge Source into Target"
     message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
@@ -211,6 +211,11 @@ test_cmd_options=(
     --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
 )
+
+if [[ ${on_kokkos_develop} == "1" ]]
+then
+    test_cmd_options+=( "--extra-configure-args=\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\" ")
+fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
 then

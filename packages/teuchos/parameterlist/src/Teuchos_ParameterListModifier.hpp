@@ -88,6 +88,14 @@ public:
   ParameterListModifier& setName( const std::string &name );
 
   //@}
+  //! @name Get Functions
+  //@{
+  //! Get the name of <tt>*this</tt> modifier.
+  inline const std::string& getName() const{
+    return name_;
+  }
+
+  //@}
 
   /** \brief Print documentation for this parameter list modifier.
    *
@@ -221,6 +229,24 @@ protected:
 
 };
 
+/*! \relates ParameterListModifier 
+    \brief Returns true if two ParameterListModifier objects are equal.
+*/
+inline bool operator==(const ParameterListModifier& plm1, const ParameterListModifier& plm2)
+{ 
+  return (
+    plm1.getName() == plm2.getName()
+    && typeid(plm1) == typeid(plm2)
+    );
+}
+
+/*! \relates ParameterListModifier 
+    \brief Returns true if two ParameterListModifier objects are <b>not</b> equal.
+*/
+inline bool operator!=(const ParameterListModifier& plm1, const ParameterListModifier& plm2)
+{ 
+  return !( plm1 == plm2 );
+}
 
 // /////////////////////////////////////////////////////
 // Inline and Template Function Definitions

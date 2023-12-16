@@ -8,7 +8,7 @@
 namespace Compadre {
 
     //! Available target functionals
-    enum TargetOperation {
+    enum TargetOperation : int {
         //! Point evaluation of a scalar
         ScalarPointEvaluation,
         //! Point evaluation of a vector (reconstructs entire vector at once, requiring a 
@@ -92,7 +92,7 @@ namespace Compadre {
     }
 
     //! Space in which to reconstruct polynomial
-    enum ReconstructionSpace {
+    enum ReconstructionSpace : int {
         //! Scalar polynomial basis centered at the target site and scaled by sum of basis powers 
         //! e.g. \f$(x-x_t)^2*(y-y_t)*(z-z_t)^3/factorial(2+1+3)\f$ would be a member of 3rd order in 3D, where 
         //! \f$(x_t,y_t,z_t)\f$ is the coordinate of the target site in 3D coordinates.
@@ -122,7 +122,7 @@ namespace Compadre {
     }
 
     //! Describes the SamplingFunction relationship to targets, neighbors
-    enum SamplingTransformType {
+    enum SamplingTransformType : int {
         Identity,           ///< No action performed on data before GMLS target operation
         SameForAll,         ///< Each neighbor for each target all apply the same transform
         DifferentEachTarget,   ///< Each target applies a different data transform, but the same to each neighbor
@@ -206,7 +206,7 @@ namespace Compadre {
         CellIntegralSample = make_sampling_functional(0,0,false,false,(int)DifferentEachNeighbor);
 
     //! Dense solver type
-    enum DenseSolverType {
+    enum DenseSolverType : int {
         //! QR+Pivoting factorization performed on P*sqrt(w) matrix
         QR, 
         //! LU factorization performed on P^T*W*P matrix
@@ -214,7 +214,7 @@ namespace Compadre {
     };
 
     //! Problem type, that optionally can handle manifolds
-    enum ProblemType {
+    enum ProblemType : int {
         //! Standard GMLS problem type
         STANDARD, 
         //! Solve GMLS problem on a manifold (will use QR or SVD to solve the resultant GMLS 
@@ -223,7 +223,7 @@ namespace Compadre {
     };
 
     //! Constraint type
-    enum ConstraintType {
+    enum ConstraintType : int {
         //! No constraint
         NO_CONSTRAINT,
         //! Neumann Gradient Scalar Type
@@ -231,7 +231,7 @@ namespace Compadre {
     };
 
     //! Available weighting kernel function types
-    enum WeightingFunctionType {
+    enum WeightingFunctionType : int {
         Power,
         Gaussian,
         CubicSpline,
@@ -241,7 +241,7 @@ namespace Compadre {
 
     //! Coordinate type for input and output format of vector data on manifold problems.
     //! Anything without a manifold is always Ambient.
-    enum CoordinatesType {
+    enum CoordinatesType : int {
         Ambient, ///< a 2D manifold in 3D in ambient coordinates would have 3 components for a vector
         Local,   ///< a 2D manifold in 3D in local coordinates would have 2 components for a vector
     };
