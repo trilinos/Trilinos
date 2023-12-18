@@ -46,18 +46,13 @@
 #ifndef MUELU_PARAMETERLISTINTEPRETER_FWD_HPP
 #define MUELU_PARAMETERLISTINTEPRETER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ParameterListIntepreter;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ParameterListIntepreter;
 }
 
 #ifndef MUELU_PARAMETERLISTINTEPRETER_SHORT
 #define MUELU_PARAMETERLISTINTEPRETER_SHORT
 #endif
 
-
-
-#endif // MUELU_PARAMETERLISTINTEPRETER_FWD_HPP
+#endif  // MUELU_PARAMETERLISTINTEPRETER_FWD_HPP

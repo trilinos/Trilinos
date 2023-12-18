@@ -21,66 +21,66 @@
 
 namespace MueLu {
 
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
+using Teuchos::ParameterList;
+using Teuchos::RCP;
 
-  class MyFactory : public ParameterListAcceptorImpl {
+class MyFactory : public ParameterListAcceptorImpl {
+ public:
+  MyFactory() {}
 
-    public:
+  virtual ~MyFactory() {}
 
-      MyFactory() { }
+  RCP<const ParameterList> GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-      virtual ~MyFactory() { }
+    validParamList->set("ParamA", 0.1, "Documentation string for param A");
+    validParamList->set("ParamB", 0.2, "Documentation string for param B");
+    validParamList->set("ParamC", 0.3, "Documentation string for param C");
+    validParamList->set("ParamD", 0.4, "Documentation string for param D");
 
-      RCP<const ParameterList> GetValidParameterList() const {
-        RCP<ParameterList> validParamList = rcp(new ParameterList());
+    return validParamList;
+  }
 
-        validParamList->set("ParamA", 0.1, "Documentation string for param A");
-        validParamList->set("ParamB", 0.2, "Documentation string for param B");
-        validParamList->set("ParamC", 0.3, "Documentation string for param C");
-        validParamList->set("ParamD", 0.4, "Documentation string for param D");
+  // Main algorithm
+  //
+  // - We do not want to set default parameters inside of the algorithm.
+  //  => Otherwise, it's difficult to track the defaults. Cf. ML.
+  //  => use ParameterList::get() without the default value input parameter.
+  void Build() {
+    if (GetParameterList().get<double>("ParamA") == 0.5) {
+    }  // change "[used]"/["unused"] flag
+    if (GetParameterList().get<double>("ParamC") == 0.5) {
+    }
 
-        return validParamList;
-      }
+    // statsParamList_.set(...);
+  }
 
-      // Main algorithm
-      //
-      // - We do not want to set default parameters inside of the algorithm.
-      //  => Otherwise, it's difficult to track the defaults. Cf. ML.
-      //  => use ParameterList::get() without the default value input parameter.
-      void Build() {
+  // - Do we want to store output stats on the same parameter list?
+  //   => better to distinguish as stats parameters are not valid input.
+  // - RCP? => a view seems enough.
+  Teuchos::ParameterList statsParamList_;
+};
 
-        if (GetParameterList().get<double>("ParamA") == 0.5) { } // change "[used]"/["unused"] flag
-        if (GetParameterList().get<double>("ParamC") == 0.5) { }
-
-        // statsParamList_.set(...);
-
-      }
-
-      // - Do we want to store output stats on the same parameter list?
-      //   => better to distinguish as stats parameters are not valid input.
-      // - RCP? => a view seems enough.
-      Teuchos::ParameterList statsParamList_;
-
-  };
-
-}
+}  // namespace MueLu
 
 int main(int argc, char* argv[]) {
-  using Teuchos::ParameterList;
   using MueLu::MyFactory;
+  using Teuchos::ParameterList;
 
   bool success = false;
   try {
     //
     // Documentation
     //
-    std::cout << "\n#\n# Documentation\n#\n" << std::endl;
-    MyFactory dummy; dummy.GetDocumentation(std::cout);
+    std::cout << "\n#\n# Documentation\n#\n"
+              << std::endl;
+    MyFactory dummy;
+    dummy.GetDocumentation(std::cout);
 
     //
 
-    std::cout << "#\n# main()\n#\n" << std::endl;
+    std::cout << "#\n# main()\n#\n"
+              << std::endl;
 
     //
     // User parameter list
@@ -93,7 +93,8 @@ int main(int argc, char* argv[]) {
     paramList.set("ParamB", 0.002);
 
     std::cout << "# Input parameter list:" << std::endl;
-    std::cout << paramList << std::endl << std::endl;
+    std::cout << paramList << std::endl
+              << std::endl;
 
     //
     // Validation of the user parameter list
@@ -102,13 +103,14 @@ int main(int argc, char* argv[]) {
     MyFactory f;
     f.SetParameterList(paramList);
 
-    if (0) {// if users want to keep their list untouched:
+    if (0) {  // if users want to keep their list untouched:
       ParameterList tmp(paramList);
       f.SetParameterList(tmp);
     }
 
     std::cout << "# Parameter list after validation:" << std::endl;
-    std::cout << paramList << std::endl << std::endl;
+    std::cout << paramList << std::endl
+              << std::endl;
 
     //
     // Algorithm
@@ -117,10 +119,12 @@ int main(int argc, char* argv[]) {
     f.Build();
 
     std::cout << "# Parameter list after algorithm (flag used/unused):" << std::endl;
-    if (0) // do not work with my design: flags used/unused are not set for the initial parameter list
-      std::cout << paramList << std::endl << std::endl;
+    if (0)  // do not work with my design: flags used/unused are not set for the initial parameter list
+      std::cout << paramList << std::endl
+                << std::endl;
 
-    std::cout << f.GetParameterList() << std::endl << std::endl;
+    std::cout << f.GetParameterList() << std::endl
+              << std::endl;
 
     success = true;
 
@@ -128,5 +132,5 @@ int main(int argc, char* argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

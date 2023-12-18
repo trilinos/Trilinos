@@ -46,18 +46,13 @@
 #ifndef MUELU_FACADESIMPLE_FWD_HPP
 #define MUELU_FACADESIMPLE_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class FacadeSimple;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class FacadeSimple;
 }
 
 #ifndef MUELU_FACADESIMPLE_SHORT
 #define MUELU_FACADESIMPLE_SHORT
 #endif
 
-
-
-#endif // MUELU_FACADESIMPLE_FWD_HPP
+#endif  // MUELU_FACADESIMPLE_FWD_HPP

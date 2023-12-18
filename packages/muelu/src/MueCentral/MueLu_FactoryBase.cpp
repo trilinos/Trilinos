@@ -48,9 +48,9 @@
 
 namespace MueLu {
 
-  int FactoryBase::GenerateUniqueId() {
-    static int i = 0;
-    return i++;
-  }
+int FactoryBase::GenerateUniqueId() {
+  static int i = 0;
+  return i++;
+}
 
-} // namespace MueLu
+}  // namespace MueLu

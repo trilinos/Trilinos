@@ -50,8 +50,8 @@
 #if defined(HAVE_MUELU_AMESOS2)
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Amesos2Smoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class Amesos2Smoother;
 }
 
 #ifndef MUELU_AMESOS2SMOOTHER_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_AMESOS2SMOOTHER_FWD_HPP
+#endif  // MUELU_AMESOS2SMOOTHER_FWD_HPP

@@ -63,76 +63,74 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
-  /*!
-    @class RAPFactory
-    @brief Factory for building coarse matrices.
-  */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class RAPFactory : public TwoLevelFactoryBase {
+/*!
+  @class RAPFactory
+  @brief Factory for building coarse matrices.
+*/
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class RAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_RAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    RAPFactory();
+  RAPFactory();
 
-    virtual ~RAPFactory() { }
+  virtual ~RAPFactory() {}
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
-    void Build(Level& fineLevel, Level& coarseLevel) const;
-    //@}
+  //! @name Build methods.
+  //@{
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@{
-    /*! @brief Add transfer factory in the end of list of transfer factories in RepartitionAcFactory.
+  //@{
+  /*! @brief Add transfer factory in the end of list of transfer factories in RepartitionAcFactory.
 
-    Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to
-    the next coarser level.
-    */
-    void AddTransferFactory(const RCP<const FactoryBase>& factory);
+  Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to
+  the next coarser level.
+  */
+  void AddTransferFactory(const RCP<const FactoryBase>& factory);
 
-    // TODO add a function to remove a specific transfer factory?
+  // TODO add a function to remove a specific transfer factory?
 
-    //! Returns number of transfer factories.
-    size_t NumTransferFactories() const { return transferFacts_.size(); }
+  //! Returns number of transfer factories.
+  size_t NumTransferFactories() const { return transferFacts_.size(); }
 
-    //@}
+  //@}
 
-  private:
+ private:
+  //@{
 
-    //@{
-    
-    mutable
-    bool hasDeclaredInput_;
+  mutable bool hasDeclaredInput_;
 
-    //@}
+  //@}
 
-    //@{
+  //@{
 
-    //! list of user-defined transfer Factories
-    std::vector<RCP<const FactoryBase> > transferFacts_;
+  //! list of user-defined transfer Factories
+  std::vector<RCP<const FactoryBase> > transferFacts_;
 
-    //@}
+  //@}
 
-  }; //class RAPFactory
+};  // class RAPFactory
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_RAPFACTORY_SHORT
-#endif // MUELU_RAPFACTORY_DECL_HPP
+#endif  // MUELU_RAPFACTORY_DECL_HPP

@@ -69,40 +69,37 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::InterfaceAggregationAlgorithm(RCP<const FactoryBase> const &/* graphFact */)
-{
+InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::InterfaceAggregationAlgorithm(RCP<const FactoryBase> const& /* graphFact */) {
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & /* params */, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& /* params */, GraphBase const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
-  const int myRank = graph.GetComm()->getRank();
+  const int myRank         = graph.GetComm()->getRank();
 
   // vertex ids for output
   Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
   Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
   // some internal variables
-  LocalOrdinal numLocalAggregates = aggregates.GetNumAggregates();    // number of local aggregates on current proc
+  LocalOrdinal numLocalAggregates = aggregates.GetNumAggregates();  // number of local aggregates on current proc
 
   // main loop over all local rows of graph(A)
-  for(int iNode1 = 0; iNode1 < nRows; ++iNode1) {
-
+  for (int iNode1 = 0; iNode1 < nRows; ++iNode1) {
     if (aggStat[iNode1] == INTERFACE) {
-
-      aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'agg'
+      aggregates.SetIsRoot(iNode1);  // mark iNode1 as root node for new aggregate 'agg'
       int aggIndex = numLocalAggregates;
       std::vector<int> aggList;
       aggList.push_back(iNode1);
       ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode1);
 
-      for(int j = 0; j < neighOfINode.size(); ++j) {
+      for (int j = 0; j < neighOfINode.size(); ++j) {
         LO neigh = neighOfINode[j];
-        if(neigh != iNode1 && graph.isLocalNeighborVertex(neigh)) {
-          if(aggStat[neigh] != AGGREGATED && aggStat[neigh] != INTERFACE &&
-             aggStat[neigh] != IGNORED) {
+        if (neigh != iNode1 && graph.isLocalNeighborVertex(neigh)) {
+          if (aggStat[neigh] != AGGREGATED && aggStat[neigh] != INTERFACE &&
+              aggStat[neigh] != IGNORED) {
             aggList.push_back(neigh);
           }
         }
@@ -117,13 +114,12 @@ void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggr
       numNonAggregatedNodes -= aggList.size();
     }
 
-  } // end for
+  }  // end for
 
   // update aggregate object
   aggregates.SetNumAggregates(numLocalAggregates);
 }
 
-} // end namespace
-
+}  // namespace MueLu
 
 #endif /* MUELU_INTERFACEAGGREGATIONALGORITHM_DEF_HPP_ */

@@ -56,64 +56,65 @@
 namespace MueLu {
 
 /*!  @brief Wraps an existing MueLu::Hierarchy as a Xpetra::Operator.
-*/
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class XpetraOperator : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-  protected:
-    XpetraOperator() { }
-  public:
+ */
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class XpetraOperator : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+ protected:
+  XpetraOperator() {}
 
-    //! @name Constructor/Destructor
-    //@{
+ public:
+  //! @name Constructor/Destructor
+  //@{
 
-    //! Constructor
-    XpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H) : Hierarchy_(H) { }
+  //! Constructor
+  XpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H)
+    : Hierarchy_(H) {}
 
-    //! Destructor.
-    virtual ~XpetraOperator() { }
+  //! Destructor.
+  virtual ~XpetraOperator() {}
 
-    //@}
+  //@}
 
-    //! Returns the Tpetra::Map object associated with the domain of this operator.
-    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const;
 
-    //! Returns the Tpetra::Map object associated with the range of this operator.
-    Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+  //! Returns the Tpetra::Map object associated with the range of this operator.
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const;
 
-    //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
-    /*!
-      \param[in]  X - Xpetra::MultiVector of dimension NumVectors to multiply with matrix.
-      \param[out] Y - Xpetra::MultiVector of dimension NumVectors containing result.
-    */
-    void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                                         Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                                         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                                         Scalar /* alpha */ = Teuchos::ScalarTraits<Scalar>::one(),
-                                         Scalar /* beta */  = Teuchos::ScalarTraits<Scalar>::one()) const;
+  //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
+  /*!
+    \param[in]  X - Xpetra::MultiVector of dimension NumVectors to multiply with matrix.
+    \param[out] Y - Xpetra::MultiVector of dimension NumVectors containing result.
+  */
+  void apply(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+             Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
+             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+             Scalar /* alpha */    = Teuchos::ScalarTraits<Scalar>::one(),
+             Scalar /* beta */     = Teuchos::ScalarTraits<Scalar>::one()) const;
 
-    //! Indicates whether this operator supports applying the adjoint operator.
-    bool hasTransposeApply() const { return false; }
+  //! Indicates whether this operator supports applying the adjoint operator.
+  bool hasTransposeApply() const { return false; }
 
-    //! Compute a residual R = B - (*this) * X
-    void residual(const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
-                  const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
-                  Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
-    
-    //! @name MueLu specific
-    //@{
+  //! Compute a residual R = B - (*this) * X
+  void residual(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+                Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& R) const;
 
-    //! Direct access to the underlying MueLu::Hierarchy.
-    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const { return Hierarchy_; }
+  //! @name MueLu specific
+  //@{
 
-    //@}
+  //! Direct access to the underlying MueLu::Hierarchy.
+  RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const { return Hierarchy_; }
 
-  private:
-    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Hierarchy_;
-  };
+  //@}
 
-} // namespace
+ private:
+  RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Hierarchy_;
+};
 
-#endif // MUELU_XPETRAOPERATOR_DECL_HPP
+}  // namespace MueLu
+
+#endif  // MUELU_XPETRAOPERATOR_DECL_HPP

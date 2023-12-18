@@ -77,12 +77,9 @@
 
 #include "Kokkos_DynRankView.hpp"
 
+namespace MueLu {
 
-namespace MueLu
-{
-
-enum MuemexType
-{
+enum MuemexType {
   INT,
   BOOL,
   DOUBLE,
@@ -104,12 +101,13 @@ enum MuemexType
   AMALGAMATION_INFO,
   GRAPH
 #ifdef HAVE_MUELU_INTREPID2
-, FIELDCONTAINER_ORDINAL
+  ,
+  FIELDCONTAINER_ORDINAL
 #endif
 };
 
 typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
-typedef typename Tpetra::Map<>::local_ordinal_type mm_LocalOrd;  //these are used for LocalOrdinal and GlobalOrdinal of all xpetra/tpetra templated types
+typedef typename Tpetra::Map<>::local_ordinal_type mm_LocalOrd;  // these are used for LocalOrdinal and GlobalOrdinal of all xpetra/tpetra templated types
 typedef typename Tpetra::Map<>::global_ordinal_type mm_GlobalOrd;
 typedef std::complex<double> complex_t;
 typedef Tpetra::Map<> muemex_map_type;
@@ -131,91 +129,93 @@ typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
 typedef MueLu::GraphBase<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
 
 #ifdef HAVE_MUELU_INTREPID2
-  typedef Kokkos::DynRankView<mm_LocalOrd,typename mm_node_t::device_type> FieldContainer_ordinal;
+typedef Kokkos::DynRankView<mm_LocalOrd, typename mm_node_t::device_type> FieldContainer_ordinal;
 #endif
 
-class MuemexArg
-{
-  public:
-    MuemexArg(MuemexType dataType) {type = dataType;}
-    MuemexType type;
+class MuemexArg {
+ public:
+  MuemexArg(MuemexType dataType) { type = dataType; }
+  MuemexType type;
 };
 
-template<typename T>
-MuemexType getMuemexType(const T & data);
+template <typename T>
+MuemexType getMuemexType(const T& data);
 
-template<typename T>
-class MuemexData : public MuemexArg
-{
-  public:
-    MuemexData(T& data); //Construct from pre-existing data, to pass to MATLAB.
-    MuemexData(T& data, MuemexType type);        //Construct from pre-existing data, to pass to MATLAB.
-    MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
-    mxArray* convertToMatlab(); //Create a MATLAB object and copy this data to it
-    T& getData();                         //Set and get methods
-    void setData(T& data);
-  private:
-    T data;
+template <typename T>
+class MuemexData : public MuemexArg {
+ public:
+  MuemexData(T& data);                   // Construct from pre-existing data, to pass to MATLAB.
+  MuemexData(T& data, MuemexType type);  // Construct from pre-existing data, to pass to MATLAB.
+  MuemexData(const mxArray* mxa);        // Construct from MATLAB array, to get from MATLAB.
+  mxArray* convertToMatlab();            // Create a MATLAB object and copy this data to it
+  T& getData();                          // Set and get methods
+  void setData(T& data);
+
+ private:
+  T data;
 };
 
-template<typename T>
-MuemexType getMuemexType(const T & data);
+template <typename T>
+MuemexType getMuemexType(const T& data);
 
-template<typename T>
+template <typename T>
 MuemexType getMuemexType();
 
-template<typename T>
+template <typename T>
 T loadDataFromMatlab(const mxArray* mxa);
 
-template<typename T>
+template <typename T>
 mxArray* saveDataToMatlab(T& data);
 
-//Add data to level. Set the keep flag on the data to "user-provided" so it's not deleted.
-template<typename T>
-void addLevelVariable(const T& data, std::string& name, Level& lvl, const FactoryBase *fact = NoFactory::get());
+// Add data to level. Set the keep flag on the data to "user-provided" so it's not deleted.
+template <typename T>
+void addLevelVariable(const T& data, std::string& name, Level& lvl, const FactoryBase* fact = NoFactory::get());
 
-template<typename T>
+template <typename T>
 const T& getLevelVariable(std::string& name, Level& lvl);
 
-//Functions used to put data through matlab factories - first arg is "this" pointer of matlab factory
-template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
-std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::string& needsParam, Level& lvl);
+// Functions used to put data through matlab factories - first arg is "this" pointer of matlab factory
+template <typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+std::vector<Teuchos::RCP<MuemexArg> > processNeeds(const Factory* factory, std::string& needsParam, Level& lvl);
 
-template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
-void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl);
+template <typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+void processProvides(std::vector<Teuchos::RCP<MuemexArg> >& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl);
 
-//create a sparse array in Matlab
-template<typename Scalar> mxArray* createMatlabSparse(int numRows, int numCols, int nnz);
-template<typename Scalar> mxArray* createMatlabMultiVector(int numRows, int numCols);
-template<typename Scalar> void fillMatlabArray(Scalar* array, const mxArray* mxa, int n);
+// create a sparse array in Matlab
+template <typename Scalar>
+mxArray* createMatlabSparse(int numRows, int numCols, int nnz);
+template <typename Scalar>
+mxArray* createMatlabMultiVector(int numRows, int numCols);
+template <typename Scalar>
+void fillMatlabArray(Scalar* array, const mxArray* mxa, int n);
 int* mwIndex_to_int(int N, mwIndex* mwi_array);
 bool isValidMatlabAggregates(const mxArray* mxa);
 bool isValidMatlabGraph(const mxArray* mxa);
 std::vector<std::string> tokenizeList(const std::string& param);
-//The two callback functions that MueLu can call to run anything in MATLAB
+// The two callback functions that MueLu can call to run anything in MATLAB
 void callMatlabNoArgs(std::string function);
-std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
+std::vector<Teuchos::RCP<MuemexArg> > callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg> > args);
 Teuchos::RCP<Teuchos::ParameterList> getInputParamList();
 Teuchos::RCP<MuemexArg> convertMatlabVar(const mxArray* mxa);
 
 // trim from start
-static inline std::string &ltrim(std::string &s) {
+static inline std::string& ltrim(std::string& s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
   return s;
 }
 
 // trim from end
-static inline std::string &rtrim(std::string &s) {
+static inline std::string& rtrim(std::string& s) {
   s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
   return s;
 }
 
 // trim from both ends
-static inline std::string &trim(std::string &s) {
+static inline std::string& trim(std::string& s) {
   return ltrim(rtrim(s));
 }
 
-}//end namespace
+}  // namespace MueLu
 
-#endif //HAVE_MUELU_MATLAB error handler
-#endif //MUELU_MATLABUTILS_DECL_HPP guard
+#endif  // HAVE_MUELU_MATLAB error handler
+#endif  // MUELU_MATLABUTILS_DECL_HPP guard

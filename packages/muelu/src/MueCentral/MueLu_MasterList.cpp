@@ -43,6 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
+
+// clang-format off
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
 #include "MueLu_Exceptions.hpp"

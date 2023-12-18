@@ -121,8 +121,7 @@
  *  using block matrices
  */
 
-
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   typedef double Scalar;
   typedef int LocalOrdinal;
@@ -138,7 +137,7 @@ int main(int argc, char *argv[]) {
   using namespace Teuchos;
 
   oblackholestream blackhole;
-  GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
   bool success = false;
   bool verbose = true;
@@ -150,15 +149,15 @@ int main(int argc, char *argv[]) {
     CommandLineProcessor clp(false);
     clp.setOption("xml", &xmlFile, "xml file with solver parameters for a 2x2 blocked NS example");
 
-    switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
     RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
-    RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
+    RCP<FancyOStream> out      = fancyOStream(rcpFromRef(std::cout));
     out->setOutputToRootOnly(0);
     *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
@@ -166,10 +165,10 @@ int main(int argc, char *argv[]) {
     Time myTime("global");
     TimeMonitor MM(myTime);
 
-    GO maxCoarseSize=1; //FIXME clp doesn't like long long int
+    GO maxCoarseSize = 1;  // FIXME clp doesn't like long long int
 
     int globalNumDofs = 1500;  // used for the maps
-    int nDofsPerNode = 3;            // used for generating the fine level null-space
+    int nDofsPerNode  = 3;     // used for generating the fine level null-space
 
     // build strided maps
     // striding information: 2 velocity dofs and 1 pressure dof = 3 dofs per node
@@ -182,29 +181,29 @@ int main(int argc, char *argv[]) {
     // xstridedfullmap: full map (velocity and pressure dof gids), continous
     // xstridedvelmap: only velocity dof gid maps (i.e. 0,1,3,4,6,7...)
     // xstridedpremap: only pressure dof gid maps (i.e. 2,5,8,...)
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-    RCP<const StridedMap> xstridedfullmap = StridedMapFactory::Build(lib,globalNumDofs,0,stridingInfo,comm,-1);
-    RCP<const StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap,0);
-    RCP<const StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap,1);
+    Xpetra::UnderlyingLib lib             = Xpetra::UseEpetra;
+    RCP<const StridedMap> xstridedfullmap = StridedMapFactory::Build(lib, globalNumDofs, 0, stridingInfo, comm, -1);
+    RCP<const StridedMap> xstridedvelmap  = StridedMapFactory::Build(xstridedfullmap, 0);
+    RCP<const StridedMap> xstridedpremap  = StridedMapFactory::Build(xstridedfullmap, 1);
 
     /////////////////////////////////////// transform Xpetra::Map objects to Epetra
     // this is needed for AztecOO
     const RCP<const Epetra_Map> fullmap = rcpFromRef(Xpetra::toEpetra(*xstridedfullmap));
-    RCP<const Epetra_Map>       velmap  = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
-    RCP<const Epetra_Map>       premap  = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
+    RCP<const Epetra_Map> velmap        = rcpFromRef(Xpetra::toEpetra(*xstridedvelmap));
+    RCP<const Epetra_Map> premap        = rcpFromRef(Xpetra::toEpetra(*xstridedpremap));
 
     /////////////////////////////////////// import problem matrix and RHS from files (-> Epetra)
 
     // read in problem
-    Epetra_CrsMatrix * ptrA = 0;
-    Epetra_Vector * ptrf = 0;
+    Epetra_CrsMatrix* ptrA    = 0;
+    Epetra_Vector* ptrf       = 0;
     Epetra_MultiVector* ptrNS = 0;
 
     *out << "Reading matrix market file" << std::endl;
-    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",*fullmap,ptrf);
-    RCP<Epetra_CrsMatrix> epA = rcp(ptrA);
-    RCP<Epetra_Vector> epv = rcp(ptrf);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt", *fullmap, *fullmap, *fullmap, ptrA);
+    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt", *fullmap, ptrf);
+    RCP<Epetra_CrsMatrix> epA    = rcp(ptrA);
+    RCP<Epetra_Vector> epv       = rcp(ptrf);
     RCP<Epetra_MultiVector> epNS = rcp(ptrNS);
 
     /////////////////////////////////////// split system into 2x2 block system
@@ -217,38 +216,37 @@ int main(int argc, char *argv[]) {
     RCP<Epetra_CrsMatrix> A21;
     RCP<Epetra_CrsMatrix> A22;
 
-    if(SplitMatrix2x2(epA,*velmap,*premap,A11,A12,A21,A22)==false)
-      *out << "Problem with splitting matrix"<< std::endl;
+    if (SplitMatrix2x2(epA, *velmap, *premap, A11, A12, A21, A22) == false)
+      *out << "Problem with splitting matrix" << std::endl;
 
     /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
     // build Xpetra objects from Epetra_CrsMatrix objects
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A11));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A12));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A21));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A22));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A11));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A12));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A21));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrixT<GO, Node>(A22));
 
     /////////////////////////////////////// generate MapExtractor object
 
-    std::vector<RCP<const Xpetra::Map<LO,GO,Node> > > xmaps;
+    std::vector<RCP<const Xpetra::Map<LO, GO, Node> > > xmaps;
     xmaps.push_back(xstridedvelmap);
     xmaps.push_back(xstridedpremap);
 
-    RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(xstridedfullmap->getMap(),xmaps);
+    RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar, LO, GO, Node>::Build(xstridedfullmap->getMap(), xmaps);
 
     /////////////////////////////////////// build blocked transfer operator
     // using the map extractor
-    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(map_extractor,map_extractor,10));
-    bOp->setMatrix(0,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA11)));
-    bOp->setMatrix(0,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA12)));
-    bOp->setMatrix(1,0,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA21)));
-    bOp->setMatrix(1,1,Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xA22)));
+    RCP<Xpetra::BlockedCrsMatrix<Scalar, LO, GO, Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar, LO, GO, Node>(map_extractor, map_extractor, 10));
+    bOp->setMatrix(0, 0, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA11)));
+    bOp->setMatrix(0, 1, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA12)));
+    bOp->setMatrix(1, 0, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA21)));
+    bOp->setMatrix(1, 1, Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xA22)));
 
     bOp->fillComplete();
 
     //////////////////////////////////////// prepare setup
     ParameterListInterpreter mueLuFactory(xmlFile, *comm);
-
 
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
     H->setDefaultVerbLevel(VERB_HIGH);
@@ -256,30 +254,29 @@ int main(int argc, char *argv[]) {
 
     RCP<MueLu::Level> Finest = H->GetLevel(0);
     Finest->setDefaultVerbLevel(VERB_HIGH);
-    Finest->Set("A",           rcp_dynamic_cast<Matrix>(bOp));
-
+    Finest->Set("A", rcp_dynamic_cast<Matrix>(bOp));
 
     ////////////////////////////////////////// prepare null space for A11
     RCP<MultiVector> nullspace11 = MultiVectorFactory::Build(xstridedvelmap, 2);  // this is a 2D standard null space
 
-    for (int i=0; i<nDofsPerNode-1; ++i) {
+    for (int i = 0; i < nDofsPerNode - 1; ++i) {
       ArrayRCP<Scalar> nsValues = nullspace11->getDataNonConst(i);
-      int numBlocks = nsValues.size() / (nDofsPerNode - 1);
-      for (int j=0; j< numBlocks; ++j) {
-        nsValues[j*(nDofsPerNode - 1) + i] = 1.0;
+      int numBlocks             = nsValues.size() / (nDofsPerNode - 1);
+      for (int j = 0; j < numBlocks; ++j) {
+        nsValues[j * (nDofsPerNode - 1) + i] = 1.0;
       }
     }
 
-    Finest->Set("Nullspace1",nullspace11);
+    Finest->Set("Nullspace1", nullspace11);
 
     ////////////////////////////////////////// prepare null space for A22
     RCP<MultiVector> nullspace22 = MultiVectorFactory::Build(xstridedpremap, 1);  // this is a 2D standard null space
-    ArrayRCP<Scalar> nsValues22 = nullspace22->getDataNonConst(0);
-    for (int j=0; j< nsValues22.size(); ++j) {
+    ArrayRCP<Scalar> nsValues22  = nullspace22->getDataNonConst(0);
+    for (int j = 0; j < nsValues22.size(); ++j) {
       nsValues22[j] = 1.0;
     }
 
-    Finest->Set("Nullspace2",nullspace22);
+    Finest->Set("Nullspace2", nullspace22);
 
     /////////////////////////////////// BEGIN setup
 
@@ -289,14 +286,14 @@ int main(int argc, char *argv[]) {
 
     *out << std::endl;
 
-    RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap,1);
+    RCP<MultiVector> xLsg = MultiVectorFactory::Build(xstridedfullmap, 1);
 
     // Use AMG directly as an iterative method
     {
-      xLsg->putScalar( (SC) 0.0);
+      xLsg->putScalar((SC)0.0);
 
       // Epetra_Vector -> Xpetra::Vector
-      RCP<Vector> xRhs = rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
+      RCP<Vector> xRhs = rcp(new Xpetra::EpetraVectorT<int, Node>(epv));
 
       // calculate initial (absolute) residual
       Array<ScalarTraits<SC>::magnitudeType> norms(1);
@@ -304,15 +301,14 @@ int main(int argc, char *argv[]) {
       *out << "||x_0|| = " << norms[0] << std::endl;
 
       // apply ten multigrid iterations
-      H->Iterate(*xRhs,*xLsg,100);
+      H->Iterate(*xRhs, *xLsg, 100);
 
       // calculate and print residual
-      RCP<MultiVector> xTmp = MultiVectorFactory::Build(xstridedfullmap,1);
-      bOp->apply(*xLsg,*xTmp,NO_TRANS,(SC)1.0,(SC)0.0);
-      xRhs->update((SC)-1.0,*xTmp,(SC)1.0);
+      RCP<MultiVector> xTmp = MultiVectorFactory::Build(xstridedfullmap, 1);
+      bOp->apply(*xLsg, *xTmp, NO_TRANS, (SC)1.0, (SC)0.0);
+      xRhs->update((SC)-1.0, *xTmp, (SC)1.0);
       xRhs->norm2(norms);
       *out << "||r|| = " << norms[0] << std::endl;
-
     }
 
     // TODO: don't forget to add Aztec as prerequisite in CMakeLists.txt!
@@ -340,7 +336,7 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 #else
   std::cout << "Epetra (and/or EpetraExt) are not available. Skip test." << std::endl;
   return EXIT_SUCCESS;

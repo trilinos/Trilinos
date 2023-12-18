@@ -46,18 +46,13 @@
 #ifndef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_FWD_HPP
 #define MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class IndefBlockedDiagonalSmoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class IndefBlockedDiagonalSmoother;
 }
 
 #ifndef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 #define MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 #endif
 
-
-
-#endif // MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_FWD_HPP
+#endif  // MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_FWD_HPP

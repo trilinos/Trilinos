@@ -46,18 +46,13 @@
 #ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_FWD_HPP
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class IsolatedNodeAggregationAlgorithm;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class IsolatedNodeAggregationAlgorithm;
 }
 
 #ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 #endif
 
-
-
-#endif // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_FWD_HPP
+#endif  // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_FWD_HPP

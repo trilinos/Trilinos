@@ -56,16 +56,16 @@
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 namespace Galeri {
-  namespace Xpetra {
+namespace Xpetra {
 
 // Add other Galeri functions as needed
-#define MUELU_ETI_GROUP(LO,GO,NO) \
-  template Teuchos::RCP<::Xpetra::Map<LO, GO, NO>> CreateMap<LO,GO,NO>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+#define MUELU_ETI_GROUP(LO, GO, NO) \
+  template Teuchos::RCP<::Xpetra::Map<LO, GO, NO>> CreateMap<LO, GO, NO>(::Xpetra::UnderlyingLib lib, const std::string& mapType, const Teuchos::RCP<const Teuchos::Comm<int>>& comm, Teuchos::ParameterList& list);
 
 #include <MueLu_ETI_3arg.hpp>
 
-  } //Xpetra namespace
-} //Galeri namespace
+}  // namespace Xpetra
+}  // namespace Galeri
 
-#endif //ifdef HAVE_GALERI_XPETRA
+#endif  // ifdef HAVE_GALERI_XPETRA
 //#endif //ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION

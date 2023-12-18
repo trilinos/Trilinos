@@ -48,8 +48,7 @@
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
-namespace MueLu
-{
+namespace MueLu {
 
 /*!
   @class InterfaceAggregationFactory class.
@@ -118,23 +117,21 @@ namespace MueLu
   | CoarseDualNodeID2PrimalNodeID | InterfaceAggregationFactory | Coarsened mapping of dual node IDs two primal node IDs.
 */
 
-template <class Scalar = DefaultScalar,
-          class LocalOrdinal = DefaultLocalOrdinal,
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
           class GlobalOrdinal = DefaultGlobalOrdinal,
-          class Node = DefaultNode>
-class InterfaceAggregationFactory : public SingleLevelFactoryBase
-{
+          class Node          = DefaultNode>
+class InterfaceAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-public:
-
+ public:
   //! Input
   //@{
 
   RCP<const ParameterList> GetValidParameterList() const override;
 
-  void DeclareInput(Level &currentLevel) const override;
+  void DeclareInput(Level& currentLevel) const override;
 
   //@}
 
@@ -142,11 +139,11 @@ public:
   //@{
 
   /*! @brief Build aggregates. */
-  void Build(Level &currentLevel) const override;
+  void Build(Level& currentLevel) const override;
 
   //@}
 
-private:
+ private:
   /*! @brief Build dual aggregates based on a given dual-to-primal node mapping
    *
    * @param[in] prefix Prefix for screen output
@@ -166,10 +163,9 @@ private:
    * @param[in/out] currentLevel Level on which the aggregation needs to be performed
    */
   void BuildBasedOnPrimalInterfaceDofMap(const std::string& prefix, Level& currentLevel) const;
-
 };
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
 #endif /* MUELU_INTERFACEAGGREGATIONFACTORY_DECL_HPP_ */

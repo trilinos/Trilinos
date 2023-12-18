@@ -77,76 +77,73 @@ namespace MueLu {
     correspond to nodes. While not strictly necessary, it might be convenient.
 */
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class UncoupledIndexManager : public IndexManager<LocalOrdinal, GlobalOrdinal, Node> {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class UncoupledIndexManager : public IndexManager<LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_UNCOUPLEDINDEXMANAGER_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
+ public:
+  // LBV: I doubt that it makes sense to have
+  //  this particular constructor since it is
+  //  not used anywhere and parameters cannot
+  //  all accessible after construction.
+  UncoupledIndexManager() = default;
 
-    //LBV: I doubt that it makes sense to have
-    // this particular constructor since it is
-    // not used anywhere and parameters cannot
-    // all accessible after construction.
-    UncoupledIndexManager() = default;
+  UncoupledIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
+                        const int NumDimensions, const int interpolationOrder,
+                        const int MyRank, const int NumRanks,
+                        const Array<GO> GFineNodesPerDir,
+                        const Array<LO> LFineNodesPerDir,
+                        const Array<LO> CoarseRate,
+                        const bool singleCoarsePoint);
 
-    UncoupledIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
-                          const int NumDimensions, const int interpolationOrder,
-                          const int MyRank, const int NumRanks,
-                          const Array<GO> GFineNodesPerDir,
-                          const Array<LO> LFineNodesPerDir,
-                          const Array<LO> CoarseRate,
-                          const bool singleCoarsePoint);
+  virtual ~UncoupledIndexManager() {}
 
-    virtual ~UncoupledIndexManager() {}
+  void computeGlobalCoarseParameters();
 
-    void computeGlobalCoarseParameters();
+  std::vector<std::vector<GO> > getCoarseMeshData() const;
 
-    std::vector<std::vector<GO> > getCoarseMeshData() const;
+  void getGhostedNodesData(const RCP<const Map> fineMap,
+                           Array<LO>& ghostedNodeCoarseLIDs,
+                           Array<int>& ghostedNodeCoarsePIDs,
+                           Array<GO>& ghostedNodeCoarseGIDs) const;
 
-    void getGhostedNodesData(const RCP<const Map> fineMap,
-                             Array<LO>& ghostedNodeCoarseLIDs,
-                             Array<int>& ghostedNodeCoarsePIDs,
-                             Array<GO>& ghostedNodeCoarseGIDs) const;
+  void getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
+                          Array<GO>& coarseNodeCoarseGIDs,
+                          Array<GO>& coarseNodeFineGIDs) const;
 
-    void getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
-                            Array<GO>& coarseNodeCoarseGIDs,
-                            Array<GO>& coarseNodeFineGIDs) const;
+  void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 
-    void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
+  void getFineNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
 
-    void getFineNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
+  void getFineNodeGhostedTuple(const LO myLID, LO& i, LO& j, LO& k) const;
 
-    void getFineNodeGhostedTuple(const LO myLID, LO& i, LO& j, LO& k) const;
+  void getFineNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
 
-    void getFineNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
+  void getFineNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getFineNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getCoarseNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 
-    void getCoarseNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
+  void getCoarseNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
 
-    void getCoarseNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
+  void getCoarseNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
 
-    void getCoarseNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
+  void getCoarseNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getCoarseNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const;
+ private:
+  const int myRank;    ///< Local rank ID.
+  const int numRanks;  ///< Number of ranks used to decompose the problem.
+};
 
-  private:
-
-    const int myRank;                   ///< Local rank ID.
-    const int numRanks;                 ///< Number of ranks used to decompose the problem.
-
-  };
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_UNCOUPLEDINDEXMANAGER_SHORT
-#endif // MUELU_UNCOUPLEDINDEXMANAGER_DECL_HPP
+#endif  // MUELU_UNCOUPLEDINDEXMANAGER_DECL_HPP

@@ -63,54 +63,51 @@
 #include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
-  /*!
-    @class InterfaceAggregationAlgorithm class.
-    @brief Algorithm for coarsening a graph with uncoupled aggregation.
-    creates aggregates along an interface using specified root nodes.
+/*!
+  @class InterfaceAggregationAlgorithm class.
+  @brief Algorithm for coarsening a graph with uncoupled aggregation.
+  creates aggregates along an interface using specified root nodes.
 
-    @ingroup Aggregation
+  @ingroup Aggregation
 
-    ### Idea ###
-    The user can mark some nodes as INTERFACE to build aggregates across an interface.
-    This can be very useful for certain applications. We build aggregates for nodes with
-    the state INTERFACE. Then, the state is changed to AGGREGATED.
-    The InterfaceAggregationAlgorithm should run before the Phase1AggregationAlgorithm.
+  ### Idea ###
+  The user can mark some nodes as INTERFACE to build aggregates across an interface.
+  This can be very useful for certain applications. We build aggregates for nodes with
+  the state INTERFACE. Then, the state is changed to AGGREGATED.
+  The InterfaceAggregationAlgorithm should run before the Phase1AggregationAlgorithm.
 
-  */
+*/
 
-  template<class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class InterfaceAggregationAlgorithm :
-    public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class InterfaceAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    InterfaceAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
+  //! Constructor.
+  InterfaceAggregationAlgorithm(RCP<const FactoryBase> const& graphFact = Teuchos::null);
 
-    //! Destructor.
-    virtual ~InterfaceAggregationAlgorithm() { }
+  //! Destructor.
+  virtual ~InterfaceAggregationAlgorithm() {}
 
-    //@}
+  //@}
 
+  //! @name Aggregation methods.
+  //@{
 
-    //! @name Aggregation methods.
-    //@{
+  /*! @brief Local aggregation. */
 
-    /*! @brief Local aggregation. */
+  void BuildAggregates(Teuchos::ParameterList const& params, GraphBase const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  //@}
 
-    void BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
-    //@}
+};  // class InterfaceAggregationAlgorithm
 
-
-  }; //class InterfaceAggregationAlgorithm
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
 #endif /* MUELU_INTERFACEAGGREGATIONALGORITHM_DECL_HPP_ */

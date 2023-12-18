@@ -46,18 +46,13 @@
 #ifndef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_FWD_HPP
 #define MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AggregationPhase3Algorithm_kokkos;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class AggregationPhase3Algorithm_kokkos;
 }
 
 #ifndef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_SHORT
 #define MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_SHORT
 #endif
 
-
-
-#endif // MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_FWD_HPP
+#endif  // MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_FWD_HPP

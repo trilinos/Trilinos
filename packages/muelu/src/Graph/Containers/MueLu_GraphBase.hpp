@@ -46,7 +46,7 @@
 #ifndef MUELU_GRAPHBASE_HPP
 #define MUELU_GRAPHBASE_HPP
 
-#include <Xpetra_ConfigDefs.hpp>   // global_size_t
+#include <Xpetra_ConfigDefs.hpp>  // global_size_t
 #include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -61,69 +61,68 @@ namespace MueLu {
 
    Pure virtual base class for MueLu representations of graphs.
 */
-  template<class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class GraphBase
-    : public BaseClass {
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class GraphBase
+  : public BaseClass {
 #undef MUELU_GRAPHBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
-    // For Zoltan2 compatibility
-    using lno_t  = LocalOrdinal;
-    using gno_t  = GlobalOrdinal;
-    using node_t = Node;
+ public:
+  // For Zoltan2 compatibility
+  using lno_t  = LocalOrdinal;
+  using gno_t  = GlobalOrdinal;
+  using node_t = Node;
 
-    //! @name Constructors/Destructors.
-    //@{
-    virtual ~GraphBase() {};
-    //@}
+  //! @name Constructors/Destructors.
+  //@{
+  virtual ~GraphBase(){};
+  //@}
 
-    virtual const RCP<const Teuchos::Comm<int> > GetComm() const = 0;
-    virtual const RCP<const Map> GetDomainMap() const = 0;
-    virtual const RCP<const Map> GetImportMap() const = 0;
+  virtual const RCP<const Teuchos::Comm<int> > GetComm() const = 0;
+  virtual const RCP<const Map> GetDomainMap() const            = 0;
+  virtual const RCP<const Map> GetImportMap() const            = 0;
 
-    //! @name Query graph attributes.
-    //@{
+  //! @name Query graph attributes.
+  //@{
 
-    //! Return number of vertices owned by the calling node.
-    virtual size_t GetNodeNumVertices() const = 0;
+  //! Return number of vertices owned by the calling node.
+  virtual size_t GetNodeNumVertices() const = 0;
 
-    //! Return number of edges owned by the calling node.
-    virtual size_t GetNodeNumEdges()    const = 0;
+  //! Return number of edges owned by the calling node.
+  virtual size_t GetNodeNumEdges() const = 0;
 
-    virtual void   SetBoundaryNodeMap(const ArrayRCP<const bool > & boundaryArray) = 0;
+  virtual void SetBoundaryNodeMap(const ArrayRCP<const bool> &boundaryArray) = 0;
 
-    virtual size_t getLocalMaxNumRowEntries() const = 0;
+  virtual size_t getLocalMaxNumRowEntries() const = 0;
 
-    virtual const ArrayRCP<const bool> GetBoundaryNodeMap() const = 0;
+  virtual const ArrayRCP<const bool> GetBoundaryNodeMap() const = 0;
 
-    //FIXME is this necessary?
-    //! Return number of global edges in the graph.
-    virtual Xpetra::global_size_t GetGlobalNumEdges() const = 0;
+  // FIXME is this necessary?
+  //! Return number of global edges in the graph.
+  virtual Xpetra::global_size_t GetGlobalNumEdges() const = 0;
 
-    //! Return the list of vertices adjacent to the vertex 'v'.
-    virtual Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const = 0;
+  //! Return the list of vertices adjacent to the vertex 'v'.
+  virtual Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const = 0;
 
-    //! Return true if vertex with local id 'v' is on current process.
-    virtual bool isLocalNeighborVertex(LocalOrdinal v) const = 0;
-    //@}
+  //! Return true if vertex with local id 'v' is on current process.
+  virtual bool isLocalNeighborVertex(LocalOrdinal v) const = 0;
+  //@}
 
-    //! @name Print graph.
-    //@{
-    /// Return a simple one-line description of the Graph.
-    virtual std::string description() const = 0;
+  //! @name Print graph.
+  //@{
+  /// Return a simple one-line description of the Graph.
+  virtual std::string description() const = 0;
 
-    //! Print the Graph with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
-    virtual void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const = 0;
-    //@}
+  //! Print the Graph with some verbosity level to an FancyOStream object.
+  // using MueLu::Describable::describe; // overloading, not hiding
+  // void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
+  virtual void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const = 0;
+  //@}
+};
 
-  };
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_GRAPHBASE_SHORT
-#endif // MUELU_GRAPHBASE_HPP
+#endif  // MUELU_GRAPHBASE_HPP

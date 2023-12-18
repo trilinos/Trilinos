@@ -62,91 +62,88 @@
 
 namespace MueLu {
 
-  /* Options defining how to pick-up the next root node in the local aggregation procedure */
-  enum MinimizationNorm {
-    ANORM = 0, /* A norm   */
-    L2NORM = 1, /* L2 norm */
-    DINVANORM  = 2 /* Dinv A norm */
-  };
+/* Options defining how to pick-up the next root node in the local aggregation procedure */
+enum MinimizationNorm {
+  ANORM     = 0, /* A norm   */
+  L2NORM    = 1, /* L2 norm */
+  DINVANORM = 2  /* Dinv A norm */
+};
 
-  /*!
-    @class PgPFactory class.
-    @brief Factory for building Petrov-Galerkin Smoothed Aggregation prolongators.
-    @ingroup MueLuTransferClasses
-  */
+/*!
+  @class PgPFactory class.
+  @brief Factory for building Petrov-Galerkin Smoothed Aggregation prolongators.
+  @ingroup MueLuTransferClasses
+*/
 
-  template <class Scalar = DefaultScalar,
-          class LocalOrdinal = DefaultLocalOrdinal,
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
           class GlobalOrdinal = DefaultGlobalOrdinal,
-          class Node = DefaultNode>
-  class PgPFactory : public PFactory {
+          class Node          = DefaultNode>
+class PgPFactory : public PFactory {
 #undef MUELU_PGPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  /*! @brief Constructor.
+    User can supply a factory for generating the tentative prolongator.
+  */
+  PgPFactory() {}
 
-    /*! @brief Constructor.
-      User can supply a factory for generating the tentative prolongator.
-    */
-    PgPFactory() { }
+  //! Destructor.
+  virtual ~PgPFactory() {}
 
-    //! Destructor.
-    virtual ~PgPFactory() { }
+  //@}
 
-    //@}
+  //! @name Set methods.
+  //@{
 
-    //! @name Set methods.
-    //@{
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! Set minimization mode (L2NORM for cheapest, ANORM more expensive, DINVANORM = default)
+  void SetMinimizationMode(MinimizationNorm minnorm);
 
-    //! Set minimization mode (L2NORM for cheapest, ANORM more expensive, DINVANORM = default)
-    void SetMinimizationMode(MinimizationNorm minnorm);
+  //! return minimization mode
+  MinimizationNorm GetMinimizationMode();
+  //@}
 
-    //! return minimization mode
-    MinimizationNorm GetMinimizationMode();
-    //@}
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  /*!
+    @brief Build method.
 
-    /*!
-      @brief Build method.
+    Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
+  */
+  void Build(Level& fineLevel, Level& coarseLevel) const;
 
-      Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
-    */
-    void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+  void ReUseDampingParameters(bool bReuse);
 
-    void ReUseDampingParameters(bool bReuse);
+ private:
+  void MultiplySelfAll(const RCP<Matrix>& Op, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& InnerProdVec) const;
 
-  private:
+  void MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& InnerProdVec) const;
 
-    void MultiplySelfAll(const RCP<Matrix>& Op, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
+  void ComputeRowBasedOmega(Level& fineLevel, Level& coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& RowBasedOmega) const;
 
-    void MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
+ private:
+  //! Factory parameters
+  std::string diagonalView_;  // TODO do we need this?
+};
 
-    void ComputeRowBasedOmega(Level& fineLevel, Level& coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
-
-  private:
-
-    //! Factory parameters
-    std::string diagonalView_; // TODO do we need this?
-  };
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_PGPFACTORY_SHORT
 #endif /* MUELU_PGPFACTORY_DECL_HPP_ */

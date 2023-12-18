@@ -46,18 +46,13 @@
 #ifndef MUELU_CLASSICALPFACTORY_FWD_HPP
 #define MUELU_CLASSICALPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ClassicalPFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ClassicalPFactory;
 }
 
 #ifndef MUELU_CLASSICALPFACTORY_SHORT
 #define MUELU_CLASSICALPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_CLASSICALPFACTORY_FWD_HPP
+#endif  // MUELU_CLASSICALPFACTORY_FWD_HPP

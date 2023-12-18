@@ -79,12 +79,12 @@ namespace Details {
 /// If you need to register MueLu's LinearSolverFactory for a set of
 /// template parameters that is <i>not</i> enabled, see
 /// MueLu_Details_LinearSolverFactory.hpp (in this directory).
-void registerLinearSolverFactory ();
+void registerLinearSolverFactory();
 
-} // namespace Details
-} // namespace MueLu
+}  // namespace Details
+}  // namespace MueLu
 
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
 // \class RegisterLinearSolverFactory
 // \brief Register MueLu's solver factory/ies with the central registry.
@@ -99,9 +99,9 @@ namespace { // (anonymous)
 // <tt>__attribute__((constructor))</tt>, without actually requiring
 // the syntax extension.)
 class RegisterLinearSolverFactory {
-public:
-  RegisterLinearSolverFactory () {
-    MueLu::Details::registerLinearSolverFactory ();
+ public:
+  RegisterLinearSolverFactory() {
+    MueLu::Details::registerLinearSolverFactory();
   }
 };
 
@@ -110,6 +110,6 @@ public:
 // MueLu::Details::registerLinearSolverFactory().
 RegisterLinearSolverFactory registerIt;
 
-} // namespace (anonymous)
+}  // namespace
 
-#endif // MUELU_DETAILS_REGISTERLINEARSOLVERFACTORY_HPP
+#endif  // MUELU_DETAILS_REGISTERLINEARSOLVERFACTORY_HPP

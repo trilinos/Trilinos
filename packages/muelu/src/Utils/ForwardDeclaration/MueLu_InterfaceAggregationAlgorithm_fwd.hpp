@@ -46,18 +46,13 @@
 #ifndef MUELU_INTERFACEAGGREGATIONALGORITHM_FWD_HPP
 #define MUELU_INTERFACEAGGREGATIONALGORITHM_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class InterfaceAggregationAlgorithm;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class InterfaceAggregationAlgorithm;
 }
 
 #ifndef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
 #define MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
 #endif
 
-
-
-#endif // MUELU_INTERFACEAGGREGATIONALGORITHM_FWD_HPP
+#endif  // MUELU_INTERFACEAGGREGATIONALGORITHM_FWD_HPP

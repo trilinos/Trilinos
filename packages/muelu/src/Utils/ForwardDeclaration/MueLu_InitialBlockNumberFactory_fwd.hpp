@@ -46,18 +46,13 @@
 #ifndef MUELU_INITIALBLOCKNUMBERFACTORY_FWD_HPP
 #define MUELU_INITIALBLOCKNUMBERFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class InitialBlockNumberFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class InitialBlockNumberFactory;
 }
 
 #ifndef MUELU_INITIALBLOCKNUMBERFACTORY_SHORT
 #define MUELU_INITIALBLOCKNUMBERFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_INITIALBLOCKNUMBERFACTORY_FWD_HPP
+#endif  // MUELU_INITIALBLOCKNUMBERFACTORY_FWD_HPP
