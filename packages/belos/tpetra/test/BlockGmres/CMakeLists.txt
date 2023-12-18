@@ -32,6 +32,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_resolve_gmres_hb
+  SOURCES test_kokkos_resolve_gmres_hb.cpp
+  COMM serial mpi
+  ARGS
+    "--verbose --filename=orsirr1.hb"
+    "--verbose --filename=orsirr1.hb --pseudo"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_pseudo_gmres_hb
   SOURCES test_pseudo_gmres_hb.cpp
   COMM serial mpi

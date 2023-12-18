@@ -82,7 +82,7 @@ int run(int argc, char *argv[]) {
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
 
   using Teuchos::RCP;
