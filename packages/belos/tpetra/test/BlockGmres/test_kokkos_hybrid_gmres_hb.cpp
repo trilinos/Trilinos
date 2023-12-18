@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Belos::MultiVecTraits<ST,MV,DM> MVT;
 
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
