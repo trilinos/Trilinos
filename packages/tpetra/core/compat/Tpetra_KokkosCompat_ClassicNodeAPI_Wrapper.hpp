@@ -69,15 +69,25 @@ public:
 };
 
 #ifdef KOKKOS_ENABLE_SYCL
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+  typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
+#else
   typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
+#endif
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
+  // NOTE: KokkosKernels does not currently suport HIPManagedSpace, but
+  // if it did, we'd add HAVE_TPETRA_MANAGED_ALLOCS here
   typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPSpace> KokkosHIPWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+  typedef KokkosDeviceWrapperNode<::Kokkos::Cuda,::Kokkos::CudaUVMSpace> KokkosCudaWrapperNode;
+#else
   typedef KokkosDeviceWrapperNode<::Kokkos::Cuda> KokkosCudaWrapperNode;
+#endif
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
