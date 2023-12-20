@@ -338,6 +338,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
   }
   prec_->setParameters(amesos2_params);
 
+  prec_->numericFactorization();
+
   SmootherPrototype::IsSetup(true);
 }
 
