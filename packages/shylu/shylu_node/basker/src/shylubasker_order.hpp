@@ -658,27 +658,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
             order_match_array(i) = i;
           }
           #endif
-          /*if (Options.verbose)
-          {
-            printf(" == matching result ==\n" );
-            printf("p=[\n");
-            for(Int i = 0; i < A.nrow; i++) printf( "%d\n",int(order_match_array(i)));
-            printf("];\n");
-          }*/
           FREE_INT_1DARRAY(WORK);
         }
         // apply matching to the rows of A
         permute_row(A, order_match_array);
-        /*if (Options.verbose) 
-        {
-          printf("A=[\n");
-          for(Int j = 0; j < A.ncol; j++) {
-            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-              printf("%d %d %.16e\n",int(A.row_idx(k)),int(j),A.val(k));
-            }
-          }
-          printf("];\n");
-        }*/
       }
       else
       {

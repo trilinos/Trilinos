@@ -2,7 +2,6 @@
 #define SHYLUBASKER_SOLVE_RHS_TR_HPP
 
 /*Basker Includes*/
-//#include "shylubasker_decl.hpp"
 #include "shylubasker_matrix_decl.hpp"
 #include "shylubasker_matrix_view_decl.hpp"
 #include "shylubasker_types.hpp"

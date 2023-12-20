@@ -101,27 +101,6 @@ namespace BaskerNS
    
     FREE_INT_1DARRAY(LL_size);
     FREE_INT_1DARRAY(LU_size);
-
-    // Delete arrays added for runtime transpose solve
-    FREE_INT_RANK2DARRAY(LDENSE_NDBLOCK_ROW_COL);
-    FREE_INT_RANK2DARRAY(UDENSE_NDBLOCK_ROW_COL);
-
-    FREE_INT_1DARRAY(L_size);
-    FREE_INT_1DARRAY(L_first);
-    FREE_INT_1DARRAY(L_second);
-
-    FREE_INT_1DARRAY(U_size);
-    FREE_INT_1DARRAY(U_first);
-    FREE_INT_1DARRAY(U_second);
-
-    FREE_INT_1DARRAY(LT_size);
-    FREE_INT_1DARRAY(LT_first);
-    FREE_INT_1DARRAY(LT_second);
-
-    FREE_INT_1DARRAY(UT_size);
-    FREE_INT_1DARRAY(UT_first);
-    FREE_INT_1DARRAY(UT_second);
-
     
     //BTF structure
     FREE_INT_1DARRAY(btf_tabs);
@@ -2038,16 +2017,6 @@ namespace BaskerNS
 
     return 0;
   }
-
-
-  //Interface for solve.... only doing parallel solve right now.
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::SolveTest()
-  {
-    //test_solve();
-    return 0;
-  }//end SolveTest
 
 
   template <class Int, class Entry, class Exe_Space>

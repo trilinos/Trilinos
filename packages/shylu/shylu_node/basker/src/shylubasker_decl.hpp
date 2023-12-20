@@ -89,9 +89,6 @@ namespace BaskerNS
     int Solve(Int nrhs, Entry *b, Entry *x, Int option, bool transpose = false);
 
     BASKER_INLINE
-    int SolveTest();
-
-    BASKER_INLINE
     int SetThreads(Int nthreads);
 
     BASKER_INLINE
@@ -1377,28 +1374,6 @@ namespace BaskerNS
     MATRIX_2DARRAY LU;   // view of views of 2D blocks; stores CCS factored AVM
     INT_1DARRAY LL_size; // tracks the number of 2D blocks ('rows') in a given 'column'
     INT_1DARRAY LU_size;
-
-    // Arrays for runtime transpose solve
-    //
-    INT_RANK2DARRAY LDENSE_NDBLOCK_ROW_COL;
-    INT_RANK2DARRAY UDENSE_NDBLOCK_ROW_COL;
-    // Track col-ordered graph of based on row,col counts as "indexing" for the scotch ND blocks
-    INT_1DARRAY L_size; // LL_size
-    INT_1DARRAY L_first; // first index to LL in trans solves
-    INT_1DARRAY L_second; // second index to LL in trans solves
-
-    INT_1DARRAY U_size; //LU_size
-    INT_1DARRAY U_first; // first index to LU in trans solves
-    INT_1DARRAY U_second; // second index to LU in trans solves
-
-    INT_1DARRAY LT_size; //LU_size
-    INT_1DARRAY LT_first; // first index to LL in trans solves
-    INT_1DARRAY LT_second; // second index to LL in trans solves
-
-    INT_1DARRAY UT_size; // LL_size
-    INT_1DARRAY UT_first; // first index to LU in trans solves
-    INT_1DARRAY UT_second; // second index to LU in trans solves
-
 
     //Used for BTF
 #define BASKER_SPLIT_A
