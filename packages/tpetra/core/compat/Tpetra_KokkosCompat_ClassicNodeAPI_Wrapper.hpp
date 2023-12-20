@@ -77,7 +77,7 @@ public:
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
-  // NOTE: KokkosKernels does not currently suport HIPManagedSpace, but
+  // NOTE: KokkosKernels does not currently support HIPManagedSpace, but
   // if it did, we'd add HAVE_TPETRA_MANAGED_ALLOCS here
   typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPSpace> KokkosHIPWrapperNode;
 #endif
