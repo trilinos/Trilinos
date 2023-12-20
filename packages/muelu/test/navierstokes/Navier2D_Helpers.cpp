@@ -46,5 +46,3 @@
 
 // the concrete implementation is in the .h file
 #include "Navier2D_Helpers.h"
-
-

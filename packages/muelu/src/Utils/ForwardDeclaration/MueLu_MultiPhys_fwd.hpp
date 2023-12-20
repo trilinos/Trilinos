@@ -46,18 +46,13 @@
 #ifndef MUELU_MULTIPHYS_FWD_HPP
 #define MUELU_MULTIPHYS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MultiPhys;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MultiPhys;
 }
 
 #ifndef MUELU_MULTIPHYS_SHORT
 #define MUELU_MULTIPHYS_SHORT
 #endif
 
-
-
-#endif // MUELU_MULTIPHYS_FWD_HPP
+#endif  // MUELU_MULTIPHYS_FWD_HPP

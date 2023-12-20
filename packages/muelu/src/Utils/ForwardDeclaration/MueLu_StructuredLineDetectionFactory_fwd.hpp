@@ -46,18 +46,13 @@
 #ifndef MUELU_STRUCTUREDLINEDETECTIONFACTORY_FWD_HPP
 #define MUELU_STRUCTUREDLINEDETECTIONFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class StructuredLineDetectionFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class StructuredLineDetectionFactory;
 }
 
 #ifndef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
 #define MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_STRUCTUREDLINEDETECTIONFACTORY_FWD_HPP
+#endif  // MUELU_STRUCTUREDLINEDETECTIONFACTORY_FWD_HPP

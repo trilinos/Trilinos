@@ -47,7 +47,6 @@
 #ifndef PACKAGES_MUELU_SRC_MISC_MUELU_FINELEVELINPUTDATAFACTORY_DECL_HPP_
 #define PACKAGES_MUELU_SRC_MISC_MUELU_FINELEVELINPUTDATAFACTORY_DECL_HPP_
 
-
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -62,63 +61,61 @@
 #include "MueLu_Graph_fwd.hpp"
 
 namespace MueLuTests {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class FineLevelInputDataFactoryTester;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class FineLevelInputDataFactoryTester;
 }
 
 namespace MueLu {
 
-  /*!
-    @class FineLevelInputData class.
-    @brief Factory for piping in input data from the finest level into the MueLu data dependency system
-  */
+/*!
+  @class FineLevelInputData class.
+  @brief Factory for piping in input data from the finest level into the MueLu data dependency system
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class FineLevelInputDataFactory : public SingleLevelFactoryBase {
-    friend class MueLuTests::FineLevelInputDataFactoryTester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class FineLevelInputDataFactory : public SingleLevelFactoryBase {
+  friend class MueLuTests::FineLevelInputDataFactoryTester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #undef MUELU_FINELEVELINPUTDATAFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  FineLevelInputDataFactory() {}
 
-    FineLevelInputDataFactory() { }
+  //! Destructor.
+  virtual ~FineLevelInputDataFactory() {}
 
-    //! Destructor.
-    virtual ~FineLevelInputDataFactory() { }
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //@}
 
-    //@}
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& currentLevel) const;
 
-    void DeclareInput(Level& currentLevel) const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  /*!
+    @brief Build method.
+    */
+  void Build(Level& currentLevel) const;
 
-    /*!
-      @brief Build method.
-      */
-    void Build(Level& currentLevel) const;
+  //@}
+ private:
+  void test() const { std::cout << "TEST" << std::endl; }
 
-    //@}
-  private:
+};  // class FineLevelInputDataFactory
 
-    void test() const { std::cout << "TEST" << std::endl; }
-
-  }; //class FineLevelInputDataFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_FINELEVELINPUTDATAFACTORY_SHORT
 

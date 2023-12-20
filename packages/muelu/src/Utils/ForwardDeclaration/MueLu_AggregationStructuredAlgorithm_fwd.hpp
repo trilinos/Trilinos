@@ -46,18 +46,13 @@
 #ifndef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_FWD_HPP
 #define MUELU_AGGREGATIONSTRUCTUREDALGORITHM_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AggregationStructuredAlgorithm;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class AggregationStructuredAlgorithm;
 }
 
 #ifndef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
 #define MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
 #endif
 
-
-
-#endif // MUELU_AGGREGATIONSTRUCTUREDALGORITHM_FWD_HPP
+#endif  // MUELU_AGGREGATIONSTRUCTUREDALGORITHM_FWD_HPP

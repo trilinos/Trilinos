@@ -25,7 +25,7 @@ except ImportError:                                                             
 
 
 
-def get_launch_env(build_name : str, system : str):
+def get_launch_env(system : str):
   """
   Gets the launch environment based on the detected system.
   This is an early environment that's required for running the driver.
@@ -34,8 +34,6 @@ def get_launch_env(build_name : str, system : str):
       str: The environment used to launch the driver.
   """
   env = ""
-  if "_rdc" in build_name:
-      env += " TRILINOS_MAX_CORES=96"
 
   if env == "":
       return ""
@@ -43,7 +41,7 @@ def get_launch_env(build_name : str, system : str):
       return "env" + env + " "
 
 
-def get_launch_cmd(build_name : str, system : str):
+def get_launch_cmd(system : str):
   """
   Gets the launch command based on the detected system.
 
@@ -95,8 +93,8 @@ def main(argv):
 
   ds = DetermineSystem(args.build_name, args.supported_systems)
 
-  launch_env = get_launch_env(args.build_name, ds.system_name)
-  launch_cmd = get_launch_cmd(args.build_name, ds.system_name)
+  launch_env = get_launch_env(ds.system_name)
+  launch_cmd = get_launch_cmd(ds.system_name)
   driver_args = get_driver_args(ds.system_name)
 
   # Specify, and override the driver script for ATDM ATS2 builds. Note that

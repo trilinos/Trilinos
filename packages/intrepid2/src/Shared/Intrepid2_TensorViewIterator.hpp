@@ -74,7 +74,7 @@ namespace Intrepid2
   class TensorViewIterator
   {
   public:
-    enum RankCombinationType
+    enum RankCombinationType : int
     {
       DIMENSION_MATCH,
       TENSOR_PRODUCT,

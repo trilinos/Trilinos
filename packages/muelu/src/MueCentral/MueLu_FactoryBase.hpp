@@ -52,54 +52,51 @@
 
 namespace MueLu {
 
-  /*!
-    @class FactoryBase
-    @brief Base class for factories (e.g., R, P, and A_coarse).
-    @ingroup MueLuBaseClasses
-  */
-  class FactoryBase : public virtual BaseClass {
+/*!
+  @class FactoryBase
+  @brief Base class for factories (e.g., R, P, and A_coarse).
+  @ingroup MueLuBaseClasses
+*/
+class FactoryBase : public virtual BaseClass {
+ public:
+  //@{ Constructors/Destructors.
 
-  public:
-    //@{ Constructors/Destructors.
+  //! Constructor.
+  FactoryBase()
+    : id_(FactoryBase::GenerateUniqueId()) {}
 
-    //! Constructor.
-    FactoryBase()
-      : id_(FactoryBase::GenerateUniqueId())
-    { }
+  //! Destructor.
+  virtual ~FactoryBase() {}
+  //@}
 
-    //! Destructor.
-    virtual ~FactoryBase() { }
-    //@}
+  //@{
+  //! @name Build methods.
 
-    //@{
-    //! @name Build methods.
+  virtual void CallBuild(Level& requestedLevel) const = 0;
 
-    virtual void CallBuild(Level & requestedLevel) const = 0;
+  virtual void CallDeclareInput(Level& requestedLevel) const = 0;
+  //@}
 
-    virtual void CallDeclareInput(Level & requestedLevel) const = 0;
-    //@}
+  //@{
+  //! @name Access factory properties
 
-    //@{
-    //! @name Access factory properties
-
-    /// return unique factory id
-    int GetID() const { return id_; };
+  /// return unique factory id
+  int GetID() const { return id_; };
 
     //@}
 
 #ifdef HAVE_MUELU_DEBUG
-    virtual void ResetDebugData() const = 0;
+  virtual void ResetDebugData() const = 0;
 #endif
 
-  private:
+ private:
+  static int GenerateUniqueId();
 
-    static int GenerateUniqueId();
+  const int id_;
 
-    const int id_;
+};  // class FactoryBase
 
-  }; //class FactoryBase
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_FACTORYBASE_SHORT
-#endif //ifndef MUELU_FACTORYBASE_HPP
+#endif  // ifndef MUELU_FACTORYBASE_HPP

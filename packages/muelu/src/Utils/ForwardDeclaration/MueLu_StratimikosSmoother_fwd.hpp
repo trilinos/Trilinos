@@ -50,8 +50,8 @@
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class StratimikosSmoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class StratimikosSmoother;
 }
 
 #ifndef MUELU_STRATIMIKOSSMOOTHER_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_STRATIMIKOSSMOOTHER_FWD_HPP
+#endif  // MUELU_STRATIMIKOSSMOOTHER_FWD_HPP

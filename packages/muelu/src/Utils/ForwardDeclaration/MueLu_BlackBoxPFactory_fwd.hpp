@@ -46,18 +46,13 @@
 #ifndef MUELU_BLACKBOXPFACTORY_FWD_HPP
 #define MUELU_BLACKBOXPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class BlackBoxPFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlackBoxPFactory;
 }
 
 #ifndef MUELU_BLACKBOXPFACTORY_SHORT
 #define MUELU_BLACKBOXPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_BLACKBOXPFACTORY_FWD_HPP
+#endif  // MUELU_BLACKBOXPFACTORY_FWD_HPP

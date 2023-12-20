@@ -50,8 +50,8 @@
 #ifdef HAVE_MUELU_TEKO
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TekoSmoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class TekoSmoother;
 }
 
 #ifndef MUELU_TEKOSMOOTHER_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_TEKOSMOOTHER_FWD_HPP
+#endif  // MUELU_TEKOSMOOTHER_FWD_HPP

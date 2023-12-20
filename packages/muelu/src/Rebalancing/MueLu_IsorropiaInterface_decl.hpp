@@ -14,7 +14,7 @@
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_CrsGraphFactory_fwd.hpp> //TODO
+#include <Xpetra_CrsGraphFactory_fwd.hpp>  //TODO
 
 #ifdef HAVE_MUELU_EPETRA
 #include <Xpetra_EpetraCrsGraph_fwd.hpp>
@@ -66,53 +66,45 @@ namespace MueLu {
 
 */
 
-  //FIXME: this class should not be templated
-  template <class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class IsorropiaInterface : public SingleLevelFactoryBase {
-
-    typedef double Scalar; // FIXME This class only works with the Epetra stack, i.e., Scalar = double
+// FIXME: this class should not be templated
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class IsorropiaInterface : public SingleLevelFactoryBase {
+  typedef double Scalar;  // FIXME This class only works with the Epetra stack, i.e., Scalar = double
 #undef MUELU_ISORROPIAINTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors
+  //@{
 
-    //! @name Constructors/Destructors
-    //@{
+  //! Constructor
+  IsorropiaInterface() {}
 
-    //! Constructor
-    IsorropiaInterface() { }
+  //! Destructor
+  virtual ~IsorropiaInterface() {}
+  //@}
 
-    //! Destructor
-    virtual ~IsorropiaInterface() { }
-    //@}
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! @name Input
+  //@{
+  void DeclareInput(Level &level) const;
+  //@}
 
-    //! @name Input
-    //@{
-    void DeclareInput(Level & level) const;
-    //@}
+  //! @name Build methods.
+  //@{
+  void Build(Level &level) const;
 
-    //! @name Build methods.
-    //@{
-    void Build(Level &level) const;
+  //@}
 
-    //@}
+ private:
+};  // class IsorropiaInterface
 
-
-
-  private:
-
-
-
-  };  //class IsorropiaInterface
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_ISORROPIAINTERFACE_SHORT
 //#endif //if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-
 
 #endif /* MUELU_ISORROPIAINTERFACE_DECL_HPP_ */

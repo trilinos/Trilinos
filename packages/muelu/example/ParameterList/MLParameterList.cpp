@@ -47,9 +47,9 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#include <Tpetra_KokkosCompat_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>  // For Epetra only runs this points to FakeKokkos in Xpetra
 
-#include <Teuchos_XMLParameterListHelpers.hpp> // getParametersFromXmlFile()
+#include <Teuchos_XMLParameterListHelpers.hpp>  // getParametersFromXmlFile()
 
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
 #include <Epetra_CrsMatrix.h>
@@ -80,7 +80,7 @@
 
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
@@ -94,34 +94,38 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   bool success = false;
   bool verbose = true;
   try {
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     //
     // Parameters
     //
 
-    //TODO: FIXME: option by default does not work for MueLu/Tpetra
+    // TODO: FIXME: option by default does not work for MueLu/Tpetra
 
     int nIts = 9;
 
-    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
-    Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256);  // manage parameters of the test case
+    Xpetra::Parameters xpetraParameters(clp);                   // manage parameters of xpetra
 
-    std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
-    int translatedmuelu = true;  clp.setOption("muelu2", &translatedmuelu,   "use muelu through XML parameter translation and ParameterListInterpreter");
-    int ml    = true;
+    std::string xmlFileName;
+    clp.setOption("xml", &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
+    int translatedmuelu = true;
+    clp.setOption("muelu2", &translatedmuelu, "use muelu through XML parameter translation and ParameterListInterpreter");
+    int ml = true;
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-    clp.setOption("ml",    &ml,          "use ml");
+    clp.setOption("ml", &ml, "use ml");
 #endif
 
-    switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
-    if (comm->getRank() == 0) { std::cout << xpetraParameters << matrixParameters; }
+    if (comm->getRank() == 0) {
+      std::cout << xpetraParameters << matrixParameters;
+    }
 
     // choose ML and Tpetra
     if (ml && xpetraParameters.GetLib() == Xpetra::UseTpetra) {
@@ -134,9 +138,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     //
 
     RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-    RCP<Matrix>  A = Pr->BuildMatrix();
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    RCP<Matrix> A = Pr->BuildMatrix();
 
     //
     // Preconditioner configuration
@@ -145,31 +149,28 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // ML parameter list
     RCP<Teuchos::ParameterList> params;
     if (xmlFileName != "") {
-
       std::cout << "Reading " << xmlFileName << " ..." << std::endl;
       params = Teuchos::getParametersFromXmlFile(xmlFileName);
 
     } else {
-
       std::cout << "Using hard-coded parameter list:" << std::endl;
       params = rcp(new Teuchos::ParameterList());
 
-      params->set("ML output",  10);
+      params->set("ML output", 10);
       params->set("max levels", 2);
       params->set("smoother: type", "symmetric Gauss-Seidel");
 
-      if (xpetraParameters.GetLib() == Xpetra::UseTpetra) // TODO: remove 'if' when Amesos2-KLU becomes available
-        params->set("coarse: type","Amesos-Superlu");
+      if (xpetraParameters.GetLib() == Xpetra::UseTpetra)  // TODO: remove 'if' when Amesos2-KLU becomes available
+        params->set("coarse: type", "Amesos-Superlu");
       else
-        params->set("coarse: type","Amesos-KLU");
-
+        params->set("coarse: type", "Amesos-KLU");
     }
 
     std::cout << "Initial parameter list" << std::endl;
     std::cout << *params << std::endl;
 
-    if ( translatedmuelu ) {
-       //
+    if (translatedmuelu) {
+      //
       // Construct a multigrid preconditioner
       //
 
@@ -186,19 +187,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       // build default null space
       LocalOrdinal numPDEs = 1;
-      if(A->IsView("stridedMaps")==true) {
-        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-        numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
-        oldView = A->SwitchToView(oldView);
+      if (A->IsView("stridedMaps") == true) {
+        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps");  // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+        numPDEs                     = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+        oldView                     = A->SwitchToView(oldView);
       }
 
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
 
-      for (int i=0; i<numPDEs; ++i) {
+      for (int i = 0; i < numPDEs; ++i) {
         Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-        int numBlocks = nsValues.size() / numPDEs;
-        for (int j=0; j< numBlocks; ++j) {
-          nsValues[j*numPDEs + i] = 1.0;
+        int numBlocks                      = nsValues.size() / numPDEs;
+        for (int j = 0; j < numBlocks; ++j) {
+          nsValues[j * numPDEs + i] = 1.0;
         }
       }
 
@@ -217,8 +218,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<Vector> X = VectorFactory::Build(map);
       RCP<Vector> B = VectorFactory::Build(map);
 
-      X->putScalar((Scalar) 0.0);
-      B->setSeed(846930886); B->randomize();
+      X->putScalar((Scalar)0.0);
+      B->setSeed(846930886);
+      B->randomize();
 
       // AMG as a standalone solver
       H->IsPreconditioner(false);
@@ -237,31 +239,32 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // probably a fix necessary in EpetraOperator (which only supports
       // SERIAL or OPENMP, but not PTHREAD of course).
 
-      if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
+      if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {  // TODO: should be doable with Tpetra too
 
         // AMG as a preconditioner
 
-        //TODO: name mueluPrec and mlPrec not
+        // TODO: name mueluPrec and mlPrec not
 
         H->IsPreconditioner(true);
-        MueLu::EpetraOperator mueluPrec(H); // Wrap MueLu preconditioner into an Epetra Operator
+        MueLu::EpetraOperator mueluPrec(H);  // Wrap MueLu preconditioner into an Epetra Operator
 
         //
         // Solve Ax = b
         //
-        RCP<Epetra_CrsMatrix> eA; //duplicate code
-        { // TODO: simplify this
-          RCP<CrsMatrixWrap>     xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-          RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
-          RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
-          eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
+        RCP<Epetra_CrsMatrix> eA;  // duplicate code
+        {                          // TODO: simplify this
+          RCP<CrsMatrixWrap> xCrsOp    = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
+          RCP<CrsMatrix> xCrsMtx       = xCrsOp->getCrsMatrix();
+          RCP<EpetraCrsMatrix> eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+          eA                           = eCrsMtx->getEpetra_CrsMatrixNonConst();
         }
 
         RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
         RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
 
-        eX->PutScalar((Scalar) 0.0);
-        eB->SetSeed(846930886); eB->Random();
+        eX->PutScalar((Scalar)0.0);
+        eB->SetSeed(846930886);
+        eB->Random();
 
         Epetra_LinearProblem eProblem(eA.get(), eX.get(), eB.get());
 
@@ -273,9 +276,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
         solver.Iterate(nIts, 1e-10);
 
-        { //TODO: simplify this
-          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
-          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
+        {  // TODO: simplify this
+          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int, Node>(eX));
+          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int, Node>(eB));
           // Print relative residual norm
           typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
           if (comm->getRank() == 0)
@@ -284,30 +287,36 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
         // TODO: AMG as a preconditioner (AZ_cg)
       }
-#endif // HAVE_MUELU_AZTECOO
-    } // if (translatedmuelu)
+#endif  // HAVE_MUELU_AZTECOO
+    }   // if (translatedmuelu)
 
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP) && !defined(HAVE_MUELU_SYCL)
     if (ml) {
-
-      std::cout << std::endl << std::endl << std::endl << std::endl << "**** ML ml ML ml ML" << std::endl << std::endl << std::endl << std::endl;
+      std::cout << std::endl
+                << std::endl
+                << std::endl
+                << std::endl
+                << "**** ML ml ML ml ML" << std::endl
+                << std::endl
+                << std::endl
+                << std::endl;
 
       //
       // Construct a multigrid preconditioner
       //
 
       // Multigrid Hierarchy
-      RCP<CrsMatrixWrap>      crsOp         = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-      RCP<CrsMatrix>        crsMtx        = crsOp->getCrsMatrix();
-      RCP<EpetraCrsMatrix>  epetraCrsMtx  = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(crsMtx, true);
+      RCP<CrsMatrixWrap> crsOp                  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
+      RCP<CrsMatrix> crsMtx                     = crsOp->getCrsMatrix();
+      RCP<EpetraCrsMatrix> epetraCrsMtx         = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(crsMtx, true);
       RCP<const Epetra_CrsMatrix> epetra_CrsMtx = epetraCrsMtx->getEpetra_CrsMatrix();
 
       RCP<Epetra_CrsMatrix> eA;
-      { // TODO: simplify this
-        RCP<CrsMatrixWrap>       xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-        RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
-        RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
-        eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
+      {  // TODO: simplify this
+        RCP<CrsMatrixWrap> xCrsOp    = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
+        RCP<CrsMatrix> xCrsMtx       = xCrsOp->getCrsMatrix();
+        RCP<EpetraCrsMatrix> eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+        eA                           = eCrsMtx->getEpetra_CrsMatrixNonConst();
       }
 
       RCP<ML_Epetra::MultiLevelPreconditioner> mlPrec = rcp(new ML_Epetra::MultiLevelPreconditioner(*eA, *params));
@@ -319,8 +328,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<Epetra_Vector> eX = rcp(new Epetra_Vector(eA->RowMap()));
       RCP<Epetra_Vector> eB = rcp(new Epetra_Vector(eA->RowMap()));
 
-      eX->PutScalar((Scalar) 0.0);
-      eB->SetSeed(846930886); eB->Random();
+      eX->PutScalar((Scalar)0.0);
+      eB->SetSeed(846930886);
+      eB->Random();
 
       Epetra_LinearProblem eProblem(eA.get(), eX.get(), eB.get());
 
@@ -332,9 +342,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       solver.Iterate(nIts, 1e-10);
 
-      { //TODO: simplify this
-        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
-        RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
+      {  // TODO: simplify this
+        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int, Node>(eX));
+        RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int, Node>(eB));
         // Print relative residual norm
         typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
         if (comm->getRank() == 0)
@@ -342,28 +352,26 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       }
 
       std::cout << "Parameter list after ML run" << std::endl;
-      const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
+      const Teuchos::ParameterList &paramsAfterML = mlPrec->GetList();
       std::cout << paramsAfterML << std::endl;
 
-    } // if (ml)
+    }  // if (ml)
 
-#endif // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
-
+#endif  // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
 
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
-
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   bool success = false;
   bool verbose = true;
 
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  Kokkos::initialize(argc,argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Kokkos::initialize(argc, argv);
   try {
     const bool throwExceptions     = false;
     const bool recogniseAllOptions = false;
@@ -371,20 +379,21 @@ int main(int argc, char* argv[]) {
     Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
     Xpetra::Parameters xpetraParameters(clp);
 
-    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda | hip)");
+    std::string node = "";
+    clp.setOption("node", &node, "node type (serial | openmp | cuda | hip)");
 
     switch (clp.parse(argc, argv, NULL)) {
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR: return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-      return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+      return main_<double, int, int, Xpetra::EpetraNode>(clp, lib, argc, argv);
 #else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
 #endif
@@ -396,5 +405,5 @@ int main(int argc, char* argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
   Kokkos::finalize();
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

@@ -44,7 +44,6 @@
 //
 // @HEADER
 
-
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_MatlabSmoother_def.hpp"
@@ -52,8 +51,8 @@
 #include "TpetraCore_ETIHelperMacros.h"
 
 #ifdef HAVE_MUELU_MATLAB
-#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
-        template class MueLu::MatlabSmoother<S,LO,GO,N>;
+#define MUELU_LOCAL_INSTANT(S, LO, GO, N) \
+  template class MueLu::MatlabSmoother<S, LO, GO, N>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

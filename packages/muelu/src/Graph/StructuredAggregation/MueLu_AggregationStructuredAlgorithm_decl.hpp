@@ -56,78 +56,74 @@
 #include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
-  /*!
-    @class AggregationStructuredAlgorithm class.
-    @brief Algorithm for coarsening a graph with structured aggregation.
+/*!
+  @class AggregationStructuredAlgorithm class.
+  @brief Algorithm for coarsening a graph with structured aggregation.
 
-    @ingroup Aggregation
+  @ingroup Aggregation
 
-    ### Idea ###
-    Use the logical indexing of the mesh to obtain a very regular aggregation pattern and maintain
-    lines and planes of the problem as they might be useful to the smoother.
-    This algorithms is also very easy to parallelize on node due to its very regular and predictible
-    memory access patern.
+  ### Idea ###
+  Use the logical indexing of the mesh to obtain a very regular aggregation pattern and maintain
+  lines and planes of the problem as they might be useful to the smoother.
+  This algorithms is also very easy to parallelize on node due to its very regular and predictible
+  memory access patern.
 
-    ### Parameters ###
-    Parameter | Meaning
-    ----------|--------
-    aggregation: coarsen | describe the coarsening rate to be used in each direction
-  */
+  ### Parameters ###
+  Parameter | Meaning
+  ----------|--------
+  aggregation: coarsen | describe the coarsening rate to be used in each direction
+*/
 
-  template<class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class AggregationStructuredAlgorithm :
-    public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class AggregationStructuredAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    AggregationStructuredAlgorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
+  //! Constructor.
+  AggregationStructuredAlgorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) {}
 
-    //! Destructor.
-    virtual ~AggregationStructuredAlgorithm() { }
+  //! Destructor.
+  virtual ~AggregationStructuredAlgorithm() {}
 
-    //@}
+  //@}
 
+  //! @name Aggregation methods.
+  //@{
 
-    //! @name Aggregation methods.
-    //@{
+  /*! @brief Local aggregation. */
 
-    /*! @brief Local aggregation. */
+  void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph,
+                       Aggregates& aggregates, std::vector<unsigned>& aggStat,
+                       LO& numNonAggregatedNodes) const;
 
-    void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph,
-                         Aggregates& aggregates, std::vector<unsigned>& aggStat,
-                         LO& numNonAggregatedNodes) const;
+  /*! @brief Local aggregation. */
 
-    /*! @brief Local aggregation. */
+  void BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
+                  RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
+                  RCP<const Map>& coarseCoordinatesMap) const;
+  //@}
 
-    void BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
-                    RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
-                    RCP<const Map>& coarseCoordinatesMap) const;
-    //@}
+  std::string description() const { return "Aggretation: structured algorithm"; }
 
-    std::string description() const { return "Aggretation: structured algorithm"; }
-
-  private:
-
-    void ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
-                                  const LO dofsPerNode, const int numInterpolationPoints,
-                                  ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
-                                  Array<LO>& colIndex) const;
-
-    void ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
+ private:
+  void ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
                                 const LO dofsPerNode, const int numInterpolationPoints,
                                 ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                                 Array<LO>& colIndex) const;
 
-  };
+  void ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
+                              const LO dofsPerNode, const int numInterpolationPoints,
+                              ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
+                              Array<LO>& colIndex) const;
+};
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
 #endif /* MUELU_AGGREGATIONSTRUCTUREDALGORITHM_DECL_HPP_ */

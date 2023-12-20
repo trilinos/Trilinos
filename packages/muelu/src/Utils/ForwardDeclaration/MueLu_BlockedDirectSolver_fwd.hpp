@@ -46,18 +46,13 @@
 #ifndef MUELU_BLOCKEDDIRECTSOLVER_FWD_HPP
 #define MUELU_BLOCKEDDIRECTSOLVER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class BlockedDirectSolver;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlockedDirectSolver;
 }
 
 #ifndef MUELU_BLOCKEDDIRECTSOLVER_SHORT
 #define MUELU_BLOCKEDDIRECTSOLVER_SHORT
 #endif
 
-
-
-#endif // MUELU_BLOCKEDDIRECTSOLVER_FWD_HPP
+#endif  // MUELU_BLOCKEDDIRECTSOLVER_FWD_HPP

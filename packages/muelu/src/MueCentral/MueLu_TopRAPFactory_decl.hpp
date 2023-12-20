@@ -19,32 +19,31 @@
 
 namespace MueLu {
 
-  template<class Scalar = DefaultScalar,
-           class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class TopRAPFactory : public TwoLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class TopRAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_TOPRAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager);
+  TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse);
 
-    TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManager);
-    TopRAPFactory(RCP<const FactoryManagerBase> parentFactoryManagerFine, RCP<const FactoryManagerBase> parentFactoryManagerCoarse);
+  virtual ~TopRAPFactory();
 
-    virtual ~TopRAPFactory();
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    void DeclareInput(Level & fineLevel, Level & coarseLevel) const;
+  void Build(Level& fineLevel, Level& coarseLevel) const;
 
-    void Build(Level & fineLevel, Level & coarseLevel) const;
+ private:
+  RCP<const FactoryBase> PFact_;
+  RCP<const FactoryBase> RFact_;
+  RCP<const FactoryBase> AcFact_;
+};
 
-  private:
-    RCP<const FactoryBase> PFact_;
-    RCP<const FactoryBase> RFact_;
-    RCP<const FactoryBase> AcFact_;
-  };
-
-}
+}  // namespace MueLu
 
 #define MUELU_TOPRAPFACTORY_SHORT
 #endif /* PACKAGES_MUELU_SRC_MUECENTRAL_MUELU_TOPRAPFACTORY_DECL_HPP_ */

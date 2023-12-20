@@ -46,18 +46,13 @@
 #ifndef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_FWD_HPP
 #define MUELU_INTERFACEMAPPINGTRANSFERFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class InterfaceMappingTransferFactory;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class InterfaceMappingTransferFactory;
 }
 
 #ifndef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
 #define MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_INTERFACEMAPPINGTRANSFERFACTORY_FWD_HPP
+#endif  // MUELU_INTERFACEMAPPINGTRANSFERFACTORY_FWD_HPP

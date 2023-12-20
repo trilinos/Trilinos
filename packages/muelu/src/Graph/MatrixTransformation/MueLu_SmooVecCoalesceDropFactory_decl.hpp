@@ -65,103 +65,100 @@
 
 namespace MueLu {
 
-  /*!
-    @class SmooVecCoalesceDropFactory
-    @brief Factory for creating a graph base on a given matrix.
+/*!
+  @class SmooVecCoalesceDropFactory
+  @brief Factory for creating a graph base on a given matrix.
 
-    Factory for creating graphs from matrices with entries selectively dropped.
+  Factory for creating graphs from matrices with entries selectively dropped.
 
-    ## Code paths ##
+  ## Code paths ##
 
-    Experimental dropping function based on taking a set of random vectors u, running
-    a smoother on A u = 0, and then basing the drop decisions on "how smooth" the vectors
-    are local. Neighobring regions where the vectors are smooth can be aggregated
-    together and so these are kept in the associated drop matrix. Areas that are
-    not smooth should end up in different aggregates and so the A_ij representing
-    these should be dropped.  This Factory can address both PDE systems and
-    scalar PDEs, always creating a matrix reprsenting nodal connections as opposed
-    to dof connections.
+  Experimental dropping function based on taking a set of random vectors u, running
+  a smoother on A u = 0, and then basing the drop decisions on "how smooth" the vectors
+  are local. Neighobring regions where the vectors are smooth can be aggregated
+  together and so these are kept in the associated drop matrix. Areas that are
+  not smooth should end up in different aggregates and so the A_ij representing
+  these should be dropped.  This Factory can address both PDE systems and
+  scalar PDEs, always creating a matrix reprsenting nodal connections as opposed
+  to dof connections.
 
-     To enter this factor as opposed to the more standard CoalesceDropFactory() one
-     must set "aggregation: drop scheme" to "unsupported vector smoothing". In this
-     case some of the parameter options associated with CoalesceDropFactory (e.g.,
-     "aggregation: drop tol", "aggregation: Dirichlet threshold", "lightweight wrap")
-     will cause parameter validator errors.
+   To enter this factor as opposed to the more standard CoalesceDropFactory() one
+   must set "aggregation: drop scheme" to "unsupported vector smoothing". In this
+   case some of the parameter options associated with CoalesceDropFactory (e.g.,
+   "aggregation: drop tol", "aggregation: Dirichlet threshold", "lightweight wrap")
+   will cause parameter validator errors.
 
-    ## Input/output of SmooVecCoalesceDropFactory ##
+  ## Input/output of SmooVecCoalesceDropFactory ##
 
-    ### User parameters of SmooVecCoalesceDropFactory ###
-    Parameter                  | type      | default   | master.xml | validated | requested | description
-    ---------------------------|-----------|-----------|:----------:|:---------:|:---------:|------------
-     A                         |Factory    | null      |            | *         | *         | Generating factory of the operator A
-     "aggregation: drop scheme"|std::string|"classical"| *          | *         | *         | Must choose "unsupported vector smoothing"
-     "aggregation: number of times to pre or post smooth"|int| 10|* |           | *         | Amount of pre or post smoothing invocations
-     "aggregation: number of random vectors"|int| 10   |          * | *         | *         | Number of random vectors
-     "aggregation: penalty parameters"|Array(double)|{12.0,-.20}| * | *         | *         | Ultimately determines how much dropping is done
+  ### User parameters of SmooVecCoalesceDropFactory ###
+  Parameter                  | type      | default   | master.xml | validated | requested | description
+  ---------------------------|-----------|-----------|:----------:|:---------:|:---------:|------------
+   A                         |Factory    | null      |            | *         | *         | Generating factory of the operator A
+   "aggregation: drop scheme"|std::string|"classical"| *          | *         | *         | Must choose "unsupported vector smoothing"
+   "aggregation: number of times to pre or post smooth"|int| 10|* |           | *         | Amount of pre or post smoothing invocations
+   "aggregation: number of random vectors"|int| 10   |          * | *         | *         | Number of random vectors
+   "aggregation: penalty parameters"|Array(double)|{12.0,-.20}| * | *         | *         | Ultimately determines how much dropping is done
 
-    The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
-    The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see SmooVecCoalesceDropFactory::GetValidParameters).<br>
-    The * in the @c requested column states that the data is requested as input with all dependencies (see SmooVecCoalesceDropFactory::DeclareInput).
+  The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
+  The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see SmooVecCoalesceDropFactory::GetValidParameters).<br>
+  The * in the @c requested column states that the data is requested as input with all dependencies (see SmooVecCoalesceDropFactory::DeclareInput).
 
-    ### Variables provided by UncoupledAggregationFactory ###
+  ### Variables provided by UncoupledAggregationFactory ###
 
-    After SmooVecCoalesceDropFactory::Build the following data is available (if requested)
+  After SmooVecCoalesceDropFactory::Build the following data is available (if requested)
 
-    Parameter | generated by | description
-    ----------|--------------|------------
-    Graph   | SmooVecCoalesceDropFactory   | Graph of matrix A
-    DofsPerNode | SmooVecCoalesceDropFactory | number of DOFs per node. Note, that we assume a constant number of DOFs per node for all nodes associated with the operator A.
+  Parameter | generated by | description
+  ----------|--------------|------------
+  Graph   | SmooVecCoalesceDropFactory   | Graph of matrix A
+  DofsPerNode | SmooVecCoalesceDropFactory | number of DOFs per node. Note, that we assume a constant number of DOFs per node for all nodes associated with the operator A.
 
-  */
+*/
 
-  template<class Scalar = DefaultScalar,
-           class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class SmooVecCoalesceDropFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class SmooVecCoalesceDropFactory : public SingleLevelFactoryBase {
 #undef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! Constructor
+  SmooVecCoalesceDropFactory();
 
-    //! Constructor
-    SmooVecCoalesceDropFactory();
+  //! Destructor
+  virtual ~SmooVecCoalesceDropFactory() {}
 
-    //! Destructor
-    virtual ~SmooVecCoalesceDropFactory() { }
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //@}
 
-    //@}
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& currentLevel) const;
 
-    void DeclareInput(Level &currentLevel) const;
+  /// set predrop function
+  void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& predrop) { predrop_ = predrop; }
 
-    /// set predrop function
-    void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &predrop) { predrop_ = predrop; }
+  //@}
 
-    //@}
+  void Build(Level& currentLevel) const;  // Build
 
-    void Build(Level &currentLevel) const; // Build
+ private:
+  // pre-drop function
+  mutable RCP<PreDropFunctionBaseClass> predrop_;
 
-  private:
+  //! Methods to support compatible-relaxation style dropping
+  void badGuysCoalesceDrop(const Matrix& Amat, Teuchos::ArrayRCP<Scalar>& dropParams, LO nPDEs, const MultiVector& smoothedTVecs, const MultiVector& smoothedNull, RCP<GraphBase>& filteredGraph) const;
+  void badGuysDropfunc(LO row, const Teuchos::ArrayView<const LocalOrdinal>& indices, const Teuchos::ArrayView<const Scalar>& vals, const MultiVector& smoothedTVecs, LO nPDEs, Teuchos::ArrayRCP<Scalar>& penalties, const MultiVector& smoothedNull, Teuchos::ArrayRCP<LO>& Bcols, Teuchos::ArrayRCP<bool>& keepOrNot, LO& Nbcols, LO nLoc) const;
 
-    // pre-drop function
-    mutable
-     RCP<PreDropFunctionBaseClass> predrop_;
+};  // class SmooVecCoalesceDropFactory
 
-    //! Methods to support compatible-relaxation style dropping
-    void badGuysCoalesceDrop(const Matrix& Amat, Teuchos::ArrayRCP<Scalar> & dropParams, LO nPDEs, const MultiVector&  smoothedTVecs, const MultiVector& smoothedNull, RCP<GraphBase>& filteredGraph) const;
-    void badGuysDropfunc(LO row, const Teuchos::ArrayView<const LocalOrdinal>& indices, const Teuchos::ArrayView<const Scalar>& vals, const MultiVector&  smoothedTVecs, LO nPDEs, Teuchos::ArrayRCP<Scalar> & penalties, const MultiVector& smoothedNull, Teuchos::ArrayRCP<LO>& Bcols, Teuchos::ArrayRCP<bool>& keepOrNot, LO &Nbcols, LO nLoc) const;
-
-  }; //class SmooVecCoalesceDropFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
-#endif // MUELU_SMOOVECCOALESCEDROPFACTORY_DECL_HPP
+#endif  // MUELU_SMOOVECCOALESCEDROPFACTORY_DECL_HPP

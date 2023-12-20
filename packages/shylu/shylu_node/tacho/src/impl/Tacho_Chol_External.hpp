@@ -60,7 +60,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::External> {
       int r_val = 0;
       // Kokkos::single(Kokkos::PerTeam(member), [&]() {
       r_val = invoke(A);
-      TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LAPACK (potrf) returns non-zero error code.");
+      KOKKOS_IF_ON_HOST((TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LAPACK (potrf) returns non-zero error code.");))
       //});
       return r_val;
     } else {

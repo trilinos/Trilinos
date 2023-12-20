@@ -53,12 +53,11 @@ echo "#endif" >> MueLu_UseShortNamesOrdinal.hpp
 
 # Add the matlab utilities to end of file
 echo "#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> TwoLevelMatlabFactory;" >> MueLu_UseShortNamesScalar.hpp
 echo "#endif" >> MueLu_UseShortNamesScalar.hpp
 echo "#ifdef MUELU_SINGLELEVELMATLABFACTORY_SHORT" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::SingleLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SingleLevelMatlabFactory;" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> SingleLevelMatlabFactory;" >> MueLu_UseShortNamesScalar.hpp
 echo "#endif" >> MueLu_UseShortNamesScalar.hpp
 echo "#ifdef MUELU_MATLABSMOOTHER_SHORT" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::MatlabSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatlabSmoother;" >> MueLu_UseShortNamesScalar.hpp
+echo "typedef MueLu::MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatlabSmoother;" >> MueLu_UseShortNamesScalar.hpp
 echo "#endif" >> MueLu_UseShortNamesScalar.hpp
-

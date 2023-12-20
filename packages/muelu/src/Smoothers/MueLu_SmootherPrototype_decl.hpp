@@ -53,98 +53,96 @@
 
 namespace MueLu {
 
-  class Level;
+class Level;
 
-  /*!
-    @class SmootherPrototype
-    @ingroup MueLuSmootherClasses
-    @brief Base class for smoother prototypes
+/*!
+  @class SmootherPrototype
+  @ingroup MueLuSmootherClasses
+  @brief Base class for smoother prototypes
 
-    A smoother prototype is a smoother which can be in two states:
-    - ready to be duplicated (parameters defined)
-    - ready to be used (setup phase completed)
+  A smoother prototype is a smoother which can be in two states:
+  - ready to be duplicated (parameters defined)
+  - ready to be used (setup phase completed)
 
-    'Smoother prototypes' can be fully copied using the Copy() method.
-  */
+  'Smoother prototypes' can be fully copied using the Copy() method.
+*/
 
-  template <class Scalar = SmootherBase<>::scalar_type,
-            class LocalOrdinal = typename SmootherBase<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename SmootherBase<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class SmootherPrototype :
-    public SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public Factory
-  {
-  public:
-    typedef Scalar scalar_type;
-    typedef LocalOrdinal local_ordinal_type;
-    typedef GlobalOrdinal global_ordinal_type;
-    typedef Node node_type;
+template <class Scalar        = SmootherBase<>::scalar_type,
+          class LocalOrdinal  = typename SmootherBase<Scalar>::local_ordinal_type,
+          class GlobalOrdinal = typename SmootherBase<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node          = typename SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class SmootherPrototype : public SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
+                          public Factory {
+ public:
+  typedef Scalar scalar_type;
+  typedef LocalOrdinal local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef Node node_type;
 
-  private:
+ private:
 #undef MUELU_SMOOTHERPROTOTYPE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //!@nameConstructors/Destructors.
-    //@{
+ public:
+  //!@nameConstructors/Destructors.
+  //@{
 
-    SmootherPrototype();
+  SmootherPrototype();
 
-    virtual ~SmootherPrototype();
+  virtual ~SmootherPrototype();
 
-    //@}
+  //@}
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    virtual void DeclareInput(Level &currentLevel) const = 0;
+  virtual void DeclareInput(Level &currentLevel) const = 0;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    virtual void Setup(Level &) = 0;
+  virtual void Setup(Level &) = 0;
 
-    virtual RCP<SmootherPrototype> Copy() const = 0;
+  virtual RCP<SmootherPrototype> Copy() const = 0;
 
-    //@}
+  //@}
 
-    //! @name Get/Set methods.
-    //@{
+  //! @name Get/Set methods.
+  //@{
 
-    //! Get the state of a smoother prototype.
-    bool IsSetup() const;
+  //! Get the state of a smoother prototype.
+  bool IsSetup() const;
 
-    //! Set the state of a smoother prototype.
-    // Developpers: this method must be called by your Setup() method.
-    void IsSetup(bool const &ToF);
+  //! Set the state of a smoother prototype.
+  // Developpers: this method must be called by your Setup() method.
+  void IsSetup(bool const &ToF);
 
-    //@}
+  //@}
 
-    //! @name Implements FactoryBase interface
-    //@{
-    virtual void CallBuild(Level & /* requestedLevel */) const {
-      TEUCHOS_TEST_FOR_EXCEPT(true);
-    }
+  //! @name Implements FactoryBase interface
+  //@{
+  virtual void CallBuild(Level & /* requestedLevel */) const {
+    TEUCHOS_TEST_FOR_EXCEPT(true);
+  }
 
-    //!
-    virtual void CallDeclareInput(Level & requestedLevel) const {
-      DeclareInput(requestedLevel);
-    }
+  //!
+  virtual void CallDeclareInput(Level &requestedLevel) const {
+    DeclareInput(requestedLevel);
+  }
 
-    //@}
+  //@}
 
-  private:
-    bool isSetup_;
+ private:
+  bool isSetup_;
 
-  }; // class SmootherPrototype
+};  // class SmootherPrototype
 
-} // namespace MueLu
+}  // namespace MueLu
 
-//TODO: private copy constructor
-//TODO: update comments
+// TODO: private copy constructor
+// TODO: update comments
 
 #define MUELU_SMOOTHERPROTOTYPE_SHORT
-#endif // MUELU_SMOOTHERPROTOTYPE_DECL_HPP
+#endif  // MUELU_SMOOTHERPROTOTYPE_DECL_HPP

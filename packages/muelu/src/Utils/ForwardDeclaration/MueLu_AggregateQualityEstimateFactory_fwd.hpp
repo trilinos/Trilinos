@@ -46,18 +46,13 @@
 #ifndef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_FWD_HPP
 #define MUELU_AGGREGATEQUALITYESTIMATEFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AggregateQualityEstimateFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class AggregateQualityEstimateFactory;
 }
 
 #ifndef MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
 #define MUELU_AGGREGATEQUALITYESTIMATEFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_AGGREGATEQUALITYESTIMATEFACTORY_FWD_HPP
+#endif  // MUELU_AGGREGATEQUALITYESTIMATEFACTORY_FWD_HPP

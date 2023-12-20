@@ -61,70 +61,63 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include "MueLu_GraphBase.hpp"
 
-
-
 // Zoltab2 InputTraits for MueLu Graph objects
 namespace Zoltan2 {
 
 template <typename LocalOrdinal,
           typename GlobalOrdinal,
           typename Node>
-struct InputTraits<MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node> >
-{
+struct InputTraits<MueLu::GraphBase<LocalOrdinal, GlobalOrdinal, Node> > {
   typedef Zoltan2::default_scalar_t scalar_t;
-  typedef LocalOrdinal  lno_t;
+  typedef LocalOrdinal lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
-  typedef Zoltan2::default_part_t  part_t;
-  typedef Node          node_t;
-  static inline std::string name() {return "MueLu::Graph";}
+  typedef Zoltan2::default_part_t part_t;
+  typedef Node node_t;
+  static inline std::string name() { return "MueLu::Graph"; }
 
-  Z2_STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES  // validate the types
 };
-}//end namespace Zoltan2
-
+}  // end namespace Zoltan2
 
 namespace MueLu {
 
-template <typename User, typename UserCoord=User>
-class MueLuGraphBaseAdapter : public Zoltan2::GraphAdapter<User,UserCoord> {
-public:
-
+template <typename User, typename UserCoord = User>
+class MueLuGraphBaseAdapter : public Zoltan2::GraphAdapter<User, UserCoord> {
+ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename Zoltan2::InputTraits<User>::scalar_t    scalar_t;
-  typedef typename Zoltan2::InputTraits<User>::offset_t    offset_t;
-  typedef typename Zoltan2::InputTraits<User>::lno_t    lno_t;
-  typedef typename Zoltan2::InputTraits<User>::gno_t    gno_t;
-  typedef typename Zoltan2::InputTraits<User>::part_t   part_t;
-  typedef typename Zoltan2::InputTraits<User>::node_t   node_t;
+  typedef typename Zoltan2::InputTraits<User>::scalar_t scalar_t;
+  typedef typename Zoltan2::InputTraits<User>::offset_t offset_t;
+  typedef typename Zoltan2::InputTraits<User>::lno_t lno_t;
+  typedef typename Zoltan2::InputTraits<User>::gno_t gno_t;
+  typedef typename Zoltan2::InputTraits<User>::part_t part_t;
+  typedef typename Zoltan2::InputTraits<User>::node_t node_t;
   typedef User xgraph_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
 #endif
 
   //! MueLu::GraphBase Compatibility Layer
-  const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return graph_->GetComm();}
-  const Teuchos::RCP< const Xpetra::Map<lno_t, gno_t, node_t> > getRowMap() const { return graph_->GetDomainMap();}
-  const RCP< const Xpetra::Map<lno_t, gno_t, node_t> > getColMap() const {
+  const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { return graph_->GetComm(); }
+  const Teuchos::RCP<const Xpetra::Map<lno_t, gno_t, node_t> > getRowMap() const { return graph_->GetDomainMap(); }
+  const RCP<const Xpetra::Map<lno_t, gno_t, node_t> > getColMap() const {
     // For some GraphBases' this is a ColMap, in others it is a seperate map that is
     // only non-null in parallel.
-    Teuchos::RCP<const Xpetra::Map<lno_t,gno_t,node_t> > map =  graph_->GetImportMap();
-    if(map.is_null()) map = graph_->GetDomainMap();
+    Teuchos::RCP<const Xpetra::Map<lno_t, gno_t, node_t> > map = graph_->GetImportMap();
+    if (map.is_null()) map = graph_->GetDomainMap();
     return map;
   }
-  size_t getLocalNumEntries() const { return graph_->GetNodeNumEdges();}
-  size_t getLocalNumRows() const { return getRowMap()->getLocalNumElements();}
-  size_t getLocalNumCols() const { return getColMap()->getLocalNumElements();}
+  size_t getLocalNumEntries() const { return graph_->GetNodeNumEdges(); }
+  size_t getLocalNumRows() const { return getRowMap()->getLocalNumElements(); }
+  size_t getLocalNumCols() const { return getColMap()->getLocalNumElements(); }
 
-  void getLocalRowView(lno_t LocalRow, Teuchos::ArrayView< const lno_t > &indices) const {
-   indices = graph_->getNeighborVertices(LocalRow);
+  void getLocalRowView(lno_t LocalRow, Teuchos::ArrayView<const lno_t> &indices) const {
+    indices = graph_->getNeighborVertices(LocalRow);
   }
-
-
 
   /*! \brief Destructor
    */
-  ~MueLuGraphBaseAdapter() { }
+  ~MueLuGraphBaseAdapter() {}
 
   /*! \brief Constructor for graph with no weights or coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
@@ -135,8 +128,8 @@ public:
    * one does because the user is obviously a Trilinos user.
    */
 
-   MueLuGraphBaseAdapter(const RCP<const User> &ingraph,
-                      int nVtxWeights=0, int nEdgeWeights=0);
+  MueLuGraphBaseAdapter(const RCP<const User> &ingraph,
+                        int nVtxWeights = 0, int nEdgeWeights = 0);
 
   /*! \brief Provide a pointer to weights for the primary entity type.
    *    \param val A pointer to the weights for index \c idx.
@@ -227,8 +220,7 @@ public:
   // TODO:  Need to add option for columns or nonzeros?
   size_t getLocalNumVertices() const { return getLocalNumRows(); }
 
-  void getVertexIDsView(const gno_t *&ids) const
-  {
+  void getVertexIDsView(const gno_t *&ids) const {
     ids = NULL;
     if (getLocalNumVertices())
       ids = getRowMap()->getLocalElementList().getRawPtr();
@@ -236,67 +228,57 @@ public:
 
   size_t getLocalNumEdges() const { return getLocalNumEntries(); }
 
-  void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
-  {
+  void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const {
     offsets = offs_.getRawPtr();
-    adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
+    adjIds  = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
   }
 
-  int getNumWeightsPerVertex() const { return nWeightsPerVertex_;}
+  int getNumWeightsPerVertex() const { return nWeightsPerVertex_; }
 
   void getVertexWeightsView(const scalar_t *&weights, int &stride,
-                            int idx) const
-  {
-    if(idx<0 || idx >= nWeightsPerVertex_)
-    {
+                            int idx) const {
+    if (idx < 0 || idx >= nWeightsPerVertex_) {
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid vertex weight index " << idx << std::endl;
       throw std::runtime_error(emsg.str());
     }
 
-
     size_t length;
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useDegreeAsVertexWeight(int idx) const {return vertexDegreeWeight_[idx];}
+  bool useDegreeAsVertexWeight(int idx) const { return vertexDegreeWeight_[idx]; }
 
-  int getNumWeightsPerEdge() const { return nWeightsPerEdge_;}
+  int getNumWeightsPerEdge() const { return nWeightsPerEdge_; }
 
-  void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const
-  {
-    if(idx<0 || idx >= nWeightsPerEdge_)
-    {
+  void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const {
+    if (idx < 0 || idx >= nWeightsPerEdge_) {
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid edge weight index " << idx << std::endl;
       throw std::runtime_error(emsg.str());
     }
 
-
     size_t length;
     edgeWeights_[idx].getStridedList(length, weights, stride);
   }
 
-
   template <typename Adapter>
   void applyPartitioningSolution(const User &in, User *&out,
                                  const Zoltan2::PartitioningSolution<Adapter> &solution) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument,"applyPartitionlingSolution not implemeneted");
-}
+    TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument, "applyPartitionlingSolution not implemeneted");
+  }
 
   template <typename Adapter>
   void applyPartitioningSolution(const User &in, RCP<User> &out,
                                  const Zoltan2::PartitioningSolution<Adapter> &solution) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument,"applyPartitionlingSolution not implemeneted");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument, "applyPartitionlingSolution not implemeneted");
   }
 
-
-private:
-
-  RCP<const User > ingraph_;
-  RCP<const xgraph_t > graph_;
+ private:
+  RCP<const User> ingraph_;
+  RCP<const xgraph_t> graph_;
   RCP<const Teuchos::Comm<int> > comm_;
 
   ArrayRCP<const offset_t> offs_;
@@ -311,67 +293,69 @@ private:
 
   int coordinateDim_;
   ArrayRCP<Zoltan2::StridedData<lno_t, scalar_t> > coords_;
-
 };
-
 
 /////////////////////////////////////////////////////////////////
 // Definitions
 /////////////////////////////////////////////////////////////////
 
 template <typename User, typename UserCoord>
-  MueLuGraphBaseAdapter<User,UserCoord>::MueLuGraphBaseAdapter(
-    const RCP<const User> &ingraph, int nVtxWgts, int nEdgeWgts):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
-      nWeightsPerVertex_(nVtxWgts), vertexWeights_(), vertexDegreeWeight_(),
-      nWeightsPerEdge_(nEdgeWgts), edgeWeights_(),
-      coordinateDim_(0), coords_()
-{
-  typedef Zoltan2::StridedData<lno_t,scalar_t> input_t;
+MueLuGraphBaseAdapter<User, UserCoord>::MueLuGraphBaseAdapter(
+    const RCP<const User> &ingraph, int nVtxWgts, int nEdgeWgts)
+  : ingraph_(ingraph)
+  , graph_()
+  , comm_()
+  , offs_()
+  , adjids_()
+  , nWeightsPerVertex_(nVtxWgts)
+  , vertexWeights_()
+  , vertexDegreeWeight_()
+  , nWeightsPerEdge_(nEdgeWgts)
+  , edgeWeights_()
+  , coordinateDim_(0)
+  , coords_() {
+  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
   graph_ = ingraph;
 
-  comm_ = getRowMap()->getComm();
-  size_t nvtx = getLocalNumRows();
+  comm_         = getRowMap()->getComm();
+  size_t nvtx   = getLocalNumRows();
   size_t nedges = getLocalNumEntries();
 
   // Unfortunately we have to copy the offsets and edge Ids
   // because edge Ids are not usually stored in vertex id order.
   size_t n = nvtx + 1;
   offs_.resize(n);
-  offset_t* offs = const_cast<offset_t*>(offs_.getRawPtr());
-  gno_t* adjids=0;
-  if(nedges > 0) {
+  offset_t *offs = const_cast<offset_t *>(offs_.getRawPtr());
+  gno_t *adjids  = 0;
+  if (nedges > 0) {
     adjids_.resize(nedges);
-    adjids = const_cast<gno_t*>(adjids_.getRawPtr());
+    adjids = const_cast<gno_t *>(adjids_.getRawPtr());
   }
 
   offs[0] = 0;
-  for (size_t v=0; v < nvtx; v++){
+  for (size_t v = 0; v < nvtx; v++) {
     ArrayView<const lno_t> nbors;
     getLocalRowView(v, nbors);
-    offs[v+1] = offs[v] + nbors.size();
-    for (offset_t e=offs[v], i=0; e < offs[v+1]; e++) {
+    offs[v + 1] = offs[v] + nbors.size();
+    for (offset_t e = offs[v], i = 0; e < offs[v + 1]; e++) {
       adjids[e] = getColMap()->getGlobalElement(nbors[i++]);
     }
   }
 
   if (nWeightsPerVertex_ > 0) {
     vertexWeights_ =
-          arcp(new input_t[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
+        arcp(new input_t[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
     vertexDegreeWeight_ =
-          arcp(new bool[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
-    for (int i=0; i < nWeightsPerVertex_; i++)
+        arcp(new bool[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
+    for (int i = 0; i < nWeightsPerVertex_; i++)
       vertexDegreeWeight_[i] = false;
   }
-
-  
 }
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void MueLuGraphBaseAdapter<User,UserCoord>::setWeights(
-    const scalar_t *weightVal, int stride, int idx)
-{
+void MueLuGraphBaseAdapter<User, UserCoord>::setWeights(
+    const scalar_t *weightVal, int stride, int idx) {
   if (this->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX)
     setVertexWeights(weightVal, stride, idx);
   else
@@ -380,29 +364,26 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void MueLuGraphBaseAdapter<User,UserCoord>::setVertexWeights(
-    const scalar_t *weightVal, int stride, int idx)
-{
-  typedef Zoltan2::StridedData<lno_t,scalar_t> input_t;
+void MueLuGraphBaseAdapter<User, UserCoord>::setVertexWeights(
+    const scalar_t *weightVal, int stride, int idx) {
+  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
 
-  if(idx<0 || idx >= nWeightsPerVertex_)
-  {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
+  if (idx < 0 || idx >= nWeightsPerVertex_) {
+    std::ostringstream emsg;
+    emsg << __FILE__ << ":" << __LINE__
+         << "  Invalid vertex weight index " << idx << std::endl;
+    throw std::runtime_error(emsg.str());
   }
 
   size_t nvtx = getLocalNumVertices();
-  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
+  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx * stride, false);
   vertexWeights_[idx] = input_t(weightV, stride);
 }
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void MueLuGraphBaseAdapter<User,UserCoord>::setWeightIsDegree(
-    int idx)
-{
+void MueLuGraphBaseAdapter<User, UserCoord>::setWeightIsDegree(
+    int idx) {
   if (this->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX)
     setVertexWeightIsDegree(idx);
   else {
@@ -416,15 +397,13 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void MueLuGraphBaseAdapter<User,UserCoord>::setVertexWeightIsDegree(
-    int idx)
-{
-  if(idx<0 || idx >= nWeightsPerVertex_)
-  {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
+void MueLuGraphBaseAdapter<User, UserCoord>::setVertexWeightIsDegree(
+    int idx) {
+  if (idx < 0 || idx >= nWeightsPerVertex_) {
+    std::ostringstream emsg;
+    emsg << __FILE__ << ":" << __LINE__
+         << "  Invalid vertex weight index " << idx << std::endl;
+    throw std::runtime_error(emsg.str());
   }
 
   vertexDegreeWeight_[idx] = true;
@@ -432,28 +411,24 @@ template <typename User, typename UserCoord>
 
 ////////////////////////////////////////////////////////////////////////////
 template <typename User, typename UserCoord>
-  void MueLuGraphBaseAdapter<User,UserCoord>::setEdgeWeights(
-    const scalar_t *weightVal, int stride, int idx)
-{
-  typedef Zoltan2::StridedData<lno_t,scalar_t> input_t;
+void MueLuGraphBaseAdapter<User, UserCoord>::setEdgeWeights(
+    const scalar_t *weightVal, int stride, int idx) {
+  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
 
-  if(idx<0 || idx >= nWeightsPerEdge_)
-  {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid edge weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
+  if (idx < 0 || idx >= nWeightsPerEdge_) {
+    std::ostringstream emsg;
+    emsg << __FILE__ << ":" << __LINE__
+         << "  Invalid edge weight index " << idx << std::endl;
+    throw std::runtime_error(emsg.str());
   }
 
   size_t nedges = getLocalNumEdges();
-  ArrayRCP<const scalar_t> weightV(weightVal, 0, nedges*stride, false);
+  ArrayRCP<const scalar_t> weightV(weightVal, 0, nedges * stride, false);
   edgeWeights_[idx] = input_t(weightV, stride);
 }
 
+}  // namespace MueLu
 
-}  //namespace MueLu
+#endif  // HAVE_MUELU_ZOLTAN2
 
-
-#endif// HAVE_MUELU_ZOLTAN2
-  
 #endif
