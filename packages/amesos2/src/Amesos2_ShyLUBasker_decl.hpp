@@ -192,8 +192,6 @@ private:
 
 
   // Members
-  bool runtime_transpose_solve;
-
   int num_threads;
 
   // The following Kokkos::View's are persisting storage for A's CCS arrays
