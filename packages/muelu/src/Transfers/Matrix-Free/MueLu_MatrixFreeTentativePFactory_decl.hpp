@@ -103,7 +103,7 @@ class MatrixFreeTentativePFactory : public PFactory {
  public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
-  typedef typename Node:execution_space execution_space;
+  typedef typename Node::execution_space execution_space;
   typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
   typedef Node node_type;
   typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType real_type;

@@ -99,6 +99,7 @@ class SemiCoarsenPFactory_kokkos : public PFactory {
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef typename Node::execution_space execution_space;
+  typedef typename Node::device_type DeviceType;
   typedef Node node_type;
 
  private:

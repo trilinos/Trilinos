@@ -73,9 +73,8 @@ namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 RCP<const ParameterList>
-SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
-                           Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
-                               DeviceType>>::GetValidParameterList() const {
+SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
+GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   std::string name = "semicoarsen: coarsen rate";
@@ -137,20 +136,18 @@ void SemiCoarsenPFactory_kokkos<
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class Node>
-void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
-                                Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
-                                    DeviceType>>::Build(Level &fineLevel,
-                                                        Level &coarseLevel)
+void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
+Build(Level &fineLevel,
+      Level &coarseLevel)
     const {
   return BuildP(fineLevel, coarseLevel);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class Node>
-void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
-                                Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
-                                    DeviceType>>::BuildP(Level &fineLevel,
-                                                         Level &coarseLevel)
+void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
+BuildP(Level &fineLevel,
+       Level &coarseLevel)
     const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
