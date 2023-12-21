@@ -1692,7 +1692,7 @@ namespace Tpetra {
         os << *prefix << "Fill lgMap" << endl;
         std::cerr << os.str();
       }
-      FillLgMap<LO, GO, no_uvm_device_type> fillIt (lgMap, minMyGID_);
+      FillLgMap<LO, GO, device_type> fillIt (lgMap, minMyGID_);
 
       if (verbose) {
         std::ostringstream os;
@@ -1779,7 +1779,7 @@ namespace Tpetra {
         os << *prefix << "Fill lgMap" << endl;
         std::cerr << os.str();
       }
-      FillLgMap<LO, GO, no_uvm_device_type> fillIt (lgMap, minMyGID_);
+      FillLgMap<LO, GO, device_type> fillIt (lgMap, minMyGID_);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;

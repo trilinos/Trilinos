@@ -252,15 +252,6 @@ namespace Tpetra {
     //! Legacy typedef that will go away at some point.
     using node_type = Node;
 
-    //! The hash will be CudaSpace, not CudaUVMSpace
-#ifdef KOKKOS_ENABLE_CUDA
-    using no_uvm_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
-      Kokkos::CudaSpace, memory_space>::type;
-    using no_uvm_device_type = Kokkos::Device<execution_space, no_uvm_memory_space>;
-#else
-    using no_uvm_device_type = device_type;
-#endif
-
     /// \brief Type of the "local" Map.
     ///
     /// \warning This object's interface is not yet fixed.  We provide
@@ -1239,7 +1230,7 @@ namespace Tpetra {
     /// the nondefault layout.
     mutable Kokkos::View<const global_ordinal_type*,
                          Kokkos::LayoutLeft,
-                         no_uvm_device_type> lgMap_;
+                         device_type> lgMap_;
 
     /// \brief Host View of lgMap_.
     ///
@@ -1256,7 +1247,7 @@ namespace Tpetra {
 
     //! Type of a mapping from global IDs to local IDs.
     typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type,
-      local_ordinal_type, no_uvm_device_type> global_to_local_table_type;
+      local_ordinal_type, device_type> global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
     ///
