@@ -60,8 +60,8 @@
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_GraphBase.hpp"
+
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_IndexManager.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
 
@@ -131,7 +131,7 @@ class Aggregates : public BaseClass {
    * the mapping of node to the owning processor id.
    *
    */
-  Aggregates(const GraphBase& graph);
+  Aggregates(const LWGraph& graph);
 
   /*! @brief Standard constructor for Aggregates structure
    *

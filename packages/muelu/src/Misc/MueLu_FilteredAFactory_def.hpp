@@ -149,15 +149,15 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& c
   else
     GetOStream(Runtime0) << "Generating new graph" << std::endl;
 
-  RCP<GraphBase> G = Get<RCP<GraphBase> >(currentLevel, "Graph");
+  RCP<LWGraph> G = Get<RCP<LWGraph> >(currentLevel, "Graph");
   if (MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING) {
     FILE* f         = fopen("graph.dat", "w");
     size_t numGRows = G->GetNodeNumVertices();
     for (size_t i = 0; i < numGRows; i++) {
       // Set up filtering array
-      ArrayView<const LO> indsG = G->getNeighborVertices(i);
-      for (size_t j = 0; j < (size_t)indsG.size(); j++) {
-        fprintf(f, "%d %d 1.0\n", (int)i, (int)indsG[j]);
+      auto indsG = G->getNeighborVertices(i);
+      for (size_t j = 0; j < (size_t)indsG.length; j++) {
+        fprintf(f, "%d %d 1.0\n", (int)i, (int)indsG(j));
       }
     }
     fclose(f);
@@ -235,7 +235,7 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& c
 // are ignored during the prolongator smoothing.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const {
+    BuildReuse(const Matrix& A, const LWGraph& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const {
   using TST = typename Teuchos::ScalarTraits<SC>;
   SC zero   = TST::zero();
 
@@ -256,10 +256,10 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   size_t numGRows = G.GetNodeNumVertices();
   for (size_t i = 0; i < numGRows; i++) {
     // Set up filtering array
-    ArrayView<const LO> indsG = G.getNeighborVertices(i);
-    for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+    auto indsG = G.getNeighborVertices(i);
+    for (size_t j = 0; j < as<size_t>(indsG.length); j++)
       for (size_t k = 0; k < blkSize; k++)
-        filter[indsG[j] * blkSize + k] = 1;
+        filter[indsG(j) * blkSize + k] = 1;
 
     for (size_t k = 0; k < blkSize; k++) {
       LO row = i * blkSize + k;
@@ -336,15 +336,15 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     // Reset filtering array
-    for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+    for (size_t j = 0; j < as<size_t>(indsG.length); j++)
       for (size_t k = 0; k < blkSize; k++)
-        filter[indsG[j] * blkSize + k] = 0;
+        filter[indsG(j) * blkSize + k] = 0;
   }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    BuildNew(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const {
+    BuildNew(const Matrix& A, const LWGraph& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const {
   using TST = typename Teuchos::ScalarTraits<SC>;
   SC zero   = Teuchos::ScalarTraits<SC>::zero();
 
@@ -360,10 +360,10 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   size_t numGRows = G.GetNodeNumVertices();
   for (size_t i = 0; i < numGRows; i++) {
     // Set up filtering array
-    ArrayView<const LO> indsG = G.getNeighborVertices(i);
-    for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+    auto indsG = G.getNeighborVertices(i);
+    for (size_t j = 0; j < as<size_t>(indsG.length); j++)
       for (size_t k = 0; k < blkSize; k++)
-        filter[indsG[j] * blkSize + k] = 1;
+        filter[indsG(j) * blkSize + k] = 1;
 
     for (size_t k = 0; k < blkSize; k++) {
       LO row = i * blkSize + k;
@@ -431,20 +431,25 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     // Reset filtering array
-    for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+    for (size_t j = 0; j < as<size_t>(indsG.length); j++)
       for (size_t k = 0; k < blkSize; k++)
-        filter[indsG[j] * blkSize + k] = 0;
+        filter[indsG(j) * blkSize + k] = 0;
   }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel, Matrix& filteredA, bool use_spread_lumping, double DdomAllowGrowthRate, double DdomCap) const {
+    BuildNewUsingRootStencil(const Matrix& A, const LWGraph& G, double dirichletThresh, Level& currentLevel, Matrix& filteredA, bool use_spread_lumping, double DdomAllowGrowthRate, double DdomCap) const {
   using TST = typename Teuchos::ScalarTraits<SC>;
   using Teuchos::arcp_const_cast;
   SC ZERO    = Teuchos::ScalarTraits<SC>::zero();
   SC ONE     = Teuchos::ScalarTraits<SC>::one();
   LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+  // In the badAggNeighbors loop, if the entry has any number besides NAN, I add it to the diagExtra and then zero the guy.
+  RCP<Aggregates> aggregates      = Get<RCP<Aggregates> >(currentLevel, "Aggregates");
+  RCP<AmalgamationInfo> amalgInfo = Get<RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
+  LO numAggs                      = aggregates->GetNumAggregates();
 
   size_t numNodes = G.GetNodeNumVertices();
   size_t blkSize  = A.GetFixedBlockSize();
@@ -463,11 +468,6 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   filteredAcrs->getAllValues(rowptr, inds, vals_const);
   vals = arcp_const_cast<SC>(vals_const);
   Array<bool> vals_dropped_indicator(vals.size(), false);
-
-  // In the badAggNeighbors loop, if the entry has any number besides NAN, I add it to the diagExtra and then zero the guy.
-  RCP<Aggregates> aggregates      = Get<RCP<Aggregates> >(currentLevel, "Aggregates");
-  RCP<AmalgamationInfo> amalgInfo = Get<RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
-  LO numAggs                      = aggregates->GetNumAggregates();
 
   // Check map nesting
   RCP<const Map> rowMap = A.getRowMap();
@@ -548,12 +548,12 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                Exceptions::RuntimeError, "MueLu::FilteredAFactory::BuildNewUsingRootStencil: Cannot find root node");
 
     // Find the list of "good" node neighbors (aka nodes which border the root node in the Graph G)
-    ArrayView<const LO> goodNodeNeighbors = G.getNeighborVertices(root_node);
+    auto goodNodeNeighbors = G.getNeighborVertices(root_node);
 
     // Now find the list of "good" aggregate neighbors (aka the aggregates neighbor the root node in the Graph G)
     goodAggNeighbors.resize(0);
-    for (LO k = 0; k < (LO)goodNodeNeighbors.size(); k++) {
-      goodAggNeighbors.push_back(vertex2AggId[goodNodeNeighbors[k]]);
+    for (LO k = 0; k < (LO)goodNodeNeighbors.length; k++) {
+      goodAggNeighbors.push_back(vertex2AggId[goodNodeNeighbors(k)]);
     }
     sort_and_unique(goodAggNeighbors);
 
@@ -580,10 +580,10 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // if there are 2 or more of these connections, remove them from the bad list.
 
     for (LO k = nodesInAgg.ptr_h(i); k < nodesInAgg.ptr_h(i + 1); k++) {
-      ArrayView<const LO> nodeNeighbors = G.getNeighborVertices(k);
-      for (LO kk = 0; kk < nodeNeighbors.size(); kk++) {
-        if ((vertex2AggId[nodeNeighbors[kk]] >= 0) && (vertex2AggId[nodeNeighbors[kk]] < numAggs))
-          (badCount[vertex2AggId[nodeNeighbors[kk]]])++;
+      auto nodeNeighbors = G.getNeighborVertices(k);
+      for (LO kk = 0; kk < nodeNeighbors.length; kk++) {
+        if ((vertex2AggId[nodeNeighbors(kk)] >= 0) && (vertex2AggId[nodeNeighbors(kk)] < numAggs))
+          (badCount[vertex2AggId[nodeNeighbors(kk)]])++;
       }
     }
     std::vector<LO> reallyBadAggNeighbors(std::min(G.getLocalMaxNumRowEntries() * maxAggSize, numNodes));
@@ -592,10 +592,10 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (badCount[badAggNeighbors[k]] <= 1) reallyBadAggNeighbors.push_back(badAggNeighbors[k]);
     }
     for (LO k = nodesInAgg.ptr_h(i); k < nodesInAgg.ptr_h(i + 1); k++) {
-      ArrayView<const LO> nodeNeighbors = G.getNeighborVertices(k);
-      for (LO kk = 0; kk < nodeNeighbors.size(); kk++) {
-        if ((vertex2AggId[nodeNeighbors[kk]] >= 0) && (vertex2AggId[nodeNeighbors[kk]] < numAggs))
-          badCount[vertex2AggId[nodeNeighbors[kk]]] = 0;
+      auto nodeNeighbors = G.getNeighborVertices(k);
+      for (LO kk = 0; kk < nodeNeighbors.length; kk++) {
+        if ((vertex2AggId[nodeNeighbors(kk)] >= 0) && (vertex2AggId[nodeNeighbors(kk)] < numAggs))
+          badCount[vertex2AggId[nodeNeighbors(kk)]] = 0;
       }
     }
 
@@ -629,9 +629,9 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       LO row_node = nodesInAgg.nodes_h(k);
 
       // Set up filtering array
-      ArrayView<const LO> indsG = G.getNeighborVertices(row_node);
-      for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
-        filter[indsG[j]] = true;
+      auto indsG = G.getNeighborVertices(row_node);
+      for (size_t j = 0; j < as<size_t>(indsG.length); j++)
+        filter[indsG(j)] = true;
 
       for (LO m = 0; m < (LO)blkSize; m++) {
         LO row = amalgInfo->ComputeLocalDOF(row_node, m);
@@ -681,8 +681,8 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }  // end m "blkSize" loop
 
       // Clear filtering array
-      for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
-        filter[indsG[j]] = false;
+      for (size_t j = 0; j < as<size_t>(indsG.length); j++)
+        filter[indsG(j)] = false;
 
     }  // end k loop over number of nodes in this agg
   }    // end i loop over numAggs

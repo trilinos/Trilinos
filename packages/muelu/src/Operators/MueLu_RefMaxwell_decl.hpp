@@ -663,7 +663,7 @@ class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar, LocalOr
   Teuchos::RCP<const Map> DorigDomainMap_;
   Teuchos::RCP<const Import> DorigImporter_;
   //! Vectors for BCs
-  Kokkos::View<bool *, typename Node::device_type> BCrows11_, BCcols22_, BCdomain22_;
+  Kokkos::View<bool *, typename Node::device_type::memory_space> BCrows11_, BCcols22_, BCdomain22_;
   int globalNumberBoundaryUnknowns11_, globalNumberBoundaryUnknowns22_;
   //! Nullspace for (1.1) block
   Teuchos::RCP<MultiVector> Nullspace11_, Nullspace22_;

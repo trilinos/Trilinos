@@ -440,8 +440,6 @@ void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
             outputter.outputField("AmalgamationInfo");
           else if (strType.find("MueLu::Constraint") != npos)
             outputter.outputField("Constraint");
-          else if (strType.find("MueLu::Graph") != npos)
-            outputter.outputField("Graph");
           else if (strType.find("MueLu::SmootherBase") != npos)
             outputter.outputField("SmootherBase");
           else if (strType.find("MueLu::SmootherPrototype") != npos)

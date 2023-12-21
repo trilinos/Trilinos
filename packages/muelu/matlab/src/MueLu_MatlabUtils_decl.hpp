@@ -126,7 +126,7 @@ typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy
 typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_complex;
 typedef MueLu::Aggregates<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAggregates;
 typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
-typedef MueLu::GraphBase<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
+typedef MueLu::LWGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
 
 #ifdef HAVE_MUELU_INTREPID2
 typedef Kokkos::DynRankView<mm_LocalOrd, typename mm_node_t::device_type> FieldContainer_ordinal;

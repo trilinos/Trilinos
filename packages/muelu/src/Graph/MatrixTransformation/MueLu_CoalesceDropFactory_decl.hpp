@@ -62,8 +62,8 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_LWGraph.hpp"
+
 #include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
@@ -173,7 +173,7 @@ class CoalesceDropFactory : public SingleLevelFactoryBase {
   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BlockDiagonalize(Level& currentLevel, const RCP<Matrix>& A, bool generate_matrix) const;
 
   // When we want to decouple a block diagonal system via a *graph*
-  void BlockDiagonalizeGraph(const RCP<GraphBase>& inputGraph, const RCP<LocalOrdinalVector>& ghostedBlockNumber, RCP<GraphBase>& outputGraph, RCP<const Import>& importer) const;
+  void BlockDiagonalizeGraph(const RCP<LWGraph>& inputGraph, const RCP<LocalOrdinalVector>& ghostedBlockNumber, RCP<LWGraph>& outputGraph, RCP<const Import>& importer) const;
 
 };  // class CoalesceDropFactory
 

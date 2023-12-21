@@ -51,7 +51,7 @@
 
 #include "MueLu_AggregationStructuredAlgorithm.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -167,12 +167,12 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
   // General problem informations are gathered from data stored in the problem matix.
-  RCP<const GraphBase> graph = Get<RCP<GraphBase> >(currentLevel, "Graph");
-  RCP<const Map> fineMap     = graph->GetDomainMap();
-  const int myRank           = fineMap->getComm()->getRank();
-  const int numRanks         = fineMap->getComm()->getSize();
-  const GO minGlobalIndex    = fineMap->getMinGlobalIndex();
-  const LO dofsPerNode       = Get<LO>(currentLevel, "DofsPerNode");
+  RCP<const LWGraph> graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
+  RCP<const Map> fineMap   = graph->GetDomainMap();
+  const int myRank         = fineMap->getComm()->getRank();
+  const int numRanks       = fineMap->getComm()->getSize();
+  const GO minGlobalIndex  = fineMap->getMinGlobalIndex();
+  const LO dofsPerNode     = Get<LO>(currentLevel, "DofsPerNode");
 
   // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
   // obtain a nodeMap.

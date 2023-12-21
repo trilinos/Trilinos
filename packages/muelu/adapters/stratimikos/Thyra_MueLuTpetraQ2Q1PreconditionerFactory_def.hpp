@@ -555,7 +555,7 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
   typedef MueLu::AmalgamationFactory<SC, LO, GO, NO> AmalgamationFactory;
   typedef MueLu::CoalesceDropFactory<SC, LO, GO, NO> CoalesceDropFactory;
   typedef MueLu::FilteredAFactory<SC, LO, GO, NO> FilteredAFactory;
-  typedef MueLu::GraphBase<LO, GO, NO> GraphBase;
+  typedef MueLu::LWGraph<LO, GO, NO> GraphBase;
 
   RCP<GraphBase> filteredGraph;
   {

@@ -51,7 +51,7 @@
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 
 #include "MueLu_AggregationPhase2bAlgorithm_fwd.hpp"
 
@@ -101,7 +101,7 @@ class AggregationPhase2bAlgorithm : public MueLu::AggregationAlgorithmBase<Local
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase 2b (expansion)"; }

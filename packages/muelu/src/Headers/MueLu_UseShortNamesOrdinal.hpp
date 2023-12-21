@@ -41,12 +41,6 @@ using AmalgamationInfo [[maybe_unused]] = MueLu::AmalgamationInfo<LocalOrdinal, 
 #ifdef MUELU_GLOBALLEXICOGRAPHICINDEXMANAGER_SHORT
 using GlobalLexicographicIndexManager [[maybe_unused]] = MueLu::GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_GRAPH_SHORT
-using Graph [[maybe_unused]] = MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_GRAPHBASE_SHORT
-using GraphBase [[maybe_unused]] = MueLu::GraphBase<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_HYBRIDAGGREGATIONFACTORY_SHORT
 using HybridAggregationFactory [[maybe_unused]] = MueLu::HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -76,9 +70,6 @@ using LWGraph [[maybe_unused]] = MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Nod
 #endif
 #ifdef MUELU_LWGRAPH_KOKKOS_SHORT
 using LWGraph_kokkos [[maybe_unused]] = MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_LOCALLWGRAPH_KOKKOS_SHORT
-using LocalLWGraph_kokkos [[maybe_unused]] = MueLu::LocalLWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_SHORT
 using LocalLexicographicIndexManager [[maybe_unused]] = MueLu::LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>;

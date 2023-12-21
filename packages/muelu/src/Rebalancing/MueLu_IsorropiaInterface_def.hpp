@@ -34,7 +34,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Graph.hpp"
+
 #include "MueLu_AmalgamationInfo.hpp"
 
 namespace MueLu {
