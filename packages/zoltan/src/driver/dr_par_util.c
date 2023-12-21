@@ -88,10 +88,10 @@ void print_sync_start(int proc, int do_print_line)
   int        from, flag;
   MPI_Status status;
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
   if ( proc != 0) {
     from = proc - 1;
-    MPI_Recv((void *) &flag, 1, MPI_INT, from, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv((void *) &flag, 1, MPI_INT, from, 0, zoltan_get_global_comm(), &status);
   }
   else {
     if (do_print_line) {
@@ -153,14 +153,14 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
 
   if (proc == 0) {
     from = nprocs - 1;
-    MPI_Irecv((void *) &flag, 1, MPI_INT, from, 0, MPI_COMM_WORLD, &req);
+    MPI_Irecv((void *) &flag, 1, MPI_INT, from, 0, zoltan_get_global_comm(), &req);
 
 #ifdef DEBUG_PSYNC
     (void) printf("\t\t\t Proc 0 posted receive from %5d\n", from);
 #endif
   }
 
-  MPI_Send((void *) &flag, 1, MPI_INT, to, 0, MPI_COMM_WORLD);
+  MPI_Send((void *) &flag, 1, MPI_INT, to, 0, zoltan_get_global_comm());
 
   if (proc == 0) {
     MPI_Wait(&req, &status);
@@ -172,7 +172,7 @@ void print_sync_end(int proc, int nprocs, int do_print_line)
    * (Num_Proc-1)
    */
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
 
 }
 
@@ -200,7 +200,7 @@ MPI_Request *req = NULL;
   offset = 0;
   for (i = 0; i < mesh->necmap; i++) {
     MPI_Irecv(&(recv_vec[offset]), mesh->ecmap_cnt[i]*vec_len, MPI_INT, 
-              mesh->ecmap_id[i], msg_type, MPI_COMM_WORLD, &(req[i]));
+              mesh->ecmap_id[i], msg_type, zoltan_get_global_comm(), &(req[i]));
     offset += mesh->ecmap_cnt[i]*vec_len;
   }
 
@@ -208,7 +208,7 @@ MPI_Request *req = NULL;
   offset = 0;
   for (i = 0; i < mesh->necmap; i++) {
     MPI_Send(&(send_vec[offset]), mesh->ecmap_cnt[i]*vec_len, MPI_INT, 
-             mesh->ecmap_id[i], msg_type, MPI_COMM_WORLD);
+             mesh->ecmap_id[i], msg_type, zoltan_get_global_comm());
     offset += mesh->ecmap_cnt[i]*vec_len;
   }
 

@@ -70,8 +70,9 @@ GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
   quadCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(fieldName(quadDegree_),quad.dl_vector);
 
   this->addEvaluatedField(quadCoordinates_);
+  this->addUnsharedField(Teuchos::rcp_const_cast<PHX::FieldTag>(quadCoordinates_.fieldTagPtr()));
 
-  this->setName("Gather "+fieldName(quadDegree_));
+  this->setName("GatherIntegrationCoordinates: "+fieldName(quadDegree_));
 }
 
 // **********************************************************************
@@ -81,6 +82,8 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 		      PHX::FieldManager<TRAITS>& /* fm */)
 {
   quadIndex_ = panzer::getIntegrationRuleIndex(quadDegree_, (*sd.worksets_)[0], this->wda);
+  // make sure to zero out derivative array as we only set the value for AD types in the loop below
+  Kokkos::deep_copy(quadCoordinates_.get_static_view(),0.0);
 }
 
 // **********************************************************************
@@ -94,11 +97,15 @@ evaluateFields(typename TRAITS::EvalData workset)
   auto d_quadCoordinates = quadCoordinates_.get_static_view();
 
   // just copy the array
-  Kokkos::parallel_for("GatherIntegrationCoords", s_ip_coordinates.extent_int(0), KOKKOS_LAMBDA (int i) {
-    for(int j=0;j<s_ip_coordinates.extent_int(1);j++)
-      for(int k=0;k<s_ip_coordinates.extent_int(2);k++)
-	d_quadCoordinates(i,j,k) = s_ip_coordinates(i,j,k);
-    });
+  Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{int(workset.num_cells),s_ip_coordinates.extent_int(1),s_ip_coordinates.extent_int(2)});
+  Kokkos::parallel_for("GatherIntegrationCoords", policy, KOKKOS_LAMBDA (const int i, const int j, const int k) {
+    if constexpr(Sacado::IsADType<typename EvalT::ScalarT>::value) {
+      d_quadCoordinates(i,j,k).val() = s_ip_coordinates(i,j,k);
+    }
+    else {
+      d_quadCoordinates(i,j,k) = s_ip_coordinates(i,j,k);
+    }
+  });
 }
 
 // **********************************************************************

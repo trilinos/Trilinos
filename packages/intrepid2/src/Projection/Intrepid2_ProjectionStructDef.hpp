@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionStructDef.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionStruct containing definitions.
+    \brief  Header file for the Intrepid2::ProjectionStruct containing definitions.
     \author Created by Mauro Perego
  */
 #ifndef __INTREPID2_PROJECTIONSTRUCTDEF_HPP__
@@ -60,10 +60,6 @@
 
 
 namespace Intrepid2 {
-
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-#endif
 
 template<typename DeviceType, typename ValueType>
 template<typename BasisPtrType>
@@ -601,6 +597,9 @@ void ProjectionStruct<DeviceType,ValueType>::createHDivProjectionStruct(const Ba
     hcurlBasis = new Basis_HCURL_TET_In_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Wedge<6> >()->key)
     hcurlBasis = new typename DerivedNodalBasisFamily<HostDeviceType,ValueType,ValueType>::HCURL_WEDGE(cellBasis->getDegree());
+// TODO: uncomment the next two lines once H(curl) pyramid implemented
+//  else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Pyramid<5> >()->key)
+//    hcurlBasis = new typename DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>::HCURL_PYR(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
     hcurlBasis = new Basis_HGRAD_QUAD_Cn_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)
@@ -764,9 +763,7 @@ void ProjectionStruct<DeviceType,ValueType>::createHVolProjectionStruct(const Ba
   allBasisDerivEPoints = view_type("allBasisDerivPoints", numBasisDerivEvalPoints, dim);
   allTargetDerivEPoints = view_type("allTargetDerivPoints", numTargetDerivEvalPoints, dim);
 }
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
+
 }  // Intrepid2 namespace
 #endif
 

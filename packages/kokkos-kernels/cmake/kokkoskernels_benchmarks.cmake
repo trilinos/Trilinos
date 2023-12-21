@@ -18,11 +18,27 @@ ELSE()
     # Note: recent bug (google/benchmark#1441) is preventing us from using
     # the latest benchmark release.
     SET(BENCHMARK_VERSION 1.6.2)
-    FetchContent_Declare(
-        googlebenchmark
-        URL https://github.com/google/benchmark/archive/refs/tags/v${BENCHMARK_VERSION}.tar.gz
-        URL_HASH MD5=14d14849e075af116143a161bc3b927b
-    )
+
+    # CMake 3.24 introduced DOWNLOAD_EXTRACT_TIMESTAMP, which controls whether
+    # extracting this file archive sets the file times to archive time (TRUE),
+    # or to extraction time (FALSE).
+    # In CMake 3.24+, the default is FALSE
+    # Prior, it did not exist, and was effectively TRUE
+    # Here, we okay the new default to silence CMP0135 warning
+    IF (${CMAKE_VERSION} VERSION_LESS "3.24.0")
+        FetchContent_Declare(
+            googlebenchmark
+            URL https://github.com/google/benchmark/archive/refs/tags/v${BENCHMARK_VERSION}.tar.gz
+            URL_HASH MD5=14d14849e075af116143a161bc3b927b
+        )
+    ELSE()
+        FetchContent_Declare(
+            googlebenchmark
+            URL https://github.com/google/benchmark/archive/refs/tags/v${BENCHMARK_VERSION}.tar.gz
+            URL_HASH MD5=14d14849e075af116143a161bc3b927b
+            DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+        )
+    ENDIF()
     FetchContent_MakeAvailable(googlebenchmark)
     LIST(POP_BACK CMAKE_MESSAGE_INDENT)
 

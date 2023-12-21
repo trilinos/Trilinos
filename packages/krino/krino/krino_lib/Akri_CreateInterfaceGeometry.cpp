@@ -48,7 +48,11 @@ std::unique_ptr<InterfaceGeometry> create_levelset_geometry(const stk::mesh::Par
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields)
 {
-  if (cdfemSupport.use_facets_instead_of_levelset_fields() && !phaseSupport.has_one_levelset_per_phase())
+  const double facetsRequested = cdfemSupport.use_facets_instead_of_levelset_fields() ||
+      (SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE == cdfemSupport.get_cdfem_edge_degeneracy_handling() &&
+       (RESNAP_USING_INTERFACE_ON_PREVIOUS_SNAPPED_MESH == cdfemSupport.get_resnap_method() ||
+        RESNAP_USING_INTERPOLATION == cdfemSupport.get_resnap_method()));
+  if (facetsRequested && !phaseSupport.has_one_levelset_per_phase())
     return std::make_unique<LevelSetSurfaceInterfaceGeometry>(activePart, cdfemSupport, phaseSupport, LSFields);
   return std::make_unique<LevelSetInterfaceGeometry>(activePart, cdfemSupport, phaseSupport, LSFields);
 }

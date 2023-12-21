@@ -87,7 +87,7 @@ Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
 getWorksets(const panzer::WorksetDescriptor & worksetDesc,
             const panzer::WorksetNeeds & needs) const
 {
-
+  PANZER_FUNC_TIME_MONITOR("panzer_stk::WorksetFactory::getWorksets");
   if(worksetDesc.requiresPartitioning()){
 
     // Generate the local mesh info if it doesn't already exist

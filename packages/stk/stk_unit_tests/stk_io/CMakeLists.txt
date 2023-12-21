@@ -33,30 +33,41 @@
 # 
 
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
-
 FILE(GLOB SOURCES *.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestMeshData.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestWriteSTKMesh.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestReadWriteSideSets.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/AttributeTests.cpp)
 
+if(HAVE_STK_Trilinos)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_EXECUTABLE(
-    stk_io_unit_tests
+  TRIBITS_ADD_EXECUTABLE(stk_io_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
-    )
+  )
 
-TRIBITS_ADD_TEST(
+  TRIBITS_ADD_TEST(
     stk_io_unit_tests
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
     NOEXEPREFIX
-    )
+  )
+else()
+  add_executable(stk_io_unit_tests ${SOURCES})
+  target_link_libraries(stk_io_unit_tests PUBLIC stk_io_util)
+  target_link_libraries(stk_io_unit_tests PUBLIC stk_io)
+  target_link_libraries(stk_io_unit_tests PUBLIC stk_unit_test_utils)
+  target_link_libraries(stk_io_unit_tests PUBLIC stk_unit_main)
+
+  target_include_directories(stk_io_unit_tests PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  add_test(NAME "stk_io_unit_tests" COMMAND stk_io_unit_tests)
+endif()
 

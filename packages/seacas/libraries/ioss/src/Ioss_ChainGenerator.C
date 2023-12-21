@@ -47,12 +47,10 @@ namespace {
   std::vector<std::string> get_adjacent_blocks(Ioss::Region      &region,
                                                const std::string &surface_list)
   {
-    auto                          selected_surfaces = Ioss::tokenize(surface_list, ",");
-    std::vector<std::string>      adjacent_blocks;
-    const Ioss::SideSetContainer &fss = region.get_sidesets();
-    for (const auto &fs : fss) {
-      if (surface_list == "ALL" || std::find(selected_surfaces.begin(), selected_surfaces.end(),
-                                             fs->name()) != selected_surfaces.end()) {
+    std::vector<std::string> adjacent_blocks;
+    if (surface_list == "ALL") {
+      const Ioss::SideSetContainer &fss = region.get_sidesets();
+      for (const auto &fs : fss) {
         // Save a list of all blocks that are adjacent to the surfaces...
         std::vector<std::string> blocks;
         fs->block_membership(blocks);
@@ -61,14 +59,65 @@ namespace {
         }
       }
     }
+    else {
+      auto selected_surfaces = Ioss::tokenize(surface_list, ",");
+      for (const auto &surface : selected_surfaces) {
+        auto *sset = region.get_sideset(surface);
+        if (sset != nullptr) {
+          // Save a list of all blocks that are adjacent to the surfaces...
+          std::vector<std::string> blocks;
+          sset->block_membership(blocks);
+          for (const auto &block : blocks) {
+            adjacent_blocks.push_back(block); // May have duplicates at this point.
+          }
+        }
+        else {
+          fmt::print("\nWARNING: Surface '{}' does not exist in this model.\n", surface);
+        }
+      }
+    }
+
     Ioss::Utils::uniquify(adjacent_blocks);
     return adjacent_blocks;
   }
 
   template <typename INT>
+  void get_line_front(Ioss::SideSet *fs, const Ioss::ElementBlock *block,
+                      const std::string &adj_block, Ioss::chain_t<INT> &element_chains,
+                      front_t<INT> &front)
+  {
+    std::vector<std::string> blocks;
+    fs->block_membership(blocks);
+    for (const auto &fs_block : blocks) {
+      if (fs_block == adj_block) {
+        // This faceset has some elements that are in `adj_block` -- put those in the `front`
+        // list. Get list of "sides" in this faceset...
+        std::vector<INT> element_side;
+        assert(fs->side_block_count() == 1);
+        const auto *fb = fs->get_block(0);
+        fb->get_field_data("element_side_raw", element_side);
+
+        // Mark each element so we know it is on the sideset(s)
+        for (size_t i = 0; i < element_side.size(); i += 2) {
+          auto element = element_side[i];
+          if (block->contains(element)) {
+            if (element_chains[element - 1] == Ioss::chain_entry_t<INT>()) {
+              int side                    = static_cast<int>(element_side[i + 1]); // 1-based sides
+              element_chains[element - 1] = Ioss::chain_entry_t<INT>{element, 0};
+              front.push_back(std::make_pair(element, side));
+              if (debug & 16) {
+                fmt::print("Putting element {}, side {} in front.\n", element, side);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  template <typename INT>
   front_t<INT> get_line_front(Ioss::Region &region, const std::string &adj_block,
-                              Ioss::chain_t<INT> &element_chains, const std::string &surface_list,
-                              INT /*dummy*/)
+                              Ioss::chain_t<INT> &element_chains, const std::string &surface_list)
   {
     front_t<INT> front;
 
@@ -80,38 +129,18 @@ namespace {
       return front;
     }
 
-    auto selected_surfaces = Ioss::tokenize(surface_list, ",");
-    // Now find the facesets that have faces on this block...
-    const Ioss::SideSetContainer &fss = region.get_sidesets();
-    for (const auto &fs : fss) {
-      if (surface_list == "ALL" || std::find(selected_surfaces.begin(), selected_surfaces.end(),
-                                             fs->name()) != selected_surfaces.end()) {
-        std::vector<std::string> blocks;
-        fs->block_membership(blocks);
-        for (const auto &fs_block : blocks) {
-          if (fs_block == adj_block) {
-            // This faceset has some elements that are in `adj_block` -- put those in the `front`
-            // list. Get list of "sides" in this faceset...
-            std::vector<INT> element_side;
-            assert(fs->side_block_count() == 1);
-            const auto *fb = fs->get_block(0);
-            fb->get_field_data("element_side_raw", element_side);
-
-            // Mark each element so we know it is on the sideset(s)
-            for (size_t i = 0; i < element_side.size(); i += 2) {
-              auto element = element_side[i];
-              if (block->contains(element)) {
-                if (element_chains[element - 1] == Ioss::chain_entry_t<INT>()) {
-                  int side = static_cast<int>(element_side[i + 1]); // 1-based sides
-                  element_chains[element - 1] = Ioss::chain_entry_t<INT>{element, 0};
-                  front.push_back(std::make_pair(element, side));
-                  if (debug & 16) {
-                    fmt::print("Putting element {}, side {} in front.\n", element, side);
-                  }
-                }
-              }
-            }
-          }
+    if (surface_list == "ALL") {
+      const Ioss::SideSetContainer &fss = region.get_sidesets();
+      for (const auto &fs : fss) {
+        get_line_front(fs, block, adj_block, element_chains, front);
+      }
+    }
+    else {
+      auto selected_surfaces = Ioss::tokenize(surface_list, ",");
+      for (const auto &surface : selected_surfaces) {
+        auto *sset = region.get_sideset(surface);
+        if (sset != nullptr) {
+          get_line_front(sset, block, adj_block, element_chains, front);
         }
       }
     }
@@ -179,13 +208,18 @@ namespace Ioss {
     // The `adjacent_blocks` contains the names of all element blocks that are adjacent to the
     // surface(s) that specify the faces at the 'root' of the lines...
     std::vector<std::string> adjacent_blocks = get_adjacent_blocks(region, surface_list);
+    if (adjacent_blocks.empty()) {
+      fmt::print("WARNING: No surfaces in the model matched the input surface list ({}).\n\tNo "
+                 "chains will be generated.\n",
+                 surface_list);
+    }
     for (const auto &adj_block : adjacent_blocks) {
       // Get the offset into the element_chains vector...
       const auto *block  = region.get_element_block(adj_block);
       auto        offset = block->get_offset() + 1;
       auto        count  = block->entity_count();
 
-      auto front = get_line_front(region, adj_block, element_chains, surface_list, (INT)0);
+      auto front = get_line_front(region, adj_block, element_chains, surface_list);
       if (front.empty()) {
         continue;
       }

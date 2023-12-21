@@ -128,7 +128,7 @@ TEST_F(TestCategory, sparse_crs2coo) {
   // Square cases
   for (size_t i = 1; i < 256; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;
-    doAllCrs2Coo<TestExecSpace>(dim, dim);
+    doAllCrs2Coo<TestDevice>(dim, dim);
   }
 
   // Non-square cases
@@ -136,7 +136,7 @@ TEST_F(TestCategory, sparse_crs2coo) {
     size_t m = (std::rand() % 511) + 1;
     size_t n = (std::rand() % 511) + 1;
     while (n == m) n = (std::rand() % 511) + 1;
-    doAllCrs2Coo<TestExecSpace>(m, n);
+    doAllCrs2Coo<TestDevice>(m, n);
   }
 }
 }  // namespace Test

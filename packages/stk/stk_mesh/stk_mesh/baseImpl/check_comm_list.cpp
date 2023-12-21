@@ -89,7 +89,10 @@ void fill_expected_recv_data(const stk::mesh::BulkData& mesh,
 {
     for(const EntityCommListInfo& commInfo : comm_list) {
         STK_ThrowAssertMsg(commInfo.entity_comm != -1,"P"<<mesh.parallel_rank()<<" entity_comm==-1 for "<<commInfo.key);
-        STK_ThrowAssert(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)));
+        STK_ThrowAssertMsg(commInfo.entity_comm == commDB.entity_comm(mesh.entity_key(commInfo.entity)),
+                           "P"<<mesh.parallel_rank()<<" mod-cycle="<<mesh.synchronized_count()
+                           <<" bad comm-map data, entity-key="<<mesh.entity_key(commInfo.entity)<<", key="<<commInfo.key
+                           <<", commInfo.entity_comm="<<commInfo.entity_comm<<", commDB.entity_comm(entity-key)="<<commDB.entity_comm(mesh.entity_key(commInfo.entity)));
         push_back_key_procs_ghost_ids(commInfo.key,
                                       mesh.parallel_owner_rank(commInfo.entity)==mesh.parallel_rank(),
                                       commDB.comm(commInfo.entity_comm), recv_data);
@@ -190,7 +193,7 @@ bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
 
     std::string str = os.str();
     if (!str.empty()) {
-        error_msg<<"P"<<local_proc<<" check_comm_list_global_consistency:\n"<<str;
+        error_msg<<"P"<<local_proc<<" mod-cycle="<<mesh.synchronized_count()<<" check_comm_list_global_consistency:\n"<<str;
     }
 
     return str.empty();

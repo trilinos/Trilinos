@@ -43,20 +43,33 @@ void fill_edge_nodes(const Edge edge, std::vector<stk::mesh::Entity> & edgeNodes
   edgeNodes.emplace_back(edge.value() >> 32);
 }
 
-void fill_entity_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, std::vector<Edge> & entityEdges)
+void append_entity_edges(const stk::mesh::BulkData & mesh, const stk::topology entityTopology, const stk::mesh::Entity entity, std::vector<Edge> & entityEdges)
 {
-  const stk::topology topology = mesh.bucket(entity).topology();
-  const unsigned numEdges = topology.num_edges();
+  const unsigned numEdges = entityTopology.num_edges();
 
-  entityEdges.clear();
-  entityEdges.reserve(numEdges);
   const stk::mesh::Entity * entityNodes = mesh.begin_nodes(entity);
 
   for (unsigned iEdge = 0; iEdge < numEdges; ++iEdge)
   {
-    const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(topology, iEdge);
+    const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(entityTopology, iEdge);
     entityEdges.push_back(edge_from_edge_nodes(mesh, entityNodes[edgeNodeOrdinals[0]], entityNodes[edgeNodeOrdinals[1]]));
   }
+}
+
+void append_entity_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, std::vector<Edge> & entityEdges)
+{
+  append_entity_edges(mesh, mesh.bucket(entity).topology(), entity, entityEdges);
+}
+
+void fill_entity_edges(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, std::vector<Edge> & entityEdges)
+{
+  const stk::topology entityTopology = mesh.bucket(entity).topology();
+  const unsigned numEdges = entityTopology.num_edges();
+
+  entityEdges.clear();
+  entityEdges.reserve(numEdges);
+
+  append_entity_edges(mesh, entityTopology, entity, entityEdges);
 }
 
 int get_edge_parallel_owner_rank(const stk::mesh::BulkData & mesh, const Edge edge)
@@ -71,6 +84,25 @@ std::string debug_edge(const stk::mesh::BulkData & mesh, const Edge edge)
   std::ostringstream out;
   out << "Edge with nodes " << mesh.identifier(edgeNodes[0]) << " and " << mesh.identifier(edgeNodes[1]);
   return out.str();
+}
+
+std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+{
+  const stk::mesh::BucketVector& buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, elementSelector);
+
+  size_t edgeCount = 0;
+  for(const auto * bucketPtr : buckets)
+    edgeCount += bucketPtr->size()*bucketPtr->topology().num_edges();
+
+  std::vector<Edge> edges;
+  edges.reserve(edgeCount);
+
+  for(const auto & bucketPtr : buckets)
+    for (const auto & elem : *bucketPtr)
+      append_entity_edges(mesh, bucketPtr->topology(), elem, edges);
+
+  stk::util::sort_and_unique(edges);
+  return edges;
 }
 
 }

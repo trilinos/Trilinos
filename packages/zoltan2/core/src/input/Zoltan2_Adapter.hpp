@@ -336,23 +336,27 @@ protected:
 
 };
 
-template <typename User> class AdapterWithCoords : public BaseAdapter<User>
+template <typename User>
+class AdapterWithCoords : public BaseAdapter<User>
 {
+public:
   using scalar_t = typename BaseAdapter<User>::scalar_t;
   using device_t = typename BaseAdapter<User>::node_t::device_type;
   using host_t = typename Kokkos::HostSpace::memory_space;
-  template <typename space>
-  using coords_t = Kokkos::View<scalar_t **, Kokkos::LayoutLeft, space>;
+
+  // Coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+  using CoordsDeviceView = Kokkos::View<scalar_t **, Kokkos::LayoutLeft, device_t>;
+  using CoordsHostView = typename CoordsDeviceView::HostMirror;
 
 public:
   virtual void getCoordinatesView(const scalar_t *&coords, int &stride,
                                   int coordDim) const = 0;
-  virtual void getCoordinatesKokkosView(coords_t<device_t> &elements) const = 0;
+  virtual void getCoordinatesKokkosView(CoordsDeviceView &elements) const = 0;
 
-  virtual void getCoordinatesHostView(coords_t<host_t> &) const {
+  virtual void getCoordinatesHostView(CoordsHostView &) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
-  virtual void getCoordinatesDeviceView(coords_t<device_t> &elements) const {
+  virtual void getCoordinatesDeviceView(CoordsDeviceView &elements) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 };

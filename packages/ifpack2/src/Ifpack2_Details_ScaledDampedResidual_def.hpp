@@ -69,13 +69,13 @@ template<class WVector,
          class Scalar,
          bool use_beta>
 struct ScaledDampedResidualVectorFunctor {
-  static_assert (static_cast<int> (WVector::Rank) == 1,
+  static_assert (static_cast<int> (WVector::rank) == 1,
                  "WVector must be a rank 1 View.");
-  static_assert (static_cast<int> (DVector::Rank) == 1,
+  static_assert (static_cast<int> (DVector::rank) == 1,
                  "DVector must be a rank 1 View.");
-  static_assert (static_cast<int> (BVector::Rank) == 1,
+  static_assert (static_cast<int> (BVector::rank) == 1,
                  "BVector must be a rank 1 View.");
-  static_assert (static_cast<int> (XVector::Rank) == 1,
+  static_assert (static_cast<int> (XVector::rank) == 1,
                  "XVector must be a rank 1 View.");
 
   using execution_space = typename AMatrix::execution_space;

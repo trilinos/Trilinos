@@ -754,6 +754,15 @@ getLocalElementList() const
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type
+StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
+getMyGlobalIndicesDevice() const
+{
+    return map_->getMyGlobalIndicesDevice();
+}
+
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
 bool
 StridedMap<LocalOrdinal, GlobalOrdinal, Node>::
 isNodeLocalElement(LocalOrdinal localIndex) const

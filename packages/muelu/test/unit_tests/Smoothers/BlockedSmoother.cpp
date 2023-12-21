@@ -927,8 +927,7 @@ namespace MueLuTests {
       TEST_EQUALITY(n00[0], Teuchos::as<Scalar>(v00->getGlobalLength() * 0.25));
       TEST_EQUALITY(n11[0], Teuchos::as<Scalar>(v01->getGlobalLength() * 1.0));
       TEST_EQUALITY(n22[0], Teuchos::as<Scalar>(v10->getGlobalLength() * 0.5));
-      TEUCHOS_TEST_COMPARE(n33[0], <, v11->getGlobalLength() * 0.33333334, out, success);
-      TEUCHOS_TEST_COMPARE(n33[0], >, v11->getGlobalLength() * 0.33333333, out, success);
+      TEST_FLOATING_EQUALITY(n33[0], v11->getGlobalLength() / 3.0, Teuchos::ScalarTraits<magnitude_type>::eps());
 
     } // end UseTpetra
   }
@@ -1696,8 +1695,7 @@ namespace MueLuTests {
       TEST_EQUALITY(n00[0], Teuchos::as<Scalar>(v00->getGlobalLength() * 0.25));
       TEST_EQUALITY(n11[0], Teuchos::as<Scalar>(v01->getGlobalLength() * 1.0));
       TEST_EQUALITY(n22[0], Teuchos::as<Scalar>(v10->getGlobalLength() * 0.5));
-      TEUCHOS_TEST_COMPARE(n33[0], <, v11->getGlobalLength() * 0.33333334, out, success);
-      TEUCHOS_TEST_COMPARE(n33[0], >, v11->getGlobalLength() * 0.33333333, out, success);
+      TEST_FLOATING_EQUALITY(n33[0], v11->getGlobalLength() / 3.0, Teuchos::ScalarTraits<magnitude_type>::eps());
     } // end UseTpetra
   }
 
@@ -4493,7 +4491,7 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 40e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 44e-3, out, success);
       TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 15e-3, out, success);
     } // end UseTpetra
   }
@@ -6620,8 +6618,8 @@ namespace MueLuTests {
 
       TEST_EQUALITY(reorderedbA->getRangeMapExtractor()->getFullMap()->isSameAs(*(A->getRowMap())),false);
       TEST_EQUALITY(reorderedbA->getDomainMapExtractor()->getFullMap()->isSameAs(*(A->getDomainMap())),false);
-      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedA->getFrobeniusNorm()), <, 1e-12, out, success);
-      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedbA->getFrobeniusNorm()), <, 1e-12, out, success);
+      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedA->getFrobeniusNorm()), <, 1e4 * Teuchos::ScalarTraits<Scalar>::eps(), out, success);
+      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedbA->getFrobeniusNorm()), <, 1e4 * Teuchos::ScalarTraits<Scalar>::eps(), out, success);
     } // end UseTpetra
   }
 

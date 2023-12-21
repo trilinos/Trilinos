@@ -58,6 +58,8 @@
 #ifndef AMESOS2_META_HPP
 #define AMESOS2_META_HPP
 
+#include <type_traits>
+
 #include "Amesos2_config.h"
 
 
@@ -71,39 +73,6 @@ namespace Amesos2 {
      * @{
      */
 
-    /* SR: We will not use external initialization for the static const types.
-     * Combined with template meta programming this fails in Intel compilers
-     * 11-13. Moving all the initializations inside the declarations.
-     */
-    template <class T, T val>
-    struct integral_constant
-    {
-      typedef integral_constant<T, val>  type;
-      typedef T                          value_type;
-      static const T value = val;
-    };
-
-
-    typedef integral_constant<bool, true>  true_type;
-    typedef integral_constant<bool, false> false_type;
-
-    ////////////////////////////////////////
-    // Testing the same'ness of two types //
-    ////////////////////////////////////////
-
-    /**
-     * \brief test same-ness of two types
-     */
-    template <typename, typename>
-    struct is_same : public false_type
-    {};
-
-    template <typename T>
-    struct is_same<T,T> : public true_type
-    {};
-
-
-
     //////////////////////////////////////////
     // Meta-functions for boolean operators //
     //////////////////////////////////////////
@@ -113,49 +82,30 @@ namespace Amesos2 {
      */
 
     template <bool b1, bool b2>
-    struct or_ : public false_type {};
+    struct or_ : public std::false_type {};
 
     template <bool b>
-    struct or_<true,b> : public true_type {};
+    struct or_<true,b> : public std::true_type {};
 
     template <bool b>
-    struct or_<b,true> : public true_type {};
+    struct or_<b,true> : public std::true_type {};
 
 
     template <bool b1, bool b2>
-    struct and_ : public false_type {};
+    struct and_ : public std::false_type {};
 
     template <>
-    struct and_<true,true> : public true_type {};
+    struct and_<true,true> : public std::true_type {};
 
 
     template <bool b>
     struct not_ {};
 
     template <>
-    struct not_<true> : false_type {};
+    struct not_<true> : std::false_type {};
 
     template <>
-    struct not_<false> : true_type {};
-
-
-    //////////////////////////////////////
-    // Evaluating to a conditional type //
-    //////////////////////////////////////
-
-    template <bool B, typename T1, typename T2>
-    struct if_then_else {};
-
-    template <typename T1, typename T2>
-    struct if_then_else<true, T1, T2> {
-      typedef T1 type;
-    };
-
-    template <typename T1, typename T2>
-    struct if_then_else<false, T1, T2> {
-      typedef T2 type;
-    };
-
+    struct not_<false> : std::true_type {};
 
     ////////////////////////////////////////////
     // A meta-programming type-list structure //
@@ -233,10 +183,11 @@ namespace Amesos2 {
      */
     template <typename list, typename elem>
     struct type_list_contains {
-      static const bool value =
-                   if_then_else<is_same<typename list::head, elem>::value,
-                   true_type,
-                   type_list_contains<typename list::tail,elem> >::type::value;
+      static const bool value = std::conditional_t<
+          std::is_same_v<typename list::head, elem>,
+          std::true_type,
+          type_list_contains<typename list::tail,elem>
+        >::value;
     };
 
     // Base recursive case

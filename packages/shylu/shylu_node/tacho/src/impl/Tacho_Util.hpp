@@ -85,13 +85,21 @@ KOKKOS_FUNCTION constexpr bool runsOnCudaOrHIP() {
   KOKKOS_IF_ON_DEVICE(return true;)
 }
 #endif
+#if !defined(KOKKOS_ENABLE_OPENMP)
+KOKKOS_FUNCTION constexpr bool runsWithOMP() { return false; }
+#else
+KOKKOS_FUNCTION constexpr bool runsWithOMP() {
+  KOKKOS_IF_ON_HOST(return true;)
+  KOKKOS_IF_ON_DEVICE(return false;)
+}
+#endif
 template <class ExecutionSpace>
 inline constexpr bool run_tacho_on_host_v = !std::is_same_v<ExecutionSpace, Kokkos::DefaultExecutionSpace>
                                           || std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                                                                \
   if ((ierr) != 0) {                                                                                                   \
-    printf(">> Error in file %s, line %d, error %d \n   %s\n", __FILE__, __LINE__, ierr, msg);                         \
+    Kokkos::printf(">> Error in file %s, line %d, error %d \n   %s\n", __FILE__, __LINE__, ierr, msg);                         \
     Kokkos::abort(">> Tacho abort\n");                                                                                 \
   }
 
@@ -473,6 +481,9 @@ struct Algo {
   struct OnDevice {
     enum : int { tag = 1004 };
   };
+  struct Serial {
+    enum : int { tag = 1005 };
+  };
 
   struct Workflow {
     struct Serial {
@@ -491,6 +502,15 @@ struct ActiveAlgorithm {
 };
 template <>
 struct ActiveAlgorithm<false> {
+  using type = Algo::External;
+};
+
+template <bool withOMP>
+struct ActiveHostAlgorithm {
+  using type = Algo::Serial;
+};
+template <>
+struct ActiveHostAlgorithm<false> {
   using type = Algo::External;
 };
 
@@ -526,10 +546,10 @@ template <> struct ExecSpaceFactory<Kokkos::Cuda> {
 };
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-template <> struct ExecSpaceFactory<Kokkos::Experimental::HIP> {
-  static void createInstance(Kokkos::Experimental::HIP &exec_instance) { exec_instance = Kokkos::Experimental::HIP(); }
-  static void createInstance(const hipStream_t &s, Kokkos::Experimental::HIP &exec_instance) {
-    exec_instance = Kokkos::Experimental::HIP(s);
+template <> struct ExecSpaceFactory<Kokkos::HIP> {
+  static void createInstance(Kokkos::HIP &exec_instance) { exec_instance = Kokkos::HIP(); }
+  static void createInstance(const hipStream_t &s, Kokkos::HIP &exec_instance) {
+    exec_instance = Kokkos::HIP(s);
   }
 };
 #endif

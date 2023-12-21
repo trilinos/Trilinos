@@ -32,14 +32,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 FILE(GLOB SOURCES
    *.cpp
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_coupling_utest
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_coupling_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS ""
@@ -47,4 +45,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX
     )
+else()
+  add_executable(stk_coupling_utest ${SOURCES})
+  target_link_libraries(stk_coupling_utest stk_coupling)
+  target_link_libraries(stk_coupling_utest stk_unit_test_utils)
+  target_link_libraries(stk_coupling_utest stk_util_parallel)
+  target_link_libraries(stk_coupling_utest stk_unit_main)
+
+  add_test(NAME "stk_coupling_utest" COMMAND stk_coupling_utest)
+endif()
 

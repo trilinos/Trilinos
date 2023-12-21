@@ -1333,7 +1333,7 @@ c) **Setting up to run MPI programs:**
 
   MPI test and example executables are passed to CTest ``add_test()`` as::
 
-    add_test(
+    add_test(NAME <testName> COMMAND
       ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
       ${MPI_EXEC_NUMPROCS_FLAG} <NP>
       ${MPI_EXEC_POST_NUMPROCS_FLAGS}

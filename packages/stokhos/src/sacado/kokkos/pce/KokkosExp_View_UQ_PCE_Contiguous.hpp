@@ -939,16 +939,11 @@ struct PCEAllocation {
       m_cijk(cijk) {}
 
     inline void execute() {
-      if ( ! m_space.in_parallel() ) {
-        typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
-        const Kokkos::Impl::ParallelFor< PCEConstruct , PolicyType >
-          closure( *this , PolicyType( 0 , m_span ) );
-        closure.execute();
-        m_space.fence();
-      }
-      else {
-        for ( size_t i = 0 ; i < m_span ; ++i ) operator()(i);
-      }
+      typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
+      const Kokkos::Impl::ParallelFor< PCEConstruct , PolicyType >
+        closure( *this , PolicyType( 0 , m_span ) );
+      closure.execute();
+      m_space.fence();
     }
 
     KOKKOS_INLINE_FUNCTION

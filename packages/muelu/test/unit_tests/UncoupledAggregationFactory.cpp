@@ -120,10 +120,52 @@ namespace MueLuTests {
 
 
   } // Build
+ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build_ML, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    #   include <MueLu_UseShortNames.hpp>
+
+      out << "version: " << MueLu::Version() << std::endl;
+      Teuchos::ParameterList galeriList;
+      GlobalOrdinal nx = 20, ny = 20;
+      galeriList.set("nx", nx);
+      galeriList.set("ny", ny);
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+      map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
+      RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+      RCP<Matrix> A = Pr->BuildMatrix();
+      A->SetFixedBlockSize(2);
+
+      Level aLevel;
+      TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
+      aLevel.Request("A");
+      aLevel.Set("A",A);
+
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
+
+      // Test the ML style options
+      aggFact->SetParameter("aggregation: match ML phase2a",Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: match ML phase2b",Teuchos::ParameterEntry(true));
+      aggFact->SetFactory("Graph", dropFact);
+
+      aLevel.Request(*aggFact);
+
+      aggFact->Build(aLevel);
+
+
+  } // Build
+
+
 
   # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Constructor, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build, Scalar, LO, GO, Node)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build_ML, Scalar, LO, GO, Node) 
 
 # include <MueLu_ETI_4arg.hpp>
 

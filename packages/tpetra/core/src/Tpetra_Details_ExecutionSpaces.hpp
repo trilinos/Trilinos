@@ -454,7 +454,7 @@ constexpr KOKKOS_INLINE_FUNCTION bool is_gpu_exec_space<Kokkos::Cuda>() {
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool
-is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+is_gpu_exec_space<Kokkos::HIP>() {
   return true;
 }
 #endif

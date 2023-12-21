@@ -101,9 +101,6 @@ namespace MueLu {
 
       // interpret ML list
       newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"Maxwell"));
-
-
-
      
       // Hardwiring options to ensure ML compatibility
       newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);
@@ -115,6 +112,10 @@ namespace MueLu {
       newList.sublist("maxwell1: 11list").set("aggregation: use ml scaling of drop tol",true);
       newList.sublist("maxwell1: 22list").set("aggregation: use ml scaling of drop tol",true);
 
+      newList.sublist("maxwell1: 22list").set("aggregation: min agg size",3);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase1",true);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a",true);
+      newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2b",true);
 
       if(list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
         newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
@@ -214,8 +215,8 @@ namespace MueLu {
       }
       if (mode_ == MODE_STANDARD)  {
         precList11_.set("smoother: type", "HIPTMAIR");
-        precList11_.sublist("hiptmair: smoother type 1","CHEBYSHEV");
-        precList11_.sublist("hiptmair: smoother type 2","CHEBYSHEV");
+        precList11_.set("hiptmair: smoother type 1","CHEBYSHEV");
+        precList11_.set("hiptmair: smoother type 2","CHEBYSHEV");
         precList11_.sublist("hiptmair: smoother list 1") = defaultSmootherList;
         precList11_.sublist("hiptmair: smoother list 2") = defaultSmootherList;
       }
@@ -234,18 +235,7 @@ namespace MueLu {
 
 
     // Are we using Kokkos?
-# ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-      useKokkos_ = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-      useKokkos_ = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-      useKokkos_ = true;
-# endif
+    useKokkos_ = !Node::is_serial;
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
 
     parameterList_ = list;

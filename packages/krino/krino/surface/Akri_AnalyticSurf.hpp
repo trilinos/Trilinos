@@ -25,8 +25,7 @@ namespace krino {
 
 class Cylinder: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
-  Cylinder(const std::string & n,  // surface name
-           const double e1[3],  // first endpoint of axis
+  Cylinder(const double e1[3],  // first endpoint of axis
            const double e2[3],  // second endpoint of axis
            const double r,      // radius of cylinder
            const int sign);
@@ -57,8 +56,7 @@ private:
 
 class Sphere: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
-  Sphere(const std::string & n,  // surface name
-	 const stk::math::Vector3d & center,
+  Sphere(const stk::math::Vector3d & center,
 	 const double radius,
          const int sign = 1);
 
@@ -81,7 +79,6 @@ private:
 class Ellipsoid : public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
   Ellipsoid(
-      const std::string & name,  // surface name
       const std::vector<double> & center,
       const std::vector<double> & semiAxes,
       const std::vector<double> & rotationVec,
@@ -111,10 +108,9 @@ private:
 
 class Plane: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
-  Plane(const std::string & n,  // surface name
-	 const double normal[3],
-	 const double offset,
-	 const double multiplier);
+  Plane(const double normal[3],
+    const double offset,
+    const double multiplier);
 
   virtual ~Plane() {}
 
@@ -134,8 +130,7 @@ private:
 
 class Point: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
-  Point(const std::string & n,  // surface name
-        const stk::math::Vector3d & coords);
+  Point(const stk::math::Vector3d & coords);
 
   virtual ~Point() {}
 

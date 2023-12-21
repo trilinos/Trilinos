@@ -1415,7 +1415,13 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     std::string map_stk_topology_to_ioss(stk::topology topo)
     {
-      Ioss::ElementTopology *iossTopo = Ioss::ElementTopology::factory(topo.name(), true);
+      std::string name = topo.name();
+
+      // FIXME SHELL SIDE TOPOLOGY
+      if (topo == stk::topology::SHELL_SIDE_BEAM_2) { name = "edge3d2"; }
+      if (topo == stk::topology::SHELL_SIDE_BEAM_3) { name = "edge3d3"; }
+
+      Ioss::ElementTopology *iossTopo = Ioss::ElementTopology::factory(name, true);
       return iossTopo != nullptr ? iossTopo->name() : "invalid";
     }
 
@@ -1985,8 +1991,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         {
             stk::mesh::FieldState stateIdentifier = static_cast<stk::mesh::FieldState>(state);
             bool fieldExists = field_state_exists_on_io_entity(name, field, stateIdentifier, ioEntity, multiStateSuffixes);
-            if (!fieldExists && !ignoreMissingFields) {
-                STKIORequire(fieldExists);
+            if (!ignoreMissingFields) {
+              const sierra::String s = multiStateSuffixes != nullptr ? (*multiStateSuffixes)[state] : std::to_string(state);
+              STK_ThrowRequireMsg(fieldExists, "Field " << field->name() << s << " does not exist in input database");
             }
             if (fieldExists) {
                 stk::mesh::FieldBase *statedField = field->field_state(stateIdentifier);

@@ -1,25 +1,30 @@
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_middle_mesh)
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_middle_mesh/stk_middle_mesh)
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_middle_mesh/stk_middle_mesh/predicates)
-
 FILE(GLOB SOURCES *.cpp util/*.cpp)
 
-
-TRIBITS_ADD_EXECUTABLE(
-    stk_middle_mesh_utest
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE(stk_middle_mesh_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
     )
 
-TRIBITS_ADD_TEST(
-    stk_middle_mesh_utest
+  TRIBITS_ADD_TEST(stk_middle_mesh_utest
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
     NOEXEPREFIX
     )
+else()
+  add_executable(stk_middle_mesh_utest ${SOURCES})
+  target_link_libraries(stk_middle_mesh_utest stk_middle_mesh)
+  target_link_libraries(stk_coupling_utest stk_unit_test_utils)
+  target_link_libraries(stk_coupling_utest stk_util_parallel)
+  target_link_libraries(stk_coupling_utest stk_unit_main)
+
+  add_test(NAME "stk_middle_mesh_utest" COMMAND stk_middle_mesh_utest)
+endif()
+
+target_include_directories(stk_middle_mesh_utest PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>
+)

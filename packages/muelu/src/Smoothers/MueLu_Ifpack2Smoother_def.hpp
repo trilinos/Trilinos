@@ -55,6 +55,7 @@
 #include <Tpetra_RowMatrix.hpp>
 
 #include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_Hiptmair.hpp>
 #include <Ifpack2_RILUK.hpp>
 #include <Ifpack2_Relaxation.hpp>
 #include <Ifpack2_ILUT.hpp>
@@ -787,19 +788,18 @@ namespace MueLu {
     }
 
     // If we're doing Chebyshev subsmoothing, we'll need to get the eigenvalues
+    SC negone = -Teuchos::ScalarTraits<Scalar>::one();
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     std::string smoother1  = paramList.get("hiptmair: smoother type 1","CHEBYSHEV");
     std::string smoother2  = paramList.get("hiptmair: smoother type 2","CHEBYSHEV");
-    //    SC lambdaMax11,lambdaMax22;
+    SC lambdaMax11 = negone;
 
     if(smoother1 == "CHEBYSHEV") {
       ParameterList & list1 = paramList.sublist("hiptmair: smoother list 1");
-      //lambdaMax11 =
-      SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
+      lambdaMax11 = SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
     }
     if(smoother2 == "CHEBYSHEV") {
       ParameterList & list2 = paramList.sublist("hiptmair: smoother list 2");
-      //lambdaMax22 =
       SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list2);
     }
 
@@ -824,6 +824,26 @@ namespace MueLu {
     }
 
     prec_->compute();
+
+    // Post-processing the (1,1) eigenvalue, if we have one
+    if(smoother1 == "CHEBYSHEV" && lambdaMax11 == negone) {
+      using Teuchos::rcp_dynamic_cast;
+      typedef Tpetra::RowMatrix<SC, LO, GO, NO> MatrixType;
+      auto hiptmairPrec = rcp_dynamic_cast<Ifpack2::Hiptmair<MatrixType> >(prec_);
+      if(hiptmairPrec != Teuchos::null) {
+        auto chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(hiptmairPrec->getPrec1());
+        if (chebyPrec != Teuchos::null) {
+          lambdaMax11 = chebyPrec->getLambdaMaxForApply();
+          RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
+          if (!matA.is_null())
+            matA->SetMaxEigenvalueEstimate(lambdaMax11);
+          this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax11 << std::endl;
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax11 == negone, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): no maximum eigenvalue estimate");
+      }
+    }
+
+
   }
 
 

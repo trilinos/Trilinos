@@ -87,7 +87,7 @@ namespace RBGen {
   void LapackPOD::computeBasis()
   {
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( get_global_comm() );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
 #endif

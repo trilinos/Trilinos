@@ -57,6 +57,9 @@
 
 #include <Xpetra_CrsMatrix.hpp>
 
+#include <iostream>
+#include <cassert>
+
 namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////////////
@@ -83,25 +86,26 @@ namespace Zoltan2 {
 */
 
 template <typename User, typename UserCoord=User>
-  class XpetraCrsMatrixAdapter : public MatrixAdapter<User,UserCoord> {
+  class XpetraCrsMatrixAdapter : public MatrixAdapter<User, UserCoord> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
-  typedef typename InputTraits<User>::lno_t    lno_t;
-  typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::part_t   part_t;
-  typedef typename InputTraits<User>::node_t   node_t;
-  typedef typename InputTraits<User>::offset_t offset_t;
-  typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
-  typedef User user_t;
-  typedef UserCoord userCoord_t;
+  using scalar_t = typename InputTraits<User>::scalar_t;
+  using lno_t = typename InputTraits<User>::lno_t;
+  using gno_t = typename InputTraits<User>::gno_t;
+  using part_t = typename InputTraits<User>::part_t;
+  using node_t = typename InputTraits<User>::node_t;
+  using offset_t = typename InputTraits<User>::offset_t;
+  using xmatrix_t = Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t>;
+
+  using userCoord_t = UserCoord;
+  using user_t = User;
 #endif
 
   /*! \brief Constructor
-   *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object
+   *    \param inmatrix The user's Epetra, Tpetra, or Xpetra CrsMatrix object
    *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
-   *        the set \c nWeightsPerRow to the number of weights per row.
+   *        then set \c nWeightsPerRow to the number of weights per row.
    */
   XpetraCrsMatrixAdapter(const RCP<const User> &inmatrix,
                          int nWeightsPerRow=0);
@@ -175,9 +179,9 @@ public:
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets,
+                  ArrayRCP<const gno_t> &colIds) const
   {
-
     ArrayRCP< const lno_t > localColumnIds;
     ArrayRCP<const scalar_t> values;
     matrix_->getAllValues(offsets,localColumnIds,values);
@@ -186,8 +190,7 @@ public:
 
   void getCRSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &colIds,
-                  ArrayRCP<const scalar_t> &values) const
-  {
+                  ArrayRCP<const scalar_t> &values) const {
     ArrayRCP< const lno_t > localColumnIds;
     matrix_->getAllValues(offsets,localColumnIds,values);
     colIds = columnIds_;
@@ -269,7 +272,7 @@ template <typename User, typename UserCoord>
   matrix_->getAllValues(offset,localColumnIds,values);
   columnIds_.resize(nnz, 0);
 
-  for(offset_t i = 0; i < offset[nrows]; i++) {
+  for(offset_t i = 0; i < offset[nrows]; i++){
     columnIds_[i] = colMap_->getGlobalElement(localColumnIds[i]);
   }
 

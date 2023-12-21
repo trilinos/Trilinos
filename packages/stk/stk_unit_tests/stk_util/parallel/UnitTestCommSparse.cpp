@@ -44,72 +44,6 @@
 #include <ostream>                             // for basic_ostream::operator<<, operator<<, bas...
 #include <vector>                              // for vector
 
-#ifndef STK_HIDE_DEPRECATED_CODE // delete after August 2022
-TEST(ParallelComm, comm_recv_msg_sizes)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  int numProcs = stk::parallel_machine_size(comm);
-  if (numProcs == 1) {
-    GTEST_SKIP();
-  }
-  int myProc = stk::parallel_machine_rank(comm);
-
-  std::vector<stk::CommBuffer> send_bufs(numProcs), recv_bufs(numProcs);
-  std::vector<int> send_procs, recv_procs;
-  
-  for(int p=myProc-2; p<=myProc+2; ++p) {
-    if (p >= 0 && p < numProcs) {
-      send_bufs[p].set_size(myProc+1);
-      send_procs.push_back(p);
-      recv_procs.push_back(p);
-    }
-  }
-
-  stk::comm_recv_msg_sizes(comm, send_procs, recv_procs, send_bufs, recv_bufs);
-
-  for(int p=0; p<numProcs; ++p) {
-    if (p < (myProc-2) || p > (myProc+2)) {
-      EXPECT_EQ(0u, recv_bufs[p].size());
-    }
-    else {
-      EXPECT_EQ((unsigned)p+1, recv_bufs[p].size());
-    }
-  }
-}
-
-TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
-{
-  MPI_Comm comm = MPI_COMM_WORLD;
-  int numProcs = stk::parallel_machine_size(comm);
-  if (numProcs == 1) {
-    GTEST_SKIP();
-  }
-  int myProc = stk::parallel_machine_rank(comm);
-
-  std::vector<stk::CommBuffer> send_bufs(numProcs), recv_bufs(numProcs);
-  
-  for(int p=myProc-2; p<=myProc+2; ++p) {
-    if (p >= 0 && p < numProcs) {
-      send_bufs[p].set_size(myProc+1);
-    }
-  }
-
-  std::vector<int> send_procs, recv_procs;
-  stk::comm_recv_procs_and_msg_sizes(comm, send_bufs, recv_bufs, send_procs, recv_procs);
-
-  for(int p=0; p<numProcs; ++p) {
-    if (p < (myProc-2) || p > (myProc+2)) {
-      EXPECT_EQ(0u, recv_bufs[p].size());
-    }
-    else {
-      unsigned expected = p+1;
-      STK_ThrowRequireMsg( recv_bufs[p].size() == expected, "proc "<<myProc<<", recv_bufs["<<p<<"].size()="<<recv_bufs[p].size()<<std::endl);
-      EXPECT_EQ(expected, recv_bufs[p].size());
-    }
-  }
-}
-#endif
-
 TEST(ParallelComm, CommSparse_pair_with_string)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -337,6 +271,61 @@ TEST(ParallelComm, CommSparse_communicate_with_unpack)
       EXPECT_EQ(srcProc, recvData);
     }
   });
+}
+
+TEST(ParallelComm, CommSparse_communicate_with_extra_work)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
+  const int numProcs = commSparse.parallel_size();
+  if (numProcs == 1) { GTEST_SKIP(); }
+  const int myProc = commSparse.parallel_rank();
+  const int destProc = myProc+1 == numProcs ? 0 : myProc+1;
+
+  commSparse.send_buffer(destProc).pack(myProc);
+  commSparse.allocate_buffers();
+  commSparse.send_buffer(destProc).pack(myProc);
+
+  int myIntValue = -1;
+
+  auto extraWork = [&myIntValue]() { myIntValue = 999; };
+
+  myIntValue = -10;
+
+  commSparse.communicate_with_extra_work(extraWork);
+
+  EXPECT_EQ(999, myIntValue);
+}
+
+TEST(ParallelComm, CommSparse_communicate_with_extra_work_and_unpack)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
+  const int numProcs = commSparse.parallel_size();
+  if (numProcs == 1) { GTEST_SKIP(); }
+  const int myProc = commSparse.parallel_rank();
+  const int destProc = myProc+1 == numProcs ? 0 : myProc+1;
+  const int srcProc = myProc-1 < 0 ? numProcs-1 : myProc-1;
+
+  commSparse.send_buffer(destProc).pack(myProc);
+  commSparse.allocate_buffers();
+  commSparse.send_buffer(destProc).pack(myProc);
+
+  int myIntValue = -1;
+
+  auto extraWork = [&myIntValue]() { myIntValue = 999; };
+
+  myIntValue = -10;
+
+  commSparse.communicate_with_extra_work_and_unpack(extraWork, [&srcProc](int fromProc, stk::CommBuffer& buf) {
+    if (fromProc == srcProc) {
+      int recvData = -1;
+      buf.unpack(recvData);
+      EXPECT_EQ(srcProc, recvData);
+    }
+  });
+
+  EXPECT_EQ(999, myIntValue);
 }
 
 TEST(ParallelComm, serialConstructCommSparse_forMemoryLeakCheck)

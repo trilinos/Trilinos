@@ -57,64 +57,33 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
+
 namespace Intrepid2 {
 
 namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
+
+  using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
   template<typename ValueType, typename DeviceType>
   int HGRAD_TET_C2_FEM_Test01(const bool verbose) {
 
-    Teuchos::RCP<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    //! Create an execution space instance.
+    const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
-    if (verbose)
-      outStream = Teuchos::rcp(&std::cout, false);
-    else
-      outStream = Teuchos::rcp(&bhs,       false);
+    //! Setup test output stream.
+    Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+      verbose, "Basis_HGRAD_TET_C2_FEM", {
+        "1) Conversion of Dof tags into Dof ordinals and back",
+        "2) Basis values for VALUE, GRAD, and Dk operators"
+    });
 
     Teuchos::oblackholestream oldFormatState;
     oldFormatState.copyfmt(std::cout);
 
-    using DeviceSpaceType = typename DeviceType::execution_space;
-    typedef typename
-      Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-
-    *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-    *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
-  
-  *outStream
-    << "\n"
-    << "===============================================================================\n"
-    << "|                                                                             |\n"
-    << "|                 Unit Test (Basis_HGRAD_TET_C2_FEM)                          |\n"
-    << "|                                                                             |\n"
-    << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
-    << "|     2) Basis values for VALUE, GRAD, and Dk operators                       |\n"
-    << "|                                                                             |\n"
-    << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-    << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n"
-    << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
-    << "|                                                                             |\n"
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-    << "|                                                                             |\n"
-    << "===============================================================================\n";
-
     typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
     typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
     const ValueType tol = tolerence();
     int errorFlag = 0;
@@ -413,7 +382,7 @@ namespace Test {
     {
     // Check VALUE of basis functions: resize vals to rank-2 container:
     DynRankView ConstructWithLabel(vals, numFields, numPoints);
-    tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
+    tetBasis.getValues(space, vals, tetNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
     for (ordinal_type i = 0; i < numFields; ++i) {
@@ -436,7 +405,7 @@ namespace Test {
     {
     // Check GRAD of basis function: resize vals to rank-3 container
     DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-    tetBasis.getValues(vals, tetNodes, OPERATOR_GRAD);
+    tetBasis.getValues(space, vals, tetNodes, OPERATOR_GRAD);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
     for (ordinal_type i = 0; i < numFields; ++i) {
@@ -460,7 +429,7 @@ namespace Test {
     }
 
     // Check D1 of basis function (do not resize vals because it has the correct size: D1 = GRAD)
-    tetBasis.getValues(vals, tetNodes, OPERATOR_D1);
+    tetBasis.getValues(space, vals, tetNodes, OPERATOR_D1);
     Kokkos::deep_copy(vals_host, vals);
     for (ordinal_type i = 0; i < numFields; ++i) {
       for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -486,7 +455,7 @@ namespace Test {
     {
     // Check D2 of basis function
     DynRankView ConstructWithLabel(vals, numFields, numPoints, D2cardinality);
-    tetBasis.getValues(vals, tetNodes, OPERATOR_D2);
+    tetBasis.getValues(space, vals, tetNodes, OPERATOR_D2);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
     for (ordinal_type i = 0; i < numFields; ++i) {
@@ -528,7 +497,7 @@ namespace Test {
         const ordinal_type DkCardin  = getDkCardinality(op, spaceDim);
         DynRankView vals("vals", numFields, numPoints, DkCardin);
 
-        tetBasis.getValues(vals, tetNodes, op);
+        tetBasis.getValues(space, vals, tetNodes, op);
         auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
         Kokkos::deep_copy(vals_host, vals);
 

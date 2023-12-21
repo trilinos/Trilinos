@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::Basis_HGRAD_WEDGE_I2_Serendipity_FEM classes.
+    \brief  Unit tests for the Intrepid2::Basis_HGRAD_WEDGE_I2_FEM classes.
     \author Created by Kyungjoo Kim
 */
 

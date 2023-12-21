@@ -230,6 +230,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
     RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
     PnodalFact->SetParameterList(tp_list);
     M1.SetFactory("P",PnodalFact);
+    M1.SetFactory("CoarseSolver", Teuchos::null);
 
 
     bool r;
@@ -272,6 +273,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
     M1.SetKokkosRefactor(false);
     RCP<ReitzingerPFactory> PedgeFact  = rcp(new ReitzingerPFactory());
     M1.SetFactory("P",PedgeFact);
+    M1.SetFactory("CoarseSolver", Teuchos::null);
 
     // Do the setup
     bool r;
@@ -340,6 +342,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
     RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
     PnodalFact->SetParameterList(tp_list);
     M1.SetFactory("P",PnodalFact);
+    M1.SetFactory("CoarseSolver", Teuchos::null);
 
 
     bool r;
@@ -385,6 +388,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
     PFact->SetFactory("P",PedgeFact);
     M1.SetFactory("Ptent",PedgeFact);
     M1.SetFactory("P",PFact);
+    M1.SetFactory("CoarseSolver", Teuchos::null);
 
 
     // Do the setup
@@ -463,6 +467,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
       RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
       PnodalFact->SetParameterList(tp_list);
       M2.SetFactory("P",PnodalFact);
+      M2.SetFactory("CoarseSolver", Teuchos::null);
     }
 
     bool r;
@@ -525,6 +530,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed,
       M2.SetFactory("Ptent",PedgeFact2);
       M2.SetFactory("D0",PedgeFact2);
       M2.SetFactory("P",PFact);
+      M2.SetFactory("CoarseSolver", Teuchos::null);
     }
     
     // Do the setup
@@ -608,6 +614,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
       RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
       PnodalFact->SetParameterList(tp_list);
       M2.SetFactory("P",PnodalFact);
+      M2.SetFactory("CoarseSolver", Teuchos::null);
     }
 
     bool r;
@@ -666,7 +673,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
       M2.SetFactory("Ptent",PFact);
       M2.SetFactory("D0",PFact);
       M2.SetFactory("P",PFact);
-     
+      M2.SetFactory("CoarseSolver", Teuchos::null);
     }
     
     // Do the setup

@@ -43,6 +43,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Comm.hpp"
+#include "stk_mesh/base/DestroyElements.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_io/FillMesh.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
@@ -77,6 +78,22 @@ public:
 
     get_bulk().modification_end();
   }
+
+  void destroy_elems(const std::vector<std::pair<int,stk::mesh::EntityId>>& procElemIds)
+  {
+    stk::mesh::EntityVector elemsToDestroy;
+    for(const std::pair<int,stk::mesh::EntityId>& procElemId : procElemIds) {
+      if (procElemId.first == get_bulk().parallel_rank()) {
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, procElemId.second);
+        ASSERT_TRUE(get_bulk().is_valid(elem));
+        elemsToDestroy.push_back(elem);
+      }
+    }
+
+    get_bulk().modification_begin();
+    stk::mesh::destroy_elements_no_mod_cycle(get_bulk(), elemsToDestroy, get_meta().universal_part());
+    get_bulk().modification_end();
+  }
 };
 
 TEST_F(TestAura2D, quadKeyhole)
@@ -105,6 +122,33 @@ TEST_F(TestAura2D, quadKeyhole)
     verify_local_num_aura_entities(get_bulk(), stk::topology::ELEM_RANK, 3);
     verify_local_num_aura_entities(get_bulk(), stk::topology::NODE_RANK, 4);
   }
+}
+
+TEST_F(TestAura2D, triSharingGhosting)
+{
+  if (get_parallel_size() != 4) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1, TRI_3_2D, 1,2,3\n"
+                         "0, 2, TRI_3_2D, 3,2,4\n"
+                         "0, 8, TRI_3_2D, 3,1,10\n"
+                         "1, 3, TRI_3_2D, 2,5,4\n"
+                         "1, 4, TRI_3_2D, 2,6,5\n"
+                         "1, 9, TRI_3_2D, 4,5,11\n"
+                         "2, 5, TRI_3_2D, 2,7,6\n"
+                         "2, 6, TRI_3_2D, 1,7,2\n"
+                         "3, 7, TRI_3_2D, 6,8,5|sideset:data=3,1,4,1,5,1\n";
+
+  //This test provides coverage for some dark corners of BulkData::modification_end.
+  //Specifically, it sets up a combination of sharing and aura-ghosting such that
+  //proc 3 has an aura-ghost of node 2, and doesn't know that procs 1 and 2 share
+  //that node. Correspondingly, procs 1 and 2 know about each other, but don't know
+  //that proc 3 has a recv-ghost of node 2.
+  //The handling of this type of situation will get easier if/when we make ghosting
+  //info symmetric in BulkData.
+ 
+  setup_text_mesh(meshDesc);
+
+  destroy_elems({ {0,8}, {1,9} });
 }
 
 class AuraToSharedToAura : public TestTextMeshAura2d

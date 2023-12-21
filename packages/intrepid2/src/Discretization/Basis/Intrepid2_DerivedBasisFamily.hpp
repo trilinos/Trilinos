@@ -409,7 +409,7 @@ namespace Intrepid2
     {
       case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_PYR (polyOrder, pointType));
 //      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_PYR(polyOrder, pointType));
-//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_PYR (polyOrder, pointType));
+      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_PYR (polyOrder, pointType));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_PYR(polyOrder, pointType));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");

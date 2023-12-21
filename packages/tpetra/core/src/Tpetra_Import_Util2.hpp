@@ -57,6 +57,7 @@
 #include "Tpetra_Details_MpiTypeTraits.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Kokkos_DualView.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include <Teuchos_Array.hpp>
 #include "Tpetra_Details_createMirrorView.hpp"
 #include <Kokkos_UnorderedMap.hpp>
@@ -111,6 +112,12 @@ void
 sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
+template<class rowptr_view_type, class colind_view_type, class vals_view_type>
+void
+sortAndMergeCrsEntries (const rowptr_view_type& CRS_rowptr,
+		        const colind_view_type& CRS_colind,
+		        const vals_view_type& CRS_vals);
+
 /// \brief lowCommunicationMakeColMapAndReindex
 ///
 /// If you know the owning PIDs already, you can make the colmap a lot
@@ -128,16 +135,29 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
 ///   and should never be called by user code.
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowPointers,
-                                      const Teuchos::ArrayView<LocalOrdinal> &columnIndices_LID,
-                                      const Teuchos::ArrayView<GlobalOrdinal> &columnIndices_GID,
-                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-                                      const Teuchos::ArrayView<const int> &owningPids,
-                                      Teuchos::Array<int> &remotePids,
+lowCommunicationMakeColMapAndReindex (
+                                      const Teuchos::ArrayView<const size_t> &rowptr,
+                                      const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
+                                      const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
+                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
+                                      const Teuchos::ArrayView<const int> &owningPIDs,
+                                      Teuchos::Array<int> &remotePIDs,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
-
-
+/// \brief lowCommunicationMakeColMapAndReindex
+///
+/// Accepts Kokkos::View's for compatibility with non-Serial Node path in the Transfer and FillComplete
+/// path in Tpetra::CrsMatrix, thus avoiding unnecessary deep_copy's.
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+lowCommunicationMakeColMapAndReindex (
+                                      const Kokkos::View<size_t*,typename Node::device_type>        rowptr_view,
+                                      const Kokkos::View<LocalOrdinal*,typename Node::device_type>  colind_LID_view,
+                                      const Kokkos::View<GlobalOrdinal*,typename Node::device_type> colind_GID_view,
+                                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
+                                      const Teuchos::ArrayView<const int> &owningPIDs,
+                                      Teuchos::Array<int> &remotePIDs,
+                                      Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
   /// \brief Generates an list of owning PIDs based on two transfer (aka import/export objects)
   /// Let:
@@ -715,6 +735,23 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   return sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
 }
 
+template<class rowptr_view_type, class colind_view_type, class vals_view_type>
+void
+sortAndMergeCrsEntries(rowptr_view_type& CRS_rowptr,
+		       colind_view_type& CRS_colind,
+		       vals_view_type& CRS_vals)
+{
+  using execution_space = typename vals_view_type::execution_space;
+
+  auto CRS_rowptr_in = CRS_rowptr;
+  auto CRS_colind_in = CRS_colind;
+  auto CRS_vals_in   = CRS_vals;
+
+  KokkosSparse::sort_and_merge_matrix<execution_space, rowptr_view_type,
+				      colind_view_type, vals_view_type>(CRS_rowptr_in, CRS_colind_in, CRS_vals_in,
+									CRS_rowptr, CRS_colind, CRS_vals);
+}
+
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
@@ -731,7 +768,7 @@ lowCommunicationMakeColMapAndReindexSerial (const Teuchos::ArrayView<const size_
   typedef GlobalOrdinal GO;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO, Node> map_type;
-  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
+  const char prefix[] = "lowCommunicationMakeColMapAndReindexSerial: ";
 
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
@@ -952,10 +989,10 @@ lowCommunicationMakeColMapAndReindexSerial (const Teuchos::ArrayView<const size_
 }
 
 
-// Kokkos version of lowCommunicationMakeColMapAndReindex
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_t> &rowptr,
+lowCommunicationMakeColMapAndReindex (
+                                      const Teuchos::ArrayView<const size_t> &rowptr,
                                       const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
@@ -968,7 +1005,7 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   typedef GlobalOrdinal GO;
   typedef Tpetra::global_size_t GST;
   typedef Tpetra::Map<LO, GO, Node> map_type;
-  const char prefix[] = "lowCommunicationMakeColMapAndReindexKokkos: ";
+  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
 
   typedef typename Node::device_type DT;
   using execution_space = typename DT::execution_space;
@@ -978,10 +1015,10 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
 
   // Create device mirror and host mirror views from function parameters
   // When we pass in views instead of Teuchos::ArrayViews, we can avoid copying views
-  auto colind_LID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_LID.getRawPtr(), colind_LID.size(), true, "colind_LID");
-  auto rowptr_view = Details::create_mirror_view_from_raw_host_array(DT(), rowptr.getRawPtr(), rowptr.size(), true, "rowptr");
-  auto colind_GID_view = Details::create_mirror_view_from_raw_host_array(DT(), colind_GID.getRawPtr(), colind_GID.size(), true, "colind_GID");
-  auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(DT(), owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
+  auto colind_LID_view = Details::create_mirror_view_from_raw_host_array(exec, colind_LID.getRawPtr(), colind_LID.size(), true, "colind_LID");
+  auto rowptr_view = Details::create_mirror_view_from_raw_host_array(exec, rowptr.getRawPtr(), rowptr.size(), true, "rowptr");
+  auto colind_GID_view = Details::create_mirror_view_from_raw_host_array(exec, colind_GID.getRawPtr(), colind_GID.size(), true, "colind_GID");
+  auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(exec, owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
 
   typename decltype(colind_LID_view)::HostMirror colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
   typename decltype(colind_GID_view)::HostMirror colind_GID_host(colind_GID.getRawPtr(), colind_GID.size());
@@ -1030,7 +1067,6 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
         const int PID = owningPIDs_view[j];
         auto outcome = RemoteGIDs_view_map.insert(GID, PID);
         if(outcome.success() && PID == -1) {
-          printf("Cannot figure out if ID is owned.\n");
           Kokkos::abort("Cannot figure out if ID is owned.\n");
         }
       }
@@ -1043,7 +1079,7 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   Kokkos::View<int*, DT> PIDList_view("PIDList", NumRemoteColGIDs);
   auto PIDList_host = Kokkos::create_mirror_view(PIDList_view);
   
-  Kokkos::View<int*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
+  Kokkos::View<GO*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
   // For each index in RemoteGIDs_map that contains a GID, use "update" to indicate the number of GIDs "before" this GID
@@ -1088,7 +1124,6 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   // Build back end, containing remote GIDs, first
   const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
   Kokkos::View<GO*, DT> ColIndices_view("ColIndices", numMyCols);
-  auto ColIndices_host = Kokkos::create_mirror_view(ColIndices_view);
   
   // We don't need to load the backend of ColIndices or sort if there are no remote GIDs
   if(NumRemoteColGIDs > 0) {
@@ -1168,14 +1203,11 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
   //     each domain GID is a column GID.  we want to do this to
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
-  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
-  auto domainGlobalElements_view = Details::create_mirror_view_from_raw_host_array(DT(), domainGlobalElements.getRawPtr(), domainGlobalElements.size(), true, "domainGlobalElements");
-  
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
       // Load Global Indices into first numMyCols elements column GID list
-      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, domainGlobalElements.size()), KOKKOS_LAMBDA(const int i) {
-        ColIndices_view[i] = domainGlobalElements_view[i];
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i) {
+        ColIndices_view[i] = domainMap_local.getGlobalElement(i);
       });
     }
   }
@@ -1184,7 +1216,7 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
     LO NumLocalAgain = 0;
     Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i, LO& update, const bool final) {
       if(final && LocalGIDs_view[i]) {
-        ColIndices_view[update] = domainGlobalElements_view[i];
+        ColIndices_view[update] = domainMap_local.getGlobalElement(i);
       }
       if(LocalGIDs_view[i]) {
         update++;
@@ -1211,31 +1243,241 @@ lowCommunicationMakeColMapAndReindexKokkos (const Teuchos::ArrayView<const size_
 
   // For now, we copy back into colind_LID_host (which also overwrites the colind_LID Tuechos array)
   // When colind_LID becomes a Kokkos View we can delete this
-  Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);        
+  Kokkos::deep_copy(exec, colind_LID_host, colind_LID_view);        
 }
 
-
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
-                                      const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
-                                      const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
+void
+lowCommunicationMakeColMapAndReindex (
+                                      const Kokkos::View<size_t*,typename Node::device_type>        rowptr_view,
+                                      const Kokkos::View<LocalOrdinal*,typename Node::device_type>  colind_LID_view,
+                                      const Kokkos::View<GlobalOrdinal*,typename Node::device_type> colind_GID_view,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
-                                      const Teuchos::ArrayView<const int> &owningPIDs,
+                                      const Kokkos::View<int*,typename Node::device_type> owningPIDs_view,
                                       Teuchos::Array<int> &remotePIDs,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap)
 {
-  // Running lowCommMakeColMap with Kokkos is slower on host, but faster on device
-  // If Kokkos runs on host, select the serial, non-Kokkos version of lowCommMakeColMap, 
-  // but if Kokkos runs on device (CUDA / HIP), select the Kokkos version of lowCommMakeColMap
-  typedef typename Node::device_type DT;
-  static constexpr bool runOnHost = !std::is_same_v<typename DT::execution_space, Kokkos::DefaultExecutionSpace> || std::is_same_v<Kokkos::DefaultExecutionSpace, 
-    Kokkos::DefaultHostExecutionSpace>;
-  if(runOnHost) {
-    lowCommunicationMakeColMapAndReindexSerial<LocalOrdinal, GlobalOrdinal, Node> (rowptr, colind_LID, colind_GID, domainMapRCP, owningPIDs, remotePIDs, colMap);
-  }
-  else lowCommunicationMakeColMapAndReindexKokkos<LocalOrdinal, GlobalOrdinal, Node> (rowptr, colind_LID, colind_GID, domainMapRCP, owningPIDs, remotePIDs, colMap);
-}
+  using Teuchos::rcp;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Tpetra::global_size_t GST;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
 
+  typedef typename Node::device_type DT;
+  using execution_space = typename DT::execution_space;
+  execution_space exec;
+  using team_policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>;
+  typedef typename map_type::local_map_type local_map_type;
+
+  // The domainMap is an RCP because there is a shortcut for a
+  // (common) special case to return the columnMap = domainMap.
+  const map_type& domainMap = *domainMapRCP;
+
+  Kokkos::UnorderedMap<LO, bool, DT> LocalGIDs_view_map(colind_LID_view.size());
+  Kokkos::UnorderedMap<GO, LO, DT> RemoteGIDs_view_map(colind_LID_view.size());
+  
+  const size_t numMyRows = rowptr_view.size () - 1;
+  local_map_type domainMap_local = domainMap.getLocalMap();
+  
+  const size_t numDomainElements = domainMap.getLocalNumElements ();
+  Kokkos::View<bool*, DT> LocalGIDs_view("LocalGIDs", numDomainElements);
+  auto LocalGIDs_host = Kokkos::create_mirror_view(LocalGIDs_view);
+  
+  size_t NumLocalColGIDs = 0;
+  
+  // Scan all column indices and sort into two groups:
+  // Local:  those whose GID matches a GID of the domain map on this processor and
+  // Remote: All others.
+  // Kokkos::Parallel_reduce sums up NumLocalColGIDs, while we use the size of the Remote GIDs map to find NumRemoteColGIDs
+  Kokkos::parallel_reduce(team_policy(numMyRows, Kokkos::AUTO), KOKKOS_LAMBDA(const typename team_policy::member_type &member, size_t &update) { 
+    const int i = member.league_rank();
+    size_t NumLocalColGIDs_temp = 0;
+    size_t rowptr_start = rowptr_view[i];
+    size_t rowptr_end = rowptr_view[i+1];
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(member, rowptr_start, rowptr_end), [&](const size_t j, size_t &innerUpdate) {
+      const GO GID = colind_GID_view[j];
+      // Check if GID matches a row GID in local domain map
+      const LO LID = domainMap_local.getLocalElement (GID);
+      if (LID != -1) {
+        auto outcome = LocalGIDs_view_map.insert(LID);
+        // Fresh insert
+        if(outcome.success()) {
+          LocalGIDs_view[LID] = true;
+          innerUpdate++;
+        }
+      }
+      else {
+        const int PID = owningPIDs_view[j];
+        auto outcome = RemoteGIDs_view_map.insert(GID, PID);
+        if(outcome.success() && PID == -1) {
+          Kokkos::abort("Cannot figure out if ID is owned.\n");
+        }
+      }
+    }, NumLocalColGIDs_temp);
+    if(member.team_rank() == 0) update += NumLocalColGIDs_temp;
+  }, NumLocalColGIDs);
+  
+  LO NumRemoteColGIDs = RemoteGIDs_view_map.size();
+  
+  Kokkos::View<int*, DT> PIDList_view("PIDList_d", NumRemoteColGIDs);
+  
+  Kokkos::View<GO*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
+  auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
+
+  // For each index in RemoteGIDs_map that contains a GID, use "update" to indicate the number of GIDs "before" this GID
+  // This maps each element in the RemoteGIDs hash table to an index in RemoteGIDList / PIDList without any overwriting or empty spaces between indices
+  Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(0, RemoteGIDs_view_map.capacity()), KOKKOS_LAMBDA(const int i, GO& update, const bool final) {
+    if(final && RemoteGIDs_view_map.valid_at(i)) {
+      RemoteGIDList_view[update] = RemoteGIDs_view_map.key_at(i);
+      PIDList_view[update] = RemoteGIDs_view_map.value_at(i);
+    }
+    if(RemoteGIDs_view_map.valid_at(i)) {
+      update += 1;
+    }
+  });
+
+  // Possible short-circuit: If all domain map GIDs are present as
+  // column indices, then set ColMap=domainMap and quit.
+  if (domainMap.getComm ()->getSize () == 1) {
+    // Sanity check: When there is only one process, there can be no
+    // remoteGIDs.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      NumRemoteColGIDs != 0, std::runtime_error, prefix << "There is only one "
+      "process in the domain Map's communicator, which means that there are no "
+      "\"remote\" indices.  Nevertheless, some column indices are not in the "
+      "domain Map.");
+    if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
+      // In this case, we just use the domainMap's indices, which is,
+      // not coincidently, what we clobbered colind with up above
+      // anyway.  No further reindexing is needed.
+      colMap = domainMapRCP;
+      
+      // Fill out local colMap (which should only contain local GIDs)
+      auto localColMap = colMap->getLocalMap();
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, colind_GID_view.size()), KOKKOS_LAMBDA(const int i) {
+        colind_LID_view[i] = localColMap.getLocalElement(colind_GID_view[i]);
+      });
+      return;
+    }
+  }
+
+  // Now build the array containing column GIDs
+  // Build back end, containing remote GIDs, first
+  const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
+  Kokkos::View<GO*, DT> ColIndices_view("ColIndices", numMyCols);
+  
+  // We don't need to load the backend of ColIndices or sort if there are no remote GIDs
+  if(NumRemoteColGIDs > 0) {
+    if(NumLocalColGIDs != static_cast<size_t> (numMyCols)) {
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, NumRemoteColGIDs), KOKKOS_LAMBDA(const int i) {
+        ColIndices_view[NumLocalColGIDs+i] = RemoteGIDList_view[i];
+      });
+    }  
+  
+    // Find the largest PID for bin sorting purposes
+    int PID_max = 0;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<execution_space>(0, PIDList_view.size()), KOKKOS_LAMBDA(const int i, int& max) {
+      if(max < PIDList_view[i]) max = PIDList_view[i];
+    }, Kokkos::Max<int>(PID_max));
+  
+    using KeyViewTypePID = decltype(PIDList_view);
+    using BinSortOpPID = Kokkos::BinOp1D<KeyViewTypePID>;
+  
+    // Make a subview of ColIndices for remote GID sorting
+    auto ColIndices_subview = Kokkos::subview(ColIndices_view, Kokkos::make_pair(NumLocalColGIDs, ColIndices_view.size()));
+  
+    // Make binOp with bins = PID_max + 1, min = 0, max = PID_max
+    BinSortOpPID binOp2(PID_max+1, 0, PID_max);
+    
+    // Sort External column indices so that all columns coming from a
+    // given remote processor are contiguous.  This is a sort with one
+    // auxilary array: RemoteColIndices
+    Kokkos::BinSort<KeyViewTypePID, BinSortOpPID> bin_sort2(PIDList_view, 0, PIDList_view.size(), binOp2, false);
+    bin_sort2.create_permute_vector(exec);
+    bin_sort2.sort(exec, PIDList_view);
+    bin_sort2.sort(exec, ColIndices_subview);
+  
+    // Deep copy back from device to host
+    // Stash the RemotePIDs. Once remotePIDs is changed to become a Kokkos view, we can remove this and copy directly.
+    Teuchos::Array<int> PIDList(NumRemoteColGIDs);
+    Kokkos::View<int*, Kokkos::HostSpace> PIDList_host(PIDList.data(), PIDList.size());
+    Kokkos::deep_copy(exec, PIDList_host, PIDList_view);
+    exec.fence();
+  
+    remotePIDs = PIDList;
+  
+    // Sort external column indices so that columns from a given remote
+    // processor are not only contiguous but also in ascending
+    // order. NOTE: I don't know if the number of externals associated
+    // with a given remote processor is known at this point ... so I
+    // count them here.
+    LO StartCurrent = 0, StartNext = 1;
+    while(StartNext < NumRemoteColGIDs) {
+      if(PIDList_host[StartNext] == PIDList_host[StartNext-1]) {
+        StartNext++;
+      }
+      else {
+        Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
+        StartCurrent = StartNext;
+        StartNext++;
+      }
+    }
+  
+    Kokkos::sort(ColIndices_view, NumLocalColGIDs + StartCurrent, NumLocalColGIDs + StartNext);
+  }
+
+
+  // Build permute array for *local* reindexing.
+
+  // Now fill front end. Two cases:
+  //
+  // (1) If the number of Local column GIDs is the same as the number
+  //     of Local domain GIDs, we can simply read the domain GIDs into
+  //     the front part of ColIndices, otherwise
+  //
+  // (2) We step through the GIDs of the domainMap, checking to see if
+  //     each domain GID is a column GID.  we want to do this to
+  //     maintain a consistent ordering of GIDs between the columns
+  //     and the domain.
+  if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
+    if (NumLocalColGIDs > 0) {
+      // Load Global Indices into first numMyCols elements column GID list
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i) {
+        ColIndices_view[i] = domainMap_local.getGlobalElement(i);
+      });
+    }
+  }
+  else {
+    // This part isn't actually tested in the unit tests
+    LO NumLocalAgain = 0;
+    Kokkos::parallel_scan(Kokkos::RangePolicy<execution_space>(0, numDomainElements), KOKKOS_LAMBDA(const int i, LO& update, const bool final) {
+      if(final && LocalGIDs_view[i]) {
+        ColIndices_view[update] = domainMap_local.getGlobalElement(i);
+      }
+      if(LocalGIDs_view[i]) {
+        update++;
+      }
+    }, NumLocalAgain);
+    
+    
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (NumLocalAgain) != NumLocalColGIDs,
+      std::runtime_error, prefix << "Local ID count test failed.");
+  }
+
+  // Make column Map
+  const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid ();
+  
+  colMap = rcp (new map_type (minus_one, ColIndices_view, domainMap.getIndexBase (),
+                              domainMap.getComm ()));
+
+  // Fill out colind_LID using local map
+  auto localColMap = colMap->getLocalMap();
+  Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, colind_GID_view.size()), KOKKOS_LAMBDA(const int i) {
+    colind_LID_view[i] = localColMap.getLocalElement(colind_GID_view[i]);
+  });
+}
 
 // Generates an list of owning PIDs based on two transfer (aka import/export objects)
 // Let:

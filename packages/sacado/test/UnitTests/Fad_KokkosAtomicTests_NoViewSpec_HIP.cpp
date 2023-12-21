@@ -41,7 +41,7 @@
 #include "Fad_KokkosAtomicTests.hpp"
 
 // Instantiate tests for HIP device.
-using Kokkos::Experimental::HIP;
+using Kokkos::HIP;
 VIEW_FAD_TESTS_D( HIP )
 
 int main( int argc, char* argv[] ) {

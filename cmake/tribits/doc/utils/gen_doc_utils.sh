@@ -51,7 +51,8 @@ function generate_git_version_file {
     echo
     echo "Generating git version"
     echo
-    echo `git describe --match="$_TRIBITS_TAG_PREFIX*"` > TribitsGitVersion.txt
+    git describe --always --match="$_TRIBITS_TAG_PREFIX*" > TribitsGitVersion.txt || \
+      echo "$_TRIBITS_TAG_PREFIX.{Unknown version}" > TribitsGitVersion.txt
   else
     echo "$_TRIBITS_TAG_PREFIX.{Unknown version}" > TribitsGitVersion.txt
   fi

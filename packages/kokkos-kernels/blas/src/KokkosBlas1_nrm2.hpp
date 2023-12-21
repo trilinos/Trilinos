@@ -241,10 +241,17 @@ KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
       " Kokkos::ArithTraits<XMV::value_type>::mag_type");
 
   if (R.extent(0) != X.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBlas::serial_nrm2 (MV): Dimensions of R and X do not match,"
         " R: %d and X: %d x %d.\n",
         R.extent_int(0), X.extent_int(0), X.extent_int(1));
+#else
+    Kokkos::printf(
+        "KokkosBlas::serial_nrm2 (MV): Dimensions of R and X do not match,"
+        " R: %d and X: %d x %d.\n",
+        R.extent_int(0), X.extent_int(0), X.extent_int(1));
+#endif
     return 1;
   }
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL

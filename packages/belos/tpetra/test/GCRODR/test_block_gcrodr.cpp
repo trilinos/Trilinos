@@ -45,20 +45,23 @@
 // setParameters() for now.  Later, we'll test actually solving linear
 // systems.
 //
-#include <BelosConfigDefs.hpp>
-#include <BelosTpetraAdapter.hpp>
-#include <BelosTpetraTestFramework.hpp>
-#include <BelosBlockGCRODRSolMgr.hpp>
+
+#include "BelosConfigDefs.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "BelosTpetraTestFramework.hpp"
+#include "BelosBlockGCRODRSolMgr.hpp"
 
 #include <Tpetra_Core.hpp>
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
-int
-main (int argc, char *argv[])
+template <typename ScalarType>
+int run (int argc, char *argv[])
 {
+  // Teuchos usings
   using Teuchos::Comm;
   using Teuchos::FancyOStream;
   using Teuchos::getFancyOStream;
@@ -68,45 +71,37 @@ main (int argc, char *argv[])
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
-  using std::cout;
-  using std::endl;
-  //
+  
   // Typedefs for Tpetra template arguments.
-  //
-  typedef Tpetra::MultiVector<>::scalar_type scalar_type;
-  typedef Tpetra::MultiVector<>::local_ordinal_type local_ordinal_type;
-  typedef Tpetra::MultiVector<>::global_ordinal_type global_ordinal_type;
-  //
+  using ST = typename Tpetra::MultiVector<ScalarType>::scalar_type;
+  using LO = typename Tpetra::MultiVector<>::local_ordinal_type;
+  using GO = typename Tpetra::MultiVector<>::global_ordinal_type;
+  using NT = typename Tpetra::MultiVector<ST, LO, GO>::node_type;
+  
   // Tpetra objects which are the MV and OP template parameters of the
   // Belos specialization which we are testing.
-  //
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type> MV;
-  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type> OP;
-  //
+  using MV = typename Tpetra::MultiVector<ST, LO, GO>;
+  using OP = typename Tpetra::Operator<ST, LO, GO>;
+  
   // Other typedefs.
-  //
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> sparse_matrix_type;
-  typedef MV::node_type node_type;
+  using tcrsmatrix_t = Tpetra::CrsMatrix<ST, LO, GO>;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
-  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   RCP<oblackholestream> blackHole (new oblackholestream);
   const int myRank = comm->getRank ();
 
   // Output stream that prints only on Process 0.
   RCP<FancyOStream> out;
   if (myRank == 0) {
-    out = Teuchos::getFancyOStream (rcpFromRef (cout));
+    out = Teuchos::getFancyOStream (rcpFromRef (std::cout));
   } else {
     out = Teuchos::getFancyOStream (blackHole);
   }
 
-  //
   // Get test parameters from command-line processor.
-  //
   // CommandLineProcessor always understands int, but may not
-  // understand global_ordinal_type.  We convert to the latter below.
+  // understand GO.  We convert to the latter below.
   int numRows = comm->getSize() * 100;
   bool tolerant = false;
   bool verbose = false;
@@ -121,7 +116,7 @@ main (int argc, char *argv[])
   cmdp.setOption("debug", "release", &debug,
                  "Run debugging checks and print copious debugging output.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    *out << "\nEnd Result: TEST FAILED" << endl;
+    *out << "\nEnd Result: TEST FAILED" << std::endl;
     return EXIT_FAILURE;
   }
   // Output stream for verbose output.
@@ -131,33 +126,31 @@ main (int argc, char *argv[])
 
   // Test whether it's possible to instantiate the solver.
   // This is a minimal compilation test.
-  *verbOut << "Instantiating Block GCRODR solver" << endl;
-  Belos::BlockGCRODRSolMgr<scalar_type, MV, OP> solver;
-  //
-  // Test setting solver parameters.  For now, we just use an empty
+  *verbOut << "Instantiating Block GCRODR solver" << std::endl;
+  Belos::BlockGCRODRSolMgr<ST, MV, OP> solver;
+
+  // Test setting solver parameters. For now, we just use an empty
   // (but non-null) parameter list, which the solver should fill in
   // with defaults.
-  //
-  *verbOut << "Setting solver parameters" << endl;
+  *verbOut << "Setting solver parameters" << std::endl;
   RCP<ParameterList> solverParams = parameterList ();
   solver.setParameters (solverParams);
-  //
+  
   // Create a linear system to solve.
-  //
-  *verbOut << "Creating linear system" << endl;
-  RCP<sparse_matrix_type> A;
+  *verbOut << "Creating linear system" << std::endl;
+  RCP<tcrsmatrix_t> A;
   RCP<MV> X_guess, X_exact, B;
   {
-    Teuchos::RCP<node_type> node; // can be null; only for type deduction
-    typedef Belos::Tpetra::ProblemMaker<sparse_matrix_type> factory_type;
-    factory_type factory (comm, node, out, tolerant, debug);
+    Teuchos::RCP<NT> node; // can be null; only for type deduction
+    Belos::Tpetra::ProblemMaker<tcrsmatrix_t> factory (comm, node, out, tolerant, debug);
 
     RCP<ParameterList> problemParams = parameterList ();
     problemParams->set ("Global number of rows",
-                        static_cast<global_ordinal_type> (numRows));
+                        static_cast<GO> (numRows));
     problemParams->set ("Problem type", std::string ("Nonsymmetric"));
     factory.makeProblem (A, X_guess, X_exact, B, problemParams);
   }
+
   // Approximate solution vector is a copy of the guess vector.
   RCP<MV> X (new MV (*X_guess));
 
@@ -172,29 +165,33 @@ main (int argc, char *argv[])
   TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::logic_error,
                              "The approximate solution vector X is null!");
 
-  typedef Belos::LinearProblem<scalar_type, MV, OP> problem_type;
+  typedef Belos::LinearProblem<ST, MV, OP> problem_type;
   RCP<problem_type> problem (new problem_type (A, X, B));
   problem->setProblem ();
   solver.setProblem (problem);
 
-  *verbOut << "Solving linear system" << endl;
+  *verbOut << "Solving linear system" << std::endl;
   Belos::ReturnType result = solver.solve ();
 
   *verbOut << "Result of solve: "
            << Belos::convertReturnTypeToString (result)
-           << endl;
+           << std::endl;
 
   // Make sure that all the processes finished.
   comm->barrier ();
 
   if (success) {
-    *out << "\nEnd Result: TEST PASSED" << endl;
+    *out << "\nEnd Result: TEST PASSED" << std::endl;
     return EXIT_SUCCESS;
   }
   else {
-    *out << "\nEnd Result: TEST FAILED" << endl;
+    *out << "\nEnd Result: TEST FAILED" << std::endl;
     return EXIT_FAILURE;
   }
 }
 
+int main(int argc, char *argv[]) {
+  return run<double>(argc, argv);
+  // return run<float>(argc, argv);
+}
 

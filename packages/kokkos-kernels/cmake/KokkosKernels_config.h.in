@@ -29,6 +29,7 @@
    requires (a) header file(s) as well, and may use functions other
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE
 
 #cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARK
@@ -49,14 +50,14 @@
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_CUDA
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE
-/* Whether to build kernels for execution space Kokkos::Experimental::HIP */
+/* Whether to build kernels for execution space Kokkos::HIP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_HIP
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HIPSPACE
 /* Whether to build kernels for execution space Kokkos::Experimental::SYCL */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SYCL
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSPACE
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSHAREDSPACE
-/* Whether to build kernels for execution space Kokkos::Experimental::HIP */
+/* Whether to build kernels for execution space Kokkos::Experimental::OpenMPTarget */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMPTARGET
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_OPENMPTARGETSPACE
 /* Whether to build kernels for execution space Kokkos::OpenMP */
@@ -109,6 +110,8 @@
 
 /* BLAS library */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_BLAS
+/* LAPACK */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_LAPACK
 /* MKL library */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL
 /* CUSPARSE */

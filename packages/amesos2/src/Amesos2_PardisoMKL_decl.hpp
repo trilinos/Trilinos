@@ -309,8 +309,8 @@ namespace Amesos2 {
 
 
     static const bool complex_
-    = Meta::or_<Meta::is_same<solver_scalar_type, PMKL::_MKL_Complex8>::value,
-                Meta::is_same<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>::value>::value;
+    = Meta::or_<std::is_same_v<solver_scalar_type, PMKL::_MKL_Complex8>,
+                std::is_same_v<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>>::value;
 
     bool is_contiguous_;
 

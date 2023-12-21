@@ -63,6 +63,7 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_Random.hpp"
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
 #  include "Teuchos_SerialDenseMatrix.hpp"
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -1136,8 +1137,14 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // We've already called checkSizes(), so this cast must succeed.
+    MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
+    const bool copyOnHost = runKernelOnHost(sourceMV);
+    const char longFuncNameHost[] = "Tpetra::MultiVector::copyAndPermute[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::copyAndPermute[Device]";
     const char tfecfFuncName[] = "copyAndPermute: ";
-    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
+    ProfilingRegion regionCAP (copyOnHost ? longFuncNameHost : longFuncNameDevice);
 
     const bool verbose = Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -1157,9 +1164,6 @@ namespace Tpetra {
        std::logic_error, "permuteToLIDs.extent(0) = "
        << permuteToLIDs.extent (0) << " != permuteFromLIDs.extent(0) = "
        << permuteFromLIDs.extent (0) << ".");
-
-    // We've already called checkSizes(), so this cast must succeed.
-    MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
     const size_t numCols = this->getNumVectors ();
 
     // sourceMV doesn't belong to us, so we can't sync it.  Do the
@@ -1168,7 +1172,6 @@ namespace Tpetra {
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool copyOnHost = runKernelOnHost(sourceMV);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "copyOnHost=" << (copyOnHost ? "true" : "false") << endl;
@@ -1517,8 +1520,15 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // We've already called checkSizes(), so this cast must succeed.
+    MV& sourceMV = const_cast<MV&>(dynamic_cast<const MV&> (sourceObj));
+
+    const bool packOnHost = runKernelOnHost(sourceMV);
+    const char longFuncNameHost[] = "Tpetra::MultiVector::packAndPrepare[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::packAndPrepare[Device]";
     const char tfecfFuncName[] = "packAndPrepare: ";
-    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepare");
+    ProfilingRegion regionPAP (packOnHost ? longFuncNameHost : longFuncNameDevice);
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1545,8 +1555,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       std::cerr << os.str ();
     }
 
-    // We've already called checkSizes(), so this cast must succeed.
-    MV& sourceMV = const_cast<MV&>(dynamic_cast<const MV&> (sourceObj));
 
     const size_t numCols = sourceMV.getNumVectors ();
 
@@ -1599,7 +1607,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool packOnHost = runKernelOnHost(sourceMV);
     if (printDebugOutput) {
       std::ostringstream os;
       os << *prefix << "packOnHost=" << (packOnHost ? "true" : "false") << endl;
@@ -1909,7 +1916,12 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
-    const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
+
+    const bool unpackOnHost = runKernelOnHost(imports);
+
+    const char longFuncNameHost[] = "Tpetra::MultiVector::unpackAndCombine[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::unpackAndCombine[Device]";
+    const char * longFuncName = unpackOnHost ? longFuncNameHost : longFuncNameDevice;
     const char tfecfFuncName[] = "unpackAndCombine: ";
     ProfilingRegion regionUAC (longFuncName);
 
@@ -1981,7 +1993,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // the size of the imports buffer.
     // DistObject::doTransferNew decides where it was last modified (based on
     // whether communication buffers used were on host or device).
-    const bool unpackOnHost = runKernelOnHost(imports);
     if (unpackOnHost) {
       if (this->imports_.need_sync_host()) this->imports_.sync_host();
     }
@@ -2681,23 +2692,14 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   randomize (const Scalar& minVal, const Scalar& maxVal)
   {
     typedef impl_scalar_type IST;
+    typedef Tpetra::Details::Static_Random_XorShift64_Pool<typename device_type::execution_space> tpetra_pool_type;
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
 
-    // Seed the pseudorandom number generator using the calling
-    // process' rank.  This helps decorrelate different process'
-    // pseudorandom streams.  It's not perfect but it's effective and
-    // doesn't require MPI communication.  The seed also includes bits
-    // from the standard library's rand().
-    //
-    // FIXME (mfh 07 Jan 2015) Should we save the seed for later use?
-    // The code below just makes a new seed each time.
+    // Seed the pool based on the system RNG and the MPI rank, if needed
+    if(!tpetra_pool_type::isSet())
+      tpetra_pool_type::resetPool(this->getMap()->getComm()->getRank());
 
-    const uint64_t myRank =
-      static_cast<uint64_t> (this->getMap ()->getComm ()->getRank ());
-    uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
-    unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
-
-    pool_type rand_pool (seed);
+    pool_type & rand_pool = tpetra_pool_type::getPool();
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
@@ -4021,6 +4023,13 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::wrapped_dual_view_type 
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getWrappedDualView() const {
+    return view_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dView () const
@@ -4364,7 +4373,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       // NOTE (mfh 17 Mar 2019) If we ever get rid of UVM, then device
       // and host will be separate allocations.  In that case, it may
       // pay to do the all-reduce from device to host.
-      Kokkos::fence(); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
+      Kokkos::fence("MultiVector::reduce"); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
       auto X_lcl = this->getLocalViewDevice(Access::ReadWrite);
       allReduceView (X_lcl, X_lcl, *comm);
     }

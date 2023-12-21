@@ -96,3 +96,15 @@ LOCA::Extended::MultiAbstractGroup::getBaseLevelUnderlyingGroup()
   }
 
 }
+
+Teuchos::RCP<NOX::Abstract::Group>
+LOCA::Extended::MultiAbstractGroup::getNestedGroup()
+{
+  return this->getUnderlyingGroup();
+}
+
+Teuchos::RCP<const NOX::Abstract::Group>
+LOCA::Extended::MultiAbstractGroup::getNestedGroup() const
+{
+  return this->getUnderlyingGroup();
+}

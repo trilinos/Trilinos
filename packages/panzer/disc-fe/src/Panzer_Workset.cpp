@@ -164,7 +164,7 @@ setup(const panzer::LocalMeshPartition & partition,
   // Allocate and fill the cell nodes
   {
     // Double check this
-    TEUCHOS_ASSERT(partition.cell_nodes.Rank == 3);
+    TEUCHOS_ASSERT(partition.cell_nodes.rank == 3);
 
     // Grab the size of the cell node array
     const int num_partition_cells = partition.cell_nodes.extent(0);

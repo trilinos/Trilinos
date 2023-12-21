@@ -2970,6 +2970,28 @@ should be copied from this example project as they represent best practice
 when using TriBITS for the typical use cases.
 
 
+TribitsExampleProject2
+----------------------
+
+``TribitsExampleProject2`` in an example `TriBITS Project`_ and `TriBITS
+Repository`_ contained in the TriBITS source tree under::
+
+  tribits/examples/TribitsExampleProject2/
+
+This example TriBITS project provides some examples for a few other features
+and testing scenarios.  It contains three internal packages ``Package1``,
+``Package2``, and ``Package3`` as shown in its ``PackagesList.cmake`` file:
+
+.. include:: ../../examples/TribitsExampleProject2/PackagesList.cmake
+   :literal:
+
+and supports four external packages/TPLs ``Tpl1``, ``Tpl2``, ``Tpl3``, and
+``Tpl4`` as shown in its ``TPLsList.cmake`` file:
+
+.. include:: ../../examples/TribitsExampleProject2/TPLsList.cmake
+   :literal:
+
+
 MockTrilinos
 -------------
 
@@ -6238,6 +6260,243 @@ the top of the first ``CMakeLists.txt`` file (this time for the package) and
 the macro ``include_tribits_build()`` needs to be defined at the top of that
 file as well.  Then every ``CMakeLists.txt`` file in subdirectories just calls
 ``include_tribits_build()``.  That is it.
+
+
+How to implement a TriBITS-compliant internal package using raw CMake
+---------------------------------------------------------------------
+
+As described in `TriBITS-Compliant Internal Packages`_, it is possible to
+create a raw CMake build system for a CMake package that can build under a
+parent TriBITS CMake project.  The raw CMake code for such a package must
+provide the ``<Package>::all_libs`` target both in the current CMake build
+system and also in the generated ``<Package>Config.cmake`` file for the build
+directory and in the installed ``<Package>Config.cmake`` file.  Every such
+TriBITS-compliant internal package therefore is **also capable of installing a
+TriBITS-compliant external package** ``<Package>Config.cmake`` file (see `How
+to implement a TriBITS-compliant external package using raw CMake`_).
+
+.. ToDo: Consider listing out the key features of a raw CMake build system
+   that is needed for a TriBITS-compliant internal package.
+
+A raw CMake build system for a TriBITS-compliant internal package is
+demonstrated in the `TribitsExampleProject2`_ project ``Package1`` package.
+The base ``CMakeLists.txt`` file for building ``Package1`` with a raw CMake
+build system (called ``package1/CMakeLists.raw.cmake`` in that directory)
+looks like:
+
+.. include:: TribitsExampleProject2_Package1_CMakeLists.raw.internal.cmake
+   :literal:
+
+As shown above, this simple CMake package contains the basic features of any
+CMake project/package including calling the ``cmake_minimum_required()`` and
+``project()`` commands as well as including ``GNUInstallDirs``.  In this
+example, the project/package being built ``Package1`` has a dependency on an
+external upstream package ``Tpl1`` pulled in with ``find_package(Tpl1)``.
+Also in this example, the package has native tests it defines with
+``include(CTest)`` and ``add_subdirectory()`` (if ``Package1_ENABLE_TESTS`` is
+set to ``ON``).
+
+The file ``package1/src/CMakeLists.raw.cmake`` (which gets included from
+``package1/src/CMakeLists.txt``) creates a library and executable for the
+package and has the contents:
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/src/CMakeLists.raw.cmake
+   :literal:
+
+This creates a single installable library target ``Package1_package1`` which
+is aliased as ``Package1::package1`` in the current CMake project and sets up
+to create the IMPORTED target ``Package1::package1`` in the generated
+``Package1ConfigTarget.cmake`` file, which gets included in the installed
+``Package1Config.cmake`` (``<Package>Config.cmake``) file (as recommenced in
+the book "Professional CMake", see below).  In addition, the above code
+creates the installable executable ``package1-prg``.
+
+The ``Package1::all_libs`` (``<Package>::all_libs``) target is defined and set
+up inside of the included file
+``package1/cmake/raw/DefineAllLibsTarget.cmake`` which contains the code:
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/cmake/raw/DefineAllLibsTarget.cmake
+   :literal:
+
+The above code contains the ALIAS library target ``Package1::all_libs``
+(``<Package>::all_libs``) for the current CMake project as well as sets up for
+the IMPORTED target ``Package1::all_libs`` (``<Package>::all_libs``) getting
+put in the generated ``Package1ConfigTargets.cmake`` file (see below).
+
+The ``Package1Config.cmake`` (``<Package>Config.cmake``) file for the build
+directory is generated inside of the included file
+``package1/cmake/raw/GeneratePackageConfigFileForBuildDir.cmake`` which has
+the contents:
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/cmake/raw/GeneratePackageConfigFileForBuildDir.cmake
+   :literal:
+
+The above code uses the ``export(EXPORT ...)`` command to generate the file
+``Package1ConfigTargets.cmake`` for the build directory which provides the
+IMPORTED targets ``Package1::package1`` and ``Package1::all_libs``.  The
+command ``configure_file(...)`` generates the ``Package1Config.cmake`` file
+that includes it for the build directory
+``<buildDir>/cmake_packages/Package1/``.  (NOTE: The above code only runs when
+the package is being built from inside of a TriBITS project which defines the
+command ``tribits_package``.  So this code gets skipped when building
+``Package1`` as a stand-alone raw CMake project.)
+
+Finally, the code for generating and installing the ``Package1Config.cmake``
+file for the install directory ``CMAKE_PREFIX_PATH=<installDir>`` is specified
+in the included file
+``package1/cmake/raw/GeneratePackageConfigFileForInstallDir.cmake`` with the
+contents:
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/cmake/raw/GeneratePackageConfigFileForInstallDir.cmake
+   :literal:
+
+The above uses the command ``install(EXPORT ...)`` to have CMake automatically
+generate and install the file ``Package1ConfigTargets.cmake`` in the install
+directory ``<installDir>/libs/cmake/Package1/`` which provides the IMPORTED
+targets ``Package1::package1`` and ``Package1::all_libs``.  The command
+``configure_file()`` is used to generate the file
+``Package1Config.install.cmake`` in the build directory from the template file
+``Package1Config.cmake.in``.  Finally, the ``install()`` command is used in
+the file ``GeneratePackageConfigFileForInstallDir.cmake`` to set up the
+installation of the ``Package1Config.cmake`` file.
+
+Note, the template file ``package1/cmake/raw/Package1Config.cmake.in`` (which
+is unique to ``Package1``) is:
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/cmake/raw/Package1Config.cmake.in
+   :literal:
+
+As shown in the all of the above code, there is a lot of boilerplate CMake
+code needed to correctly define the targets such that they get put into the
+installed ``Package1Config.cmake`` file using the correct namespace
+``Package1::`` and care must be taken to ensure that a consistent "export set"
+is used for this purpose.  (For more details, see the book "Professional
+CMake".)
+
+**NOTE:** One should compare the above raw CMakeLists files to the more
+compact TriBITS versions for the base ``package1/CMakeLists.txt`` file (called
+``package1/CMakeLists.tribits.cmake`` in the base directory ``pacakge1/``):
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/CMakeLists.tribits.cmake
+   :literal:
+
+and the TriBITS ``package1/src/CMakeLists.txt`` file (called
+``package1/src/CMakeLists.tribits.cmake``):
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/src/CMakeLists.tribits.cmake
+   :literal:
+
+This shows the amount of boilerplate code that TriBITS addresses automatically
+(which reduces the overhead of finer-grained packages and avoids common
+mistakes with tedious low-level CMake code).
+
+
+How to implement a TriBITS-compliant external package using raw CMake
+---------------------------------------------------------------------
+
+As described in `TriBITS-Compliant External Packages`_, it is possible to
+create a raw CMake build system for a CMake package such that once it is
+installed, satisfies the requirements for a TriBITS-compliant external
+package.  These installed packages provide a ``<Package>Config.cmake`` file
+that provides the required targets and behaviors as if it was produced by a
+TriBITS project.  For most existing raw CMake projects that already produce a
+"Professional CMake" compliant ``<Package>Config.cmake`` file, that usually
+just means adding the IMPORTED target called ``<Package>::all_libs`` to the
+installed ``<Package>Config.cmake`` file.
+
+A raw CMake build system for a TriBITS-compliant external package is
+demonstrated in the `TribitsExampleProject2`_ project ``Package1`` package.
+The base ``package1/CMakeLists.txt`` file for building ``Package1`` with a raw
+CMake build system (called ``package1/CMakeLists.raw.cmake``) for implementing
+a TriBITS-compliant internal package looks like:
+
+.. include:: TribitsExampleProject2_Package1_CMakeLists.raw.external.cmake
+   :literal:
+
+Note that the raw build system this example is identical to the build system
+for the raw TriBITS-compliant internal package described in `How to implement
+a TriBITS-compliant internal package using raw CMake`_.  The only differences
+are:
+
+1) The ``Package1Config.cmake`` (``<Package>Config.cmake``) file does **not**
+   need to be generated for the build directory and therefore the code in
+   ``cmake/raw/GeneratePackageConfigFileForBuildDir.cmake`` does **not** need
+   to be included.
+
+2) The ALIAS library target ``Package1::all_libs`` (``<Package>::all_libs``)
+   does **not** need to be generated (but should be to be "Professional CMake"
+   compliant).
+
+Other than that, see `How to implement a TriBITS-compliant internal package
+using raw CMake`_ for how to implement a TriBITS-compliant external package.
+
+
+How to use TriBITS testing support in non-TriBITS project
+---------------------------------------------------------
+
+The TriBITS test support functions `tribits_add_test()`_ and
+`tribits_add_advanced_test()`_ can be used from any raw (i.e. non-TriBITS)
+CMake project.  To do so, one just needs to include the TriBITS modules:
+
+* ``<tribitsDir>/core/test_support/TribitsAddTest.cmake``
+* ``<tribitsDir>/core/test_support/TribitsAddAdvancedTest.cmake``
+
+and set the variable ``${PROJECT_NAME}_ENABLE_TESTS`` to ``ON``.  For an
+MPI-enabled CMake project, the CMake variables ``MPI_EXEC``,
+``MPI_EXEC_PRE_NUMPROCS_FLAGS``, ``MPI_EXEC_NUMPROCS_FLAG`` and
+``MPI_EXEC_POST_NUMPROCS_FLAGS`` must also be set which define the MPI runtime
+program launcher command-line used in the TriBITS testing functions::
+
+  ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
+    ${MPI_EXEC_NUMPROCS_FLAG} <NP>
+    ${MPI_EXEC_POST_NUMPROCS_FLAGS}
+    <TEST_EXECUTABLE_PATH> <TEST_ARGS>
+
+(NOTE: These variables are defined automatically in a TriBITS project when
+``TPL_ENABLE_MPI`` is set to ``ON``.)
+
+This is demonstrated in the `TribitsExampleProject2`_ project ``Package1``
+package.  The base ``pacakge1/CMakeLists.txt`` file for building ``Package1``
+with a raw CMake build system using TriBITS testing functions (called
+``package1/CMakeLists.raw.cmake``) looks like:
+
+.. include:: TribitsExampleProject2_Package1_CMakeLists.raw.tribits_test.cmake
+   :literal:
+
+The only difference between this base ``package1/CMakeLists.txt`` file and one
+for a raw CMake project is the inclusion of the file
+``package1/cmake/raw/EnableTribitsTestSupport.cmake`` which has the contents:
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/cmake/raw/EnableTribitsTestSupport.cmake
+   :literal:
+
+The key lines are::
+
+  include("${Package1_TRIBITS_DIR}/core/test_support/TribitsAddTest.cmake")
+  include("${Package1_TRIBITS_DIR}/core/test_support/TribitsAddAdvancedTest.cmake")
+
+This defines the CMake functions `tribits_add_test()`_ and
+`tribits_add_advanced_test()`_, respectively.
+
+The above code demonstrates that ``CMAKE_MODULE_PATH`` does **not** need to be
+updated to use these TriBITS ``test_support`` modules.  However, one is free
+to update ``CMAKE_MODULE_PATH`` and then include the modules by name only
+like::
+
+  list(PREPEND CMAKE_MODULE_PATH "${Package1_TRIBITS_DIR}/core/test_support")
+  include(TribitsAddTest)
+  include(TribitsAddAdvancedTest)
+
+Once these TriBITS modules are included, one can use the TriBITS functions as
+demonstrated in the file ``package1/test/CMakeLists.tribits.cmake`` (which is
+included from the file ``package1/test/CMakeLists.txt``) and has the contents:
+
+.. include:: ../../examples/TribitsExampleProject2/packages/package1/test/CMakeLists.tribits.cmake
+   :literal:
+
+Note that in this example, the executable ``package1-prg`` was already
+created.  If new test libraries and executables need to be created, then the
+raw CMake commands to create those will need to be added as well.
 
 
 How to check for and tweak TriBITS "ENABLE" cache variables

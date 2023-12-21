@@ -172,7 +172,9 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             max_cores_allowed=12,
             num_concurrent_tests=-1,
             ccache_enable=False,
-            dry_run = False
+            dry_run = False,
+            use_explicit_cachefile = False,
+            extra_configure_args = ""
         )
         return output
 

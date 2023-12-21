@@ -231,10 +231,15 @@ namespace MueLu {
 
     LO current = 0;
     LO Nnc = PnT_D0T->getRowMap()->getLocalNumElements();
+
+    // Get the node maps for D0_coarse
+    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
+    RCP<const Map> ownedPlusSharedCoarseNodeMap  = D0_Pn->getCrsGraph()->getColMap();    
+
     
     for(LO i=0; i<(LO)Nnc; i++) {
-      //      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
-
+       LO local_column_i = ownedPlusSharedCoarseNodeMap->getLocalElement(PnT_D0T->getRowMap()->getGlobalElement(i));
+ 
       // FIXME: We don't really want an std::map here.  This is just a first cut implementation
       using value_type = bool;
       std::map<LO, value_type> ce_map;
@@ -273,10 +278,10 @@ namespace MueLu {
         bool keep_shared_edge = false, own_both_nodes = false;
         if(zero_matches && one_matches) {own_both_nodes=true;}
         else {
-          int sum_is_odd =  (pid0 + pid1) % 2;
-          int i_am_smaller = MyPID == std::min(pid0,pid1);
-          if(sum_is_odd  && i_am_smaller)  keep_shared_edge=true;
-          if(!sum_is_odd && !i_am_smaller) keep_shared_edge=true;
+          bool sum_is_even  = (pid0 + pid1) % 2 == 0;
+          bool i_am_smaller = MyPID == std::min(pid0,pid1);
+          if(sum_is_even  && i_am_smaller)  keep_shared_edge=true;
+          if(!sum_is_even && !i_am_smaller) keep_shared_edge=true;
         }
         //        printf("[%d] - matches %d/%d keep_shared = %d own_both = %d\n",MyPID,(int)zero_matches,(int)one_matches,(int)keep_shared_edge,(int)own_both_nodes);
         if(!keep_shared_edge && !own_both_nodes) continue;
@@ -284,11 +289,11 @@ namespace MueLu {
 
         // We're doing this in GID space, but only because it allows us to explain
         // the edge orientation as "always goes from lower GID to higher GID".  This could
-        // be done entirely in local GIDs, but then the ordering is a little more confusing.
+        // be done entirely in LIDs, but then the ordering is a little more confusing.
         // This could be done in local indices later if we need the extra performance.
         for(LO k=0; k<(LO)colind_N.size(); k++) {
           LO my_colind = colind_N[k];
-          if(my_colind!=LO_INVALID && ((keep_shared_edge && my_colind != i) || (own_both_nodes && my_colind > i)) ) {
+          if(my_colind!=LO_INVALID && ((keep_shared_edge && my_colind != local_column_i ) || (own_both_nodes && my_colind > local_column_i)) ) {
             ce_map.emplace(std::make_pair(my_colind,true));
           }
         }//end for k < colind_N.size()
@@ -298,13 +303,12 @@ namespace MueLu {
       // std::map is sorted, so we'll just iterate through this
       for(auto iter=ce_map.begin(); iter != ce_map.end(); iter++) {
         LO col = iter->first;
-        // This shouldn't happen.  But in case it did...
-        if(col == i) {
+        if(col == local_column_i) {
           continue;
         }
 
-        // ASSUMPTION: "i" is a valid local column id
-        D0_colind[current]  = i;
+        // NOTE: "i" here might not be a valid local column id, so we read it from the map
+        D0_colind[current]  = local_column_i;
         D0_values[current] = -1;
         current++;
         D0_colind[current]  = col;
@@ -330,11 +334,6 @@ namespace MueLu {
     // Count the total number of edges
     // NOTE: Since we solve the ownership issue above, this should do what we want
     RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO,GO,NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges,EdgeMatrix->getRowMap()->getIndexBase(),EdgeMatrix->getRowMap()->getComm());
-
-
-    // NOTE:  This only works because of the assumptions above
-    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
-    RCP<const Map> ownedPlusSharedCoarseNodeMap  = D0_Pn->getCrsGraph()->getColMap();
 
     // Create the coarse D0
     RCP<CrsMatrix> D0_coarse;

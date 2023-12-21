@@ -490,27 +490,6 @@ ContourElement::volume() const
   }
 
 double
-ContourElement::average_edge_length() const
-{ /* %TRACE% */  /* %TRACE% */
-  const stk::topology Top = coord_topology();
-  int num_edges = Top.num_edges();
-
-  double sum_edge_lengths = 0.0;
-
-  for ( int edge = 0; edge < num_edges; edge++ )
-    {
-      const unsigned * const lnn = get_edge_node_ordinals(Top, edge);
-
-      double sqr_length = 0.0;
-      for ( int d = 0; d < my_spatial_dim; d++ ) sqr_length += (my_coords(d,lnn[0]) - my_coords(d,lnn[1])) *
-							       (my_coords(d,lnn[0]) - my_coords(d,lnn[1]));
-      sum_edge_lengths += std::sqrt(sqr_length);
-    }
-
-  return sum_edge_lengths/num_edges;
-}
-
-double
 ContourElement::elem_size() const
   { /* %TRACE% */  /* %TRACE% */
     const double vol      = volume();

@@ -39,10 +39,10 @@ printf "Putting output and logs here: ${output_dir}\n";
 
 exe cd $sierra_proj
 
-stk_config_log=${output_dir}/stk-no-stk-mesh-config.out.$date_suffix
-stk_make_log=${output_dir}/stk-no-stk-mesh-make.out.$date_suffix
-stk_install_log=${output_dir}/stk-no-stk-mesh-install.out.$date_suffix
-stk_ctest_log=${output_dir}/stk-no-stk-mesh-ctest.out.$date_suffix
+stk_config_log=${output_dir}/stk-no-middle-mesh-config.out.$date_suffix
+stk_make_log=${output_dir}/stk-no-middle-mesh-make.out.$date_suffix
+stk_install_log=${output_dir}/stk-no-middle-mesh-install.out.$date_suffix
+stk_ctest_log=${output_dir}/stk-no-middle-mesh-ctest.out.$date_suffix
 
 if [ -d ${trilinos_dir}/packages/stk ] ; then
   exe rm -rf ${trilinos_dir}/packages/stk;

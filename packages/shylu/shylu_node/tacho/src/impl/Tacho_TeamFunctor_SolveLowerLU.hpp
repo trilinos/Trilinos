@@ -84,8 +84,8 @@ public:
   ///
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
-    using TrsvAlgoType = typename TrsvAlgorithm::type;
-    using GemvAlgoType = typename GemvAlgorithm::type;
+    using TrsvAlgoType = typename TrsvAlgorithm_Team::type;
+    using GemvAlgoType = typename GemvAlgorithm_Team::type;
 
     const value_type minus_one(-1), zero(0);
     {
@@ -322,7 +322,7 @@ public:
       }
     }
     if (mode == -1) {
-      printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
+      Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
     } else {
       // skip
     }

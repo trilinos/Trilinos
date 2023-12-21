@@ -68,9 +68,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_2_ILUT_nos1_hb.xml 
   test_2_RILUK_nos1_hb.xml
   test_2_RILUK_HTS_nos1_hb.xml
+  test_2_RILUK_2streams_nos1_hb.xml
+  test_2_RILUK_4streams_nos1_hb.xml
   test_4_ILUT_nos1_hb.xml 
   test_4_RILUK_nos1_hb.xml
   test_4_RILUK_HTS_nos1_hb.xml
+  test_4_RILUK_2streams_nos1_hb.xml
+  test_4_RILUK_4streams_nos1_hb.xml
   test_SGS_calore1_mm.xml 
   test_MTSGS_calore1_mm.xml
   calore1.mtx 
@@ -132,6 +136,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_4_MTGS_muelu.xml
   test_4_SGS_muelu.xml
   test_4_MTSGS_muelu.xml
+  schwarz.xml
   # test_SGS_wathen_mm.xml
   # test_MTSGS_wathen_mm.xml
 
@@ -345,6 +350,56 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
 )
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Schwarz_RILUK_hb_belos
+  ARGS "--xml_file=schwarz.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+
+
+
+IF(Kokkos_ENABLE_CUDA)
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_2streams_hb_belos
+    ARGS "--xml_file=test_2_RILUK_2streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_4streams_hb_belos
+    ARGS "--xml_file=test_2_RILUK_4streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_2streams_hb_belos
+    ARGS "--xml_file=test_4_RILUK_2streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME RILUK_4streams_hb_belos
+    ARGS "--xml_file=test_4_RILUK_4streams_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+  )
+ENDIF()
 ENDIF()
 
 

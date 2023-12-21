@@ -14,6 +14,37 @@
 //
 //@HEADER
 
+// **********************************************************************
+// The tests executed by the code below cover many combinations for
+// the operation A += alpha * x * y^{T,H}.
+// 01) Type of 'x' components: float, double, complex, ...
+// 02) Type of 'y' components: float, double, complex, ...
+// 03) Type of 'A' components: float, double, complex, ...
+// 04) Execution space: serial, threads, OpenMP, Cuda, ...
+// 05) Layout of 'x'
+// 06) Layout of 'y'
+// 07) Layout of 'A'
+// 08) Dimension of 'A'
+// 09) Options 'const' or 'non const' for x view, when calling ger()
+// 10) Options 'const' or 'non const' for y view, when calling ger()
+// 11) Usage of analytical results in the tests
+// 12) Options 'T' or 'H' when calling ger()
+//
+// Choices (01)-(04) are selected in the routines TEST_F() at the
+// very bottom of the file, when calling test_ger<...>().
+//
+// Choices (05)-(12) are selected in routine test_gerr<...>(),
+// when calling the method test() of class Test::GerTester<...>.
+//
+// The class Test::GerTester<...> represents the "core" of the test
+// logic, where all calculations, comparisons, and success/failure
+// decisions are performed.
+//
+// A high level explanation of method Test::GerTester<...>::test()
+// is given by the 9 steps named "Step 1 of 9" to "Step 9 of 9"
+// in the code below.
+// **********************************************************************
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -35,18 +66,18 @@ class GerTester {
             const bool useHermitianOption   = false);
 
  private:
-  typedef Kokkos::View<ScalarX*, tLayoutX, Device> _ViewTypeX;
-  typedef Kokkos::View<ScalarY*, tLayoutY, Device> _ViewTypeY;
-  typedef Kokkos::View<ScalarA**, tLayoutA, Device> _ViewTypeA;
+  using _ViewTypeX = Kokkos::View<ScalarX*, tLayoutX, Device>;
+  using _ViewTypeY = Kokkos::View<ScalarY*, tLayoutY, Device>;
+  using _ViewTypeA = Kokkos::View<ScalarA**, tLayoutA, Device>;
 
-  typedef typename _ViewTypeX::HostMirror _HostViewTypeX;
-  typedef typename _ViewTypeY::HostMirror _HostViewTypeY;
-  typedef typename _ViewTypeA::HostMirror _HostViewTypeA;
-  typedef Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>
-      _ViewTypeExpected;
+  using _HostViewTypeX = typename _ViewTypeX::HostMirror;
+  using _HostViewTypeY = typename _ViewTypeY::HostMirror;
+  using _HostViewTypeA = typename _ViewTypeA::HostMirror;
+  using _ViewTypeExpected =
+      Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
-  typedef Kokkos::ArithTraits<ScalarA> _KAT_A;
-  typedef typename _KAT_A::mag_type _AuxType;
+  using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
+  using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
                          _HostViewTypeY& h_y, _HostViewTypeA& h_A,
@@ -88,29 +119,31 @@ class GerTester {
   typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                               std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
-  compareVanillaExpected(const T& alpha, const _ViewTypeExpected& h_vanilla,
-                         const _ViewTypeExpected& h_expected);
+  compareVanillaAgainstExpected(const T& alpha,
+                                const _ViewTypeExpected& h_vanilla,
+                                const _ViewTypeExpected& h_expected);
 
   template <class T>
   typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                               !std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
-  compareVanillaExpected(const T& alpha, const _ViewTypeExpected& h_vanilla,
-                         const _ViewTypeExpected& h_expected);
+  compareVanillaAgainstExpected(const T& alpha,
+                                const _ViewTypeExpected& h_vanilla,
+                                const _ViewTypeExpected& h_expected);
 
   template <class T>
   typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                               std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
-  compareKokkosExpected(const T& alpha, const _HostViewTypeA& h_A,
-                        const _ViewTypeExpected& h_expected);
+  compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
+                              const _ViewTypeExpected& h_expected);
 
   template <class T>
   typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                               !std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
-  compareKokkosExpected(const T& alpha, const _HostViewTypeA& h_A,
-                        const _ViewTypeExpected& h_expected);
+  compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
+                              const _ViewTypeExpected& h_expected);
 
   template <class T>
   T shrinkAngleToZeroTwoPiRange(const T input);
@@ -127,8 +160,8 @@ class GerTester {
   const bool _A_is_ll;
   const bool _testIsGpu;
   const bool _vanillaUsesDifferentOrderOfOps;
-  const _AuxType _epsAbs;
-  const _AuxType _epsRel;
+  const _AuxType _absTol;
+  const _AuxType _relTol;
   int _M;
   int _N;
   bool _useAnalyticalResults;
@@ -154,8 +187,16 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       _vanillaUsesDifferentOrderOfOps(false)
 #endif
       ,
-      _epsAbs(std::is_same<_AuxType, float>::value ? 1.0e-6 : 1.0e-9),
-      _epsRel(std::is_same<_AuxType, float>::value ? 5.0e-3 : 1.0e-6),
+      // ****************************************************************
+      // Tolerances for double can be tighter than tolerances for float.
+      //
+      // In the case of calculations with float, a small amount of
+      // discrepancies between reference results and CUDA results are
+      // large enough to require 'relTol' to value 5.0e-3. The same
+      // calculations show no discrepancies for calculations with double.
+      // ****************************************************************
+      _absTol(std::is_same<_AuxType, float>::value ? 1.0e-6 : 1.0e-9),
+      _relTol(std::is_same<_AuxType, float>::value ? 5.0e-3 : 1.0e-6),
       _M(-1),
       _N(-1),
       _useAnalyticalResults(false),
@@ -177,6 +218,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                              const int nonConstConstCombinations,
                              const bool useAnalyticalResults,
                              const bool useHermitianOption) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Entering GerTester::test()... - - - - - - - - - - - - - - - - "
                "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                "- - - - - - - - - "
@@ -186,9 +228,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
             << ", _A_is_lr = " << _A_is_lr << ", _A_is_ll = " << _A_is_ll
             << ", _testIsGpu = " << _testIsGpu
             << ", _vanillaUsesDifferentOrderOfOps = "
-            << _vanillaUsesDifferentOrderOfOps << ", _epsAbs = " << _epsAbs
-            << ", _epsRel = " << _epsRel << std::endl;
-
+            << _vanillaUsesDifferentOrderOfOps << ", _absTol = " << _absTol
+            << ", _relTol = " << _relTol << std::endl;
+#endif
   // ********************************************************************
   // Step 1 of 9: declare main types and variables
   // ********************************************************************
@@ -249,9 +291,17 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   view_stride_adapter<_ViewTypeExpected, true> h_vanilla(
       "vanilla = A + alpha * x * y^{t,h}", _M, _N);
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n",
       typeid(alpha).name());
+#else
+  Kokkos::printf(
+      "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n",
+      typeid(alpha).name());
+#endif
+#endif
   this->populateVanillaValues(alpha, x.h_view, y.h_view, A.h_view,
                               h_vanilla.d_view);
 
@@ -262,7 +312,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     // ******************************************************************
     // Compare h_vanilla against h_expected
     // ******************************************************************
-    this->compareVanillaExpected(alpha, h_vanilla.d_view, h_expected.d_view);
+    this->compareVanillaAgainstExpected(alpha, h_vanilla.d_view,
+                                        h_expected.d_view);
   } else {
     // ******************************************************************
     // Copy h_vanilla to h_expected
@@ -323,10 +374,12 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   EXPECT_ANY_THROW(KokkosBlas::ger("", alpha, x.d_view, y.d_view, A.d_view))
       << "Failed test: kk ger should have thrown an exception for mode ''";
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Leaving GerTester::test() - - - - - - - - - - - - - - - - - - "
                "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                "- - - - - - - "
             << std::endl;
+#endif
 }
 
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY,
@@ -660,10 +713,10 @@ template <class T>
 typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                             std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareVanillaExpected(const T& alpha,
-                                          const _ViewTypeExpected& h_vanilla,
-                                          const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareVanillaAgainstExpected(const T& alpha,
+                                  const _ViewTypeExpected& h_vanilla,
+                                  const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -687,7 +740,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
         diff = _KAT_A::abs(h_expected(i, j).real() - h_vanilla(i, j).real());
         errorHappened = false;
         if (h_expected(i, j).real() == 0.) {
-          diffThreshold = _KAT_A::abs(_epsAbs);
+          diffThreshold = _KAT_A::abs(_absTol);
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealAbs++;
@@ -700,13 +753,14 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
             jForMaxErrorRealRel = j;
           }
 
-          diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j).real());
+          diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j).real());
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealRel++;
           }
         }
         if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j).real() = " << h_expected(i, j).real()
                     << ", h_vanilla(i,j).real() = " << h_vanilla(i, j).real()
@@ -714,12 +768,13 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                        "h_vanilla(i,j).real()) = "
                     << diff << ", diffThreshold = " << diffThreshold
                     << std::endl;
+#endif
         }
 
         diff = _KAT_A::abs(h_expected(i, j).imag() - h_vanilla(i, j).imag());
         errorHappened = false;
         if (h_expected(i, j).imag() == 0.) {
-          diffThreshold = _KAT_A::abs(_epsAbs);
+          diffThreshold = _KAT_A::abs(_absTol);
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagAbs++;
@@ -732,13 +787,14 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
             jForMaxErrorImagRel = j;
           }
 
-          diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j).imag());
+          diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j).imag());
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagRel++;
           }
         }
         if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j).imag() = " << h_expected(i, j).imag()
                     << ", h_vanilla(i,j).imag() = " << h_vanilla(i, j).imag()
@@ -746,6 +802,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                        "h_vanilla(i,j).imag()) = "
                     << diff << ", diffThreshold = " << diffThreshold
                     << std::endl;
+#endif
         }
       }  // for j
     }    // for i
@@ -773,7 +830,9 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
       int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
       if (numErrorsReal > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
+#endif
       }
       EXPECT_LE(numErrorsReal, maxNumErrorsAllowed)
           << "Failed test" << msg.str();
@@ -802,7 +861,9 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
       int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
       if (numErrorsImag > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
+#endif
       }
       EXPECT_LE(numErrorsImag, maxNumErrorsAllowed)
           << "Failed test" << msg.str();
@@ -815,22 +876,26 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       for (int j(0); j < _N; ++j) {
         if (h_expected(i, j).real() != h_vanilla(i, j).real()) {
           if (numErrorsReal == 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j).real() = "
                       << h_expected(i, j).real()
                       << ", h_vanilla(i,j).real() = " << h_vanilla(i, j).real()
                       << std::endl;
+#endif
           }
           numErrorsReal++;
         }
 
         if (h_expected(i, j).imag() != h_vanilla(i, j).imag()) {
           if (numErrorsImag == 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j).imag() = "
                       << h_expected(i, j).imag()
                       << ", h_vanilla(i,j).imag() = " << h_vanilla(i, j).imag()
                       << std::endl;
+#endif
           }
           numErrorsImag++;
         }
@@ -862,10 +927,10 @@ template <class T>
 typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                             !std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareVanillaExpected(const T& alpha,
-                                          const _ViewTypeExpected& h_vanilla,
-                                          const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareVanillaAgainstExpected(const T& alpha,
+                                  const _ViewTypeExpected& h_vanilla,
+                                  const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -884,7 +949,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
         diff          = _KAT_A::abs(h_expected(i, j) - h_vanilla(i, j));
         errorHappened = false;
         if (h_expected(i, j) == 0.) {
-          diffThreshold = _KAT_A::abs(_epsAbs);
+          diffThreshold = _KAT_A::abs(_absTol);
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsAbs++;
@@ -897,19 +962,21 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
             jForMaxErrorRel = j;
           }
 
-          diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j));
+          diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j));
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRel++;
           }
         }
         if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j) = " << h_expected(i, j)
                     << ", h_vanilla(i,j) = " << h_vanilla(i, j)
                     << ", _KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = "
                     << diff << ", diffThreshold = " << diffThreshold
                     << std::endl;
+#endif
         }
       }  // for j
     }    // for i
@@ -936,7 +1003,9 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
       int numErrors(numErrorsAbs + numErrorsRel);
       if (numErrors > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
+#endif
       }
       EXPECT_LE(numErrors, maxNumErrorsAllowed) << "Failed test" << msg.str();
     }
@@ -947,9 +1016,11 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       for (int j(0); j < _N; ++j) {
         if (h_expected(i, j) != h_vanilla(i, j)) {
           if (numErrors == 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j) = " << h_expected(i, j)
                       << ", h_vanilla(i,j) = " << h_vanilla(i, j) << std::endl;
+#endif
           }
           numErrors++;
         }
@@ -973,10 +1044,9 @@ template <class T>
 typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                             std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareKokkosExpected(const T& alpha,
-                                         const _HostViewTypeA& h_A,
-                                         const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
+                                const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -998,7 +1068,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       diff          = _KAT_A::abs(h_expected(i, j).real() - h_A(i, j).real());
       errorHappened = false;
       if (h_expected(i, j).real() == 0.) {
-        diffThreshold = _KAT_A::abs(_epsAbs);
+        diffThreshold = _KAT_A::abs(_absTol);
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRealAbs++;
@@ -1011,25 +1081,27 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
           jForMaxErrorRealRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j).real());
+        diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j).real());
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRealRel++;
         }
       }
       if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout
             << "ERROR, i = " << i << ", j = " << j
             << ": h_expected(i,j).real() = " << h_expected(i, j).real()
             << ", h_A(i,j).real() = " << h_A(i, j).real()
             << ", _KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) = "
             << diff << ", diffThreshold = " << diffThreshold << std::endl;
+#endif
       }
 
       diff          = _KAT_A::abs(h_expected(i, j).imag() - h_A(i, j).imag());
       errorHappened = false;
       if (h_expected(i, j).imag() == 0.) {
-        diffThreshold = _KAT_A::abs(_epsAbs);
+        diffThreshold = _KAT_A::abs(_absTol);
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsImagAbs++;
@@ -1042,22 +1114,25 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
           jForMaxErrorImagRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j).imag());
+        diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j).imag());
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsImagRel++;
         }
       }
       if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout
             << "ERROR, i = " << i << ", j = " << j
             << ": h_expected(i,j).imag() = " << h_expected(i, j).imag()
             << ", h_A(i,j).imag() = " << h_A(i, j).imag()
             << ", _KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) = "
             << diff << ", diffThreshold = " << diffThreshold << std::endl;
+#endif
       }
     }  // for j
   }    // for i
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout
       << "A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
       << ", _A_is_ll = " << _A_is_ll
@@ -1110,7 +1185,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
               << ", h_A(710, 1065) = (" << h_A(710, 1065).real() << ", "
               << h_A(710, 1065).imag() << ")" << std::endl;
   }
-
+#endif
   {
     std::ostringstream msg;
     msg << ", A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
@@ -1135,7 +1210,9 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
     int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
     if (numErrorsReal > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
+#endif
     }
     EXPECT_LE(numErrorsReal, maxNumErrorsAllowed) << "Failed test" << msg.str();
   }
@@ -1163,7 +1240,9 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
     int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
     if (numErrorsImag > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
+#endif
     }
     EXPECT_LE(numErrorsImag, maxNumErrorsAllowed) << "Failed test" << msg.str();
   }
@@ -1176,10 +1255,9 @@ template <class T>
 typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                             !std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareKokkosExpected(const T& alpha,
-                                         const _HostViewTypeA& h_A,
-                                         const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
+                                const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -1196,7 +1274,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       diff          = _KAT_A::abs(h_expected(i, j) - h_A(i, j));
       errorHappened = false;
       if (h_expected(i, j) == 0.) {
-        diffThreshold = _KAT_A::abs(_epsAbs);
+        diffThreshold = _KAT_A::abs(_absTol);
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsAbs++;
@@ -1209,21 +1287,24 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
           jForMaxErrorRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j));
+        diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j));
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRel++;
         }
       }
       if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "ERROR, i = " << i << ", j = " << j
                   << ": h_expected(i,j) = " << h_expected(i, j)
                   << ", h_A(i,j) = " << h_A(i, j)
                   << ", _KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << diff
                   << ", diffThreshold = " << diffThreshold << std::endl;
+#endif
       }
     }  // for j
   }    // for i
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
             << ", _A_is_ll = " << _A_is_ll
             << ", alpha type = " << typeid(alpha).name()
@@ -1241,6 +1322,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
             << (((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRel, jForMaxErrorRel)
                                        : 9.999e+99)
             << ", maxNumErrorsAllowed = " << maxNumErrorsAllowed << std::endl;
+#endif
   {
     std::ostringstream msg;
     msg << ", A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
@@ -1263,7 +1345,9 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
     int numErrors(numErrorsAbs + numErrorsRel);
     if (numErrors > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
+#endif
     }
     EXPECT_LE(numErrors, maxNumErrorsAllowed) << "Failed test" << msg.str();
   }
@@ -1278,22 +1362,35 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                                        _ViewTypeA& A, const _HostViewTypeA& h_A,
                                        const _ViewTypeExpected& h_expected,
                                        const std::string& situation) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): "
       "ViewTypeA = %s, _kkGerShouldThrowException=%d\n",
       typeid(_ViewTypeA).name(), _kkGerShouldThrowException);
+#else
+  Kokkos::printf(
+      "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): "
+      "ViewTypeA = %s, _kkGerShouldThrowException=%d\n",
+      typeid(_ViewTypeA).name(), _kkGerShouldThrowException);
+#endif
+#endif
   std::string mode = _useHermitianOption ? "H" : "T";
   bool gotStdException(false);
   bool gotUnknownException(false);
   try {
     KokkosBlas::ger(mode.c_str(), alpha, x, y, A);
   } catch (const std::exception& e) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_ger, '" << situation
               << "': caught exception, e.what() = " << e.what() << std::endl;
+#endif
     gotStdException = true;
   } catch (...) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_ger, '" << situation
               << "': caught unknown exception" << std::endl;
+#endif
     gotUnknownException = true;
   }
 
@@ -1309,20 +1406,34 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   if ((gotStdException == false) && (gotUnknownException == false)) {
     Kokkos::deep_copy(h_A, A);
 
-    this->compareKokkosExpected(alpha, h_A, h_expected);
+    this->compareKkGerAgainstExpected(alpha, h_A, h_expected);
   }
 }
 
 }  // namespace Test
 
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
 int test_ger(const std::string& caseName) {
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+======================================================================="
       "===\n");
+#else
+  Kokkos::printf(
+      "+======================================================================="
+      "===\n");
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s, device = %s ...\n",
                                 caseName.c_str(), typeid(Device).name());
-
+#else
+  Kokkos::printf("Starting %s, device = %s ...\n", caseName.c_str(),
+                 typeid(Device).name());
+#endif
+#else
+int test_ger(const std::string& /*caseName*/) {
+#endif
   bool xBool = std::is_same<ScalarX, float>::value ||
                std::is_same<ScalarX, double>::value ||
                std::is_same<ScalarX, Kokkos::complex<float>>::value ||
@@ -1340,12 +1451,23 @@ int test_ger(const std::string& caseName) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTLEFT ...\n",
                                 caseName.c_str());
-
+#else
+  Kokkos::printf("Starting %s for LAYOUTLEFT ...\n", caseName.c_str());
+#endif
+#endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutLeft, ScalarY, Kokkos::LayoutLeft,
                     ScalarA, Kokkos::LayoutLeft, Device>
@@ -1374,22 +1496,45 @@ int test_ger(const std::string& caseName) {
     }
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTLEFT\n",
                                 caseName.c_str());
+#else
+  Kokkos::printf("Finished %s for LAYOUTLEFT\n", caseName.c_str());
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#endif
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTRIGHT ...\n",
                                 caseName.c_str());
-
+#else
+  Kokkos::printf("Starting %s for LAYOUTRIGHT ...\n", caseName.c_str());
+#endif
+#endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutRight, ScalarY, Kokkos::LayoutRight,
                     ScalarA, Kokkos::LayoutRight, Device>
@@ -1418,21 +1563,44 @@ int test_ger(const std::string& caseName) {
     }
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTRIGHT\n",
                                 caseName.c_str());
+#else
+  Kokkos::printf("Finished %s for LAYOUTRIGHT\n", caseName.c_str());
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#endif
 #endif
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTSTRIDE ...\n",
                                 caseName.c_str());
-
+#else
+  Kokkos::printf("Starting %s for LAYOUTSTRIDE ...\n", caseName.c_str());
+#endif
+#endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutStride, ScalarY,
                     Kokkos::LayoutStride, ScalarA, Kokkos::LayoutStride, Device>
@@ -1458,21 +1626,44 @@ int test_ger(const std::string& caseName) {
     }
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTSTRIDE\n",
                                 caseName.c_str());
+#else
+  Kokkos::printf("Finished %s for LAYOUTSTRIDE\n", caseName.c_str());
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#endif
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for MIXED LAYOUTS ...\n",
                                 caseName.c_str());
-
+#else
+  Kokkos::printf("Starting %s for MIXED LAYOUTS ...\n", caseName.c_str());
+#endif
+#endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutStride, ScalarY, Kokkos::LayoutLeft,
                     ScalarA, Kokkos::LayoutRight, Device>
@@ -1493,18 +1684,41 @@ int test_ger(const std::string& caseName) {
     tester.test(1024, 1024, 0);
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for MIXED LAYOUTS\n",
                                 caseName.c_str());
+#else
+  Kokkos::printf("Finished %s for MIXED LAYOUTS\n", caseName.c_str());
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
+#else
+  Kokkos::printf(
+      "+-----------------------------------------------------------------------"
+      "---\n");
+#endif
+#endif
 #endif
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s\n", caseName.c_str());
+#else
+  Kokkos::printf("Finished %s\n", caseName.c_str());
+#endif
+#if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+======================================================================="
       "===\n");
-
+#else
+  Kokkos::printf(
+      "+======================================================================="
+      "===\n");
+#endif
+#endif
   return 1;
 }
 
@@ -1513,7 +1727,7 @@ int test_ger(const std::string& caseName) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_float");
-  test_ger<float, float, float, TestExecSpace>("test case ger_float");
+  test_ger<float, float, float, TestDevice>("test case ger_float");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1524,8 +1738,7 @@ TEST_F(TestCategory, ger_float) {
 TEST_F(TestCategory, ger_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_complex_float");
   test_ger<Kokkos::complex<float>, Kokkos::complex<float>,
-           Kokkos::complex<float>, TestExecSpace>(
-      "test case ger_complex_float");
+           Kokkos::complex<float>, TestDevice>("test case ger_complex_float");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1535,7 +1748,7 @@ TEST_F(TestCategory, ger_complex_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double");
-  test_ger<double, double, double, TestExecSpace>("test case ger_double");
+  test_ger<double, double, double, TestDevice>("test case ger_double");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1546,8 +1759,7 @@ TEST_F(TestCategory, ger_double) {
 TEST_F(TestCategory, ger_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_complex_double");
   test_ger<Kokkos::complex<double>, Kokkos::complex<double>,
-           Kokkos::complex<double>, TestExecSpace>(
-      "test case ger_complex_double");
+           Kokkos::complex<double>, TestDevice>("test case ger_complex_double");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1557,7 +1769,7 @@ TEST_F(TestCategory, ger_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_int");
-  test_ger<int, int, int, TestExecSpace>("test case ger_int");
+  test_ger<int, int, int, TestDevice>("test case ger_int");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1566,7 +1778,7 @@ TEST_F(TestCategory, ger_int) {
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, ger_double_int_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double_int_float");
-  test_ger<double, int, float, TestExecSpace>("test case ger_mixed_types");
+  test_ger<double, int, float, TestDevice>("test case ger_double_int_float");
   Kokkos::Profiling::popRegion();
 }
 #endif

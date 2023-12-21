@@ -1285,21 +1285,6 @@ public:
     }
   }
 
-  void destroy_elems(const std::vector<std::pair<int,stk::mesh::EntityId>>& procElemIds)
-  {
-    stk::mesh::EntityVector elemsToDestroy;
-    for(const std::pair<int,stk::mesh::EntityId>& procElemId : procElemIds) {
-      if (procElemId.first == get_bulk().parallel_rank()) {
-        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, procElemId.second);
-        ASSERT_TRUE(get_bulk().is_valid(elem));
-        elemsToDestroy.push_back(elem);
-      }
-    }
-
-    get_bulk().modification_begin();
-    stk::mesh::destroy_elements_no_mod_cycle(get_bulk(), elemsToDestroy, get_meta().universal_part());
-    get_bulk().modification_end();
-  }
 };
 
 TEST_F(AuraTetSide, removeAuraSideOnOwner_checkMarking)
@@ -1375,7 +1360,69 @@ TEST_F(AuraTetSide, removeAuraElemOnP2_auraNodesDeletedOnP1)
   delete_elem_on_p1_check_aura_nodes_deleted();
 }
 
-TEST_F(AuraTetSide, destroy_elems)
+class AuraTetGhosting : public TestTextMeshAura
+{
+public:
+
+  void make_node110_owned_by_p1()
+  {
+    stk::mesh::EntityProcVec nodeToMove;
+    {
+      stk::mesh::Entity node110 = get_bulk().get_entity(stk::topology::NODE_RANK,110);
+      if (get_bulk().parallel_rank() == 0) {
+        EXPECT_TRUE(get_bulk().bucket(node110).owned());
+        int destProc = 1;
+        nodeToMove.push_back(stk::mesh::EntityProc(node110, destProc));
+      }
+    }
+
+    get_bulk().change_entity_owner(nodeToMove);
+
+    {
+      stk::mesh::Entity node110 = get_bulk().get_entity(stk::topology::NODE_RANK,110);
+      if (get_bulk().parallel_rank() == 1) {
+        EXPECT_TRUE(get_bulk().bucket(node110).owned());
+      }
+    }
+  }
+
+  void destroy_elems(const std::vector<std::pair<int,stk::mesh::EntityId>>& procElemIds)
+  {
+    stk::mesh::EntityVector elemsToDestroy;
+    for(const std::pair<int,stk::mesh::EntityId>& procElemId : procElemIds) {
+      if (procElemId.first == get_bulk().parallel_rank()) {
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, procElemId.second);
+        ASSERT_TRUE(get_bulk().is_valid(elem));
+        elemsToDestroy.push_back(elem);
+      }
+    }
+
+    get_bulk().modification_begin();
+    stk::mesh::destroy_elements_no_mod_cycle(get_bulk(), elemsToDestroy, get_meta().universal_part());
+    get_bulk().modification_end();
+  }
+
+  void custom_ghost(stk::mesh::EntityRank rank, stk::mesh::EntityId entityId, const std::vector<int>& destProcs)
+  {
+    get_bulk().modification_begin();
+
+    stk::mesh::Ghosting& customGhosting = get_bulk().create_ghosting("myCustomGhosting");
+
+    stk::mesh::Entity entity = get_bulk().get_entity(rank, entityId);
+    stk::mesh::EntityProcVec entityToGhost;
+    if (get_bulk().is_valid(entity) && get_bulk().parallel_owner_rank(entity)==get_bulk().parallel_rank()) {
+      for(int destProc : destProcs) {
+        entityToGhost.push_back(stk::mesh::EntityProc(entity, destProc));
+      }
+    }
+
+    get_bulk().change_ghosting(customGhosting, entityToGhost);
+
+    get_bulk().modification_end();
+  }
+};
+
+TEST_F(AuraTetGhosting, destroy_elems)
 {
   if (get_parallel_size() != 8) { GTEST_SKIP(); }
 
@@ -1447,6 +1494,132 @@ TEST_F(AuraTetSide, destroy_elems)
                   {6, 1163},
                   {6, 1164},
                   {6, 1165} });
+}
+
+TEST_F(AuraTetGhosting, destroy_elems_custom_ghosting)
+{
+  if (get_parallel_size() != 8) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1049, TET_4, 101,140,138,137\n"
+                         "0, 1050, TET_4, 140,110,139,136\n"
+                         "0, 1051, TET_4, 138,139,108,135\n"
+                         "0, 1052, TET_4, 137,136,135,107\n"
+                         "0, 1053, TET_4, 138,137,140,136\n"
+                         "0, 1054, TET_4, 138,135,137,136\n"
+                         "0, 1055, TET_4, 138,139,135,136\n"
+                         "0, 1056, TET_4, 138,140,139,136\n"
+                         "1, 2000, TET_4, 200,110,162,201\n"
+                         "2, 1065, TET_4, 147,108,103,109\n"
+                         "2, 1066, TET_4, 105,147,103,109\n"
+                         "3, 1108, TET_4, 134,106,133,104\n"
+                         "3, 1109, TET_4, 132,133,105,104\n"
+                         "3, 1110, TET_4, 132,134,133,104\n"
+                         "3, 1111, TET_4, 107,134,132,104\n"
+                         "4, 1081, TET_4, 134,136,107,135\n"
+                         "4, 1145, TET_4, 135,107,136,134\n"
+                         "4, 1146, TET_4, 139,136,110,162\n"
+                         "4, 1148, TET_4, 136,135,134,159\n"
+                         "4, 1149, TET_4, 136,139,135,159\n"
+                         "4, 1150, TET_4, 136,162,139,159\n"
+                         "4, 1151, TET_4, 136,134,162,159\n"
+                         "5, 1089, TET_4, 108,147,135,159\n"
+                         "5, 1090, TET_4, 147,105,132,133\n"
+                         "5, 1091, TET_4, 135,132,107,134\n"
+                         "5, 1092, TET_4, 159,133,134,106\n"
+                         "5, 1093, TET_4, 132,147,133,159\n"
+                         "5, 1094, TET_4, 132,135,147,159\n"
+                         "5, 1095, TET_4, 132,134,135,159\n"
+                         "5, 1096, TET_4, 132,133,134,159\n"
+                         "6, 1160, TET_4, 159,133,160,147\n"
+                         "6, 1161, TET_4, 159,160,133,106\n"
+                         "6, 1162, TET_4, 109,159,160,147\n"
+                         "6, 1163, TET_4, 109,159,147,108\n"
+                         "6, 1164, TET_4, 105,160,133,147\n"
+                         "6, 1165, TET_4, 105,160,147,109\n"
+                         "7, 2001, TET_4, 202,162,110,203|sideset:data=1151,4,1146,2,1052,1,1050,1,1081,4,1053,2\n";
+
+  setup_text_mesh(meshDesc);
+
+  //This mesh setup provides coverage for some dark corners of BulkData::modification_end.
+  //Specifically, node 110 is both aura-ghosted and custom-ghosted from proc 0 to procs 4 and 7,
+  //and it is both shared with, and custom-ghosted to proc 1.
+  //Similarly, node 135 is shared by procs 0 and 4 and 5, as well as being custom-ghosted
+  //from proc 0 to procs 4 and 5.
+  //This test is a success if no exception is thrown from BulkData::modification_end.
+
+  custom_ghost(stk::topology::NODE_RANK, 110, {1, 4, 7});
+  custom_ghost(stk::topology::NODE_RANK, 135, {4, 5});
+
+  destroy_elems({ {0, 1050},
+                  {4, 1081},
+                  {4, 1145},
+                  {4, 1146},
+                  {4, 1148},
+                  {4, 1149},
+                  {1, 2000} });
+}
+
+TEST_F(AuraTetGhosting, destroy_elems_sharing_and_aura_ghosting)
+{
+  if (get_parallel_size() != 4) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1049, TET_4, 101,140,138,137\n"
+                         "0, 1050, TET_4, 140,110,139,136\n"
+                         "0, 1051, TET_4, 138,139,108,135\n"
+                         "0, 1052, TET_4, 137,136,135,107\n"
+                         "1, 2000, TET_4, 200,110,162,201\n"
+                         "1, 2001, TET_4, 200,110,165,202\n"
+                         "1, 2002, TET_4, 200,203,204,202\n"
+                         "2, 1065, TET_4, 200,108,103,104\n"
+                         "2, 1066, TET_4, 200,101,105,106\n"
+                         "3, 1085, TET_4, 136,189,183,156\n"
+                         "3, 1086, TET_4, 136,157,153,186|sideset:data=1050,1,1085,1,1086,2\n";
+
+  //This mesh setup provides coverage for some dark corners of BulkData::modification_end.
+  //Specifically, we make node 110 shared by procs 0 and 1, and aura-ghosting to proc 2 and 3.
+  //Additionally, we move the ownership of node 110 to proc 1, while the face that it is
+  //attached to (face 10501, i.e., the face on side 1 of element 1050) remains owned by proc 0.
+  //This test is a success if no exception is thrown from BulkData::modification_end.
+
+  setup_text_mesh(meshDesc);
+
+  make_node110_owned_by_p1();
+
+  destroy_elems({ {2, 1065} });
+}
+
+TEST_F(AuraTetGhosting, destroy_elems_sharing_and_aura_and_custom_ghosting)
+{
+  if (get_parallel_size() != 4) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1049, TET_4, 101,140,138,137\n"
+                         "0, 1050, TET_4, 140,110,139,136\n"
+                         "0, 1051, TET_4, 138,139,108,135\n"
+                         "0, 1052, TET_4, 137,136,135,107\n"
+                         "1, 2000, TET_4, 200,110,162,201\n"
+                         "1, 2001, TET_4, 200,110,165,202\n"
+                         "1, 2002, TET_4, 200,203,204,202\n"
+                         "2, 1065, TET_4, 200,108,103,104\n"
+                         "2, 1066, TET_4, 200,101,105,106\n"
+                         "3, 1085, TET_4, 136,189,183,156\n"
+                         "3, 1086, TET_4, 136,157,153,186|sideset:data=1050,1,1085,1,1086,2\n";
+
+  //This mesh setup provides coverage for some dark corners of BulkData::modification_end.
+  //Specifically, we make node 110 shared by procs 0 and 1, and aura-ghosting to proc 2 and 3.
+  //Additionally, we move the ownership of node 110 to proc 1, while the face that it is
+  //attached to (face 10501, i.e., the face on side 1 of element 1050) remains owned by proc 0.
+  //Finally, we also custom-ghost elems 1050 and 1051 to procs 2 and 3, as well as node 110 to procs 2 and 3.
+  //This test is a success if no exception is thrown from BulkData::modification_end.
+
+  setup_text_mesh(meshDesc);
+
+  make_node110_owned_by_p1();
+
+  custom_ghost(stk::topology::ELEM_RANK, 1050, {2, 3});
+  custom_ghost(stk::topology::ELEM_RANK, 1051, {2, 3});
+  custom_ghost(stk::topology::NODE_RANK, 110, {2, 3});
+
+  destroy_elems({ {2, 1065} });
 }
 
 } // empty namespace

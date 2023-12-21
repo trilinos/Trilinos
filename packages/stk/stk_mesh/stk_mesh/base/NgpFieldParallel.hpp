@@ -75,18 +75,6 @@ void do_final_sync_to_device(const std::vector<NgpField<T>*>& ngpFields)
   }
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
-template <typename T>
-STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use copy_owned_to_shared(bulk, ngpFields, doFinalSyncBackToDevice).")
-void copy_owned_to_shared(const stk::mesh::BulkData & bulk,
-                          const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                          bool doFinalSyncBackToDevice,
-                          bool syncOnlySharedOrGhosted)
-{
-  copy_owned_to_shared(bulk, ngpFields, doFinalSyncBackToDevice);
-}
-#endif
-
 template <typename T>
 void copy_owned_to_shared(const stk::mesh::BulkData & bulk,
                           const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
@@ -107,18 +95,6 @@ void copy_owned_to_shared(const stk::mesh::BulkData & bulk,
   }
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
-template <typename T>
-STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(ghosts, ngpFields, doFinalSyncBackToDevice).")
-void communicate_field_data(const stk::mesh::Ghosting & ghosting,
-                            const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                            bool doFinalSyncBackToDevice,
-                            bool syncOnlySharedOrGhosted)
-{
-  communicate_field_data(ghosting, ngpFields, doFinalSyncBackToDevice);
-}
-#endif
-
 template <typename T>
 void communicate_field_data(const stk::mesh::Ghosting & ghosting,
                             const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
@@ -138,18 +114,6 @@ void communicate_field_data(const stk::mesh::Ghosting & ghosting,
     do_final_sync_to_device(ngpFields);
   }
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
-template <typename T>
-STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(bulk, ngpFields, doFinalSyncBackToDevice).")
-void communicate_field_data(const stk::mesh::BulkData & bulk,
-                            const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                            bool doFinalSyncBackToDevice,
-                            bool syncOnlySharedOrGhosted)
-{
-  communicate_field_data(bulk, ngpFields, doFinalSyncBackToDevice);
-}
-#endif
 
 template <typename T>
 void communicate_field_data(const stk::mesh::BulkData & bulk,
@@ -297,7 +261,7 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
   }
 
   const bool deterministic = false;
-  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double>(MPI_COMM_WORLD,
+  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double>(bulk.parallel(),
                                                                 comm_procs,
                                                                 exchangeHandler,
                                                                 deterministic);

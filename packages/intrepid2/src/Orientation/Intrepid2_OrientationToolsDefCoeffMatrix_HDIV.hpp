@@ -104,7 +104,8 @@ check_getCoeffMatrix_HDIV(const subcellBasisType& subcellBasis,
       cellBaseKey != shards::Triangle<>::key &&
       cellBaseKey != shards::Hexahedron<>::key &&
       cellBaseKey != shards::Wedge<>::key &&
-      cellBaseKey != shards::Tetrahedron<>::key,
+      cellBaseKey != shards::Tetrahedron<>::key &&
+      cellBaseKey != shards::Pyramid<>::key,
       std::logic_error,
       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
       "cellBasis must have quad, triangle, hexhedron or tetrahedron topology.");

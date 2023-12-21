@@ -26,9 +26,19 @@
 #error "The macro KOKKOSKERNELS_PERF_TEST_NAME was not defined"
 #endif
 
+// All perf tests must implement print_options()
+void print_options();
+
 int main_instantiation(int argc, char** argv) {
   perf_test::CommonInputParams params;
   perf_test::parse_common_options(argc, argv, params);
+
+  // If help is requested with "-h" or "--help", then just print the options
+  // and quit.
+  if (params.print_help) {
+    print_options();
+    return 0;
+  }
 
   /* Assumption is that use_openmp/use_threads variables are */
   /* provided as numbers of threads */

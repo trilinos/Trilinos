@@ -107,6 +107,9 @@ def main(argv):
 
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
+  if args.build_name.startswith("rhel8"):
+    cmd += " --on_rhel8"
+
   if args.in_container:
      cmd += " --no-bootstrap"
 

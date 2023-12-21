@@ -6,7 +6,7 @@
  *    L'Ecuyer and Cote, ACM Transactions on Mathematical
  *       Software, March 1991
  *    Russian peasant algorithm -- Knuth, vol. II, pp. 442-43
- *  Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ *  Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  *  of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  *  NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,14 +20,12 @@
 
 #include "chaco_random.h"
 
-#define MOD 2147483647L /* modulus for generator  */
-#define MULT 41358L     /* multiplier             */
-                        /* modulus = mult*quotient  + remainder  */
-#define Q 51924L        /* int(modulus / multiplier) */
-#define R 10855L        /* remainder                 */
+#define MOD  2147483647L /* modulus for generator  */
+#define MULT 41358L      /* multiplier             */
+                         /* modulus = mult*quotient  + remainder  */
+#define Q         51924L /* int(modulus / multiplier) */
+#define R         10855L /* remainder                 */
 #define MAX_VALUE (MOD - 1)
-
-#define EXP_VAL 1285562981L /* value for 10,000th draw */
 
 #define IMPOSSIBLE_RAND (-1)
 #define STARTUP_RANDS                                                                              \
@@ -61,7 +59,7 @@ long get_init_rand_port(void)
 {
   long seed;
 
-  srand((unsigned int)time(NULL)); /* initialize system generator */
+  srand((int)time(NULL)); /* initialize system generator */
   do {
     seed = ((long)rand()) * rand();
     seed += ((long)rand()) * rand();
@@ -135,6 +133,9 @@ double rand_rect_port(void) { return (double)rand_port() / (double)(MAX_VALUE + 
   use Russian peasant algorithm followed by approximate factoring */
 
 #if defined(TESTING)
+
+#define EXP_VAL 1285562981L /* value for 10,000th draw */
+
 /* Test the generator */
 #include <stdio.h>
 int main(void)

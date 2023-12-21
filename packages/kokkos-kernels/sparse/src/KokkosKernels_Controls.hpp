@@ -20,7 +20,9 @@
 /// \brief Mechanism to control internal behavior of kernels
 /// \author Luc Berger-Vergiat (lberge@sandia.gov)
 
+#include <string>
 #include <unordered_map>
+#include <string>
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_tpl_handles_decl.hpp"
 
@@ -43,8 +45,13 @@ namespace Experimental {
 // Declaration of Controls class
 class Controls {
  public:
+  using key_type    = std::string;
+  using mapped_type = std::string;
+  using value_type  = std::pair<const key_type, mapped_type>;
+
   // Constructor
   Controls() = default;
+  Controls(std::initializer_list<value_type> init) : kernel_parameters(init) {}
 
   // set a new parameter
   void setParameter(const std::string& name, const std::string& value) {
@@ -60,12 +67,10 @@ class Controls {
   ///
   /// \param name the name of the parameter to retrieve
   /// \param orUnset (default \c "" ) the value to return if \c name is not set
-  std::string getParameter(const std::string& name,
-                           const std::string& orUnset = "") const {
+  key_type getParameter(const std::string& name,
+                        const std::string& orUnset = "") const {
     auto search = kernel_parameters.find(name);
     if (kernel_parameters.end() == search) {
-      std::cerr << "WARNING: Controls::getParameter for name \"" << name
-                << "\" was unset" << std::endl;
       return orUnset;
     } else {
       return search->second;
@@ -125,7 +130,7 @@ class Controls {
 
  private:
   // storage for kernel parameters
-  std::unordered_map<std::string, std::string> kernel_parameters;
+  std::unordered_map<key_type, mapped_type> kernel_parameters;
 };
 
 }  // namespace Experimental

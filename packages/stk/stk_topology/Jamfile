@@ -64,7 +64,9 @@ local installed-end-user-files =
 # Note that if the --install-developer-files option is passed to bjam these will also
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
-  stk_topology_utest
+  stk_topology_utest_a
+  stk_topology_utest_b
+  stk_topology_utest_c
   stk_topology_doc_test
   ;
 
@@ -128,7 +130,9 @@ install install-user-lib
 
 explicit install-exe-targets ;
 alias install-exe-targets
- : stk_topology_utest
+ : stk_topology_utest_a
+   stk_topology_utest_b
+   stk_topology_utest_c
    stk_topology_doc_test
  ;
 
@@ -157,10 +161,30 @@ lib stk_topology
   ;
 
 
-exe stk_topology_utest
+exe stk_topology_utest_a
   :
     [
-      glob $(stk_topology-root)/../stk_unit_tests/stk_topology/*.cpp 
+      glob $(stk_topology-root)/../stk_unit_tests/stk_topology/utest_a/*.cpp 
+    ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+  : <tag>@sierra-exec-tag
+    <include>$(stk_topology-root)/../stk_unit_tests/stk_topology
+  ;
+
+exe stk_topology_utest_b
+  :
+    [
+      glob $(stk_topology-root)/../stk_unit_tests/stk_topology/utest_b/*.cpp 
+    ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+  : <tag>@sierra-exec-tag
+    <include>$(stk_topology-root)/../stk_unit_tests/stk_topology
+  ;
+
+exe stk_topology_utest_c
+  :
+    [
+      glob $(stk_topology-root)/../stk_unit_tests/stk_topology/utest_c/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
   : <tag>@sierra-exec-tag

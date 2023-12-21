@@ -86,8 +86,6 @@
 #include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "struct_mesh_utils.hpp"
 
-#define Intrepid2_Experimental
-
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -161,13 +159,8 @@ int ProjectFields(const bool verbose) {
   };
 
   using ots = OrientationTools<DeviceType>;
-  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using pts = Experimental::ProjectionTools<DeviceType>;
-  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
-#else
   using pts = ProjectionTools<DeviceType>;
   using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
-#endif
   using basisPtrType = BasisPtr<DeviceType,ValueType,ValueType>;
   using CG_NBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
 

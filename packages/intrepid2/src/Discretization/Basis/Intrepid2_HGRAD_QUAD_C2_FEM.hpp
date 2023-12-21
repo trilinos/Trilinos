@@ -64,7 +64,7 @@ namespace Intrepid2 {
 
       When the serendipity template argument is true, the basis has
       cardinality 8 and spans an INCOMPLETE bi-quadratic polynomial space (Dofs are associated only to vertices and edges). 
-      Note, Basis_HGRAD_QUAD_I2_Serendipity_FEM = Basis_HGRAD_QUAD_C2_FEM<true>      
+      Note, Basis_HGRAD_QUAD_I2_FEM = Basis_HGRAD_QUAD_C2_FEM<true>      
       
       Basis functions are dual
       to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
@@ -126,7 +126,8 @@ namespace Intrepid2 {
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
-      getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues( const typename DeviceType::execution_space& space,
+                       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
 
@@ -189,23 +190,26 @@ namespace Intrepid2 {
            typename pointValueType>
   class Basis_HGRAD_QUAD_DEG2_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisBase = Basis<DeviceType, outputValueType, pointValueType>;
+    using typename BasisBase::ExecutionSpace;
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
 
     /** \brief Constructor.
      */
     Basis_HGRAD_QUAD_DEG2_FEM();
 
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType;
+    using typename BasisBase::ScalarViewType;
 
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
-    getValues(       OutputViewType outputValues,
+    getValues( const ExecutionSpace& space,
+                     OutputViewType outputValues,
                const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -216,16 +220,11 @@ namespace Intrepid2 {
                                       this->getBaseCellTopology(),
                                       this->getCardinality() );
 #endif
-      if constexpr (serendipity)
-        Impl::Basis_HGRAD_QUAD_DEG2_FEM<true>::
-          getValues<DeviceType>( outputValues,
-                                    inputPoints,
-                                    operatorType );
-      else 
-        Impl::Basis_HGRAD_QUAD_DEG2_FEM<false>::
-          getValues<DeviceType>( outputValues,
-                                    inputPoints,
-                                    operatorType );
+      Impl::Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::
+          template getValues<DeviceType>(space,
+                                outputValues,
+                                inputPoints,
+                                operatorType);
     }
 
     virtual
@@ -263,7 +262,7 @@ namespace Intrepid2 {
     const char*
     getName() const override {
       if constexpr (serendipity)
-        return "Intrepid2_HGRAD_QUAD_I2_Serendipity_FEM";
+        return "Intrepid2_HGRAD_QUAD_I2_FEM";
       else
         return "Intrepid2_HGRAD_QUAD_C2_FEM";
     }
@@ -295,7 +294,7 @@ namespace Intrepid2 {
   using Basis_HGRAD_QUAD_C2_FEM = Basis_HGRAD_QUAD_DEG2_FEM<false, DeviceType, outputValueType, pointValueType>;
 
   template<typename DeviceType = void, typename outputValueType = double, typename pointValueType = double>
-  using Basis_HGRAD_QUAD_I2_Serendipity_FEM = Basis_HGRAD_QUAD_DEG2_FEM<true, DeviceType, outputValueType, pointValueType>;
+  using Basis_HGRAD_QUAD_I2_FEM = Basis_HGRAD_QUAD_DEG2_FEM<true, DeviceType, outputValueType, pointValueType>;
 
 }// namespace Intrepid2
 

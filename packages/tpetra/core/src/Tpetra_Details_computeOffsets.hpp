@@ -189,12 +189,17 @@ public:
        const CountType count)
   {
     const SizeType numOffsets (offsets.extent (0));
+    if(numOffsets == SizeType(0))
+    {
+      // Special case that is possible with zero rows
+      return 0;
+    }
     using range_type = Kokkos::RangePolicy<ExecutionSpace, SizeType>;
     range_type range (execSpace, 0, numOffsets);
     using functor_type =
       ComputeOffsetsFromConstantCount<OffsetType, CountType, SizeType>;
     functor_type functor (offsets, count);
-    const OffsetType total = numOffsets*count;
+    const OffsetType total = (numOffsets - 1) * count;
     const char funcName[] =
       "Tpetra::Details::computeOffsetsFromConstantCount";
     Kokkos::parallel_for (funcName, range, functor);
@@ -385,7 +390,7 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
     using functor_type =
       ComputeOffsetsFromConstantCount<offset_type, CT, SizeType>;
     execution_space execSpace;
-    functor_type::run (execSpace, ptr, count);
+    total = functor_type::run (execSpace, ptr, count);
   }
   return total;
 }

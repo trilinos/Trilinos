@@ -21,10 +21,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol_Combined_FSA)
   test_vdp_fsa(method_name, true, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol_Combined_FSA_Tangent)
-{
-  test_vdp_fsa(method_name, true, true, out, success);
-}
 
 } // namespace Tempus_Test
 

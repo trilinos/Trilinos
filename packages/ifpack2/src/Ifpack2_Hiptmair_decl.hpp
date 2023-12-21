@@ -223,6 +223,12 @@ namespace Ifpack2 {
     //! Returns the time spent in apply().
     double getApplyTime() const;
 
+    //! Returns prec 1
+    Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> > getPrec1();
+
+    //! Returns prec 2
+    Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> > getPrec2();
+
     //! @name Overridden from Teuchos::Describable
     //@{
 

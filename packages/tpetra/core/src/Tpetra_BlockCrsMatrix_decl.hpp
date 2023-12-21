@@ -940,7 +940,7 @@ private:
     // Gonna badly fake this here for other execspaces
 #elif defined(KOKKOS_ENABLE_HIP)
     static constexpr bool value =
-      std::is_same<typename Device::execution_space, Kokkos::Experimental::HIP>::value;
+      std::is_same<typename Device::execution_space, Kokkos::HIP>::value;
 #elif defined(KOKKOS_ENABLE_SYCL)
     static constexpr bool value =
       std::is_same<typename Device::execution_space, Kokkos::Experimental::SYCL>::value;

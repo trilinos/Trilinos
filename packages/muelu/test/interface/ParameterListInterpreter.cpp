@@ -63,7 +63,6 @@
 #include <MueLu_TestHelpers.hpp>
 
 #include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
@@ -98,43 +97,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string xmlForceFile = "";
   bool useKokkos = false;
   if(lib == Xpetra::UseTpetra) {
-# ifdef HAVE_MUELU_SERIAL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-      useKokkos = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-      useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-      useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-      useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-    if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-      useKokkos = true;
-# endif    
+      useKokkos = !Node::is_serial;
   }
-  bool compareWithGold = true;
-#ifdef KOKKOS_ENABLE_CUDA
-  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-    // Behavior of some algorithms on Cuda is non-deterministic, so we won't check the output.
-    compareWithGold = false;
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-    // Behavior of some algorithms on HIP is non-deterministic, so we won't check the output.
-    compareWithGold = false;
-#endif
-#ifdef KOKKOS_ENABLE_SYCL
-  if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-    // Behavior of some algorithms on SYCL is non-deterministic, so we won't check the output.
-    compareWithGold = false;
-#endif
+  bool compareWithGold = !Node::is_gpu;
   clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
@@ -283,25 +248,28 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList,comm));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter/") {
-          paramList.set("use kokkos refactor", useKokkos);
+          if(paramList.isParameter("parameter list: syntax"))
+            paramList.remove("parameter list: syntax");
+          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+          mueluParamList->set("multigrid algorithm","sa");
+          mueluParamList->set("use kokkos refactor", useKokkos);
+          
+          // If we are using Kokkos refactor, we need to strip off the options that Kokkos doesn't support
+          if(useKokkos) {
+            if (mueluParamList->isParameter("aggregation: match ML phase1"))
+              mueluParamList->remove("aggregation: match ML phase1");
+            if (mueluParamList->isParameter("aggregation: match ML phase2b"))
+              mueluParamList->remove("aggregation: match ML phase2b");
+            if (mueluParamList->isParameter("aggregation: use ml scaling of drop tol"))
+              mueluParamList->remove("aggregation: use ml scaling of drop tol");
+          }
 
-          paramList.set("x-coordinates",coordinates->getDataNonConst(0).get());
-          if (coordinates->getNumVectors() > 1)
-            paramList.set("y-coordinates",coordinates->getDataNonConst(1).get());
-          if (coordinates->getNumVectors() > 2)
-            paramList.set("z-coordinates",coordinates->getDataNonConst(2).get());
-          coordsSet = true;
-
-          // MLParameterInterpreter needs the nullspace information if rebalancing is active!
-          // add default constant null space vector
-          paramList.set("null space: type", "pre-computed");
-          paramList.set("null space: dimension", Teuchos::as<int>(nullspace->getNumVectors()));
-          paramList.set("null space: vectors", nullspace->getDataNonConst(0).get());
-
-          mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
+          mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter2/") {
           RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
+
+          mueluParamList->set("multigrid algorithm","sa");
           mueluParamList->set("use kokkos refactor", useKokkos);
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
         } else
@@ -378,7 +346,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // Tpetra produces different eigenvalues in Chebyshev due to using
         // std::rand() for generating random vectors, which may be initialized
         // using different seed, and may have different algorithm from one
-        // gcc version to another, or to anogther compiler (like clang)
+        // gcc version to another, or to another compiler (like clang)
         // This leads to us always failing this test.
         // NOTE1 : Epetra, on the other hand, rolls out its out random number
         // generator, which always produces same results
@@ -404,6 +372,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         run_sed("'s/SuperLU solver interface, direct solve/<Direct> solver interface/'", baseFile);
         run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
         run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
+
+        // The smoother complexity depends on the coarse solver.
+        run_sed("'s/Smoother complexity = [0-9][0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
 
         // Strip template args for some classes
         std::vector<std::string> classes;

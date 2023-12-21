@@ -105,8 +105,8 @@ void MeshExchangeBoundaryEdges::fill_updated_remote_vertices_info(VertexPointExc
   for (int rank=0; rank < nprocs; ++rank)
   {
     auto& sendBuf = exchanger.get_send_buf(rank);
-    sendBuf.reserve(m_sortedVerticesByOwner.get_entities(rank).size());
-    for (auto& vertex : m_sortedVerticesByOwner.get_entities(rank))
+    sendBuf.reserve(m_sortedVerticesByOwner.get_values(rank).size());
+    for (auto& vertex : m_sortedVerticesByOwner.get_values(rank))
       sendBuf.push_back(vertex->get_point_orig(0));
   }
 }
@@ -146,8 +146,8 @@ void MeshExchangeBoundaryEdges::add_boundary_edges_on_root(VertexExchange& bound
   {
     for (unsigned j = 0; j < recvEdgeBuffer.size(); ++j) {
       BoundaryEdgeInfo edgeInfo = recvEdgeBuffer[j];
-      m_boundaryMesh->create_edge(m_sortedVerticesByOwner.get_entity(edgeInfo.vertex1Owner),
-                                m_sortedVerticesByOwner.get_entity(edgeInfo.vertex2Owner));
+      m_boundaryMesh->create_edge(m_sortedVerticesByOwner.get_value(edgeInfo.vertex1Owner),
+                                m_sortedVerticesByOwner.get_value(edgeInfo.vertex2Owner));
     }
   };
 

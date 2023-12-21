@@ -189,8 +189,11 @@ void MeshModLogObserver::print_patch()
   for(unsigned i=0; i<m_entityPatch.size(); ++i) {
     unsigned reverseIdx = m_entityPatch.size() - i - 1;
     Entity ent = m_entityPatch[reverseIdx];
+    const bool shared = m_mesh.bucket(ent).shared();
+    const bool inAura = m_mesh.bucket(ent).in_aura();
+    const bool customRecvGhost = m_mesh.in_receive_custom_ghost(m_mesh.entity_key(ent));
     m_os << "P" << m_mesh.parallel_rank() << " " << m_mesh.entity_key(ent)
-         << " {P" << m_mesh.parallel_owner_rank(ent) << ",s=" << m_mesh.bucket(ent).shared()<<",a=" << m_mesh.bucket(ent).in_aura() << "}, ";
+         << " {P" << m_mesh.parallel_owner_rank(ent) << (shared?",shrd":"") << (inAura?",aura":"") << (customRecvGhost?",CRG":"") << m_mesh.state(ent)<<"}, ";
     for(unsigned r=0; r<reverseRanks.size(); ++r) {
       const EntityRank rank = reverseRanks[r];
       if (rank == m_mesh.entity_rank(ent)) { continue; }

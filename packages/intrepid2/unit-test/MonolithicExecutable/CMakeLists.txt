@@ -16,7 +16,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 # add single-group tests; allows for easier targeted builds and debugging (especially useful under CUDA)
-# since each of these is redundant with Intrepid2_Tests above, we don't build this when all targets are built
+# since each of these is redundant with Intrepid2_Tests above, we don't build them when all targets are built
 
 # BasisEquivalenceTests
 TRIBITS_ADD_EXECUTABLE( BasisEquivalenceTests NOEXESUFFIX SOURCES BasisEquivalenceTests_Wedge.cpp BasisEquivalenceTests_Tri.cpp BasisEquivalenceTests_Tet.cpp BasisEquivalenceTests_Quad.cpp BasisEquivalenceTests_Line.cpp BasisEquivalenceTests_Hypercube.cpp BasisEquivalenceTests_Hex.cpp UnitTestMain.cpp )
@@ -45,3 +45,7 @@ SET_TARGET_PROPERTIES( Intrepid2_DataTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 # StructuredVersusStandard integration
 TRIBITS_ADD_EXECUTABLE( StructuredVersusStandard NOEXESUFFIX SOURCES StructuredIntegrationTests_StructuredVersusStandard.cpp UnitTestMain.cpp )
 SET_TARGET_PROPERTIES( Intrepid2_StructuredVersusStandard PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+# SubBasisInclusionTests
+TRIBITS_ADD_EXECUTABLE( SubBasisInclusionTests NOEXESUFFIX SOURCES SubBasisInclusionTests.cpp UnitTestMain.cpp )
+SET_TARGET_PROPERTIES( Intrepid2_SubBasisInclusionTests PROPERTIES EXCLUDE_FROM_ALL TRUE)

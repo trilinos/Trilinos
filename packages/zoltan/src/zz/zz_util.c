@@ -360,7 +360,7 @@ MPI_Datatype Zoltan_mpi_gno_type()
   if (!zz_mpi_gno_name){
     /* should never happen */
     fprintf(stderr,"Zoltan_mpi_gno_type: It happened\n");
-    MPI_Abort(MPI_COMM_WORLD,99);
+    MPI_Abort(zoltan_get_global_comm(),99);
   }
 
   return zz_mpi_gno_type;
@@ -435,7 +435,7 @@ void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly)
   char *c=NULL, *next=NULL, *c_end;
   char fbuf[64],buf[2048],label[64],value[64],units[64];
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(zoltan_get_global_comm(), &rank);
 
   f = open("/proc/meminfo", O_RDONLY);
   if (f == -1) return;

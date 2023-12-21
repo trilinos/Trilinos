@@ -66,7 +66,8 @@ LOCA::Thyra::Group::Group(
         const LOCA::ParameterVector& p,
         int p_index,
         bool impl_dfdp,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector) :
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
+        const bool set_transient_in_args) :
   NOX::Thyra::Group(initial_guess, model, weight_vector),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
@@ -75,7 +76,8 @@ LOCA::Thyra::Group::Group(
   saveDataStrategy(),
   implement_dfdp(impl_dfdp),
   weight_vec_(weight_vector),
-  paramsInSeparatePVecs(false)
+  paramsInSeparatePVecs(false),
+  set_transient_in_args_(set_transient_in_args)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -87,7 +89,8 @@ LOCA::Thyra::Group::Group(
         const LOCA::ParameterVector& p,
         const std::vector<int>& p_index,
         bool impl_dfdp,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector) :
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
+        const bool set_transient_in_args) :
   NOX::Thyra::Group(nox_group, NOX::DeepCopy),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
@@ -96,7 +99,8 @@ LOCA::Thyra::Group::Group(
   saveDataStrategy(),
   implement_dfdp(impl_dfdp),
   weight_vec_(weight_vector),
-  paramsInSeparatePVecs(true)
+  paramsInSeparatePVecs(true),
+  set_transient_in_args_(set_transient_in_args)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -111,7 +115,8 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   param_index(source.param_index),
   saveDataStrategy(source.saveDataStrategy),
   implement_dfdp(source.implement_dfdp),
-  paramsInSeparatePVecs(source.paramsInSeparatePVecs)
+  paramsInSeparatePVecs(source.paramsInSeparatePVecs),
+  set_transient_in_args_(source.set_transient_in_args_)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -132,6 +137,7 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
     saveDataStrategy = source.saveDataStrategy;
     implement_dfdp = source.implement_dfdp;
     paramsInSeparatePVecs = source.paramsInSeparatePVecs;
+    set_transient_in_args_ = source.set_transient_in_args_;
     updateThyraParamView();
   }
   return *this;
@@ -163,24 +169,24 @@ LOCA::Thyra::Group::computeF()
   if (this->isF())
     return NOX::Abstract::Group::Ok;
 
-  in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
-    in_args_.set_x_dot(x_dot_vec);
+  auto in_args = model_->createInArgs();
+  auto out_args = model_->createOutArgs();
+
+  if (this->usingBasePoint())
+    in_args = this->base_point_;
+
+  in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot) && set_transient_in_args_)
+    in_args.set_x_dot(x_dot_vec);
   for (size_t i=0; i < param_index.size(); ++i)
-    in_args_.set_p(param_index[i], param_thyra_vec[i]);
-  out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+    in_args.set_p(param_index[i], param_thyra_vec[i]);
+  out_args.set_f(f_vec_->getThyraRCPVector().assert_not_null());
 
-  model_->evalModel(in_args_, out_args_);
-
-  in_args_.set_x(Teuchos::null);
-
-  for (const auto& p : param_index)
-    in_args_.set_p(p, Teuchos::null);
-  out_args_.set_f(Teuchos::null);
+  model_->evalModel(in_args, out_args);
 
   is_valid_f_ = true;
 
-  if (out_args_.isFailed())
+  if (out_args.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;
@@ -194,33 +200,30 @@ LOCA::Thyra::Group::computeJacobian()
 
   shared_jacobian_->getObject(this);
 
-  in_args_.set_x(x_vec_->getThyraRCPVector());
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
-    in_args_.set_x_dot(x_dot_vec);
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
-    in_args_.set_alpha(0.0);
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
-    in_args_.set_beta(1.0);
+  auto in_args = model_->createInArgs();
+  auto out_args = model_->createOutArgs();
+
+  if (this->usingBasePoint())
+    in_args = this->base_point_;
+
+  in_args.set_x(x_vec_->getThyraRCPVector());
+  if (set_transient_in_args_) {
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+      in_args.set_x_dot(x_dot_vec);
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
+      in_args.set_alpha(0.0);
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
+      in_args.set_beta(1.0);
+  }
   for (size_t i=0; i < param_index.size(); ++i)
-    in_args_.set_p(param_index[i], param_thyra_vec[i]);
-  out_args_.set_W_op(lop_);
+    in_args.set_p(param_index[i], param_thyra_vec[i]);
+  out_args.set_W_op(lop_);
 
-  model_->evalModel(in_args_, out_args_);
-
-  in_args_.set_x(Teuchos::null);
-  // nschloe (I apologize for this hack):
-  // Curiously, the *_args_ are persistent object in the NOX groups and
-  // accessible from anywhere. We make use of this here by *not* resetting the
-  // parameters
-  //    in_args_.set_p(param_index, Teuchos::null);
-  // and thus passing the the param_thyra_vec into the preconditioner builder,
-  // which resides in NOX::Thyra::Group::updateLOWS.  This only works because
-  // this function right here is called *before* NOX::Thyra::Group::updateLOWS.
-  out_args_.set_W_op(Teuchos::null);
+  model_->evalModel(in_args, out_args);
 
   is_valid_jacobian_ = true;
 
-  if (out_args_.isFailed())
+  if (out_args.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;
@@ -284,11 +287,17 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   // so we are disabling this for now
   implement_dfdp = false;
 
+  auto in_args = model_->createInArgs();
+  auto out_args = model_->createOutArgs();
+
+  if (this->usingBasePoint())
+    in_args = this->base_point_;
+
   // Use default implementation if we don't want to use model evaluator, or
   // it doesn't support it
   if (!implement_dfdp ||
-      !out_args_.supports(::Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,
-              param_index[0]).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
+      !out_args.supports(::Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,
+                         param_index[0]).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
     NOX::Abstract::Group::ReturnType res =
       LOCA::Abstract::Group::computeDfDpMulti(paramIDs, fdfdp, isValidF);
     return res;
@@ -314,31 +323,23 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   ::Thyra::ModelEvaluatorBase::DerivativeMultiVector<double> dmv(dfdp_full->getThyraMultiVector(), ::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL);
   ::Thyra::ModelEvaluatorBase::Derivative<double> deriv(dmv);
 
-  in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
-    in_args_.set_x_dot(x_dot_vec);
+  in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot) && set_transient_in_args_)
+    in_args.set_x_dot(x_dot_vec);
   for (size_t i=0; i < param_index.size(); ++i)
-    in_args_.set_p(param_index[i], param_thyra_vec[i]);
+    in_args.set_p(param_index[i], param_thyra_vec[i]);
   if (!isValidF)
-    out_args_.set_f(f.getThyraRCPVector().assert_not_null());
-  out_args_.set_DfDp(param_index[0], deriv);
+    out_args.set_f(f.getThyraRCPVector().assert_not_null());
+  out_args.set_DfDp(param_index[0], deriv);
 
   // Evaluate model
-  model_->evalModel(in_args_, out_args_);
+  model_->evalModel(in_args, out_args);
 
   // Copy back dfdp
   for (int i=0; i<num_vecs; i++)
     (*dfdp)[i] = (*dfdp_full)[paramIDs[i]];
 
-  // Reset inargs/outargs
-  in_args_.set_x(Teuchos::null);
-  for (const auto& p : param_index)
-    in_args_.set_p(p, Teuchos::null);
-  out_args_.set_f(Teuchos::null);
-  out_args_.set_DfDp(param_index[0],
-             ::Thyra::ModelEvaluatorBase::Derivative<double>());
-
-  if (out_args_.isFailed())
+  if (out_args.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;
@@ -366,26 +367,25 @@ LOCA::Thyra::Group::postProcessContinuationStep(
   // is tricky using that approach.
   //   If there are no responses, then we don't have to call evalModel.
   if (model_->Ng() > 0) {
-    in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-    if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
-      in_args_.set_x_dot(x_dot_vec);
+    auto in_args = model_->createInArgs();
+    auto out_args = model_->createOutArgs();
+
+    if (this->usingBasePoint())
+      in_args = this->base_point_;
+
+    in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+    if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot) && set_transient_in_args_)
+      in_args.set_x_dot(x_dot_vec);
     for (size_t i=0; i < param_index.size(); ++i)
-      in_args_.set_p(param_index[i], param_thyra_vec[i]);
-    out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+      in_args.set_p(param_index[i], param_thyra_vec[i]);
+    out_args.set_f(f_vec_->getThyraRCPVector().assert_not_null());
     // This is the key part. It makes the model evaluator call the response
     // functions.
     const Teuchos::RCP< ::Thyra::VectorBase<double> >
       g0 = ::Thyra::createMember(model_->get_g_space(0));
-    out_args_.set_g(0, g0);
+    out_args.set_g(0, g0);
 
-    model_->evalModel(in_args_, out_args_);
-
-    in_args_.set_x(Teuchos::null);
-    for (const auto& p : param_index)
-      in_args_.set_p(p, Teuchos::null);
-    out_args_.set_f(Teuchos::null);
-    // Set g back to null to restore the original state of out_args_.
-    out_args_.set_g(0, Teuchos::null);
+    model_->evalModel(in_args, out_args);
   }
 
   if (saveDataStrategy != Teuchos::null)
@@ -441,32 +441,31 @@ LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
 {
   shared_jacobian_->getObject(this);
 
-  in_args_.set_x(x_vec_->getThyraRCPVector());
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
-    in_args_.set_x_dot(x_dot_vec);
+  auto in_args = model_->createInArgs();
+  auto out_args = model_->createOutArgs();
+
+  if (this->usingBasePoint())
+    in_args = this->base_point_;
+
+  in_args.set_x(x_vec_->getThyraRCPVector());
+  // Don't use the set_transient_in_args_ flag here. Shifted Matrix
+  // need special flags.
+  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+    in_args.set_x_dot(x_dot_vec);
   for (size_t i=0; i < param_index.size(); ++i)
-    in_args_.set_p(param_index[i], param_thyra_vec[i]);
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
-    in_args_.set_alpha(-beta);
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
-    in_args_.set_beta(alpha);
-  out_args_.set_W_op(lop_);
+    in_args.set_p(param_index[i], param_thyra_vec[i]);
+  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
+    in_args.set_alpha(-beta);
+  if (in_args.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
+    in_args.set_beta(alpha);
+  out_args.set_W_op(lop_);
 
-  model_->evalModel(in_args_, out_args_);
-
-  in_args_.set_x(Teuchos::null);
-  for (const auto& p : param_index)
-    in_args_.set_p(p, Teuchos::null);
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
-    in_args_.set_alpha(0.0);
-  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
-    in_args_.set_beta(1.0);
-  out_args_.set_W_op(Teuchos::null);
+  model_->evalModel(in_args, out_args);
 
   is_valid_jacobian_ = false;
   is_valid_lows_ = false;
 
-  if (out_args_.isFailed())
+  if (out_args.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;

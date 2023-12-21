@@ -51,6 +51,7 @@
 #include "EpetraExt_PointToBlockDiagPermute.h"
 
 #include "Teko_TpetraHelpers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 
 using Teuchos::rcp;

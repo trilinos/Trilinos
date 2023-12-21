@@ -117,12 +117,7 @@ initLocalPrec()
 
   #ifdef HAVE_IFPACK2_METIS
   if (p.use_metis) {
-    if (this->isBlockCrs()) {
-      localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
-    }
-    else {
-      localPrecBlockCrs_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
-    }
+    localPrec_->setMetisPerm(this->metis_perm_, this->metis_iperm_);
   }
   #endif
 
@@ -144,8 +139,9 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node, BlockCrsEnabled>::
 applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
-  //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
   localPrec_->apply(x, y);
+
+  //since this may be applied to multiple vectors, add to applyTime_ instead of setting it
   this->applyTime_ += localPrec_->getApplyTime();
 }
 

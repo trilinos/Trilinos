@@ -351,7 +351,7 @@ namespace Tpetra {
           for (size_t k=0; k<pointColInds.size(); ++k) {
             GO meshColInd = (pointColMap.getGlobalElement(pointColInds[k]) - indexBase) / blockSize + indexBase;
             if (meshColMap->getLocalElement(meshColInd) == Teuchos::OrdinalTraits<GO>::invalid()) {
-              std::ostringstream oss; 
+              std::ostringstream oss;
               oss<< "["<<i<<"] ERROR: meshColId "<< meshColInd <<" is not in the column map.  Correspnds to pointColId = "<<pointColInds[k]<<std::endl;
               throw std::runtime_error(oss.str());
             }
@@ -449,8 +449,10 @@ namespace Tpetra {
     using dev_row_view_t  = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
     using dev_col_view_t  = typename crs_t::local_graph_device_type::entries_type::non_const_type;
     using dev_val_view_t  = typename crs_t::local_matrix_device_type::values_type::non_const_type;
-    using dev_bool_view_t = Kokkos::View<bool*, execution_space>;
     using range_type      = Kokkos::RangePolicy<execution_space, size_t>;
+    using team_policy     = Kokkos::TeamPolicy<execution_space>;
+    using member_type     = typename team_policy::member_type;
+    using scratch_view    = Kokkos::View<bool*, typename execution_space::scratch_memory_space>;
     using Ordinal         = typename dev_row_view_t::non_const_value_type;
 
     // Get structure / values
@@ -467,48 +469,233 @@ namespace Tpetra {
     // Make row workspace views
     dev_row_view_t new_rowmap("new_rowmap", nrows+1);
     const auto blocks_per_row = nrows / blockSize; // assumes square matrix
-    dev_bool_view_t row_block_active("row_block_active", blocks_per_row * nrows);
+    dev_row_view_t active_block_row_map("active_block_row_map", blocks_per_row + 1);
+    const int max_threads = execution_space::concurrency();
+    assert(blockSize > 1);
     assert(nrows % blockSize == 0);
+    const int mem_level = 1;
+    const int bytes = scratch_view::shmem_size(blocks_per_row);
+
+    if (max_threads >= blockSize) {
+      // Prefer 1 team per block since this will require a lot less scratch memory
+      team_policy tp(blocks_per_row, blockSize);
+
+      // Count active blocks
+      Kokkos::parallel_for("countActiveBlocks", tp.set_scratch_size(mem_level, Kokkos::PerTeam(bytes)), KOKKOS_LAMBDA(const member_type& team) {
+        Ordinal block_row = team.league_rank();
+
+        scratch_view row_block_active(team.team_scratch(mem_level), blocks_per_row);
+        Kokkos::single(
+          Kokkos::PerTeam(team), [&] () {
+            for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+              row_block_active(row_block_idx) = false;
+            }
+        });
+        team.team_barrier();
+
+        // All threads in a team scan a blocks-worth of rows to see which
+        // blocks are active
+        Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(team, blockSize), [&] (Ordinal block_offset) {
+
+            Ordinal row     = block_row*blockSize + block_offset;
+            Ordinal row_itr = row_ptrs(row);
+            Ordinal row_end = row_ptrs(row+1);
+
+            for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+              const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
+              const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+              Ordinal curr_nnz_col = col_inds(row_itr);
+              while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
+                // This block has at least one nnz in this row
+                row_block_active(row_block_idx) = true;
+                ++row_itr;
+                if (row_itr == row_end) break;
+                curr_nnz_col = col_inds(row_itr);
+              }
+            }
+        });
+
+        team.team_barrier();
+
+        Kokkos::single(
+          Kokkos::PerTeam(team), [&] () {
+            Ordinal count = 0;
+            for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+              if (row_block_active(row_block_idx)) {
+                ++count;
+              }
+            }
+            active_block_row_map(block_row) = count;
+        });
+      });
+    }
+    else {
+      // We don't have enough parallelism to make a thread team handle a block, so just
+      // have 1 thread per block
+      team_policy tp(blocks_per_row, 1);
+
+      // Count active blocks
+      Kokkos::parallel_for("countActiveBlocks", tp.set_scratch_size(mem_level, Kokkos::PerTeam(bytes)), KOKKOS_LAMBDA(const member_type& team) {
+        Ordinal block_row = team.league_rank();
+
+        scratch_view row_block_active(team.team_scratch(mem_level), blocks_per_row);
+        for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+          row_block_active(row_block_idx) = false;
+        }
+
+        // One thread scans a blocks-worth of rows to see which blocks are active
+        for (int block_offset=0; block_offset < blockSize; ++block_offset) {
+          Ordinal row     = block_row*blockSize + block_offset;
+          Ordinal row_itr = row_ptrs(row);
+          Ordinal row_end = row_ptrs(row+1);
+
+          for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+            const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
+            const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+            Ordinal curr_nnz_col = col_inds(row_itr);
+            while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
+              // This block has at least one nnz in this row
+              row_block_active(row_block_idx) = true;
+              ++row_itr;
+              if (row_itr == row_end) break;
+              curr_nnz_col = col_inds(row_itr);
+            }
+          }
+        }
+
+        Ordinal count = 0;
+        for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+          if (row_block_active(row_block_idx)) {
+            ++count;
+          }
+        }
+        active_block_row_map(block_row) = count;
+      });
+    }
+
+    Ordinal nnz_block_count = 0;
+#if KOKKOSKERNELS_VERSION >= 40199
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
+      execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
+#else
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
+      dev_row_view_t, execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
+#endif
+    dev_col_view_t block_col_ids("block_col_ids", nnz_block_count);
 
     // Find active blocks
-    Kokkos::parallel_for("findActiveBlocks", range_type(0, nrows), KOKKOS_LAMBDA(const size_t row) {
-      Ordinal row_itr = row_ptrs(row);
-      Ordinal row_end = row_ptrs(row+1);
+    if (max_threads >= blockSize) {
+      // Prefer 1 team per block since this will require a lot less scratch memory
+      team_policy tp(blocks_per_row, blockSize);
 
-      const auto active_offset = (row / blockSize) * blocks_per_row;
+      Kokkos::parallel_for("findActiveBlocks", tp.set_scratch_size(mem_level, Kokkos::PerTeam(bytes)), KOKKOS_LAMBDA(const member_type& team) {
+        Ordinal block_row = team.league_rank();
 
-      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-        const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
-        const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
-        Ordinal curr_nnz_col = col_inds(row_itr);
-        while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
-          // This block has at least one nnz in this row
-          row_block_active(active_offset + row_block_idx) = true;
-          ++row_itr;
-          if (row_itr == row_end) break;
-          curr_nnz_col = col_inds(row_itr);
+        scratch_view row_block_active(team.team_scratch(mem_level), blocks_per_row);
+        Kokkos::single(
+          Kokkos::PerTeam(team), [&] () {
+            for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+              row_block_active(row_block_idx) = false;
+            }
+        });
+        team.team_barrier();
+
+        // All threads in a team scan a blocks-worth of rows to see which
+        // blocks are active
+        Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(team, blockSize), [&] (Ordinal block_offset) {
+
+            Ordinal row     = block_row*blockSize + block_offset;
+            Ordinal row_itr = row_ptrs(row);
+            Ordinal row_end = row_ptrs(row+1);
+
+            for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+              const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
+              const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+              Ordinal curr_nnz_col = col_inds(row_itr);
+              while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
+                // This block has at least one nnz in this row
+                row_block_active(row_block_idx) = true;
+                ++row_itr;
+                if (row_itr == row_end) break;
+                curr_nnz_col = col_inds(row_itr);
+              }
+            }
+        });
+
+        team.team_barrier();
+
+        Kokkos::single(
+          Kokkos::PerTeam(team), [&] () {
+            Ordinal offset = active_block_row_map[block_row];
+            for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+              if (row_block_active(row_block_idx)) {
+                block_col_ids(offset) = row_block_idx;
+                ++offset;
+              }
+            }
+        });
+      });
+    }
+    else {
+      team_policy tp(blocks_per_row, 1);
+
+      Kokkos::parallel_for("findActiveBlocks", tp.set_scratch_size(mem_level, Kokkos::PerTeam(bytes)), KOKKOS_LAMBDA(const member_type& team) {
+        Ordinal block_row = team.league_rank();
+
+        scratch_view row_block_active(team.team_scratch(mem_level), blocks_per_row);
+        for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+          row_block_active(row_block_idx) = false;
         }
-      }
-    });
+
+        // One thread scans a blocks-worth of rows to see which blocks are active
+        for (int block_offset=0; block_offset < blockSize; ++block_offset) {
+          Ordinal row     = block_row*blockSize + block_offset;
+          Ordinal row_itr = row_ptrs(row);
+          Ordinal row_end = row_ptrs(row+1);
+
+          for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+            const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
+            const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
+            Ordinal curr_nnz_col = col_inds(row_itr);
+            while (curr_nnz_col >= first_possible_col_in_block && curr_nnz_col < first_possible_col_in_next_block && row_itr < row_end) {
+              // This block has at least one nnz in this row
+              row_block_active(row_block_idx) = true;
+              ++row_itr;
+              if (row_itr == row_end) break;
+              curr_nnz_col = col_inds(row_itr);
+            }
+          }
+        }
+
+        Ordinal offset = active_block_row_map[block_row];
+        for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
+          if (row_block_active(row_block_idx)) {
+            block_col_ids(offset) = row_block_idx;
+            ++offset;
+          }
+        }
+      });
+    }
 
     // Sizing
     Kokkos::parallel_for("sizing", range_type(0, nrows), KOKKOS_LAMBDA(const size_t row) {
-      Ordinal row_nnz = 0;
-
-      const auto active_offset = (row / blockSize) * blocks_per_row;
-
-      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-        if (row_block_active(row_block_idx + active_offset)) {
-          row_nnz += blockSize;
-        }
-      }
+      const auto block_row = row / blockSize;
+      const Ordinal block_row_begin = active_block_row_map(block_row);
+      const Ordinal block_row_end   = active_block_row_map(block_row+1);
+      const Ordinal row_nnz         = (block_row_end - block_row_begin) * blockSize;
       new_rowmap(row) = row_nnz;
     });
 
     Ordinal new_nnz_count = 0;
+#if KOKKOSKERNELS_VERSION >= 40199
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
+      execution_space>(new_rowmap.extent(0), new_rowmap, new_nnz_count);
+#else
     KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       dev_row_view_t, execution_space>(new_rowmap.extent(0), new_rowmap, new_nnz_count);
-
+#endif
     // Now populate cols and vals
     dev_col_view_t new_col_ids("new_col_ids", new_nnz_count);
     dev_val_view_t new_vals("new_vals",       new_nnz_count);
@@ -517,20 +704,21 @@ namespace Tpetra {
       Ordinal row_end = row_ptrs(row+1);
       Ordinal row_itr_new = new_rowmap(row);
 
-      const auto active_offset = (row / blockSize) * blocks_per_row;
+      Ordinal block_row       = row / blockSize;
+      Ordinal block_row_begin = active_block_row_map(block_row);
+      Ordinal block_row_end   = active_block_row_map(block_row+1);
 
-      for (size_t row_block_idx = 0; row_block_idx < blocks_per_row; ++row_block_idx) {
-        const Ordinal first_possible_col_in_block      = row_block_idx * blockSize;
-        const Ordinal first_possible_col_in_next_block = (row_block_idx+1) * blockSize;
-        if (row_block_active(row_block_idx + active_offset)) {
-          for (Ordinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
-            new_col_ids(row_itr_new) = possible_col;
-            Ordinal curr_nnz_col = col_inds(row_itr);
-            if (possible_col == curr_nnz_col && row_itr < row_end) {
-              // Already a non-zero entry
-              new_vals(row_itr_new) = values(row_itr);
-              ++row_itr;
-            }
+      for (Ordinal row_block_idx = block_row_begin; row_block_idx < block_row_end; ++row_block_idx) {
+        const Ordinal block_col                        = block_col_ids(row_block_idx);
+        const Ordinal first_possible_col_in_block      = block_col * blockSize;
+        const Ordinal first_possible_col_in_next_block = (block_col+1) * blockSize;
+        for (Ordinal possible_col = first_possible_col_in_block; possible_col < first_possible_col_in_next_block; ++possible_col, ++row_itr_new) {
+          new_col_ids(row_itr_new) = possible_col;
+          Ordinal curr_nnz_col = col_inds(row_itr);
+          if (possible_col == curr_nnz_col && row_itr < row_end) {
+            // Already a non-zero entry
+            new_vals(row_itr_new) = values(row_itr);
+            ++row_itr;
           }
         }
       }
@@ -552,7 +740,8 @@ namespace Tpetra {
     using dev_row_view_t  = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
     using dev_col_view_t  = typename crs_t::local_graph_device_type::entries_type::non_const_type;
     using dev_val_view_t  = typename crs_t::local_matrix_device_type::values_type::non_const_type;
-    using STS             = Kokkos::ArithTraits<Scalar>;
+    using impl_scalar_t   = typename Kokkos::ArithTraits<Scalar>::val_type;
+    using STS             = Kokkos::ArithTraits<impl_scalar_t>;
     using Ordinal         = typename dev_row_view_t::non_const_value_type;
     using execution_space = typename Node::execution_space;
     using range_type      = Kokkos::RangePolicy<execution_space, size_t>;
@@ -566,12 +755,12 @@ namespace Tpetra {
 
     // Sizing and rows
     dev_row_view_t new_rowmap("new_rowmap", nrows+1);
-    const Scalar zero = STS::zero();
+    const impl_scalar_t zero = STS::zero();
     Kokkos::parallel_for("sizing", range_type(0, nrows), KOKKOS_LAMBDA(const size_t row) {
       const Ordinal row_nnz_begin = row_ptrs(row);
       Ordinal row_nnzs = 0;
       for (Ordinal row_nnz = row_nnz_begin; row_nnz < row_ptrs(row+1); ++row_nnz) {
-        const Scalar value = values(row_nnz);
+        const impl_scalar_t value = values(row_nnz);
         if (value != zero) {
           ++row_nnzs;
         }
@@ -580,9 +769,13 @@ namespace Tpetra {
     });
 
     Ordinal real_nnzs = 0;
+#if KOKKOSKERNELS_VERSION >= 40199
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
+      execution_space>(new_rowmap.extent(0), new_rowmap, real_nnzs);
+#else
     KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       dev_row_view_t, execution_space>(new_rowmap.extent(0), new_rowmap, real_nnzs);
-
+#endif
     // Now populate cols and vals
     dev_col_view_t new_col_ids("new_col_ids", real_nnzs);
     dev_val_view_t new_vals("new_vals",       real_nnzs);
@@ -591,7 +784,7 @@ namespace Tpetra {
       const Ordinal old_row_nnz_begin = row_ptrs(row);
       const Ordinal new_row_nnz_begin = new_rowmap(row);
       for (Ordinal old_row_nnz = old_row_nnz_begin; old_row_nnz < row_ptrs(row+1); ++old_row_nnz) {
-        const Scalar value = values(old_row_nnz);
+        const impl_scalar_t value = values(old_row_nnz);
         if (value != zero) {
           new_col_ids(new_row_nnz_begin + row_nnzs) = col_inds(old_row_nnz);
           new_vals(new_row_nnz_begin + row_nnzs) = value;
@@ -653,7 +846,7 @@ namespace Tpetra {
 
     for(LO i=0, ct=0; i<(LO)blockGids.size(); i++) {
       GO base = (blockGids[i] - indexBase)* blockSize + indexBase;
-      for(LO j=0; j<blockSize; j++, ct++) 
+      for(LO j=0; j<blockSize; j++, ct++)
 	pointGids[i*blockSize+j] = base+j;
     }
 
@@ -670,10 +863,10 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::RCP;
-    
+
     typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
     typedef Tpetra::Map<LO,GO,Node>                   map_type;
-    typedef Tpetra::CrsMatrix<Scalar, LO,GO,Node>     crs_matrix_type;    
+    typedef Tpetra::CrsMatrix<Scalar, LO,GO,Node>     crs_matrix_type;
 
     using crs_graph_type           = typename block_crs_matrix_type::crs_graph_type;
     using local_graph_device_type  = typename crs_matrix_type::local_graph_device_type;
@@ -694,14 +887,14 @@ namespace Tpetra {
 
 
     LO blocksize = blockMatrix.getBlockSize();
-    const offset_type bs2 = blocksize * blocksize; 
+    const offset_type bs2 = blocksize * blocksize;
     size_t block_nnz = blockMatrix.getLocalNumEntries();
     size_t point_nnz = block_nnz * bs2;
 
     // We can get these from the blockMatrix directly
     RCP<const map_type> pointDomainMap = blockMatrix.getDomainMap();
     RCP<const map_type> pointRangeMap  = blockMatrix.getRangeMap();
-  
+
     // We need to generate the row/col Map ourselves.
     RCP<const map_type> blockRowMap = blockMatrix.getRowMap();
     RCP<const map_type> pointRowMap = createPointMap<LO,GO,Node>(blocksize, *blockRowMap);
@@ -735,7 +928,7 @@ namespace Tpetra {
 	// Fill the last guy, if we're on the final entry
 	if(i==block_rows-1) {
 	  rowptr[block_rows*blocksize] = blockRowptr[i+1] * bs2;
-	}	  
+	}
       });
 
 
@@ -745,9 +938,9 @@ namespace Tpetra {
 
 	// For each block in the row...
 	for (offset_type block=0; block < numBlocks; block++) {
-	  column_type point_col_base = blockColind[blkBeg + block] * blocksize;	  
+	  column_type point_col_base = blockColind[blkBeg + block] * blocksize;
 	  little_block_type my_block(blockValues.data () + (blkBeg+block) * bs2, blocksize, blocksize);
-                                   
+
 	  // For each entry in the block...
 	  for(LO little_row=0; little_row<blocksize; little_row++) {
 	    offset_type point_row_offset = rowptr[i*blocksize + little_row];
@@ -766,7 +959,7 @@ namespace Tpetra {
 
     // FUTURE OPTIMIZATION: Directly compute import/export, rather than letting ESFC do it
     pointCrsMatrix->expertStaticFillComplete(pointDomainMap,pointRangeMap);
-    
+
     return pointCrsMatrix;
   }
 

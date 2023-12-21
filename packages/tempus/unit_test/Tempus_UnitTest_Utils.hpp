@@ -13,6 +13,7 @@
 #include "Tempus_config.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"

@@ -100,7 +100,6 @@
 #include <random>
 #include <algorithm>
 
-#define Intrepid2_Experimental
 
 namespace Discretization {
 
@@ -187,9 +186,9 @@ int feAssemblyHex(int argc, char *argv[]) {
           std::is_same<mem_space, Kokkos::CudaHostPinnedSpace>::value
 #elif defined(KOKKOS_ENABLE_HIP)
           || std::is_same<mem_space,
-                          Kokkos::Experimental::HIPHostPinnedSpace>::value ||
+                          Kokkos::HIPHostPinnedSpace>::value ||
           std::is_same<mem_space,
-                       Kokkos::Experimental::HIPManagedSpace>::value
+                       Kokkos::HIPManagedSpace>::value
 #elif defined(KOKKOS_ENABLE_SYCL)
           || std::is_same<mem_space,
                           Kokkos::Experimental::SYCLSharedUSMSpace>::value ||
@@ -203,7 +202,7 @@ int feAssemblyHex(int argc, char *argv[]) {
 #if defined(KOKKOS_ENABLE_CUDA)
       std::is_same<exec_space, Kokkos::Cuda>::value ||
 #elif defined(KOKKOS_ENABLE_HIP)
-      std::is_same<exec_space, Kokkos::Experimental::HIP>::value ||
+      std::is_same<exec_space, Kokkos::HIP>::value ||
 #elif defined(KOKKOS_ENABLE_SYCL)
       std::is_same<exec_space, Kokkos::Experimental::SYCL>::value ||
 #elif defined(KOKKOS_ENABLE_OPENMPTARGET)
@@ -241,11 +240,7 @@ int feAssemblyHex(int argc, char *argv[]) {
   using ots = Intrepid2::OrientationTools<DeviceSpaceType>;
   using rst = Intrepid2::RealSpaceTools<DeviceSpaceType>;
   using fst = Intrepid2::FunctionSpaceTools<DeviceSpaceType>;
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using li = Intrepid2::Experimental::LagrangianInterpolation<DeviceSpaceType>;
-#else
   using li = Intrepid2::LagrangianInterpolation<DeviceSpaceType>;
-#endif
 
   int errorFlag = 0;
 

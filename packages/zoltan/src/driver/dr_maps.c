@@ -386,9 +386,9 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
    * Create DDirectory and register all owned elements. 
    */
 
-  MPI_Allreduce(&num_elems, &max_nelems, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(&num_elems, &max_nelems, 1, MPI_INT, MPI_MAX, zoltan_get_global_comm());
 
-  ierr = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, max_nelems, 0);
+  ierr = Zoltan_DD_Create(&dd, zoltan_get_global_comm(), 1, 1, 0, max_nelems, 0);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Create");
     error = 1;
@@ -498,7 +498,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
    * Check for errors 
    */
 
-  MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_SUM, zoltan_get_global_comm());
   if (gerror) {
     Gen_Error(0, "Fatal:  Error returned by DDirectory Test");
     error_report(proc);
@@ -537,7 +537,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     i_want[j++] = my_gids[i];
   }
 
-  ierr = Zoltan_Comm_Create(&comm, num_nbor, ownerlist, MPI_COMM_WORLD, 747, 
+  ierr = Zoltan_Comm_Create(&comm, num_nbor, ownerlist, zoltan_get_global_comm(), 747, 
                         &num_others);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Create");
@@ -683,7 +683,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
      * output of generated map is serialized (and not junked up).
      */
     int nprocs;
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    MPI_Comm_size(zoltan_get_global_comm(), &nprocs);
     print_sync_end(proc, nprocs, 1);
   }
 

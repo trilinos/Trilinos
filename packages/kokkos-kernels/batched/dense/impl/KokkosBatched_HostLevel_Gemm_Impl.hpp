@@ -49,8 +49,7 @@ constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dbl_buf_tile_k() {
 // buffering algorithm by a factor of 2.
 #if defined(KOKKOS_ENABLE_HIP) && defined(KOKKOS_ARCH_VEGA908)
 template <>
-constexpr KOKKOS_INLINE_FUNCTION int
-kk_gemm_dbl_buf_tile_k<Kokkos::Experimental::HIP>() {
+constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dbl_buf_tile_k<Kokkos::HIP>() {
   return 16;
 }
 #endif

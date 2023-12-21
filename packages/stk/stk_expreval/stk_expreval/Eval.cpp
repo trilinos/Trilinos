@@ -74,7 +74,9 @@ Eval::Eval(const Eval& otherEval)
     m_parseStatus(otherEval.m_parseStatus),
     m_headNode(otherEval.m_headNode),
     m_nodes(otherEval.m_nodes),
+    m_evaluationNodes(otherEval.m_evaluationNodes),
     m_arrayOffsetType(otherEval.m_arrayOffsetType),
+    m_resultBuffer(otherEval.m_resultBuffer),
     m_parsedEval(nullptr)
 {}
 

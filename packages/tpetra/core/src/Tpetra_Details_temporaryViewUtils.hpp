@@ -74,7 +74,7 @@ struct AlwaysMPISafe<Kokkos::CudaHostPinnedSpace>
 
 #ifdef KOKKOS_ENABLE_HIP
 template<>
-struct AlwaysMPISafe<Kokkos::Experimental::HIPHostPinnedSpace>
+struct AlwaysMPISafe<Kokkos::HIPHostPinnedSpace>
 {
   enum : bool {value = true};
 };

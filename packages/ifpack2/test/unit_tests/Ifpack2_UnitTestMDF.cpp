@@ -114,6 +114,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test0, Scalar, LocalOrdinal, Globa
   TEST_EQUALITY(reversePermuations,prec.getReversePermutations());
 }
 
+// Apply a looser tolerance for float than double
+template<typename Scalar>
+inline Scalar test_mdf_reference_tol() { return 1e-8; }
+
+template<>
+inline float test_mdf_reference_tol<float>() { return 5e-6; }
+
 template<size_t maxEntrPerRow,typename Scalar,typename LO,typename GO,typename Node>
 void test_mdf_reference_problem(
   bool& success,
@@ -183,10 +190,10 @@ void test_mdf_reference_problem(
 
     Teuchos::ArrayRCP<const Scalar> yview = yMDF.get1dView();
 
-    const Scalar tol = 1e-8;
-    TEST_COMPARE_FLOATING_ARRAYS(yview, knownSln, tol);
+    TEST_COMPARE_FLOATING_ARRAYS(yview, knownSln, test_mdf_reference_tol<Scalar>());
   }
 
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   // Now apply reordering with AdditiveSchwarz
   Ifpack2::AdditiveSchwarz<row_matrix_t> reorderedPrec(crsmatrix.getConst());
   {
@@ -229,6 +236,7 @@ void test_mdf_reference_problem(
     Teuchos::ArrayRCP<const Scalar> yILUview = yILU.get1dView();
     TEST_COMPARE_FLOATING_ARRAYS(yMDFview, yILUview, 100*Teuchos::ScalarTraits<Scalar>::eps());
   }
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test1, Scalar, LocalOrdinal, GlobalOrdinal)

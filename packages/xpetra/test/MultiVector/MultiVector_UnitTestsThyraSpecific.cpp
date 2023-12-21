@@ -44,7 +44,6 @@
 //
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_TypeTraits.hpp>
 #include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_Comm.hpp>
 

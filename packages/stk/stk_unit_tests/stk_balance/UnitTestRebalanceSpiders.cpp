@@ -65,7 +65,7 @@ public:
 
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     get_meta().set_coordinate_field_name(m_balanceSettings.getCoordinateFieldName());
-    stk::balance::internal::register_internal_fields(get_bulk(), m_balanceSettings);
+    stk::balance::internal::register_internal_fields_and_parts(get_bulk(), m_balanceSettings);
 
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
@@ -143,14 +143,14 @@ private:
 //                           // || | \                                                                          .
 //                          //  || |  \                                                                         .
 //                         //  / |  \  \                                                                        .
-//                   (2:0)//   | |   \  \(6:2)
+//                   (2:0)//   | |   \  \(6:3)
 //                       //    | |    |  \                                                                      .
 //                      //     | |    |(5:3)
 //                     //(1:0) | |     \   \                                                                    .
 //                    //      /  |(4:1) |   \                                                                   .
 //                   //       |  |      |    \                                                                  .
 //                  2/        |  4      |     6
-//                  /    (3:1)|          \                                                                      .
+//                  /    (3:2)|          \                                                                      .
 //                 /          |           \                                                                     .
 //               1            3            5
 //
@@ -167,10 +167,10 @@ TEST_F(RebalanceSpiders, notASpider_EnoughLegsNoVolumeElements_PartitionedNormal
   // Beams not part of a spider, so partitioned with RCB
   check_spider_legs_ownership({{stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1), 0},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2), 0},
-                               {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 3), 1},
+                               {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 3), 2},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 4), 1},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 5), 3},
-                               {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 6), 2}});
+                               {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 6), 3}});
 }
 
 

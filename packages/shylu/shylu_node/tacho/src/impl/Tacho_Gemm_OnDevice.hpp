@@ -107,7 +107,7 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
       r_val = cublas_invoke(member, alpha, A, B, beta, C);
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value)
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value)
       r_val = rocblas_invoke(member, alpha, A, B, beta, C);
 #endif
     return r_val;

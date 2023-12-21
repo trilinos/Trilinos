@@ -38,11 +38,14 @@
 # @HEADER
 
 # Standard TriBITS system includes
-include(TribitsConstants)
+
+include("${CMAKE_CURRENT_LIST_DIR}/../common/TribitsConstants.cmake")
+
+include("${CMAKE_CURRENT_LIST_DIR}/../test_support/TribitsTestCategories.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../test_support/TribitsAddTestHelpers.cmake")
+
 include(TribitsSetupMPI)
-include(TribitsTestCategories)
 include(TribitsGeneralMacros)
-include(TribitsAddTestHelpers)
 include(TribitsVerbosePrintVar)
 include(TribitsProcessEnabledTpls)
 include(TribitsInstallHeaders)
@@ -463,13 +466,6 @@ macro(tribits_define_global_options_and_define_extra_repos)
     CACHE BOOL
     "Make the ${PROJECT_NAME} configure process verbose."
     )
-
-  if ("${${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT}" STREQUAL "")
-    set(${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT  ${${PROJECT_NAME}_VERBOSE_CONFIGURE})
-  endif()
-  advanced_set(${PROJECT_NAME}_TRACE_ADD_TEST ${${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT}
-    CACHE BOOL
-    "Show a configure time trace of every test added or not added any why (one line)." )
 
   advanced_option(${PROJECT_NAME}_DUMP_LINK_LIBS
     "Dump the link libraries for every library and executable created."
@@ -2072,17 +2068,20 @@ macro(tribits_configure_enabled_packages)
         tribits_trace_file_processing(PACKAGE  ADD_SUBDIR
           "${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         if (NOT ${TRIBITS_PACKAGE}_SOURCE_DIR STREQUAL ${PROJECT_NAME}_SOURCE_DIR)
-          add_subdirectory(${${TRIBITS_PACKAGE}_SOURCE_DIR} ${${TRIBITS_PACKAGE}_BINARY_DIR})
+          add_subdirectory(${${TRIBITS_PACKAGE}_SOURCE_DIR}
+            ${${TRIBITS_PACKAGE}_BINARY_DIR})
         else()
           include("${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         endif()
-        if (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS)
+        if ((NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS) AND
+	    (NOT TARGET ${PACKAGE_NAME}::all_libs)
+          )
           tribits_report_invalid_tribits_usage(
             "ERROR: Forgot to call tribits_package_postprocess() in"
             " ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         endif()
 
-        list(APPEND ENABLED_PACKAGE_LIBS_TARGETS ${TRIBITS_PACKAGE}_libs)
+        list(APPEND ENABLED_PACKAGE_LIBS_TARGETS ${TRIBITS_PACKAGE}::all_libs)
         list(APPEND ${PROJECT_NAME}_LIBRARIES ${${TRIBITS_PACKAGE}_LIBRARIES})
 
         tribits_package_config_code_stop_timer(PROCESS_THIS_PACKAGE_TIME_START_SECONDS

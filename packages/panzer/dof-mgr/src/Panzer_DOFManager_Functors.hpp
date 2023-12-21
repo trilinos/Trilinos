@@ -43,26 +43,32 @@
 #ifndef __Panzer_DOFManager_Functors_hpp__
 #define __Panzer_DOFManager_Functors_hpp__
 
+#include "Kokkos_Core.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 namespace dof_functors {
 
 //! Sums all entries of a Rank 2 Kokkos View 
-template<typename GO, typename ArrayType>
+template <typename ReductionDataType, typename view_t>
 struct SumRank2 {
-  typedef GO value_type;
-  typedef typename PHX::Device execution_space;
-  
-  ArrayType a_;
+    using policy_t = Kokkos::MDRangePolicy<typename view_t::execution_space, Kokkos::Rank<2>>;
 
-  SumRank2(ArrayType a) : a_(a) {}
-  
-  KOKKOS_INLINE_FUNCTION
-  void operator () (const unsigned int i, GO& lsum) const {
-    for (unsigned int j=0; j < a_.extent(1); ++j)
-      lsum += a_(i,j);
-  }
+    const view_t values;
+
+    void apply(ReductionDataType& sum) const
+    {
+      const auto& values_ref = values;
+
+      Kokkos::parallel_reduce(
+        policy_t({0, 0}, {values.extent(0), values.extent(1)}),
+        KOKKOS_LAMBDA(const typename policy_t::index_type indexi, const typename policy_t::index_type indexj, ReductionDataType& local_sum)
+        {
+          local_sum += values_ref(indexi, indexj);
+        },
+        Kokkos::Sum<ReductionDataType>(sum)
+      );
+    }
 };
 
 }

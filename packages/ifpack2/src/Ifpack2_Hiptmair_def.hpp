@@ -254,6 +254,18 @@ double Hiptmair<MatrixType>::getApplyTime () const {
 
 
 template <class MatrixType>
+Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> > Hiptmair<MatrixType>::getPrec1() {
+  return ifpack2_prec1_;
+}
+
+
+template <class MatrixType>
+Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> > Hiptmair<MatrixType>::getPrec2() {
+  return ifpack2_prec2_;
+}
+
+
+template <class MatrixType>
 void Hiptmair<MatrixType>::initialize ()
 {
   using Teuchos::ParameterList;

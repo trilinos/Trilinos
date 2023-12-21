@@ -24,7 +24,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
-SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.1.00")
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.2.00")
 
 
 # Option to allow developers to ignore incompatible Kokkos versions
@@ -111,18 +111,7 @@ INCLUDE(CMakeCuda.txt)
 # Note on (2) above: some of the types can only be enabled if certain
 # requirements are fulfilled.
 #
-# Tpetra also keeps a list of the Kokkos Device types (specializations
-# of Kokkos::Device) over which it does instantiations and/or tests.
-# This is the Tpetra_ETI_DEVICES CMake variable.  Eventually, we will
-# deprecate and remove the above Node instantiation list, and just use
-# the list of enabled Devices.  We use devices rather than execution
-# spaces, because a Kokkos::Device is an (execution space, memory
-# space) pair.  This means that it is more general.  For example,
-# Device<Cuda, CudaSpace> != Device<Cuda, CudaUVMSpace>, yet some
-# users may want both represented.  The particular use case I have in
-# mind here is Device<OpenMP, $MEM_SPACE> where $MEM_SPACE could be
-# either HostSpace or the HBM (high-bandwidth memory) memory space.
-#
+
 
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
@@ -138,7 +127,6 @@ SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS "")
 
 SET(${PACKAGE_NAME}_ETI_LORDS "")
 SET(${PACKAGE_NAME}_ETI_GORDS "")
-SET(${PACKAGE_NAME}_ETI_DEVICES "")
 SET(${PACKAGE_NAME}_ETI_NODES "")
 
 # ============================================================
@@ -380,7 +368,7 @@ ENDIF () # Tpetra_INST_SYCL
 # safe, but possibly less performant assumption that MPI is not CUDA
 # aware.
 
-SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
+SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
 
 ASSERT_DEFINED (TPL_ENABLE_MPI)
 MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is GPU aware:")
@@ -523,7 +511,8 @@ ELSE ()
         MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT GPU aware. You can change this at configure time with the option Tpetra_ASSUME_GPU_AWARE_MPI=ON, and override the configure-time setting at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
       ENDIF ()
     ELSE ()
-      MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT GPU aware.  If you would like to change this, please set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI:BOOL=ON explicitly at configure time.  You can also override this at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
+      MESSAGE (STATUS "  - Search for \"ompi_info\" failed, unable to automatically detect whether MPI is GPU-aware.")
+      MESSAGE (STATUS "  - Whether MPI is GPU-aware may be specified at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
     ENDIF () # Tpetra_FOUND_OMPI_INFO_EXECUTABLE
   ENDIF () # Whether we are cross compiling
 ENDIF () # Whether we have CUDA and MPI
@@ -554,6 +543,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Tpetra_ASSUME_CUDA_AWARE_MPI})
 
 
+MESSAGE(STATUS "Tpetra: defaulting to Tpetra_ASSUME_GPU_AWARE_MPI: ${Tpetra_ASSUME_GPU_AWARE_MPI}")
 
 #
 # Check that users did not attempt to enable both the OpenMP and
@@ -572,36 +562,21 @@ ENDIF ()
 # Construct the list of enabled Device and Node types.
 #
 IF(Tpetra_INST_SERIAL)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSerialWrapperNode")
 ENDIF()
 IF(Tpetra_INST_PTHREAD)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosThreadsWrapperNode")
 ENDIF()
 IF(Tpetra_INST_OPENMP)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_CUDA)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::CudaSpace as well as
-  # Kokkos::CudaUVMSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
 ENDIF()
 IF(Tpetra_INST_HIP)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::HIPSpace as well as
-  # Kokkos::HIPHostPinnedSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosHIPWrapperNode")
 ENDIF()
 IF(Tpetra_INST_SYCL)
-  # TpetraCore currently requires UVM, so it doesn't make sense to
-  # instantiate over Kokkos::SYCLDeviceUSMSpace as well as
-  # Kokkos::SYCLSharedUSMSpace.
-  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSYCLWrapperNode")
 ENDIF()
 
@@ -613,6 +588,7 @@ MESSAGE(STATUS "  - OpenMP:  ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
 MESSAGE(STATUS "  - HIP:     ${HAVE_TPETRA_HIP}")
 MESSAGE(STATUS "  - SYCL:    ${HAVE_TPETRA_SYCL}")
+
 
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
@@ -814,7 +790,7 @@ ENDIF()
 
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_mpi_advance)
   IF (DEFINED TpetraCore_ENABLE_mpi_advance)
-    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TpetraCore_ENABLE_mpi_advannce}")
+    SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TpetraCore_ENABLE_mpi_advance}")
   ELSEIF (DEFINED TPL_ENABLE_mpi_advance)
     SET (${PACKAGE_NAME}_ENABLE_mpi_advance "${TPL_ENABLE_mpi_advance}")
   ELSE ()

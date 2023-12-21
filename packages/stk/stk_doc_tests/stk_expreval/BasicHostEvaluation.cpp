@@ -140,7 +140,7 @@ TEST(HostEvaluation, testFunctions)
 }
 
 double reference_normal_pdf(double x, double mu, double sigma) {
-  return std::exp(-(x-mu)*(x-mu)/(2.0*sigma*sigma))/std::sqrt(2.0*stk::expreval::pi()*sigma*sigma);
+  return std::exp(-(x-mu)*(x-mu)/(2.0*sigma*sigma)) / std::sqrt(2.0*stk::expreval::pi()*sigma*sigma);
 }
 
 double reference_weibull_pdf(double x, double k, double lambda) {

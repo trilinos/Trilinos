@@ -33,6 +33,7 @@
 // 
 
 #include "stk_util/environment/RuntimeMessage.hpp"
+#include "stk_util/environment/Env.hpp"
 #include "stk_util/parallel/Parallel.hpp"   // for parallel_machine_rank, MPI_Gather, MPI_Gatherv
 #include "stk_util/stk_config.h"            // for STK_HAS_MPI
 #include "stk_util/util/Bootstrap.hpp"      // for Bootstrap
@@ -186,7 +187,7 @@ Marshal &operator>>(Marshal &min, DeferredMessage &s)  {
 
 bool should_increment_message_count(unsigned messageType)
 {
-  return !(messageType & MSG_SYMMETRIC) || (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0);
+  return !(messageType & MSG_SYMMETRIC) || (stk::parallel_machine_rank(sierra::Env::parallel_comm()) == 0);
 }
 
 CutoffStatus

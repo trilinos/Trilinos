@@ -47,7 +47,6 @@ APPEND_SET(HEADERS
   epetra/shylu_internal_gmres.h
   epetra/shylu_internal_gmres_tools.h
   epetra/IQRSolver.h
-  epetra/shylu_debug_manager.hpp
   epetra/Ifpack_ShyLU.h
   epetra/shylu_amesos_schur_operator.h
   epetra/shylu_util.h

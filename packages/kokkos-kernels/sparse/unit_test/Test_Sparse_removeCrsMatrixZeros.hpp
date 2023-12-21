@@ -91,9 +91,7 @@ Matrix loadMatrixFromVectors(int numRows, int numCols,
 
 template <typename Matrix>
 void getTestInput(int test, Matrix& A, Matrix& Afiltered_ref) {
-  using Offset = typename Matrix::size_type;
-  using Device =
-      Kokkos::Device<TestExecSpace, typename TestExecSpace::memory_space>;
+  using Offset                = typename Matrix::size_type;
   bool haveHardcodedReference = true;
   switch (test) {
     case 0: {
@@ -226,7 +224,8 @@ void getTestInput(int test, Matrix& A, Matrix& Afiltered_ref) {
   if (haveHardcodedReference) {
     Matrix Afiltered_refimpl = removeMatrixZerosReference(A);
     bool referenceImplMatchesHardcoded =
-        Test::is_same_matrix<Matrix, Device>(Afiltered_ref, Afiltered_refimpl);
+        Test::is_same_matrix<Matrix, TestDevice>(Afiltered_ref,
+                                                 Afiltered_refimpl);
     ASSERT_TRUE(referenceImplMatchesHardcoded)
         << "Test case " << test << ": reference impl gave wrong answer!";
   }
@@ -236,15 +235,13 @@ void getTestInput(int test, Matrix& A, Matrix& Afiltered_ref) {
 
 void testRemoveCrsMatrixZeros(int testCase) {
   using namespace TestRemoveCrsMatrixZeros;
-  using Device =
-      Kokkos::Device<TestExecSpace, typename TestExecSpace::memory_space>;
-  using Matrix = KokkosSparse::CrsMatrix<default_scalar, default_lno_t, Device,
-                                         void, default_size_type>;
+  using Matrix = KokkosSparse::CrsMatrix<default_scalar, default_lno_t,
+                                         TestDevice, void, default_size_type>;
   Matrix A, Afiltered_ref;
   getTestInput<Matrix>(testCase, A, Afiltered_ref);
   Matrix Afiltered_actual = KokkosSparse::removeCrsMatrixZeros(A);
   bool matches =
-      Test::is_same_matrix<Matrix, Device>(Afiltered_actual, Afiltered_ref);
+      Test::is_same_matrix<Matrix, TestDevice>(Afiltered_actual, Afiltered_ref);
   EXPECT_TRUE(matches)
       << "Test case " << testCase
       << ": matrix with zeros filtered out does not match reference.";

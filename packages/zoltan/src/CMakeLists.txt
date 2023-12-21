@@ -482,6 +482,7 @@ APPEND_SET(SOURCES
   Utilities/Communication/comm_do_reverse.c
   Utilities/Communication/comm_info.c
   Utilities/Communication/comm_create.c
+  Utilities/Communication/comm_default.c
   Utilities/Communication/comm_resize.c
   Utilities/Communication/comm_sort_ints.c
   Utilities/Communication/comm_destroy.c

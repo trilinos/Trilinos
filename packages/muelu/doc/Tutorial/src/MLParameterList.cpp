@@ -63,7 +63,7 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
-#include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -181,7 +181,9 @@ int main(int argc, char *argv[]) {
 
     // Multigrid Hierarchy
     // TUTORIALSPLIT ===========================================================
-    MLParameterListInterpreter mueLuFactory(*params);
+    std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(*params, "");
+    params = Teuchos::getParametersFromXmlString(paramXML);
+    ParameterListInterpreter mueLuFactory(*params);
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
     // TUTORIALSPLIT ===========================================================
 

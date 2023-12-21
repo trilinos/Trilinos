@@ -689,8 +689,7 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
 
 
         //HDIV Case
-        //TODO: uncomment after we implement H(div) basis for pyramids
-        /*{
+        {
           FunDiv fun;
           DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
           for(ordinal_type i=0; i<numCells; ++i) {
@@ -756,7 +755,7 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
             testResults.test(errorFlag,tol);
             delete basisPtr;
           }
-        }*/
+        }
       } //rotation of first cell vertices
     } while(std::next_permutation(&reorder[0]+2, &reorder[0]+5)); //reorder vertices of common face
 

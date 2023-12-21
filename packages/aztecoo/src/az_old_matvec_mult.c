@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ***********************************************************************
-// 
-//        AztecOO: An Object-Oriented Aztec Linear Solver Package 
+//
+//        AztecOO: An Object-Oriented Aztec Linear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -119,9 +119,9 @@ void AZ_matvec_mult(double *val, int *indx, int *bindx, int *rpntr, int *cpntr,
    Amat.aux_matrix = NULL;
    Amat.matrix_type = data_org[AZ_matrix_type];
 #ifdef AZTEC_MPI
-   AZ_set_comm(proc_config, MPI_COMM_WORLD);
+   AZ_set_comm(proc_config, MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
    if (first_time == 1) {
-      AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
+      AZ_set_proc_config(proc_config, MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
 #else
    if (first_time == 1) {
       AZ_set_proc_config(proc_config, AZ_NOT_MPI);

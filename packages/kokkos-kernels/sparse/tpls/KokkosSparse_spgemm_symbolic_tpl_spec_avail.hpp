@@ -141,7 +141,7 @@ SPGEMM_SYMBOLIC_AVAIL_MKL_E(Kokkos::Serial)
 #ifdef KOKKOS_ENABLE_OPENMP
 SPGEMM_SYMBOLIC_AVAIL_MKL_E(Kokkos::OpenMP)
 #endif
-#endif
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 }  // namespace Impl
 }  // namespace KokkosSparse

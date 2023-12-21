@@ -53,6 +53,7 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include "BelosGlobalComm.hpp"
 #endif
 
 /*!	\class Belos::OutputManager
@@ -160,7 +161,7 @@ namespace Belos {
     // Initialize MPI
     int mpiStarted = 0;
     MPI_Initialized(&mpiStarted);
-    if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+    if (mpiStarted) MPI_Comm_rank(Belos::get_global_comm(), &MyPID);
     else MyPID=0;
 #else 
     MyPID = 0;

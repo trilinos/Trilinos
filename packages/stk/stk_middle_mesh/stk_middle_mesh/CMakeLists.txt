@@ -36,13 +36,12 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 FILE(GLOB PRED_HEADERS predicates/*.hpp)
 FILE(GLOB PRED_SOURCES predicates/*.cpp)
 
+message("STKMiddle_mesh requires CDT. (use -DSTK_ENABLE_STKMiddle_mesh=OFF if you don't need it and you don't have CDT.)")
 find_package(CDT REQUIRED)
 if(CDT_FOUND)
   message(STATUS "Found CDT library ${CDT_DIR}")
@@ -50,22 +49,28 @@ else()
   message(FATAL_ERROR "Failed to find CDT package")
 endif()
 
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_middle_mesh
-  NOINSTALLHEADERS ${HEADERS} ${PRED_HEADERS}
-  SOURCES ${SOURCES} ${PRED_SOURCES}
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_middle_mesh
+    NOINSTALLHEADERS ${HEADERS} ${PRED_HEADERS}
+    SOURCES ${SOURCES} ${PRED_SOURCES}
   )
+else()
+  add_library(stk_middle_mesh ${SOURCES} ${PRED_SOURCES})
+  target_link_libraries(stk_middle_mesh PUBLIC stk_util_parallel)
+  target_link_libraries(stk_middle_mesh PUBLIC stk_search)
+endif()
 
-IF(CDT_INCLUDE_DIRS)
+target_include_directories(stk_middle_mesh PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_middle_mesh>
+  $<INSTALL_INTERFACE:include>
+)
+
+if(CDT_INCLUDE_DIRS)
 SET(CDT_INC_DIR "${CDT_INCLUDE_DIRS}")
-ELSE()
+else()
 message(STATUS "CDT_INCLUDE_DIRS not set, trying get_target_property...")
 get_target_property(CDT_INC_DIR CDT::CDT INTERFACE_INCLUDE_DIRECTORIES)
-ENDIF()
+endif()
 
 target_include_directories(stk_middle_mesh PUBLIC ${CDT_INC_DIR})
 
@@ -75,3 +80,6 @@ INSTALL(FILES ${HEADERS} DESTINATION
 INSTALL(FILES ${PRED_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_middle_mesh/predicates)
 
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_middle_mesh DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

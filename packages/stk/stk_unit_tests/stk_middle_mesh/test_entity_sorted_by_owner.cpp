@@ -36,19 +36,19 @@ TEST(EntitySortedByOwner, Access)
   container.insert({0, 1}, v0);
   container.insert({0, 2}, v2);
 
-  EXPECT_EQ(container.get_entity({0, 2}), v2);
-  EXPECT_EQ(container.get_entity({0, 1}), v0);
-  EXPECT_EQ(container.get_entity({0, 0}), v1);
+  EXPECT_EQ(container.get_value({0, 2}), v2);
+  EXPECT_EQ(container.get_value({0, 1}), v0);
+  EXPECT_EQ(container.get_value({0, 0}), v1);
 
   container.insert({1, 1}, v4);
   container.insert({1, 3}, v3);
   container.insert({1, 5}, v5);
 
-  EXPECT_EQ(container.get_entity({1, 5}), v5);
-  EXPECT_EQ(container.get_entity({1, 3}), v3);
-  EXPECT_EQ(container.get_entity({1, 1}), v4);  
-  EXPECT_EQ(container.get_entity({1, 0}), nullptr);
-  EXPECT_EQ(container.get_entity({1, 2}), nullptr);
-  EXPECT_EQ(container.get_entity({1, 4}), nullptr);
-  EXPECT_EQ(container.get_entity({1, 6}), nullptr);
+  EXPECT_EQ(container.get_value({1, 5}), v5);
+  EXPECT_EQ(container.get_value({1, 3}), v3);
+  EXPECT_EQ(container.get_value({1, 1}), v4);  
+  EXPECT_EQ(container.get_value({1, 0}), nullptr);
+  EXPECT_EQ(container.get_value({1, 2}), nullptr);
+  EXPECT_EQ(container.get_value({1, 4}), nullptr);
+  EXPECT_EQ(container.get_value({1, 6}), nullptr);
 }

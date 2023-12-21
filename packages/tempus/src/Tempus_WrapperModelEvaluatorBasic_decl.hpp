@@ -34,8 +34,20 @@ public:
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
     : appModel_(appModel), timeDer_(Teuchos::null), evaluationType_(SOLVE_FOR_X)
   {
-    wrapperInArgs_  = this->createInArgs();
-    wrapperOutArgs_ = this->createOutArgs();
+    using Teuchos::rcp_const_cast;
+
+    p_ = Teuchos::rcp(new ImplicitODEParameters<Scalar>());
+    index_ = -1;
+
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::InArgs<Scalar> inArgs = appModel_->getNominalValues();
+    x_ = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgs.get_x());
+
+    if (inArgs.supports(MEB::IN_ARG_x_dot)) {
+      xDot_ = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x_dot());
+    } else {
+      xDot_ = Teuchos::null;
+    }
   }
 
   /// Set the underlying application ModelEvaluator
@@ -47,32 +59,24 @@ public:
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getAppModel() const { return appModel_; }
 
-  /// Set InArgs the wrapper ModelEvalutor.
-  virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
-  { wrapperInArgs_.setArgs(inArgs); }
-
-  /// Get InArgs the wrapper ModelEvalutor.
-  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
-  { return wrapperInArgs_; }
-
-  /// Set OutArgs the wrapper ModelEvalutor.
-  virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
-  { wrapperOutArgs_.setArgs(outArgs); }
-
-  /// Get OutArgs the wrapper ModelEvalutor.
-  virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
-  { return wrapperOutArgs_; }
-
   /// Set parameters for application implicit ModelEvaluator solve.
-  virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
-    Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs,
-    EVALUATION_TYPE evaluationType = SOLVE_FOR_X)
+  void setForSolve(
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
+    const Scalar time,
+    const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
+    const int index = -1    /* index and y are for IMEX_RK_Partition */ )
   {
-    timeDer_ = timeDer;
-    wrapperInArgs_.setArgs(inArgs);
-    wrapperOutArgs_.setArgs(outArgs);
-    evaluationType_ = evaluationType;
+    x_ = x;
+    xDot_ = xDot;
+    time_ = time;
+    p_ = p;
+    y_ = y;
+    index_ = index;
+
+    timeDer_ = p->timeDer_;
+    evaluationType_ = p->evaluationType_;
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
@@ -95,6 +99,9 @@ public:
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
       { return appModel_->get_p_names(p); }
 
+    Teuchos::ArrayView<const std::string> get_g_names(int g) const
+    { return appModel_->get_g_names(g); }
+
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
       { return appModel_->get_x_space(); }
 
@@ -103,6 +110,15 @@ public:
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
       { return appModel_->getNominalValues(); }
+
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar>> create_DfDp_op(int l) const
+      { return appModel_->create_DfDp_op(l); }
+
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar>> create_DgDx_op(int j) const
+      { return appModel_->create_DgDx_op(j); }
+
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar>> create_DgDp_op(int j, int l) const
+      { return appModel_->create_DgDp_op(j,l); }
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
@@ -118,9 +134,15 @@ private:
 
 private:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot_;
+  Scalar time_;
+  Teuchos::RCP<ImplicitODEParameters<Scalar> > p_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > y_;
+  int index_;
+
   Teuchos::RCP<TimeDerivative<Scalar> >              timeDer_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>          wrapperInArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperOutArgs_;
   EVALUATION_TYPE                                    evaluationType_;
 };
 

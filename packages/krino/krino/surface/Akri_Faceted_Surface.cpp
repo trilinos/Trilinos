@@ -11,10 +11,13 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Facet.hpp>
 #include <Akri_FacetedSurfaceCalcs.hpp>
+#include <Akri_Sign.hpp>
 
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 
 namespace krino{
 
@@ -22,8 +25,37 @@ Faceted_Surface::Faceted_Surface(const std::string & sn)
    : SurfaceThatTakesAdvantageOfNarrowBandAndThereforeMightHaveWrongSign(),
      my_name(sn) {}
 
+static int find_destination_proc_for_facet(const std::vector<BoundingBox> & procBboxes, const Facet * facet)
+{
+  int numProcs = procBboxes.size();
+  for ( int destProc = 1; destProc < numProcs; ++destProc )
+    if ( facet->does_intersect(procBboxes[destProc]) )
+      return destProc;
+  return 0;
+}
+
+static void unpack_and_append_facets_from_proc(stk::CommSparse & commSparse, const int recvProc, FacetOwningVec & facetVec)
+{
+  stk::CommBuffer & b = commSparse.recv_buffer(recvProc);
+  if (b.remaining())
+  {
+    size_t numProcFacets = 0;
+    b.unpack(numProcFacets);
+
+    if(krinolog.shouldPrint(LOG_DEBUG))
+      krinolog << "P" << stk::EnvData::parallel_rank() << ":" << " Receiving " << numProcFacets << " facets from proc#" << recvProc << stk::diag::dendl;
+
+    for ( size_t n = 0; n < numProcFacets; ++n )
+    {
+      std::unique_ptr<Facet> facet = Facet::unpack_from_buffer( b );
+      facetVec.emplace_back( std::move(facet) );
+    }
+    STK_ThrowAssert( 0 == b.remaining() );
+  }
+}
+
 void
-Faceted_Surface::parallel_distribute_facets(const size_t batch_size, const std::vector<BoundingBox> & proc_bboxes)
+Faceted_Surface::parallel_distribute_facets(const size_t batch_size, const std::vector<BoundingBox> & procBboxes)
 {
   const int num_procs = stk::EnvData::parallel_size();
   if ( num_procs == 1 ) return;
@@ -43,20 +75,8 @@ Faceted_Surface::parallel_distribute_facets(const size_t batch_size, const std::
     start = my_local_facets.size() - batch_size;
     for ( size_t index = 0; index < batch_size; ++index )
     {
-      const Facet * facet = my_local_facets[start+index].get();
-      for ( int dest_proc = 1; dest_proc < num_procs; ++dest_proc )
-      {
-        if ( facet->does_intersect(proc_bboxes[dest_proc]) )
-        {
-          dest_procs[index] = dest_proc;
-          ++(proc_facet_counts[dest_proc]);
-          break;
-        }
-      }
-      if (dest_procs[index] == 0)
-      {
-        ++(proc_facet_counts[0]);
-      }
+      dest_procs[index] = find_destination_proc_for_facet(procBboxes, my_local_facets[start+index].get());
+      ++(proc_facet_counts[dest_procs[index]]);
     }
   }
 
@@ -67,34 +87,31 @@ Faceted_Surface::parallel_distribute_facets(const size_t batch_size, const std::
     {
       for ( int dest_proc = 0; dest_proc < num_procs; ++dest_proc )
       {
-        if (comm_step == 0 && krinolog.shouldPrint(LOG_DEBUG))
+        const size_t numProcFacets = proc_facet_counts[dest_proc];
+        if (numProcFacets > 0)
         {
-          krinolog << "P" << me << ":"
-            << " Packaging " << proc_facet_counts[dest_proc]
-            << " facets for proc#" << dest_proc << stk::diag::dendl;
-        }
+          if (comm_step == 0 && krinolog.shouldPrint(LOG_DEBUG))
+            krinolog << "P" << me << ":" << " Packaging " << numProcFacets << " facets for proc#" << dest_proc << stk::diag::dendl;
 
-        stk::CommBuffer & b = comm_sparse.send_buffer(dest_proc);
-        b.pack(proc_facet_counts[dest_proc]);
+          stk::CommBuffer & b = comm_sparse.send_buffer(dest_proc);
+          b.pack(numProcFacets);
 
-        for ( size_t index = 0; index < batch_size; ++index )
-        {
-          if (dest_procs[index] == dest_proc)
+          for ( size_t index = 0; index < batch_size; ++index )
           {
-            const Facet * facet = my_local_facets[start+index].get();
-            facet->pack_into_buffer(b);
+            if (dest_procs[index] == dest_proc)
+            {
+              const Facet * facet = my_local_facets[start+index].get();
+              facet->pack_into_buffer(b);
+            }
           }
         }
       }
     }
+
     if (comm_step == 0)
-    { //allocation step
       comm_sparse.allocate_buffers();
-    }
     else
-    { //communication step
       comm_sparse.communicate();
-    }
   }
 
   if (me == 0)
@@ -103,27 +120,12 @@ Faceted_Surface::parallel_distribute_facets(const size_t batch_size, const std::
     my_local_facets.erase(my_local_facets.begin()+start, my_local_facets.end());
   }
 
-  // unload, creating locally owned copy of facet
-  const int recv_proc = 0;
-  stk::CommBuffer & b = comm_sparse.recv_buffer(recv_proc);
-
-  size_t proc_num_facets_recvd = 0;
-  b.unpack(proc_num_facets_recvd);
-
-  if(krinolog.shouldPrint(LOG_DEBUG))
-    krinolog << "P" << stk::EnvData::parallel_rank() << ":" << " Receiving " << proc_num_facets_recvd << " facets from proc#" << recv_proc << stk::diag::dendl;
-
-  for ( size_t n = 0; n < proc_num_facets_recvd; ++n )
-  {
-    std::unique_ptr<Facet> facet = Facet::unpack_from_buffer( b );
-    my_local_facets.emplace_back( std::move(facet) );
-  }
-  STK_ThrowAssert( 0 == b.remaining() );
+  unpack_and_append_facets_from_proc(comm_sparse, 0, my_local_facets);
 }
 
 void 
 Faceted_Surface::prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length)
-{ /* %TRACE[ON]% */ Trace trace__("krino::Faceted_Surface::prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length)"); /* %TRACE% */
+{
   
   build_local_facets(point_bbox);
 
@@ -165,9 +167,35 @@ void Faceted_Surface::prepare_to_compute(const BoundingBox & point_bbox, const d
   prepare_to_compute(0.0, point_bbox, truncation_length);
 }
 
+static void append_intersecting_facets(const BoundingBox & sourceBbox, const std::vector<Facet*> & sourceFacets, const BoundingBox & targetBbox, std::vector<Facet*> & targetFacets)
+{
+  targetFacets.reserve(targetFacets.size() + sourceFacets.size());
+  if (targetBbox.intersects(sourceBbox))
+  {
+    for ( auto&& facet : sourceFacets )
+      if ( facet->does_intersect(targetBbox) )
+        targetFacets.push_back(facet);
+  }
+}
+
+static void retain_intersecting_facets(const BoundingBox & bbox, std::vector<Facet*> & searchFacets)
+{
+  std::vector<Facet*> targetFacets;
+  append_intersecting_facets(bbox, searchFacets, bbox, targetFacets);
+  searchFacets.swap(targetFacets);
+}
+
+static size_t get_global_num_facets(const stk::ParallelMachine comm, const std::vector<Facet*> & localFacets)
+{
+  const size_t localNumFacets = localFacets.size();
+  size_t globalNumFacets = 0;
+  stk::all_reduce_sum(comm, &localNumFacets, &globalNumFacets, 1);
+  return globalNumFacets;
+}
+
 void
 Faceted_Surface::gather_nonlocal_facets(const BoundingBox & point_bbox, const double truncation_length)
-{ /* %TRACE[ON]% */ Trace trace__("krino::Faceted_Surface::get_nonlocal_descendants(const BoundingBox & point_bbox, const double truncation_length)"); /* %TRACE% */
+{
 
   // If truncation length is specified, get all of the facets that are within
   // our padded processor's bounding box.
@@ -176,117 +204,86 @@ Faceted_Surface::gather_nonlocal_facets(const BoundingBox & point_bbox, const do
 
   my_nonlocal_facets.clear();
   
-  const int num_procs = stk::EnvData::parallel_size();
-  if ( num_procs == 1) return;
+  const stk::ParallelMachine comm = stk::EnvData::parallel_comm();
+  const int numProcs = stk::parallel_machine_size(comm);
+  if ( numProcs == 1) return;
 
   const std::vector<BoundingBox> procPaddedQueryBboxes = fill_processor_bounding_boxes(my_bounding_box, point_bbox, truncation_length);
 
-  // determine which facets will be sent to each processor and formulate message sizes
-  const int me = stk::EnvData::parallel_rank();
-  size_t me_intersecting_facet_counts = 0;
-  std::vector<Facet*> intersecting_facets;
-  intersecting_facets.reserve(my_all_facets.size());
+  const int me = stk::parallel_machine_rank(comm);
+  const size_t numFacetsPerBatch = 1 + get_global_num_facets(comm, my_all_facets)/numProcs; // min size of 1
+  std::vector<Facet*> intersectingFacets;
+  std::vector<std::pair<int,size_t>> procAndNumFacets;
 
-  // Perform communication in stages.  In the nth stage, processor, p,
-  // sends facets to processor p+n and receives from p-n.
-  // In the 0th stage, each processor count how many of its own facets are
-  // are within that processor's nodal bounding box.
-  for ( int comm_partner = 0; comm_partner < num_procs; ++comm_partner )
+  // Perform communication in batches, communicating with as many neighbors as possible until the batch size is reached.
+  // Proc p starts by communicating with proc p+1 and incrementing until all neighbors are processed.
+  size_t numBatches = 0;
+  size_t maxFacetsPerBatch = 0;
+  int commPartner = 1;
+  while ( stk::is_true_on_any_proc(comm, commPartner < numProcs) )
   {
-    stk::CommSparse comm_sparse(stk::EnvData::parallel_comm());
+    intersectingFacets.clear();
+    procAndNumFacets.clear();
 
-    const int dest_proc = (me+comm_partner) % num_procs;
-
-    // Communication involves two steps, the first one sizes the messages, the second one actually packs and sends the messages
-    for ( int comm_step = 0; comm_step < 2; ++comm_step)
+    while (commPartner < numProcs && intersectingFacets.size() < numFacetsPerBatch)
     {
-      if (comm_step == 0)
-      {
-        const BoundingBox & proc_bbox = procPaddedQueryBboxes[dest_proc];
-        intersecting_facets.clear();
-        if (proc_bbox.intersects(my_bounding_box))
-        {
-          for ( auto&& facet : my_all_facets )
-          {
-            if ( facet->does_intersect(proc_bbox) )
-            {
-              intersecting_facets.push_back(facet);
-            }
-          }
-        }
-        if (dest_proc == me) me_intersecting_facet_counts = intersecting_facets.size();
+      const int destProc = (me+commPartner) % numProcs;
 
-        if(krinolog.shouldPrint(LOG_DEBUG))
-          krinolog << "P" << me << ":" << " Packaging " << intersecting_facets.size() << " facets for proc#" << dest_proc << stk::diag::dendl;
-      }
-
-      stk::CommBuffer & b = comm_sparse.send_buffer(dest_proc);
-      if (dest_proc != me) // Don't talk to yourself, it's embarrassing
-      {
-        const size_t intersecting_facets_size = intersecting_facets.size();
-        b.pack(intersecting_facets_size);
-        for ( auto&& facet : intersecting_facets )
-        {
-          facet->pack_into_buffer(b);
-        }
-      }
-
-      if (comm_step == 0)
-      { //allocation step
-        comm_sparse.allocate_buffers();
-      }
-      else
-      { //communication step
-        comm_sparse.communicate();
-      }
-    }
-
-    // unload, creating local copies of nonlocal facets
-
-    const int recv_proc = (me+num_procs-comm_partner) % num_procs;
-
-    if (recv_proc != me)
-    {
-      stk::CommBuffer & b = comm_sparse.recv_buffer(recv_proc);
-
-      size_t proc_num_facets_recvd = 0;
-      b.unpack(proc_num_facets_recvd);
+      const size_t numPreviousIntersectingFacets = intersectingFacets.size();
+      append_intersecting_facets(my_bounding_box, my_all_facets, procPaddedQueryBboxes[destProc], intersectingFacets);
+      const size_t procNumIntersectingFacets = intersectingFacets.size() - numPreviousIntersectingFacets;
+      procAndNumFacets.emplace_back(destProc, procNumIntersectingFacets);
 
       if(krinolog.shouldPrint(LOG_DEBUG))
-        krinolog << "P" << stk::EnvData::parallel_rank() << ":" << " Receiving " << proc_num_facets_recvd << " facets from proc#" << recv_proc << stk::diag::dendl;
+        krinolog << "P" << me << ":" << " Packaging " << procNumIntersectingFacets << " facets for proc#" << destProc << stk::diag::dendl;
 
-      for ( size_t n = 0; n < proc_num_facets_recvd; ++n )
-      {
-        std::unique_ptr<Facet> facet = Facet::unpack_from_buffer( b );
-        my_nonlocal_facets.emplace_back( std::move(facet) );
-      }
-      STK_ThrowAssert( 0 == b.remaining() );
+      ++commPartner;
     }
-  }
+    maxFacetsPerBatch = std::max(maxFacetsPerBatch, intersectingFacets.size());
 
-  // only retain intersecting local descendants
-  if (my_all_facets.size() != me_intersecting_facet_counts)
-  {
-    FacetVec local_descendants;
-    local_descendants.reserve(me_intersecting_facet_counts);
-    for ( auto&& facet : my_all_facets )
+    // Communication involves two steps, the first one sizes the messages, the second one actually packs and sends the messages
+    stk::CommSparse commSparse(comm);
+    for ( int commStep = 0; commStep < 2; ++commStep)
     {
-      if ( facet->does_intersect(procPaddedQueryBboxes[me]) )
+      size_t iFacet = 0;
+      for (const auto & [destProc, numProcFacets] : procAndNumFacets)
       {
-        local_descendants.push_back( facet );
+        stk::CommBuffer & b = commSparse.send_buffer(destProc);
+
+        b.pack(numProcFacets);
+        for ( size_t iProcFacet=0; iProcFacet<numProcFacets; ++iProcFacet )
+          intersectingFacets[iFacet++]->pack_into_buffer(b);
       }
+
+      if (commStep == 0)
+        commSparse.allocate_buffers();
+      else
+        commSparse.communicate();
     }
-    my_all_facets.swap(local_descendants);
+
+    for(int recvProc=0; recvProc<numProcs; ++recvProc)
+    {
+      unpack_and_append_facets_from_proc(commSparse, recvProc, my_nonlocal_facets);
+    }
+
+    ++numBatches;
+    if(krinolog.shouldPrint(LOG_DEBUG))
+      krinolog << "P" << me << ":" << " Facet communication after batch #" << numBatches << ", still need to communicate with " << numProcs-commPartner << " neighboring procs." << stk::diag::dendl;
   }
 
-  // copy nonlocal facets into my_descendants
+  if(krinolog.shouldPrint(LOG_DEBUG))
+    krinolog << "P" << me << ":" << " Facet communication required " << numBatches << " batches of up to " << maxFacetsPerBatch << " facets per batch." << stk::diag::dendl;
+
+  retain_intersecting_facets(procPaddedQueryBboxes[me], my_all_facets);
+
+  // copy pointers to nonlocal facets into my_all_facets
   my_all_facets.reserve(my_all_facets.size()+ my_nonlocal_facets.size());
   for (auto && nonlocal_descendant : my_nonlocal_facets) { my_all_facets.push_back(nonlocal_descendant.get()); }
 }
 
 double
 Faceted_Surface::point_distance(const stk::math::Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const
-{ /* %TRACE% */  /* %TRACE% */
+{
   STK_ThrowAssertMsg(my_facet_tree, "ERROR: Empty facet tree");
 
   // get all facets we need to check
@@ -311,6 +308,23 @@ Faceted_Surface::storage_size() const
   store_size += krino::storage_size(my_all_facets);
 
   return store_size;
+}
+
+static std::vector<Facet*> find_candidate_surface_facets_for_intersection_with_segment(SearchTree<Facet*> & facetTree, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1)
+{
+  BoundingBox facetBbox;
+  facetBbox.accommodate(edgePt0);
+  facetBbox.accommodate(edgePt1);
+  facetBbox.pad_epsilon();
+  std::vector<Facet*> results;
+  facetTree.get_intersecting_entities(facetBbox, results);
+  return results;
+}
+
+std::pair<int, double> Faceted_Surface::compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double edgeCrossingTol) const
+{
+  const std::vector<Facet*> candidates = find_candidate_surface_facets_for_intersection_with_segment(*my_facet_tree, pt0, pt1);
+  return compute_intersection_between_and_surface_facets_and_edge(candidates, pt0, pt1);
 }
 
 } // namespace krino

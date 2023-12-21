@@ -123,6 +123,13 @@ def parse_args():
                           help="Path to the build directory.",
                           required=False)
 
+    optional.add_argument('--use-explicit-cachefile',
+                          dest='use_explicit_cachefile',
+                          action='store_true',
+                          default=False,
+                          help="Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.",
+                          required=False)
+
     optional.add_argument('--ctest-driver',
                           dest="ctest_driver",
                           action='store',
@@ -231,6 +238,12 @@ def parse_args():
                           default=False,
                           help="Enable dry-run mode. Script will run but not execute the build steps. Default = %(default)s")
 
+    optional.add_argument("--extra-configure-args",
+                          dest="extra_configure_args",
+                          action="store",
+                          default="",
+                          help="Extra arguments that will be passed to CMake for configuring Trilinos.")
+
     arguments = parser.parse_args()
 
     # Type conversions
@@ -266,6 +279,7 @@ def parse_args():
     print("| - [O] req-mem-per-core            : {req_mem_per_core}".format(**vars(arguments)))
     print("| - [O] test-mode                   : {test_mode}".format(**vars(arguments)))
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
+    print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 

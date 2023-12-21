@@ -61,7 +61,6 @@
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
-#include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <Tpetra_Operator.hpp>
 #include <MueLu_TpetraOperator.hpp>
@@ -232,6 +231,9 @@ namespace MueLuExamples {
       run_sed("'s/KLU2 solver interface/<Direct> solver interface/'", baseFile);
       run_sed("'s/Basker solver interface/<Direct> solver interface/'", baseFile);
 
+      // The smoother complexity depends on the coarse solver.
+      run_sed("'s/Smoother complexity = [0-9]*.[0-9]*/Smoother complexity = <ignored>/'", baseFile);
+
       // Nuke all pointers
       run_sed("'s/0x[0-9a-f]*//g'", baseFile);
 
@@ -291,26 +293,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     bool useKokkos = false;
     if(lib == Xpetra::UseTpetra) {
-# ifdef HAVE_MUELU_SERIAL
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSerialWrapperNode).name())
-        useKokkos = false;
-# endif
-# ifdef HAVE_MUELU_OPENMP
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_CUDA
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_HIP
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-        useKokkos = true;
-# endif
-# ifdef HAVE_MUELU_SYCL
-      if (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name())
-        useKokkos = true;
-# endif      
+      useKokkos = !Node::is_serial;
     }
     clp.setOption("useKokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 

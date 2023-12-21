@@ -175,6 +175,23 @@ public:
     Kokkos::deep_copy(elements, host_elements);
   }
 
+  /*! \brief Provide a Kokkos view (Host side) to the elements of the specified vector.
+      \param elements will on return point to the vector values
+        corresponding to the global Ids.
+   */
+  virtual void getEntriesHostView(typename AdapterWithCoords<User>::CoordsHostView & elements) const {
+      Z2_THROW_NOT_IMPLEMENTED
+
+  }
+
+  /*! \brief Provide a Kokkos view (Device side) to the elements of the specified vector.
+      \param elements will on return point to the vector values
+        corresponding to the global Ids.
+   */
+  virtual void getEntriesDeviceView(typename AdapterWithCoords<User>::CoordsDeviceView& elements) const {
+      Z2_THROW_NOT_IMPLEMENTED
+  }
+
   /*! \brief Write files that can be used as input to Zoltan or Zoltan2 driver
    *  Creates chaco-formatted input files for coordinates and weights that
    *  can be used as input for Zoltan or Zoltan2 drivers.
@@ -210,9 +227,18 @@ public:
 
   void getCoordinatesKokkosView(
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const override
+    typename AdapterWithCoords<User>::CoordsDeviceView & elements) const override
   {
     getEntriesKokkosView(elements);
+  }
+
+  void getCoordinatesHostView(typename AdapterWithCoords<User>::CoordsHostView &elements) const override
+  {
+    getEntriesHostView(elements);
+  }
+  void getCoordinatesDeviceView(typename AdapterWithCoords<User>::CoordsDeviceView &elements) const override
+  {
+    getEntriesDeviceView(elements);
   }
 
 private:

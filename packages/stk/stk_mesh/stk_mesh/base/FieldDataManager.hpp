@@ -83,12 +83,9 @@ struct BucketFieldSegment {
 class FieldDataManager
 {
 public:
-    FieldDataManager(unsigned alignmentIncrementBytes, AllocatorAdaptorInterface * allocatorAdaptor = nullptr)
-      : m_defaultAllocator(),
-        field_data_allocator((allocatorAdaptor) ? allocatorAdaptor : &m_defaultAllocator),
-        alignment_increment_bytes(alignmentIncrementBytes)
-    {}
-
+    FieldDataManager(unsigned alignmentIncrementBytes,
+                     std::unique_ptr<AllocatorAdaptorInterface> allocatorAdaptor =
+                         std::unique_ptr<AllocatorAdaptorInterface>());
 
     virtual ~FieldDataManager() = default;
     virtual void allocate_bucket_field_data(const EntityRank rank, const std::vector< FieldBase * > & field_set,
@@ -111,15 +108,15 @@ public:
     unsigned get_alignment_bytes() const { return alignment_increment_bytes; }
 
 protected:
-    AllocatorAdaptor<::stk::impl::FieldDataAllocator<unsigned char>> m_defaultAllocator;
-    AllocatorAdaptorInterface * field_data_allocator;
+    std::unique_ptr<AllocatorAdaptorInterface> m_fieldDataAllocator;
     size_t alignment_increment_bytes;
 };
 
 class DefaultFieldDataManager : public FieldDataManager
 {
 public:
-    DefaultFieldDataManager(const unsigned num_ranks, unsigned alignmentIncrementBytes = stk::impl::DEFAULT_FIELD_ALIGNMENT_BYTES)
+    DefaultFieldDataManager(const unsigned num_ranks,
+                            unsigned alignmentIncrementBytes = stk::impl::DEFAULT_FIELD_ALIGNMENT_BYTES)
     : FieldDataManager(alignmentIncrementBytes),
       m_field_raw_data(num_ranks),
       m_bucketCapacity(num_ranks),
@@ -128,9 +125,9 @@ public:
     }
 
     DefaultFieldDataManager(const unsigned num_ranks,
-                            AllocatorAdaptorInterface* userSpecifiedAllocatorAdaptor,
+                            std::unique_ptr<AllocatorAdaptorInterface> userSpecifiedAllocatorAdaptor,
                             unsigned alignmentIncrementBytes)
-    : FieldDataManager(alignmentIncrementBytes, userSpecifiedAllocatorAdaptor),
+    : FieldDataManager(alignmentIncrementBytes, std::move(userSpecifiedAllocatorAdaptor)),
       m_field_raw_data(num_ranks),
       m_bucketCapacity(num_ranks),
       m_num_bytes_allocated_per_field()

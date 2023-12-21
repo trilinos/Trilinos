@@ -345,6 +345,13 @@ bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity 
 
 bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);
 
+void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk,
+                                            stk::mesh::Entity connectedEntity,
+                                            EntityVector& scratchSpace);
+
+void print_upward_connected_entities(stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     std::ostream& os);
 } // namespace impl
 } // namespace mesh
 } // namespace stk

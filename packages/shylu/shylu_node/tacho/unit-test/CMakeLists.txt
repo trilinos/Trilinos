@@ -58,7 +58,7 @@ IF (Kokkos_ENABLE_CUDA)
 ENDIF()
 IF (Kokkos_ENABLE_HIP)
   LIST(APPEND TACHO_ETI_DEVICE_NAME "HIP")
-  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::HIP,Kokkos::HIPSpace>")
   LIST(APPEND TACHO_ETI_WITH_TASK "0")
 ENDIF()
 

@@ -56,7 +56,7 @@
 #ifdef KOKKOS_ENABLE_CUDA
 typedef Kokkos::Cuda Device;
 #elif defined(KOKKOS_ENABLE_HIP)
-typedef Kokkos::Experimental::HIP Device;
+typedef Kokkos::HIP Device;
 #else
 typedef Kokkos::Serial Device;
 #endif

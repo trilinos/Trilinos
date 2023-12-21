@@ -50,32 +50,39 @@
  *  \todo test with geometric row coordinates.
  */
 
-#include <string>
-
-#include <Zoltan2_TpetraRowMatrixAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
+#include <Zoltan2_TpetraRowMatrixAdapter.hpp>
+#include <Zoltan2_TpetraCrsMatrixAdapter.hpp>
 
-#include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCP.hpp>
+#include <cstdlib>
+#include <stdexcept>
 
+using Teuchos::Comm;
+using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
-using Teuchos::Comm;
 
-typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> ztcrsmatrix_t;
-typedef Tpetra::RowMatrix<zscalar_t, zlno_t, zgno_t, znode_t> ztrowmatrix_t;
+using ztcrsmatrix_t = Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>;
+using ztrowmatrix_t = Tpetra::RowMatrix<zscalar_t, zlno_t, zgno_t, znode_t>;
+using node_t = typename Zoltan2::InputTraits<ztrowmatrix_t>::node_t;
+using device_t = typename node_t::device_type;
+using rowAdapter_t = Zoltan2::TpetraRowMatrixAdapter<ztrowmatrix_t>;
+using crsAdapter_t = Zoltan2::TpetraCrsMatrixAdapter<ztcrsmatrix_t>;
+using execspace_t =
+    typename rowAdapter_t::ConstWeightsHostView1D::execution_space;
 
 //////////////////////////////////////////////////////////////////////////
 
 template<typename offset_t>
 void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
-    const zgno_t *rowIds, const offset_t *offsets, const zgno_t *colIds)
-{
+    const zgno_t *rowIds, const offset_t *offsets, const zgno_t *colIds) {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   comm->barrier();
@@ -98,169 +105,196 @@ void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
 
 //////////////////////////////////////////////////////////////////////////
 
-template <typename User>
-int verifyInputAdapter(
-  Zoltan2::TpetraRowMatrixAdapter<User> &ia, ztrowmatrix_t &M)
-{
-  typedef typename Zoltan2::InputTraits<User>::offset_t offset_t;
+template <typename adapter_t, typename matrix_t>
+void TestMatrixIds(adapter_t &ia, matrix_t &matrix) {
 
-  RCP<const Comm<int> > comm = M.getComm();
-  int fail = 0, gfail=0;
+  using idsHost_t = typename adapter_t::ConstIdsHostView;
+  using offsetsHost_t = typename adapter_t::ConstOffsetsHostView;
+  using localInds_t =
+      typename adapter_t::user_t::nonconst_local_inds_host_view_type;
+  using localVals_t =
+      typename adapter_t::user_t::nonconst_values_host_view_type;
 
-  if (!fail && ia.getLocalNumRows() != M.getLocalNumRows())
-    fail = 4;
 
-  if (M.getLocalNumRows()){
-    if (!fail && ia.getLocalNumColumns() != M.getLocalNumCols())
-      fail = 6;
-  }
+  const auto nrows = matrix.getLocalNumRows();
+  const auto ncols = matrix.getLocalNumEntries();
+  const auto maxNumEntries = matrix.getLocalMaxNumRowEntries();
 
-  gfail = globalFail(*comm, fail);
+  typename adapter_t::Base::ConstIdsHostView colIdsHost_("colIdsHost_", ncols);
+  typename adapter_t::Base::ConstOffsetsHostView offsHost_("offsHost_",
+                                                           nrows + 1);
 
-  const zgno_t *rowIds=NULL;
-  ArrayRCP<const zgno_t> colIds;
-  ArrayRCP<const offset_t> offsets;
-  size_t nrows=0;
+  localInds_t localColInds("localColInds", maxNumEntries);
+  localVals_t localVals("localVals", maxNumEntries);
 
-  if (!gfail){
+  for (size_t r = 0; r < nrows; r++) {
+    size_t numEntries = 0;
+    matrix.getLocalRowCopy(r, localColInds, localVals, numEntries);;
 
-    nrows = ia.getLocalNumRows();
-    ia.getRowIDsView(rowIds);
-    ia.getCRSView(offsets, colIds);
-
-    if (nrows != M.getLocalNumRows())
-      fail = 8;
-
-    gfail = globalFail(*comm, fail);
-
-    if (gfail == 0){
-      printMatrix<offset_t>(comm, nrows, rowIds, offsets.getRawPtr(), colIds.getRawPtr());
-    }
-    else{
-      if (!fail) fail = 10;
+    offsHost_(r + 1) = offsHost_(r) + numEntries;
+    for (size_t e = offsHost_(r), i = 0; e < offsHost_(r + 1); e++) {
+      colIdsHost_(e) = matrix.getColMap()->getGlobalElement(localColInds(i++));
     }
   }
-  return fail;
+
+  idsHost_t rowIdsHost;
+  ia.getRowIDsHostView(rowIdsHost);
+
+  const auto matrixIDS = matrix.getRowMap()->getLocalElementList();
+
+  Z2_TEST_COMPARE_ARRAYS(matrixIDS, rowIdsHost);
+
+  idsHost_t colIdsHost;
+  offsetsHost_t offsetsHost;
+  ia.getCRSHostView(offsetsHost, colIdsHost);
+
+  Z2_TEST_COMPARE_ARRAYS(colIdsHost_, colIdsHost);
+  Z2_TEST_COMPARE_ARRAYS(offsHost_, offsetsHost);
 }
 
+template <typename adapter_t, typename matrix_t>
+void verifyInputAdapter(adapter_t &ia, matrix_t &matrix) {
+  using idsDevice_t = typename adapter_t::ConstIdsDeviceView;
+  using idsHost_t = typename adapter_t::ConstIdsHostView;
+  using weightsDevice_t = typename adapter_t::WeightsDeviceView1D;
+  using weightsHost_t = typename adapter_t::WeightsHostView1D;
 
-int main(int narg, char *arg[])
-{
+  const auto nrows = ia.getLocalNumIDs();
+
+  Z2_TEST_EQUALITY(ia.getLocalNumRows(), matrix.getLocalNumRows());
+  Z2_TEST_EQUALITY(ia.getLocalNumColumns(), matrix.getLocalNumCols());
+  Z2_TEST_EQUALITY(ia.getLocalNumEntries(), matrix.getLocalNumEntries());
+
+  /////////////////////////////////
+  //// getRowIdsView
+  /////////////////////////////////
+
+  idsDevice_t rowIdsDevice;
+  ia.getRowIDsDeviceView(rowIdsDevice);
+  idsHost_t rowIdsHost;
+  ia.getRowIDsHostView(rowIdsHost);
+
+  Z2_TEST_DEVICE_HOST_VIEWS(rowIdsDevice, rowIdsHost);
+
+  /////////////////////////////////
+  //// setRowWeightsDevice
+  /////////////////////////////////
+  Z2_TEST_THROW(ia.setRowWeightsDevice(
+                    typename adapter_t::WeightsDeviceView1D{}, 50),
+                std::runtime_error);
+
+  weightsDevice_t wgts0("wgts0", nrows);
+  Kokkos::parallel_for(
+      nrows, KOKKOS_LAMBDA(const int idx) { wgts0(idx) = idx * 2; });
+
+  Z2_TEST_NOTHROW(ia.setRowWeightsDevice(wgts0, 0));
+
+  // Don't reuse the same View, since we don't copy the values,
+  // we just assign the View (increase use count)
+  weightsDevice_t wgts1("wgts1", nrows);
+  Kokkos::parallel_for(
+      nrows, KOKKOS_LAMBDA(const int idx) { wgts1(idx) = idx * 3; });
+
+  Z2_TEST_NOTHROW(ia.setRowWeightsDevice(wgts1, 1));
+
+  /////////////////////////////////
+  //// getRowWeightsDevice
+  /////////////////////////////////
+  {
+    weightsDevice_t weightsDevice;
+    Z2_TEST_NOTHROW(ia.getRowWeightsDeviceView(weightsDevice, 0));
+
+    weightsHost_t weightsHost;
+    Z2_TEST_NOTHROW(ia.getRowWeightsHostView(weightsHost, 0));
+
+    Z2_TEST_DEVICE_HOST_VIEWS(weightsDevice, weightsHost);
+
+    Z2_TEST_DEVICE_HOST_VIEWS(wgts0, weightsHost);
+  }
+  {
+    weightsDevice_t weightsDevice;
+    Z2_TEST_NOTHROW(ia.getRowWeightsDeviceView(weightsDevice, 1));
+
+    weightsHost_t weightsHost;
+    Z2_TEST_NOTHROW(ia.getRowWeightsHostView(weightsHost, 1));
+
+    Z2_TEST_DEVICE_HOST_VIEWS(weightsDevice, weightsHost);
+
+    Z2_TEST_DEVICE_HOST_VIEWS(wgts1, weightsHost);
+  }
+  {
+    weightsDevice_t wgtsDevice;
+    Z2_TEST_THROW(ia.getRowWeightsDeviceView(wgtsDevice, 2),
+                  std::runtime_error);
+
+    weightsHost_t wgtsHost;
+    Z2_TEST_THROW(ia.getRowWeightsHostView(wgtsHost, 2), std::runtime_error);
+  }
+
+  TestMatrixIds(ia, matrix);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+int main(int narg, char *arg[]) {
+  using rowSoln_t = Zoltan2::PartitioningSolution<rowAdapter_t>;
+  using rowPart_t = rowAdapter_t::part_t;
+
   Tpetra::ScopeGuard tscope(&narg, &arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  const auto comm = Tpetra::getDefaultComm();
 
-  int rank = comm->getRank();
-  int fail = 0, gfail=0;
-  bool aok = true;
+  try {
+    Teuchos::ParameterList params;
+    params.set("input file", "simple");
+    params.set("file type", "Chaco");
 
-  // Create object that can give us Tpetra matrices for testing.
+    auto uinput = rcp(new UserInputForTests(params, comm));
 
-  RCP<UserInputForTests> uinput;
-  Teuchos::ParameterList params;
-  params.set("input file", "simple");
-  params.set("file type", "Chaco");
+    // Input crs matrix and row matrix cast from it.
+    const auto crsMatrix = uinput->getUITpetraCrsMatrix();
+    const auto rowMatrix = rcp_dynamic_cast<ztrowmatrix_t>(crsMatrix);
 
-  try{
-    uinput = rcp(new UserInputForTests(params, comm));
-  }
-  catch(std::exception &e){
-    aok = false;
+    const auto nrows = rowMatrix->getLocalNumRows();
+
+    // To test migration in the input adapter we need a Solution object.
+    const auto env = rcp(new Zoltan2::Environment(comm));
+
+    const int nWeights = 2;
+
+    /////////////////////////////////////////////////////////////
+    // User object is Tpetra::RowMatrix
+    /////////////////////////////////////////////////////////////
+
+    PrintFromRoot("Input adapter for Tpetra::RowMatrix");
+
+    // Graph Adapters use crsGraph, original TpetraInput uses trM (=rowMatrix)
+    auto tpetraRowMatrixInput = rcp(new rowAdapter_t(rowMatrix, nWeights));
+
+    verifyInputAdapter(*tpetraRowMatrixInput, *rowMatrix);
+
+    rowPart_t *p = new rowPart_t[nrows];
+    memset(p, 0, sizeof(rowPart_t) * nrows);
+    ArrayRCP<rowPart_t> solnParts(p, 0, nrows, true);
+
+    rowSoln_t solution(env, comm, nWeights);
+    solution.setParts(solnParts);
+
+    ztrowmatrix_t *mMigrate = NULL;
+    tpetraRowMatrixInput->applyPartitioningSolution(*rowMatrix, mMigrate,
+                                                    solution);
+    const auto newM = rcp(mMigrate);
+    auto cnewM = rcp_const_cast<const ztrowmatrix_t>(newM);
+    auto newInput = rcp(new rowAdapter_t(cnewM, nWeights));
+
+    PrintFromRoot("Input adapter for Tpetra::RowMatrix migrated to proc 0");
+
+    verifyInputAdapter(*newInput, *newM);
+
+  } catch (std::exception &e) {
     std::cout << e.what() << std::endl;
-  }
-  TEST_FAIL_AND_EXIT(*comm, aok, "input ", 1);
-
-  // Input matrix and row matrix cast from it.
-  RCP<ztcrsmatrix_t> tM = uinput->getUITpetraCrsMatrix();
-  RCP<ztrowmatrix_t> trM = rcp_dynamic_cast<ztrowmatrix_t>(tM);
-
-  RCP<ztrowmatrix_t> newM;   // migrated matrix
-
-  size_t nrows = trM->getLocalNumRows();
-
-  // To test migration in the input adapter we need a Solution object.
-
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
-
-  int nWeights = 1;
-
-  typedef Zoltan2::TpetraRowMatrixAdapter<ztrowmatrix_t> adapter_t;
-  typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
-  typedef adapter_t::part_t part_t;
-
-  part_t *p = new part_t [nrows];
-  memset(p, 0, sizeof(part_t) * nrows);
-  ArrayRCP<part_t> solnParts(p, 0, nrows, true);
-
-  soln_t solution(env, comm, nWeights);
-  solution.setParts(solnParts);
-
-  /////////////////////////////////////////////////////////////
-  // User object is Tpetra::RowMatrix
-  if (!gfail){
-    if (rank==0)
-      std::cout << "Input adapter for Tpetra::RowMatrix" << std::endl;
-
-    RCP<const ztrowmatrix_t> ctrM = rcp_const_cast<const ztrowmatrix_t>(
-                                   rcp_dynamic_cast<ztrowmatrix_t>(tM));
-    RCP<adapter_t> trMInput;
-
-    try {
-      trMInput = rcp(new adapter_t(ctrM));
-    }
-    catch (std::exception &e){
-      aok = false;
-      std::cout << e.what() << std::endl;
-    }
-    TEST_FAIL_AND_EXIT(*comm, aok, "TpetraRowMatrixAdapter ", 1);
-
-    fail = verifyInputAdapter<ztrowmatrix_t>(*trMInput, *trM);
-
-    gfail = globalFail(*comm, fail);
-
-    if (!gfail){
-      ztrowmatrix_t *mMigrate = NULL;
-      try{
-        trMInput->applyPartitioningSolution(*trM, mMigrate, solution);
-        newM = rcp(mMigrate);
-      }
-      catch (std::exception &e){
-        fail = 11;
-        std::cout << "Error caught:  " << e.what() << std::endl;
-      }
-
-      gfail = globalFail(*comm, fail);
-
-      if (!gfail){
-        RCP<const ztrowmatrix_t> cnewM =
-                                 rcp_const_cast<const ztrowmatrix_t>(newM);
-        RCP<adapter_t> newInput;
-        try{
-          newInput = rcp(new adapter_t(cnewM));
-        }
-        catch (std::exception &e){
-          aok = false;
-          std::cout << e.what() << std::endl;
-        }
-        TEST_FAIL_AND_EXIT(*comm, aok, "TpetraRowMatrixAdapter 2 ", 1);
-
-        if (rank==0){
-          std::cout <<
-           "Input adapter for Tpetra::RowMatrix migrated to proc 0" <<
-           std::endl;
-        }
-        fail = verifyInputAdapter<ztrowmatrix_t>(*newInput, *newM);
-        if (fail) fail += 100;
-        gfail = globalFail(*comm, fail);
-      }
-    }
-    if (gfail){
-      printFailureCode(*comm, fail);
-    }
+    return EXIT_FAILURE;
   }
 
-  /////////////////////////////////////////////////////////////
-  // DONE
+  PrintFromRoot("PASS");
 
-  if (rank==0)
-    std::cout << "PASS" << std::endl;
 }

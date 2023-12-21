@@ -89,7 +89,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.36
-Smoother complexity = 1.59
+Smoother complexity = 1.61
 Cycle type          = V
 
 level  rows   nnz    nnz/row  c ratio  procs

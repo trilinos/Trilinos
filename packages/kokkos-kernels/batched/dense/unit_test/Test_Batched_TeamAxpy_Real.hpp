@@ -16,12 +16,12 @@
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, batched_scalar_team_axpy_nt_float_float) {
-  test_batched_team_axpy<TestExecSpace, float, float>();
+  test_batched_team_axpy<TestDevice, float, float>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, batched_scalar_team_axpy_nt_double_double) {
-  test_batched_team_axpy<TestExecSpace, double, double>();
+  test_batched_team_axpy<TestDevice, double, double>();
 }
 #endif

@@ -50,6 +50,9 @@ public:
   void pad( const Real & dist );
   void pad_epsilon();
 
+  template<class VECTYPE>
+  void shift( const VECTYPE & shiftVec );
+
   void scale( const Real & fraction );
 
   Real size_squared() const;
@@ -201,13 +204,18 @@ inline void
 BoundingBox_T<REAL,DIM>::pad_epsilon()
 {
   if (!valid()) return;
+  pad(std::sqrt(size_squared())*std::numeric_limits<Real>::epsilon());
+}
 
-  const double eps = std::numeric_limits<Real>::epsilon();
-
-  for (unsigned i = 0; i < DIM; i++ )
+template<class REAL, unsigned DIM>
+template<class VECTYPE>
+inline void
+BoundingBox_T<REAL,DIM>::shift( const VECTYPE & shiftVec )
+{
+  for ( unsigned i = 0; i < DIM; ++i )
   {
-    min[i] -= std::abs(min[i])*eps;
-    max[i] += std::abs(max[i])*eps;
+    min[i] += shiftVec[i];
+    max[i] += shiftVec[i];
   }
 }
 

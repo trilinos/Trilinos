@@ -66,7 +66,7 @@ KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type() {
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
-  if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace>::value) {
+  if (std::is_same<Kokkos::HIP, ExecutionSpace>::value) {
     exec_space = Exec_HIP;
   }
 #endif
@@ -98,8 +98,7 @@ constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Cuda>() {
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-constexpr KOKKOS_INLINE_FUNCTION bool
-kk_is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::HIP>() {
   return true;
 }
 #endif
@@ -157,29 +156,68 @@ inline void kk_get_free_total_memory(size_t& /* free_mem */,
   throw std::runtime_error(oss.str());
 }
 
+// Host function to determine free and total device memory.
+// Will throw if execution space doesn't support this.
+template <typename MemorySpace>
+inline void kk_get_free_total_memory(size_t& /* free_mem */,
+                                     size_t& /* total_mem */,
+                                     int /* n_streams */) {
+  std::ostringstream oss;
+  oss << "Error: memory space " << MemorySpace::name()
+      << " does not support querying free/total memory.";
+  throw std::runtime_error(oss.str());
+}
+
 #ifdef KOKKOS_ENABLE_CUDA
 template <>
 inline void kk_get_free_total_memory<Kokkos::CudaSpace>(size_t& free_mem,
-                                                        size_t& total_mem) {
+                                                        size_t& total_mem,
+                                                        int n_streams) {
   cudaMemGetInfo(&free_mem, &total_mem);
+  free_mem /= n_streams;
+  total_mem /= n_streams;
+}
+template <>
+inline void kk_get_free_total_memory<Kokkos::CudaSpace>(size_t& free_mem,
+                                                        size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::CudaSpace>(free_mem, total_mem, 1);
+}
+template <>
+inline void kk_get_free_total_memory<Kokkos::CudaUVMSpace>(size_t& free_mem,
+                                                           size_t& total_mem,
+                                                           int n_streams) {
+  kk_get_free_total_memory<Kokkos::CudaSpace>(free_mem, total_mem, n_streams);
 }
 template <>
 inline void kk_get_free_total_memory<Kokkos::CudaUVMSpace>(size_t& free_mem,
                                                            size_t& total_mem) {
-  cudaMemGetInfo(&free_mem, &total_mem);
+  kk_get_free_total_memory<Kokkos::CudaUVMSpace>(free_mem, total_mem, 1);
+}
+template <>
+inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(
+    size_t& free_mem, size_t& total_mem, int n_streams) {
+  kk_get_free_total_memory<Kokkos::CudaSpace>(free_mem, total_mem, n_streams);
 }
 template <>
 inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(
     size_t& free_mem, size_t& total_mem) {
-  cudaMemGetInfo(&free_mem, &total_mem);
+  kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(free_mem, total_mem, 1);
 }
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(
-    size_t& free_mem, size_t& total_mem) {
+inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
+                                                       size_t& total_mem,
+                                                       int n_streams) {
   KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipMemGetInfo(&free_mem, &total_mem));
+  free_mem /= n_streams;
+  total_mem /= n_streams;
+}
+template <>
+inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
+                                                       size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::HIPSpace>(free_mem, total_mem, 1);
 }
 #endif
 
@@ -188,7 +226,7 @@ inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
 template <>
 inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
-    size_t& free_mem, size_t& total_mem) {
+    size_t& free_mem, size_t& total_mem, int n_streams) {
   sycl::queue queue;
   sycl::device device = queue.get_device();
   auto level_zero_handle =
@@ -220,20 +258,43 @@ inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
     total_mem += memory_states.size;
     free_mem += memory_states.free;
   }
+  free_mem /= n_streams;
+  total_mem /= n_streams;
+}
+
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
+    size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
+      free_mem, total_mem, 1);
+}
+
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(
+    size_t& free_mem, size_t& total_mem, int n_streams) {
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
+      free_mem, total_mem, n_streams);
 }
 
 template <>
 inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(
     size_t& free_mem, size_t& total_mem) {
-  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem,
-                                                                     total_mem);
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(
+      free_mem, total_mem, 1);
+}
+
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(
+    size_t& free_mem, size_t& total_mem, int n_streams) {
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
+      free_mem, total_mem, n_streams);
 }
 
 template <>
 inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(
     size_t& free_mem, size_t& total_mem) {
-  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem,
-                                                                     total_mem);
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(
+      free_mem, total_mem, 1);
 }
 #endif
 
@@ -343,13 +404,13 @@ struct SpaceInstance<Kokkos::Cuda> {
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-struct SpaceInstance<Kokkos::Experimental::HIP> {
-  static Kokkos::Experimental::HIP create() {
+struct SpaceInstance<Kokkos::HIP> {
+  static Kokkos::HIP create() {
     hipStream_t stream;
     KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipStreamCreate(&stream));
-    return Kokkos::Experimental::HIP(stream);
+    return Kokkos::HIP(stream);
   }
-  static void destroy(Kokkos::Experimental::HIP& space) {
+  static void destroy(Kokkos::HIP& space) {
     hipStream_t stream = space.hip_stream();
     KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipStreamDestroy(stream));
   }

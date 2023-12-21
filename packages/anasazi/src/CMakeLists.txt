@@ -108,6 +108,7 @@ APPEND_SET(HEADERS
   AnasaziTraceMinSolMgr.hpp
   AnasaziTraceMinTypes.hpp
   AnasaziTypes.hpp
+  AnasaziGlobalComm.hpp
   )
 
 APPEND_SET(SOURCES

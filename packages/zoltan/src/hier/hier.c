@@ -1115,14 +1115,14 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
   }
 
   if (hpp->output_level >= HIER_DEBUG_LIST){
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
     for (i=0; i < zz->Num_Proc; i++){
       if (i == zz->Proc){
         view_hierarchy_specification(hpp->spec, i, (i==0));
       }
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(zoltan_get_global_comm());
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
   }
 
   return ZOLTAN_OK;

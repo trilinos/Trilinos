@@ -5,7 +5,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   HTS                   hts               ST       OPTIONAL
   Tacho                 tacho             PT       OPTIONAL
   Basker                basker            EX       OPTIONAL
-  FastILU               fastilu           EX       OPTIONAL
+  FastILU               fastilu           PT       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)

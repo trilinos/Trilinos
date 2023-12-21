@@ -81,7 +81,40 @@ namespace MueLu {
     LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;
 
     const double aggFactor = params.get<double>("aggregation: phase2a agg factor");
-    double       factor    = as<double>(numLocalAggregated)/(numLocalNodes+1);
+    double       factor;
+
+
+    if (matchMLbehavior) {
+      // Note: ML uses global counts to set the factor
+      // Passing  # of nonaggregated nodes and # of nodes via aggStat
+      GO in_data[2] ={(GO)numNonAggregatedNodes,(GO) aggStat.size()};
+      GO out_data[2];
+      Teuchos::reduceAll(*graph.GetComm(), Teuchos::REDUCE_SUM, 2, in_data, out_data);
+      GO phase_one_aggregated = out_data[1] - out_data[0];
+      factor = as<double>(phase_one_aggregated) / (out_data[1]+1);
+      
+      LO agg_stat_unaggregated=0;
+      LO agg_stat_aggregated=0;
+      LO agg_stat_bdry=0;
+      for (LO i=0; i<(LO)aggStat.size(); i++) {
+        if (aggStat[i] == AGGREGATED)
+          agg_stat_aggregated++;
+        else if (aggStat[i] == BOUNDARY)
+          agg_stat_bdry++;
+        else
+          agg_stat_unaggregated++;
+      }
+
+      // NOTE: ML always uses 3 as minNodesPerAggregate
+      minNodesPerAggregate=3;
+      
+    }
+    else {
+      // MueLu defaults to using local counts to set the factor
+      factor = as<double>(numLocalAggregated)/(numLocalNodes+1);  
+    }
+
+    // Now apply aggFactor
     factor = pow(factor, aggFactor);
 
     int              aggIndex = -1;
@@ -89,8 +122,9 @@ namespace MueLu {
     std::vector<int> aggList(graph.getLocalMaxNumRowEntries());
 
     for (LO rootCandidate = 0; rootCandidate < numRows; rootCandidate++) {
-      if (aggStat[rootCandidate] != READY)
+      if (aggStat[rootCandidate] != READY) {
         continue;
+      }
 
       LO numNeighbors = 0;
       aggSize = 0;
@@ -101,9 +135,12 @@ namespace MueLu {
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(rootCandidate);
 
-
+      LO num_nonaggd_neighbors=0, num_local_neighbors=0;
       for (int j = 0; j < neighOfINode.size(); j++) {
         LO neigh = neighOfINode[j];
+        if (graph.isLocalNeighborVertex(neigh))
+          num_local_neighbors++;
+
 
         if (neigh != rootCandidate) {
           if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
@@ -114,15 +151,30 @@ namespace MueLu {
             //       with all the other check too big aggregates would not be accepted at all.
             if (aggSize < as<size_t>(maxNodesPerAggregate))
               aggList[aggSize++] = neigh;
+            num_nonaggd_neighbors++;
           }
 
           numNeighbors++;
         }
       }
 
-      // NOTE: ML uses a hardcoded value 3 instead of MinNodesPerAggregate
-      if (aggSize > as<size_t>(minNodesPerAggregate) &&
-          (aggSize > factor*numNeighbors)) {
+      
+      bool accept_aggregate;
+      if (matchMLbehavior) {
+        // ML does this calculation slightly differently than MueLu does by default, specifically it
+        // uses the *local* number of neigbors, regardless of what they are.
+        // NOTE: ML does zero compression here.  Not sure if it matters
+        // NOTE: ML uses a hardcoded value 3 instead of minNodesPerAggregate.  This has been set above
+        LO rowi_N = num_local_neighbors;
+        num_nonaggd_neighbors++; // ML counts the node itself as a nonaggd_neighbor
+        accept_aggregate = (rowi_N > as<LO>(minNodesPerAggregate)) && (num_nonaggd_neighbors > (factor*rowi_N));
+      }
+      else {
+        accept_aggregate = (aggSize > as<size_t>(minNodesPerAggregate)) &&  (aggSize > factor*numNeighbors);
+      }
+
+      
+      if (accept_aggregate) {
         // Accept new aggregate
         // rootCandidate becomes the root of the newly formed aggregate
         aggregates.SetIsRoot(rootCandidate);

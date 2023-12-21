@@ -1,5 +1,10 @@
-/*
- * a cuda intercept for kokkos deep copies, now with counts
+/**
+ * A cuda intercept for kokkos deep copies, now with counts.
+ *
+ * Note that if a CUDA function is marked @c __host__ @c __device__ in the CUDA documentation,
+ * it must be written in this file inside a @c #ifndef @c __CUDA_ARCH__ region, otherwise
+ * compilation ends with
+ *    error: function "..." has already been defined
  */
 
 #include <string>
@@ -71,6 +76,7 @@ void finalize() {
 }
 };
 
+//! Note that using @c cudaDeviceSynchronize on device is deprecated since CUDA 11.6. As a side note, calling @c dlsym from a @c __device__ function is not allowed.
 __host__ __device__ cudaError_t cudaDeviceSynchronize() {
   cudaError_t (*o_cudaDeviceSynchronize)();
   o_cudaDeviceSynchronize = (cudaError_t (*)())dlsym(RTLD_NEXT, "cudaDeviceSynchronize");
@@ -82,41 +88,42 @@ __host__ __device__ cudaError_t cudaDeviceSynchronize() {
   return o_cudaDeviceSynchronize();
 }
 
+#ifndef __CUDA_ARCH__ // To avoid error: function "cudaMemcpy2DAsync" has already been defined
 //Copies data between host and device.  Don't care about __device__ calls, so count only if from host.
 __host__ __device__ cudaError_t cudaMemcpy2DAsync ( void* dst, size_t dpitch, const void* src, size_t spitch, size_t width, size_t height, cudaMemcpyKind kind, cudaStream_t stream) {
   cudaError_t (*o_cudaMemcpy2DAsync) (void*, size_t, const void*, size_t, size_t, size_t, cudaMemcpyKind, cudaStream_t);
   o_cudaMemcpy2DAsync = (cudaError_t (*)(void*, size_t, const void*, size_t, size_t, size_t, cudaMemcpyKind, cudaStream_t))dlsym(RTLD_NEXT, "cudaMemcpy2DAsync");
-#ifndef __CUDA_ARCH__
   ApiTest *ctr = ApiTest::getInstance();
 
   ctr->incr("cudaMemcpy2DAsync");
-#endif
   return o_cudaMemcpy2DAsync(dst, dpitch, src, spitch, width, height, kind, stream);
 }
+#endif
 
+#ifndef __CUDA_ARCH__ // error: function "cudaMemcpy3DAsync" has already been defined
 //Copies data between 3D objects.
 __host__ __device__ cudaError_t cudaMemcpy3DAsync ( const cudaMemcpy3DParms* p, cudaStream_t stream ) {
   cudaError_t (*o_cudaMemcpy3DAsync) ( const cudaMemcpy3DParms* , cudaStream_t );
   o_cudaMemcpy3DAsync = (cudaError_t (*)(const cudaMemcpy3DParms* , cudaStream_t))dlsym(RTLD_NEXT, "cudaMemcpy3DAsync");
-#ifndef __CUDA_ARCH__
   ApiTest *ctr = ApiTest::getInstance();
 
   ctr->incr("cudaMemcpy3DAsync");
-#endif
+
   return o_cudaMemcpy3DAsync(p, stream);
 }
+#endif
 
+#ifndef __CUDA_ARCH__ // error: function "cudaMemcpyAsync" has already been defined
 //Copies data between host and device.
 __host__ __device__ cudaError_t cudaMemcpyAsync ( void* dst, const void* src, size_t count, cudaMemcpyKind kind, cudaStream_t stream) {
   cudaError_t (*o_cudaMemcpyAsync) ( void*, const void*, size_t, cudaMemcpyKind, cudaStream_t );
   o_cudaMemcpyAsync = (cudaError_t (*)(void*, const void*, size_t, cudaMemcpyKind, cudaStream_t))dlsym(RTLD_NEXT, "cudaMemcpyAsync");
-#ifndef __CUDA_ARCH__
   ApiTest *ctr = ApiTest::getInstance();
 
   ctr->incr("cudaMemcpyAsync");
-#endif
   return o_cudaMemcpyAsync(dst, src, count, kind, stream);
 }
+#endif
 
 //Copies data to the given symbol on the device.
 __host__ cudaError_t cudaMemcpy(void* dst, const void* src, size_t count, cudaMemcpyKind kind) {

@@ -31,41 +31,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
-
-#
-# A) Package-specific configuration options
-#
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-
-#
-# Core headers
-#
-
 FILE(GLOB HEADERS *.hpp)
-
 FILE(GLOB SOURCES *.cpp)
 
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_search
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_search
+    NOINSTALLHEADERS ${HEADERS}
+    SOURCES ${SOURCES}
   )
+else()
+  add_library(stk_search ${SOURCES})
+
+  target_link_libraries(stk_search PUBLIC stk_math)
+  target_link_libraries(stk_search PUBLIC stk_util_parallel)
+
+  find_package(KokkosKernels REQUIRED)
+  target_link_libraries(stk_search PUBLIC Kokkos::kokkoskernels)
+endif()
+
+target_include_directories(stk_search PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_search>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_search)
+
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_search DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

@@ -138,16 +138,18 @@ private:
   void computeTrial(Vector<Real> &s,
                     const Vector<Real> &x,
                     const Vector<Real> &l,
-                    Objective<Real> &obj,
-                    Constraint<Real> &con);
+                    Objective<Real>    &obj,
+                    Constraint<Real>   &con,
+                    std::ostream       &os);
 
   /** \brief Update trust-region radius, take step, etc.
   */
-  void updateRadius(Vector<Real> &x,
-                    Vector<Real> &l,
+  void updateRadius(Vector<Real>       &x,
+                    Vector<Real>       &l,
                     const Vector<Real> &s,
-                    Objective<Real> &obj,
-                    Constraint<Real> &con);
+                    Objective<Real>    &obj,
+                    Constraint<Real>   &con,
+                    std::ostream       &os);
 
   /** \brief Compute Lagrange multipliers by solving the least-squares
              problem minimizing the gradient of the Lagrangian, via the
@@ -158,10 +160,11 @@ private:
              @param[in]       gf  is the gradient of the objective function; a dual optimization-space vector
              @param[in]       con is the equality constraint object
   */
-  void computeLagrangeMultiplier(Vector<Real> &l,
+  void computeLagrangeMultiplier(Vector<Real>       &l,
                                  const Vector<Real> &x,
                                  const Vector<Real> &gf,
-                                 Constraint<Real> &con);
+                                 Constraint<Real>   &con,
+                                 std::ostream       &os);
 
   /** \brief Compute quasi-normal step by minimizing the norm of
              the linearized constraint.
@@ -185,11 +188,12 @@ private:
              @param[in]       con   is the equality constraint object
 
   */
-  void computeQuasinormalStep(Vector<Real> &n,
+  void computeQuasinormalStep(Vector<Real>       &n,
                               const Vector<Real> &c,
                               const Vector<Real> &x,
-                              Real delta,
-                              Constraint<Real> &con);
+                              Real               delta,
+                              Constraint<Real>   &con,
+                              std::ostream       &os);
 
   /** \brief Solve tangential subproblem.
 
@@ -205,16 +209,17 @@ private:
              @param[in]       con   is the equality constraint object
 
   */
-  void solveTangentialSubproblem(Vector<Real> &t,
-                                 Vector<Real> &tCP,
-                                 Vector<Real> &Wg,
+  void solveTangentialSubproblem(Vector<Real>       &t,
+                                 Vector<Real>       &tCP,
+                                 Vector<Real>       &Wg,
                                  const Vector<Real> &x,
                                  const Vector<Real> &g,
                                  const Vector<Real> &n,
                                  const Vector<Real> &l,
-                                 Real delta,
-                                 Objective<Real> &obj,
-                                 Constraint<Real> &con);
+                                 Real               delta,
+                                 Objective<Real>    &obj,
+                                 Constraint<Real>   &con,
+                                 std::ostream       &os);
 
   /** \brief Check acceptance of subproblem solutions, adjust merit function penalty parameter, ensure global convergence.
   */
@@ -222,11 +227,11 @@ private:
               Vector<Real> &gf_new, Vector<Real> &l_new, Vector<Real> &g_new,
               const Vector<Real> &x, const Vector<Real> &l, Real f, const Vector<Real> &gf, const Vector<Real> &c,
               const Vector<Real> &g, Vector<Real> &tCP, Vector<Real> &Wg,
-              Objective<Real> &obj, Constraint<Real> &con);
+              Objective<Real> &obj, Constraint<Real> &con, std::ostream &os);
 
   template<typename T> int sgn(T val) const;
 
-  void printInfoLS(const std::vector<Real> &res) const;
+  void printInfoLS(const std::vector<Real> &res, std::ostream& os) const;
 
   Real setTolOSS(const Real intol) const;
 

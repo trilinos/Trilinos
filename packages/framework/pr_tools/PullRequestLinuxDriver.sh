@@ -8,6 +8,7 @@ source ${SCRIPTPATH:?}/common.bash
 on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
 on_kokkos_develop=$(echo "$@" | grep '\-\-kokkos\-develop' &> /dev/null && echo "1")
+on_rhel8=$(echo "$@" | grep '\-\-on_rhel8' &> /dev/null && echo "1")
 
 bootstrap=$(echo "$@" | grep '\-\-\no\-bootstrap' &> /dev/null && echo "0" || echo "1")
 
@@ -32,6 +33,7 @@ function bootstrap_modules() {
     message_std "PRDriver> " "Job is $JOB_BASE_NAME"
 
     vortex_regex=".*(vortex).*"
+    container_regex=".*(container).*"
     if [[ ${NODE_NAME:?} =~ ${vortex_regex} || ${on_ats2} == "1" ]]; then
         execute_command_checked "module load git/2.20.0"
         execute_command_checked "module load python/3.7.2"
@@ -40,6 +42,9 @@ function bootstrap_modules() {
         mkdir -p /tmp/trilinos
 
         module list
+    elif [[ ${NODE_NAME:?} =~ ${container_regex} ]]; then
+	echo "Nothing done for bootstrap in a container"
+	module list
     elif [[ ${on_weaver} == "1" ]]; then
         module unload git
         module unload python
@@ -48,11 +53,20 @@ function bootstrap_modules() {
         get_python_packages pip3
 
         module list
+    elif [[ ${on_rhel8} == "1" ]]; then
+        source /projects/sems/modulefiles/utils/sems-modules-init.sh
+        module unload sems-git
+        module unload sems-python
+        module load sems-git/2.37.0
+        module load sems-python/3.9.0
+
+        module list
     else
-        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
-        execute_command_checked "module unload sems-archive-git"
-        execute_command_checked "module unload sems-archive-python"
-        execute_command_checked "module load sems-archive-git/2.10.1"
+        source /projects/sems/modulefiles/utils/sems-modules-init.sh
+        execute_command_checked "module unload sems-git"
+        execute_command_checked "module unload sems-python"
+        execute_command_checked "module load sems-git/2.37.0"
+        execute_command_checked "module load sems-python/3.9.0"
         execute_command_checked "module load sems-ccache"
         configure_ccache
 
@@ -93,7 +107,7 @@ sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReques
 
 if [[ ${on_kokkos_develop} == "1" ]]; then
     message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
-    "$SCRIPTPATH"/SetKokkosDevelop.sh
+    "${SCRIPTPATH}"/SetKokkosDevelop.sh
 else
     print_banner "Merge Source into Target"
     message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
@@ -185,7 +199,7 @@ test_cmd_options=(
     --pullrequest-gen-config-file=${GENCONFIG_CONFIG_FILE:?}
     --pullrequest-number=${PULLREQUESTNUM:?}
     --jenkins-job-number=${BUILD_NUMBER:?}
-    --req-mem-per-core=3.0
+    --req-mem-per-core=4.0
     --max-cores-allowed=${TRILINOS_MAX_CORES:=29}
     --num-concurrent-tests=4
     --test-mode=${mode}
@@ -194,12 +208,19 @@ test_cmd_options=(
     --filename-subprojects=${WORKSPACE:?}/package_subproject_list.cmake
     --source-dir=${WORKSPACE}/Trilinos
     --build-dir=${TRILINOS_BUILD_DIR:?}
-    --ctest-driver=${WORKSPACE:?}/pr-ctest-framework/cmake/ctest-driver.cmake
+    --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
-    #--dry-run
 )
 
+if [[ ${on_kokkos_develop} == "1" ]]
+then
+    test_cmd_options+=( "--extra-configure-args=\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\" ")
+fi
 
+if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
+then
+    test_cmd_options+=( "--use-explicit-cachefile ")
+fi 
 
 # Execute the TEST operation
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"

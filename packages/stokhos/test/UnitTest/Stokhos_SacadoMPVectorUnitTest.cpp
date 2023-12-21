@@ -565,6 +565,9 @@ struct UnitTestSetup {
   /* Operators min and max are not supported for complex type. */                  \
   BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, max  , max  , using std::max  ;, Max)        \
   BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, min  , min  , using std::min  ;, Min)        \
+  /* Operators fmin and fmax are not supported for complex type. */                \
+  BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, fmax , fmax , using std::fmax ;, FMax)       \
+  BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, fmin , fmin , using std::fmin ;, FMin)       \
   /* Ternary test uses 'operator<' that is not defined for complex type. */        \
   TERNARY_UNIT_TEST(VEC, SCALAR_T)
 

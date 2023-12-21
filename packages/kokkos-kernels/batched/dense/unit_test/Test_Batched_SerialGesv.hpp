@@ -35,6 +35,7 @@ namespace Gesv {
 template <typename DeviceType, typename MatrixType, typename VectorType,
           typename AlgoTagType>
 struct Functor_TestBatchedSerialGesv {
+  using execution_space = typename DeviceType::execution_space;
   const MatrixType _A;
   const MatrixType _tmp;
   const VectorType _X;
@@ -61,7 +62,7 @@ struct Functor_TestBatchedSerialGesv {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType> policy(0, _X.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, _X.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }

@@ -253,6 +253,12 @@ tribits_add_advanced_test(find_package_Trilinos
       "-- Configuring done"
       "-- Generating done"
     ALWAYS_FAIL_ON_NONZERO_RETURN
+
+  TEST_1
+    MESSAGE "Build a dummy project that calls find_package(Trilinos)"
+    CMND "${CMAKE_COMMAND}"
+    ARGS --build .
+
   ADDED_TEST_NAME_OUT  find_package_Trilinos_name
   )
   # NOTE: The above test will run find_package(Trilinos) for **all** of the

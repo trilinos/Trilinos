@@ -20,11 +20,8 @@ namespace krino {
 class MasterElementHybrid
 {
 public:
-  static const MasterElementHybrid & getMasterElement(stk::topology t);
-
-  MasterElementHybrid(
-      stk::topology topology,
-      std::unique_ptr<Basis> basis);
+  MasterElementHybrid(stk::topology topology);
+  ~MasterElementHybrid();
 
   // Copy and assignment are not allowed
   MasterElementHybrid( const MasterElementHybrid & ) = delete;
@@ -126,7 +123,6 @@ private:
 
   double m_refVolume;
 
-  // Local FieldContainers
   std::vector<double> m_shapeFuncs;
   std::vector<double> m_pointGrads;
   std::vector<double> m_refPoints;

@@ -62,11 +62,14 @@ class TypeBIndicatorObjective : public Objective<Real> {
 private:
   const Ptr<PolyhedralProjection<Real>> proj_;
   const Ptr<Vector<Real>> res_;
+  bool isInit_;
+  Real tol_;
  
 public:
 
   TypeBIndicatorObjective(const Ptr<BoundConstraint<Real>> &bnd)
-    : proj_(makePtr<PolyhedralProjection<Real>>(bnd)) {}
+    : proj_(makePtr<PolyhedralProjection<Real>>(bnd)),
+      isInit_(true), tol_(0) {}
 
   TypeBIndicatorObjective(const Vector<Real>               &xprim,
                           const Vector<Real>               &xdual,
@@ -75,20 +78,32 @@ public:
                           const Vector<Real>               &mul,
                           const Vector<Real>               &res,
                           ParameterList                    &list)
-    proj_(PolyhedralProjectionFactory<Real>(xprim,xdual,bnd,con,mul,res,list)),
-    res_(res.clone()) {}
+    : proj_(PolyhedralProjectionFactory<Real>(xprim,xdual,bnd,con,mul,res,list)),
+      res_(res.clone()), isInit_(false) {}
 
   TypeBIndicatorObjective(const Ptr<PolyhedralProjection<Real>> &proj)
-    : proj_(proj), res_(proj->getResidual()->clone()) {}
+    : proj_(proj), res_(proj->getResidual()->clone()), isInit_(false) {}
+
+  void initialize(const Vector<Real> &x) {
+    if (!isInit_) {
+      auto xz = x.clone(); xz->zero();
+      Real tol(std::sqrt(ROL_EPSILON<Real>()));
+      tol_ = static_cast<Real>(1e-2)*tol;
+      proj_->getLinearConstraint()->value(*res_,*xz,tol);
+      Real rnorm = res_->norm();
+      if (rnorm > ROL_EPSILON<Real>()) tol_ *= rnorm;
+      isInit_ = true;
+    }
+  }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const Real zero(0), eps(ROL_EPSILON<Real>());
-    Real val(0);
+    initialize(x);
+    const Real zero(0);
     bool isBndFeasible = proj_->getBoundConstraint()->isFeasible(x); 
     bool isConFeasible = true;
     if (res_ != nullPtr) {
       proj_->getLinearConstraint()->value(*res_,x,tol);
-      if (res_->norm() > eps) isConFeasible = false;
+      if (res_->norm() > tol_) isConFeasible = false;
     }
     return (isBndFeasible && isConFeasible) ? zero : ROL_INF<Real>();
   }

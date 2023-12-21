@@ -235,19 +235,14 @@ namespace Amesos2 {
   template <typename KV>
   bool
   MultiVecAdapter<
-    MultiVector<Scalar,
-                LocalOrdinal,
-                GlobalOrdinal,
-                Node> >::get1dCopy_kokkos_view(
-                                   bool bInitialize,
-                                   KV& kokkos_view,
-                                   size_t lda,
-                                   Teuchos::Ptr<
-                                     const Tpetra::Map<LocalOrdinal,
-                                                       GlobalOrdinal,
-                                                       Node> > distribution_map,
-                                                       EDistribution distribution) const
-  {
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+  >::get1dCopy_kokkos_view(
+    bool bInitialize,
+    KV& kokkos_view,
+    [[maybe_unused]] size_t lda,
+    Teuchos::Ptr<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > distribution_map,
+    EDistribution distribution
+  ) const {
     using Teuchos::as;
     using Teuchos::RCP;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;

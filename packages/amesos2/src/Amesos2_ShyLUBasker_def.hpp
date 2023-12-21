@@ -434,23 +434,18 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   } // end if ( single_proc_optimization() && nrhs == 1 )
   else {
 
-    if ( is_contiguous_ == true ) {
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
-    }
-    else {
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-    }
+    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+      host_solve_array_t>::do_get(initialize_data, B, bValues_,
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        this->rowIndexBase_);
+
     // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
-    if ( is_contiguous_ == true ) {
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
-    }
-    else {
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs), CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-    }
+    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+      host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        this->rowIndexBase_);
   }
 
   if ( this->root_ ) { // do solve
@@ -472,18 +467,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
       std::runtime_error,
       "Could not alloc needed working memory for solve" );
 
-  if ( is_contiguous_ == true ) {
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-          as<size_t>(ld_rhs),
-          ROOTED);
-  }
-  else {
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-          as<size_t>(ld_rhs),
-          CONTIGUOUS_AND_ROOTED);
-  }
+  Util::put_1d_data_helper_kokkos_view<
+    MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+      as<size_t>(ld_rhs),
+      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
 
   return(ierr);
 }
@@ -738,18 +725,12 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
     #endif
 
-      if ( is_contiguous_ == true ) {
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
-          ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_,
-              nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
-      }
-      else {
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
-          ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_,
-              nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
-      }
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
+        ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          ARBITRARY,
+          this->rowIndexBase_); // copies from matrixA_ to ShyLUBasker ConcreteSolver cp, ri, nzval members
     }
 
     if( this->root_ ){

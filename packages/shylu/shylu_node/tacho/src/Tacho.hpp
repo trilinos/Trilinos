@@ -95,16 +95,30 @@ template <typename T> struct UseThisFuture<T, Kokkos::Cuda> {
 };
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-template <> struct UseThisDevice<Kokkos::Experimental::HIP> {
-  using type = Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
+template <> struct UseThisDevice<Kokkos::HIP> {
+  using type = Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>;
   using device_type = type;
 };
-template <> struct UseThisScheduler<Kokkos::Experimental::HIP> {
-  using type = DummyTaskScheduler<Kokkos::Experimental::HIP>;
+template <> struct UseThisScheduler<Kokkos::HIP> {
+  using type = DummyTaskScheduler<Kokkos::HIP>;
   using scheduler_type = type;
 };
-template <typename T> struct UseThisFuture<T, Kokkos::Experimental::HIP> {
-  using type = DummyFuture<T, Kokkos::Experimental::HIP>;
+template <typename T> struct UseThisFuture<T, Kokkos::HIP> {
+  using type = DummyFuture<T, Kokkos::HIP>;
+  using future_type = type;
+};
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+template <> struct UseThisDevice<Kokkos::Experimental::SYCL> {
+  using type = Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>;
+  using device_type = type;
+};
+template <> struct UseThisScheduler<Kokkos::Experimental::SYCL> {
+  using type = DummyTaskScheduler<Kokkos::Experimental::SYCL>;
+  using scheduler_type = type;
+};
+template <typename T> struct UseThisFuture<T, Kokkos::Experimental::SYCL> {
+  using type = DummyFuture<T, Kokkos::Experimental::SYCL>;
   using future_type = type;
 };
 #endif
@@ -175,7 +189,7 @@ template <typename SpT> void printExecSpaceConfiguration(std::string name, const
   }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-  if (std::is_same<SpT, Kokkos::Experimental::HIP>::value) {
+  if (std::is_same<SpT, Kokkos::HIP>::value) {
     is_printed = true;
     std::cout << std::setw(16) << name << ":: HIP \n";
   }

@@ -59,11 +59,10 @@
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_MasterList.hpp>
-#include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyUtils.hpp>
-
+#include <MueLu_ML2MueLuParameterTranslator.hpp>
 #include <stdlib.h>
 
 namespace MueLu {
@@ -88,7 +87,6 @@ namespace MueLu {
     using HierarchyManager = MueLu::HierarchyManager<SC, LO, GO, NO>;
     using HierarchyUtils = MueLu::HierarchyUtils<SC, LO, GO, NO>;
     using Hierarchy = MueLu::Hierarchy<SC, LO, GO, NO>;
-    using MLParameterListInterpreter = MLParameterListInterpreter<SC, LO, GO, NO>;
     using ParameterListInterpreter = ParameterListInterpreter<SC, LO, GO, NO>;
 
     bool hasParamList = inParamList.numParams();
@@ -117,10 +115,10 @@ namespace MueLu {
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
       paramList.remove(syntaxStr);
-      mueLuFactory = rcp(new MLParameterListInterpreter(paramList));
-    } else {
-      mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
+      std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
+      paramList = *Teuchos::getParametersFromXmlString(paramXML);
     }
+    mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
 
     // Create Hierarchy
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy(label);

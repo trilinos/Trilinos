@@ -1680,6 +1680,7 @@ namespace {
 
       for (int i = 0; i < global.assemblyCount; i++) {
         delete[] assemblies[i].entity_list;
+	// This is `calloc`d in `ex_get_assemblies` call.
         free(assemblies[i].name);
       }
     }

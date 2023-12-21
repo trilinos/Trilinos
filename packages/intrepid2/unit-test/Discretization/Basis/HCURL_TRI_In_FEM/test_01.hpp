@@ -63,23 +63,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
 
 namespace Intrepid2 {
 
 namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-
 
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HCURL_TRI_In_FEM_Test01(const bool verbose) {
@@ -121,8 +109,6 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
-
   const scalar_type tol = tolerence();
   int errorFlag = 0;
   constexpr ordinal_type dim =2;
@@ -146,13 +132,13 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
 
     const ordinal_type cardinality = triBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality, dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, cardinality, dim);
     triBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
     RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoeffs, cardinality , dim);
     triBasis.getDofCoeffs(dofCoeffs);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
@@ -206,7 +192,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
 
     const ordinal_type cardinality = triBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, cardinality , dim);
     triBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
@@ -222,7 +208,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     const ordinal_type numFields = triBasis.getCardinality();
 
     //Normals at each edge
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(tangents, numFields,dim); // normals at each point basis point
+    DynRankViewHostScalarValueType ConstructWithLabel(tangents, numFields,dim); // normals at each point basis point
 
     for (int edgeId = 0; edgeId < 3; ++edgeId) {
       auto tangent = Kokkos::subview(tangents, edgeId, Kokkos::ALL());
@@ -285,7 +271,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
     const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
     const ordinal_type cardinality = triBasis.getCardinality();
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
+    DynRankViewHostScalarValueType ConstructWithLabel(lattice_host_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
     auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);
@@ -359,7 +345,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
       const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
       const ordinal_type cardinality = triBasis.getCardinality();
-      DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
+      DynRankViewHostScalarValueType ConstructWithLabel(lattice_host_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
       auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);
@@ -470,7 +456,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
       const ordinal_type cardinality = triBasis.getCardinality();
       const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
-      DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
+      DynRankViewHostScalarValueType ConstructWithLabel(lattice_host_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
       auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);

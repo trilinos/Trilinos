@@ -340,6 +340,16 @@ public:
   /// then compute(), before you may call apply().
   virtual void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
+  /// \brief Set this triangular solver's stream information.
+  ///
+  void setStreamInfo (const bool& isKokkosKernelsStream, const int& num_streams, const std::vector<HandleExecSpace>& exec_space_instances);
+
+  /// \brief Set this preconditioner's matrices (used by stream interface of triangular solve).
+  ///
+  /// After calling this method, you must call first initialize(),
+  /// then compute(), before you may call apply().
+  void setMatrices (const std::vector< Teuchos::RCP<crs_matrix_type> >& A_crs_v);
+
   //@}
 
 private:
@@ -349,6 +359,7 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   //! The original input matrix, as a Tpetra::CrsMatrix.
   Teuchos::RCP<const crs_matrix_type> A_crs_;
+  std::vector< Teuchos::RCP<crs_matrix_type> > A_crs_v_;
 
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   mutable Teuchos::RCP<MV> X_colMap_;
@@ -383,6 +394,11 @@ private:
   //! Optional KokkosKernels implementation.
   bool isKokkosKernelsSptrsv_;
   Teuchos::RCP<k_handle> kh_;
+  std::vector< Teuchos::RCP<k_handle> > kh_v_;
+  int num_streams_;
+  bool isKokkosKernelsStream_;
+  bool kh_v_nonnull_;
+  std::vector<HandleExecSpace> exec_space_instances_;
 
   /// \brief "L" if the matrix is locally lower triangular, "U" if the
   ///   matrix is locally upper triangular, or "N" if unknown or

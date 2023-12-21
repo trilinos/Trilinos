@@ -1817,6 +1817,117 @@ namespace Teuchos
 
   // END INT, COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
 
+  // BEGIN INT, KOKKOS::COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
+
+  template<>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, Kokkos::complex<double> >
+  {
+  public:
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<int, Kokkos::complex<double> >& lapack) {}
+    inline virtual ~LAPACK(void) {}
+
+    // Symmetric positive definite linear system routines
+    void PTTRF(const int& n, double* d, Kokkos::complex<double>* e, int* info) const;
+    void PTTRS(const char& UPLO, const int& n, const int& nrhs, const double* d, const Kokkos::complex<double>* e, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void POTRF(const char& UPLO, const int& n, Kokkos::complex<double>* A, const int& lda, int* info) const;
+    void POTRS(const char& UPLO, const int& n, const int& nrhs, const Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void POTRI(const char& UPLO, const int& n, Kokkos::complex<double>* A, const int& lda, int* info) const;
+    void POCON(const char& UPLO, const int& n, const Kokkos::complex<double>* A, const int& lda, const double& anorm, double* rcond, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+    void POSV(const char& UPLO, const int& n, const int& nrhs, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void POEQU(const int& n, const Kokkos::complex<double>* A, const int& lda, double* S, double* scond, double* amax, int* info) const;
+    void PORFS(const char& UPLO, const int& n, const int& nrhs, const Kokkos::complex<double>* A, const int& lda, const Kokkos::complex<double>* AF, const int& ldaf, const Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* X, const int& ldx, double* FERR, double* BERR, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+
+    void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* AF, const int& ldaf, char* EQUED, double* S, Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+
+    // General Linear System Routines
+    void GELS(const char& TRANS, const int& m, const int& n, const int& nrhs, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* WORK, const int& lwork, int* info) const;
+    void GELSS(const int& m, const int& n, const int& nrhs, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, double* S, const double& rcond, int* rank, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+    void GEQRF(const int& m, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* TAU, Kokkos::complex<double>* WORK, const int& lwork, int* info) const;
+    void GEQR2(const int& m, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* TAU, Kokkos::complex<double>* WORK, int* const info) const;
+    void UNGQR(const int& m, const int& n, const int& k, Kokkos::complex<double>* A, const int& lda, const Kokkos::complex<double>* TAU, Kokkos::complex<double>* WORK, const int& lwork, int* info) const;
+    void UNMQR(const char& SIDE, const char& TRANS, const int& m, const int& n, const int& k, const Kokkos::complex<double>* A, const int& lda, const Kokkos::complex<double>* TAU, Kokkos::complex<double>* C, const int& ldc, Kokkos::complex<double>* WORK, const int& lwork, int* info) const;
+    void UNM2R(const char& SIDE, const char& TRANS, const int& M, const int& N, const int& K, const Kokkos::complex<double>* A, const int& LDA, const Kokkos::complex<double>* TAU, Kokkos::complex<double>* C, const int& LDC, Kokkos::complex<double>* WORK, int* const INFO) const;
+
+    void GETRF(const int& m, const int& n, Kokkos::complex<double>* A, const int& lda, int* IPIV, int* info) const;
+    void GETRS(const char& TRANS, const int& n, const int& nrhs, const Kokkos::complex<double>* A, const int& lda, const int* IPIV, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void LASCL(const char& TYPE, const int& kl, const int& ku, const double& cfrom, const double& cto, const int& m, const int& n, Kokkos::complex<double>* A, const int& lda, int* info) const;
+
+    void GEQP3 (const int& m, const int& n, Kokkos::complex<double>* A, const int& lda, int* jpvt, Kokkos::complex<double>* TAU, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+    void LASWP (const int& N, Kokkos::complex<double>* A, const int& LDA, const int& K1, const int& K2, const int* IPIV, const int& INCX) const;
+
+    void GBTRF(const int& m, const int& n, const int& kl, const int& ku, Kokkos::complex<double>* A, const int& lda, int* IPIV, int* info) const;
+    void GBTRS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const Kokkos::complex<double>* A, const int& lda, const int* IPIV, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void GTTRF(const int& n, Kokkos::complex<double>* dl, Kokkos::complex<double>* d, Kokkos::complex<double>* du, Kokkos::complex<double>* du2, int* IPIV, int* info) const;
+    void GTTRS(const char& TRANS, const int& n, const int& nrhs, const Kokkos::complex<double>* dl, const Kokkos::complex<double>* d, const Kokkos::complex<double>* du, const Kokkos::complex<double>* du2, const int* IPIV, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void GETRI(const int& n, Kokkos::complex<double>* A, const int& lda, const int* IPIV, Kokkos::complex<double>* WORK, const int& lwork, int* info) const;
+    void LATRS (const char& UPLO, const char& TRANS, const char& DIAG, const char& NORMIN, const int& N, const Kokkos::complex<double>* A, const int& LDA, Kokkos::complex<double>* X, double* SCALE, double* CNORM, int* INFO) const;
+    void GECON(const char& NORM, const int& n, const Kokkos::complex<double>* A, const int& lda, const double& anorm, double* rcond, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+    void GBCON(const char& NORM, const int& n, const int& kl, const int& ku, const Kokkos::complex<double>* A, const int& lda, const int* IPIV, const double& anorm, double* rcond, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+    double LANGB(const char& NORM, const int& n, const int& kl, const int& ku, const Kokkos::complex<double>* A, const int& lda, double* WORK) const;
+    void GESV(const int& n, const int& nrhs, Kokkos::complex<double>* A, const int& lda, int* IPIV, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void GEEQU(const int& m, const int& n, const Kokkos::complex<double>* A, const int& lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
+    void GERFS(const char& TRANS, const int& n, const int& nrhs, const Kokkos::complex<double>* A, const int& lda, const Kokkos::complex<double>* AF, const int& ldaf, const int* IPIV, const Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* X, const int& ldx, double* FERR, double* BERR, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+    void GBEQU(const int& m, const int& n, const int& kl, const int& ku, const Kokkos::complex<double>* A, const int& lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
+    void GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const Kokkos::complex<double>* A, const int& lda, const Kokkos::complex<double>* AF, const int& ldaf, const int* IPIV, const Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* X, const int& ldx, double* FERR, double* BERR, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+
+    void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* AF, const int& ldaf, int* IPIV, char* EQUED, double* R, double* C, Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* X, const int& ldx, double* rcond, double* FERR, double* BERR, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+
+    void GEHRD(const int& n, const int& ilo, const int& ihi, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* TAU, Kokkos::complex<double>* WORK, const int& lwork, int* info) const;
+    void TRTRS(const char& UPLO, const char& TRANS, const char& DIAG, const int& n, const int& nrhs, const Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, int* info) const;
+    void TRTRI(const char& UPLO, const char& DIAG, const int& n, Kokkos::complex<double>* A, const int& lda, int* info) const;
+
+    // Symmetric eigenvalue routines.
+    void STEQR(const char& COMPZ, const int& n, double* D, double* E, Kokkos::complex<double>* Z, const int& ldz, double* WORK, int* info) const;
+    void PTEQR(const char& COMPZ, const int& n, double* D, double* E, Kokkos::complex<double>* Z, const int& ldz, double* WORK, int* info) const;
+    void HEEV(const char& JOBZ, const char& UPLO, const int& n, Kokkos::complex<double>* A, const int& lda, double* W, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+    void HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, double* W, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+
+    // Non-hermitian eigenvalue routines.
+    void HSEQR(const char& JOB, const char& COMPZ, const int& n, const int& ilo, const int& ihi, Kokkos::complex<double>* H, const int& ldh, Kokkos::complex<double>* W, Kokkos::complex<double>* Z, const int& ldz, Kokkos::complex<double>* WORK, const int& lwork, int* info) const;
+    void GEES(const char& JOBVS, const char& SORT, int (*ptr2func)(std::complex<double>*), const int& n, Kokkos::complex<double>* A, const int& lda, int* sdim, Kokkos::complex<double>* W, Kokkos::complex<double>* VS, const int& ldvs, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* BWORK, int* info) const;
+    void GEES(const char& JOBVS, const int& n, Kokkos::complex<double>* A, const int& lda, int* sdim, double* WR, double* WI, Kokkos::complex<double>* VS, const int& ldvs, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* BWORK, int* info) const;
+
+    void GEEV(const char& JOBVL, const char& JOBVR, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* W, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+    void GEEV(const char& JOBVL, const char& JOBVR, const int& n, Kokkos::complex<double>* A, const int& lda, double* WR, double* WI, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+
+    void GEEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* W, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+    void GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* ALPHA, Kokkos::complex<double>* BETA, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, Kokkos::complex<double>* work, const int& lwork, double* RWORK, int* IWORK, int* BWORK, int* info) const;
+    void GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, double* ALPHAR, double* ALPHAI, Kokkos::complex<double>* BETA, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, Kokkos::complex<double>* work, const int& lwork, double* RWORK, int* IWORK, int* BWORK, int* info) const;
+    void GGEV(const char& JOBVL, const char& JOBVR, const int& n, Kokkos::complex<double> *A, const int& lda, Kokkos::complex<double> *B, const int& ldb, Kokkos::complex<double>* ALPHA, Kokkos::complex<double>* BETA, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>*VR, const int& ldvr, Kokkos::complex<double> *WORK, const int& lwork, double* RWORK, int* info) const;
+    void GGES(const char& JOBVL, const char& JOBVR, const char& SORT, int (*ptr2func)(std::complex<double>*, std::complex<double>*), const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, int* sdim, Kokkos::complex<double>* ALPHA, Kokkos::complex<double>* BETA, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, Kokkos::complex<double>* WORK, const int& lwork, double* rwork, int* bwork, int* info ) const;
+    void TGSEN(const int& ijob, const int& wantq, const int& wantz, const int* SELECT, const int& n, Kokkos::complex<double>* A, const int& lda, Kokkos::complex<double>* B, const int& ldb, Kokkos::complex<double>* ALPHA, Kokkos::complex<double>* BETA, Kokkos::complex<double>* Q, const int& ldq, Kokkos::complex<double>* Z, const int& ldz, int* M, double* PL, double* PR, double* DIF, Kokkos::complex<double>* WORK, const int& lwork, int* IWORK, const int& liwork, int* info ) const;
+
+    // SVD routine
+    void GESVD(const char& JOBU, const char& JOBVT, const int& m, const int& n, Kokkos::complex<double>* A, const int& lda, double* S, Kokkos::complex<double>* U, const int& ldu, Kokkos::complex<double>* V, const int& ldv, Kokkos::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
+
+    // Triangular matrix routines.
+    void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const Kokkos::complex<double>* T, const int& ldt, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, const int& mm, int* m, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+    void TREVC(const char& SIDE, const int& n, const Kokkos::complex<double>* T, const int& ldt, Kokkos::complex<double>* VL, const int& ldvl, Kokkos::complex<double>* VR, const int& ldvr, const int& mm, int* m, Kokkos::complex<double>* WORK, double* RWORK, int* info) const;
+
+    void TREXC(const char& COMPQ, const int& n, Kokkos::complex<double>* T, const int& ldt, Kokkos::complex<double>* Q, const int& ldq, int* ifst, int* ilst, Kokkos::complex<double>* WORK, int* info) const;
+
+    // Rotation/reflection generators
+    void LARTG( const Kokkos::complex<double> f, const Kokkos::complex<double> g, double* c, Kokkos::complex<double>* s, Kokkos::complex<double>* r ) const;
+    void LARFG( const int& n, Kokkos::complex<double>* alpha, Kokkos::complex<double>* x, const int& incx, Kokkos::complex<double>* tau ) const;
+
+    // Matrix balancing routines.
+
+    void GEBAL(const char& JOBZ, const int& n, Kokkos::complex<double>* A, const int& lda, int* ilo, int* ihi, double* scale, int* info) const;
+
+    void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const double* scale, const int& m, Kokkos::complex<double>* V, const int& ldv, int* info) const;
+
+    // Random number generators
+    Kokkos::complex<double> LARND( const int& idist, int* seed ) const;
+    void LARNV( const int& idist, int* seed, const int& n, Kokkos::complex<double>* v ) const;
+
+    // Machine characteristics
+    int ILAENV( const int& ispec, const std::string& NAME, const std::string& OPTS, const int& N1 = -1, const int& N2 = -1, const int& N3 = -1, const int& N4 = -1 ) const;
+
+  };
+
+  // END INT, KOKKOS::COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
+
 #endif // HAVE_TEUCHOS_COMPLEX
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH

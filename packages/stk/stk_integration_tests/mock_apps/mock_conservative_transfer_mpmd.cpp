@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     MPI_Comm meshComm;
     MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
 
-    stk_interface::StkMeshCreator creator(meshFileName, meshComm);
+    stk_interface::StkMeshCreator creator(meshFileName, "NONE", meshComm);
     std::shared_ptr<mesh::Mesh> inputMesh = creator.create_mesh_from_part(partName).mesh;
 
     std::shared_ptr<mesh::Mesh> inputMesh1 = color == 0 ? inputMesh : nullptr;

@@ -118,7 +118,7 @@ private:
    void deleteRemovedFields(const std::vector<std::string> & removedFields,
                             std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & fields) const;
 
-   struct RemovedFieldsSearchUnaryFunctor : public std::unary_function<std::pair<std::string,const panzer::PureBasis>,bool> {
+   struct RemovedFieldsSearchUnaryFunctor {
      std::vector<std::string> removedFields_;
      bool operator() (const std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > & field) 
      { return std::find(removedFields_.begin(),removedFields_.end(),field.first)!=removedFields_.end(); }

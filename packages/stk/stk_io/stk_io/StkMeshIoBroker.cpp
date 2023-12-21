@@ -143,6 +143,7 @@ stk::mesh::FieldVector get_fields_by_name(const stk::mesh::MetaData &meta, const
 
 StkMeshIoBroker::StkMeshIoBroker()
 : m_communicator(MPI_COMM_NULL),
+  m_meshBuilder(std::make_shared<stk::mesh::MeshBuilder>()),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
@@ -156,6 +157,7 @@ StkMeshIoBroker::StkMeshIoBroker()
 
 StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
 : m_communicator(comm),
+  m_meshBuilder(std::make_shared<stk::mesh::MeshBuilder>(comm)),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
@@ -255,10 +257,16 @@ void StkMeshIoBroker::create_sideset_observer()
     }
 }
 
+void StkMeshIoBroker::set_mesh_builder(std::shared_ptr<stk::mesh::MeshBuilder> meshBuilder)
+{
+  STK_ThrowErrorMsgIf(m_metaData || m_bulkData,
+                      "Setting a MeshBuilder after as mesh has already been built has no effect.");
+  m_meshBuilder = meshBuilder;
+}
+
 void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    STK_ThrowErrorMsgIf( m_bulkData != nullptr,
-                     "Bulk data already initialized" );
+    STK_ThrowErrorMsgIf(m_bulkData, "BulkData already initialized.");
     m_bulkData = arg_bulk_data;
 
     if (m_metaData == nullptr) {
@@ -275,14 +283,12 @@ void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bul
 
 void StkMeshIoBroker::replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    STK_ThrowErrorMsgIf( m_bulkData == nullptr,
-                     "There is  no bulk data to replace." );
-    STK_ThrowErrorMsgIf( m_metaData == nullptr,
-                     "Meta data must be non-null when calling StkMeshIoBroker::replace_bulk_data." );
+    STK_ThrowRequireMsg(m_bulkData, "There is  no BulkData to replace.");
+    STK_ThrowRequireMsg(m_metaData, "MetaData must be non-null when calling StkMeshIoBroker::replace_bulk_data.");
 
     std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto pointerWeWontDelete){});
-    STK_ThrowErrorMsgIf( m_metaData.get() != new_meta_data.get(),
-                     "Meta data for both new and old bulk data must be the same." );
+    STK_ThrowErrorMsgIf(m_metaData.get() != new_meta_data.get(),
+                        "MetaData for both new and old BulkData must be the same.");
 
     m_bulkData = arg_bulk_data;
 
@@ -478,7 +484,7 @@ void StkMeshIoBroker::create_input_mesh()
 
     // See if meta data is null, if so, create a new one...
     if (is_meta_data_null()) {
-        m_metaData = std::shared_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData());
+        m_metaData = m_meshBuilder->create_meta_data();
     }
 
     if (m_useSimpleFields) {
@@ -826,9 +832,9 @@ void StkMeshIoBroker::create_bulk_data()
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
     if (is_bulk_data_null()) {
-        set_bulk_data(stk::mesh::MeshBuilder(region->get_database()->util().communicator())
-                                          .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
-                                          .create(meta_data_ptr()));
+        set_bulk_data(m_meshBuilder->set_communicator(region->get_database()->util().communicator())
+                                   .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
+                                   .create(meta_data_ptr()));
     }
 }
 

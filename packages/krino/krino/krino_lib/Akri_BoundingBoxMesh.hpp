@@ -9,9 +9,11 @@
 #ifndef Akri_BoundingBoxMesh_h
 #define Akri_BoundingBoxMesh_h
 
+#include <Akri_MeshInterface.hpp>
 #include <Akri_BoundingBox.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <array>
 #include <memory>
 
@@ -67,20 +69,20 @@ enum BoundingBoxMeshStructureType
   FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH = 4
 };
 
-class BoundingBoxMesh {
+class BoundingBoxMesh : public MeshInterface {
 public:
   typedef BoundingBox_T<double,3> BoundingBoxType;
   static std::array<size_t,3> get_node_x_y_z( stk::mesh::EntityId entity_id, const std::array<size_t,3> & N );
 
 public:
-  BoundingBoxMesh(stk::topology element_topology, const std::vector<std::string>& rank_names = std::vector<std::string>());
-  void set_domain(const BoundingBoxType & mesh_bbox, const double mesh_size, const int pad_cells = 0);
-  void populate_mesh(stk::ParallelMachine pm = MPI_COMM_WORLD, const stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA);
-  stk::mesh::MetaData & meta_data() { STK_ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
-  stk::mesh::BulkData & bulk_data() { STK_ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
-  const stk::mesh::MetaData & meta_data() const { STK_ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
-  const stk::mesh::BulkData & bulk_data() const { STK_ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
+  BoundingBoxMesh(stk::topology element_topology, stk::ParallelMachine comm);
+  virtual void populate_mesh(const stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA) override;
+  virtual stk::mesh::MetaData & meta_data() override { STK_ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
+  virtual const stk::mesh::MetaData & meta_data() const override { STK_ThrowAssert( nullptr != m_meta.get() ) ; return *m_meta; }
+  virtual stk::mesh::BulkData & bulk_data() override { STK_ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
+  virtual const stk::mesh::BulkData & bulk_data() const override { STK_ThrowAssert( nullptr != m_mesh.get() ) ; return *m_mesh; }
 
+  void set_domain(const BoundingBoxType & mesh_bbox, const double mesh_size, const int pad_cells = 0);
   void create_domain_sides();
   const CartesianCoordinateMapping & get_coord_mapping() const { return *my_coord_mapping; }
   void get_node_x_y_z( stk::mesh::EntityId entity_id, size_t &ix , size_t &iy , size_t &iz ) const;
@@ -116,6 +118,7 @@ private:
   void set_is_cell_edge_function_for_BCC_mesh() const;
   void set_is_cell_edge_function_for_cell_based_mesh() const;
 private:
+  stk::ParallelMachine myComm;
   std::shared_ptr<stk::mesh::MetaData> m_meta;
   std::unique_ptr<stk::mesh::BulkData> m_mesh;
   std::unique_ptr<CartesianCoordinateMapping> my_coord_mapping;
@@ -126,30 +129,6 @@ private:
   size_t m_nx, m_ny, m_nz;
   BoundingBoxType m_mesh_bbox;
   std::vector<stk::mesh::Part*> mySideParts;
-};
-
-class BoundingBoxMeshTri3 : public BoundingBoxMesh
-{
-public:
-  BoundingBoxMeshTri3() : BoundingBoxMesh(stk::topology::TRIANGLE_3_2D) {}
-};
-
-class BoundingBoxMeshQuad4 : public BoundingBoxMesh
-{
-public:
-  BoundingBoxMeshQuad4() : BoundingBoxMesh(stk::topology::QUADRILATERAL_4_2D) {}
-};
-
-class BoundingBoxMeshTet4 : public BoundingBoxMesh
-{
-public:
-  BoundingBoxMeshTet4() : BoundingBoxMesh(stk::topology::TETRAHEDRON_4) {}
-};
-
-class BoundingBoxMeshHex8 : public BoundingBoxMesh
-{
-public:
-  BoundingBoxMeshHex8() : BoundingBoxMesh(stk::topology::HEXAHEDRON_8) {}
 };
 
 } // namespace krino

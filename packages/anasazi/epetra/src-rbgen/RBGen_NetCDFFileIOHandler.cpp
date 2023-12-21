@@ -103,7 +103,7 @@ namespace RBGen {
   Teuchos::RCP<Epetra_MultiVector> NetCDFFileIOHandler::Read( const std::vector<std::string>& filenames )
   {
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( get_global_comm() );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
 #endif
@@ -403,7 +403,7 @@ namespace RBGen {
   void NetCDFFileIOHandler::Write( const Teuchos::RCP<const Epetra_MultiVector>& MV, const std::string& filename )
   {
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( get_global_comm() );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
 #endif

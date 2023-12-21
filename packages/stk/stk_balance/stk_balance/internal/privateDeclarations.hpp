@@ -106,8 +106,8 @@ bool should_omit_spider_element(const stk::mesh::BulkData & stkMeshBulkData,
                                 const stk::balance::BalanceSettings & balanceSettings,
                                 stk::mesh::Entity elem);
 
-void register_internal_fields(stk::mesh::BulkData & bulk, const stk::balance::BalanceSettings & balanceSettings);
-void fill_spider_connectivity_count_fields(const stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings);
+void register_internal_fields_and_parts(stk::mesh::BulkData & bulk, const stk::balance::BalanceSettings & balanceSettings);
+void fill_spider_connectivity_count_fields_and_parts(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings);
 void fill_output_subdomain_field(const stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings,
                                  stk::mesh::EntityProcVec & decomp);
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData,

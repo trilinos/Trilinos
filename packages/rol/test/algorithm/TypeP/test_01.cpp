@@ -50,6 +50,7 @@
 #include "ROL_l1Objective.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include <random>
 
 template<typename Real>
 class QuadraticTypeP_Test01 : public ROL::StdObjective<Real> {
@@ -59,11 +60,15 @@ private:
 
 public:
   QuadraticTypeP_Test01(int dim) : dim_(dim) {
+    using seed_type = std::mt19937_64::result_type;
+    seed_type const seed = 123;
+    std::mt19937_64 eng{seed};
+    std::uniform_real_distribution<Real> distA(0.0,5.0), distB(-10.0,10.0);
     a_.resize(dim);
     b_.resize(dim);
     for (int i = 0; i < dim; ++i) {
-      a_[i] = static_cast<Real>(5)*static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-      b_[i] = static_cast<Real>(20)*static_cast<Real>(rand())/static_cast<Real>(RAND_MAX) - static_cast<Real>(10);
+      a_[i] = distA(eng);
+      b_[i] = distB(eng);
     }
   }
 

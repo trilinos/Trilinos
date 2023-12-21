@@ -113,6 +113,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ParamTagType,
           typename AlgoTagType>
 struct Functor_TestBatchedSerialTrtri {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a;
 
   KOKKOS_INLINE_FUNCTION
@@ -132,7 +133,7 @@ struct Functor_TestBatchedSerialTrtri {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, ParamTagType> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _a.extent(0));
     Kokkos::parallel_for("Functor_TestBatchedSerialTrtri", policy, *this);
     Kokkos::Profiling::popRegion();
   }

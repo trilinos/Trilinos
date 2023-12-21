@@ -12,9 +12,12 @@ template <class Real>
 class L1_Dyn_Objective : public ROL::Objective<Real> {
 	using size_type = typename std::vector<Real>::size_type; 
 private:
-  Real theta_, beta_;
+  Real theta_, beta_;//, T_;
 	const size_type  Nt_; 
   const std::vector<ROL::TimeStamp<Real>> ts_;
+	const ROL::Ptr<ROL::PartitionedVector<Real>> zl_; 
+	const ROL::Ptr<ROL::PartitionedVector<Real>> zu_; 
+	
 	ROL::PartitionedVector<Real> &partition ( ROL::Vector<Real>& x ) const {
     return static_cast<ROL::PartitionedVector<Real>&>(x);
   }
@@ -69,17 +72,18 @@ private:
     return xp;
   }
 
-  struct ProjSymBnd : public ROL::Elementwise::BinaryFunction<Real> {
-         Real apply(const Real &xc, const Real &yc) const { return std::min(yc, std::max(-yc, xc)); }
-    } psb_;
 
  public:
-  L1_Dyn_Objective(ROL::ParameterList                    &parlist,
-                   const std::vector<ROL::TimeStamp<Real>>    &timeStamp
-    ) : Nt_(timeStamp.size()), ts_(timeStamp){
-      theta_  = parlist.sublist("Time Discretization").get("Theta",    1.0);
-	    beta_   = parlist.get("L1 Parameter", 1e-2);
-		  }
+  L1_Dyn_Objective(ROL::ParameterList                         &parlist,
+                   const std::vector<ROL::TimeStamp<Real>>    &timeStamp,
+									 const ROL::Ptr<ROL::PartitionedVector<Real>>         &zl,
+									 const ROL::Ptr<ROL::PartitionedVector<Real>>         &zu
+    ) : Nt_(timeStamp.size()), ts_(timeStamp), zl_(zl), zu_(zu)
+	    {
+      theta_  = parlist.sublist("Reduced Dynamic Objective").sublist("Time Discretization").get("Theta",    1.0);
+	    beta_   = parlist.sublist("Problem").get("L1 Control Cost", 1.e-2);
+
+	  }
   
     // value
     Real value(const ROL::Vector<Real> &z,
@@ -89,16 +93,34 @@ private:
 		  const ROL::PartitionedVector<Real> &zp = partition(z); 
 		  const Real one(1);
       Real dt(0), val(0);
+			bool isinf(false); 
 
-		  for (size_type k = 1; k < Nt_; ++k){//dynamic obj
+      for (size_type k = 0; k < Nt_; ++k){//dynamic obj
+				ROL::Ptr<const std::vector<Real>> zlk = getConstParameter(*zl_->get(k)); 
+				ROL::Ptr<const std::vector<Real>> zuk = getConstParameter(*zu_->get(k)); 
+			  ROL::Ptr<const std::vector<Real>> zpk = getConstParameter(*zp.get(k)); // ROL vector of partition/kth timestep
+				
+				for (size_type i = 0; i < zpk->size(); ++i){
+					if ((*zpk)[i] < (*zlk)[i] || (*zpk)[i]>(*zuk)[i]){
+						val = ROL::ROL_INF<Real>();  
+						isinf=true; 
+						break; 
+					}
+				}
+			}
+      
+      if (!isinf) {
+		    for (size_type k = 1; k < Nt_; ++k){//dynamic obj
+		    	
+		      ROL::Ptr<const std::vector<Real>> zpn = getConstParameter(*zp.get(k)); // ROL vector of partition/kth timestep
+		      ROL::Ptr<const std::vector<Real>> zpo = getConstParameter(*zp.get(k-1)); // ROL vector of partition/kth timestep
+	        dt = ts_[k].t[1] - ts_[k].t[0];
 
-			  ROL::Ptr<const std::vector<Real>> zpn = getConstParameter(*zp.get(k)); // ROL vector of partition/kth timestep
-			  ROL::Ptr<const std::vector<Real>> zpo = getConstParameter(*zp.get(k-1)); // ROL vector of partition/kth timestep
-	  	  dt = ts_[k].t[1] - ts_[k].t[0];
-        for (size_type i = 0; i < zpn->size(); ++i){
-			    val += dt*((one - theta_)*std::abs((*zpo)[i]) + theta_*std::abs((*zpn)[i])); 
-			  } // end i for
-		  }// end k for
+          for (size_type i = 0; i < zpn->size(); ++i){
+		        val += dt*((one - theta_)*std::abs((*zpo)[i]) + theta_*std::abs((*zpn)[i])); 
+		      } // end i for
+		    }// end k for
+			}
       return beta_*val;
    } //end value
 
@@ -106,10 +128,9 @@ private:
 	void prox(ROL::Vector<Real>       &Pz, 
 			      const ROL::Vector<Real> &z,  
 						Real                t, 
-						Real               &tol
-		)
+						Real               &tol		)
 	  {
-    
+
 		//partitioned vectors
 		const ROL::PartitionedVector<Real> &zp  = partition(z); 
     ROL::PartitionedVector<Real> &Pzp = partition(Pz); 
@@ -119,35 +140,31 @@ private:
 		Real hk(0), hkplus(0);
 		Real l1param(0); 
 
-		for (size_type k = 0; k<=Nt_; ++k) {//dynamic part; 0->Nt inclusive
-
+		for (size_type k = 0; k<Nt_; ++k) {//dynamic part; 0->Nt inclusive
+      ROL::Ptr<const std::vector<Real>> zlk = getConstParameter(*zl_->get(k)); 
+			ROL::Ptr<const std::vector<Real>> zuk = getConstParameter(*zu_->get(k)); 
 			ROL::Ptr<const std::vector<Real>> zk  = getConstParameter(zp[k]); //kth timestep
 			ROL::Ptr<std::vector<Real>> Pzk = getParameter(Pzp[k]); 
 
 			// update prox parameter
 			if (k == 0){
         hkplus  = ts_[k+1].t[1] - ts_[k+1].t[0]; 
-				l1param = t*hkplus*beta_*theta_; 
-			} else if (k == Nt_) {
+				l1param = t*hkplus*beta_*(one - theta_); 
+			} else if (k == (Nt_ - 1)) {
 				hk      = ts_[k].t[1] - ts_[k].t[0]; 
-        l1param = t*hk*beta_*(one - theta_); 
+        l1param = t*hk*beta_*theta_; 
 			} else {
 				hk      = ts_[k].t[1] - ts_[k].t[0]; 
 				hkplus  = ts_[k+1].t[1] - ts_[k+1].t[0]; 
-        l1param = t*beta_*(hk*(one - theta_) + theta_*hkplus); 
+        l1param = t*beta_*(hkplus*(one - theta_) + theta_*hk); 
 			}
-      
-			//Pzk.set(*shift_);//no shift
-      //Pzk.axpy(static_cast<Real>(-1), zk);
-		  //Pzk.scale(static_cast<Real>(1)/t); //not right with t in l1param
-		  //Pzk.applyBinary(psb_, l1param); //instead of weights
-		  //Pzk.scale(t); //not scaled right
-      //Pzk.plus(zk); 
-			
+						
 			for (size_type i = 0; i < zk->size(); ++i){
-				if ((*zk)[i] > l1param) { (*Pzk)[i] = (*zk)[i] + l1param; }
-				else if ((*zk)[i] < l1param) {(*Pzk)[i] = (*zk)[i] - l1param;}
+				if ((*zk)[i] > l1param) { (*Pzk)[i] = (*zk)[i] - l1param; }
+				else if ((*zk)[i] < -l1param) {(*Pzk)[i] = (*zk)[i] + l1param;}
 				else { (*Pzk)[i] = zero;}
+
+				(*Pzk)[i] = std::min((*zuk)[i], std::max((*zlk)[i], (*Pzk)[i])); 
 			} // end i loop
 
 		}//end k for

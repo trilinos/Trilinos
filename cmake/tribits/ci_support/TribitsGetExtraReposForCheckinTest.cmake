@@ -82,11 +82,12 @@ set(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST  ${CHECK_EXTRAREPOS_EXIST})
 # B) Include files from TriBITS
 #
 
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
+
 set( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   )
-include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 include(Split)
 include(AppendStringVar)
 include(SetDefaultAndFromEnv) # Used in ExtraRepositoriesList.cmake file?

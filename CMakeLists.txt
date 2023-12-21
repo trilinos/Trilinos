@@ -91,8 +91,10 @@ SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 # Don't allow disabled subpackages to be excluded from tarball
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
-# Set up C++ language standard selection
-include(SetTrilinosCxxStandard)
+
+SET(Trilinos_USE_GNUINSTALLDIRS_DEFAULT ON)
+
+SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 
 # Some CMake and TriBiTS tweaks just for Trilinos
 include(TrilinosTweaks)

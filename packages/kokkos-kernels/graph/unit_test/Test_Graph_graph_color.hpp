@@ -96,9 +96,10 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<
       lno_view_t, lno_nnz_view_t, typename lno_view_t::non_const_type,
-      typename lno_nnz_view_t::non_const_type, device>(
-      numRows, input_mat.graph.row_map, input_mat.graph.entries, sym_xadj,
-      sym_adj);
+      typename lno_nnz_view_t::non_const_type,
+      typename device::execution_space>(numRows, input_mat.graph.row_map,
+                                        input_mat.graph.entries, sym_xadj,
+                                        sym_adj);
   size_type numentries = sym_adj.extent(0);
   scalar_view_t newValues("vals", numentries);
 
@@ -193,28 +194,28 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth,
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int, int, TestExecSpace)
+EXECUTE_TEST(default_scalar, int, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int64_t, int, TestExecSpace)
+EXECUTE_TEST(default_scalar, int64_t, int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int, size_t, TestExecSpace)
+EXECUTE_TEST(default_scalar, int, size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(default_scalar, int64_t, size_t, TestExecSpace)
+EXECUTE_TEST(default_scalar, int64_t, size_t, TestDevice)
 #endif
 
 #undef EXECUTE_TEST

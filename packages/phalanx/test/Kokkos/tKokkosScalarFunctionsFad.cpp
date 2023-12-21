@@ -238,24 +238,29 @@ Teuchos::StackedTimer:12.5579 [1] (0)
 
     void evaluate()
     {
-      EquationOfState eos;
+      EquationOfState eos_tmp;
       Kokkos::TeamPolicy<PHX::exec_space> policy(num_cells,Kokkos::AUTO(),1);
       PHX::Device().fence();
       Kokkos::parallel_for("compute a with return type",policy, KOKKOS_CLASS_LAMBDA (const team_t& team) {
         const int c = team.league_rank();
+	// implicit lambda capture outside of constexpr if (cuda restriction)
+	auto rho = rho_;
+	auto p = p_;
+	auto a = a_;
+	auto eos = eos_tmp;
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int i) {
           if constexpr (std::is_same_v<EquationOfState,EoS_FUNC>) {
-            auto rho = rho_(c,i);
-            auto p = p_(c,i);
-            auto&& a = a_(c,i);
-            eos.a(rho,p,a);
+            auto rho_i = rho(c,i);
+            auto p_i = p(c,i);
+            auto&& a_i = a(c,i);
+            eos.a(rho_i,p_i,a_i);
           } else if constexpr(std::is_same_v<EquationOfState,EoS_Baseline>) {
-            a_(c,i) = std::sqrt(eos.gamma_ * p_(c,i) / rho_(c,i));
+            a(c,i) = std::sqrt(eos.gamma_ * p(c,i) / rho(c,i));
           } else { // Scalar or auto
-            auto rho = rho_(c,i);
-            auto p = p_(c,i);
-            auto&& a = a_(c,i);
-            a = eos.a(rho,p);
+            auto rho_i = rho(c,i);
+            auto p_i = p(c,i);
+            auto&& a_i = a(c,i);
+            a_i = eos.a(rho_i,p_i);
           }
         });
       });

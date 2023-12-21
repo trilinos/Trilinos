@@ -207,22 +207,26 @@ public:
     // To do:  query number of registers used by functor and adjust
     // nwarp accordingly to get maximum occupancy
 
+    auto const maxWarpCount = std::min<unsigned>(
+        m_policy.space().cuda_device_prop().maxThreadsPerBlock / CudaTraits::WarpSize,
+        CudaTraits::WarpSize);
+
     Cuda::size_type nwarp = 0;
     if (m_config.team > CudaTraits::WarpSize) {
       const Cuda::size_type warps_per_team =
         ( m_config.team + CudaTraits::WarpSize-1 ) / CudaTraits::WarpSize;
-      nwarp = cuda_internal_maximum_warp_count() / warps_per_team;
+      nwarp = maxWarpCount / warps_per_team;
     }
     else {
       const Cuda::size_type teams_per_warp =
         CudaTraits::WarpSize / m_config.team ;
-      nwarp = cuda_internal_maximum_warp_count() * teams_per_warp;
+      nwarp = maxWarpCount * teams_per_warp;
     }
     const dim3 block( m_config.team , nwarp , 1 );
 
+    const Cuda::size_type maxGridSizeX = m_policy.space().cuda_device_prop().maxGridSize[0];
     Cuda::size_type nblock =
-      std::min( (m_work + block.y - 1 ) / block.y ,
-                cuda_internal_maximum_grid_count()[0] );
+      std::min( (m_work + block.y - 1 ) / block.y , maxGridSizeX );
     const dim3 grid( nblock , 1 , 1 );
 
     const Cuda::size_type shared = m_config.shared;

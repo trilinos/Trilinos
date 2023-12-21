@@ -24,6 +24,14 @@ IF (KOKKOS_ENABLE_CUDA)
       backends/Test_Cuda_Sparse.cpp
     COMPONENTS sparse
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blocksparse_cuda
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_Cuda_BlockSparse.cpp
+    COMPONENTS sparse
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_HIP)
@@ -32,6 +40,14 @@ IF (KOKKOS_ENABLE_HIP)
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_HIP_Sparse.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blocksparse_hip
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_HIP_BlockSparse.cpp
     COMPONENTS sparse
   )
 ENDIF ()
@@ -44,6 +60,14 @@ IF (KOKKOS_ENABLE_SYCL)
       backends/Test_SYCL_Sparse.cpp
     COMPONENTS sparse
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blocksparse_sycl
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_SYCL_BlockSparse.cpp
+    COMPONENTS sparse
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMPTARGET)
@@ -52,6 +76,14 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   SOURCES
   #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
   #     backends/Test_OpenMPTarget_Sparse.cpp
+  #   COMPONENTS sparse
+  # )
+
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   blocksparse_openmptarget
+  #   SOURCES
+  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+  #     backends/Test_OpenMPTarget_BlockSparse.cpp
   #   COMPONENTS sparse
   # )
 ENDIF ()
@@ -71,6 +103,14 @@ IF (KOKKOS_ENABLE_SERIAL)
       backends/Test_Serial_Sparse.cpp
     COMPONENTS sparse
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blocksparse_serial
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_Serial_BlockSparse.cpp
+    COMPONENTS sparse
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMP)
@@ -81,6 +121,14 @@ IF (KOKKOS_ENABLE_OPENMP)
       backends/Test_OpenMP_Sparse.cpp
     COMPONENTS sparse
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blocksparse_openmp
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_OpenMP_BlockSparse.cpp
+    COMPONENTS sparse
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_THREADS)
@@ -89,6 +137,14 @@ IF (KOKKOS_ENABLE_THREADS)
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_Threads_Sparse.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    blocksparse_threads
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_Threads_BlockSparse.cpp
     COMPONENTS sparse
   )
 ENDIF ()

@@ -90,7 +90,6 @@ void print_options() {
 }
 
 int parse_inputs(LocalParams& params, int argc, char** argv) {
-  bool printHelp = false;
   bool discard;
   for (int i = 1; i < argc; ++i) {
     // if (perf_test::check_arg_str(i, argc, argv, "--amtx", params.amtx)) {
@@ -131,18 +130,12 @@ int parse_inputs(LocalParams& params, int argc, char** argv) {
       ++i;
     } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose",
                                          params.verbose)) {
-    } else if (perf_test::check_arg_bool(i, argc, argv, "-h", printHelp)) {
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--help", printHelp)) {
     } else {
       std::cerr << "Unrecognized command line argument #" << i << ": "
                 << argv[i] << std::endl;
       print_options();
       return 1;
     }
-  }
-  if (printHelp) {
-    print_options();
-    return 1;
   }
   return 0;
 }
@@ -190,6 +183,31 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   if (params.cmtx.length() && params.use_mkl) {
     throw std::invalid_argument(
         "If running MKL, can't output the result to file");
+  }
+
+  // Check that offset/ordinal types are compatible with any requested TPLs
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  if (params.use_mkl) {
+    if constexpr (!std::is_same_v<int, MKL_INT>) {
+      throw std::runtime_error(
+          "MKL configured with long long int not supported in Kokkos Kernels");
+    }
+    if constexpr (!std::is_same_v<MKL_INT, lno_t> ||
+                  !std::is_same_v<MKL_INT, size_type>) {
+      throw std::runtime_error(
+          "Must enable int as both ordinal and offset type in KokkosKernels to "
+          "call MKL SpAdd");
+    }
+  }
+#endif
+
+  if (params.use_cusparse) {
+    if constexpr (!std::is_same_v<int, lno_t> ||
+                  !std::is_same_v<int, size_type>) {
+      throw std::runtime_error(
+          "Must enable int as both ordinal and offset type in KokkosKernels to "
+          "call cuSPARSE SpAdd");
+    }
   }
 
   std::cout << "************************************* \n";
@@ -326,9 +344,11 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   }
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  sparse_matrix_t Amkl, Bmkl, Cmkl;
+  sparse_matrix_t Amkl = sparse_matrix_t(), Bmkl = sparse_matrix_t(),
+                  Cmkl = sparse_matrix_t();
   if (params.use_mkl) {
-    if constexpr (std::is_same_v<int, MKL_INT>) {
+    if constexpr (std::is_same_v<lno_t, MKL_INT> &&
+                  std::is_same_v<size_type, MKL_INT>) {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
           &Amkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)A.graph.row_map.data(),
           (int*)A.graph.row_map.data() + 1, A.graph.entries.data(),
@@ -337,9 +357,6 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
           &Bmkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)B.graph.row_map.data(),
           (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
           B.values.data()));
-    } else {
-      throw std::runtime_error(
-          "MKL configured with long long int not supported in Kokkos Kernels");
     }
   }
 #endif
@@ -354,22 +371,30 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
       c_nnz = addHandle->get_c_nnz();
     } else if (params.use_cusparse) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      // Symbolic phase: compute buffer size, then compute nnz
-      size_t bufferSize;
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2_bufferSizeExt(
-          cusparseHandle, A.numRows(), A.numCols(), &alphabeta, A_cusparse,
-          A.nnz(), A.values.data(), A.graph.row_map.data(),
-          A.graph.entries.data(), &alphabeta, B_cusparse, B.nnz(),
-          B.values.data(), B.graph.row_map.data(), B.graph.entries.data(),
-          C_cusparse, NULL, row_mapC.data(), NULL, &bufferSize));
-      // Allocate work buffer
-      KOKKOS_IMPL_CUDA_SAFE_CALL(
-          cudaMalloc((void**)&cusparseBuffer, bufferSize));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgeam2Nnz(
-          cusparseHandle, m, n, A_cusparse, A.nnz(), A.graph.row_map.data(),
-          A.graph.entries.data(), B_cusparse, B.nnz(), B.graph.row_map.data(),
-          B.graph.entries.data(), C_cusparse, row_mapC.data(), &c_nnz,
-          cusparseBuffer));
+      if constexpr (std::is_same_v<lno_t, int> &&
+                    std::is_same_v<size_type, int>) {
+        // Symbolic phase: compute buffer size, then compute nnz
+        size_t bufferSize;
+        KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2_bufferSizeExt(
+            cusparseHandle, A.numRows(), A.numCols(), &alphabeta, A_cusparse,
+            A.nnz(), A.values.data(), A.graph.row_map.data(),
+            A.graph.entries.data(), &alphabeta, B_cusparse, B.nnz(),
+            B.values.data(), B.graph.row_map.data(), B.graph.entries.data(),
+            C_cusparse, NULL, row_mapC.data(), NULL, &bufferSize));
+        // Allocate work buffer
+        KOKKOS_IMPL_CUDA_SAFE_CALL(
+            cudaMalloc((void**)&cusparseBuffer, bufferSize));
+        KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgeam2Nnz(
+            cusparseHandle, m, n, A_cusparse, A.nnz(), A.graph.row_map.data(),
+            A.graph.entries.data(), B_cusparse, B.nnz(), B.graph.row_map.data(),
+            B.graph.entries.data(), C_cusparse, row_mapC.data(), &c_nnz,
+            cusparseBuffer));
+      } else {
+        throw std::runtime_error(
+            "Must enable int as both ordinal and offset type in KokkosKernels "
+            "to "
+            "call cuSPARSE");
+      }
 #endif
     }
     if (!params.use_mkl) {
@@ -388,24 +413,32 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
     for (int numericRep = 0; numericRep < params.numericRepeat; numericRep++) {
       if (params.use_cusparse) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2(
-            cusparseHandle, m, n, &alphabeta, A_cusparse, A.nnz(),
-            A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
-            &alphabeta, B_cusparse, B.nnz(), B.values.data(),
-            B.graph.row_map.data(), B.graph.entries.data(), C_cusparse,
-            valuesC.data(), row_mapC.data(), entriesC.data(), cusparseBuffer));
+        if constexpr (std::is_same_v<lno_t, int> &&
+                      std::is_same_v<size_type, int>) {
+          KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2(
+              cusparseHandle, m, n, &alphabeta, A_cusparse, A.nnz(),
+              A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
+              &alphabeta, B_cusparse, B.nnz(), B.values.data(),
+              B.graph.row_map.data(), B.graph.entries.data(), C_cusparse,
+              valuesC.data(), row_mapC.data(), entriesC.data(),
+              cusparseBuffer));
+        }
 #endif
       } else if (params.use_mkl) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_add(
-            SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl));
-        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
+        if constexpr (std::is_same_v<lno_t, int> &&
+                      std::is_same_v<size_type, int>) {
+          KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_add(
+              SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl));
+          KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
+        }
 #endif
       } else {
-        spadd_numeric(
-            &kh, A.graph.row_map, A.graph.entries, A.values, 1.0,  // A, alpha
-            B.graph.row_map, B.graph.entries, B.values, 1.0,       // B, beta
-            row_mapC, entriesC, valuesC);                          // C
+        spadd_numeric(&kh, A.graph.row_map, A.graph.entries, A.values,
+                      1.0,  // A, alpha
+                      B.graph.row_map, B.graph.entries, B.values,
+                      1.0,                           // B, beta
+                      row_mapC, entriesC, valuesC);  // C
       }
     }
     numericTime += timer.seconds();

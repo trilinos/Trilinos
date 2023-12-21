@@ -84,7 +84,9 @@ class Test_parse_args(unittest.TestCase):
                                          max_cores_allowed=12,
                                          num_concurrent_tests=-1,
                                          ccache_enable=False,
-                                         dry_run=False)
+                                         dry_run=False,
+                                         use_explicit_cachefile=False,
+                                         extra_configure_args="")
 
         self.default_stdout = dedent('''\
                 | - [R] source-repo-url             : /dev/null/source_repo
@@ -120,7 +122,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
@@ -133,6 +135,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
                                    [--enable-ccache] [--dry-run]
+                                   [--extra-configure-args EXTRA_CONFIGURE_ARGS]
 
                 Parse the repo and build information
 
@@ -160,6 +163,8 @@ class Test_parse_args(unittest.TestCase):
                                         Directory containing the source code to compile/test.
                   --build-dir BUILD_DIR
                                         Path to the build directory.
+                  --use-explicit-cachefile
+                                        Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.
                   --ctest-driver CTEST_DRIVER
                                         Location of the CTest driver script to load via `-S`.
                   --ctest-drop-site CTEST_DROP_SITE
@@ -210,6 +215,9 @@ class Test_parse_args(unittest.TestCase):
                                         Default = False
                   --dry-run             Enable dry-run mode. Script will run but not execute
                                         the build steps. Default = False
+                  --extra-configure-args EXTRA_CONFIGURE_ARGS
+                                        Extra arguments that will be passed to CMake for
+                                        configuring Trilinos.
                 ''')
 
         self.usage_output = dedent('''\
@@ -220,7 +228,7 @@ class Test_parse_args(unittest.TestCase):
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
@@ -232,7 +240,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run]
+                                   [--enable-ccache] [--dry-run] [--extra-configure-args EXTRA_CONFIGURE_ARGS]
                 programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
                 ''')
 

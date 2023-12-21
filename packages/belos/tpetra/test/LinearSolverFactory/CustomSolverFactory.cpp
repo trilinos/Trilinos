@@ -126,6 +126,8 @@ private:
 template<class SC, class MV, class OP>
 class FooSolverFactory : public Belos::CustomSolverFactory<SC, MV, OP>
 {
+  public:
+
   virtual ~FooSolverFactory () {}
 
   virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> >
@@ -165,6 +167,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CustomSolverFactory, AddFactory, SC, LO, GO, 
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_static_cast;
   using std::endl;
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
@@ -189,8 +192,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CustomSolverFactory, AddFactory, SC, LO, GO, 
   // At this point, 'factory' should NOT support a solver called "BAZ".
   TEST_ASSERT( ! factory.isSupported ("BAZ") );
 
+  RCP<FooSolverFactory<SC, MV, OP> > fooFactory = rcp(new FooSolverFactory<SC, MV, OP>);
   RCP<custom_factory_type> customFactory =
-    rcp (static_cast<custom_factory_type*> (new FooSolverFactory<SC, MV, OP>));
+    rcp_static_cast<custom_factory_type> (fooFactory);
   // Add an instance of our custom factory to the main factory.
   factory.addFactory (customFactory);
 
@@ -216,6 +220,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CustomSolverFactory, AddFactory, SC, LO, GO, 
   TEST_ASSERT( ! solver.is_null () );
   fooSolver = Teuchos::rcp_dynamic_cast<FooSolver<SC, MV, OP> > (solver);
   TEST_ASSERT( ! fooSolver.is_null () );
+
+  // Clear the custom solver factory, which is shared by all solver factories
+  factory.clearFactories();
+
+  // Check that the custom solver is not available anymore from another 
+  // Belos::SolverFactory instance.
+  TEST_ASSERT( ! factory2.isSupported ("FOO") );
 }
 
 // Define typedefs that make the Tpetra macros work.

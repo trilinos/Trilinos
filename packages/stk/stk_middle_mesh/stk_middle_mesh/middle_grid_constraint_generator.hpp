@@ -2,6 +2,7 @@
 #define MIDDLE_GRID_CONSTRAINT_GENERATOR_H
 
 #include "mesh_relational_data.hpp"
+#include "stk_util/parallel/DataExchangeKnownPatternNonBlockingBuffer.hpp"
 
 #include <set> //TODO: DEBUGGING
 
@@ -29,13 +30,25 @@ class MiddleGridConstraintGenerator
     void generate();
 
   private:
+    using ExchangerKnown = stk::DataExchangeKnownPatternNonBlockingBuffer<int>;
+
     void create_mesh1_vertices();
+
+    void set_mesh1_vert_shared_entities(ExchangerKnown& exchanger);
 
     void create_mesh2_interior_vertices();
 
     void create_mesh1_edges();
 
+    void set_mesh1_edge_shared_entities(ExchangerKnown& exchanger);
+
     void split_edges();
+
+    void pack_edge_split_shared_info(ExchangerKnown& exchanger,
+          mesh::VariableSizeFieldPtr<int> sharedEntityInfoPtr, mesh::MeshEntityPtr edge1);
+
+    void set_edge_split_shared_entities(ExchangerKnown& exchanger, 
+           mesh::VariableSizeFieldPtr<int> sharedEntityInfoPtr);
 
     void sort_edge_splits(mesh::MeshEntityPtr edge1);
 

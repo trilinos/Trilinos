@@ -9,7 +9,3 @@
 
 /* Define if want to build with KokkosKernels enabled */
 #cmakedefine HAVE_INTREPID2_KOKKOSKERNELS
-
-/* Temporary flag */
-#cmakedefine HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-

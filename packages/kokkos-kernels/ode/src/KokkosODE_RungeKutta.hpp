@@ -17,7 +17,7 @@
 #ifndef KOKKOSODE_RUNGEKUTTA_HPP
 #define KOKKOSODE_RUNGEKUTTA_HPP
 
-/// \author Luc Berger-Vergiat (lberg@sandia.gov)
+/// \author Luc Berger-Vergiat (lberge@sandia.gov)
 /// \file KokkosODE_RungeKutta.hpp
 
 #include "Kokkos_Core.hpp"

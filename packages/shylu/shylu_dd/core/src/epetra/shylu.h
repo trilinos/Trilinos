@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 /** \file shylu.h
-    
+
     \brief Main header file of ShyLU (Include main user calls)
 
     \author Siva Rajamanickam
@@ -50,10 +50,10 @@
 #define SHYLU_H
 
 // Epetra include
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Map.h" 
-#include "Epetra_MultiVector.h" 
-#include "Epetra_LinearProblem.h" 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_LinearProblem.h"
 #include "Epetra_SerialComm.h"
 
 // Amesos includes
@@ -96,14 +96,13 @@
 
 #include <IQRSolver.h>
 
-//#include "shylu_debug_manager.hpp"
 
 #define SHYLU_CORE_MIN(a, b) (((a) < (b)) ? a : b)
 #define SHYLU_CORE_MAX(a, b) (((a) > (b)) ? a : b)
 
 /** \brief Main data structure holding needed offset and temp variables
  *
- * This structur contains ...  
+ * This structur contains ...
  */
 typedef struct
 {
@@ -190,7 +189,7 @@ int shylu_solve(shylu_symbolic *ssym, shylu_data *data, shylu_config *config,
 /** \brief Compute an approximate Schur Complement (Narrow Sep)
  *
  *  Computate an approximate Schur Complement either using ...
- */ 
+ */
 
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     shylu_symbolic *ssym,

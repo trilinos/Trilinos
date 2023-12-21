@@ -20,7 +20,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_nt_u_float_float) {
                                      Trans::NoTranspose, Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_l_nt_n_float_float) {
@@ -28,7 +28,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_nt_n_float_float) {
                                      Trans::NoTranspose, Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_u_float_float) {
@@ -36,7 +36,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_u_float_float) {
                                      Trans::NoTranspose, Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_n_float_float) {
@@ -44,7 +44,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_n_float_float) {
                                      Trans::NoTranspose, Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_u_float_float) {
@@ -52,7 +52,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_u_float_float) {
                                      Trans::NoTranspose, Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_n_float_float) {
@@ -60,7 +60,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_n_float_float) {
                                      Trans::NoTranspose, Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 //
@@ -69,7 +69,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_t_u_float_float) {
                                      Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_l_t_n_float_float) {
@@ -77,7 +77,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_t_n_float_float) {
                                      Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_u_float_float) {
@@ -85,7 +85,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_u_float_float) {
                                      Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_n_float_float) {
@@ -93,7 +93,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_n_float_float) {
                                      Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, float, float, param_tag_type,
+  test_batched_team_trsm<TestDevice, float, float, param_tag_type,
                          algo_tag_type>();
 }
 #endif
@@ -104,7 +104,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_nt_u_double_double) {
                                      Trans::NoTranspose, Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_l_nt_n_double_double) {
@@ -112,7 +112,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_nt_n_double_double) {
                                      Trans::NoTranspose, Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_u_double_double) {
@@ -120,7 +120,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_u_double_double) {
                                      Trans::NoTranspose, Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_n_double_double) {
@@ -128,7 +128,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_nt_n_double_double) {
                                      Trans::NoTranspose, Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_u_double_double) {
@@ -136,7 +136,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_u_double_double) {
                                      Trans::NoTranspose, Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_n_double_double) {
@@ -144,7 +144,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_r_u_nt_n_double_double) {
                                      Trans::NoTranspose, Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 //
@@ -153,7 +153,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_t_u_double_double) {
                                      Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_l_t_n_double_double) {
@@ -161,7 +161,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_l_t_n_double_double) {
                                      Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_u_double_double) {
@@ -169,7 +169,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_u_double_double) {
                                      Diag::Unit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_n_double_double) {
@@ -177,7 +177,7 @@ TEST_F(TestCategory, batched_scalar_team_trsm_l_u_t_n_double_double) {
                                      Diag::NonUnit>
       param_tag_type;
   typedef Algo::Trsm::Blocked algo_tag_type;
-  test_batched_team_trsm<TestExecSpace, double, double, param_tag_type,
+  test_batched_team_trsm<TestDevice, double, double, param_tag_type,
                          algo_tag_type>();
 }
 #endif

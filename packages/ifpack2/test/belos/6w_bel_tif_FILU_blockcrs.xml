@@ -19,6 +19,7 @@
     <Parameter name="triangular solve iterations" type="int" value="2"/>
     <Parameter name="block crs" type="bool" value="true"/>
     <Parameter name="block crs block size" type="int" value="3"/>
+    <Parameter name="fill blocks for input" type="bool" value="true"/>
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="5"/>

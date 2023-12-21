@@ -75,12 +75,13 @@ namespace LOCA {
 
       //! Constructor (internally constructs nox group)
       Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-        const NOX::Thyra::Vector& initial_guess,
-        const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
-        const LOCA::ParameterVector& p,
-        int p_index,
-        bool implement_dfdp = false,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+            const NOX::Thyra::Vector& initial_guess,
+            const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+            const LOCA::ParameterVector& p,
+            int p_index,
+            bool implement_dfdp = false,
+            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
+            const bool set_transient_in_args = true);
 
       //! Constructor for Householder continuation where parameters are in separate param vectors.
       Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -88,7 +89,8 @@ namespace LOCA {
             const LOCA::ParameterVector& p,
             const std::vector<int>& p_index,
             bool implement_dfdp = false,
-            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
+            const bool set_transient_in_args = true);
 
       /*!
        * \brief Copy constructor. If type is DeepCopy, takes ownership of
@@ -275,6 +277,16 @@ namespace LOCA {
 
       // If set to true, each parameter is in a separate model evaluator parameter vector
       bool paramsInSeparatePVecs;
+
+      // If set to true, when evaluating the Jacobian, if transient
+      // in_args are supported, set the values for a steady state
+      // Jacobian. LOCA uses transient in_args for stability analysis
+      // and otherwise normally assumes steady-state. It default sets
+      // transients to make sure the Jacobian is steady-state
+      // (alpha=0, beta=1, x_dot=0). This override was added for using
+      // LOCA bordering algorithms within a Tempus transient loop
+      // where Tempus will set the transient parameters.
+      bool set_transient_in_args_;
 
     private:
 

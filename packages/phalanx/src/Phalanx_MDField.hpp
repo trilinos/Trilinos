@@ -48,6 +48,7 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include "Phalanx_config.hpp"
 #include "Phalanx_any.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
@@ -233,6 +234,45 @@ namespace PHX {
   // MDField
   // ****************************
 
+  /*! A multidimensional array with optional compile time rank tags for self documentation.
+
+    This class currently wraps a Kokkos::View as the underlying data
+    structure for performance portability. It also carries along a
+    field tag with identifier and a data layout for sizing the
+    multidimensional array.
+
+    Design Notes:
+
+    - There are essentially two versions of MDField, a runtime and
+      compile time version that switched based on class template
+      parameters.
+
+    - Tag dispatch is used to switch between the runtime rank and
+      compile time rank implementations. The
+      ViewSpecialization<traits::rank> is the tag. For the runtime
+      rank version, the traits::rank is 0. For the compile time
+      version, the rank is a positive integer greater than zero. Since
+      c++17, we can now use "if consexpr" to replace some of the tag
+      dispatch when appropriate.
+
+    - The private member m_host_data is a pointer to all data that is
+      only accessed on host. This data is not marked with device ctors
+      and generally creates warnings with cuda compilers if a copy
+      constructor for an MDField is called on device. By using a
+      pointer, the warnings are removed and these objects are not
+      created on device.
+
+    - The runtime version has an extra data member in the m_host_data
+      struct. The member is an any object to hold the true static
+      type. The FieldManager always allocates all arrays using the
+      static rank Kokkos::View. This ensures performance when we can
+      use the static view. The runtime versions can always be created
+      from the static versions, but tend to be less performant due to
+      runtime indexing.
+
+    - We can assign runtime and static MDFields to each other. This
+      means that the rank comparison can be a runtime check.
+   */
   template<typename Scalar,typename... Props>
   class MDField
   {
@@ -253,6 +293,25 @@ namespace PHX {
     typedef Scalar value_type;
     typedef Scalar& reference_type;
 
+  private:
+
+    struct HostData {
+      Teuchos::RCP<const PHX::FieldTag> m_tag;
+      PHX::AnyType<traits::rank> m_any_holder; // only used for dynamic rank (empty otherwise)
+    };
+
+    /// Kokkos View or DynRankView of the field
+    array_type m_view;
+
+    /// Host data. Stored as a raw pointer to eliminate warnings in device code for ctors and dtors of member RCPs and PHX::any.
+    HostData* m_host_data;
+
+#ifdef PHX_DEBUG
+    /// Debug flag that only exists if phalanx debug configure flag is set to true.
+    bool m_data_set;
+#endif
+
+  public:
 
     /// ONLY USE THIS CTOR FOR UNMANAGED FIELDS!!!! It will allocate memory unassociated with the DAG!
     template<typename...Extents>
@@ -262,49 +321,111 @@ namespace PHX {
       , m_data_set(true)
 #endif
     {
+      m_host_data = new HostData;
       Teuchos::RCP<PHX::Layout> layout = Teuchos::rcp(new PHX::Layout(layout_name,e...));
-      m_tag = Teuchos::rcp(new PHX::Tag<value_type>(name,layout));
+      m_host_data->m_tag = Teuchos::rcp(new PHX::Tag<value_type>(name,layout));
+
+      if constexpr (traits::rank==0) {
+        m_host_data->m_any_holder.set(PHX::any(m_view));
+      }
     }
 
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl)
 #ifdef PHX_DEBUG
       : m_data_set(false)
 #endif
-    {m_tag = Teuchos::rcp(new PHX::Tag<Scalar>(name,dl));}
+    {
+      m_host_data = new HostData;
+      m_host_data->m_tag = Teuchos::rcp(new PHX::Tag<Scalar>(name,dl));
+    }
 
     MDField(const PHX::FieldTag& t)
-      : m_tag(t.clone())
 #ifdef PHX_DEBUG
-      , m_data_set(false)
+      : m_data_set(false)
 #endif
-    {}
+    {
+      m_host_data = new HostData;
+      m_host_data->m_tag = t.clone();
+    }
 
     MDField(const Teuchos::RCP<const PHX::FieldTag>& t)
-      : m_tag(t)
 #ifdef PHX_DEBUG
-      , m_data_set(false)
+      : m_data_set(false)
 #endif
-    {}
+    {
+      m_host_data = new HostData;
+      m_host_data->m_tag = t;
+    }
 
+    /// Default empty constructor
     MDField()
 #ifdef PHX_DEBUG
       : m_data_set(false)
 #endif
-    {}
+    {m_host_data = new HostData;}
 
+    /// Copy ctor
+    KOKKOS_FUNCTION
+    MDField(const MDField& source)
+      : m_view(source.m_view),
+        m_host_data(nullptr)
+#ifdef PHX_DEBUG
+      , m_data_set(source.m_data_set)
+#endif
+    {
+      // Do not create host data if on device
+      KOKKOS_IF_ON_HOST( m_host_data = new HostData; )
+      KOKKOS_IF_ON_HOST( m_host_data->m_tag = source.m_host_data->m_tag; )
+      KOKKOS_IF_ON_HOST( m_host_data->m_any_holder.set(source.get_static_view_as_any()); )
+    }
+
+    /** \brief Templated copy ctor
+
+        The templated version allows for different extra template
+        parameters/dimension tags. For example, one evaluator could a
+        use "Point" dim tag and be copied to an evaluator that uses a
+        "QuadraturePoint" dim tag for the same field in a different
+        evaluator. Another example is for assigning a compiletime
+        MDFields to runtime MDFields and vice versa. Examples:
+
+        MDField<double,Cell,Point> a("a",data_layout);
+        a.setFieldData(memory);
+        MDField<double,Cell,QuadPoint> b;
+        b = a;
+
+        MDField<double> c; // dynamic rank
+        c = a;
+
+        Another example could be for atomic access flags.
+    */
     template<typename SourceScalar,typename...SourceProps>
+    KOKKOS_FUNCTION
     MDField(const MDField<SourceScalar,SourceProps...>& source)
-      : m_tag(source.m_tag),
-        m_view(source.m_view)
+      : m_view(source.m_view),
+        m_host_data(nullptr)
 #ifdef PHX_DEBUG
       , m_data_set(source.m_data_set)
 #endif
     {
       static_assert(std::is_same<typename std::decay<Scalar>::type, typename std::decay<SourceScalar>::type>::value,
                     "ERROR: Compiletime MDField copy ctor requires scalar types to be the same!");
+
+      // Do not create host data if on device
+      KOKKOS_IF_ON_HOST( m_host_data = new HostData; )
+      KOKKOS_IF_ON_HOST( m_host_data->m_tag = source.m_host_data->m_tag; )
+      KOKKOS_IF_ON_HOST( m_host_data->m_any_holder.set(source.get_static_view_as_any()); )
     }
 
-    ~MDField() {}
+    KOKKOS_FUNCTION
+    ~MDField()
+    {
+      // Only delete if on host (will not ba allocated on device)
+      KOKKOS_IF_ON_HOST( delete m_host_data; )
+#ifdef PHX_DEBUG
+      // Should not be needed, but helps in debug builds to catch ctor issues
+      KOKKOS_IF_ON_HOST( m_host_data = nullptr; )
+#endif
+    }
 
     constexpr bool is_static() const {return (traits::rank != 0);}
     constexpr bool is_dynamic() const {return (traits::rank == 0);}
@@ -320,26 +441,40 @@ namespace PHX {
 
     const PHX::FieldTag& fieldTag() const
     {
-#if defined( PHX_DEBUG)
-      TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
+#if defined(PHX_DEBUG)
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data == nullptr, std::runtime_error, hostDataErrorMsg());
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data->m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
 #endif
-      return *m_tag;
+      return *(m_host_data->m_tag);
     }
 
     Teuchos::RCP<const PHX::FieldTag> fieldTagPtr() const
     {
-#if defined( PHX_DEBUG)
-      TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
+#if defined(PHX_DEBUG)
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data->m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
 #endif
-      return m_tag;
+      return m_host_data->m_tag;
+    }
+
+    PHX::MDField<Scalar,Props...>&
+    operator=(const MDField<Scalar,Props...>& source)
+    {
+      m_view = source.m_view;
+      m_host_data->m_tag = source.m_host_data->m_tag;
+      m_host_data->m_any_holder.set(source.get_static_view_as_any());
+#ifdef PHX_DEBUG
+      m_data_set = source.m_data_set;
+#endif
+      return *this;
     }
 
     template<typename SrcScalar,typename...SrcProps>
     PHX::MDField<Scalar,Props...>&
     operator=(const MDField<SrcScalar,SrcProps...>& source)
     {
-      m_tag = source.m_tag;
       m_view = source.m_view;
+      m_host_data->m_tag = source.m_host_data->m_tag;
+      m_host_data->m_any_holder.set(source.get_static_view_as_any());
 #ifdef PHX_DEBUG
       m_data_set = source.m_data_set;
 #endif
@@ -428,10 +563,10 @@ namespace PHX {
     {return m_view.extent(ord);}
 
     void setFieldTag(const PHX::FieldTag& t)
-    {m_tag = t.clone();}
+    {m_host_data->m_tag = t.clone();}
 
     void setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t)
-    {m_tag = t;}
+    {m_host_data->m_tag = t;}
 
     void setFieldData(const PHX::any& a)
     {setFieldData(ViewSpecialization<traits::rank>(),a);}
@@ -450,7 +585,7 @@ namespace PHX {
     void dimensions(std::vector<iType>& dims)
     {
 #if defined( PHX_DEBUG)
-      TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data->m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       dims.resize(this->rank());
@@ -486,7 +621,7 @@ namespace PHX {
     void deep_copy(const Scalar& source)
     {Kokkos::deep_copy(m_view, source);}
 
-    PHX::any get_static_view_as_any()
+    PHX::any get_static_view_as_any() const
     {return get_static_view_as_any(ViewSpecialization<traits::rank>());}
 
     /// Resets the underlying view ptr to null.
@@ -504,8 +639,9 @@ namespace PHX {
 
     template<int R> void setFieldData(ViewSpecialization<R>,const PHX::any& a)
     {
-#if defined( PHX_DEBUG)
-      TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
+#if defined(PHX_DEBUG)
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data == nullptr, std::logic_error, hostDataErrorMsg());
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data->m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif
 
@@ -529,28 +665,29 @@ namespace PHX {
 
     void setFieldData(ViewSpecialization<0>,const PHX::any& a)
     {
-#if defined( PHX_DEBUG)
-      TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
+#if defined(PHX_DEBUG)
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data == nullptr, std::logic_error, hostDataErrorMsg());
+      TEUCHOS_TEST_FOR_EXCEPTION(m_host_data->m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif
 
-      m_any_holder.set(a);
+      m_host_data->m_any_holder.set(a);
 
       using NonConstDataT = typename std::remove_const<Scalar>::type;
       try {
-        if (m_tag->dataLayout().rank() == 1)
+        if (m_host_data->m_tag->dataLayout().rank() == 1)
           m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*,layout_type,device_type>>(a);
-        else if (m_tag->dataLayout().rank() == 2)
+        else if (m_host_data->m_tag->dataLayout().rank() == 2)
           m_view =  PHX::any_cast<Kokkos::View<NonConstDataT**,layout_type,device_type>>(a);
-        else if (m_tag->dataLayout().rank() == 3)
+        else if (m_host_data->m_tag->dataLayout().rank() == 3)
           m_view =  PHX::any_cast<Kokkos::View<NonConstDataT***,layout_type,device_type>>(a);
-        else if (m_tag->dataLayout().rank() == 4)
+        else if (m_host_data->m_tag->dataLayout().rank() == 4)
           m_view =  PHX::any_cast<Kokkos::View<NonConstDataT****,layout_type,device_type>>(a);
-        else if (m_tag->dataLayout().rank() == 5)
+        else if (m_host_data->m_tag->dataLayout().rank() == 5)
           m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*****,layout_type,device_type>>(a);
-        else if (m_tag->dataLayout().rank() == 6)
+        else if (m_host_data->m_tag->dataLayout().rank() == 6)
           m_view =  PHX::any_cast<Kokkos::View<NonConstDataT******,layout_type,device_type>>(a);
-        else if (m_tag->dataLayout().rank() == 7)
+        else if (m_host_data->m_tag->dataLayout().rank() == 7)
           m_view =  PHX::any_cast<Kokkos::View<NonConstDataT*******,layout_type,device_type>>(a);
         else {
           throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
@@ -598,8 +735,8 @@ namespace PHX {
       }
       os << "): ";
 
-      if (nonnull(m_tag))
-        os << *m_tag;
+      if (nonnull(m_host_data->m_tag))
+        os << *(m_host_data->m_tag);
 
       if (printValues)
         os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please discontinue the use of this call!" << std::endl;
@@ -608,27 +745,30 @@ namespace PHX {
     void print(ViewSpecialization<0>, std::ostream& os, bool printValues) const
     {
       os << "MDField(";
-      for (size_type i=0; i < m_tag->dataLayout().rank(); ++i) {
+      for (size_type i=0; i < m_host_data->m_tag->dataLayout().rank(); ++i) {
         if (i > 0)
           os << ",";
-        os << m_tag->dataLayout().dimension(i);
+        os << m_host_data->m_tag->dataLayout().dimension(i);
       }
       os << "): ";
 
-      if (nonnull(m_tag))
-        os << *m_tag;
+      if (nonnull(m_host_data->m_tag))
+        os << *(m_host_data->m_tag);
 
       if (printValues)
         os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please discontinue the use of this call!" << std::endl;
     }
 
-    template<int R> PHX::any get_static_view_as_any(ViewSpecialization<R>)
+    template<int R> PHX::any get_static_view_as_any(ViewSpecialization<R>) const
     {return PHX::any(m_view);}
 
-    PHX::any get_static_view_as_any(ViewSpecialization<0>)
-    {return m_any_holder.get();}
+    PHX::any get_static_view_as_any(ViewSpecialization<0>) const
+    {return m_host_data->m_any_holder.get();}
 
 #ifdef PHX_DEBUG
+    std::string hostDataErrorMsg() const
+    {return "Error - PHX::MDField - m_host_data is null!";}
+
     std::string fieldTagErrorMsg() const
     {return "Error - PHX::MDField - No tag has been set!";}
 
@@ -637,12 +777,6 @@ namespace PHX {
 #endif
 
   private:
-    Teuchos::RCP<const PHX::FieldTag> m_tag;
-    array_type m_view;
-    PHX::AnyType<traits::rank> m_any_holder; // only used for dynamic rank (empty otherwise)
-#ifdef PHX_DEBUG
-    bool m_data_set;
-#endif
 
     template<typename FScalar,typename...FProps> friend class PHX::MDField;
   };

@@ -31,6 +31,8 @@
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data
 #include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
+#include "stk_util/util/SortAndUnique.hpp"
+#include "stk_util/parallel/ParallelReduce.hpp"
 
 namespace stk { namespace mesh { class Part; } }
 // clang-format on
@@ -43,6 +45,7 @@ namespace unit_test_util
 using Topology = StkTopologyMapEntry;
 using TextMeshData = text_mesh::TextMeshData<stk::mesh::EntityId, StkTopologyMapEntry>;
 using ElementData = text_mesh::ElementData<stk::mesh::EntityId, StkTopologyMapEntry>;
+using ElementDataLess = text_mesh::ElementDataLess<stk::mesh::EntityId, StkTopologyMapEntry>;
 using SidesetData = text_mesh::SidesetData<stk::mesh::EntityId, StkTopologyMapEntry>;
 using NodesetData = text_mesh::NodesetData<stk::mesh::EntityId>;
 using AssemblyData = text_mesh::AssemblyData;
@@ -56,8 +59,8 @@ using AssemblyType = text_mesh::AssemblyType;
 class MetaDataInitializer
 {
 public:
-  MetaDataInitializer(const TextMeshData& d, stk::mesh::MetaData& m)
-    : m_data(d), m_meta(m)
+  MetaDataInitializer(const StkTopologyMapping& t, const TextMeshData& d, stk::mesh::MetaData& m)
+    : m_topologyMapping(t), m_data(d), m_meta(m)
   { }
 
   void setup()
@@ -187,14 +190,94 @@ private:
 
  void declare_sideblock_part(stk::mesh::Part& sidesetPart, const SideBlockInfo& sideBlock)
  {
-   stk::mesh::Part& sideBlockPart = m_meta.declare_part(sideBlock.name, m_meta.side_rank());
+   stk::topology sideTopology = m_topologyMapping.topology(sideBlock.sideTopology).topology;
 
-   stk::io::put_io_part_attribute(sideBlockPart);
-   m_meta.set_part_id(sideBlockPart, sidesetPart.id());
+   stk::mesh::Part* sideBlockPart = nullptr;
 
-   if (sidesetPart.mesh_meta_data_ordinal() != sideBlockPart.mesh_meta_data_ordinal()) {
-     m_meta.declare_part_subset(sidesetPart, sideBlockPart);
+   if(stk::topology::INVALID_TOPOLOGY == sideTopology) {
+     sideBlockPart = &m_meta.declare_part(sideBlock.name, m_meta.side_rank());
+   } else {
+     sideBlockPart = &m_meta.declare_part_with_topology(sideBlock.name, sideTopology);
    }
+
+   STK_ThrowRequire(nullptr != sideBlockPart);
+   stk::io::put_io_part_attribute(*sideBlockPart);
+   m_meta.set_part_id(*sideBlockPart, sidesetPart.id());
+
+   if (sidesetPart.mesh_meta_data_ordinal() != sideBlockPart->mesh_meta_data_ordinal()) {
+     m_meta.declare_part_subset(sidesetPart, *sideBlockPart);
+   }
+ }
+
+ void compute_block_membership(const SidesetData& sidesetData, const SideBlockInfo& sideBlock,
+                               std::vector<const stk::mesh::Part*>& sideBlockTouchingBlockParts)
+ {
+   std::vector<int> l_blockIndex(m_data.partIds.size(), 0);
+   std::vector<int> g_blockIndex(m_data.partIds.size(), 0);
+
+   if (l_blockIndex.size() == 1) {
+     l_blockIndex[0] = 1;
+   } else {
+     std::vector<std::string> partNames = m_data.partIds.get_part_names_sorted_by_id();
+     std::sort(partNames.begin(), partNames.end());
+     stk::mesh::BulkData& bulk = m_meta.mesh_bulk_data();
+
+     std::vector<size_t> sideIndices = sidesetData.get_sideblock_indices_local_to_proc(sideBlock, bulk.parallel_rank());
+     for (size_t sideIndex : sideIndices) {
+       stk::mesh::EntityId elemId = sidesetData.data[sideIndex].first;
+       auto elemIter = text_mesh::bound_search(m_data.elementDataVec.begin(), m_data.elementDataVec.end(), elemId, ElementDataLess());
+       STK_ThrowRequire(elemIter != m_data.elementDataVec.end());
+
+       std::string partName = elemIter->partName;
+
+       auto partNameIter = text_mesh::bound_search(partNames.begin(), partNames.end(), partName);
+       STK_ThrowRequire(partNameIter != partNames.end());
+
+       unsigned index = std::distance(partNames.begin(), partNameIter);
+       STK_ThrowRequire(index < m_data.partIds.size());
+
+       l_blockIndex[index] = 1;
+     }
+
+     stk::all_reduce_max(bulk.parallel(), l_blockIndex.data(), g_blockIndex.data(), l_blockIndex.size());
+
+     for(unsigned i=0; i<g_blockIndex.size(); i++) {
+       if(g_blockIndex[i] == 1) {
+         stk::mesh::Part* part = m_meta.get_part(partNames[i]);
+         STK_ThrowRequire(nullptr != part);
+         sideBlockTouchingBlockParts.push_back(part);
+       }
+     }
+   }
+ }
+
+ void setup_surface_to_block_mapping(const SidesetData& sidesetData)
+ {
+   stk::mesh::Part* sidesetPart = m_meta.get_part(sidesetData.name);
+   STK_ThrowRequire(nullptr != sidesetPart);
+
+   std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
+
+   std::vector<const stk::mesh::Part*> touchingBlockParts;
+
+   for (const auto& sideBlock : sideBlocks) {
+     stk::mesh::Part* sideBlockPart = m_meta.get_part(sideBlock.name);
+     std::vector<const stk::mesh::Part*> sideBlockTouchingBlockParts;
+
+     if(!sideBlock.touchingBlock.empty()) {
+       const stk::mesh::Part* touchingBlockPart = m_meta.get_part(sideBlock.touchingBlock);
+       STK_ThrowRequire(nullptr != touchingBlockPart);
+       sideBlockTouchingBlockParts.push_back(touchingBlockPart);
+     } else {
+       compute_block_membership(sidesetData, sideBlock, sideBlockTouchingBlockParts);
+     }
+
+     std::sort(sideBlockTouchingBlockParts.begin(), sideBlockTouchingBlockParts.end(), stk::mesh::PartLess());
+     stk::util::insert_keep_sorted_and_unique(sideBlockTouchingBlockParts, touchingBlockParts, stk::mesh::PartLess());
+     m_meta.set_surface_to_block_mapping(sideBlockPart, sideBlockTouchingBlockParts);
+   }
+
+   m_meta.set_surface_to_block_mapping(sidesetPart, touchingBlockParts);
  }
 
  void declare_sideset_part(const SidesetData& sidesetData)
@@ -217,6 +300,7 @@ private:
  {
    for (const SidesetData& sidesetData : m_data.sidesets.get_group_data()) {
      declare_sideset_part(sidesetData);
+     setup_surface_to_block_mapping(sidesetData);
    }
  }
 
@@ -281,6 +365,7 @@ private:
     stk::io::set_field_output_type(coordsField, stk::io::FieldOutputType::VECTOR_3D);
   }
 
+  const StkTopologyMapping &m_topologyMapping;
   const TextMeshData& m_data;
   stk::mesh::MetaData& m_meta;
 };
@@ -501,12 +586,13 @@ public:
       m_parser(m_meta.spatial_dimension())
   {
     validate_spatial_dim(m_meta.spatial_dimension());
+    m_topologyMapping.initialize_topology_map();
     m_data = m_parser.parse(meshDesc);
   }
 
   void setup_mesh()
   {
-    MetaDataInitializer metaInit(m_data, m_meta);
+    MetaDataInitializer metaInit(m_topologyMapping, m_data, m_meta);
     metaInit.setup();
 
     BulkDataInitializer bulkInit(m_data, m_bulk);
@@ -527,6 +613,7 @@ private:
 
   TextMeshParser m_parser;
   TextMeshData m_data;
+  StkTopologyMapping m_topologyMapping;
 };
 
 std::string get_full_text_mesh_desc(const std::string& textMeshDesc, const std::vector<double>& coordVec)

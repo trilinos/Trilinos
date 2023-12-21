@@ -89,6 +89,23 @@ LinMoreAlgorithm<Real>::LinMoreAlgorithm(ParameterList &list,
   qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",                1e-8);
   interpfPS_ = lmlist.sublist("Projected Search").get("Backtracking Rate",             0.5);
   pslim_     = lmlist.sublist("Projected Search").get("Maximum Number of Steps",       20);
+  // Inexactness Information
+  ParameterList &glist = list.sublist("General");
+  useInexact_.clear();
+  useInexact_.push_back(glist.get("Inexact Objective Function",     false));
+  useInexact_.push_back(glist.get("Inexact Gradient",               false));
+  useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
+  // Trust-Region Inexactness Parameters
+  ParameterList &ilist = trlist.sublist("Inexact").sublist("Gradient");
+  scale0_ = ilist.get("Tolerance Scaling",  static_cast<Real>(0.1));
+  scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
+  // Inexact Function Evaluation Information
+  ParameterList &vlist = trlist.sublist("Inexact").sublist("Value");
+  scale_       = vlist.get("Tolerance Scaling",                 static_cast<Real>(1.e-1));
+  omega_       = vlist.get("Exponent",                          static_cast<Real>(0.9));
+  force_       = vlist.get("Forcing Sequence Initial Value",    static_cast<Real>(1.0));
+  updateIter_  = vlist.get("Forcing Sequence Update Frequency", static_cast<int>(10));
+  forceFactor_ = vlist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
   // Output Parameters
   verbosity_   = list.sublist("General").get("Output Level",0);
   writeHeader_ = verbosity_ > 2;
@@ -111,7 +128,7 @@ void LinMoreAlgorithm<Real>::initialize(Vector<Real>          &x,
                                         Objective<Real>       &obj,
                                         BoundConstraint<Real> &bnd,
                                         std::ostream &outStream) {
-  const Real one(1);
+  //const Real one(1);
   hasEcon_ = true;
   if (proj_ == nullPtr) {
     proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
@@ -127,22 +144,20 @@ void LinMoreAlgorithm<Real>::initialize(Vector<Real>          &x,
   obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
-  obj.gradient(*state_->gradientVec,x,ftol);
+  //obj.gradient(*state_->gradientVec,x,ftol);
+  computeGradient(x,*state_->gradientVec,*state_->stepVec,state_->searchSize,obj,true,gtol_,state_->gnorm,outStream);
   state_->ngrad++;
-  state_->stepVec->set(x);
-  state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec,outStream); state_->nproj++;
-  state_->stepVec->axpy(-one,x);
-  state_->gnorm = state_->stepVec->norm();
+  //state_->stepVec->set(x);
+  //state_->stepVec->axpy(-one,state_->gradientVec->dual());
+  //proj_->project(*state_->stepVec,outStream); state_->nproj++;
+  //state_->stepVec->axpy(-one,x);
+  //state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
   // Normalize initial CP step length
-  if (normAlpha_) {
-    alpha_ /= state_->gradientVec->norm();
-  }
+  if (normAlpha_) alpha_ /= state_->gradientVec->norm();
   // Compute initial trust region radius if desired.
-  if ( state_->searchSize <= static_cast<Real>(0) ) {
+  if ( state_->searchSize <= static_cast<Real>(0) )
     state_->searchSize = state_->gradientVec->norm();
-  }
   // Initialize null space projection
   if (hasEcon_) {
     rcon_ = makePtr<ReducedLinearConstraint<Real>>(proj_->getLinearConstraint(),
@@ -154,6 +169,114 @@ void LinMoreAlgorithm<Real>::initialize(Vector<Real>          &x,
 }
 
 template<typename Real>
+Real LinMoreAlgorithm<Real>::computeValue(Real inTol,
+                                          Real &outTol,
+                                          Real pRed,
+                                          Real &fold,
+                                          int iter,
+                                          const Vector<Real> &x,
+                                          const Vector<Real> &xold,
+                                          Objective<Real> &obj) {
+  outTol = std::sqrt(ROL_EPSILON<Real>());
+  if ( useInexact_[0] ) {
+    if (!(iter%updateIter_) && (iter!=0)) force_ *= forceFactor_;
+    const Real one(1);
+    Real eta = static_cast<Real>(0.999)*std::min(eta1_,one-eta2_);
+    outTol   = scale_*std::pow(eta*std::min(pRed,force_),one/omega_);
+    if (inTol > outTol) fold = obj.value(xold,outTol);
+  }
+  // Evaluate objective function at new iterate
+  obj.update(x,UpdateType::Trial);
+  Real fval = obj.value(x,outTol);
+  return fval;
+}
+
+template<typename Real>
+void LinMoreAlgorithm<Real>::computeGradient(const Vector<Real> &x,
+                                             Vector<Real> &g,
+                                             Vector<Real> &pwa,
+                                             Real del,
+                                             Objective<Real> &obj,
+                                             bool accept,
+                                             Real &gtol,
+                                             Real &gnorm,
+                                             std::ostream &outStream) const {
+  if ( useInexact_[1] ) {
+    const Real one(1);
+    Real gtol0 = scale0_*del;
+    if (accept) gtol  = gtol0 + one;
+    else        gtol0 = scale0_*std::min(gnorm,del);
+    while ( gtol > gtol0 ) {
+      gtol = gtol0;
+      obj.gradient(g,x,gtol);
+      gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,g,pwa,outStream);
+      gtol0 = scale0_*std::min(gnorm,del);
+    }
+  }
+  else {
+    if (accept) {
+      gtol = std::sqrt(ROL_EPSILON<Real>());
+      obj.gradient(g,x,gtol);
+      gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,g,pwa,outStream);
+    }
+  }
+}
+
+//template<typename Real>
+//Real LinMoreAlgorithm<Real>::computeValue(Real inTol,
+//                                                 Real &outTol,
+//                                                 Real pRed,
+//                                                 Real &fold,
+//                                                 int iter,
+//                                                 const Vector<Real> &x,
+//                                                 const Vector<Real> &xold,
+//                                                 Objective<Real> &obj) {
+//  outTol = std::sqrt(ROL_EPSILON<Real>());
+//  if ( useInexact_[0] ) {
+//    if (!(iter%updateIter_) && (iter!=0)) force_ *= forceFactor_;
+//    const Real one(1);
+//    Real eta = static_cast<Real>(0.999)*std::min(eta1_,one-eta2_);
+//    outTol   = scale_*std::pow(eta*std::min(pRed,force_),one/omega_);
+//    if (inTol > outTol) fold = obj.value(xold,outTol);
+//  }
+//  // Evaluate objective function at new iterate
+//  obj.update(x,UpdateType::Trial);
+//  Real fval = obj.value(x,outTol);
+//  return fval;
+//}
+//
+//template<typename Real>
+//void LinMoreAlgorithm<Real>::computeGradient(const Vector<Real> &x,
+//                                                    Vector<Real> &g,
+//                                                    Vector<Real> &pwa,
+//                                                    Real del,
+//                                                    Objective<Real> &obj,
+//                                                    bool accept,
+//                                                    Real &gtol,
+//                                                    Real &gnorm,
+//                                                    std::ostream &outStream) const {
+//  if ( useInexact_[1] ) {
+//    const Real one(1);
+//    Real gtol0 = scale0_*del;
+//    if (accept) gtol  = gtol0 + one;
+//    else        gtol0 = scale0_*std::min(gnorm,del);
+//    while ( gtol > gtol0 ) {
+//      gtol = gtol0;
+//      obj.gradient(g,x,gtol);
+//      gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,g,pwa,outStream);
+//      gtol0 = scale0_*std::min(gnorm,del);
+//    }
+//  }
+//  else {
+//    if (accept) {
+//      gtol = std::sqrt(ROL_EPSILON<Real>());
+//      obj.gradient(g,x,gtol);
+//      gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,g,pwa,outStream);
+//    }
+//  }
+//}
+
+template<typename Real>
 void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
                                  const Vector<Real>    &g, 
                                  Objective<Real>       &obj,
@@ -161,6 +284,7 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
                                  std::ostream          &outStream ) {
   const Real zero(0);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
+  Real inTol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(), outTol(inTol);
   Real gfnorm(0), gfnormf(0), tol(0), stol(0), snorm(0);
   Real ftrial(0), pRed(0), rho(1), q(0), delta(0);
   int flagCG(0), iterCG(0), maxit(0);
@@ -181,7 +305,7 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
 
   while (status_->check(*state_)) {
     // Build trust-region model
-    model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
+    model_->setData(obj,*state_->iterateVec,*state_->gradientVec,gtol_);
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     // Compute Cauchy point (TRON notation: x = x[1])
@@ -289,8 +413,9 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
     }
 
     // Compute trial objective value
-    obj.update(x,UpdateType::Trial);
-    ftrial = obj.value(x,tol0);
+    //obj.update(x,UpdateType::Trial);
+    //ftrial = obj.value(x,tol0);
+    ftrial = computeValue(inTol,outTol,pRed,state_->value,state_->iter,x,*state_->iterateVec,obj);
     state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
@@ -317,6 +442,7 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
       else { // Shrink trust-region radius
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }
+      computeGradient(x,*state_->gradientVec,*pwa1,state_->searchSize,obj,false,gtol_,state_->gnorm,outStream);
     }
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
@@ -335,9 +461,10 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       dwa1->set(*state_->gradientVec);
-      obj.gradient(*state_->gradientVec,x,tol0);
+      //obj.gradient(*state_->gradientVec,x,tol0);
+      computeGradient(x,*state_->gradientVec,*pwa1,state_->searchSize,obj,true,gtol_,state_->gnorm,outStream);
       state_->ngrad++;
-      state_->gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
+      //state_->gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
       state_->iterateVec->set(x);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,

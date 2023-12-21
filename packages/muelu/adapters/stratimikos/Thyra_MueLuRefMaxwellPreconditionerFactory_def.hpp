@@ -158,7 +158,17 @@ namespace Thyra {
     if (startingOver == true) {
 
       // Convert to Xpetra
-      std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "M1", "Ms", "D0", "M0inv"};
+      std::list<std::string> convertMat = {
+        "Dk_1", "Dk_2", "D0",
+        "Mk_one", "Mk_1_one", "M1_beta", "M1_alpha",
+        "invMk_1_invBeta", "invMk_2_invAlpha",
+        // for backwards compatibility
+         "M1", "Ms", "M0inv"
+      };
+      std::list<std::string> convertMV = {"Coordinates", "Nullspace"};
+      std::list<std::string> convertXpetra;
+      convertXpetra.insert(convertXpetra.end(), convertMV.begin(), convertMV.end());
+      convertXpetra.insert(convertXpetra.end(), convertMat.begin(), convertMat.end());
       for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
         Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
 
@@ -180,7 +190,6 @@ namespace Thyra {
           RCP<XphMV> halfNullspace = Xpetra::convertToHalfPrecision(nullspace);
           paramList.set("Nullspace",halfNullspace);
         }
-        std::list<std::string> convertMat = {"M1", "Ms", "D0", "M0inv"};
         for (auto it = convertMat.begin(); it != convertMat.end(); ++it) {
           if (paramList.isType<RCP<XpMat> >(*it)) {
             RCP<XpMat> M = paramList.get<RCP<XpMat> >(*it);

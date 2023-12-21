@@ -168,6 +168,10 @@ namespace stk {
       stk::mesh::Selector get_active_selector() const;
       void set_active_selector(stk::mesh::Selector my_selector);
 
+      // Override the default MeshBuilder if you need to have a custom STK Mesh
+      // auto-generated internally.
+      void set_mesh_builder(std::shared_ptr<stk::mesh::MeshBuilder> meshBuilder);
+
       // Set bulk data directly with your own bulk data. If this is
       // not called prior to the populate_bulk_data() call, it will be
       // created automatically using the communicator of the m_input_region.
@@ -742,6 +746,7 @@ namespace stk {
       stk::ParallelMachine m_communicator;
       std::vector<std::string>       m_rankNames; // Optional rank name vector.
 
+      std::shared_ptr<stk::mesh::MeshBuilder> m_meshBuilder;
       std::shared_ptr<stk::mesh::MetaData>  m_metaData;
       std::shared_ptr<stk::mesh::BulkData>  m_bulkData;
 

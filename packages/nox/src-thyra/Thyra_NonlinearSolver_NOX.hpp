@@ -54,6 +54,9 @@
 
 namespace NOX {
   class SolverManager;
+  namespace Abstract {
+    class Group;
+  }
   namespace Thyra {
     class Group;
   }
@@ -151,7 +154,7 @@ public:
 
       \param[in] group The nox group with the initial guess
    */
-  void setGroup(const Teuchos::RCP<NOX::Thyra::Group>& group);
+  void setGroup(const Teuchos::RCP<NOX::Abstract::Group>& group);
 
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
 
@@ -173,6 +176,22 @@ private:
   */
   void setupRowSumScalingObjects();
 
+  // Returns the underlying NOX::Thyra::Group. First tries to dynamic
+  // cast the group input param to a thyra group. If that fails, it
+  // will try to pull out a nested group and recursively call this
+  // function to eventually get a thyra group. This is needed when we
+  // use groups that use a nesting approach as opposed to inheritance
+  // (LOCA does this alot).
+  Teuchos::RCP<NOX::Thyra::Group> getThyraGroupNonConst(const Teuchos::RCP<NOX::Abstract::Group>& group);
+
+  // Returns the underlying NOX::Thyra::Group. First tries to dynamic
+  // cast the group input param to a thyra group. If that fails, it
+  // will try to pull out a nested group and recursively call this
+  // function to eventually get a thyra group. This is needed when we
+  // use groups that use a nesting approach as opposed to inheritance
+  // (LOCA does this alot).
+  Teuchos::RCP<const NOX::Thyra::Group> getThyraGroupConst(const Teuchos::RCP<const NOX::Abstract::Group>& group) const;
+
 private:
 
   RCP<Teuchos::ParameterList> param_list_;
@@ -180,7 +199,11 @@ private:
   RCP<const ModelEvaluator<double> > model_;
   ModelEvaluatorBase::InArgs<double> basePoint_;
 
-  RCP<NOX::Thyra::Group> nox_group_;
+  //! Note that this is not a thyra group. To support loca groups that
+  //! use nesting, the nox_group is the base class. When we need the
+  //! underlying Thyra group, the getThyraGroup calls can pull out the
+  //! nested group.
+  RCP<NOX::Abstract::Group> nox_group_;
   RCP<NOX::StatusTest::Generic> status_test_;
   RCP<NOX::Solver::Generic> solver_;
 
@@ -199,7 +222,9 @@ private:
   Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>> precFactory_;
   bool updatePreconditioner_;
 
-  RCP<NOX::Thyra::Group> user_defined_nox_group_;
+  RCP<NOX::Abstract::Group> user_defined_nox_group_;
+
+  bool use_base_point_;
 };
 
 

@@ -155,6 +155,7 @@ auto get_local_crs_row_matrix(
 template<class MatrixType>
 MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
+    Verbosity_(0),
     LevelOfFill_ (0),
     Overalloc_ (2.),
     isAllocated_ (false),
@@ -175,6 +176,7 @@ MDF<MatrixType>::MDF (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
 template<class MatrixType>
 MDF<MatrixType>::MDF (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
   : A_ (Matrix_in),
+    Verbosity_(0),
     LevelOfFill_ (0),
     Overalloc_ (2.),
     isAllocated_ (false),
@@ -472,9 +474,6 @@ void MDF<MatrixType>::initialize ()
   using Teuchos::rcp_implicit_cast;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  typedef Tpetra::CrsGraph<local_ordinal_type,
-                           global_ordinal_type,
-                           node_type> crs_graph_type;
   const char prefix[] = "Ifpack2::MDF::initialize: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION

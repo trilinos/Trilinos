@@ -106,8 +106,6 @@
 #include <random>
 #include <algorithm>
 
-#define Intrepid2_Experimental
-
 namespace Discretization {
 
 namespace Example {
@@ -169,13 +167,8 @@ int feProjection(int argc, char *argv[]) {
 
   using ct = Intrepid2::CellTools<DeviceSpaceType>;
   using ots = Intrepid2::OrientationTools<DeviceSpaceType>;
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using pts = Intrepid2::Experimental::ProjectionTools<DeviceSpaceType>;
-  using ProjectionStruct = Intrepid2::Experimental::ProjectionStruct<DeviceSpaceType,scalar_t>;
-#else
   using pts = Intrepid2::ProjectionTools<DeviceSpaceType>;
   using ProjectionStruct = Intrepid2::ProjectionStruct<DeviceSpaceType,scalar_t>;
-#endif
   using rst = Intrepid2::RealSpaceTools<DeviceSpaceType>;
   using fst = Intrepid2::FunctionSpaceTools<DeviceSpaceType>;
 

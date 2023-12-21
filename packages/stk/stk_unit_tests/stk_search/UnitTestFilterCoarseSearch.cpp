@@ -165,10 +165,12 @@ TEST_F(SearchFilterTester, checkEarlyGeometricMatch)
   // mix of points within and out of parametric and geo tol
   add_coarse_results({ 2.5, 1.1, 2.0, 0.5 }, { 2.0, 0.2, 2.5, 0.0 });
 
+  auto extrapolateOption = stk::search::ObjectOutsideDomainPolicy::ABORT;
+
   stk::search::impl::FilterCoarseSearchStats stats = stk::search::impl::filter_coarse_search_by_range(coarse_results,
                                                                                                       sendMesh, recvMesh,
                                                                                                       false, false,
-                                                                                                      sendMesh.get_extrapolate_option(),
+                                                                                                      extrapolateOption,
                                                                                                       filteredSearchResults);
 
   EXPECT_EQ(1u, stats.numEntitiesWithinTolerance);
@@ -189,10 +191,12 @@ TEST_F(SearchFilterTester, checkAllGeometric)
   // all points outside parametric tol - pick closest geo
   add_coarse_results({ 2.5, 1.6, 2.0, 3.5 }, { 2.0, 0.2, 2.5, 0.7 });
 
+  auto extrapolateOption = stk::search::ObjectOutsideDomainPolicy::ABORT;
+
   stk::search::impl::FilterCoarseSearchStats stats = stk::search::impl::filter_coarse_search_by_range(coarse_results,
                                                                                                       sendMesh, recvMesh,
                                                                                                       false, false,
-                                                                                                      sendMesh.get_extrapolate_option(),
+                                                                                                      extrapolateOption,
                                                                                                       filteredSearchResults);
 
   EXPECT_EQ(1u, stats.numEntitiesWithinTolerance);
@@ -213,10 +217,12 @@ TEST_F(SearchFilterTester, checkAllOutsideTolerance)
   // all points outside both parametric and geometric tolerance
   add_coarse_results({ 2.5, 1.6, 2.0, 3.5 }, { 2.0, 0.75, 2.5, 0.7 });
 
+  auto extrapolateOption = stk::search::ObjectOutsideDomainPolicy::ABORT;
+
   stk::search::impl::FilterCoarseSearchStats stats = stk::search::impl::filter_coarse_search_by_range(coarse_results,
                                                                                                       sendMesh, recvMesh,
                                                                                                       false, false,
-                                                                                                      sendMesh.get_extrapolate_option(),
+                                                                                                      extrapolateOption,
                                                                                                       filteredSearchResults);
 
   EXPECT_EQ(0u, stats.numEntitiesWithinTolerance);

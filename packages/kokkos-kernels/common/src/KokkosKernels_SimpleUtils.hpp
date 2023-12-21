@@ -84,7 +84,7 @@ struct InclusiveParallelPrefixSum {
  * \param num_elements: size of the array
  * \param arr: the array for which the prefix sum will be performed.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     const MyExecSpace &exec, typename view_t::value_type num_elements,
     view_t arr) {
@@ -100,7 +100,7 @@ inline void kk_exclusive_parallel_prefix_sum(
  * \param num_elements: size of the array
  * \param arr: the array for which the prefix sum will be performed.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     typename view_t::value_type num_elements, view_t arr) {
   kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr);
@@ -116,7 +116,7 @@ inline void kk_exclusive_parallel_prefix_sum(
  * \param finalSum: will be set to arr[num_elements - 1] after computing the
  * prefix sum.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     const MyExecSpace &exec, typename view_t::value_type num_elements,
     view_t arr, typename view_t::non_const_value_type &finalSum) {
@@ -135,27 +135,43 @@ inline void kk_exclusive_parallel_prefix_sum(
  * \param finalSum: will be set to arr[num_elements - 1] after computing the
  * prefix sum.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     typename view_t::value_type num_elements, view_t arr,
     typename view_t::non_const_value_type &finalSum) {
   kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr, finalSum);
 }
 
-/***
- * \brief Function performs the inclusive parallel prefix sum. That is each
- * entry holds the sum until itself including itself. \param num_elements: size
- * of the array \param arr: the array for which the prefix sum will be
- * performed.
- */
-template <typename forward_array_type, typename MyExecSpace>
+///
+/// \brief Function performs the inclusive parallel prefix sum. That is each
+///        entry holds the sum until itself including itself.
+/// \param my_exec_space: The execution space instance
+/// \param num_elements: size of the array
+/// \param arr: the array for which the prefix sum will be performed.
+///
+template <typename MyExecSpace, typename forward_array_type>
+void kk_inclusive_parallel_prefix_sum(
+    MyExecSpace my_exec_space,
+    typename forward_array_type::value_type num_elements,
+    forward_array_type arr) {
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
+                        range_policy_t(my_exec_space, 0, num_elements),
+                        InclusiveParallelPrefixSum<forward_array_type>(arr));
+}
+
+///
+/// \brief Function performs the inclusive parallel prefix sum. That is each
+///        entry holds the sum until itself including itself.
+/// \param num_elements: size of the array
+/// \param arr: the array for which the prefix sum will be performed.
+///
+template <typename MyExecSpace, typename forward_array_type>
 void kk_inclusive_parallel_prefix_sum(
     typename forward_array_type::value_type num_elements,
     forward_array_type arr) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
-                        my_exec_space(0, num_elements),
-                        InclusiveParallelPrefixSum<forward_array_type>(arr));
+  MyExecSpace my_exec_space;
+  return kk_inclusive_parallel_prefix_sum(my_exec_space, num_elements, arr);
 }
 
 template <typename view_t>
@@ -324,11 +340,19 @@ struct IsRelativelyIdenticalFunctor {
     }
 
     if (val_diff > mag_type(eps)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much "
           "(eps = %e)\n",
           (int)i, KAT::real(view1(i)), KAT::imag(view1(i)), KAT::real(view2(i)),
           KAT::imag(view2(i)), eps);
+#else
+      Kokkos::printf(
+          "Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much "
+          "(eps = %e)\n",
+          (int)i, KAT::real(view1(i)), KAT::imag(view1(i)), KAT::real(view2(i)),
+          KAT::imag(view2(i)), eps);
+#endif
       num_diffs++;
     }
   }

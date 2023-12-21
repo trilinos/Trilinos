@@ -96,16 +96,6 @@ void do_initial_sync_to_host(const std::vector<const FieldBase*>& fields, Select
 }
 
 //----------------------------------------------------------------------
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
-STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(ghosts, fields).")
-void communicate_field_data(const Ghosting& ghosts ,
-                            const std::vector< const FieldBase *> & fields,
-                            bool syncOnlySharedOrGhosted)
-{
-  communicate_field_data(ghosts, fields);
-}
-#endif
-
 void communicate_field_data(const Ghosting& ghosts, const std::vector<const FieldBase*>& fields)
 {
   if ( fields.empty() ) { return; }
@@ -231,16 +221,6 @@ void communicate_field_data(const Ghosting& ghosts, const std::vector<const Fiel
     if (phase == 0) { sparse.communicate(); }
   }
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after Aug 2023
-STK_DEPRECATED_MSG("Unnecessary sync argument removed. Use communicate_field_data(mesh, fields).")
-void communicate_field_data(const BulkData& mesh ,
-                            const std::vector< const FieldBase *> & fields,
-                            bool syncOnlySharedOrGhosted)
-{
-  communicate_field_data(mesh, fields);
-}
-#endif
 
 void communicate_field_data(const BulkData& mesh ,
                             const std::vector< const FieldBase *> & fields)

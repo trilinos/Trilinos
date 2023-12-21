@@ -37,7 +37,7 @@ class MeshProjectionCalculatorTester : public ::testing::Test
           m_mesh2, PointClassifierNormalWrapperTolerances(eps));
       mRelationalData = std::make_shared<nonconformal4::impl::MeshRelationalData>(m_mesh1, m_mesh2, m_meshIn);
       mProjector      = std::make_shared<nonconformal4::impl::MeshProjectionCalculator>(
-          m_mesh1, m_mesh2, m_meshIn, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
+          m_mesh1, m_mesh2, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
       mProjector->project();
     }
 
@@ -256,6 +256,57 @@ TEST_F(MeshProjectionCalculatorTester, IdenticalQuads)
   EXPECT_EQ(get_all_fake_verts().size(), 4u);
 }
 
+TEST_F(MeshProjectionCalculatorTester, IdenticalTris)
+{
+  std::vector<utils::Point> verts = {utils::Point(0, 0), utils::Point(1, 0), utils::Point(0, 1)};
+  std::vector<std::array<int, 4>> elVerts = {{0, 1, 2, -1}};
+  create_mesh1(verts, elVerts);
+  create_mesh2(verts, elVerts);
+  run();
+
+  auto& verts1ToFakeVerts = *(mRelationalData->verts1ToFakeVerts);
+  for (auto& vert : m_mesh1->get_vertices())
+  {
+    nonconformal4::impl::FakeVert fv = verts1ToFakeVerts(vert, 0, 0);
+    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+  }
+
+  auto& verts2ToFakeVerts   = *(mRelationalData->verts2ToFakeVerts);
+  auto& verts2ClassOnMesh1  = *(mRelationalData->verts2ClassOnMesh1);
+  auto& edges2ToFakeVertsIn = *(mRelationalData->edges2ToFakeVertsIn);
+  for (auto& vert : m_mesh2->get_vertices())
+  {
+    nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
+    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+
+    predicates::impl::PointRecord& record = verts2ClassOnMesh1(vert, 0, 0);
+    EXPECT_EQ(record.type, PointClassification::Vert);
+  }
+
+  for (auto& edge2 : m_mesh2->get_edges())
+  {
+    EXPECT_EQ(edges2ToFakeVertsIn.get_num_comp(edge2, 0), 2);
+    std::array<nonconformal4::impl::FakeVert, 2> edge2FakeVerts = {edges2ToFakeVertsIn(edge2, 0, 0).vert,
+                                                                   edges2ToFakeVertsIn(edge2, 0, 1).vert};
+    std::sort(edge2FakeVerts.begin(), edge2FakeVerts.end());
+
+    std::array<mesh::MeshEntityPtr, 2> edge2Verts                       = {edge2->get_down(0), edge2->get_down(1)};
+    std::array<nonconformal4::impl::FakeVert, 2> edge2FakeVertsExpected = {verts2ToFakeVerts(edge2Verts[0], 0, 0),
+                                                                           verts2ToFakeVerts(edge2Verts[1], 0, 0)};
+    std::sort(edge2FakeVertsExpected.begin(), edge2FakeVertsExpected.end());
+
+    EXPECT_EQ(edge2FakeVerts[0].id, edge2FakeVertsExpected[0].id);
+    EXPECT_EQ(edge2FakeVerts[1].id, edge2FakeVertsExpected[1].id);
+  }
+
+  auto& mesh1EdgesToSplit = *(mRelationalData->mesh1EdgesToSplit);
+  for (auto& edge1 : m_mesh1->get_edges())
+    EXPECT_EQ(mesh1EdgesToSplit.get_num_comp(edge1, 0), 0);
+
+  EXPECT_EQ(get_all_fake_verts().size(), 3u);
+}
+
+
 TEST_F(MeshProjectionCalculatorTester, EdgeIntersection)
 {
   std::vector<utils::Point> verts1         = {utils::Point(0, 0), utils::Point(1, 0),   utils::Point(1, 1),
@@ -318,8 +369,61 @@ TEST_F(MeshProjectionCalculatorTester, EdgeIntersection)
   test_edge_splits(mRelationalData, m_mesh1, edge1SplitsExpected);
 
   EXPECT_EQ(get_all_fake_verts().size(), 12u);
+}
 
-  // TODO: test number of (unique) FakeVerts
+TEST_F(MeshProjectionCalculatorTester, EdgeIntersectionTri)
+{
+  std::vector<utils::Point> verts          = {utils::Point(0, 0), utils::Point(1, 0),   utils::Point(1, 1),
+                                              utils::Point(0, 1)};
+  std::vector<std::array<int, 4>> elVerts1 = {{0, 1, 2, -1}, {0, 2, 3, -1}};
+  std::vector<std::array<int, 4>> elVerts2 = {{0, 1, 3, -1}, {1, 2, 3, -1}};
+  create_mesh1(verts, elVerts1);
+  create_mesh2(verts, elVerts2);
+
+  run();
+
+  auto& verts1ToFakeVerts = *(mRelationalData->verts1ToFakeVerts);
+  for (auto& vert : m_mesh1->get_vertices())
+  {
+    nonconformal4::impl::FakeVert fv = verts1ToFakeVerts(vert, 0, 0);
+    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+  }
+
+  auto& verts2ToFakeVerts = *(mRelationalData->verts2ToFakeVerts);
+  for (auto& vert : m_mesh2->get_vertices())
+  {
+    nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
+    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+  }
+
+  auto& els                                                              = m_mesh1->get_elements();
+  std::vector<predicates::impl::PointRecord> expectedVertClassifications = {
+      predicates::impl::PointRecord(PointClassification::Vert, 0, els[0]),
+      predicates::impl::PointRecord(PointClassification::Vert, 1, els[0]),
+      predicates::impl::PointRecord(PointClassification::Vert, 1, els[1]),
+      predicates::impl::PointRecord(PointClassification::Vert, 2, els[1])};
+  test_classification(mRelationalData, m_mesh2, expectedVertClassifications);
+
+  std::map<mesh::MeshEntityPtr, std::vector<utils::Point>> edge2FakeVertsExpected;
+  edge2FakeVertsExpected[find_closest_edge(m_mesh2, utils::Point(0.5, 0))]   = {utils::Point(0, 0),
+                                                                                utils::Point(1, 0)};
+  edge2FakeVertsExpected[find_closest_edge(m_mesh2, utils::Point(1,   0.5))] = {utils::Point(1, 0),
+                                                                                utils::Point(1, 1)};
+  edge2FakeVertsExpected[find_closest_edge(m_mesh2, utils::Point(0.5, 1.0))] = {utils::Point(1, 1),
+                                                                                utils::Point(0, 1)};
+  edge2FakeVertsExpected[find_closest_edge(m_mesh2, utils::Point(0,   0.5))] = {utils::Point(0, 1),
+                                                                                utils::Point(0, 0)};
+  edge2FakeVertsExpected[find_closest_edge(m_mesh2, utils::Point(0.5, 0.5))] = {utils::Point(1, 0),
+                                                                                utils::Point(0.5, 0.5),
+                                                                                utils::Point(0, 1)};
+  test_edge_fake_verts(mRelationalData, m_mesh2, edge2FakeVertsExpected);
+
+  std::map<mesh::MeshEntityPtr, std::vector<double>> edge1SplitsExpected;
+  edge1SplitsExpected[find_closest_edge(m_mesh1, utils::Point(0.5, 0.5))]  = {0.5};
+
+  test_edge_splits(mRelationalData, m_mesh1, edge1SplitsExpected);
+
+  EXPECT_EQ(get_all_fake_verts().size(), 5u);
 }
 
 TEST_F(MeshProjectionCalculatorTester, EdgeCoincident)

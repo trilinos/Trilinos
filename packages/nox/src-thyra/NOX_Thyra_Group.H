@@ -326,12 +326,44 @@ namespace NOX {
       //! Print out the group
       void print() const;
 
-      /** FOR POWER USERS ONLY!  Grab the inargs used by nox and allow the user to change it.  Used by pseudo-transient solver to add an x_dot and alpha/beta to the model evaluator call. */
-      ::Thyra::ModelEvaluatorBase::InArgs<double>& getNonconstInArgs();
-
-      const ::Thyra::ModelEvaluatorBase::InArgs<double>& getInArgs() const;
-
       Teuchos::RCP< const ::Thyra::ModelEvaluator<double> > getModel() const;
+
+      /** \brief Set the transient terms on the Group and use them in the underlying evalModelImpl() calls.
+
+          \param x_dot Time derivative term. Can be set to null.
+          \param alpha Model evaluator transient timer derivative multiplier
+          \param beta Model evaluator transient Jacobian multiplier
+          \param t Current time value
+      */
+      void enablePseudoTransientTerms(const Teuchos::RCP<const ::Thyra::VectorBase<double>>& x_dot,
+                                      const double alpha, const double beta, const double t);
+
+      /// Disable the pseudo traansient terms in the underlying evalModel() calls. Sets x_dot, alpha, beta and t back to steady state values.
+      void disablePseudoTransientTerms();
+
+      /// Check for whether the pseudo transient support is enabled for residual and Jacobian evaluations.
+      bool usingPseudoTransientTerms() const;
+
+      /// Set default parameters to be used with inArgs. This is a
+      /// hack to support a bad design in PIRO. PIRO wraps nox as a
+      /// model evaluator. The PIRO inArgs suppots all inargs, but nox
+      /// only knows about nonlinear solver realted inputs. It knows
+      /// nothing about parameters. PIRO should have a model evaluator
+      /// wrapper that populates the extra inArgs as needed to
+      /// override nominal values. Instead, we have to hard code
+      /// storage of all in arg parameters in nox groups. This is only
+      /// used in the ::Thyra::NOXNonlinearSolver and only when
+      /// wrapped within a PIRO model evaluator that calls the
+      /// setBasePoint on ::Thyra::NOXNonlinearSolver. This function
+      /// should eventually be deprecated in favor of addign a wrapper
+      /// ME to the piro nox solver class.
+      void setBasePoint(const ::Thyra::ModelEvaluatorBase::InArgs<double>& base_point_params);
+
+      /// Unset the base point parameters so that they are not used internally.
+      void unsetBasePoint();
+
+      /// Returns true if a base point has been set.
+      bool usingBasePoint() const;
 
     protected:
 
@@ -409,12 +441,6 @@ namespace NOX {
       //! Preconditioner factory
       Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> > prec_factory_;
 
-      //! Residual InArgs
-      mutable ::Thyra::ModelEvaluatorBase::InArgs<double> in_args_;
-
-      //! Residual OutArgs
-      mutable ::Thyra::ModelEvaluatorBase::OutArgs<double> out_args_;
-
       /** \brief Optional wieghting vector for function scaling. NOX assumes that this vector can be updated in between nonlinear iterations.
 
            This is pulled out of the initial guess vector
@@ -450,6 +476,28 @@ namespace NOX {
       //! The tolerance achieved by the last linear solver
       mutable double last_linear_solve_achieved_tol_;
 
+      // True if pseudo transient term is enabled
+      bool use_pseudo_transient_terms_;
+      // Only used for pseudo transient
+      Teuchos::RCP<const ::Thyra::VectorBase<double>> x_dot_;
+      // Only used for pseudo transient
+      double alpha_;
+      // Only used for pseudo transient
+      double beta_;
+      // Only used for pseudo transient
+      double t_;
+
+      // True if we will use a default inArgs set on this group. This
+      // is used for the thyra nonlinear solver interface that allows
+      // users to set an inArgs as the base point. It is a hack to
+      // work around bad PIRO design.
+      bool use_base_point_;
+
+      // Will override null parameter values on in_args with
+      // these. This is used for the thyra nonlinear solver interface
+      // that allows users to set an inArgs as the base point. It is a
+      // hack to work around bad PIRO design.
+      ::Thyra::ModelEvaluatorBase::InArgs<double> base_point_;
     };
 
   } // namespace LAPACK

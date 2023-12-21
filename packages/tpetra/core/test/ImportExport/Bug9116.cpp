@@ -57,8 +57,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9116, LargeImport,
 // Import from one-to-one vector to large overlap vector
 // Check overlap vector for expected values
 // The bug in #9116 should cause this test to 
-// pass with TPETRA_ASSUME_CUDA_AWARE_MPI=1 and 
-// fail with TPETRA_ASSUME_CUDA_AWARE_MPI=0.
+// pass with TPETRA_ASSUME_GPU_AWARE_MPI=1 and 
+// fail with TPETRA_ASSUME_GPU_AWARE_MPI=0.
 
   using map_t = Tpetra::Map<>;
   using vector_t = Tpetra::Vector<Scalar>;

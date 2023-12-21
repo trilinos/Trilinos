@@ -177,12 +177,12 @@ public:
 
   virtual bool shouldFixMechanisms() const;
   virtual bool shouldFixSpiders() const;
-  virtual std::string getSpiderBeamConnectivityCountFieldName() const;
+  virtual std::string getSpiderPartName() const;
   virtual std::string getSpiderVolumeConnectivityCountFieldName() const;
   virtual std::string getOutputSubdomainFieldName() const;
   virtual std::string getDiagnosticElementWeightFieldName() const;
   virtual std::string getVertexConnectivityWeightFieldName() const;
-  virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
+  virtual stk::mesh::Part * getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<int> * getOutputSubdomainField(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<double> * getDiagnosticElementWeightField(const stk::mesh::BulkData & stkMeshBulkData) const;
@@ -283,7 +283,7 @@ public:
 
   virtual bool shouldFixMechanisms() const override;
   virtual bool shouldFixSpiders() const override;
-  virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
+  virtual stk::mesh::Part * getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const override;
   virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
   virtual const stk::mesh::Field<int> * getOutputSubdomainField(const stk::mesh::BulkData & stkMeshBulkData) const override;
 
@@ -307,7 +307,7 @@ protected:
   bool m_UseConstantToleranceForFaceSearch;
   bool m_shouldFixSpiders;
   bool m_shouldFixMechanisms;
-  mutable const stk::mesh::Field<int> * m_spiderBeamConnectivityCountField;
+  mutable stk::mesh::Part * m_spiderPart;
   mutable const stk::mesh::Field<int> * m_spiderVolumeConnectivityCountField;
   mutable const stk::mesh::Field<int> * m_outputSubdomainField;
   std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;

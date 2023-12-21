@@ -20,7 +20,11 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     SOURCES example_01.cpp
     ADD_DIR_TO_NAME
   )
-
+  TRIBITS_ADD_EXECUTABLE(
+    example_02
+    SOURCES example_02.cpp
+    ADD_DIR_TO_NAME
+  )
   IF(TPL_ENABLE_MPI)
     TRIBITS_ADD_EXECUTABLE(
       AugmentedSystem
@@ -33,6 +37,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     DynamicNavierStokesDataCopy
     SOURCE_FILES
       input.xml
+      input_02.xml
       plotControl.m
       plotFlow.m
       plotInitialFlow.m

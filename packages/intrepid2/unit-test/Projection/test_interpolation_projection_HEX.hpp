@@ -83,8 +83,6 @@
 #include "Intrepid2_LagrangianInterpolation.hpp"
 
 
-#define Intrepid2_Experimental
-
 //this allows to reduce cost of the tests.
 //undefine when debugging/developing
 #define RANDOMLY_PICK_ELEM_PERMUTATION
@@ -218,15 +216,9 @@ int InterpolationProjectionHex(const bool verbose) {
   using ct = CellTools<DeviceType>;
   using ots = OrientationTools<DeviceType>;
   using fst = FunctionSpaceTools<DeviceType>;
-  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using pts = Experimental::ProjectionTools<DeviceType>;
-  using li = Experimental::LagrangianInterpolation<DeviceType>;
-  using ProjStruct = Experimental::ProjectionStruct<DeviceType,ValueType>;
-#else
   using pts = ProjectionTools<DeviceType>;
   using li = LagrangianInterpolation<DeviceType>;
   using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
-#endif
   using lt = LagrangianTools<DeviceType>;
   using  basisType = Basis<DeviceType,ValueType,ValueType>;
 

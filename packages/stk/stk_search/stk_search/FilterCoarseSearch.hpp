@@ -62,7 +62,9 @@ using FilterCoarseSearchProcRelation = std::pair<typename RECVMESH::EntityProc, 
 template <class SENDMESH, class RECVMESH>
 using FilterCoarseSearchProcRelationVec = std::vector<FilterCoarseSearchProcRelation<SENDMESH, RECVMESH>>;
 
+//BEGINObjectOutsideDomainPolicy 
 enum class ObjectOutsideDomainPolicy { IGNORE, EXTRAPOLATE, TRUNCATE, PROJECT, ABORT, UNDEFINED_OBJFLAG = 0xff };
+//ENDObjectOutsideDomainPolicy 
 
 inline ObjectOutsideDomainPolicy get_object_outside_domain_policy(const std::string& id)
 {
@@ -95,6 +97,7 @@ inline std::string get_object_outside_domain_policy(const ObjectOutsideDomainPol
   return std::string("");
 }
 
+//BEGINFilterCoarseSearchOptions
 struct FilterCoarseSearchOptions
 {
   std::ostream& m_outputStream{std::cout};
@@ -102,6 +105,7 @@ struct FilterCoarseSearchOptions
   bool m_useNearestNodeForClosestBoundingBox{false};
   bool m_useCentroidForGeometricProximity{false};
   bool m_verbose{true};
+//ENDFilterCoarseSearchOptions
 
   FilterCoarseSearchOptions(std::ostream& out)
   : m_outputStream(out) {}
@@ -119,6 +123,7 @@ struct FilterCoarseSearchOptions
   , m_verbose(verbose) {}
 };
 
+//BEGINFilterCoarseSearchResult
 template <class RECVMESH>
 class FilterCoarseSearchResult
 {
@@ -137,9 +142,12 @@ public:
 
   virtual ~FilterCoarseSearchResult() {}
 };
+//ENDFilterCoarseSearchResult
 
+//BEGINFilterCoarseSearchResultMap
 template <class RECVMESH>
 class FilterCoarseSearchResultMap : public FilterCoarseSearchResult<RECVMESH>
+//ENDFilterCoarseSearchResultMap
 {
 public:
   using EntityKey = typename RECVMESH::EntityKey;
@@ -167,8 +175,10 @@ private:
   std::map<EntityKey, std::vector<double>> m_searchFilterInfo;
 };
 
+//BEGINFilterCoarseSearchResultVector
 template <class RECVMESH>
 class FilterCoarseSearchResultVector : public FilterCoarseSearchResult<RECVMESH>
+//ENDFilterCoarseSearchResultVector
 {
 public:
   using EntityKey = typename RECVMESH::EntityKey;
@@ -499,12 +509,14 @@ void output_summary_outside_tolerance(SENDMESH& sendMesh, RECVMESH& recvMesh, Ou
 }
 }
 
+//BEGINfilter_coarse_search_impl
 template <class SENDMESH, class RECVMESH>
 void filter_coarse_search(const std::string& name,
                           FilterCoarseSearchProcRelationVec<SENDMESH, RECVMESH>& rangeToDomain,
                           SENDMESH& sendMesh, RECVMESH& recvMesh,
                           FilterCoarseSearchOptions& filterOptions,
                           FilterCoarseSearchResult<RECVMESH>& filterResult)
+//ENDfilter_coarse_search_impl
 {
   const double parametricTol = recvMesh.get_parametric_tolerance();
   const double geometricTol = recvMesh.get_search_tolerance();

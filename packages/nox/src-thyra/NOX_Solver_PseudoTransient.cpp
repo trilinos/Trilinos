@@ -293,12 +293,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
       ::Thyra::V_StVpStV(x_dot.ptr(),inv_delta,*x,-inv_delta,*x_old);
     }
 
-    ::Thyra::ModelEvaluatorBase::InArgs<double>& inArgs = thyraSolnGroup->getNonconstInArgs();
-
-    inArgs.set_x_dot(x_dot);
-    inArgs.set_alpha(inv_delta);
-    inArgs.set_beta(1.0);
-    inArgs.set_t(time);
+    thyraSolnGroup->enablePseudoTransientTerms(x_dot,inv_delta,1.0,time);
   }
   else {
     delta = std::numeric_limits<double>::max();
@@ -313,8 +308,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   bool ok = true;
   if ( use_transient_residual && (nIter < max_pseudo_transient_iterations) ) {
     thyraTransientResidualGroup->setX(solnPtr->getX());
-    ::Thyra::ModelEvaluatorBase::InArgs<double>& inArgs = thyraTransientResidualGroup->getNonconstInArgs();
-    inArgs.setArgs(thyraSolnGroup->getInArgs());
+    thyraTransientResidualGroup->enablePseudoTransientTerms(x_dot,inv_delta,1.0,time);
     ok = directionPtr->compute(*dirPtr, *thyraTransientResidualGroup, *this);
     NOX::Abstract::Group::ReturnType rtype = thyraTransientResidualGroup->computeF();
     if (rtype != NOX::Abstract::Group::Ok) {
@@ -322,6 +316,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
               << "Unable to compute F" << std::endl;
       throw std::runtime_error("NOX Error");
     }
+    thyraTransientResidualGroup->disablePseudoTransientTerms();
   }
   else {
     ok = directionPtr->compute(*dirPtr, soln, *this);
@@ -337,13 +332,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   }
 
   // reset the inargs to the correct value for steady state residual evaluations
-  {
-    ::Thyra::ModelEvaluatorBase::InArgs<double>& inArgs = thyraSolnGroup->getNonconstInArgs();
-    inArgs.set_x_dot(Teuchos::null);
-    inArgs.set_alpha(0.0);
-    inArgs.set_beta(1.0);
-    inArgs.set_t(0.0);
-  }
+  thyraSolnGroup->disablePseudoTransientTerms();
 
   // Update iteration count.
   nIter ++;

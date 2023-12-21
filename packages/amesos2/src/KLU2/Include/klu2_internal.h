@@ -199,67 +199,6 @@ size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
 ) ;
 
 template <typename Entry, typename Int>
-void KLU_lsolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Lp [ ],
-    Int Li [ ],
-    Unit LU [ ],
-    Int nrhs,
-    /* right-hand-side on input, solution to Lx=b on output */
-    Entry X [ ]
-) ;
-
-template <typename Entry, typename Int>
-void KLU_ltsolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Lp [ ],
-    Int Li [ ],
-    Unit LU [ ],
-    Int nrhs,
-#ifdef COMPLEX
-    Int conj_solve,
-#endif
-    /* right-hand-side on input, solution to L'x=b on output */
-    Entry X [ ]
-) ;
-
-
-template <typename Entry, typename Int>
-void KLU_usolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Up [ ],
-    Int Ui [ ],
-    Unit LU [ ],
-    Entry Udiag [ ],
-    Int nrhs,
-    /* right-hand-side on input, solution to Ux=b on output */
-    Entry X [ ]
-) ;
-
-template <typename Entry, typename Int>
-void KLU_utsolve
-(
-    /* inputs, not modified: */
-    Int n,
-    Int Up [ ],
-    Int Ui [ ],
-    Unit LU [ ],
-    Entry Udiag [ ],
-    Int nrhs,
-#ifdef COMPLEX /* TODO : Need to fix this */
-    Int conj_solve,
-#endif
-    /* right-hand-side on input, solution to U'x=b on output */
-    Entry X [ ]
-) ;
-
-template <typename Entry, typename Int>
 Int KLU_valid 
 (
     Int n, 

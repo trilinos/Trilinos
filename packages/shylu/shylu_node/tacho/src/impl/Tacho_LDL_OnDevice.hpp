@@ -117,7 +117,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value) {
       if (W.span() == 0) {
         r_val = 2;
       } else
@@ -259,7 +259,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value) {
       r_val = device_modify(member, A, P, D);
     }
 #endif

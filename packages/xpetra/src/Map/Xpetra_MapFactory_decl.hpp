@@ -264,6 +264,15 @@ class MapFactory
           const LocalOrdinal numDofPerNode,
           const GlobalOrdinal gidOffset = Teuchos::ScalarTraits<GlobalOrdinal>::zero());
 
+#ifdef HAVE_XPETRA_TPETRA
+    static Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node>>
+    Build(UnderlyingLib                                                         lib,
+          global_size_t                                                         numGlobalElements,
+          const Kokkos::View<const GlobalOrdinal*, typename Node::device_type>& indexList,
+          GlobalOrdinal                                                         indexBase,
+          const Teuchos::RCP<const Teuchos::Comm<int>>&                         comm);
+#endif
+
 
     static Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >
     createLocalMap(UnderlyingLib lib,
@@ -379,6 +388,17 @@ class MapFactory
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
     Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
           LocalOrdinal numDofPerNode);
+
+
+#ifdef HAVE_XPETRA_TPETRA
+    static Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node>>
+    Build(UnderlyingLib                                                         lib,
+          global_size_t                                                         numGlobalElements,
+          const Kokkos::View<const GlobalOrdinal*, typename Node::device_type>& indexList,
+          GlobalOrdinal                                                         indexBase,
+          const Teuchos::RCP<const Teuchos::Comm<int>>&                         comm);
+#endif
+
 
 
     static Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >

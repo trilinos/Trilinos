@@ -157,7 +157,7 @@ public:
     vec_.assign(size_,static_cast<Real>(0));
   }
 
-  Real computeStatistic(const Ptr<std::vector<Real>> &xstat) const {
+  Real computeStatistic(const Ptr<const std::vector<Real>> &xstat) const override {
     Real stat(0);
     if (xstat != nullPtr) {
       for (int i = 0; i < size_; ++i) {

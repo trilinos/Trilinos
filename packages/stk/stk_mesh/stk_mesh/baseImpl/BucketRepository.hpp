@@ -152,6 +152,9 @@ public:
 
   void set_need_sync_from_partitions(EntityRank entityRank) { m_need_sync_from_partitions[entityRank] = true; }
 
+  void set_remove_mode_tracking();
+  void set_remove_mode_fill_and_sort();
+
 private:
   BucketRepository();
 

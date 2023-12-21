@@ -126,7 +126,12 @@ private:
         {
             if(numTotalFailures == 0)
             {
+#ifdef STK_BUILT_IN_SIERRA
               ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[       OK ] ");
+#else
+//newer versions of gtest don't allow external access to ColoredPrintf
+              printf("[       OK ] ");
+#endif
             }
             else
             {
@@ -209,13 +214,23 @@ private:
 
     void print_failed(const std::string &message)
     {
+#ifdef STK_BUILT_IN_SIERRA
       ::testing::internal::ColoredPrintf(::testing::internal::COLOR_RED, "[  FAILED  ] ");
+#else
+//newer versions of gtest don't allow external access to ColoredPrintf
+      printf("[  FAILED  ] ");
+#endif
       printf("%s\n", message.c_str());
     }
 
     void print_passed(const std::string &message)
     {
+#ifdef STK_BUILT_IN_SIERRA
       ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[  PASSED  ] ");
+#else
+//newer versions of gtest don't allow external access to ColoredPrintf
+      printf("[  PASSED  ] ");
+#endif
       printf("%s\n", message.c_str());
     }
 };

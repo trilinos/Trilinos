@@ -145,7 +145,7 @@ char *recv_data)		/* array of data I'll own after comm */
 
     /* Check input parameters */
     if (!plan) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &my_proc);
+        MPI_Comm_rank(zoltan_get_global_comm(), &my_proc);
 	ZOLTAN_COMM_ERROR("Communication plan = NULL", yo, my_proc);
 	return ZOLTAN_FATAL;
     }

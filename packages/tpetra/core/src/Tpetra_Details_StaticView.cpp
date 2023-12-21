@@ -104,7 +104,7 @@ size_t hip_memory_size_ = 0;
 void finalize_hip_memory ()
 {
   if (hip_memory_ != nullptr) {
-    Kokkos::kokkos_free<Kokkos::Experimental::HIPSpace> (hip_memory_);
+    Kokkos::kokkos_free<Kokkos::HIPSpace> (hip_memory_);
     hip_memory_ = nullptr;
     hip_memory_size_ = 0;
   }
@@ -116,7 +116,7 @@ size_t hip_host_pinned_memory_size_ = 0;
 void finalize_hip_host_pinned_memory ()
 {
   if (hip_host_pinned_memory_ != nullptr) {
-    Kokkos::kokkos_free<Kokkos::Experimental::HIPHostPinnedSpace> (hip_host_pinned_memory_);
+    Kokkos::kokkos_free<Kokkos::HIPHostPinnedSpace> (hip_host_pinned_memory_);
     hip_host_pinned_memory_ = nullptr;
     hip_host_pinned_memory_size_ = 0;
   }
@@ -243,11 +243,11 @@ resize (Kokkos::CudaHostPinnedSpace /* space */,
 #ifdef KOKKOS_ENABLE_HIP
 
 void*
-StaticKokkosAllocation<Kokkos::Experimental::HIPSpace>::
-resize (Kokkos::Experimental::HIPSpace /* space */,
+StaticKokkosAllocation<Kokkos::HIPSpace>::
+resize (Kokkos::HIPSpace /* space */,
         const size_t size)
 {
-  using memory_space = Kokkos::Experimental::HIPSpace;
+  using memory_space = Kokkos::HIPSpace;
   static bool created_finalize_hook = false;
 
   if (size > hip_memory_size_) {
@@ -267,11 +267,11 @@ resize (Kokkos::Experimental::HIPSpace /* space */,
 }
 
 void*
-StaticKokkosAllocation<Kokkos::Experimental::HIPHostPinnedSpace>::
-resize (Kokkos::Experimental::HIPHostPinnedSpace /* space */,
+StaticKokkosAllocation<Kokkos::HIPHostPinnedSpace>::
+resize (Kokkos::HIPHostPinnedSpace /* space */,
         const size_t size)
 {
-  using memory_space = Kokkos::Experimental::HIPHostPinnedSpace;
+  using memory_space = Kokkos::HIPHostPinnedSpace;
   static bool created_finalize_hook = false;
 
   const size_t req_size = size > minimum_initial_size ? size : minimum_initial_size;

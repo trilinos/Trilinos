@@ -11,28 +11,29 @@
 
 #include <memory>
 #include <stk_topology/topology.hpp>
-
-namespace Intrepid { template<class Scalar, int ArrayTypeId> class FieldContainer; }
-namespace Intrepid { template<class Scalar, class ArrayScalar> class Basis; }
+#include <Kokkos_Core_fwd.hpp>
+#include <Intrepid2_Basis.hpp>
+#include <Intrepid2_Cubature.hpp>
 
 namespace krino {
 
 class MasterElementIntrepid
 {
 public:
-  MasterElementIntrepid(
-      stk::topology topology,
-      std::unique_ptr<Intrepid::Basis<double, Intrepid::FieldContainer<double,0> > > basis,
-      unsigned spatial_dimension);
+  using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
+  using OutputType = double;
+  using PointType = double;
+  using IntrepidBasis = Intrepid2::Basis<ExecutionSpace, OutputType, PointType>;
+  using IntrepidCubature = Intrepid2::Cubature<ExecutionSpace, OutputType, PointType>;
+
+  MasterElementIntrepid(stk::topology topology);
 
   // Copy and assignment are not allowed
   MasterElementIntrepid( const MasterElementIntrepid & ) = delete;
   MasterElementIntrepid & operator=( const MasterElementIntrepid & ) = delete;
 
-  static const MasterElementIntrepid & getMasterElement(stk::topology t, const unsigned spatial_dimension);
-
   stk::topology get_topology() const { return m_topology; }
-  unsigned dimension() const { return m_topology.dimension(); }
+  unsigned topology_dimension() const { return m_topology.dimension(); }
 
   // returns the number of integration points
   unsigned num_intg_pts() const { return m_numIntgPts; }
@@ -48,17 +49,21 @@ public:
 
   const double * nodal_parametric_coordinates() const { return m_refCoords.data(); }
 
+  double parametric_volume() const { return m_refVolume; }
+
   void determinant(
+     const int numCoordDims,
      const int nelem,
-     const double* coords,  // (nvec,npe,nelem)
+     const double* coords,  // (numCoordDims,npe,nelem)
      double* det_J,         // (nelem,nint)
      double* error ) const; // (nelem)
   void determinant(
+      const int numCoordDims,
       const int  nint,
       const int npe_g,
-      const double* deriv_g,  // (nvec,npe_g,nint)
+      const double* deriv_g,  // (m_numElemDims,npe_g,nint)
       const int   nelem,
-      const double* coords,   // (nvec,npe,nelem)
+      const double* coords,   // (numCoordDims,npe,nelem)
       double* det_J,          // (nelem,nint)
       double* error ) const ; // (nelem)
 
@@ -87,16 +92,17 @@ public:
       double * result ) const;       // (ncomp_field)
 
   void gradient_operator(
+      const int numCoordDims,
       const int nint,
       const int npe_g,
-      const double* deriv_g,   // (nvec,npe_g,nint)
+      const double* deriv_g,   // (numElemDims,npe_g,nint)
       const int npe_f,
-      const double* deriv_f,   // (nvec,npe_f,nint)
+      const double* deriv_f,   // (numElemDims,npe_f,nint)
       const int   nelem,
-      const double* coords,    // (nvec,npe,nelem)
-      double* gradop,          // (nvec,npe,nelem,nint)
+      const double* coords,    // (numElemDims,npe,nelem)
+      double* gradop,          // (numElemDims,npe,nelem,nint)
       double* det_J,           // (nelem,nint)
-      double* error) const ;
+      double* error) const;
 
   void scalar_gradient(
       const int   nelem,      //:  number of elements to process
@@ -116,11 +122,11 @@ private:
   stk::topology m_topology;
   int m_numNodes;
   int m_numElemDims;
-  int m_numCoordDims;
   int m_numIntgPts;
 
-  // the Intrepid Basis
-  std::unique_ptr<Intrepid::Basis<double, Intrepid::FieldContainer<double,0>>> m_intrepidBasis;
+  std::unique_ptr<IntrepidBasis> m_intrepidBasis;
+
+  double m_refVolume;
 
   // Local FieldContainers
   std::vector<double> m_shapeFuncs;

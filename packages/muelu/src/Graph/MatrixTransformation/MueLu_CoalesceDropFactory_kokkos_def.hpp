@@ -468,6 +468,7 @@ namespace MueLu {
     SET_VALID_ENTRY("filtered matrix: use lumping");
     SET_VALID_ENTRY("filtered matrix: reuse graph");
     SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
+    SET_VALID_ENTRY("aggregation: use ml scaling of drop tol");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
       validParamList->getEntry("aggregation: drop scheme").setValidator(
@@ -526,6 +527,11 @@ namespace MueLu {
     auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
+
+    // Sanity Checking: ML drop tol scaling is not supported in UncoupledAggregation_Kokkos
+    TEUCHOS_TEST_FOR_EXCEPTION( pL.get<bool>("aggregation: use ml scaling of drop tol"),std::invalid_argument,"Option: 'aggregation: use ml scaling of drop tol' is not supported in the Kokkos version of CoalesceDroPFactory");
+
+
 
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
 

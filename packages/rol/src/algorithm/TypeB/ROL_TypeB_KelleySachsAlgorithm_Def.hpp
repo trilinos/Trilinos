@@ -159,7 +159,7 @@ void KelleySachsAlgorithm<Real>::run(Vector<Real>          &x,
 
   while (status_->check(*state_)) {
     // Build trust-region model
-    model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
+    model_->setData(obj,*state_->iterateVec,*state_->gradientVec,ftol);
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
     pRed = trpcg(*s,SPflag_,SPiter_,*gfree,x,*state_->gradientVec,
