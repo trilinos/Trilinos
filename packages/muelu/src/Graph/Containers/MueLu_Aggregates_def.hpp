@@ -59,8 +59,8 @@
 
 namespace MueLu {
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::Aggregates(const GraphBase& graph) {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const GraphBase& graph) {
   numAggregates_       = 0;
   numGlobalAggregates_ = 0;
 
@@ -76,8 +76,8 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrappe
   aggregatesIncludeGhosts_ = true;
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::
     Aggregates(LWGraph_kokkos graph) {
   numAggregates_       = 0;
   numGlobalAggregates_ = 0;
@@ -94,8 +94,8 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrappe
   aggregatesIncludeGhosts_ = true;
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::
     Aggregates(const RCP<const Map>& map) {
   numAggregates_       = 0;
   numGlobalAggregates_ = 0;
@@ -112,9 +112,9 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrappe
   aggregatesIncludeGhosts_ = true;
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-typename Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::aggregates_sizes_type::const_type
-Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::ComputeAggregateSizes(bool forceRecompute) const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Aggregates<LocalOrdinal, GlobalOrdinal, Node>::aggregates_sizes_type::const_type
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(bool forceRecompute) const {
   if (aggregateSizes_.size() && !forceRecompute) {
     return aggregateSizes_;
 
@@ -141,9 +141,9 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrappe
   }
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ArrayRCP<LocalOrdinal>
-Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::
     ComputeAggregateSizesArrayRCP(bool forceRecompute) const {
   auto aggregateSizes = this->ComputeAggregateSizes(forceRecompute);
 
@@ -163,9 +163,9 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrappe
   return aggregateSizesArrayRCP;
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-typename Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::local_graph_type
-Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetGraph() const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Aggregates<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetGraph() const {
   using row_map_type = typename local_graph_type::row_map_type;
   using entries_type = typename local_graph_type::entries_type;
   using size_type    = typename local_graph_type::size_type;
@@ -224,8 +224,8 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrappe
   return graph_;
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::ComputeNodesInAggregate(LO_view& aggPtr, LO_view& aggNodes, LO_view& unaggregated) const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeNodesInAggregate(LO_view& aggPtr, LO_view& aggNodes, LO_view& unaggregated) const {
   LO numAggs                                          = GetNumAggregates();
   LO numNodes                                         = vertex2AggId_->getLocalLength();
   auto vertex2AggId                                   = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
@@ -278,16 +278,16 @@ void Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceW
       });
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-std::string Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::description() const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node>::description() const {
   if (numGlobalAggregates_ == -1)
     return BaseClass::description() + "{nGlobalAggregates = not computed}";
   else
     return BaseClass::description() + "{nGlobalAggregates = " + toString(numGlobalAggregates_) + "}";
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
   MUELU_DESCRIBE;
 
   if (verbLevel & Statistics1) {
@@ -298,8 +298,8 @@ void Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceW
   }
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetNumGlobalAggregatesComputeIfNeeded() {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetNumGlobalAggregatesComputeIfNeeded() {
   if (numGlobalAggregates_ != -1) {
     LO nAggregates = GetNumAggregates();
     GO nGlobalAggregates;
@@ -309,9 +309,9 @@ GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::Kokk
   return numGlobalAggregates_;
 }
 
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>>
-Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetMap() const {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetMap() const {
   return vertex2AggId_->getMap();
 }
 

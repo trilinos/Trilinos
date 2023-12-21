@@ -448,8 +448,8 @@ class Stage1dVectorFunctor {
 
 }  // namespace CoalesceDrop_Kokkos_Details
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -474,8 +474,8 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   return validParamList;
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& currentLevel) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
   Input(currentLevel, "A");
   Input(currentLevel, "UnAmalgamationInfo");
 
@@ -484,8 +484,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Kok
     Input(currentLevel, "Coordinates");
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Build(Level& currentLevel) const {
   FactoryMonitor m(*this, "Build", currentLevel);
 
@@ -826,7 +826,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Kok
 
     // get number of local nodes
     LO numNodes = Teuchos::as<LocalOrdinal>(uniqueMap->getLocalNumElements());
-    typedef typename Kokkos::View<LocalOrdinal*, DeviceType> id_translation_type;
+    typedef typename Kokkos::View<LocalOrdinal*, typename Node::device_type> id_translation_type;
     id_translation_type rowTranslation("dofId2nodeId", rowTranslationArray.size());
     id_translation_type colTranslation("ov_dofId2nodeId", colTranslationArray.size());
     Kokkos::deep_copy(rowTranslation, rowTranslationView);

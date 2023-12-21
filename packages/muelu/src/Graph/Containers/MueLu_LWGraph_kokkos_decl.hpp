@@ -70,18 +70,14 @@ namespace MueLu {
   information. These were built without using fillComplete.
  */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-class LWGraph_kokkos;
-
-// Partial specialization for DeviceType
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>> {
+class LWGraph_kokkos {
  public:
   using local_ordinal_type  = LocalOrdinal;
   using global_ordinal_type = GlobalOrdinal;
-  using execution_space     = typename DeviceType::execution_space;
-  using memory_space        = typename DeviceType::memory_space;
-  using device_type         = Kokkos::Device<execution_space, memory_space>;
-  using node_type           = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>;
+  using execution_space     = typename Node::execution_space;
+  using memory_space        = typename Node::memory_space;
+  using device_type         = typename Node::device_type;
+  using node_type           = Node;
   using local_lw_graph_type = MueLu::LocalLWGraph_kokkos<LocalOrdinal, GlobalOrdinal, node_type>;
   using size_type           = size_t;
 
@@ -90,8 +86,6 @@ class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDe
   using boundary_nodes_type = typename local_lw_graph_type::boundary_nodes_type;
 
  private:
-  // For compatibility
-  typedef node_type Node;
 #undef MUELU_LWGRAPH_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 

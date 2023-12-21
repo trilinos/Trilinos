@@ -128,20 +128,17 @@ namespace MueLu {
   not access to a "Graph" or "Coordinates" variable.
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class CoalesceDropFactory_kokkos;
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-class CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
+class CoalesceDropFactory_kokkos
+ : public SingleLevelFactoryBase {
  public:
   using local_ordinal_type  = LocalOrdinal;
   using global_ordinal_type = GlobalOrdinal;
-  using execution_space     = typename DeviceType::execution_space;
+  using execution_space     = typename Node::execution_space;
   using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
-  using node_type           = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>;
+  using node_type           = Node;
 
  private:
   // For compatibility
-  using Node = node_type;
 #undef MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
