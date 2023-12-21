@@ -92,19 +92,14 @@ namespace MueLu {
 
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class SaPFactory_kokkos;
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-class SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
+class SaPFactory_kokkos : public PFactory {
  public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
-  typedef typename DeviceType::execution_space execution_space;
-  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> node_type;
+  typedef typename Node::execution_space execution_space;
+  typedef Node node_type;
 
  private:
-  // For compatibility
-  typedef node_type Node;
 #undef MUELU_SAPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 

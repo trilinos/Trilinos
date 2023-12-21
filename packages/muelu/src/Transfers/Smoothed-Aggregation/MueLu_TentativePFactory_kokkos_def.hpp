@@ -375,8 +375,8 @@ class LocalQRDecompFunctor {
 
 }  // namespace
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-RCP<const ParameterList> TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -401,8 +401,8 @@ RCP<const ParameterList> TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOr
   return validParamList;
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
   const ParameterList& pL = GetParameterList();
   // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
   std::string nspName = "Nullspace";
@@ -423,13 +423,13 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Kokko
   }
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
   return BuildP(fineLevel, coarseLevel);
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
   typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
@@ -582,8 +582,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Kokko
   }
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
                     RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                     RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
@@ -994,8 +994,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Kokko
   }
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
                             RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                             RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative,
@@ -1296,8 +1296,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Kokko
   Ptentative = P_wrap;
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates> /* aggregates */,
                   RCP<AmalgamationInfo> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
                   RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */,
@@ -1305,8 +1305,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Kokko
   throw Exceptions::RuntimeError("MueLu: Construction of coupled tentative P is not implemented");
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-bool TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     isGoodMap(const Map& rowMap, const Map& colMap) const {
   auto rowLocalMap = rowMap.getLocalMap();
   auto colLocalMap = colMap.getLocalMap();
