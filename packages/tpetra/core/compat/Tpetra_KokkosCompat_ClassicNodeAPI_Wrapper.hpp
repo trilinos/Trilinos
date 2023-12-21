@@ -77,9 +77,11 @@ public:
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
-  // NOTE: KokkosKernels does not currently support HIPManagedSpace, but
-  // if it did, we'd add HAVE_TPETRA_MANAGED_ALLOCS here
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+  typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPManagedSpace> KokkosHIPWrapperNode;
+#else
   typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPSpace> KokkosHIPWrapperNode;
+#endif
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
