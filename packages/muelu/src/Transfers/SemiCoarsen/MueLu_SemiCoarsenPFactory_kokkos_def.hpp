@@ -70,8 +70,8 @@
 
 namespace MueLu {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-          class DeviceType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+
 RCP<const ParameterList>
 SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
                            Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
@@ -101,10 +101,10 @@ SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-          class DeviceType>
+          class Node>
 void SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
-    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+   Node>::
     DeclareInput(Level &fineLevel, Level & /* coarseLevel */) const {
   Input(fineLevel, "A");
   Input(fineLevel, "Nullspace");
@@ -136,7 +136,7 @@ void SemiCoarsenPFactory_kokkos<
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-          class DeviceType>
+          class Node>
 void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
                                 Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
                                     DeviceType>>::Build(Level &fineLevel,
@@ -146,7 +146,7 @@ void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-          class DeviceType>
+          class Node>
 void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
                                 Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
                                     DeviceType>>::BuildP(Level &fineLevel,
@@ -330,10 +330,10 @@ void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-          class DeviceType>
+          class Node>
 void SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
-    Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
+   Node>::
     BuildSemiCoarsenP(Level &coarseLevel, const LO NFRows, const LO NFNodes,
                       const LO DofsPerNode, const LO NFLayers,
                       const LO NCLayers, const ArrayRCP<LO> LayerId,
