@@ -70,6 +70,12 @@ public:
   void setVerbose(const bool verbose);
   void setOption(const int id, const idx_t value);
 
+  template <typename ordering_type>
+  ordering_type amd_order(ordering_type n, const ordering_type *xadj,
+                                           const ordering_type *adjncy,
+                          ordering_type *perm,
+                          double *control, double *info);
+
   ///
   /// reorder by metis
   ///
