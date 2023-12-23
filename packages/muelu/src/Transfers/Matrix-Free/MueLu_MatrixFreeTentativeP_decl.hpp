@@ -70,7 +70,7 @@ namespace MueLu {
 // class MatrixFreeTentativeP;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class MatrixFreeTentativeP: public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+class MatrixFreeTentativeP : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
  public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;

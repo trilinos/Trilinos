@@ -129,7 +129,7 @@ namespace MueLu {
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class CoalesceDropFactory_kokkos
- : public SingleLevelFactoryBase {
+  : public SingleLevelFactoryBase {
  public:
   using local_ordinal_type  = LocalOrdinal;
   using global_ordinal_type = GlobalOrdinal;

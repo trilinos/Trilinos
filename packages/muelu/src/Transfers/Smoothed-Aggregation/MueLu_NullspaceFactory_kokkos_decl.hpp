@@ -100,7 +100,7 @@ namespace MueLu {
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
-class NullspaceFactory_kokkos: public SingleLevelFactoryBase {
+class NullspaceFactory_kokkos : public SingleLevelFactoryBase {
  public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;

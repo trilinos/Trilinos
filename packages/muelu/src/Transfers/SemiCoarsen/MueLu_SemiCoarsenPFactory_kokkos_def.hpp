@@ -73,8 +73,8 @@ namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 RCP<const ParameterList>
-SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
-GetValidParameterList() const {
+SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   std::string name = "semicoarsen: coarsen rate";
@@ -103,7 +103,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class Node>
 void SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
-   Node>::
+    Node>::
     DeclareInput(Level &fineLevel, Level & /* coarseLevel */) const {
   Input(fineLevel, "A");
   Input(fineLevel, "Nullspace");
@@ -136,19 +136,19 @@ void SemiCoarsenPFactory_kokkos<
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class Node>
-void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
-Build(Level &fineLevel,
-      Level &coarseLevel)
-    const {
+void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    Build(Level &fineLevel,
+          Level &coarseLevel)
+        const {
   return BuildP(fineLevel, coarseLevel);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class Node>
-void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,Node>::
-BuildP(Level &fineLevel,
-       Level &coarseLevel)
-    const {
+void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    BuildP(Level &fineLevel,
+           Level &coarseLevel)
+        const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
   // obtain general variables
@@ -330,7 +330,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
           class Node>
 void SemiCoarsenPFactory_kokkos<
     Scalar, LocalOrdinal, GlobalOrdinal,
-   Node>::
+    Node>::
     BuildSemiCoarsenP(Level &coarseLevel, const LO NFRows, const LO NFNodes,
                       const LO DofsPerNode, const LO NFLayers,
                       const LO NCLayers, const ArrayRCP<LO> LayerId,

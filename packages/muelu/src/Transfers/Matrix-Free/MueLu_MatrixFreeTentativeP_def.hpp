@@ -64,10 +64,10 @@ namespace MueLu {
 // compute Y = alpha*R*X + beta*Y
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const MultiVector &X,
-                                                                                                                                 MultiVector &Y,
-                                                                                                                                 Teuchos::ETransp mode,
-                                                                                                                                 Scalar alpha,
-                                                                                                                                 Scalar beta) const {
+                                                                            MultiVector &Y,
+                                                                            Teuchos::ETransp mode,
+                                                                            Scalar alpha,
+                                                                            Scalar beta) const {
   using impl_scalar_type     = typename Kokkos::ArithTraits<Scalar>::val_type;
   impl_scalar_type implAlpha = alpha;
 
