@@ -146,17 +146,17 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   params->set<RCP<Matrix> >("M1_beta", Teuchos::null);
   params->set<RCP<Matrix> >("M1_alpha", Teuchos::null);
-  // for backwards compatiblity
+  // for backwards compatibility
   params->set<RCP<Matrix> >("Ms", Teuchos::null);
 
   params->set<RCP<Matrix> >("Mk_one", Teuchos::null);
   params->set<RCP<Matrix> >("Mk_1_one", Teuchos::null);
-  // for backwards compatiblity
+  // for backwards compatibility
   params->set<RCP<Matrix> >("M1", Teuchos::null);
 
   params->set<RCP<Matrix> >("invMk_1_invBeta", Teuchos::null);
   params->set<RCP<Matrix> >("invMk_2_invAlpha", Teuchos::null);
-  // for backwards compatiblity
+  // for backwards compatibility
   params->set<RCP<Matrix> >("M0inv", Teuchos::null);
 
   params->set<RCP<MultiVector> >("Nullspace", Teuchos::null);

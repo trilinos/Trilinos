@@ -179,7 +179,7 @@ namespace MueLu {
     A11_nodal = D_{0}^T * M_1(beta)  * D_{0}
     A22_nodal = D_{0}^T * M_1(alpha) * D_{0}
 
-  then constuct typical nodal scalar HGrad prolongators.
+  then construct typical nodal scalar HGrad prolongators.
 
   We then replicate them into prolongators for vectorial H(grad)
   problem. Finally, we multiply from the left with the projection
@@ -240,10 +240,10 @@ namespace MueLu {
   Parameter list options:
   - <tt>refmaxwell: mode</tt> - a <tt>string</tt> specifying the order of solve of the block system.
                                 Allowed values are: "additive" (default), "121", "212", "1", "2"
-  - <tt>refmaxwell: disable addon</tt> - <tt>bool</tt> specifing whether the addon should be built for stabilization.
+  - <tt>refmaxwell: disable addon</tt> - <tt>bool</tt> specifying whether the addon should be built for stabilization.
                                          Default: "true"
-  - <tt>refmaxwell: use as preconditioner</tt> - <tt>bool</tt> specifing whether RefMaxwell is used as a preconditioner or as a solver.
-  - <tt>refmaxwell: dump matrices</tt> - <tt>bool</tt> specifing whether the matrices should be dumped.
+  - <tt>refmaxwell: use as preconditioner</tt> - <tt>bool</tt> specifying whether RefMaxwell is used as a preconditioner or as a solver.
+  - <tt>refmaxwell: dump matrices</tt> - <tt>bool</tt> specifying whether the matrices should be dumped.
                                          Default: "false"
   - <tt>refmaxwell: 11list</tt> and <tt>refmaxwell: 22list</tt> - parameter list for the multigrid hierarchies on 11 and 22 blocks
   - <tt>refmaxwell: subsolves on subcommunicators</tt> - <tt>bool</tt> redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel)
