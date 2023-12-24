@@ -62,12 +62,12 @@
 namespace MueLu {
 
 // compute Y = alpha*R*X + beta*Y
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::apply(const MultiVector &X,
-                                                                                                                                 MultiVector &Y,
-                                                                                                                                 Teuchos::ETransp mode,
-                                                                                                                                 Scalar alpha,
-                                                                                                                                 Scalar beta) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const MultiVector &X,
+                                                                            MultiVector &Y,
+                                                                            Teuchos::ETransp mode,
+                                                                            Scalar alpha,
+                                                                            Scalar beta) const {
   using impl_scalar_type     = typename Kokkos::ArithTraits<Scalar>::val_type;
   impl_scalar_type implAlpha = alpha;
 
@@ -113,8 +113,8 @@ void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCom
 }
 
 // I don't care
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const {
   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MatrixFreeTentativeP residual would make no sense as the operator is not square!");
 }
 

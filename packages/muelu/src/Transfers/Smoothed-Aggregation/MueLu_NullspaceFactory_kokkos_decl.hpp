@@ -99,20 +99,16 @@ namespace MueLu {
 
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class NullspaceFactory_kokkos;
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-class NullspaceFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
+class NullspaceFactory_kokkos : public SingleLevelFactoryBase {
  public:
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
-  typedef typename DeviceType::execution_space execution_space;
+  typedef typename Node::execution_space execution_space;
   typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> node_type;
+  typedef Node node_type;
 
  private:
-  // For compatibility
-  typedef node_type Node;
 #undef MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 

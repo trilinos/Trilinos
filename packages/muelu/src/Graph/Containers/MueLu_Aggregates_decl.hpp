@@ -49,7 +49,6 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_Aggregates_fwd.hpp"
 
@@ -103,24 +102,19 @@ namespace MueLu {
     correspond to nodes. While not strictly necessary, it might be convenient.
 */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-class Aggregates;
-
-template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-class Aggregates<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType> > : public BaseClass {
+class Aggregates : public BaseClass {
  public:
   using local_ordinal_type  = LocalOrdinal;
   using global_ordinal_type = GlobalOrdinal;
-  using execution_space     = typename DeviceType::execution_space;
-  using node_type           = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>;
-  using device_type         = DeviceType;
+  using execution_space     = typename Node::execution_space;
+  using node_type           = Node;
+  using device_type         = typename Node::device_type;
   using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
   using LO_view             = Kokkos::View<local_ordinal_type*, device_type>;
 
   using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, device_type>;
 
  private:
-  // For compatibility
-  typedef node_type Node;
 #undef MUELU_AGGREGATES_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 

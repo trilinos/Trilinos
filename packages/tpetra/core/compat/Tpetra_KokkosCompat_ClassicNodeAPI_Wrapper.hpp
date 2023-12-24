@@ -2,6 +2,7 @@
 #define TPETRA_KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
 #include "Kokkos_Core.hpp"
+#include "TpetraCore_config.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 //

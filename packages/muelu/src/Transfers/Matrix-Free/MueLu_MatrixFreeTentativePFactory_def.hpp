@@ -57,8 +57,8 @@
 
 namespace MueLu {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-RCP<const ParameterList> MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
@@ -77,8 +77,8 @@ RCP<const ParameterList> MatrixFreeTentativePFactory<Scalar, LocalOrdinal, Globa
   return validParamList;
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
   const ParameterList& pL = GetParameterList();
   // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
   std::string nspName = "Nullspace";
@@ -90,13 +90,13 @@ void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Ko
   Input(fineLevel, "CoarseMap");
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
   return BuildP(fineLevel, coarseLevel);
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
   const ParameterList& pL = GetParameterList();
@@ -116,7 +116,7 @@ void MatrixFreeTentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::Ko
   size_t NSDim                     = fineNullspace->getNumVectors();
   RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
-  Teuchos::RCP<Operator> P = Teuchos::rcp(new MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>(coarseMap, fineMap, aggregates));
+  Teuchos::RCP<Operator> P = Teuchos::rcp(new MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>(coarseMap, fineMap, aggregates));
   P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, 1.0, 0.0);  // coarse = alpha*R*fine + beta*coarse
 
   Set(coarseLevel, "Nullspace", coarseNullspace);

@@ -103,8 +103,7 @@ class CoordinatesTransferFactory : public TwoLevelFactoryBase {
   typedef Scalar scalar_type;
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
-  typedef typename Node::device_type DeviceType;
-  typedef typename DeviceType::execution_space execution_space;
+  typedef typename Node::execution_space execution_space;
 
  private:
 #undef MUELU_COORDINATESTRANSFERFACTORY_SHORT
