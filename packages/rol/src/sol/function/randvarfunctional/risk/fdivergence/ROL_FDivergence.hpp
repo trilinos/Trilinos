@@ -162,7 +162,7 @@ public:
   */
   virtual Real Fdual(Real x, int deriv = 0) = 0;
 
-  bool check(std::ostream &outStream = std::cout) const {
+  bool check(std::ostream &outStream = std::cout) {
     const Real tol(std::sqrt(ROL_EPSILON<Real>()));
     bool flag = true;
 

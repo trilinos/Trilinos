@@ -3,11 +3,8 @@
 
 #include <ROL_Vector.hpp>
 #include <ROL_Objective.hpp>
-#include <ROL_QuadraticObjective.hpp>
 #include <ROL_Constraint.hpp>
 #include <ROL_Solver.hpp>
-#include <ROL_Algorithm.hpp>
-#include <ROL_TrustRegionStep.hpp>
 #include <ROL_Problem.hpp>
 
 #include <ROL_Vector_SimOpt.hpp>
@@ -15,6 +12,8 @@
 #include <ROL_Reduced_Objective_SimOpt.hpp>
 #include <ROL_SimConstraint.hpp>
 #include <ROL_BoundConstraint_SimOpt.hpp>
+
+#include <ROL_OED_Factory.hpp>
 
 #include <PyROL_ETI_helper.hpp>
 
@@ -31,7 +30,6 @@
 
 #define BINDER_ROL_OBJECTIVE(SCALAR) \
   BINDER_ETI_ABSTRACT(Objective<SCALAR>) \
-  BINDER_ETI_WITH_FOO(QuadraticObjective<SCALAR>) \
   BINDER_ETI_ABSTRACT(Objective_SimOpt<SCALAR>) \
   BINDER_ETI_ABSTRACT(Reduced_Objective_SimOpt<SCALAR>)
 
@@ -41,12 +39,13 @@
   BINDER_ETI_ABSTRACT(BoundConstraint_SimOpt<SCALAR>)
 
 #define BINDER_ROL_SOLVER(SCALAR) \
-  BINDER_ETI_ABSTRACT(Solver<SCALAR>) \
-  BINDER_ETI_WITH_FOO(Algorithm<SCALAR>) \
-  BINDER_ETI_WITH_FOO(TrustRegionStep<SCALAR>)
+  BINDER_ETI_ABSTRACT(Solver<SCALAR>)
 
 #define BINDER_ROL_PROBLEM(SCALAR) \
   BINDER_ETI_ABSTRACT(Problem<SCALAR>)
+
+#define BINDER_ROL_OED(SCALAR) \
+  BINDER_ETI_ABSTRACT(Factory<SCALAR>)
 
 namespace ROL {
 
@@ -55,6 +54,10 @@ namespace ROL {
   BINDER_ROL_CONSTRAINT(double)
   BINDER_ROL_SOLVER(double)
   BINDER_ROL_PROBLEM(double)
+
+namespace OED {
+  BINDER_ROL_OED(double)
+}
 
 }
 

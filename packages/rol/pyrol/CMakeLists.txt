@@ -73,7 +73,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_CMAKE_ERROR
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_VERBOSE
   PYROL_B_VERBOSE
   "Increase the verbosity of binder"
-  OFF ) 
+  OFF )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_ENABLE_BINDER_UPDATE
   PYROL_UPDATE_GENERATED_SRC
@@ -193,6 +193,14 @@ list(APPEND ROL_all_include_dirs "${PARAMETERLIST_DIR}")
 list(APPEND ROL_all_include_dirs "${LA_DIR}")
 list(APPEND ROL_all_include_dirs "${LAPACK_DIR}")
 list(APPEND ROL_all_include_dirs "${BLAS_DIR}")
+
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed")
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/constraint")
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/factors")
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/objective")
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/objective/het")
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/objective/hom")
+list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/utilities")
 
 IF (PYROL_GENERATE_SRC)
   MESSAGE("-- PyROL_BINDER_EXECUTABLE:")
