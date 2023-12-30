@@ -46,18 +46,13 @@
 #ifndef MUELU_RAPSHIFTFACTORY_FWD_HPP
 #define MUELU_RAPSHIFTFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class RAPShiftFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class RAPShiftFactory;
 }
 
 #ifndef MUELU_RAPSHIFTFACTORY_SHORT
 #define MUELU_RAPSHIFTFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_RAPSHIFTFACTORY_FWD_HPP
+#endif  // MUELU_RAPSHIFTFACTORY_FWD_HPP

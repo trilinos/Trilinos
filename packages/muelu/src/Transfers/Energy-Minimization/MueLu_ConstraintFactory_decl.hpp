@@ -53,62 +53,60 @@
 
 namespace MueLu {
 
-  /*!
-    @class ConstraintFactory class.
-    @brief Factory for building the constraint operator
+/*!
+  @class ConstraintFactory class.
+  @brief Factory for building the constraint operator
 
-    Factory for creating the constraint operator.
+  Factory for creating the constraint operator.
 
-    @ingroup MueLuTransferClasses
-  */
+  @ingroup MueLuTransferClasses
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class ConstraintFactory : public TwoLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class ConstraintFactory : public TwoLevelFactoryBase {
 #undef MUELU_CONSTRAINTFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  /*! @brief Constructor.
+    User can supply a factory for generating the nonzero pattern. The nullspace vectors (both fine and coarse) will
+    be taken from the corresponding level factories
+    */
+  ConstraintFactory() {}
 
-    /*! @brief Constructor.
-      User can supply a factory for generating the nonzero pattern. The nullspace vectors (both fine and coarse) will
-      be taken from the corresponding level factories
-      */
-    ConstraintFactory() { }
+  //! Destructor.
+  virtual ~ConstraintFactory() {}
 
-    //! Destructor.
-    virtual ~ConstraintFactory() { }
+  //@}
 
-    //@}
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! @name Input
+  //@{
 
-    //! @name Input
-    //@{
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  //@}
+  //! @name Build methods.
+  //@{
 
-    //@}
-    //! @name Build methods.
-    //@{
+  /*!
+    @brief Build method.
 
-    /*!
-      @brief Build method.
+    Builds Constraint and returns it in <tt>coarseLevel</tt>.
+    */
+  void Build(Level& fineLevel, Level& coarseLevel) const;
 
-      Builds Constraint and returns it in <tt>coarseLevel</tt>.
-      */
-    void Build(Level & fineLevel, Level& coarseLevel) const;
+  //@}
+};  // class ConstraintFactory
 
-    //@}
-  }; // class ConstraintFactory
-
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_CONSTRAINTFACTORY_SHORT
-#endif // MUELU_CONSTRAINTFACTORY_DECL_HPP
+#endif  // MUELU_CONSTRAINTFACTORY_DECL_HPP

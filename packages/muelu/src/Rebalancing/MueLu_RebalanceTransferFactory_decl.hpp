@@ -65,57 +65,57 @@
 
 namespace MueLu {
 
-  /*!
-    @class RebalanceTransferFactory class.
-    @brief Applies permutation to grid transfer operators.
-    @ingroup MueLuTransferClasses
-  */
+/*!
+  @class RebalanceTransferFactory class.
+  @brief Applies permutation to grid transfer operators.
+  @ingroup MueLuTransferClasses
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class RebalanceTransferFactory : public TwoLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class RebalanceTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCETRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    RebalanceTransferFactory() { }
+  //! Constructor.
+  RebalanceTransferFactory() {}
 
-    //! Destructor.
-    virtual ~RebalanceTransferFactory() { }
+  //! Destructor.
+  virtual ~RebalanceTransferFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level& fineLevel, Level& coarseLevel) const;
+  //! Build an object with this factory.
+  void Build(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-  }; // class RebalanceTransferFactory
+};  // class RebalanceTransferFactory
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_REBALANCETRANSFERFACTORY_SHORT
-#endif // MUELU_REBALANCETRANSFERFACTORY_DECL_HPP
+#endif  // MUELU_REBALANCETRANSFERFACTORY_DECL_HPP

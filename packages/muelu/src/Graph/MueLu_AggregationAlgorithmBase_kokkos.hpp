@@ -59,42 +59,42 @@
 
 namespace MueLu {
 
-  /*!
-       @class AggregationAlgorithmBase
-       @brief Pure virtual base class for all MueLu aggregation algorithms
+/*!
+     @class AggregationAlgorithmBase
+     @brief Pure virtual base class for all MueLu aggregation algorithms
 
-       @ingroup MueLuBaseClasses
-   */
-  template<class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class AggregationAlgorithmBase_kokkos : public BaseClass {
+     @ingroup MueLuBaseClasses
+ */
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class AggregationAlgorithmBase_kokkos : public BaseClass {
 #undef MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
-    public:
-    using device_type = typename LWGraph_kokkos::device_type;
+ public:
+  using device_type = typename LWGraph_kokkos::device_type;
 
-    //! @name Constructors/Destructors
-    //@{
+  //! @name Constructors/Destructors
+  //@{
 
-    //! Destructor.
-    virtual ~AggregationAlgorithmBase_kokkos() {}
+  //! Destructor.
+  virtual ~AggregationAlgorithmBase_kokkos() {}
 
-    //@}
+  //@}
 
-    //! @name Build routines
-    //@{
+  //! @name Build routines
+  //@{
 
-    //! BuildAggregates routine.
-    virtual void BuildAggregates(const Teuchos::ParameterList& params,
-                                 const LWGraph_kokkos& graph,
-                                 Aggregates& aggregates,
-                                 Kokkos::View<unsigned*, device_type>& aggStat,
-                                 LO& numNonAggregatedNodes) const = 0;
-    //@}
-  };
+  //! BuildAggregates routine.
+  virtual void BuildAggregates(const Teuchos::ParameterList& params,
+                               const LWGraph_kokkos& graph,
+                               Aggregates& aggregates,
+                               Kokkos::View<unsigned*, device_type>& aggStat,
+                               LO& numNonAggregatedNodes) const = 0;
+  //@}
+};
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_SHORT
-#endif // MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP
+#endif  // MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP

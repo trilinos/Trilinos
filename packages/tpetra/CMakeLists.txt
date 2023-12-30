@@ -339,6 +339,24 @@ ELSE () # NOT Tpetra_INST_SYCL
   ENDIF ()
 ENDIF () # Tpetra_INST_SYCL
 
+############################################################
+# Shared/Managed Memory Default Allocation
+############################################################
+# Normally we allocate Tpetra objects to the basic space by default,
+# but some apps might want to allocate memory to the "shared" host/device
+# space. This might be CudaUVMSpace, HIPManagedSpace or SYCLSharedUSMSpace.
+# These options allow us to do that sort of thing, changing
+# core/compat/Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ALLOCATE_IN_SHARED_SPACE
+  HAVE_TPETRA_SHARED_ALLOCS
+  "Have Tpetra allocate memory in shared/managed space by default"
+  OFF
+  )
+IF(Tpetra_ALLOCATE_IN_SHARED_SPACE)
+  MESSAGE(STATUS "- Tpetra: Allocating the shared/managed space by default.")
+ENDIF()
+
 
 ############################################################
 # Device-aware MPI Support

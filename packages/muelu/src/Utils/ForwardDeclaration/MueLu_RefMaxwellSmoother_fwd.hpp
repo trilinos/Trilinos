@@ -46,18 +46,13 @@
 #ifndef MUELU_REFMAXWELLSMOOTHER_FWD_HPP
 #define MUELU_REFMAXWELLSMOOTHER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class RefMaxwellSmoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class RefMaxwellSmoother;
 }
 
 #ifndef MUELU_REFMAXWELLSMOOTHER_SHORT
 #define MUELU_REFMAXWELLSMOOTHER_SHORT
 #endif
 
-
-
-#endif // MUELU_REFMAXWELLSMOOTHER_FWD_HPP
+#endif  // MUELU_REFMAXWELLSMOOTHER_FWD_HPP

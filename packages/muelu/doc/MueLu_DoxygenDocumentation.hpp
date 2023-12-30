@@ -115,4 +115,4 @@ The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-#endif //ifndef MUELU_DOXYGEN_DOCUMENTATION_HPP
+#endif  // ifndef MUELU_DOXYGEN_DOCUMENTATION_HPP

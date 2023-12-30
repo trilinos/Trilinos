@@ -103,62 +103,61 @@ namespace MueLu {
     | CrsGraph     | StructuredAggregationFactory_kokkos   | CrsGraph of the prolongator
 */
 
-  template<class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class StructuredAggregationFactory_kokkos : public SingleLevelFactoryBase {
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class StructuredAggregationFactory_kokkos : public SingleLevelFactoryBase {
 #undef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    StructuredAggregationFactory_kokkos();
+  //! Constructor.
+  StructuredAggregationFactory_kokkos();
 
-    //! Destructor.
-    virtual ~StructuredAggregationFactory_kokkos() { }
+  //! Destructor.
+  virtual ~StructuredAggregationFactory_kokkos() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! @name Set/get methods.
-    //@{
-    // set information about 1-node aggregates (map name and generating factory)
-    void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-      SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name))); // revalidate
-      SetFactory("OnePt aggregate map factory",mapFact);
-    }
+  //! @name Set/get methods.
+  //@{
+  // set information about 1-node aggregates (map name and generating factory)
+  void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
+    SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name)));  // revalidate
+    SetFactory("OnePt aggregate map factory", mapFact);
+  }
 
-    //@}
+  //@}
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level& currentLevel) const;
+  void DeclareInput(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    /*! @brief Build aggregates. */
-    void Build(Level& currentLevel) const;
+  /*! @brief Build aggregates. */
+  void Build(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-  private:
+ private:
+  //! boolean flag: definition phase
+  //! if true, the aggregation algorithms still can be set and changed.
+  //! if false, no change in aggregation algorithms is possible any more
+  mutable bool bDefinitionPhase_;
 
-    //! boolean flag: definition phase
-    //! if true, the aggregation algorithms still can be set and changed.
-    //! if false, no change in aggregation algorithms is possible any more
-    mutable bool bDefinitionPhase_;
+};  // class StructuredAggregationFactory
 
-  }; // class StructuredAggregationFactory
-
-}
+}  // namespace MueLu
 
 #define MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_SHORT
-#endif // MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
+#endif  // MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP

@@ -46,18 +46,13 @@
 #ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_FWD_HPP
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class IsolatedNodeAggregationAlgorithm_kokkos;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class IsolatedNodeAggregationAlgorithm_kokkos;
 }
 
 #ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_SHORT
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_SHORT
 #endif
 
-
-
-#endif // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_FWD_HPP
+#endif  // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_FWD_HPP

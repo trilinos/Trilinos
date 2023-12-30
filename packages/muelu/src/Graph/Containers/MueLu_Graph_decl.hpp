@@ -46,8 +46,8 @@
 #ifndef MUELU_GRAPH_DECL_HPP
 #define MUELU_GRAPH_DECL_HPP
 
-#include <Xpetra_ConfigDefs.hpp>   // global_size_t
-#include <Xpetra_CrsGraph_fwd.hpp>     // inline functions requires class declaration
+#include <Xpetra_ConfigDefs.hpp>    // global_size_t
+#include <Xpetra_CrsGraph_fwd.hpp>  // inline functions requires class declaration
 #include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -64,78 +64,76 @@ namespace MueLu {
    This class holds an underlying Xpetra_CrsGraph.
    This class can be considered a facade, as MueLu needs only limited functionality for aggregation.
 */
-  template <class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class Graph
-    : public MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node> { //FIXME  shortnames isn't working
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class Graph
+  : public MueLu::GraphBase<LocalOrdinal, GlobalOrdinal, Node> {  // FIXME  shortnames isn't working
 #undef MUELU_GRAPH_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
+  Graph(const RCP<const CrsGraph>& graph, const std::string& /* objectLabel */ = "");
 
-    //! @name Constructors/Destructors.
-    //@{
-    Graph(const RCP<const CrsGraph> & graph, const std::string & /* objectLabel */="");
+  virtual ~Graph() {}
+  //@}
 
-    virtual ~Graph() {}
-    //@}
+  size_t GetNodeNumVertices() const { return graph_->getLocalNumRows(); }
+  size_t GetNodeNumEdges() const { return graph_->getLocalNumEntries(); }
 
-    size_t GetNodeNumVertices() const                                        { return graph_->getLocalNumRows(); }
-    size_t GetNodeNumEdges()    const                                        { return graph_->getLocalNumEntries(); }
+  Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
 
-    Xpetra::global_size_t GetGlobalNumEdges() const                          { return graph_->getGlobalNumEntries(); }
+  const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
+  const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
+  //! Returns overlapping import map (nodes).
+  const RCP<const Map> GetImportMap() const { return graph_->getColMap(); }
 
-    const RCP<const Teuchos::Comm<int> > GetComm() const                     { return graph_->getComm(); }
-    const RCP<const Map> GetDomainMap() const                                { return graph_->getDomainMap(); }
-    //! Returns overlapping import map (nodes).
-    const RCP<const Map> GetImportMap() const                                { return graph_->getColMap();    }
+  const RCP<const CrsGraph> GetGraph() const { return graph_; }
 
-    const RCP<const CrsGraph> GetGraph() const {return graph_;}
+  //! Set map with local ids of boundary nodes.
+  void SetBoundaryNodeMap(const ArrayRCP<const bool>& localDirichletNodes) { localDirichletNodes_ = localDirichletNodes; }
 
-    //! Set map with local ids of boundary nodes.
-    void SetBoundaryNodeMap(const ArrayRCP<const bool>& localDirichletNodes) { localDirichletNodes_ = localDirichletNodes; }
+  //! Returns map with local ids of boundary nodes.
+  const ArrayRCP<const bool> GetBoundaryNodeMap() const { return localDirichletNodes_; }
 
-    //! Returns map with local ids of boundary nodes.
-    const ArrayRCP<const bool> GetBoundaryNodeMap() const                    { return localDirichletNodes_; }
+  //! Returns the maximum number of entries across all rows/columns on this node
+  size_t getLocalMaxNumRowEntries() const { return graph_->getLocalMaxNumRowEntries(); }
 
-    //! Returns the maximum number of entries across all rows/columns on this node
-    size_t getLocalMaxNumRowEntries () const                                  { return graph_->getLocalMaxNumRowEntries(); }
+  //! Return the list of vertices adjacent to the vertex 'v'.
+  ArrayView<const LO> getNeighborVertices(LO i) const {
+    ArrayView<const LO> rowView;
+    graph_->getLocalRowView(i, rowView);
+    return rowView;
+  }
 
-    //! Return the list of vertices adjacent to the vertex 'v'.
-    ArrayView<const LO> getNeighborVertices(LO i) const {
-      ArrayView<const LO> rowView;
-      graph_->getLocalRowView(i, rowView);
-      return rowView;
-    }
-
-    //! Return true if vertex with local id 'v' is on current process.
-    bool isLocalNeighborVertex(LO i) const                                   { return i >= minLocalIndex_ && i <= maxLocalIndex_; }
+  //! Return true if vertex with local id 'v' is on current process.
+  bool isLocalNeighborVertex(LO i) const { return i >= minLocalIndex_ && i <= maxLocalIndex_; }
 
 #ifdef MUELU_UNUSED
-    size_t GetNodeNumGhost() const;
+  size_t GetNodeNumGhost() const;
 #endif
 
-    /// Return a simple one-line description of the Graph.
-    std::string description() const                                          { return "MueLu.description()"; }
+  /// Return a simple one-line description of the Graph.
+  std::string description() const { return "MueLu.description()"; }
 
-    //! Print the Graph with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+  //! Print the Graph with some verbosity level to an FancyOStream object.
+  // using MueLu::Describable::describe; // overloading, not hiding
+  // void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
+  void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
-  private:
+ private:
+  RCP<const CrsGraph> graph_;
 
-    RCP<const CrsGraph> graph_;
+  //! Vector of Dirichlet boundary node IDs on current process.
+  ArrayRCP<const bool> localDirichletNodes_;
 
-    //! Vector of Dirichlet boundary node IDs on current process.
-    ArrayRCP<const bool> localDirichletNodes_;
+  // local index boundaries (cached from domain map)
+  LO minLocalIndex_, maxLocalIndex_;
+};
 
-    // local index boundaries (cached from domain map)
-    LO minLocalIndex_, maxLocalIndex_;
-  };
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_GRAPH_SHORT
-#endif // MUELU_GRAPH_DECL_HPP
+#endif  // MUELU_GRAPH_DECL_HPP

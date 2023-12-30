@@ -55,71 +55,70 @@
 
 namespace MueLu {
 
-  /*!
-    @class MultiVectorTransferFactory class.
-    @brief Class for restricting a MultiVector from a finer to a coarser level.
+/*!
+  @class MultiVectorTransferFactory class.
+  @brief Class for restricting a MultiVector from a finer to a coarser level.
 
-    This is to be used in conjunction with Muelu::RAPFactory::AddTransferFactory().
-  */
+  This is to be used in conjunction with Muelu::RAPFactory::AddTransferFactory().
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class MultiVectorTransferFactory : public TwoLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class MultiVectorTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    /*! @brief Constructor.
+  /*! @brief Constructor.
 
-       @param vectorName The name of the quantity to be restricted.
-       @param restrictionName The name of the restriction Matrix.
+     @param vectorName The name of the quantity to be restricted.
+     @param restrictionName The name of the restriction Matrix.
 
-       The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
-       <tt>vectorName</tt>.
-    */
-    MultiVectorTransferFactory() { }
+     The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
+     <tt>vectorName</tt>.
+  */
+  MultiVectorTransferFactory() {}
 
-    MultiVectorTransferFactory(std::string const & vectorName); // deprecated
+  MultiVectorTransferFactory(std::string const &vectorName);  // deprecated
 
-    //! Destructor.
-    virtual ~MultiVectorTransferFactory() { }
+  //! Destructor.
+  virtual ~MultiVectorTransferFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &finelevel, Level &coarseLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level &finelevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level & fineLevel, Level &coarseLevel) const;
+  //! Build an object with this factory.
+  void Build(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-  private:
+ private:
+  static ArrayRCP<SC> expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize);
 
-    static ArrayRCP<SC> expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize);
+};  // class MultiVectorTransferFactory
 
-  }; // class MultiVectorTransferFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
-#endif // MUELU_MULTIVECTORTRANSFER_FACTORY_DECL_HPP
+#endif  // MUELU_MULTIVECTORTRANSFER_FACTORY_DECL_HPP

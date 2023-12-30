@@ -58,80 +58,78 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 
 namespace MueLu {
-  /*!
-    @class AggregationPhase2bAlgorithm class.
-    @brief Add leftovers to existing aggregates
-    @ingroup Aggregation
+/*!
+  @class AggregationPhase2bAlgorithm class.
+  @brief Add leftovers to existing aggregates
+  @ingroup Aggregation
 
-    ### Idea ###
-    In phase 2b non-aggregated nodes are added to existing aggregates.
-    All neighbors of the unaggregated node are checked and the corresponding
-    aggregate weight is increased. The unaggregated node is added to the aggregate
-    with the best weight. A simple penalty strategy makes sure that the non-aggregated
-    nodes are added to different aggregates.
-    The routine runs twice to cover non-aggregate nodes which have a node distance
-    of two to existing aggregates. Assuming that the node distance is not greater
-    than 3 (the aggregate diameter size), running the algorithm only twice should
-    be sufficient.
+  ### Idea ###
+  In phase 2b non-aggregated nodes are added to existing aggregates.
+  All neighbors of the unaggregated node are checked and the corresponding
+  aggregate weight is increased. The unaggregated node is added to the aggregate
+  with the best weight. A simple penalty strategy makes sure that the non-aggregated
+  nodes are added to different aggregates.
+  The routine runs twice to cover non-aggregate nodes which have a node distance
+  of two to existing aggregates. Assuming that the node distance is not greater
+  than 3 (the aggregate diameter size), running the algorithm only twice should
+  be sufficient.
 
-    ### Comments ###
-    Only nodes with state READY are changed to AGGREGATED. There are no aggregation criteria considered. Especially the aggregation: max agg size criterion is ignored.
-    This is not a problem, since after the previous aggregation phases one should not be able to build too large aggregates.
-  */
+  ### Comments ###
+  Only nodes with state READY are changed to AGGREGATED. There are no aggregation criteria considered. Especially the aggregation: max agg size criterion is ignored.
+  This is not a problem, since after the previous aggregation phases one should not be able to build too large aggregates.
+*/
 
-  template<class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class AggregationPhase2bAlgorithm_kokkos :
-    public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal,GlobalOrdinal,Node> {
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class AggregationPhase2bAlgorithm_kokkos : public MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
-    using device_type     = typename LWGraph_kokkos::device_type;
-    using execution_space = typename LWGraph_kokkos::execution_space;
-    using memory_space    = typename LWGraph_kokkos::memory_space;
+ public:
+  using device_type     = typename LWGraph_kokkos::device_type;
+  using execution_space = typename LWGraph_kokkos::execution_space;
+  using memory_space    = typename LWGraph_kokkos::memory_space;
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    AggregationPhase2bAlgorithm_kokkos(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
+  //! Constructor.
+  AggregationPhase2bAlgorithm_kokkos(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) {}
 
-    //! Destructor.
-    virtual ~AggregationPhase2bAlgorithm_kokkos() { }
+  //! Destructor.
+  virtual ~AggregationPhase2bAlgorithm_kokkos() {}
 
-    //@}
+  //@}
 
+  //! @name Aggregation methods.
+  //@{
 
-    //! @name Aggregation methods.
-    //@{
+  /*! @brief Local aggregation. */
 
-    /*! @brief Local aggregation. */
+  void BuildAggregates(const ParameterList& params,
+                       const LWGraph_kokkos& graph,
+                       Aggregates& aggregates,
+                       Kokkos::View<unsigned*, device_type>& aggStat,
+                       LO& numNonAggregatedNodes) const;
 
-    void BuildAggregates(const ParameterList& params,
-                         const LWGraph_kokkos& graph,
-                         Aggregates& aggregates,
-                         Kokkos::View<unsigned*, device_type>& aggStat,
-                         LO& numNonAggregatedNodes) const;
+  void BuildAggregatesRandom(const ParameterList& params,
+                             const LWGraph_kokkos& graph,
+                             Aggregates& aggregates,
+                             Kokkos::View<unsigned*, device_type>& aggStat,
+                             LO& numNonAggregatedNodes) const;
 
-    void BuildAggregatesRandom(const ParameterList& params,
-                               const LWGraph_kokkos& graph,
-                               Aggregates& aggregates,
-                               Kokkos::View<unsigned*, device_type>& aggStat,
-                               LO& numNonAggregatedNodes) const;
+  void BuildAggregatesDeterministic(const ParameterList& params,
+                                    const LWGraph_kokkos& graph,
+                                    Aggregates& aggregates,
+                                    Kokkos::View<unsigned*, device_type>& aggStat,
+                                    LO& numNonAggregatedNodes) const;
+  //@}
 
-    void BuildAggregatesDeterministic(const ParameterList& params,
-                                      const LWGraph_kokkos& graph,
-                                      Aggregates& aggregates,
-                                      Kokkos::View<unsigned*, device_type>& aggStat,
-                                      LO& numNonAggregatedNodes) const;
-    //@}
+  std::string description() const { return "Phase 2b (expansion)"; }
+};
 
-    std::string description() const { return "Phase 2b (expansion)"; }
-  };
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_SHORT
-#endif // MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP
+#endif  // MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP

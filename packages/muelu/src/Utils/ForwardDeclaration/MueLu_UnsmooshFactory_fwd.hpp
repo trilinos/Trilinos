@@ -46,18 +46,13 @@
 #ifndef MUELU_UNSMOOSHFACTORY_FWD_HPP
 #define MUELU_UNSMOOSHFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class UnsmooshFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class UnsmooshFactory;
 }
 
 #ifndef MUELU_UNSMOOSHFACTORY_SHORT
 #define MUELU_UNSMOOSHFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_UNSMOOSHFACTORY_FWD_HPP
+#endif  // MUELU_UNSMOOSHFACTORY_FWD_HPP

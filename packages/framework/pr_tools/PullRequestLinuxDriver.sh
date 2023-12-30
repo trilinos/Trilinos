@@ -201,7 +201,7 @@ test_cmd_options=(
     --jenkins-job-number=${BUILD_NUMBER:?}
     --req-mem-per-core=4.0
     --max-cores-allowed=${TRILINOS_MAX_CORES:=29}
-    --num-concurrent-tests=4
+    --num-concurrent-tests=16
     --test-mode=${mode}
     --workspace-dir=${WORKSPACE:?}
     --filename-packageenables=${WORKSPACE:?}/packageEnables.cmake

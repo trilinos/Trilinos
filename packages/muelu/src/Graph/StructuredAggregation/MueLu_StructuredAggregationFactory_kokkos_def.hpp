@@ -65,193 +65,192 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  StructuredAggregationFactory_kokkos() : bDefinitionPhase_(true) { }
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+    StructuredAggregationFactory_kokkos()
+  : bDefinitionPhase_(true) {}
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  GetValidParameterList() const {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+    GetValidParameterList() const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
-    SET_VALID_ENTRY("aggregation: allow user-specified singletons");
-    SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
-    SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
-#undef  SET_VALID_ENTRY
+  SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
+  SET_VALID_ENTRY("aggregation: allow user-specified singletons");
+  SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
+  SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
+#undef SET_VALID_ENTRY
 
-    // general variables needed in StructuredAggregationFactory
-    validParamList->set<std::string>            ("aggregation: output type", "Aggregates",
-                                                 "Type of object holding the aggregation data: Aggregtes or CrsGraph");
-    validParamList->set<std::string>            ("aggregation: coarsening rate", "{3}",
-                                                 "Coarsening rate per spatial dimensions");
-    validParamList->set<int>                    ("aggregation: coarsening order", 0,
-                                                  "The interpolation order used to construct grid transfer operators based off these aggregates.");
-    validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
-                                                 "Graph of the matrix after amalgamation but without dropping.");
-    validParamList->set<RCP<const FactoryBase> >("DofsPerNode",             Teuchos::null,
-                                                 "Number of degrees of freedom per mesh node, provided by the coalsce drop factory.");
-    validParamList->set<RCP<const FactoryBase> >("numDimensions",           Teuchos::null,
-                                                 "Number of spatial dimension provided by CoordinatesTransferFactory.");
-    validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
-                                                 "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
+  // general variables needed in StructuredAggregationFactory
+  validParamList->set<std::string>("aggregation: output type", "Aggregates",
+                                   "Type of object holding the aggregation data: Aggregtes or CrsGraph");
+  validParamList->set<std::string>("aggregation: coarsening rate", "{3}",
+                                   "Coarsening rate per spatial dimensions");
+  validParamList->set<int>("aggregation: coarsening order", 0,
+                           "The interpolation order used to construct grid transfer operators based off these aggregates.");
+  validParamList->set<RCP<const FactoryBase> >("Graph", Teuchos::null,
+                                               "Graph of the matrix after amalgamation but without dropping.");
+  validParamList->set<RCP<const FactoryBase> >("DofsPerNode", Teuchos::null,
+                                               "Number of degrees of freedom per mesh node, provided by the coalsce drop factory.");
+  validParamList->set<RCP<const FactoryBase> >("numDimensions", Teuchos::null,
+                                               "Number of spatial dimension provided by CoordinatesTransferFactory.");
+  validParamList->set<RCP<const FactoryBase> >("lNodesPerDim", Teuchos::null,
+                                               "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
 
-    return validParamList;
-  } // GetValidParameterList()
+  return validParamList;
+}  // GetValidParameterList()
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  DeclareInput(Level& currentLevel) const {
-    Input(currentLevel, "Graph");
-    Input(currentLevel, "DofsPerNode");
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+    DeclareInput(Level& currentLevel) const {
+  Input(currentLevel, "Graph");
+  Input(currentLevel, "DofsPerNode");
 
-    // Request the local number of nodes per dimensions
-    if(currentLevel.GetLevelID() == 0) {
-      if(currentLevel.IsAvailable("numDimensions", NoFactory::get())) {
-        currentLevel.DeclareInput("numDimensions", NoFactory::get(), this);
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("numDimensions", NoFactory::get()),
-                                   Exceptions::RuntimeError,
-                                   "numDimensions was not provided by the user on level0!");
-      }
-      if(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get())) {
-        currentLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get()),
-                                   Exceptions::RuntimeError,
-                                   "lNodesPerDim was not provided by the user on level0!");
-      }
+  // Request the local number of nodes per dimensions
+  if (currentLevel.GetLevelID() == 0) {
+    if (currentLevel.IsAvailable("numDimensions", NoFactory::get())) {
+      currentLevel.DeclareInput("numDimensions", NoFactory::get(), this);
     } else {
-      Input(currentLevel, "lNodesPerDim");
-      Input(currentLevel, "numDimensions");
+      TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("numDimensions", NoFactory::get()),
+                                 Exceptions::RuntimeError,
+                                 "numDimensions was not provided by the user on level0!");
     }
-  } // DeclareInput()
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  Build(Level &currentLevel) const {
-    FactoryMonitor m(*this, "Build", currentLevel);
-
-    RCP<Teuchos::FancyOStream> out;
-    if(const char* dbg = std::getenv("MUELU_STRUCTUREDAGGREGATION_DEBUG")) {
-      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      out->setShowAllFrontMatter(false).setShowProcRank(true);
+    if (currentLevel.IsAvailable("lNodesPerDim", NoFactory::get())) {
+      currentLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
     } else {
-      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+      TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get()),
+                                 Exceptions::RuntimeError,
+                                 "lNodesPerDim was not provided by the user on level0!");
     }
+  } else {
+    Input(currentLevel, "lNodesPerDim");
+    Input(currentLevel, "numDimensions");
+  }
+}  // DeclareInput()
 
-    using device_type     = typename LWGraph_kokkos::local_graph_type::device_type;
-    using execution_space = typename LWGraph_kokkos::local_graph_type::device_type::execution_space;
-    using memory_space    = typename LWGraph_kokkos::local_graph_type::device_type::memory_space;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+    Build(Level& currentLevel) const {
+  FactoryMonitor m(*this, "Build", currentLevel);
 
-    *out << "Entering structured aggregation" << std::endl;
+  RCP<Teuchos::FancyOStream> out;
+  if (const char* dbg = std::getenv("MUELU_STRUCTUREDAGGREGATION_DEBUG")) {
+    out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setShowAllFrontMatter(false).setShowProcRank(true);
+  } else {
+    out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+  }
 
-    ParameterList pL = GetParameterList();
-    bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
+  using device_type     = typename LWGraph_kokkos::local_graph_type::device_type;
+  using execution_space = typename LWGraph_kokkos::local_graph_type::device_type::execution_space;
+  using memory_space    = typename LWGraph_kokkos::local_graph_type::device_type::memory_space;
 
-    // General problem informations are gathered from data stored in the problem matix.
-    RCP<const LWGraph_kokkos> graph = Get<RCP<LWGraph_kokkos> >(currentLevel, "Graph");
-    RCP<const Map> fineMap          = graph->GetDomainMap();
-    const int myRank                = fineMap->getComm()->getRank();
-    const LO  dofsPerNode           = Get<LO>(currentLevel, "DofsPerNode");
+  *out << "Entering structured aggregation" << std::endl;
 
-    // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
-    // obtain a nodeMap.
-    const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
-    std::string outputType = pL.get<std::string>("aggregation: output type");
-    const bool outputAggregates = (outputType == "Aggregates" ? true : false);
-    Array<LO> lFineNodesPerDir(3);
-    int numDimensions;
-    if(currentLevel.GetLevelID() == 0) {
-      // On level 0, data is provided by applications and has no associated factory.
-      lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
-      numDimensions    = currentLevel.Get<int>("numDimensions", NoFactory::get());
-    } else {
-      // On level > 0, data is provided directly by generating factories.
-      lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
-      numDimensions    = Get<int>(currentLevel, "numDimensions");
+  ParameterList pL  = GetParameterList();
+  bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
+
+  // General problem informations are gathered from data stored in the problem matix.
+  RCP<const LWGraph_kokkos> graph = Get<RCP<LWGraph_kokkos> >(currentLevel, "Graph");
+  RCP<const Map> fineMap          = graph->GetDomainMap();
+  const int myRank                = fineMap->getComm()->getRank();
+  const LO dofsPerNode            = Get<LO>(currentLevel, "DofsPerNode");
+
+  // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
+  // obtain a nodeMap.
+  const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
+  std::string outputType       = pL.get<std::string>("aggregation: output type");
+  const bool outputAggregates  = (outputType == "Aggregates" ? true : false);
+  Array<LO> lFineNodesPerDir(3);
+  int numDimensions;
+  if (currentLevel.GetLevelID() == 0) {
+    // On level 0, data is provided by applications and has no associated factory.
+    lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
+    numDimensions    = currentLevel.Get<int>("numDimensions", NoFactory::get());
+  } else {
+    // On level > 0, data is provided directly by generating factories.
+    lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
+    numDimensions    = Get<int>(currentLevel, "numDimensions");
+  }
+
+  // First make sure that input parameters are set logically based on dimension
+  for (int dim = 0; dim < 3; ++dim) {
+    if (dim >= numDimensions) {
+      lFineNodesPerDir[dim] = 1;
     }
+  }
 
+  // Get the coarsening rate
+  std::string coarseningRate = pL.get<std::string>("aggregation: coarsening rate");
+  Teuchos::Array<LO> coarseRate;
+  try {
+    coarseRate = Teuchos::fromStringToArray<LO>(coarseningRate);
+  } catch (const Teuchos::InvalidArrayStringRepresentation& e) {
+    GetOStream(Errors, -1) << " *** \"aggregation: coarsening rate\" must be a string convertible into an array! *** "
+                           << std::endl;
+    throw e;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION((coarseRate.size() > 1) && (coarseRate.size() < numDimensions),
+                             Exceptions::RuntimeError,
+                             "\"aggregation: coarsening rate\" must have at least as many"
+                             " components as the number of spatial dimensions in the problem.");
 
-    // First make sure that input parameters are set logically based on dimension
-    for(int dim = 0; dim < 3; ++dim) {
-      if(dim >= numDimensions) {
-        lFineNodesPerDir[dim] = 1;
-      }
-    }
+  // Now that we have extracted info from the level, create the IndexManager
+  RCP<IndexManager_kokkos> geoData = rcp(new IndexManager_kokkos(numDimensions,
+                                                                 interpolationOrder, myRank,
+                                                                 lFineNodesPerDir,
+                                                                 coarseRate));
 
-    // Get the coarsening rate
-    std::string coarseningRate = pL.get<std::string>("aggregation: coarsening rate");
-    Teuchos::Array<LO> coarseRate;
-    try {
-      coarseRate = Teuchos::fromStringToArray<LO>(coarseningRate);
-    } catch(const Teuchos::InvalidArrayStringRepresentation& e) {
-      GetOStream(Errors,-1) << " *** \"aggregation: coarsening rate\" must be a string convertible into an array! *** "
-                            << std::endl;
-      throw e;
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION((coarseRate.size() > 1) && (coarseRate.size() < numDimensions),
-                               Exceptions::RuntimeError,
-                               "\"aggregation: coarsening rate\" must have at least as many"
-                               " components as the number of spatial dimensions in the problem.");
+  *out << "The index manager has now been built" << std::endl;
+  TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getLocalNumElements() != static_cast<size_t>(geoData->getNumLocalFineNodes()),
+                             Exceptions::RuntimeError,
+                             "The local number of elements in the graph's map is not equal to "
+                             "the number of nodes given by: lNodesPerDim!");
 
-    // Now that we have extracted info from the level, create the IndexManager
-    RCP<IndexManager_kokkos> geoData = rcp(new IndexManager_kokkos(numDimensions,
-                                                                   interpolationOrder, myRank,
-                                                                   lFineNodesPerDir,
-                                                                   coarseRate));
+  // Now we are ready for the big loop over the fine node that will assign each
+  // node on the fine grid to an aggregate and a processor.
+  RCP<AggregationStructuredAlgorithm_kokkos> myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm_kokkos());
 
-    *out << "The index manager has now been built" << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getLocalNumElements()
-                               != static_cast<size_t>(geoData->getNumLocalFineNodes()),
-                               Exceptions::RuntimeError,
-                               "The local number of elements in the graph's map is not equal to "
-                               "the number of nodes given by: lNodesPerDim!");
+  if (interpolationOrder == 0 && outputAggregates) {
+    RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));
+    aggregates->setObjectLabel("ST");
+    aggregates->SetIndexManagerKokkos(geoData);
+    aggregates->AggregatesCrossProcessors(false);
+    aggregates->SetNumAggregates(geoData->getNumCoarseNodes());
 
-    // Now we are ready for the big loop over the fine node that will assign each
-    // node on the fine grid to an aggregate and a processor.
-    RCP<AggregationStructuredAlgorithm_kokkos> myStructuredAlgorithm
-      = rcp(new AggregationStructuredAlgorithm_kokkos());
+    LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
+    Kokkos::View<unsigned*, device_type> aggStat("aggStat", numNonAggregatedNodes);
+    Kokkos::parallel_for(
+        "StructuredAggregation: initialize aggStat",
+        Kokkos::RangePolicy<execution_space>(0, numNonAggregatedNodes),
+        KOKKOS_LAMBDA(const LO nodeIdx) { aggStat(nodeIdx) = READY; });
 
-    if(interpolationOrder == 0 && outputAggregates){
-      RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));
-      aggregates->setObjectLabel("ST");
-      aggregates->SetIndexManagerKokkos(geoData);
-      aggregates->AggregatesCrossProcessors(false);
-      aggregates->SetNumAggregates(geoData->getNumCoarseNodes());
+    myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat,
+                                           numNonAggregatedNodes);
 
-      LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
-      Kokkos::View<unsigned*, device_type> aggStat("aggStat", numNonAggregatedNodes);
-      Kokkos::parallel_for("StructuredAggregation: initialize aggStat",
-                           Kokkos::RangePolicy<execution_space>(0, numNonAggregatedNodes),
-                           KOKKOS_LAMBDA(const LO nodeIdx) {aggStat(nodeIdx) = READY;});
+    *out << "numNonAggregatedNodes: " << numNonAggregatedNodes << std::endl;
 
-      myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat,
-                                             numNonAggregatedNodes);
+    TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
+                               "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
+    aggregates->ComputeAggregateSizes(true /*forceRecompute*/);
+    GetOStream(Statistics1) << aggregates->description() << std::endl;
+    Set(currentLevel, "Aggregates", aggregates);
 
-      *out << "numNonAggregatedNodes: " << numNonAggregatedNodes << std::endl;
+  } else {
+    // Create Coarse Data
+    RCP<CrsGraph> myGraph;
+    myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph);
+    Set(currentLevel, "prolongatorGraph", myGraph);
+  }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
-                                 "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
-      aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
-      GetOStream(Statistics1) << aggregates->description() << std::endl;
-      Set(currentLevel, "Aggregates", aggregates);
+  Set(currentLevel, "lCoarseNodesPerDim", geoData->getCoarseNodesPerDirArray());
+  Set(currentLevel, "indexManager", geoData);
+  Set(currentLevel, "structuredInterpolationOrder", interpolationOrder);
+  Set(currentLevel, "numDimensions", numDimensions);
 
-    } else {
-      // Create Coarse Data
-      RCP<CrsGraph> myGraph;
-      myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph);
-      Set(currentLevel, "prolongatorGraph", myGraph);
-    }
+}  // Build()
 
-    Set(currentLevel, "lCoarseNodesPerDim",           geoData->getCoarseNodesPerDirArray());
-    Set(currentLevel, "indexManager",                 geoData);
-    Set(currentLevel, "structuredInterpolationOrder", interpolationOrder);
-    Set(currentLevel, "numDimensions",                numDimensions);
-
-  } // Build()
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #endif /* MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP */

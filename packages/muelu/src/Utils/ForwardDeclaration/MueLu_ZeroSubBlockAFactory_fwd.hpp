@@ -46,18 +46,13 @@
 #ifndef MUELU_ZEROSUBBLOCKAFACTORY_FWD_HPP
 #define MUELU_ZEROSUBBLOCKAFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ZeroSubBlockAFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ZeroSubBlockAFactory;
 }
 
 #ifndef MUELU_ZEROSUBBLOCKAFACTORY_SHORT
 #define MUELU_ZEROSUBBLOCKAFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_ZEROSUBBLOCKAFACTORY_FWD_HPP
+#endif  // MUELU_ZEROSUBBLOCKAFACTORY_FWD_HPP

@@ -58,83 +58,81 @@
 
 namespace MueLuTests {
 
-  // Little utility to generate a LWGraph.
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::GraphBase<LocalOrdinal, GlobalOrdinal, Node> >
-  gimmeLWGraph(const Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) {
-#   include "MueLu_UseShortNames.hpp"
+// Little utility to generate a LWGraph.
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<MueLu::GraphBase<LocalOrdinal, GlobalOrdinal, Node> >
+gimmeLWGraph(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A) {
+#include "MueLu_UseShortNames.hpp"
 
-    Level level;
+  Level level;
 
-    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
-    level.Set("A", A);
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
+  level.Set("A", A);
 
-    RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
-    dropFact->SetVerbLevel(MueLu::Extreme);
-    dropFact->SetPreDropFunction(rcp(new PreDropFunctionConstVal(0.00001)));
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+  dropFact->SetVerbLevel(MueLu::Extreme);
+  dropFact->SetPreDropFunction(rcp(new PreDropFunctionConstVal(0.00001)));
 
-    level.Request("Graph",              dropFact.get());
-    dropFact->Build(level);
+  level.Request("Graph", dropFact.get());
+  dropFact->Build(level);
 
-    auto graph = level.Get<RCP<GraphBase> >("Graph", dropFact.get());
-    level.Release("Graph",              dropFact.get());
-    return graph;
+  auto graph = level.Get<RCP<GraphBase> >("Graph", dropFact.get());
+  level.Release("Graph", dropFact.get());
+  return graph;
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph, CreateLWGraph, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
+    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+    return;
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph, CreateLWGraph, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "version: " << MueLu::Version() << std::endl;
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
 
-    if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
-      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-      return;
-    }
+  RCP<GraphBase> graph = gimmeLWGraph(A);
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
+  auto comm          = graph->GetComm();
+  const int numRanks = comm->getSize();
 
-    RCP<GraphBase> graph = gimmeLWGraph(A);
+  graph->print(out, MueLu::MsgType::Extreme);
+  //    TEST_EQUALITY( graph->description() == "LWGraph (graph of A)" ,  true);
+  TEST_EQUALITY(graph->description() == "MueLu.description()", true);  // To fix when LWGRaph description method will be fixed
+  TEST_EQUALITY(graph != Teuchos::null, true);
+  auto graphLWK = dynamic_cast<LWGraph*>(graph.get());
+  auto rows     = graphLWK->getRowPtrs();
 
-    auto comm = graph->GetComm();
-    const int numRanks = comm->getSize();
+  if (numRanks == 1) {
+    TEST_EQUALITY(graph->getLocalMaxNumRowEntries() == 3, true);
+    TEST_EQUALITY(graph->GetNodeNumVertices() == 16, true);
+    TEST_EQUALITY(graph->GetNodeNumEdges() == 46, true);
+    TEST_EQUALITY(rows.size() == 17, true);
 
-    graph->print(out, MueLu::MsgType::Extreme);
-    //    TEST_EQUALITY( graph->description() == "LWGraph (graph of A)" ,  true);
-    TEST_EQUALITY( graph->description() == "MueLu.description()",  true); // To fix when LWGRaph description method will be fixed
-    TEST_EQUALITY(graph != Teuchos::null,                true);
-    auto graphLWK = dynamic_cast<LWGraph*>(graph.get());
-    auto rows = graphLWK->getRowPtrs();
+  } else if (numRanks == 4) {
+    TEST_EQUALITY(graph->GetNodeNumVertices() == 4, true);
+  }
 
-    if(numRanks == 1) {
-      TEST_EQUALITY(graph->getLocalMaxNumRowEntries() == 3,   true);
-      TEST_EQUALITY(graph->GetNodeNumVertices() == 16,   true);
-      TEST_EQUALITY(graph->GetNodeNumEdges() == 46,   true);
-      TEST_EQUALITY(rows.size() == 17,   true);
+  auto columns = graphLWK->getEntries();
+  for (size_t i = 0; i < graph->GetNodeNumVertices(); ++i) {
+    TEST_EQUALITY(graph->getNeighborVertices(i).size() == columns.view(rows[i], rows[i + 1] - rows[i]).size(), true);
+  }
 
-    } else if(numRanks == 4) {
-      TEST_EQUALITY(graph->GetNodeNumVertices() == 4,    true);
-    }
+  auto crsGraph = graphLWK->GetCrsGraph();
+  TEST_EQUALITY(crsGraph->getLocalNumEntries() == graph->GetNodeNumEdges(), true);
+  TEST_EQUALITY(crsGraph->getLocalNumRows() == graph->GetNodeNumVertices(), true);
+  TEST_EQUALITY(crsGraph->getLocalMaxNumRowEntries() == graph->getLocalMaxNumRowEntries(), true);
 
-    auto columns = graphLWK->getEntries();
-    for(size_t i = 0; i < graph->GetNodeNumVertices(); ++i) {
-        TEST_EQUALITY(graph->getNeighborVertices(i).size() == columns.view(rows[i], rows[i+1]-rows[i]).size(),   true);
-    }
+  TEST_THROW(graphLWK->SetBoundaryNodeMap(graphLWK->GetDomainMap()), MueLu::Exceptions::NotImplemented);
 
-    auto crsGraph = graphLWK->GetCrsGraph();
-    TEST_EQUALITY(crsGraph->getLocalNumEntries() == graph->GetNodeNumEdges(),    true);
-    TEST_EQUALITY(crsGraph->getLocalNumRows() == graph->GetNodeNumVertices(),    true);
-    TEST_EQUALITY(crsGraph->getLocalMaxNumRowEntries() == graph->getLocalMaxNumRowEntries(),    true);
-
-    TEST_THROW(graphLWK->SetBoundaryNodeMap(graphLWK->GetDomainMap()), MueLu::Exceptions::NotImplemented);
-
-  } // CreateLWGraph
-
+}  // CreateLWGraph
 
 #define MUELU_ETI_GROUP(SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(LWGraph, CreateLWGraph,  SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(LWGraph, CreateLWGraph, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
-} // namespace MueLuTests
+}  // namespace MueLuTests

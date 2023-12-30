@@ -6,130 +6,129 @@
 
 namespace MueLu {
 
-  // Another version of ParameterListAcceptorImpl with conditional parameters: parameters "T" and "K" are available only according to the value of the parameter "Solver".
-  //
-  // Note: There is something in Teuchos/Optika to deal with such cases. I haven't figured out yet how to use it.
-  // See for instance: http://trilinos.sandia.gov/packages/docs/r10.2/packages/optika/browser/doc/html/test_2dependencyandexec_2main_8cpp-source.html
+// Another version of ParameterListAcceptorImpl with conditional parameters: parameters "T" and "K" are available only according to the value of the parameter "Solver".
+//
+// Note: There is something in Teuchos/Optika to deal with such cases. I haven't figured out yet how to use it.
+// See for instance: http://trilinos.sandia.gov/packages/docs/r10.2/packages/optika/browser/doc/html/test_2dependencyandexec_2main_8cpp-source.html
 
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
+using Teuchos::ParameterList;
+using Teuchos::RCP;
 
-  class ParameterListAcceptorAdvImpl: public ParameterListAcceptorImpl {
+class ParameterListAcceptorAdvImpl : public ParameterListAcceptorImpl {
+ public:
+  ParameterListAcceptorAdvImpl() {}
 
-    public:
+  virtual ~ParameterListAcceptorAdvImpl() {}
 
-      ParameterListAcceptorAdvImpl() { }
+  // This functions add *all* the extra parameters recursively using GetValidParameterListSimple
+  RCP<const ParameterList> GetValidParameterList() const {
+    RCP<const ParameterList> validParamList = GetValidParameterListSimple();
 
-      virtual ~ParameterListAcceptorAdvImpl() { }
+    int numParams;
+    do {
+      numParams      = validParamList->numParams();
+      validParamList = GetValidParameterListSimple();
+    } while (validParamList->numParams() != numParams);
 
-      // This functions add *all* the extra parameters recursively using GetValidParameterListSimple
-      RCP<const ParameterList> GetValidParameterList() const {
-        RCP<const ParameterList> validParamList = GetValidParameterListSimple();
+    return validParamList;
+  }
 
-        int numParams;
-        do {
-          numParams = validParamList->numParams();
-          validParamList = GetValidParameterListSimple();
-        } while (validParamList->numParams() != numParams);
+  // GetValidParameterListSimple only add one extra level of default parameters. Ex: if "Solver" is not set in the input list "pL",
+  // extra parameters "T" or "K" are not added to the validParamList.
+  virtual RCP<const ParameterList> GetValidParameterListSimple() const = 0;
 
-        return validParamList;
-      }
+  void GetDocumentation(std::ostream& os) const {
+    GetAdvancedDocumentation(os);
+  }
 
-      // GetValidParameterListSimple only add one extra level of default parameters. Ex: if "Solver" is not set in the input list "pL",
-      // extra parameters "T" or "K" are not added to the validParamList.
-      virtual RCP<const ParameterList> GetValidParameterListSimple() const = 0;
+ private:
+  virtual void GetAdvancedDocumentation(std::ostream& os) const = 0;
+};
 
-      void GetDocumentation(std::ostream &os) const {
-        GetAdvancedDocumentation(os);
-      }
+class MyFactory : public ParameterListAcceptorAdvImpl {
+ public:
+  MyFactory() {}
 
-    private:
+  virtual ~MyFactory() {}
 
-      virtual void GetAdvancedDocumentation(std::ostream &os) const = 0;
+  RCP<const ParameterList> GetValidParameterListSimple() const {
+    RCP<ParameterList> validParamList = Teuchos::rcp(new ParameterList());  // output list
 
-  };
+    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
+    validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"), "Solver")));
 
+    AddILUTParameters(*validParamList);
+    AddILUKParameters(*validParamList);
 
+    return validParamList;
+  }
 
-  class MyFactory : public ParameterListAcceptorAdvImpl {
+  // Main algorithm
+  void Build() {
+    const ParameterList& pL = GetParameterList();
+    std::string type        = pL.get<std::string>("Solver");
+    if (type == "ILUT") {
+      pL.get<double>("T");
 
-    public:
+    } else if (type == "ILUK") {
+      pL.get<int>("K");
+    }
+  }
 
-      MyFactory() { }
+ private:
+  // Separates functions to be used by both GetValidParameterListSimple and GetDocumentation.
+  static void AddILUTParameters(ParameterList& paramList) {
+    paramList.set("T", 0.1, "ILUT threshold");
+  }
 
-      virtual ~MyFactory() { }
+  static void AddILUKParameters(ParameterList& paramList) {
+    paramList.set("K", 1, "ILUK level of fill");
+  }
 
-      RCP<const ParameterList> GetValidParameterListSimple() const {
-        RCP<ParameterList> validParamList = Teuchos::rcp(new ParameterList()); // output list
+  void GetAdvancedDocumentation(std::ostream& os) const {
+    os << "## Parameters:" << std::endl;
+    printParameterListOptions(os, *GetValidParameterListSimple());
 
-        typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
-        validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"), "Solver")));
+    os << "# ILUT specific parameters:" << std::endl;
+    {
+      ParameterList p;
+      AddILUKParameters(p);
+      printParameterListOptions(os, p);
+    }
 
-        AddILUTParameters(*validParamList);
-        AddILUKParameters(*validParamList);
+    os << "# ILUK specific parameters:" << std::endl;
+    {
+      ParameterList p;
+      AddILUTParameters(p);
+      printParameterListOptions(os, p);
+    }
 
-        return validParamList;
-      }
+    os << "## Fully described default method:" << std::endl;
+    GetValidParameterList()->print(os, 2, true, false);
+    os << std::endl;
+  }
+};
 
-      // Main algorithm
-      void Build() {
-        const ParameterList & pL = GetParameterList();
-        std::string type = pL.get<std::string>("Solver");
-        if (type == "ILUT") {
-          pL.get<double>("T");
-
-        } else if (type == "ILUK") {
-          pL.get<int>("K");
-        }
-
-      }
-
-    private:
-      // Separates functions to be used by both GetValidParameterListSimple and GetDocumentation.
-      static void AddILUTParameters(ParameterList& paramList) {
-        paramList.set("T", 0.1, "ILUT threshold");
-      }
-
-      static void AddILUKParameters(ParameterList& paramList) {
-        paramList.set("K", 1, "ILUK level of fill");
-      }
-
-      void GetAdvancedDocumentation(std::ostream &os) const {
-
-        os << "## Parameters:" << std::endl;
-        printParameterListOptions(os, *GetValidParameterListSimple());
-
-        os << "# ILUT specific parameters:" << std::endl;
-        { ParameterList p; AddILUKParameters(p); printParameterListOptions(os, p); }
-
-
-        os << "# ILUK specific parameters:" << std::endl;
-        { ParameterList p; AddILUTParameters(p); printParameterListOptions(os, p); }
-
-        os << "## Fully described default method:" << std::endl;
-        GetValidParameterList()->print(os, 2, true, false);
-        os << std::endl;
-      }
-
-  };
-
-}
+}  // namespace MueLu
 
 int main(int argc, char* argv[]) {
-  using Teuchos::ParameterList;
   using MueLu::MyFactory;
+  using Teuchos::ParameterList;
 
   bool success = false;
   try {
     //
     // Documentation
     //
-    std::cout << "\n#\n# Documentation\n#\n" << std::endl;
-    MyFactory dummy; dummy.GetDocumentation(std::cout);
+    std::cout << "\n#\n# Documentation\n#\n"
+              << std::endl;
+    MyFactory dummy;
+    dummy.GetDocumentation(std::cout);
 
     //
 
-    std::cout << "#\n# main()\n#\n" << std::endl;
+    std::cout << "#\n# main()\n#\n"
+              << std::endl;
 
     //
     // User parameter list
@@ -139,7 +138,8 @@ int main(int argc, char* argv[]) {
     // paramList.set("Solver", "ILUK");
 
     std::cout << "# Input parameter list:" << std::endl;
-    std::cout << paramList << std::endl << std::endl;
+    std::cout << paramList << std::endl
+              << std::endl;
 
     //
     // Validation of the user parameter list
@@ -149,7 +149,8 @@ int main(int argc, char* argv[]) {
     f.SetParameterList(paramList);
 
     std::cout << "# Parameter list after validation:" << std::endl;
-    std::cout << paramList << std::endl << std::endl;
+    std::cout << paramList << std::endl
+              << std::endl;
 
     //
     // Algorithm
@@ -159,11 +160,12 @@ int main(int argc, char* argv[]) {
 
     std::cout << "# Parameter list after algorithm (flag used/unused):" << std::endl;
 
-    std::cout << f.GetParameterList() << std::endl << std::endl;
+    std::cout << f.GetParameterList() << std::endl
+              << std::endl;
 
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

@@ -131,6 +131,7 @@ namespace {
 
     const size_t nsize=3;
 
+   /* Create the identity matrix, three rows per proc */
     RCP<MAT> A1 = Tpetra::Utils::MatrixGenerator<MAT>::generate_miniFE_matrix(nsize, comm);
     if(!A1->isFillComplete()) A1->fillComplete();
     auto map = A1->getRowMap();
@@ -169,7 +170,7 @@ namespace {
 
 
     if (numRanks ==1 || Node::is_cpu || Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
-      // No H2D/D2H if CPU, MPI is GPU aware or if there's no MPI
+      // No H2D/D2H if MPI is GPU aware, not a CPU, or if there's no MPI
       TEST_EQUALITY(DeepCopyCounter::get_count_different_space(),0);
     }
     else {
