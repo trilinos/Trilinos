@@ -41,6 +41,10 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_DYNAMICCONSTRAINT_HPP
+#include "ROL_DynamicConstraint.hpp"
+#else
+
 #ifndef ROL_CONSTRAINT_DYNAMICSTATE_H
 #define ROL_CONSTRAINT_DYNAMICSTATE_H
 
@@ -108,4 +112,5 @@ public:
 
 } // namespace ROL
 
+#endif
 #endif

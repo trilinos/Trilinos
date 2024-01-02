@@ -14,6 +14,7 @@
 #include <ROL_BoundConstraint_SimOpt.hpp>
 
 #include <ROL_OED_Factory.hpp>
+#include <ROL_ReducedDynamicObjective.hpp>
 
 #include <PyROL_ETI_helper.hpp>
 
@@ -31,7 +32,8 @@
 #define BINDER_ROL_OBJECTIVE(SCALAR) \
   BINDER_ETI_ABSTRACT(Objective<SCALAR>) \
   BINDER_ETI_ABSTRACT(Objective_SimOpt<SCALAR>) \
-  BINDER_ETI_ABSTRACT(Reduced_Objective_SimOpt<SCALAR>)
+  BINDER_ETI_ABSTRACT(Reduced_Objective_SimOpt<SCALAR>) \
+  BINDER_ETI_ABSTRACT(ReducedDynamicObjective<SCALAR>)
 
 #define BINDER_ROL_CONSTRAINT(SCALAR) \
   BINDER_ETI_ABSTRACT(Constraint<SCALAR>) \
