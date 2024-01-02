@@ -183,7 +183,8 @@ int run(int argc, char *argv[])
     
     // Get the number of iterations for this solve.
     int numIters = solver->getNumIters();
-    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+    if (proc_verbose)
+      std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
     
     // Compute actual residuals.
     std::vector<MT> actual_resids( numrhs );
@@ -209,7 +210,8 @@ int run(int argc, char *argv[])
     
     // Get the number of iterations for this solve.
     numIters = solver->getNumIters();
-    std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
+    if (proc_verbose)
+      std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
     if (ret!=Belos::Converged) {
       if (proc_verbose)
         std::cout << "End Result: TEST FAILED" << std::endl;
@@ -250,7 +252,8 @@ int run(int argc, char *argv[])
     
     // Get the number of iterations for this solve.
     numIters = solver->getNumIters();
-    std::cout << "Number of iterations performed for this solve (label reset): " << numIters << std::endl;
+    if (proc_verbose)
+      std::cout << "Number of iterations performed for this solve (label reset): " << numIters << std::endl;
     if (ret!=Belos::Converged) {
       if (proc_verbose)
         std::cout << "End Result: TEST FAILED" << std::endl;
@@ -317,7 +320,8 @@ int run(int argc, char *argv[])
     
     // Get the number of iterations for this solve.
     numIters = solver->getNumIters();
-    std::cout << "Number of iterations performed for this solve (new solver): " << numIters << std::endl;
+    if (proc_verbose)
+      std::cout << "Number of iterations performed for this solve (new solver): " << numIters << std::endl;
     
     // Compute actual residuals.
     OPT::Apply( *A, *X2, resid2 );
