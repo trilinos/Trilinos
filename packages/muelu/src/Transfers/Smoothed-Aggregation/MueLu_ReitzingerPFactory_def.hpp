@@ -313,7 +313,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   D0_rowptr.resize(num_coarse_edges + 1);
   D0_colind.resize(current);
   D0_values.resize(current);
-  
+
   // Count the total number of edges
   // NOTE: Since we solve the ownership issue above, this should do what we want
   RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO, GO, NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges, EdgeMatrix->getRowMap()->getIndexBase(), EdgeMatrix->getRowMap()->getComm());
