@@ -17,11 +17,26 @@ jobs:
         inplace: true
     - run: git diff HEAD > format_patch.txt
     - run: if [ "$(cat format_patch.txt)" == "" ] ; then rm format_patch.txt ; fi
-    - uses: actions/upload-artifact@v3
+
+    - uses: actions/upload-artifact@v4
+      id: upload-artf
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
         name: MueLu format patch
         path: format_patch.txt
+        
+    - name: Artifact ID test
+      run: |
+        echo "Artifact ID is ${{ steps.upload-artf.outputs.artifact-id }}"
+        echo "Link: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts/${{ steps.upload-artf.outputs.artifact-id }}"
+        
+    - name: Post artifact in issue comment
+      uses: mshick/add-pr-comment@v2.8.1
+      if: ${{ hashFiles('format_patch.txt') != '' }}          
+      with:
+        message: |
+          Your PR updated files in MueLu, but did not respect the Clang Formatting.  Please apply the patch found [here](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload-artf.outputs.artifact-id }})
+        
     - uses: actions/github-script@v3
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
