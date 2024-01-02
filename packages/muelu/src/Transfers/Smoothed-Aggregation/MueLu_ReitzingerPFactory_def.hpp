@@ -314,12 +314,6 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   D0_colind.resize(current);
   D0_values.resize(current);
 
-  // We're assuming that if the coarse NodeMatrix has no nodes on a rank, the coarse edge guy won't either.
-  // We check that here.
-  TEUCHOS_TEST_FOR_EXCEPTION((num_coarse_edges > 0 && CoarseNodeMatrix.is_null()) ||
-                                 (num_coarse_edges == 0 && !CoarseNodeMatrix.is_null()),
-                             Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Mismatched num_coarse_edges and NodeMatrix repartition.");
-
   // Count the total number of edges
   // NOTE: Since we solve the ownership issue above, this should do what we want
   RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO, GO, NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges, EdgeMatrix->getRowMap()->getIndexBase(), EdgeMatrix->getRowMap()->getComm());
