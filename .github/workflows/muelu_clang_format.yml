@@ -35,7 +35,7 @@ jobs:
       if: ${{ hashFiles('format_patch.txt') != '' }}          
       with:
         message: |
-          Your PR updated files in MueLu, but did not respect the Clang Formatting.  Please apply the patch found [here](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload-artf.outputs.artifact-id }})
+          Your PR updated files in MueLu, but did not respect the clang formatting settings.  Please apply the patch found [here](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.upload-artf.outputs.artifact-id }})
         
     - uses: actions/github-script@v3
       if: ${{ hashFiles('format_patch.txt') != '' }}
