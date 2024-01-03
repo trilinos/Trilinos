@@ -101,11 +101,13 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{int(workset.num_cells),s_basis_coordinates.extent_int(1),s_basis_coordinates.extent_int(2)});
   Kokkos::parallel_for("GatherBasisCoords",policy, KOKKOS_LAMBDA(const int i, const int j, const int k) {
+    auto d_basisCoordinates_tmp = d_basisCoordinates;
+    auto s_basis_coordinates_tmp = s_basis_coordinates;
     if constexpr(Sacado::IsADType<typename EvalT::ScalarT>::value) {
-      d_basisCoordinates(i,j,k).val() = s_basis_coordinates(i,j,k);
+      d_basisCoordinates_tmp(i,j,k).val() = s_basis_coordinates_tmp(i,j,k);
     }
     else {
-      d_basisCoordinates(i,j,k) = s_basis_coordinates(i,j,k);
+      d_basisCoordinates_tmp(i,j,k) = s_basis_coordinates_tmp(i,j,k);
     }
   });
   Kokkos::fence();
