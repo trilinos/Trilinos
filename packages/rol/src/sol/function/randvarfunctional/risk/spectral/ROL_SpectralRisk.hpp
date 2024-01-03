@@ -94,7 +94,7 @@ private:
   std::vector<Real> wts_;
   std::vector<Real> pts_;
 
-  void checkInputs(ROL::Ptr<Distribution<Real> > &dist = ROL::nullPtr) const {
+  void checkInputs(const ROL::Ptr<Distribution<Real> > &dist = ROL::nullPtr) const {
     ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::SpectralRisk): PlusFunction pointer is null!");
     if ( dist != ROL::nullPtr) {

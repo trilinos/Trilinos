@@ -110,7 +110,7 @@ public:
   void getFactor(Vector<Real> &F, const std::vector<Real> &param) const;
   Real getNoise(int k) const;
   void getTraceSample(Vector<Real> &g, const std::vector<Real> &param) const;
-  void sumAll(Real *in, Real *out, int size) const;
+  // void sumAll(Real *in, Real *out, int size) const;
   Real logDeterminant(const Vector<Real> &z);
 }; // class BilinearConstraint
 
