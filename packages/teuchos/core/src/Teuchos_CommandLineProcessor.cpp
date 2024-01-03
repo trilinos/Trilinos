@@ -62,9 +62,13 @@ inline int my_max( int a, int b ) { return a > b ? a : b; }
 
 std::string remove_quotes( const std::string& str )
 {
-  if(str[0] != '\"')
-    return str;
-  return str.substr(1,str.size()-2);
+  if (str[0] == '\"' && str[str.size()-1] == '\"')
+    return str.substr(1,str.size()-2);
+  else if (str[0] == '\"')
+    return str.substr(1,str.size()-1);
+  else if (str[str.size()-1] == '\"')
+    return str.substr(0,str.size()-2);
+  return str;
 }
 
 
