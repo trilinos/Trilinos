@@ -15,10 +15,7 @@ on:
 jobs:
   analyze:
     name: CodeQL Analyze
-    runs-on: self-hosted
-    container:
-      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
-      options: --hostname trilinos-container-gcc-8
+    runs-on: [self-hosted, triloamd01]
     # timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
       actions: read
