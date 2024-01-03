@@ -104,14 +104,14 @@ namespace TeuchosTests
         );
   }
 
-  TEUCHOS_UNIT_TEST(YAML, PR1805)
+  TEUCHOS_UNIT_TEST(YAML, PR1805) // "\t" has been removed since yaml does not support tabs
   {
     RCP<ParameterList> params = Teuchos::getParametersFromYamlString(
         "My Awesome Problem:\n"
-        "\tMesh:\n"
-        "\t\tInline:\n"
-        "\t\t\tType: Quad\n"
-        "\t\t\tElements: [     10,     10 ]\n"
+        "  Mesh:\n"
+        "    Inline:\n"
+        "      Type: Quad\n"
+        "      Elements: [     10,     10 ]\n"
         "...\n"
         );
   }
@@ -281,8 +281,14 @@ namespace TeuchosTests
       " small number: 54\n"
       " big number: 72057594037927936\n");
     TEST_EQUALITY(pl->isType<int>("small number"), true);
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+    TEST_EQUALITY(pl->isType<double>("big number"), true);
+    long long big_number = static_cast<long long>(pl->get<double>("big number"));
+    TEST_EQUALITY(big_number, 72057594037927936ll);
+#else
     TEST_EQUALITY(pl->isType<long long>("big number"), true);
     TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
+#endif
   }
 
   TEUCHOS_UNIT_TEST(YAML, flow_map)
@@ -309,7 +315,7 @@ namespace TeuchosTests
     TEST_EQUALITY(sublist.name(), "mycode->sublist");
   }
 
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
   TEUCHOS_UNIT_TEST(YAML, yamlcpp_parser)
   {
     RCP<ParameterList> pl = Teuchos::getParametersFromYamlString(
@@ -343,7 +349,7 @@ namespace TeuchosTests
 
     using twoDarr_t = Teuchos::Array<Teuchos::Array<int>>;
     twoDarr_t ragged_arr = pl->get<twoDarr_t>("ragged_array");
-    int correct_ragged_arr = {
+    twoDarr_t correct_ragged_arr = {
       {1, 2, 3},
       {1, 2, 3, 4}
     };
@@ -355,11 +361,31 @@ namespace TeuchosTests
 
     using arr_t   = Teuchos::Array<int>;
     arr_t arr = pl->get<arr_t>("line_continuation");
-    int correct_arr = {1, 2, 3, 4, 5, 6};
+    arr_t correct_arr = {1, 2, 3, 4, 5, 6};
     for (int i=0; i<arr.size(); i++) {
       TEST_EQUALITY(correct_arr[i], arr[i]);
     }
   }
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+
+  TEUCHOS_UNIT_TEST(YAML, yaml_throws)
+  {
+  TEST_THROW(Teuchos::getParametersFromYamlString(
+    "Foo:\n"
+    "  [60,2,3]: 1\n"),
+    Teuchos::YamlKeyError)
+  TEST_THROW(Teuchos::getParametersFromYamlString(
+    "Foo:\n"
+    "  Array:\n"
+    "  - 1.3e0.2\n"
+    "  - [1,2,3]"),
+    Teuchos::YamlSequenceError)
+  TEST_THROW(Teuchos::getParametersFromYamlString(
+    "Foo: 1\n"),
+    Teuchos::YamlStructureError)
+  }
+  // It is not clear how to test Teuchos::YamlUndefinedNode, but the throw
+  // is left in the source code to protect against any unforeseen cases.
+
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 } //namespace TeuchosTests

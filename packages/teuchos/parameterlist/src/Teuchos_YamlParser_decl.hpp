@@ -141,9 +141,9 @@ and looks better in YAML itself.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_PtrDecl.hpp"
 #include "Teuchos_FileInputSource.hpp"
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 #include "yaml-cpp/yaml.h"
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 #include <iostream>
 #include <string>
@@ -151,7 +151,7 @@ and looks better in YAML itself.
 namespace Teuchos
 {
 
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 #define MAKE_EXCEPTION_TYPE(Name) \
 class Name : public Teuchos::ExceptionBase \
 { \
@@ -160,13 +160,12 @@ class Name : public Teuchos::ExceptionBase \
 };
 
 MAKE_EXCEPTION_TYPE(YamlKeyError)
-MAKE_EXCEPTION_TYPE(YamlScalarError)
 MAKE_EXCEPTION_TYPE(YamlSequenceError)
 MAKE_EXCEPTION_TYPE(YamlStructureError)
 MAKE_EXCEPTION_TYPE(YamlUndefinedNodeError)
 
 #undef MAKE_EXCEPTION_TYPE
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 std::string convertXmlToYaml(const std::string& xmlFileName); //returns filename of produced YAML file
 void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileName); //writes to given filename
@@ -182,11 +181,11 @@ namespace YAMLParameterList
   void writeYamlStream(std::ostream& yamlFile, const Teuchos::ParameterList& pl);
   void writeYamlFile(const std::string& yamlFile, const Teuchos::ParameterList& pl);
 
-  #ifdef HAVE_TEUCHOSCORE_YAMLCPP
+  #ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
   Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<::YAML::Node>& lists);
   void processMapNode(const ::YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
   void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
-  #endif // HAVE_TEUCHOSCORE_YAMLCPP
+  #endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
   void writeParameterList(const Teuchos::ParameterList& pl, std::ostream& yaml, int indentLevel);
   void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ostream& yaml, int indentLevel);    //throws if the entry's type is not supported

@@ -56,15 +56,15 @@
 
 #include "Teuchos_Reader.hpp"
 
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 #include "yaml-cpp/yaml.h"
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 #include "Teuchos_YAML.hpp"
 
 
 namespace Teuchos {
 
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 /* see https://github.com/jbeder/yaml-cpp/issues/261
    there are times when we want to insist that a parameter
@@ -167,7 +167,7 @@ tarray_t getYaml2DRaggedArray(::YAML::Node node, int ndim, std::string key)
     Teuchos::Array<T> sub_arr;
     for (::YAML::const_iterator it1 = node.begin(); it1 != node.end(); ++it1) {
       for (::YAML::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
-          sub_arr.push_back(quoted_as<T>(*it2));
+        sub_arr.push_back(quoted_as<T>(*it2));
       } base_arr.push_back(sub_arr);
     sub_arr.clear();
     }
@@ -192,11 +192,11 @@ tarray_t getYaml3DArray(::YAML::Node node, int ndim, std::string key)
     for (::YAML::const_iterator it1 = node.begin(); it1 != node.end(); ++it1) {
       for (::YAML::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
         for (::YAML::const_iterator it3 = it2->begin(); it3 != it2->end(); ++it3) {
-            sub_sub_arr.push_back(quoted_as<T>(*it3));
+          sub_sub_arr.push_back(quoted_as<T>(*it3));
         } sub_arr.push_back(sub_sub_arr);
-        sub_sub_arr.clear();
+      sub_sub_arr.clear();
       } base_arr.push_back(sub_arr);
-      sub_arr.clear();
+    sub_arr.clear();
     }
   }
   else
@@ -206,7 +206,13 @@ tarray_t getYaml3DArray(::YAML::Node node, int ndim, std::string key)
   return base_arr;
 }
 
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+template <typename T>
+void safe_set_entry(ParameterList& list, std::string const& name_in, T const& entry_in) {
+  TEUCHOS_TEST_FOR_EXCEPTION(list.isParameter(name_in), ParserFail,
+      "Parameter \"" << name_in << "\" already exists in list \"" << list.name() << "\"\n");
+  list.set(name_in, entry_in);
+}
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 std::string remove_trailing_whitespace(std::string const& in) {
   std::size_t new_end = 0;
@@ -1225,21 +1231,22 @@ namespace YAMLParameterList
 
 Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text, const std::string& name)
 {
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
   auto yaml_input = ::YAML::LoadAll(text); // std::vector<::YAML::Node>
   return readParams(yaml_input);
 #else
+  std::cout << "parseYamlText Not using yaml-cpp" << std::endl;
   any result;
   Teuchos::YAMLParameterList::Reader reader;
   reader.read_string(result, text, name);
   ParameterList& pl = any_ref_cast<ParameterList>(result);
   return Teuchos::rcp(new ParameterList(pl));
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 }
 
 Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile)
 {
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
   auto yaml_input = ::YAML::LoadAllFromFile(yamlFile);
   return readParams(yaml_input);
 #else
@@ -1248,12 +1255,12 @@ Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile)
   reader.read_file(result, yamlFile);
   ParameterList& pl = any_ref_cast<ParameterList>(result);
   return Teuchos::rcp(new ParameterList(pl));
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 }
 
 Teuchos::RCP<Teuchos::ParameterList> parseYamlStream(std::istream& yaml)
 {
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
   auto yaml_input = ::YAML::LoadAll(yaml);
   return readParams(yaml_input);
 #else
@@ -1262,13 +1269,13 @@ Teuchos::RCP<Teuchos::ParameterList> parseYamlStream(std::istream& yaml)
   reader.read_stream(result, yaml, "parseYamlStream");
   ParameterList& pl = any_ref_cast<ParameterList>(result);
   return Teuchos::rcp(new ParameterList(pl));
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 }
 
 // The following three functions (readParams, processMapNode, and processKeyValueNode)
 // were previously removed from Trilinos in PR 1779 (Teuchos: use Parser, not yaml-cpp, to read YAML PL).
 
-#ifdef HAVE_TEUCHOSCORE_YAMLCPP
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<::YAML::Node>& lists)
 {
@@ -1290,7 +1297,7 @@ void processMapNode(const ::YAML::Node& node, Teuchos::ParameterList& parent, bo
   }
   if (topLevel)
   {
-    parent.setName("ANONYMOUS");
+    parent.setName(node.begin()->first.as<std::string>());
     processMapNode(node.begin()->second, parent);
   }
   else
@@ -1300,7 +1307,7 @@ void processMapNode(const ::YAML::Node& node, Teuchos::ParameterList& parent, bo
       // make sure the key type is a string
       if(i->first.Type() != ::YAML::NodeType::Scalar)
       {
-        throw YamlKeyError("Keys must be plain strings");
+        throw YamlKeyError("Keys must be YAML scalars (int, double, or string)");
       }
       // if this conversion fails and throws for any reason (shouldn't), let the caller handle it
       const std::string key = quoted_as<std::string>(i->first);
@@ -1317,35 +1324,28 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
   {
     try
     {
-      parent.set(key, quoted_as<int>(node));
+      safe_set_entry<int>(parent, key, quoted_as<int>(node));
     }
     catch(...)
     {
       try
       {
-        parent.set(key, quoted_as<double>(node));
+        safe_set_entry<double>(parent, key, quoted_as<double>(node));
       }
       catch(...)
       {
-        try
+        std::string rawString = quoted_as<std::string>(node);
+        if(rawString == "true")
         {
-          std::string rawString = quoted_as<std::string>(node);
-          if(rawString == "true")
-          {
-            parent.set<bool>(key, true);
-          }
-          else if(rawString == "false")
-          {
-            parent.set<bool>(key, false);
-          }
-          else
-          {
-            parent.set(key, rawString);
-          }
+          safe_set_entry<bool>(parent, key, true);
         }
-        catch(...)
+        else if(rawString == "false")
         {
-          throw YamlScalarError("YAML scalars must be int, double, bool or string.");
+          safe_set_entry<bool>(parent, key, false);
+        }
+        else
+        {
+          safe_set_entry<std::string>(parent, key, rawString);
         }
       }
     }
@@ -1371,21 +1371,21 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
       try
       {
         quoted_as<int>(first_value);
-        parent.set(key, getYamlArray<int>(node));
+        safe_set_entry<Teuchos::Array<int>>(parent, key, getYamlArray<int>(node));
       }
       catch(...)
       {
         try
         {
           quoted_as<double>(first_value);
-          parent.set(key, getYamlArray<double>(node));
+          safe_set_entry<Teuchos::Array<double>>(parent, key, getYamlArray<double>(node));
         }
         catch(...)
         {
           try
           {
             quoted_as<std::string>(first_value);
-            parent.set(key, getYamlArray<std::string>(node));
+            safe_set_entry<Teuchos::Array<std::string>>(parent, key, getYamlArray<std::string>(node));
           }
           catch(...)
           {
@@ -1403,9 +1403,9 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
         quoted_as<int>(first_value);
         using arr_t = Teuchos::Array<Teuchos::Array<int>>;
         if (is_ragged) {
-          parent.set(key, getYaml2DRaggedArray<arr_t, int>(node, ndim, key));
+          safe_set_entry<arr_t>(parent, key, getYaml2DRaggedArray<arr_t, int>(node, ndim, key));
         } else {
-          parent.set(key, getYamlTwoDArray<int>(node));
+          safe_set_entry<Teuchos::TwoDArray<int>>(parent, key, getYamlTwoDArray<int>(node));
         }
       }
       catch(...)
@@ -1415,9 +1415,9 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
           quoted_as<double>(first_value);
           using arr_t = Teuchos::Array<Teuchos::Array<double>>;
           if (is_ragged) {
-            parent.set(key, getYaml2DRaggedArray<arr_t, double>(node, ndim, key));
+            safe_set_entry<arr_t>(parent, key, getYaml2DRaggedArray<arr_t, double>(node, ndim, key));
           } else {
-            parent.set(key, getYamlTwoDArray<double>(node));
+            safe_set_entry<Teuchos::TwoDArray<double>>(parent, key, getYamlTwoDArray<double>(node));
           }
         }
         catch(...)
@@ -1427,9 +1427,9 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
             quoted_as<std::string>(first_value);
             using arr_t = Teuchos::Array<Teuchos::Array<std::string>>;
             if (is_ragged) {
-              parent.set(key, getYaml2DRaggedArray<arr_t, std::string>(node, ndim, key));
+              safe_set_entry<arr_t>(parent, key, getYaml2DRaggedArray<arr_t, std::string>(node, ndim, key));
             } else {
-              parent.set(key, getYamlTwoDArray<std::string>(node));
+              safe_set_entry<Teuchos::TwoDArray<std::string>>(parent, key, getYamlTwoDArray<std::string>(node));
             }
           }
           catch(...)
@@ -1446,7 +1446,7 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
       {
         quoted_as<int>(first_value);
         using arr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<int>>>;
-        parent.set(key, getYaml3DArray<arr_t, int>(node, ndim, key));
+        safe_set_entry<arr_t>(parent, key, getYaml3DArray<arr_t, int>(node, ndim, key));
       }
       catch(...)
       {
@@ -1454,7 +1454,7 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
         {
           quoted_as<double>(first_value);
           using arr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<double>>>;
-          parent.set(key, getYaml3DArray<arr_t, double>(node, ndim, key));
+          safe_set_entry<arr_t>(parent, key, getYaml3DArray<arr_t, double>(node, ndim, key));
 
         }
         catch(...)
@@ -1463,7 +1463,7 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
           {
             quoted_as<std::string>(first_value);
             using arr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<std::string>>>;
-            parent.set(key, getYaml3DArray<arr_t, std::string>(node, ndim, key));
+            safe_set_entry<arr_t>(parent, key, getYaml3DArray<arr_t, std::string>(node, ndim, key));
 
           }
           catch(...)
@@ -1477,7 +1477,7 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
   else if(node.Type() == ::YAML::NodeType::Null)
   {
     // treat NULL as empty string (not an error)
-    parent.set(key, std::string());
+    safe_set_entry<std::string>(parent, key, std::string());
   }
   else
   {
@@ -1486,7 +1486,7 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
   }
 }
 
-#endif // HAVE_TEUCHOSCORE_YAMLCPP
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
 {
