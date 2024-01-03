@@ -214,11 +214,6 @@ void Factors<Real>::evaluate(Vector<Real> &F, const std::vector<Real> &param) co
 }
 
 template<typename Real>
-void Factors<Real>::sumAll(Real *in, Real *out, int size) const {
-  // TO-DO
-}
-
-template<typename Real>
 int Factors<Real>::numFactors() const {
   return theta_->dimension();
 }

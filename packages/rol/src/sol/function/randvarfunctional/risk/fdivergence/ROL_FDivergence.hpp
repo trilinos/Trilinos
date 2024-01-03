@@ -146,7 +146,7 @@ public:
 
       Upon return, Fprimal returns \f$F(x)\f$ or a derivative of \f$F(x)\f$.
   */
-  virtual Real Fprimal(Real x, int deriv = 0) = 0;
+  virtual Real Fprimal(Real x, int deriv = 0) const = 0;
 
   /** \brief Implementation of the scalar dual F function.
 
@@ -160,9 +160,9 @@ public:
           F^*(y) = \sup_{x\in\mathbb{R}}\{xy - F(x)\}.
       \f]
   */
-  virtual Real Fdual(Real x, int deriv = 0) = 0;
+  virtual Real Fdual(Real x, int deriv = 0) const = 0;
 
-  bool check(std::ostream &outStream = std::cout) {
+  bool check(std::ostream &outStream = std::cout) const {
     const Real tol(std::sqrt(ROL_EPSILON<Real>()));
     bool flag = true;
 

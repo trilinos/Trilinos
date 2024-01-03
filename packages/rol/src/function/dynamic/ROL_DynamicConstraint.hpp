@@ -46,16 +46,26 @@
 #ifndef ROL_DYNAMICCONSTRAINT_HPP
 #define ROL_DYNAMICCONSTRAINT_HPP
 
-#include "ROL_DynamicFunction.hpp"
 
-#include "ROL_NonlinearLeastSquaresObjective_Dynamic.hpp"
-#include "ROL_Constraint_DynamicState.hpp"
 #include "ROL_Objective_FSsolver.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_CompositeStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_DynamicFunction.hpp"
+
+namespace ROL {
+
+template<typename Real>
+class DynamicConstraint;
+
+template<typename Real>
+class Constraint_DynamicState;
+}
+
+#include "ROL_Constraint_DynamicState.hpp"
+#include "ROL_NonlinearLeastSquaresObjective_Dynamic.hpp"
 
 /** @ingroup dynamic_group
     \class ROL::DynamicConstraint
@@ -73,7 +83,6 @@
     \f]
 
 */
-
 
 namespace ROL {
 

@@ -233,26 +233,6 @@ public:
     }
   }
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-//    if ( augmentedObj_ && activatedObj_ ) {
-//      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
-//      statObj_bc_->update(*xs,flag,iter);
-//    }
-//    if (augmentedCon_) {
-//      int size = statCon_bc_.size();
-//      for (int i = 0; i < size; ++i) {
-//        if (activatedCon_[i]) {
-//          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
-//          statCon_bc_[i]->update(*xs,flag,iter);
-//        }
-//      }
-//    }
-//    if ( bc_ != nullPtr && bc_->isActivated() ) {
-//      Ptr<const Vector<Real>> xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-//      bc_->update(*xv,flag,iter);
-//    }
-  }
-
   void project( Vector<Real> &x ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>> xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(0);
