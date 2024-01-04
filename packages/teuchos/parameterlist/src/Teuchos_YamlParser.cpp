@@ -1235,7 +1235,6 @@ Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text, cons
   auto yaml_input = ::YAML::LoadAll(text); // std::vector<::YAML::Node>
   return readParams(yaml_input);
 #else
-  std::cout << "parseYamlText Not using yaml-cpp" << std::endl;
   any result;
   Teuchos::YAMLParameterList::Reader reader;
   reader.read_string(result, text, name);
