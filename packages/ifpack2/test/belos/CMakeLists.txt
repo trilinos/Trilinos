@@ -351,14 +351,16 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-TRIBITS_ADD_TEST(
-  tif_belos
-  NAME Schwarz_RILUK_hb_belos
-  ARGS "--xml_file=schwarz.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  STANDARD_PASS_OUTPUT
-)
+IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core AND ${PACKAGE_NAME}_ENABLE_Xpetra)
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME Schwarz_RILUK_hb_belos
+    ARGS "--xml_file=schwarz.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+  )
+ENDIF()
 
 
 
