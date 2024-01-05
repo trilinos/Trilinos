@@ -67,7 +67,7 @@ std::string remove_quotes( const std::string& str )
   else if (str[0] == '\"')
     return str.substr(1,str.size()-1);
   else if (str[str.size()-1] == '\"')
-    return str.substr(0,str.size()-2);
+    return str.substr(0,str.size()-1);
   return str;
 }
 
