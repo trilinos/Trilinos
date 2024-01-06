@@ -63,7 +63,20 @@ void GraphTools_Metis::setVerbose(const bool verbose) { _verbose = verbose; }
 void GraphTools_Metis::setOption(const int id, const idx_t value) { _options[id] = value; }
 
 ///
-/// reorder by metis
+/// reorder by amd
+///
+template <>
+int32_t GraphTools_Metis::amd_order<int32_t> (int32_t n, const int32_t *xadj, const int32_t *adjncy, int32_t *perm, double *control, double *info) {
+  return trilinos_amd_order(n, xadj, adjncy, perm, control, info);
+}
+
+template <>
+int64_t GraphTools_Metis::amd_order<int64_t> (int64_t n, const int64_t *xadj, const int64_t *adjncy, int64_t *perm, double *control, double *info) {
+  return trilinos_amd_l_order(n, xadj, adjncy, perm, control, info);
+}
+
+///
+/// reorder by metis or amd
 ///
 
 void GraphTools_Metis::reorder(const ordinal_type verbose) {
@@ -81,10 +94,11 @@ void GraphTools_Metis::reorder(const ordinal_type verbose) {
     double amd_info[TRILINOS_AMD_INFO];
 
     timer.reset();
-    ierr = trilinos_amd_order(_nvts, _xadj.data(), _adjncy.data(), _perm.data(), NULL, amd_info);
+    ierr = GraphTools_Metis::amd_order(_nvts, _xadj.data(), _adjncy.data(), _perm_t.data(), NULL, amd_info);
     t_metis = timer.seconds();
 
     for (idx_t i = 0; i < _nvts; ++i) {
+      _perm(i) = _perm_t(i);
       _peri(_perm(i)) = i;
     }
 
