@@ -48,12 +48,10 @@
 
 
 #include "ROL_Objective_FSsolver.hpp"
-#include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_DynamicFunction.hpp"
+#include "ROL_TypeU_TrustRegionAlgorithm.hpp"
+#include "ROL_TypeE_AugmentedLagrangianAlgorithm.hpp"
 
 namespace ROL {
 
@@ -69,14 +67,14 @@ class Constraint_DynamicState;
 
 /** @ingroup dynamic_group
     \class ROL::DynamicConstraint
-    \brief Defines the time-dependent constraint operator interface for 
+    \brief Defines the time-dependent constraint operator interface for
            simulation-based optimization.
 
-    This constraint interface inherits from ROL_Constraint_SimOpt. Though 
+    This constraint interface inherits from ROL_Constraint_SimOpt. Though
     the interface takes two simulation space vectors from spaces
-    \f$\mathcal{U_o}\times\mathcal{U_n}\f$. The space \f$\mathcal{U_o}\f$ is 
-    ``old'' information that accounts for the initial condition on the time 
-     interval. The space \f$\mathcal{U_n}\f$ is the ``new'' variables that can 
+    \f$\mathcal{U_o}\times\mathcal{U_n}\f$. The space \f$\mathcal{U_o}\f$ is
+    ``old'' information that accounts for the initial condition on the time
+     interval. The space \f$\mathcal{U_n}\f$ is the ``new'' variables that can
     be determined by satisfying constraints in the form
     \f[
       c(u_o,u_n,z,t_o,t_n) = 0 \,.
@@ -151,7 +149,7 @@ public:
       firstSolve_         (                                true ) {}
 
 
-  
+
   virtual void update( const V& uo, const V& un, const V& z, const TS& ts ) {
     update_uo( uo, ts );
     update_un( un, ts );
@@ -162,14 +160,13 @@ public:
   using DynamicFunction<Real>::update_un;
   using DynamicFunction<Real>::update_z;
 
-  virtual void value( V& c, const V& uo, const V& un, 
+  virtual void value( V& c, const V& uo, const V& un,
                       const V& z, const TS& ts ) const = 0;
 
-  virtual void solve( V& c, const V& uo, V& un, 
+  virtual void solve( V& c, const V& uo, V& un,
                       const V& z, const TS& ts ) {
-    if ( zero_ ) {
-      un.zero();
-    }
+    if ( zero_ ) un.zero();
+    Ptr<std::ostream> stream = makeStreamPtr(std::cout, print_);
     update(uo,un,z,ts);
     value(c,uo,un,z,ts);
     Real cnorm = c.norm();
@@ -183,12 +180,12 @@ public:
       Real alpha(1), tmp(0);
       int cnt = 0;
       if ( print_ ) {
-        std::cout << "\n     Default DynamicConstraint::solve\n";
-        std::cout << "       ";
-        std::cout << std::setw(6)  << std::left << "iter";
-        std::cout << std::setw(15) << std::left << "rnorm";
-        std::cout << std::setw(15) << std::left << "alpha";
-        std::cout << "\n";
+        *stream << "     Default DynamicConstraint::solve" << std::endl;
+        *stream << "       ";
+        *stream << std::setw(6)  << std::left << "iter";
+        *stream << std::setw(15) << std::left << "rnorm";
+        *stream << std::setw(15) << std::left << "alpha";
+        *stream << std::endl;
       }
       for (cnt = 0; cnt < maxit_; ++cnt) {
         // Compute Newton step
@@ -211,13 +208,13 @@ public:
           tmp = c.norm();
         }
         if ( print_ ) {
-          std::cout << "       ";
-          std::cout << std::setw(6)  << std::left << cnt;
-          std::cout << std::scientific << std::setprecision(6);
-          std::cout << std::setw(15) << std::left << tmp;
-          std::cout << std::scientific << std::setprecision(6);
-          std::cout << std::setw(15) << std::left << alpha;
-          std::cout << "\n";
+          *stream << "       ";
+          *stream << std::setw(6)  << std::left << cnt;
+          *stream << std::scientific << std::setprecision(6);
+          *stream << std::setw(15) << std::left << tmp;
+          *stream << std::scientific << std::setprecision(6);
+          *stream << std::setw(15) << std::left << alpha;
+          *stream << std::endl;
         }
         // Update iterate
         cnorm = tmp;
@@ -230,42 +227,32 @@ public:
       }
     }
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
-      Ptr<DynamicConstraint<Real>> con_ptr = makePtrFromRef(*this);
-      Ptr<const Vector<Real>>       uo_ptr = makePtrFromRef(uo);
-      Ptr<const Vector<Real>>        z_ptr = makePtrFromRef(z);
-      Ptr<const TimeStamp<Real>>    ts_ptr = makePtrFromRef(ts);
-      Ptr<Objective<Real>>         obj_ptr
-        = makePtr<NonlinearLeastSquaresObjective_Dynamic<Real>>(con_ptr,c,uo_ptr,z_ptr,ts_ptr,true);
+      Ptr<DynamicConstraint<Real>> con = makePtrFromRef(*this);
+      Ptr<Objective<Real>>         obj
+        = makePtr<NonlinearLeastSquaresObjective_Dynamic<Real>>(con,c,makePtrFromRef(uo),makePtrFromRef(z),makePtrFromRef(ts),true);
       ParameterList parlist;
+      parlist.sublist("General").set("Output Level",1);
+      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
+      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
-      Ptr<Step<Real>>         step = makePtr<TrustRegionStep<Real>>(parlist);
-      Ptr<StatusTest<Real>> status = makePtr<StatusTest<Real>>(parlist);
-      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
-      algo->run(un,*obj_ptr,print_);
+      Ptr<TypeU::Algorithm<Real>> algo = makePtr<TypeU::TrustRegionAlgorithm<Real>>(parlist);
+      algo->run(un,*obj,*stream);
       value(c,uo,un,z,ts);
     }
     if (solverType_==2 || (solverType_==4 && cnorm > ctol)) {
-      Ptr<DynamicConstraint<Real>> con_ptr = makePtrFromRef(*this);
-      Ptr<const Vector<Real>>       uo_ptr = makePtrFromRef(uo);
-      Ptr<const Vector<Real>>        z_ptr = makePtrFromRef(z);
-      Ptr<const TimeStamp<Real>>    ts_ptr = makePtrFromRef(ts);
-      Ptr<Constraint<Real>>         cn_ptr
-        = makePtr<Constraint_DynamicState<Real>>(con_ptr,uo_ptr,z_ptr,ts_ptr);
-      Ptr<Objective<Real>>         obj_ptr
-        = makePtr<Objective_FSsolver<Real>>();
+      Ptr<Constraint<Real>> con
+        = makePtr<Constraint_DynamicState<Real>>(makePtrFromRef(*this),makePtrFromRef(uo),makePtrFromRef(z),makePtrFromRef(ts));
+      Ptr<Objective<Real>>  obj = makePtr<Objective_FSsolver<Real>>();
+      Ptr<Vector<Real>>       l = c.dual().clone();
       ParameterList parlist;
+      parlist.sublist("General").set("Output Level",1);
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      Ptr<Step<Real>>         step = makePtr<CompositeStep<Real>>(parlist);
-      Ptr<StatusTest<Real>> status = makePtr<ConstraintStatusTest<Real>>(parlist);
-      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
-      Ptr<Vector<Real>>          l = c.dual().clone();
-      algo->run(un,*l,*obj_ptr,*cn_ptr,print_);
+      Ptr<TypeE::Algorithm<Real>> algo = makePtr<TypeE::AugmentedLagrangianAlgorithm<Real>>(parlist);
+      algo->run(un,*obj,*con,*l,*stream);
       value(c,uo,un,z,ts);
     }
     if (solverType_ > 4 || solverType_ < 0) {
@@ -309,94 +296,94 @@ public:
 
   //----------------------------------------------------------------------------
   // Partial Jacobians
-  virtual void applyJacobian_uo( V& jv, const V& vo, const V& uo, 
-                                    const V& un, const V& z, 
+  virtual void applyJacobian_uo( V& jv, const V& vo, const V& uo,
+                                    const V& un, const V& z,
                                     const TS& ts ) const {}
 
-  virtual void applyJacobian_un( V& jv, const V& vn, const V& uo, 
-                                    const V& un, const V& z, 
+  virtual void applyJacobian_un( V& jv, const V& vn, const V& uo,
+                                    const V& un, const V& z,
                                     const TS& ts ) const {}
 
-  virtual void applyJacobian_z( V& jv, const V& vz, const V& uo, 
-                                const V& un, const V& z, 
+  virtual void applyJacobian_z( V& jv, const V& vz, const V& uo,
+                                const V& un, const V& z,
                                 const TS& ts ) const {}
 
   //----------------------------------------------------------------------------
   // Adjoint partial Jacobians
-  virtual void applyAdjointJacobian_uo( V& ajv, const V& dualv, const V& uo, 
-                                           const V& un, const V& z, 
+  virtual void applyAdjointJacobian_uo( V& ajv, const V& dualv, const V& uo,
+                                           const V& un, const V& z,
                                            const TS& ts ) const {}
 
-  virtual void applyAdjointJacobian_un( V& ajv, const V& dualv, const V& uo, 
-                                           const V& un, const V& z, 
+  virtual void applyAdjointJacobian_un( V& ajv, const V& dualv, const V& uo,
+                                           const V& un, const V& z,
                                            const TS& ts ) const {}
 
-  virtual void applyAdjointJacobian_z( V& ajv, const V& dualv, const V& uo, 
-                                       const V& un, const V& z, 
+  virtual void applyAdjointJacobian_z( V& ajv, const V& dualv, const V& uo,
+                                       const V& un, const V& z,
                                        const TS& ts ) const {}
 
   //----------------------------------------------------------------------------
   // Inverses
-  virtual void applyInverseJacobian_un( V& ijv, const V& vn, const V& uo, 
-                                           const V& un, const V& z, 
+  virtual void applyInverseJacobian_un( V& ijv, const V& vn, const V& uo,
+                                           const V& un, const V& z,
                                            const TS& ts ) const {}
-    
-  virtual void applyInverseAdjointJacobian_un( V& iajv, const V& vn, const V& uo, 
-                                                  const V& un, const V& z, 
+
+  virtual void applyInverseAdjointJacobian_un( V& iajv, const V& vn, const V& uo,
+                                                  const V& un, const V& z,
                                                   const TS& ts ) const {}
 
   //----------------------------------------------------------------------------
   // Adjoint Hessian components
   virtual void applyAdjointHessian_un_un( V& ahwv, const V& wn, const V& vn,
-                                          const V& uo, const V& un, 
+                                          const V& uo, const V& un,
                                           const V& z, const TS& ts ) const {
     ahwv.zero();
   }
 
   virtual void applyAdjointHessian_un_uo( V& ahwv, const V& w, const V& vn,
-                                          const V& uo, const V& un, 
+                                          const V& uo, const V& un,
                                           const V& z, const TS& ts ) const {
     ahwv.zero();
   }
 
   virtual void applyAdjointHessian_un_z( V& ahwv, const V& w, const V& vn,
-                                          const V& uo, const V& un, 
+                                          const V& uo, const V& un,
                                           const V& z, const TS& ts ) const {
     ahwv.zero();
   }
 
   virtual void applyAdjointHessian_uo_un( V& ahwv, const V& w, const V& vo,
-                                          const V& uo, const V& un, 
+                                          const V& uo, const V& un,
                                           const V& z, const TS& ts ) const {
     ahwv.zero();
   }
 
   virtual void applyAdjointHessian_uo_uo( V& ahwv, const V& w, const V& v,
-                                          const V& uo, const V& un, 
+                                          const V& uo, const V& un,
                                           const V& z, const TS& ts ) const {
     ahwv.zero();
   }
 
   virtual void applyAdjointHessian_uo_z( V& ahwv, const V& w, const V& vo,
-                                         const V& uo, const V& un, 
+                                         const V& uo, const V& un,
                                          const V& z, const TS& ts ) const {
     ahwv.zero();
   }
 
   virtual void applyAdjointHessian_z_un( V& ahwv, const V& w, const V& vz,
-                                         const V& uo, const V& un, 
+                                         const V& uo, const V& un,
                                          const V& z, const TS& ts ) const {
     ahwv.zero();
   }
 
   virtual void applyAdjointHessian_z_uo( V& ahwv, const V& w, const V& vz,
-                                         const V& uo, const V& un, 
+                                         const V& uo, const V& un,
                                          const V& z, const TS& ts ) const {
     ahwv.zero();
   }
-  
+
   virtual void applyAdjointHessian_z_z( V& ahwv, const V& w, const V& vz,
-                                        const V& uo, const V& un, 
+                                        const V& uo, const V& un,
                                         const V& z, const TS& ts ) const {
     ahwv.zero();
   }
