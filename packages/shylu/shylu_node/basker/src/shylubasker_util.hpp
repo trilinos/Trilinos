@@ -1,6 +1,9 @@
 #ifndef SHYLUBASKER_UTIL_HPP
 #define SHYLUBASKER_UTIL_HPP
 
+/*Teuchos Includes*/
+#include "Teuchos_ScalarTraits.hpp"
+
 /*Basker Includes*/
 #include "shylubasker_decl.hpp"
 #include "shylubasker_matrix_decl.hpp"
@@ -112,10 +115,7 @@ namespace BaskerNS
         {
           basker->t_reset_ND_factor(kid);
         }
-        if(basker->btf_nblks > 1)
-        {
-          basker->t_reset_BTF_factor(kid);
-        }
+        basker->t_reset_BTF_factor(kid);
       }
 #if defined(BASKER_SPLIT_A) 
       if (basker->btf_top_nblks > 0) {
@@ -764,11 +764,12 @@ namespace BaskerNS
           }
           else
           {
-            //printf("Using BTF AU\n");
+            //printf(" %d: Using BTF AVM(%d,%d), %dx%d\n",kid,U_col,U_row, AVM(U_col)(U_row).nrow,AVM(U_col)(U_row).ncol);
             //printf("2nd convert AVM: %d %d size:%d kid: %d\n",
             //	   U_col, U_row, AVM(U_col)(U_row).nnz, 
             //     kid);
             AVM(U_col)(U_row).convert2D(BTF_A, alloc, kid);
+            //printf(" %d: Using BTF AU(%d,%d) done\n",kid,U_col,U_row);
           }
 
         }//over inner lvls
@@ -874,7 +875,7 @@ namespace BaskerNS
       } //end if btf_tabs_offset != 0
       //else // though offset=0, there may be still BLK factorization
       {
-        if(btf_nblks > 1 && (btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset))
+        if(btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset)
         { // if any left over for BLK factorization
           if(Options.btf == BASKER_TRUE)
           {
@@ -1302,7 +1303,8 @@ namespace BaskerNS
     {
       for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
       {
-        fprintf(fp, "%ld %ld %e \n", (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j])); 
+        fprintf(fp, "%ld %ld %.16e \n", (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j])); 
+        //fprintf(fp, "%ld %ld %e \n", (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j])); 
       }//over nnz in each column
     }//over each column
 
@@ -1334,12 +1336,14 @@ namespace BaskerNS
       {
         if(off == BASKER_FALSE)
         {
-          fprintf(fp, "%ld %ld %e \n", 
+          //fprintf(fp, "%ld %ld %e \n", 
+          fprintf(fp, "%ld %ld %.16e \n", 
               (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j]));
         }
         else
         {
-          fprintf(fp, "%ld %ld %e \n", 
+          //fprintf(fp, "%ld %ld %e \n", 
+          fprintf(fp, "%ld %ld %.16e \n", 
               (long)M.row_idx[j]+1-brow, (long)k-bcol+1, std::real(M.val[j]));
         }
       }//over nnz in each column
@@ -1459,7 +1463,8 @@ namespace BaskerNS
       //for(Int k = 0; k < rhs.size(); k++)
       for(Int k = 0; k < 1; k++)
       {
-        fprintf(fp, "%ld %ld %f, ", (long)r, (long)gperm[r], rhs[k][r]);
+        //fprintf(fp, "%ld %ld %f, ", (long)r, (long)gperm[r], rhs[k][r]);
+        fprintf(fp, "%ld %ld %.16e, ", (long)r, (long)gperm[r], rhs[k][r]);
       }//end over each column
       fprintf(fp, "\n");
     }//end over each row
@@ -2241,7 +2246,7 @@ namespace BaskerNS
 
     for(Int i = 0; i < n; i++)
     {
-      fprintf(fp, "%ld \n", (long)x(i));
+      fprintf(fp, "%ld\n", (long)x(i));
     }
 
     fclose(fp);
@@ -2262,7 +2267,8 @@ namespace BaskerNS
 
     for(Int i = 0; i < n; i++)
     {
-      fprintf(fp, "%f \n", x(i));
+      //fprintf(fp, "%lf\n", x(i));
+      fprintf(fp, "%.16e\n", x(i));
     }
 
     fclose(fp);
@@ -2277,14 +2283,14 @@ namespace BaskerNS
    Int n
   )
   {
-    printf("---VECTOR: %d ----\n", n);
+    printf("---VECTOR: %d ----\n", int(n));
 
     for(Int i = 0 ; i < n;  i++)
     {
       printf("%ld %ld, \n", (long)i, (long)x(i));
     }
 
-    printf("---END VECTOR %d --\n", n);
+    printf("---END VECTOR %d --\n", int(n));
   }//end printVec(Int)
 
 
@@ -2296,17 +2302,40 @@ namespace BaskerNS
    Int n
   )
   {
-    printf("---VECTOR: %d ----\n", n);
+    using STS = Teuchos::ScalarTraits<Entry>;
+    printf("---VECTOR: %d ----\n", int(n));
 
     for(Int i = 0; i< n; i++)
     {
       //printf("%ld %g, \n", (long)i, x[i]);
-      printf("%ld %.16e\n", (long)i, x[i]);
+      printf("%ld %.16e\n", (long)i, STS::real(x[i]));
     }
 
-    printf("---END VECTOR: %d ---\n", n);
+    printf("---END VECTOR: %d ---\n", int(n));
   }//end printVec Entry
 
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int, Entry,Exe_Space>::printVec
+  (
+   std::string fname, 
+   BASKER_ENTRY* x, 
+   Int n
+  )
+  {
+    using STS = Teuchos::ScalarTraits<Entry>;
+    FILE *fp;
+    fp = fopen(fname.c_str(), "w");
+
+    for(Int i = 0; i < n; i++)
+    {
+      fprintf(fp, "%.16e\n", STS::real(x[i]));
+    }
+
+    fclose(fp);
+  }//end printVec(file,Int);
+   //
 
   template <class Int, class Entry, class Exe_Space>
   inline

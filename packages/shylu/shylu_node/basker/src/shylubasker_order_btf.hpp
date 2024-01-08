@@ -355,20 +355,6 @@ namespace BaskerNS
     //1. Run backward through the btf_tabs to find size C
     //2. Form A,B,C based on size in 1.
 
-    //Short circuit, 
-    //If nblks  == 1, than only BTF_A exists
-    if(nblks == 1)
-    {
-
-    #ifdef BASKER_DEBUG_ORDER_BTF
-      printf("Short Circuit part_call \n");
-    #endif
-      BTF_A = A;
-      //Options.btf = BASKER_FALSE;
-      btf_tabs_offset = 1;
-      return 0;
-    }
-
     //Step 1.
     Int t_size            = 0;
     Int scol              = M.ncol;
@@ -647,8 +633,6 @@ namespace BaskerNS
     #ifdef BASKER_DEBUG_ORDER_BTF
       printf("Basker: break_into_parts2 - short circuit for single block case\n");
     #endif
-      BTF_A = A;
-      btf_tabs_offset = 1;
       #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
       if (Options.run_nd_on_leaves == BASKER_TRUE) {
         if(Options.verbose == BASKER_TRUE) {
@@ -663,7 +647,6 @@ namespace BaskerNS
         }
         Options.replace_zero_pivot = BASKER_FALSE;
       }
-      return 0;
     }
 
     //Short circuit for incomplete
@@ -698,7 +681,9 @@ namespace BaskerNS
       double total_work_estimate = 0;
       for(Int b = 0; b < nblks; b++) //nblks is input; determined during btf ordering - total BTF_A blocks AND BTF_C blocks
       {
-        total_work_estimate += btf_blk_work(b); //determined prior, during btf ordering
+        Int blk_size = _btf_tabs(b+1) - _btf_tabs(b);
+        Int wrk_size = btf_blk_work(b); //determined prior, during btf ordering
+        total_work_estimate += (blk_size > wrk_size ? blk_size : wrk_size);
       }
       //Set a class variable to use later
       btf_total_work = total_work_estimate;
@@ -709,13 +694,13 @@ namespace BaskerNS
       #if 0 // forcing to have the big A bloock for debug
       double break_work_size = 0.0;
       //double break_block_size = 0.0;
-      double break_block_size = 10.0;
+      double break_block_size = 0.0;
       printf( " > debug: break_size = %f, %f\n",break_work_size,break_block_size );
       #else
       // A block if it is larger than work esitimate assigned to one thread
       double break_fact = 0.7;
       double break_work_size = ceil(total_work_estimate*(break_fact * ((double)1.0/num_threads) + ((double)BASKER_BTF_IMBALANCE)));
-      double break_block_size = 0; //1000;
+      double break_block_size = 20 * num_threads; //0;
       #endif
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker: Break size for workspace and size: %d and %d with %d threads (total work estimate = %f)\n",
@@ -750,7 +735,7 @@ namespace BaskerNS
         //  (blk_idx > 1))
 
         //Continue to be in btf
-        if( (Options.use_sequential_diag_facto || (blk_work < break_work_size || blk_size < break_block_size)) && (blk_idx > 1) )
+        if( (Options.use_sequential_diag_facto || (blk_work <= break_work_size || blk_size < break_block_size)) && (blk_idx > 1) )
         {
           #ifdef BASKER_DEBUG_ORDER_BTF
            printf("Basker(blk_idx=%d, blk_size=%d, blk_work=%d, break_size=%d): continue with fine structure btf blocks\n",
@@ -761,7 +746,7 @@ namespace BaskerNS
           scol    = _btf_tabs[blk_idx];
         }
         //break due to size i.e. entered non-trivial large BTF_A block
-        else if( blk_work >= break_work_size && blk_size >= break_block_size)
+        else if( blk_work > break_work_size && blk_size >= break_block_size)
         {
           if(Options.verbose == BASKER_TRUE) {
             printf("Basker: blk=%d break due to size (work: %d > %d, size: %d > %d)\n",(int)blk_idx-1, (int)blk_work,(int)break_work_size, (int)blk_size,(int)break_block_size);
