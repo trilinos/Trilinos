@@ -48,12 +48,6 @@ fi
 if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.5" ]]; then
   module load sparc-dev/arm-20.1_openmpi-4.0.5
   module unload yaml-cpp
-
-  if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
-    unset OMP_PLACES
-    unset OMP_PROC_BIND
-  fi
-
   # We'll use TPL_ROOT for consistency across ATDM environments
   export MPI_ROOT=${MPI_DIR}
   export BLAS_ROOT=${ARMPL_DIR}
@@ -66,12 +60,22 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.5" ]]; then
   export PARMETIS_ROOT=${PARMETIS_DIR}
   export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
   export BINUTILS_ROOT=${BINUTILS_DIR}
+elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-22.1_OPENMPI-4.0.5" ]]; then
+  module load sparc-dev/arm-22.1_openmpi-4.0.5
+  module unload yaml-cpp
+  # This version of sparc-dev sets the $TPL_ROOT style variables,
+  # so do not change them here.
 else
   echo
   echo "***"
   echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
   echo "***"
   return
+fi
+
+if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
+  unset OMP_PLACES
+  unset OMP_PROC_BIND
 fi
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
