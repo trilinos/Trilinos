@@ -169,7 +169,7 @@ class Test_mergeBranch(unittest.TestCase):
                                        mock.call(['git', 'fetch', 'origin', 'fake_develop']),
                                        mock.call(['git', 'reset', '--hard', 'HEAD']),
                                        mock.call(['git', 'checkout', '-B', 'fake_develop', 'origin/fake_develop']),
-                                       mock.call(['git', 'merge', '--no-edit', 'df324ae']),
+                                       mock.call(['git', 'merge', '--no-ff', '--no-edit', 'df324ae']),
                                        ])
         return
 
@@ -199,7 +199,7 @@ class Test_mergeBranch(unittest.TestCase):
                                        mock.call(['git', 'fetch', 'origin', 'fake_develop']),
                                        mock.call(['git', 'reset', '--hard', 'HEAD']),
                                        mock.call(['git', 'checkout', '-B', 'fake_develop', 'origin/fake_develop']),
-                                       mock.call(['git', 'merge', '--no-edit', 'df324ae']),
+                                       mock.call(['git', 'merge', '--no-ff', '--no-edit', 'df324ae']),
                                        ])
         self.assertIn("git remote exists, removing it", m_stdout.getvalue())
         return
@@ -229,7 +229,7 @@ class Test_mergeBranch(unittest.TestCase):
                                        mock.call(['git', 'fetch', 'origin', 'fake_develop']),
                                        mock.call(['git', 'reset', '--hard', 'HEAD']),
                                        mock.call(['git', 'checkout', '-B', 'fake_develop', 'origin/fake_develop']),
-                                       mock.call(['git', 'merge', '--no-edit', 'source_remote/some_ref']),
+                                       mock.call(['git', 'merge', '--no-ff', '--no-edit', 'source_remote/some_ref']),
                                        ])
         self.assertIn("git remote exists, removing it", m_stdout.getvalue())
         return
