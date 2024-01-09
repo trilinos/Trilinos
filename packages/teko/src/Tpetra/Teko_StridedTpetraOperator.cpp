@@ -173,7 +173,7 @@ void StridedTpetraOperator::WriteBlocks(const std::string & prefix) const
       for(int j=0;j<rows;j++) {
          // build the file name
          std::stringstream ss;
-         ss << prefix << "_" << i << j << ".mm";
+         ss << prefix << "_" << i << "_" << j << ".mm";
 
          // get the row matrix object (Note: can't use "GetBlock" method b/c matrix might be reordered)
          RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(blockOp->getBlock(i,j));
