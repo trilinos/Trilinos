@@ -279,6 +279,7 @@ namespace TeuchosTests
     auto pl = Teuchos::getParametersFromYamlString(
       "List:\n"
       " small number: 54\n"
+      " test string: ends with ll\n"
 #ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
       " big number: 72057594037927936ll\n"
       " other big number: 92057594037927936LL\n"
@@ -288,6 +289,7 @@ namespace TeuchosTests
 #endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
     );
     TEST_EQUALITY(pl->isType<int>("small number"), true);
+    TEST_EQUALITY(pl->isType<std::string>("test string"), true);
     TEST_EQUALITY(pl->isType<long long>("big number"), true);
     TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
     TEST_EQUALITY(pl->isType<long long>("other big number"), true);
