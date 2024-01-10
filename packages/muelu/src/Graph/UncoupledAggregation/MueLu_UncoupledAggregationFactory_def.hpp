@@ -219,8 +219,8 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   const LO numRows = graph->GetNodeNumVertices();
 
   // construct aggStat information
-  using AggStatType = typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType;
-  AggStatType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), numRows);
+  using AggStatHostType = typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType;
+  AggStatHostType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), numRows);
   Kokkos::deep_copy(aggStat, READY);
 
   // interface
@@ -262,7 +262,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     SubFactoryMonitor sfm(*this, "Algo " + phase, currentLevel);
 
     int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
-    algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
+    algos_[a]->BuildAggregatesOnHost(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
     algos_[a]->SetProcRankVerbose(oldRank);
 
     if (IsPrint(Statistics1)) {

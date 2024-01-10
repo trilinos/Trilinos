@@ -55,13 +55,13 @@
 
 #include "MueLu_UncoupledAggregationFactory_kokkos_decl.hpp"
 
-#include "MueLu_OnePtAggregationAlgorithm_kokkos.hpp"
-#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos.hpp"
+#include "MueLu_OnePtAggregationAlgorithm.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
 
-#include "MueLu_AggregationPhase1Algorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase2aAlgorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase2bAlgorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase3Algorithm_kokkos.hpp"
+#include "MueLu_AggregationPhase1Algorithm.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm.hpp"
+#include "MueLu_AggregationPhase2bAlgorithm.hpp"
+#include "MueLu_AggregationPhase3Algorithm.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
@@ -160,12 +160,12 @@ void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
 
   // TODO Can we keep different aggregation algorithms over more Build calls?
   algos_.clear();
-  algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm_kokkos(graphFact)));
-  if (pL.get<bool>("aggregation: allow user-specified singletons") == true) algos_.push_back(rcp(new OnePtAggregationAlgorithm_kokkos(graphFact)));
-  if (pL.get<bool>("aggregation: enable phase 1") == true) algos_.push_back(rcp(new AggregationPhase1Algorithm_kokkos(graphFact)));
-  if (pL.get<bool>("aggregation: enable phase 2a") == true) algos_.push_back(rcp(new AggregationPhase2aAlgorithm_kokkos(graphFact)));
-  if (pL.get<bool>("aggregation: enable phase 2b") == true) algos_.push_back(rcp(new AggregationPhase2bAlgorithm_kokkos(graphFact)));
-  if (pL.get<bool>("aggregation: enable phase 3") == true) algos_.push_back(rcp(new AggregationPhase3Algorithm_kokkos(graphFact)));
+  algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm(graphFact)));
+  if (pL.get<bool>("aggregation: allow user-specified singletons") == true) algos_.push_back(rcp(new OnePtAggregationAlgorithm(graphFact)));
+  if (pL.get<bool>("aggregation: enable phase 1") == true) algos_.push_back(rcp(new AggregationPhase1Algorithm(graphFact)));
+  if (pL.get<bool>("aggregation: enable phase 2a") == true) algos_.push_back(rcp(new AggregationPhase2aAlgorithm(graphFact)));
+  if (pL.get<bool>("aggregation: enable phase 2b") == true) algos_.push_back(rcp(new AggregationPhase2bAlgorithm(graphFact)));
+  if (pL.get<bool>("aggregation: enable phase 3") == true) algos_.push_back(rcp(new AggregationPhase3Algorithm(graphFact)));
 
   // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 or Phase 2b, but is in 2a
   TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase1"), std::invalid_argument, "Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");
@@ -192,8 +192,8 @@ void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   const LO numRows = graph->GetNodeNumVertices();
 
   // construct aggStat information
-  using aggStatType = Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>;
-  aggStatType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), numRows);
+  using AggStatType = typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType;
+  AggStatType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), numRows);
   Kokkos::deep_copy(aggStat, READY);
 
   // LBV on Sept 06 2019: re-commenting out the dirichlet boundary map

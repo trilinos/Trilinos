@@ -50,9 +50,8 @@
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
-
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Types.hpp"
 
 namespace MueLu {
@@ -70,7 +69,10 @@ class AggregationAlgorithmBase : public BaseClass {
 #undef MUELU_AGGREGATIONALGORITHMBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
  public:
-  using LWGraphType = LWGraph;
+  using LWGraphHostType = LWGraph;
+  using AggStatHostType = Kokkos::View<unsigned*, typename LWGraphHostType::device_type>;
+
+  using LWGraphType = LWGraph_kokkos;
   using AggStatType = Kokkos::View<unsigned*, typename LWGraphType::device_type>;
 
   //! @name Constructors/Destructors
@@ -83,6 +85,13 @@ class AggregationAlgorithmBase : public BaseClass {
 
   //! @name Build routines
   //@{
+
+  //! BuildAggregatesOnHost routine.
+  virtual void BuildAggregatesOnHost(const Teuchos::ParameterList& params,
+                                     const LWGraphHostType& graph,
+                                     Aggregates& aggregates,
+                                     AggStatHostType& aggStat,
+                                     LO& numNonAggregatedNodes) const = 0;
 
   //! BuildAggregates routine.
   virtual void BuildAggregates(const Teuchos::ParameterList& params,

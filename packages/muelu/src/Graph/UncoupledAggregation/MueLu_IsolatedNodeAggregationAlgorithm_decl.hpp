@@ -100,7 +100,7 @@ class IsolatedNodeAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregatesOnHost(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase - (isolated)"; }

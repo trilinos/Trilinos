@@ -55,6 +55,7 @@
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AggregationAlgorithmBase.hpp"
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
 #include "MueLu_AggregationPhase1Algorithm_kokkos_fwd.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm_kokkos_fwd.hpp"
@@ -229,7 +230,7 @@ class UncoupledAggregationFactory_kokkos : public SingleLevelFactoryBase {
  private:
   //! aggregation algorithms
   // will be filled in Build routine
-  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
+  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
 
   //! boolean flag: definition phase
   //! if true, the aggregation algorithms still can be set and changed.

@@ -102,7 +102,13 @@ class InterfaceAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<Loc
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(Teuchos::ParameterList const& params, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregatesOnHost(Teuchos::ParameterList const& params, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
+
+  void BuildAggregates(const Teuchos::ParameterList& params,
+                       const LWGraph_kokkos& graph,
+                       Aggregates& aggregates,
+                       typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
+                       LO& numNonAggregatedNodes) const;
   //@}
 
 };  // class InterfaceAggregationAlgorithm

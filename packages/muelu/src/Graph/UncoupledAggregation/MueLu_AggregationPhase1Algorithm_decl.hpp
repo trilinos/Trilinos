@@ -103,7 +103,25 @@ class AggregationPhase1Algorithm : public MueLu::AggregationAlgorithmBase<LocalO
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregatesOnHost(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
+
+  void BuildAggregates(const Teuchos::ParameterList& params,
+                       const LWGraph_kokkos& graph,
+                       Aggregates& aggregates,
+                       typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
+                       LO& numNonAggregatedNodes) const;
+
+  void BuildAggregatesRandom(const LO maxAggSize,
+                             const LWGraph_kokkos& graph,
+                             Aggregates& aggregates,
+                             typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
+                             LO& numNonAggregatedNodes) const;
+
+  void BuildAggregatesDeterministic(const LO maxAggSize,
+                                    const LWGraph_kokkos& graph,
+                                    Aggregates& aggregates,
+                                    typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
+                                    LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase 1 (main)"; }

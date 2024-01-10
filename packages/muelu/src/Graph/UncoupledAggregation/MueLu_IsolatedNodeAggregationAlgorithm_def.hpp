@@ -68,8 +68,8 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& /* params */, const LWGraph& graph, Aggregates& /* aggregates */, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregates");
+void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesOnHost(const ParameterList& /* params */, const LWGraph& graph, Aggregates& /* aggregates */, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesOnHost");
 
   const LO numRows = graph.GetNodeNumVertices();
 
