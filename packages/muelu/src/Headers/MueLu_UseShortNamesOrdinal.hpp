@@ -41,9 +41,6 @@ using InterfaceAggregationAlgorithm [[maybe_unused]] = MueLu::InterfaceAggregati
 #ifdef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
 using InterfaceMappingTransferFactory [[maybe_unused]] = MueLu::InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
-using IsolatedNodeAggregationAlgorithm [[maybe_unused]] = MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_ISORROPIAINTERFACE_SHORT
 using IsorropiaInterface [[maybe_unused]] = MueLu::IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>;
 #endif

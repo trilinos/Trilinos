@@ -57,7 +57,6 @@
 #include "MueLu_InterfaceAggregationAlgorithm_fwd.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
 
 #include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm_fwd.hpp"
@@ -88,7 +87,6 @@ namespace MueLu {
     AggregationPhase2aAlgorithm | Build aggregates of reasonable size from leftover nodes
     AggregationPhase2bAlgorithm | Add leftover nodes to existing aggregates
     AggregationPhase3Algorithm | Handle leftover nodes. Try to avoid singletons
-    IsolatedNodeAggregationAlgorithm | Drop/ignore leftover nodes
 
     Internally, each node has a status which can be one of the following:
 
