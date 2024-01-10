@@ -311,7 +311,9 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     aggregates->SetIndexManager(geoData);
     aggregates->AggregatesCrossProcessors(coupled);
     aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
-    std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
+    using AggStatType = typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType;
+    AggStatType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), geoData->getNumLocalFineNodes());
+    Kokkos::deep_copy(aggStat, READY);
     LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
 
     myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat,

@@ -219,7 +219,9 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   const LO numRows = graph->GetNodeNumVertices();
 
   // construct aggStat information
-  std::vector<unsigned> aggStat(numRows, READY);
+  using AggStatType = typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType;
+  AggStatType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), numRows);
+  Kokkos::deep_copy(aggStat, READY);
 
   // interface
   if (pL.get<bool>("aggregation: use interface aggregation") == true) {

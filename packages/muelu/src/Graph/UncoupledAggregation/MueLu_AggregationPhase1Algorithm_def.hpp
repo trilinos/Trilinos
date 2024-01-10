@@ -64,7 +64,7 @@ namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
-    BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat,
+    BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
                     LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 

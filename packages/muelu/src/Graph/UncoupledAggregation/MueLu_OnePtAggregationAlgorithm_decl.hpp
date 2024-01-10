@@ -105,7 +105,7 @@ class OnePtAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOr
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(Teuchos::ParameterList const& params, LWGraph const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregates(Teuchos::ParameterList const& params, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
 };  // class OnePtAggregationAlgorithm

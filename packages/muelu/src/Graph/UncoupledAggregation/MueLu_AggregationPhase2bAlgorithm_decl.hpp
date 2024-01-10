@@ -101,7 +101,7 @@ class AggregationPhase2bAlgorithm : public MueLu::AggregationAlgorithmBase<Local
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase 2b (expansion)"; }

@@ -103,7 +103,7 @@ class PreserveDirichletAggregationAlgorithm : public MueLu::AggregationAlgorithm
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase - (Dirichlet)"; }

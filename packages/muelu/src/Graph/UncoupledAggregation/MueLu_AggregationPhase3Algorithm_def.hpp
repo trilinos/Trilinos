@@ -63,7 +63,7 @@ namespace MueLu {
 // Try to stick unaggregated nodes into a neighboring aggregate if they are
 // not already too big. Otherwise, make a new aggregate
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   bool makeNonAdjAggs    = false;

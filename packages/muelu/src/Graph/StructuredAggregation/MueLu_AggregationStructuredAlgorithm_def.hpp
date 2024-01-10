@@ -67,7 +67,8 @@ namespace MueLu {
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
     BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph& graph,
-                    Aggregates& aggregates, std::vector<unsigned>& aggStat,
+                    Aggregates& aggregates,
+                    typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
                     LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 

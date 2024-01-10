@@ -96,7 +96,7 @@ class AggregationPhase3Algorithm : public MueLu::AggregationAlgorithmBase<LocalO
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase 3 (cleanup)"; }

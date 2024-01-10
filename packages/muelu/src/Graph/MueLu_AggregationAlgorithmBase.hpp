@@ -70,6 +70,9 @@ class AggregationAlgorithmBase : public BaseClass {
 #undef MUELU_AGGREGATIONALGORITHMBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
  public:
+  using LWGraphType = LWGraph;
+  using AggStatType = Kokkos::View<unsigned*, typename LWGraphType::device_type>;
+
   //! @name Constructors/Destructors
   //@{
 
@@ -83,9 +86,9 @@ class AggregationAlgorithmBase : public BaseClass {
 
   //! BuildAggregates routine.
   virtual void BuildAggregates(const Teuchos::ParameterList& params,
-                               const LWGraph& graph,
+                               const LWGraphType& graph,
                                Aggregates& aggregates,
-                               std::vector<unsigned>& aggStat,
+                               AggStatType& aggStat,
                                LO& numNonAggregatedNodes) const = 0;
   //@}
 };

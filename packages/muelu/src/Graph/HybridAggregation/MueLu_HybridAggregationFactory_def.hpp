@@ -266,8 +266,10 @@ void HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::
   aggregates->setObjectLabel("HB");
 
   // construct aggStat information
-  const LO numRows = graph->GetNodeNumVertices();
-  std::vector<unsigned> aggStat(numRows, READY);
+  const LO numRows      = graph->GetNodeNumVertices();
+  using AggStatHostType = typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType;
+  AggStatHostType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), numRows);
+  Kokkos::deep_copy(aggStat, READY);
 
   // Get aggregation type for region
   std::string regionType;
@@ -432,7 +434,7 @@ void HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::
     BuildInterfaceAggregates(Level& currentLevel, RCP<Aggregates> aggregates,
-                             std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
+                             typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes,
                              Array<LO> coarseRate) const {
   FactoryMonitor m(*this, "BuildInterfaceAggregates", currentLevel);
 
