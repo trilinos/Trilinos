@@ -318,7 +318,8 @@ TEUCHOS_UNIT_TEST(Trapezoidal, SinCos)
   writeOrderError("Tempus_Trapezoidal_SinCos-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,                 order, 0.01   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.000832086, 1.0e-4 );
@@ -400,7 +401,8 @@ TEUCHOS_UNIT_TEST(Trapezoidal, VanDerPol)
   writeOrderError("Tempus_Trapezoidal_VanDerPol-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.10 );
   TEST_FLOATING_EQUALITY( xDotSlope,         order, 0.10 );//=order at samll dt

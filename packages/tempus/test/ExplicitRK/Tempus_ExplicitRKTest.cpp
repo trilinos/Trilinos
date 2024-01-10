@@ -141,9 +141,9 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
 
       bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
       if (!pass) {
-        std::cout << std::endl;
-        std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
-        std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+        out << std::endl;
+        out << "stepperPL -------------- \n" << *stepperPL << std::endl;
+        out << "defaultPL -------------- \n" << *defaultPL << std::endl;
       }
       TEST_ASSERT(pass)
     }
@@ -242,16 +242,16 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
     Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
     // Check the order and intercept
-    std::cout << "  Stepper = " << stepper->description()
-              << "\n            with " << option << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
-                                         << get_ele(*(x_exact), 1) << std::endl;
-    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
-                                         << get_ele(*(x      ), 1) << std::endl;
-    std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
-                                         << get_ele(*(xdiff  ), 1) << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = " << stepper->description()
+        << "\n            with " << option << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
+                                   << get_ele(*(x_exact), 1) << std::endl;
+    out << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
+                                   << get_ele(*(x      ), 1) << std::endl;
+    out << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
+                                   << get_ele(*(xdiff  ), 1) << std::endl;
+    out << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.841470, 1.0e-4 );
     TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.540303, 1.0e-4 );
   }
@@ -329,16 +329,16 @@ TEUCHOS_UNIT_TEST(ExplicitRK, useFSAL_false)
     Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
     // Check the order and intercept
-    std::cout << "  Stepper = " << stepper->description()
-              << "\n            with " << "useFSAL=false" << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
-                                         << get_ele(*(x_exact), 1) << std::endl;
-    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
-                                         << get_ele(*(x      ), 1) << std::endl;
-    std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
-                                         << get_ele(*(xdiff  ), 1) << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = " << stepper->description()
+        << "\n            with " << "useFSAL=false" << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
+                                   << get_ele(*(x_exact), 1) << std::endl;
+    out << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
+                                   << get_ele(*(x      ), 1) << std::endl;
+    out << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
+                                   << get_ele(*(xdiff  ), 1) << std::endl;
+    out << "  =========================" << std::endl;
     if (RKMethods[m] == "RK Forward Euler") {
       TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.882508, 1.0e-4 );
       TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.570790, 1.0e-4 );
@@ -515,7 +515,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
     writeOrderError("Tempus_"+RKMethod+"_SinCos-Error.dat",
                     stepper, StepSize,
                     solutions,    xErrorNorm,    xSlope,
-                    solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutionsDot, xDotErrorNorm, xDotSlope,
+                    out);
 
     double order_tol = 0.01;
     if (RKMethods[m] == "Merson 4(5) Pair") order_tol = 0.04;
@@ -550,7 +551,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
 
   for(auto integratorChoice : IntegratorList){
 
-     std::cout << "Using Integrator: " << integratorChoice << " !!!" << std::endl;
+     out << "Using Integrator: " << integratorChoice << " !!!" << std::endl;
 
      // Read params from .xml file
      RCP<ParameterList> pList =
@@ -618,10 +619,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
 
         // test for number of steps
         TEST_EQUALITY(iStep, refIstep);
-        std::cout << "Tolerance = " << absTol
-           << " L2norm = "   << L2norm
-           << " iStep = "    << iStep
-           << " nFail = "    << nFail << std::endl;
+        out << "Tolerance = " << absTol
+            << " L2norm = "   << L2norm
+            << " iStep = "    << iStep
+            << " nFail = "    << nFail << std::endl;
      }
 
      // Plot sample solution and exact solution

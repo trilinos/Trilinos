@@ -198,10 +198,11 @@ void writeOrderError(
   Scalar & xDotSlope,
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutionsDotDot,
   std::vector<Scalar> & xDotDotErrorNorm,
-  Scalar & xDotDotSlope)
+  Scalar & xDotDotSlope,
+  Teuchos::FancyOStream &out)
 {
   if ( solutions.empty() ) {
-    std::cout << "No solutions to write out!\n" << std::endl;
+    out << "No solutions to write out!\n" << std::endl;
     return;
   }
   std::size_t lastElem = solutions.size()-1;  // Last element is the ref soln.
@@ -240,15 +241,15 @@ void writeOrderError(
   }
 
   Scalar order = stepper->getOrder();
-  std::cout << "  Stepper = " << stepper->description() << std::endl;
-  std::cout << "  =================================" << std::endl;
-  std::cout << "  Expected Order = " << order        << std::endl;
-  std::cout << "  x        Order = " << xSlope       << std::endl;
+  out << "  Stepper = " << stepper->description() << std::endl;
+  out << "  =================================" << std::endl;
+  out << "  Expected Order = " << order        << std::endl;
+  out << "  x        Order = " << xSlope       << std::endl;
   if (!solutionsDot.empty())
-    std::cout<<"  xDot     Order = " << xDotSlope    << std::endl;
+    out<<"  xDot     Order = " << xDotSlope    << std::endl;
   if (!solutionsDotDot.empty())
-    std::cout<<"  xDotDot  Order = " << xDotDotSlope << std::endl;
-  std::cout << "  =================================" << std::endl;
+    out<<"  xDotDot  Order = " << xDotDotSlope << std::endl;
+  out << "  =================================" << std::endl;
 
   std::ofstream ftmp(filename);
   Scalar factor = 0.0;
@@ -275,7 +276,8 @@ void writeOrderError(
   Scalar & xSlope,
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutionsDot,
   std::vector<Scalar> & xDotErrorNorm,
-  Scalar & xDotSlope)
+  Scalar & xDotSlope,
+  Teuchos::FancyOStream &out)
 {
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> solutionsDotDot;
   std::vector<Scalar> xDotDotErrorNorm;
@@ -283,7 +285,7 @@ void writeOrderError(
   writeOrderError(filename, stepper, StepSize,
                   solutions,       xErrorNorm,       xSlope,
                   solutionsDot,    xDotErrorNorm,    xDotSlope,
-                  solutionsDotDot, xDotDotErrorNorm, xDotDotSlope);
+                  solutionsDotDot, xDotDotErrorNorm, xDotDotSlope, out);
 }
 
 template<class Scalar>
@@ -293,7 +295,8 @@ void writeOrderError(
   std::vector<Scalar> & StepSize,
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutions,
   std::vector<Scalar> & xErrorNorm,
-  Scalar & xSlope)
+  Scalar & xSlope,
+  Teuchos::FancyOStream &out)
 {
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> solutionsDot;
   std::vector<Scalar> xDotErrorNorm;
@@ -304,7 +307,7 @@ void writeOrderError(
   writeOrderError(filename, stepper, StepSize,
                   solutions,       xErrorNorm,       xSlope,
                   solutionsDot,    xDotErrorNorm,    xDotSlope,
-                  solutionsDotDot, xDotDotErrorNorm, xDotDotSlope);
+                  solutionsDotDot, xDotDotErrorNorm, xDotDotSlope, out);
 }
 
 template<class Scalar>

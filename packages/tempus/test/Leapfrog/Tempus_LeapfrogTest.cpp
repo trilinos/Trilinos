@@ -244,7 +244,8 @@ TEUCHOS_UNIT_TEST(Leapfrog, SinCos)
   writeOrderError("Tempus_Leapfrog_SinCos-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,               order, 0.02 );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.0157928, 1.0e-4 );

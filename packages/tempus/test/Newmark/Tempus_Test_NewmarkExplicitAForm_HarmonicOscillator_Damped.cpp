@@ -82,8 +82,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
 
     //Perform time-step refinement
     dt /= 2;
-    std::cout << "\n \n time step #" << n << " (out of "
-              << nTimeStepSizes-1 << "), dt = " << dt << "\n";
+    out << "\n \n time step #" << n << " (out of "
+        << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
@@ -148,7 +148,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
   writeOrderError("Tempus_Test_NewmarkExplicitAForm_HarmonicOscillator_Damped-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,           1.060930, 0.01   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.508229, 1.0e-4 );

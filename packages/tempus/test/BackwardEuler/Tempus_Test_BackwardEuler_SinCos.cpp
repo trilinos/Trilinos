@@ -150,7 +150,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
   writeOrderError("Tempus_BackwardEuler_SinCos-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,               order, 0.01   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.0486418, 1.0e-4 );

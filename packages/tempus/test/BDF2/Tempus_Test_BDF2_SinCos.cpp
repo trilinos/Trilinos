@@ -159,7 +159,8 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     writeOrderError(err_out_file_name,
                     stepper, StepSize,
                     solutions,    xErrorNorm,    xSlope,
-                    solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutionsDot, xDotErrorNorm, xDotSlope,
+                    out);
 
     TEST_FLOATING_EQUALITY( xSlope,                 order, 0.01   );
     TEST_FLOATING_EQUALITY( xDotSlope,              order, 0.01   );

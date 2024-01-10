@@ -52,10 +52,6 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
   double order = 0.0;
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
-  Teuchos::RCP<Teuchos::FancyOStream> my_out =
-    Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
-  my_out->setOutputToRootOnly(0);
   for (int n=0; n<nTimeStepSizes; n++) {
 
     // Read params from .xml file
@@ -183,17 +179,17 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
     L2norm = std::sqrt(L2norm);
     ErrorNorm.push_back(L2norm);
 
-    //*my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
-    //        << std::endl;
+    //out << " n = " << n << " dt = " << dt << " error = " << L2norm
+    //    << std::endl;
   }
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  *my_out << "  Stepper = BDF2" << std::endl;
-  *my_out << "  =========================" << std::endl;
-  *my_out << "  Expected order: " << order << std::endl;
-  *my_out << "  Observed order: " << slope << std::endl;
-  *my_out << "  =========================" << std::endl;
+  out << "  Stepper = BDF2" << std::endl;
+  out << "  =========================" << std::endl;
+  out << "  Expected order: " << order << std::endl;
+  out << "  Observed order: " << slope << std::endl;
+  out << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY( slope,          1.95006, 0.015 );
   TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0137394, 1.0e-4 );
 

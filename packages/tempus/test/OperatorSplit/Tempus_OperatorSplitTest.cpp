@@ -215,7 +215,8 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
   writeOrderError("Tempus_OperatorSplit_VanDerPol-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.05 );
   TEST_FLOATING_EQUALITY( xDotSlope,         order, 0.05 );//=order at small dt

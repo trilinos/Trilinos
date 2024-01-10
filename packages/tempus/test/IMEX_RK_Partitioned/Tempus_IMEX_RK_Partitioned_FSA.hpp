@@ -118,10 +118,6 @@ void test_vdp_fsa(const std::string& method_name,
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
-  Teuchos::RCP<Teuchos::FancyOStream> my_out =
-    Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
-  my_out->setOutputToRootOnly(0);
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
@@ -274,8 +270,8 @@ void test_vdp_fsa(const std::string& method_name,
       StepSizeCheck.push_back(StepSize[i]);
       ErrorNorm.push_back(L2norm);
 
-      //*my_out << " n = " << i << " dt = " << StepSize[i]
-      //        << " error = " << L2norm << std::endl;
+      //out << " n = " << i << " dt = " << StepSize[i]
+      //    << " error = " << L2norm << std::endl;
     }
 
     // Check the order and intercept

@@ -195,13 +195,13 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
     Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
     // Check the order and intercept
-    std::cout << "  Stepper = " << stepper->description()
-              << "\n            with " << option << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
-    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
-    std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
-    std::cout << "  =========================" << std::endl;
+    out << "  Stepper = " << stepper->description()
+        << "\n            with " << option << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
+    out << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
+    out << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
+    out << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -0.222222, 1.0e-4 );
   }
 }
