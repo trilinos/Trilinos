@@ -60,11 +60,24 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.5" ]]; then
   export PARMETIS_ROOT=${PARMETIS_DIR}
   export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
   export BINUTILS_ROOT=${BINUTILS_DIR}
+  # SUPERLU_DIST and NETCDF libraries live in $ROOT/lib in this version
+  export ATDM_CONFIG_SUPERLUDIST_LIBS="-L${SUPERLUDIST_ROOT}/lib;-lsuperlu_dist"
+  export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
 elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-22.1_OPENMPI-4.0.5" ]]; then
+  export BLAS_ROOT=${ARMPL_DIR}
   module load sparc-dev/arm-22.1_openmpi-4.0.5
   module unload yaml-cpp
-  # This version of sparc-dev sets the $TPL_ROOT style variables,
-  # so do not change them here.
+  # superlu and binutils are not included in the devpack:
+  module load superlu/5.2.1
+  module load binutils/2.33.1
+  # This version of sparc-dev sets most of the $TPL_ROOT style variables,
+  # except these:
+  export MPI_ROOT=${MPI_DIR}
+  export SUPERLU_ROOT=${SUPERLU_DIR}
+  export BINUTILS_ROOT=${BINUTILS_DIR}
+  # SUPERLU_DIST and NETCDF libraries live in $ROOT/lib64 in this version
+  export ATDM_CONFIG_SUPERLUDIST_LIBS="-L${SUPERLUDIST_ROOT}/lib64;-lsuperlu_dist"
+  export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib64;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
 else
   echo
   echo "***"
@@ -87,9 +100,14 @@ else
   export OMP_NUM_THREADS=1
 fi
 
+# Also unload this cmake module as 3.17 is too old to configure Trilinos.
+# sparc-cmake/3.23.2 is the version we want to use
+# (and both devpacks load it), but because it has a
+# different name it won't unload this older version.
+module unload cmake/3.17.1
+
 # Common modules for all builds
 module load ninja
-module load cmake/3.17.1
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=
@@ -103,18 +121,14 @@ export ATDM_CONFIG_CGNS_LIBRARY_NAMES="cgns"
 # HDF5 settings
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
-# NETCDF settings
-export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
-
 # BLAS settings
 export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-larmpl_lp64_mp;-larmflang;-lomp"
 
 # LAPACK settings
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-larmpl_lp64_mp;-larmflang;-lomp"
 
-# SuperLUDist settings
+# Common SuperLUDist settings
 export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS="${SUPERLUDIST_ROOT}/include"
-export ATDM_CONFIG_SUPERLUDIST_LIBS="-L${SUPERLUDIST_ROOT}/lib;-lsuperlu_dist"
 
 # METIS settings - force linker order!
 export ATDM_CONFIG_PARMETIS_LIBS="${PARMETIS_ROOT}/lib/libparmetis.a;${METIS_ROOT}/lib/libmetis.a"
