@@ -332,7 +332,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
   writeOrderError("Tempus_HHTAlpha_SinCos_SecondOrder-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,                order, 0.02   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.00644755, 1.0e-4 );
@@ -477,7 +478,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
   writeOrderError("Tempus_HHTAlpha_SinCos_FirstOrder-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,           0.977568, 0.02   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.048932, 1.0e-4 );
@@ -623,7 +625,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
   writeOrderError("Tempus_HHTAlpha_SinCos_ExplicitCD-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,                order, 0.02   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.00451069, 1.0e-4 );

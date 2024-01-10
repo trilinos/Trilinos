@@ -185,7 +185,8 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     writeOrderError("Tempus_BDF2_SinCos-Error.dat",
                     stepper, StepSize,
                     solutions,    xErrorNorm,    xSlope,
-                    solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutionsDot, xDotErrorNorm, xDotSlope,
+                    out);
 
     TEST_FLOATING_EQUALITY( xSlope,                 1.932, 0.01 );
     TEST_FLOATING_EQUALITY( xDotSlope,              1.932, 0.01 );

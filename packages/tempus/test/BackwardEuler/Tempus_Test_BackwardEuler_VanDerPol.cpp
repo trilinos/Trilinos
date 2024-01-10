@@ -119,7 +119,8 @@ TEUCHOS_UNIT_TEST(BackwardEuler, VanDerPol)
   writeOrderError("Tempus_BackwardEuler_VanDerPol-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.10   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],  0.571031, 1.0e-4 );

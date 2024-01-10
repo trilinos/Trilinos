@@ -322,14 +322,14 @@ TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
   auto times_out = tsc->getOutputTimes();
   double maxDiff = 0.0;
 
-  //std::cout << "\n  times_in, times_out = " << std::endl;
+  //out << "\n  times_in, times_out = " << std::endl;
   for (size_t i=0; i < times_in.size(); ++i) {
-    //std::cout << std::setw(25) << std::setprecision(16) << times_in[i] << ","
-    //          << std::setw(25) << std::setprecision(16) << times_out[i]
-    //          << std::endl;
+    //out << std::setw(25) << std::setprecision(16) << times_in[i] << ","
+    //    << std::setw(25) << std::setprecision(16) << times_out[i]
+    //    << std::endl;
     maxDiff = std::max(std::fabs(times_in[i] - times_out[i]), maxDiff);
   }
-  //std::cout << "  maxDiff = " << maxDiff << std::endl;
+  //out << "  maxDiff = " << maxDiff << std::endl;
 
   TEST_COMPARE(maxDiff, <, 1.0e-25);
 
@@ -352,14 +352,14 @@ TEUCHOS_UNIT_TEST(TimeStepControl, setOutputTimes)
   times_out = tsc->getOutputTimes();
   maxDiff = 0.0;
 
-  //std::cout << "\n  times_in, times_out = " << std::endl;
+  //out << "\n  times_in, times_out = " << std::endl;
   for (size_t i=0; i < times_in.size(); ++i) {
-    //std::cout << std::setw(30) << std::setprecision(20) << times_in[i] << ","
-    //          << std::setw(30) << std::setprecision(20) << times_out[i]
-    //          << std::endl;
+    //out << std::setw(30) << std::setprecision(20) << times_in[i] << ","
+    //    << std::setw(30) << std::setprecision(20) << times_out[i]
+    //    << std::endl;
     maxDiff = std::max(std::fabs(times_in[i] - times_out[i]), maxDiff);
   }
-  //std::cout << "  maxDiff = " << maxDiff << std::endl;
+  //out << "  maxDiff = " << maxDiff << std::endl;
 
   TEST_COMPARE(maxDiff, <, 1.0e-25);
 }

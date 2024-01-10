@@ -266,7 +266,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
     writeOrderError("Tempus_"+stepperName+"_VanDerPol-Error.dat",
                     stepper, StepSize,
                     solutions,    xErrorNorm,    xSlope,
-                    solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutionsDot, xDotErrorNorm, xDotSlope,
+                    out);
 
     TEST_FLOATING_EQUALITY( xSlope,        stepperOrders[m],   0.02 );
     TEST_FLOATING_EQUALITY( xErrorNorm[0], stepperErrors[m], 1.0e-4 );

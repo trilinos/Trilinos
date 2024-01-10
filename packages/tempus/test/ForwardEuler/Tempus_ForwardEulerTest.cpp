@@ -312,7 +312,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
   writeOrderError("Tempus_ForwardEuler_SinCos-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,               order, 0.01   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],     0.051123, 1.0e-4 );
@@ -395,7 +396,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
   writeOrderError("Tempus_ForwardEuler_VanDerPol-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.10   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],  0.387476, 1.0e-4 );

@@ -156,7 +156,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream &out, 
   writeOrderError("Tempus_BackwardEuler_CDR-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
-                  solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutionsDot, xDotErrorNorm, xDotSlope,
+                  out);
 
   TEST_FLOATING_EQUALITY( xSlope,            1.32213, 0.01   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.116919, 1.0e-4 );

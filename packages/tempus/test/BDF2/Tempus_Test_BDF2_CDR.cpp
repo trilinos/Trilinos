@@ -166,7 +166,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream &out, 
     writeOrderError("Tempus_BDF2_CDR-Error.dat",
                     stepper, StepSize,
                     solutions,    xErrorNorm,    xSlope,
-                    solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutionsDot, xDotErrorNorm, xDotSlope,
+                    out);
     TEST_FLOATING_EQUALITY( xSlope, order, 0.35 );
     TEST_COMPARE(xSlope, >, 0.95);
     TEST_FLOATING_EQUALITY( xDotSlope, order, 0.35 );

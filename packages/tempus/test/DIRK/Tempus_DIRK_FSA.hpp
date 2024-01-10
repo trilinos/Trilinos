@@ -110,10 +110,6 @@ void test_sincos_fsa(const std::string& method_name,
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
-  Teuchos::RCP<Teuchos::FancyOStream> my_out =
-    Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
-  my_out->setOutputToRootOnly(0);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -265,8 +261,8 @@ void test_sincos_fsa(const std::string& method_name,
       L2norm = std::sqrt(L2norm);
       ErrorNorm.push_back(L2norm);
 
-      //*my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
-      //        << std::endl;
+      //out << " n = " << n << " dt = " << dt << " error = " << L2norm
+      //    << std::endl;
     }
 
     if (comm->getRank() == 0) {
@@ -289,11 +285,11 @@ void test_sincos_fsa(const std::string& method_name,
 
     // Check the order and intercept
     double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-    *my_out << "  Stepper = " << RKMethods[m] << std::endl;
-    *my_out << "  =========================" << std::endl;
-    *my_out << "  Expected order: " << order << std::endl;
-    *my_out << "  Observed order: " << slope << std::endl;
-    *my_out << "  =========================" << std::endl;
+    out << "  Stepper = " << RKMethods[m] << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Expected order: " << order << std::endl;
+    out << "  Observed order: " << slope << std::endl;
+    out << "  =========================" << std::endl;
 
     // Can only seem to get at most 4th order when using staggered method
     double order_expected = use_combined_method ? order : std::min(order,4.0);
