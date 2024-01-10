@@ -2766,5 +2766,22 @@ RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > getPhysicallyBlockedLin
     return Teuchos::null;
 }
 
+std::string formatBlockName(const std::string & prefix,int i,int j,int nrow)
+{
+  unsigned digits = 0;
+  auto blockId = nrow-1;
+  do {
+      blockId /= 10;
+      digits++;
+  } while (blockId);
+
+  std::ostringstream ss;
+  ss << prefix << "_";
+  ss << std::setfill('0') << std::setw(digits) << i;
+  ss << "_";
+  ss << std::setfill('0') << std::setw(digits) << j;
+  ss << ".mm";
+  return ss.str();
+}
 
 }
