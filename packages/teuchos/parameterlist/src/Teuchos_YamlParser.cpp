@@ -1342,6 +1342,10 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
         {
           safe_set_entry<bool>(parent, key, false);
         }
+        else if (rawString.length() > 2 && (rawString.substr(rawString.length()-2) == "ll" || rawString.substr(rawString.length()-2) == "LL"))
+        {
+          safe_set_entry<long long int>(parent, key, std::stoll(rawString));
+        }
         else
         {
           safe_set_entry<std::string>(parent, key, rawString);
@@ -1475,8 +1479,8 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
   }
   else if(node.Type() == ::YAML::NodeType::Null)
   {
-    // treat NULL as empty string (not an error)
-    safe_set_entry<std::string>(parent, key, std::string());
+    // treat NULL as empty sublist (not an error)
+    parent.sublist(key);
   }
   else
   {

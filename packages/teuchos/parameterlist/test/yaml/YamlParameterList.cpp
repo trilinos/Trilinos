@@ -279,16 +279,18 @@ namespace TeuchosTests
     auto pl = Teuchos::getParametersFromYamlString(
       "List:\n"
       " small number: 54\n"
-      " big number: 72057594037927936\n");
-    TEST_EQUALITY(pl->isType<int>("small number"), true);
 #ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
-    TEST_EQUALITY(pl->isType<double>("big number"), true);
-    long long big_number = static_cast<long long>(pl->get<double>("big number"));
-    TEST_EQUALITY(big_number, 72057594037927936ll);
+      " big number: 72057594037927936ll\n"
+      " other big number: 92057594037927936LL\n"
 #else
+      " big number: 72057594037927936\n"
+      " other big number: 92057594037927936\n"
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+    );
+    TEST_EQUALITY(pl->isType<int>("small number"), true);
     TEST_EQUALITY(pl->isType<long long>("big number"), true);
     TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
-#endif
+    TEST_EQUALITY(pl->isType<long long>("other big number"), true);
   }
 
   TEUCHOS_UNIT_TEST(YAML, flow_map)
@@ -313,6 +315,15 @@ namespace TeuchosTests
       );
     auto& sublist = pl.sublist("sublist");
     TEST_EQUALITY(sublist.name(), "mycode->sublist");
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, null_node)
+  {
+    RCP<ParameterList> pl = Teuchos::getParametersFromYamlString(
+        "mycode:\n"
+        "  empty_node:\n"
+    );
+    TEST_EQUALITY(pl->isSublist("empty_node"), true);
   }
 
 #ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
