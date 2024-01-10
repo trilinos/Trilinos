@@ -62,10 +62,10 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_AggregationPhase1Algorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase2aAlgorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase2bAlgorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase3Algorithm_kokkos.hpp"
+#include "MueLu_AggregationPhase1Algorithm.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm.hpp"
+#include "MueLu_AggregationPhase2bAlgorithm.hpp"
+#include "MueLu_AggregationPhase3Algorithm.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
@@ -142,19 +142,19 @@ void gimmeUncoupledAggregates(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrd
   params.set<bool>("aggregation: phase3 avoid singletons", false);
 
   if (bPhase1) {
-    RCP<MueLu::AggregationAlgorithmBase_kokkos<LO, GO, NO>> phase1 = rcp(new AggregationPhase1Algorithm_kokkos(dropFact));
+    RCP<MueLu::AggregationAlgorithmBase<LO, GO, NO>> phase1 = rcp(new AggregationPhase1Algorithm(dropFact));
     phase1->BuildAggregates(params, *graph, *aggregates, aggStat, numNonAggregatedNodes);
   }
   if (bPhase2a) {
-    RCP<MueLu::AggregationAlgorithmBase_kokkos<LO, GO, NO>> phase2a = rcp(new AggregationPhase2aAlgorithm_kokkos(dropFact));
+    RCP<MueLu::AggregationAlgorithmBase<LO, GO, NO>> phase2a = rcp(new AggregationPhase2aAlgorithm(dropFact));
     phase2a->BuildAggregates(params, *graph, *aggregates, aggStat, numNonAggregatedNodes);
   }
   if (bPhase2b) {
-    RCP<MueLu::AggregationAlgorithmBase_kokkos<LO, GO, NO>> phase2b = rcp(new AggregationPhase2bAlgorithm_kokkos(dropFact));
+    RCP<MueLu::AggregationAlgorithmBase<LO, GO, NO>> phase2b = rcp(new AggregationPhase2bAlgorithm(dropFact));
     phase2b->BuildAggregates(params, *graph, *aggregates, aggStat, numNonAggregatedNodes);
   }
   if (bPhase3) {
-    RCP<MueLu::AggregationAlgorithmBase_kokkos<LO, GO, NO>> phase3 = rcp(new AggregationPhase3Algorithm_kokkos(dropFact));
+    RCP<MueLu::AggregationAlgorithmBase<LO, GO, NO>> phase3 = rcp(new AggregationPhase3Algorithm(dropFact));
     phase3->BuildAggregates(params, *graph, *aggregates, aggStat, numNonAggregatedNodes);
   }
   aggregates->AggregatesCrossProcessors(false);

@@ -56,16 +56,15 @@
 
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase.hpp"
-#include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
-#include "MueLu_AggregationPhase1Algorithm_kokkos_fwd.hpp"
-#include "MueLu_AggregationPhase2aAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_AggregationPhase2bAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_AggregationPhase3Algorithm_kokkos_fwd.hpp"
+#include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase2bAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase3Algorithm_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
-#include "MueLu_OnePtAggregationAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos_fwd.hpp"
+#include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLu {

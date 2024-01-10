@@ -57,6 +57,7 @@
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoarseMapFactory.hpp>
+#include <MueLu_Aggregates.hpp>
 #include <MueLu_BlockedCoarseMapFactory.hpp>
 
 namespace MueLuTests {

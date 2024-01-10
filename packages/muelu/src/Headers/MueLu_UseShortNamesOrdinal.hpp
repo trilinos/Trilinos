@@ -8,32 +8,17 @@ using Aggregates [[maybe_unused]] = MueLu::Aggregates<LocalOrdinal, GlobalOrdina
 #ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
 using AggregationPhase1Algorithm [[maybe_unused]] = MueLu::AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_SHORT
-using AggregationPhase1Algorithm_kokkos [[maybe_unused]] = MueLu::AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_AGGREGATIONPHASE2AALGORITHM_SHORT
 using AggregationPhase2aAlgorithm [[maybe_unused]] = MueLu::AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_AGGREGATIONPHASE2AALGORITHM_KOKKOS_SHORT
-using AggregationPhase2aAlgorithm_kokkos [[maybe_unused]] = MueLu::AggregationPhase2aAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
 using AggregationPhase2bAlgorithm [[maybe_unused]] = MueLu::AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_SHORT
-using AggregationPhase2bAlgorithm_kokkos [[maybe_unused]] = MueLu::AggregationPhase2bAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_AGGREGATIONPHASE3ALGORITHM_SHORT
 using AggregationPhase3Algorithm [[maybe_unused]] = MueLu::AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_SHORT
-using AggregationPhase3Algorithm_kokkos [[maybe_unused]] = MueLu::AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
 using AggregationStructuredAlgorithm [[maybe_unused]] = MueLu::AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_KOKKOS_SHORT
-using AggregationStructuredAlgorithm_kokkos [[maybe_unused]] = MueLu::AggregationStructuredAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 using AmalgamationInfo [[maybe_unused]] = MueLu::AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>;
@@ -59,9 +44,6 @@ using InterfaceMappingTransferFactory [[maybe_unused]] = MueLu::InterfaceMapping
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 using IsolatedNodeAggregationAlgorithm [[maybe_unused]] = MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_SHORT
-using IsolatedNodeAggregationAlgorithm_kokkos [[maybe_unused]] = MueLu::IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_ISORROPIAINTERFACE_SHORT
 using IsorropiaInterface [[maybe_unused]] = MueLu::IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -80,14 +62,8 @@ using LocalOrdinalTransferFactory [[maybe_unused]] = MueLu::LocalOrdinalTransfer
 #ifdef MUELU_ONEPTAGGREGATIONALGORITHM_SHORT
 using OnePtAggregationAlgorithm [[maybe_unused]] = MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_SHORT
-using OnePtAggregationAlgorithm_kokkos [[maybe_unused]] = MueLu::OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_SHORT
 using PreserveDirichletAggregationAlgorithm [[maybe_unused]] = MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_KOKKOS_SHORT
-using PreserveDirichletAggregationAlgorithm_kokkos [[maybe_unused]] = MueLu::PreserveDirichletAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_PRFACTORY_SHORT
 using PRFactory [[maybe_unused]] = MueLu::PRFactory<LocalOrdinal, GlobalOrdinal, Node>;
