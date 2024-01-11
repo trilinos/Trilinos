@@ -915,6 +915,9 @@ bool isPhysicallyBlockedLinearOp(const LinearOp & op);
   */
 Teuchos::RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > getPhysicallyBlockedLinearOp(const LinearOp & op, ST *scalar, bool *transp);
 
+//! Construct filename string for writing blocks to matrix-market format
+std::string formatBlockName(const std::string & prefix,int i,int j,int nrow);
+
 } // end namespace Teko
 
 #ifdef _MSC_VER
