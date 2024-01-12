@@ -15,7 +15,6 @@
 
 #include "../TestModels/DahlquistTestModel.hpp"
 
-
 namespace Tempus_Unit_Test {
 
 using Teuchos::RCP;
@@ -23,8 +22,8 @@ using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 
-
-/** \brief Explicit RK Modifier Dahlquist Test using StepperERK_BogackiShampine32.
+/** \brief Explicit RK Modifier Dahlquist Test using
+ * StepperERK_BogackiShampine32.
  *
  *  This is the canonical Dahlquist test equation
  *  \f[
@@ -82,7 +81,8 @@ using Teuchos::rcp_dynamic_cast;
  *                        & = & 1/2 \\
  *       \bar{f}(X_2,1/2) & = & \lambda X_2 = (-1)(1/2) \\
  *                        & = & -1/2 \\
- *                    X_3 & = & x_0 + (3/4)\,\bar{f}(X_2,1/2) = 1 + (3/4)(-1/2)\\
+ *                    X_3 & = & x_0 + (3/4)\,\bar{f}(X_2,1/2) = 1 +
+ * (3/4)(-1/2)\\
  *                        & = & 5/8 \\
  *       \bar{f}(X_3,3/4) & = & \lambda X_3 = (-1)(5/8) \\
  *                        & = & -5/8 \\
@@ -115,112 +115,119 @@ using Teuchos::rcp_dynamic_cast;
  * \f}
  */
 class StepperRKModifierBogackiShampineTest
-  : virtual public Tempus::StepperRKModifierBase<double>
-{
-public:
-
+  : virtual public Tempus::StepperRKModifierBase<double> {
+ public:
   /// Constructor
-  StepperRKModifierBogackiShampineTest(Teuchos::FancyOStream &Out, bool &Success)
+  StepperRKModifierBogackiShampineTest(Teuchos::FancyOStream &Out,
+                                       bool &Success)
     : out(Out), success(Success)
-  {}
+  {
+  }
 
   /// Destructor
-  virtual ~StepperRKModifierBogackiShampineTest(){}
+  virtual ~StepperRKModifierBogackiShampineTest() {}
 
   /// Test the modify RK Stepper at the Action Locations.
   virtual void modify(
-    Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-    Teuchos::RCP<Tempus::StepperRKBase<double> > stepper,
-    const typename Tempus::StepperRKAppAction<double>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
+      Teuchos::RCP<Tempus::StepperRKBase<double> > stepper,
+      const typename Tempus::StepperRKAppAction<double>::ACTION_LOCATION actLoc)
   {
-    const double relTol = 1.0e-14;
-    auto stageNumber = stepper->getStageNumber();
-    Teuchos::SerialDenseVector<int,double> c = stepper->getTableau()->c();
+    const double relTol                       = 1.0e-14;
+    auto stageNumber                          = stepper->getStageNumber();
+    Teuchos::SerialDenseVector<int, double> c = stepper->getTableau()->c();
 
-    auto currentState   = sh->getCurrentState();
-    auto workingState   = sh->getWorkingState();
-    const double dt     = workingState->getTimeStep();
-    double time = currentState->getTime();
-    if (stageNumber >= 0) time += c(stageNumber)*dt;
+    auto currentState = sh->getCurrentState();
+    auto workingState = sh->getWorkingState();
+    const double dt   = workingState->getTimeStep();
+    double time       = currentState->getTime();
+    if (stageNumber >= 0) time += c(stageNumber) * dt;
 
     auto x    = workingState->getX();
     auto xDot = workingState->getXDot();
     if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
 
-
     if (actLoc == StepperRKAppAction<double>::BEGIN_STEP) {
       {
         auto DME = Teuchos::rcp_dynamic_cast<
-          const Tempus_Test::DahlquistTestModel<double> > (stepper->getModel());
+            const Tempus_Test::DahlquistTestModel<double> >(
+            stepper->getModel());
         TEST_FLOATING_EQUALITY(DME->getLambda(), -1.0, relTol);
       }
       TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
 
       const double x_0    = get_ele(*(x), 0);
       const double xDot_0 = get_ele(*(xDot), 0);
-      TEST_FLOATING_EQUALITY(x_0,     1.0, relTol);      // Should be x_0
-      TEST_FLOATING_EQUALITY(xDot_0, -1.0, relTol);      // Should be xDot_0
+      TEST_FLOATING_EQUALITY(x_0, 1.0, relTol);      // Should be x_0
+      TEST_FLOATING_EQUALITY(xDot_0, -1.0, relTol);  // Should be xDot_0
       TEST_ASSERT(std::abs(time) < relTol);
-      TEST_FLOATING_EQUALITY(dt,      1.0, relTol);
+      TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
       TEST_COMPARE(stageNumber, ==, -1);
-
-    } else if (actLoc == StepperRKAppAction<double>::BEGIN_STAGE          ||
-               actLoc == StepperRKAppAction<double>::BEFORE_SOLVE         ||
-               actLoc == StepperRKAppAction<double>::AFTER_SOLVE          ||
-               actLoc == StepperRKAppAction<double>::BEFORE_EXPLICIT_EVAL ||
-               actLoc == StepperRKAppAction<double>::END_STAGE) {
+    }
+    else if (actLoc == StepperRKAppAction<double>::BEGIN_STAGE ||
+             actLoc == StepperRKAppAction<double>::BEFORE_SOLVE ||
+             actLoc == StepperRKAppAction<double>::AFTER_SOLVE ||
+             actLoc == StepperRKAppAction<double>::BEFORE_EXPLICIT_EVAL ||
+             actLoc == StepperRKAppAction<double>::END_STAGE) {
       const double X_i = get_ele(*(x), 0);
       const double f_i = get_ele(*(xDot), 0);
       if (stageNumber == 0) {
-        TEST_FLOATING_EQUALITY(X_i,      1.0, relTol);   // Should be X_1
+        TEST_FLOATING_EQUALITY(X_i, 1.0, relTol);  // Should be X_1
         TEST_ASSERT(std::abs(time) < relTol);
         if (actLoc == StepperRKAppAction<double>::END_STAGE ||
             !stepper->getUseFSAL()) {
-          TEST_FLOATING_EQUALITY(f_i,     -1.0, relTol); // Should be \bar{f}_1
-        } else {
-          TEST_ASSERT(std::abs(f_i) < relTol);           // Not set yet.
+          TEST_FLOATING_EQUALITY(f_i, -1.0, relTol);  // Should be \bar{f}_1
         }
-
-      } else if (stageNumber == 1) {
-        TEST_FLOATING_EQUALITY(X_i,      0.5, relTol);   // Should be X_2
-        TEST_FLOATING_EQUALITY(time,     0.5, relTol);
-        if (actLoc == StepperRKAppAction<double>::END_STAGE) {
-          TEST_FLOATING_EQUALITY(f_i,     -0.5, relTol); // Should be \bar{f}_2
-        } else {
-          TEST_ASSERT(std::abs(f_i) < relTol);           // Not set yet.
+        else {
+          TEST_ASSERT(std::abs(f_i) < relTol);  // Not set yet.
         }
-
-      } else if (stageNumber == 2) {
-        TEST_FLOATING_EQUALITY(X_i,  5.0/8.0, relTol);   // Should be X_3
-        TEST_FLOATING_EQUALITY(time,    0.75, relTol);
-        if (actLoc == StepperRKAppAction<double>::END_STAGE) {
-          TEST_FLOATING_EQUALITY(f_i, -5.0/8.0, relTol); // Should be \bar{f}_3
-        } else {
-          TEST_ASSERT(std::abs(f_i) < relTol);           // Not set yet.
-        }
-
-      } else if (stageNumber == 3) {
-        TEST_FLOATING_EQUALITY(X_i,  1.0/3.0, relTol);   // Should be X_4
-        TEST_FLOATING_EQUALITY(time,     1.0, relTol);
-        if (actLoc == StepperRKAppAction<double>::END_STAGE) {
-          TEST_FLOATING_EQUALITY(f_i, -1.0/3.0, relTol); // Should be \bar{f}_4
-        } else if (workingState->getNConsecutiveFailures() > 0) {
-          TEST_FLOATING_EQUALITY(f_i,     -1.0, relTol); // From IC and FSAL swap.
-        } else {
-          TEST_ASSERT(std::abs(f_i) < relTol);           // Not set yet.
-        }
-
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPT( !(-1 < stageNumber && stageNumber < 4));
       }
-      TEST_FLOATING_EQUALITY(dt,   1.0, relTol);
-
-    } else if (actLoc == StepperRKAppAction<double>::END_STEP) {
+      else if (stageNumber == 1) {
+        TEST_FLOATING_EQUALITY(X_i, 0.5, relTol);  // Should be X_2
+        TEST_FLOATING_EQUALITY(time, 0.5, relTol);
+        if (actLoc == StepperRKAppAction<double>::END_STAGE) {
+          TEST_FLOATING_EQUALITY(f_i, -0.5, relTol);  // Should be \bar{f}_2
+        }
+        else {
+          TEST_ASSERT(std::abs(f_i) < relTol);  // Not set yet.
+        }
+      }
+      else if (stageNumber == 2) {
+        TEST_FLOATING_EQUALITY(X_i, 5.0 / 8.0, relTol);  // Should be X_3
+        TEST_FLOATING_EQUALITY(time, 0.75, relTol);
+        if (actLoc == StepperRKAppAction<double>::END_STAGE) {
+          TEST_FLOATING_EQUALITY(f_i, -5.0 / 8.0,
+                                 relTol);  // Should be \bar{f}_3
+        }
+        else {
+          TEST_ASSERT(std::abs(f_i) < relTol);  // Not set yet.
+        }
+      }
+      else if (stageNumber == 3) {
+        TEST_FLOATING_EQUALITY(X_i, 1.0 / 3.0, relTol);  // Should be X_4
+        TEST_FLOATING_EQUALITY(time, 1.0, relTol);
+        if (actLoc == StepperRKAppAction<double>::END_STAGE) {
+          TEST_FLOATING_EQUALITY(f_i, -1.0 / 3.0,
+                                 relTol);  // Should be \bar{f}_4
+        }
+        else if (workingState->getNConsecutiveFailures() > 0) {
+          TEST_FLOATING_EQUALITY(f_i, -1.0, relTol);  // From IC and FSAL swap.
+        }
+        else {
+          TEST_ASSERT(std::abs(f_i) < relTol);  // Not set yet.
+        }
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPT(!(-1 < stageNumber && stageNumber < 4));
+      }
+      TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
+    }
+    else if (actLoc == StepperRKAppAction<double>::END_STEP) {
       const double x_1 = get_ele(*(x), 0);
-      time = workingState->getTime();
-      TEST_FLOATING_EQUALITY(x_1,  1.0/3.0, relTol);   // Should be x_1
-      TEST_FLOATING_EQUALITY(time,     1.0, relTol);
-      TEST_FLOATING_EQUALITY(dt,       1.0, relTol);
+      time             = workingState->getTime();
+      TEST_FLOATING_EQUALITY(x_1, 1.0 / 3.0, relTol);  // Should be x_1
+      TEST_FLOATING_EQUALITY(time, 1.0, relTol);
+      TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
       TEST_COMPARE(stageNumber, ==, -1);
 
       if (stepper->getUseEmbedded() == true) {
@@ -229,27 +236,25 @@ public:
         // e = 0 from doxygen above.
         TEST_ASSERT(std::abs(workingState->getErrorRel()) < relTol);
       }
-
-    } else {
+    }
+    else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                 "Error - unknown action location.\n");
     }
   }
 
-private:
-
-  Teuchos::FancyOStream & out;
-  bool & success;
+ private:
+  Teuchos::FancyOStream &out;
+  bool &success;
 };
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK, Modifier)
 {
   auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-    model = rcp(new Tempus_Test::DahlquistTestModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::DahlquistTestModel<double>());
   auto modifier = rcp(new StepperRKModifierBogackiShampineTest(out, success));
 
   stepper->setModel(model);
@@ -267,20 +272,19 @@ TEUCHOS_UNIT_TEST(ERK, Modifier)
   double dt = 1.0;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   solutionHistory->getWorkingState()->setTime(dt);
-  stepper->takeStep(solutionHistory);           // Primary testing occurs in
-                                                // modifierX during takeStep().
+  stepper->takeStep(solutionHistory);  // Primary testing occurs in
+                                       // modifierX during takeStep().
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK, Modifier_FSAL)
 {
   auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-    model = rcp(new Tempus_Test::DahlquistTestModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::DahlquistTestModel<double>());
   auto modifier = rcp(new StepperRKModifierBogackiShampineTest(out, success));
 
   stepper->setModel(model);
@@ -298,20 +302,19 @@ TEUCHOS_UNIT_TEST(ERK, Modifier_FSAL)
   double dt = 1.0;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   solutionHistory->getWorkingState()->setTime(dt);
-  stepper->takeStep(solutionHistory);           // Primary testing occurs in
-                                                // modifierX during takeStep().
+  stepper->takeStep(solutionHistory);  // Primary testing occurs in
+                                       // modifierX during takeStep().
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK, Modifier_FSAL_Failure)
 {
   auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-    model = rcp(new Tempus_Test::DahlquistTestModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::DahlquistTestModel<double>());
   auto modifier = rcp(new StepperRKModifierBogackiShampineTest(out, success));
 
   stepper->setModel(model);
@@ -330,20 +333,19 @@ TEUCHOS_UNIT_TEST(ERK, Modifier_FSAL_Failure)
   solutionHistory->getWorkingState()->setTimeStep(dt);
   solutionHistory->getWorkingState()->setTime(dt);
   solutionHistory->getWorkingState()->setNConsecutiveFailures(1);
-  stepper->takeStep(solutionHistory);           // Primary testing occurs in
-                                                // modifierX during takeStep().
+  stepper->takeStep(solutionHistory);  // Primary testing occurs in
+                                       // modifierX during takeStep().
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK, Modifier_Embedded)
 {
   auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-    model = rcp(new Tempus_Test::DahlquistTestModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::DahlquistTestModel<double>());
   auto modifier = rcp(new StepperRKModifierBogackiShampineTest(out, success));
 
   stepper->setModel(model);
@@ -364,96 +366,100 @@ TEUCHOS_UNIT_TEST(ERK, Modifier_Embedded)
   solutionHistory->getWorkingState()->setTime(dt);
   solutionHistory->getWorkingState()->setTolRel(1.0);
   solutionHistory->getWorkingState()->setTolAbs(0.0);
-  stepper->takeStep(solutionHistory);           // Primary testing occurs in
-                                                // modifierX during takeStep().
+  stepper->takeStep(solutionHistory);  // Primary testing occurs in
+                                       // modifierX during takeStep().
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
 
-
-/** \brief Explicit RK ModifierX Dahlquist Test using StepperERK_BogackiShampine32.
+/** \brief Explicit RK ModifierX Dahlquist Test using
+ * StepperERK_BogackiShampine32.
  *
  *  This is similar to StepperRKModifierBogackiShampineTest but is
  *  specialized for the AppAction::ModifierX interface.  See
  *  StepperRKModifierXBogackiShampineTest for more details.
  */
 class StepperRKModifierXBogackiShampineTest
-  : virtual public Tempus::StepperRKModifierXBase<double>
-{
-public:
-
+  : virtual public Tempus::StepperRKModifierXBase<double> {
+ public:
   /// Constructor
-  StepperRKModifierXBogackiShampineTest(Teuchos::FancyOStream &Out, bool &Success)
+  StepperRKModifierXBogackiShampineTest(Teuchos::FancyOStream &Out,
+                                        bool &Success)
     : out(Out), success(Success)
-  {}
+  {
+  }
 
   /// Destructor
-  virtual ~StepperRKModifierXBogackiShampineTest(){}
+  virtual ~StepperRKModifierXBogackiShampineTest() {}
 
   /// Test the modify RK Stepper at the Action Locations.
   virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<double> > x,
-    const double time, const double dt, const int stageNumber,
-    const typename Tempus::StepperRKModifierXBase<double>::MODIFIER_TYPE modType)
+      Teuchos::RCP<Thyra::VectorBase<double> > x, const double time,
+      const double dt, const int stageNumber,
+      const typename Tempus::StepperRKModifierXBase<double>::MODIFIER_TYPE
+          modType)
   {
     const double relTol = 1.0e-14;
     if (modType == StepperRKModifierXBase<double>::X_BEGIN_STEP) {
-      const double x_0 = get_ele(*(x), 0);               // Should be x_0
-      TEST_FLOATING_EQUALITY(x_0,  1.0, relTol);
+      const double x_0 = get_ele(*(x), 0);  // Should be x_0
+      TEST_FLOATING_EQUALITY(x_0, 1.0, relTol);
       TEST_FLOATING_EQUALITY(time, 0.0, relTol);
-      TEST_FLOATING_EQUALITY(dt,   1.0, relTol);
+      TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
       TEST_COMPARE(stageNumber, ==, -1);
-
-    } else if (modType == StepperRKModifierXBase<double>::X_BEGIN_STAGE          ||
-               modType == StepperRKModifierXBase<double>::X_BEFORE_SOLVE         ||
-               modType == StepperRKModifierXBase<double>::X_AFTER_SOLVE          ||
-               modType == StepperRKModifierXBase<double>::X_BEFORE_EXPLICIT_EVAL ||
-               modType == StepperRKModifierXBase<double>::X_END_STAGE) {
+    }
+    else if (modType == StepperRKModifierXBase<double>::X_BEGIN_STAGE ||
+             modType == StepperRKModifierXBase<double>::X_BEFORE_SOLVE ||
+             modType == StepperRKModifierXBase<double>::X_AFTER_SOLVE ||
+             modType ==
+                 StepperRKModifierXBase<double>::X_BEFORE_EXPLICIT_EVAL ||
+             modType == StepperRKModifierXBase<double>::X_END_STAGE) {
       const double X_i = get_ele(*(x), 0);
       if (stageNumber == 0) {
-        TEST_FLOATING_EQUALITY(X_i,      1.0, relTol);  // Should be X_1
-        TEST_FLOATING_EQUALITY(time,     0.0, relTol);
-      } else if (stageNumber == 1) {
-        TEST_FLOATING_EQUALITY(X_i,      0.5, relTol);  // Should be X_2
-        TEST_FLOATING_EQUALITY(time,     0.5, relTol);
-      } else if (stageNumber == 2) {
-        TEST_FLOATING_EQUALITY(X_i,  5.0/8.0, relTol);  // Should be X_3
-        TEST_FLOATING_EQUALITY(time,    0.75, relTol);
-      } else if (stageNumber == 3) {
-        TEST_FLOATING_EQUALITY(X_i,  1.0/3.0, relTol);  // Should be X_4
-        TEST_FLOATING_EQUALITY(time,     1.0, relTol);
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPT( !(-1 < stageNumber && stageNumber < 4));
+        TEST_FLOATING_EQUALITY(X_i, 1.0, relTol);  // Should be X_1
+        TEST_FLOATING_EQUALITY(time, 0.0, relTol);
       }
-      TEST_FLOATING_EQUALITY(dt,   1.0, relTol);
-
-    } else if (modType == StepperRKModifierXBase<double>::X_END_STEP) {
+      else if (stageNumber == 1) {
+        TEST_FLOATING_EQUALITY(X_i, 0.5, relTol);  // Should be X_2
+        TEST_FLOATING_EQUALITY(time, 0.5, relTol);
+      }
+      else if (stageNumber == 2) {
+        TEST_FLOATING_EQUALITY(X_i, 5.0 / 8.0, relTol);  // Should be X_3
+        TEST_FLOATING_EQUALITY(time, 0.75, relTol);
+      }
+      else if (stageNumber == 3) {
+        TEST_FLOATING_EQUALITY(X_i, 1.0 / 3.0, relTol);  // Should be X_4
+        TEST_FLOATING_EQUALITY(time, 1.0, relTol);
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPT(!(-1 < stageNumber && stageNumber < 4));
+      }
+      TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
+    }
+    else if (modType == StepperRKModifierXBase<double>::X_END_STEP) {
       const double x_1 = get_ele(*(x), 0);
-      TEST_FLOATING_EQUALITY(x_1,  1.0/3.0, relTol);   // Should be x_1
-      TEST_FLOATING_EQUALITY(time,     1.0, relTol);
-      TEST_FLOATING_EQUALITY(dt,       1.0, relTol);
+      TEST_FLOATING_EQUALITY(x_1, 1.0 / 3.0, relTol);  // Should be x_1
+      TEST_FLOATING_EQUALITY(time, 1.0, relTol);
+      TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
       TEST_COMPARE(stageNumber, ==, -1);
-
-    } else {
+    }
+    else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                 "Error - unknown action location.\n");
     }
   }
 
-private:
-
-  Teuchos::FancyOStream & out;
-  bool & success;
+ private:
+  Teuchos::FancyOStream &out;
+  bool &success;
 };
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK, ModifierX)
 {
   auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-    model = rcp(new Tempus_Test::DahlquistTestModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::DahlquistTestModel<double>());
   auto modifierX = rcp(new StepperRKModifierXBogackiShampineTest(out, success));
 
   stepper->setModel(model);
@@ -471,20 +477,19 @@ TEUCHOS_UNIT_TEST(ERK, ModifierX)
   double dt = 1.0;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   solutionHistory->getWorkingState()->setTime(dt);
-  stepper->takeStep(solutionHistory);               // Primary testing occurs in
-                                                    // modifierX during takeStep().
+  stepper->takeStep(solutionHistory);  // Primary testing occurs in
+                                       // modifierX during takeStep().
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK, ModifierX_FSAL)
 {
   auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-    model = rcp(new Tempus_Test::DahlquistTestModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::DahlquistTestModel<double>());
   auto modifierX = rcp(new StepperRKModifierXBogackiShampineTest(out, success));
 
   stepper->setModel(model);
@@ -502,20 +507,19 @@ TEUCHOS_UNIT_TEST(ERK, ModifierX_FSAL)
   double dt = 1.0;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   solutionHistory->getWorkingState()->setTime(dt);
-  stepper->takeStep(solutionHistory);               // Primary testing occurs in
-                                                    // modifierX during takeStep().
+  stepper->takeStep(solutionHistory);  // Primary testing occurs in
+                                       // modifierX during takeStep().
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(ERK, ModifierX_FSAL_Failure)
 {
   auto stepper = rcp(new Tempus::StepperERK_BogackiShampine32<double>());
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-    model = rcp(new Tempus_Test::DahlquistTestModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::DahlquistTestModel<double>());
   auto modifierX = rcp(new StepperRKModifierXBogackiShampineTest(out, success));
 
   stepper->setModel(model);
@@ -534,11 +538,10 @@ TEUCHOS_UNIT_TEST(ERK, ModifierX_FSAL_Failure)
   solutionHistory->getWorkingState()->setTimeStep(dt);
   solutionHistory->getWorkingState()->setTime(dt);
   solutionHistory->getWorkingState()->setNConsecutiveFailures(1);
-  stepper->takeStep(solutionHistory);               // Primary testing occurs in
-                                                    // modifierX during takeStep().
+  stepper->takeStep(solutionHistory);  // Primary testing occurs in
+                                       // modifierX during takeStep().
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 3);
 }
 
-
-} // namespace Tempus_Unit_Test
+}  // namespace Tempus_Unit_Test

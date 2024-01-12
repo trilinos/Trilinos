@@ -13,7 +13,7 @@
 #include "Tempus_StepperImplicit_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperImplicit)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperImplicit)
 }
 
 #endif

@@ -13,7 +13,7 @@
 #include "Tempus_SolutionStateMetaData_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SolutionStateMetaData)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SolutionStateMetaData)
 }
 
 #endif

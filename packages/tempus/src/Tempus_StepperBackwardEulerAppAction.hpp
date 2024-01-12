@@ -12,16 +12,16 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration
-template<class Scalar> class StepperBackwardEuler;
+template <class Scalar>
+class StepperBackwardEuler;
 
 /** \brief Application Action for StepperBackwardEuler.
  *
- *  This class provides a means to apply various actions with the BackwardEuler time step.
- *  The data available to this class is solution variables (through
+ *  This class provides a means to apply various actions with the BackwardEuler
+ * time step. The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
  *  the application to just observe this data, i.e., use but not change
  *  any of it (USER BEWARE!).
@@ -30,32 +30,31 @@ template<class Scalar> class StepperBackwardEuler;
  *  (StepperBackwardEulerAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperBackwardEuler.
  */
-template<class Scalar>
-class StepperBackwardEulerAppAction
-{
-public:
-
+template <class Scalar>
+class StepperBackwardEulerAppAction {
+ public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.
-    BEFORE_SOLVE,   ///< Before the implicit solve.
-    AFTER_SOLVE,    ///< After the implicit solve.
-    END_STEP        ///< At the end of the step.
+    BEGIN_STEP,    ///< At the beginning of the step.
+    BEFORE_SOLVE,  ///< Before the implicit solve.
+    AFTER_SOLVE,   ///< After the implicit solve.
+    END_STEP       ///< At the end of the step.
   };
 
   /// Constructor
-  StepperBackwardEulerAppAction(){}
+  StepperBackwardEulerAppAction() {}
 
   /// Destructor
-  virtual ~StepperBackwardEulerAppAction(){}
+  virtual ~StepperBackwardEulerAppAction() {}
 
   /// Execute application action for BackwardEuler Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperBackwardEuler<Scalar> > stepper,
-    const typename StepperBackwardEulerAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperBackwardEuler<Scalar> > stepper,
+      const typename StepperBackwardEulerAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperBackwardEulerAppAction_hpp
+#endif  // Tempus_StepperBackwardEulerAppAction_hpp

@@ -13,7 +13,7 @@
 #include "Tempus_AdjointAuxSensitivityModelEvaluator_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(AdjointAuxSensitivityModelEvaluator)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(AdjointAuxSensitivityModelEvaluator)
 }
 
 #endif

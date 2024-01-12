@@ -42,27 +42,34 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::CDR_Model_Tpetra(
     const Teuchos::RCP<const Teuchos::Comm<int>> &comm,
     const GO numGlobalElements, const SC zMin, const SC zMax, const SC a,
     const SC k)
-    : comm_(comm), numGlobalElements_(numGlobalElements), zMin_(zMin),
-      zMax_(zMax), a_(a), k_(k), showGetInvalidArg_(false) {
+  : comm_(comm),
+    numGlobalElements_(numGlobalElements),
+    zMin_(zMin),
+    zMax_(zMax),
+    a_(a),
+    k_(k),
+    showGetInvalidArg_(false)
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
   using ::Thyra::VectorBase;
   using MEB = ::Thyra::ModelEvaluatorBase;
-  using ST = Teuchos::ScalarTraits<SC>;
+  using ST  = Teuchos::ScalarTraits<SC>;
 
   TEUCHOS_ASSERT(nonnull(comm_));
 
   const auto num_nodes = numGlobalElements_ + 1;
-  const auto myRank = comm_->getRank();
+  const auto myRank    = comm_->getRank();
 
   // owned space
   xOwnedMap_ = rcp(new tpetra_map(num_nodes, 0, comm_));
-  xSpace_ = ::Thyra::createVectorSpace<SC, LO, GO, Node>(xOwnedMap_);
+  xSpace_    = ::Thyra::createVectorSpace<SC, LO, GO, Node>(xOwnedMap_);
 
   // ghosted space
   if (comm_->getSize() == 1) {
     xGhostedMap_ = xOwnedMap_;
-  } else {
+  }
+  else {
     LO overlapNumMyElements;
     GO overlapGetMinGLobalIndex;
     overlapNumMyElements = xOwnedMap_->getLocalNumElements() + 2;
@@ -72,7 +79,8 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::CDR_Model_Tpetra(
 
     if (myRank == 0) {
       overlapGetMinGLobalIndex = xOwnedMap_->getMinGlobalIndex();
-    } else {
+    }
+    else {
       overlapGetMinGLobalIndex = xOwnedMap_->getMinGlobalIndex() - 1;
     }
 
@@ -95,7 +103,7 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::CDR_Model_Tpetra(
 
   // residual space
   fOwnedMap_ = xOwnedMap_;
-  fSpace_ = xSpace_;
+  fSpace_    = xSpace_;
 
   x0_ = ::Thyra::createMember(xSpace_);
   V_S(x0_.ptr(), ST::zero());
@@ -106,8 +114,8 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::CDR_Model_Tpetra(
   // Create the nodal coordinates
   nodeCoordinates_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
 
-  auto length = zMax_ - zMin_;
-  auto dx = length / static_cast<SC>(numGlobalElements_ - 1);
+  auto length      = zMax_ - zMin_;
+  auto dx          = length / static_cast<SC>(numGlobalElements_ - 1);
   const auto minGI = xOwnedMap_->getMinGlobalIndex();
   {
     CoordFiller<tpetra_vec> coordFiller(*nodeCoordinates_, zMin_, dx, minGI);
@@ -147,7 +155,8 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::CDR_Model_Tpetra(
 
 template <typename SC, typename LO, typename GO, typename Node>
 Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node>>
-CDR_Model_Tpetra<SC, LO, GO, Node>::createGraph() {
+CDR_Model_Tpetra<SC, LO, GO, Node>::createGraph()
+{
   auto W_graph = Teuchos::rcp(new tpetra_graph(xOwnedMap_, 5));
   W_graph->resumeFill();
 
@@ -156,14 +165,12 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::createGraph() {
 
   // Loop Over # of Finite Elements on Processor
   for (LO elem = 0; elem < overlapNumMyElements - 1; elem++) {
-
     // Loop over Nodes in Element
     for (LO i = 0; i < 2; i++) {
       auto row = xGhostedMap_->getGlobalElement(elem + i);
 
       // Loop over Trial Functions
       for (LO j = 0; j < 2; j++) {
-
         // If this row is owned by current processor, add the index
         if (xOwnedMap_->isNodeGlobalElement(row)) {
           auto colIndex = xGhostedMap_->getGlobalElement(elem + j);
@@ -180,7 +187,8 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::createGraph() {
 
 template <typename SC, typename LO, typename GO, typename Node>
 void CDR_Model_Tpetra<SC, LO, GO, Node>::set_x0(
-    const Teuchos::ArrayView<const SC> &x0_in) {
+    const Teuchos::ArrayView<const SC> &x0_in)
+{
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY(xSpace_->dim(), x0_in.size());
 #endif
@@ -190,14 +198,16 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::set_x0(
 
 template <typename SC, typename LO, typename GO, typename Node>
 void CDR_Model_Tpetra<SC, LO, GO, Node>::setShowGetInvalidArgs(
-    bool showGetInvalidArg) {
+    bool showGetInvalidArg)
+{
   showGetInvalidArg_ = showGetInvalidArg;
 }
 
 template <typename SC, typename LO, typename GO, typename Node>
 void CDR_Model_Tpetra<SC, LO, GO, Node>::set_W_factory(
     const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<SC>>
-        &W_factory) {
+        &W_factory)
+{
   wFactory_ = W_factory;
 }
 
@@ -205,25 +215,29 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::set_W_factory(
 
 template <typename SC, typename LO, typename GO, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<SC>>
-CDR_Model_Tpetra<SC, LO, GO, Node>::get_x_space() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::get_x_space() const
+{
   return xSpace_;
 }
 
 template <typename SC, typename LO, typename GO, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<SC>>
-CDR_Model_Tpetra<SC, LO, GO, Node>::get_f_space() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::get_f_space() const
+{
   return fSpace_;
 }
 
 template <typename SC, typename LO, typename GO, typename Node>
 Thyra::ModelEvaluatorBase::InArgs<SC>
-CDR_Model_Tpetra<SC, LO, GO, Node>::getNominalValues() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::getNominalValues() const
+{
   return nominalValues_;
 }
 
 template <typename SC, typename LO, typename GO, typename Node>
 Teuchos::RCP<Thyra::LinearOpWithSolveBase<double>>
-CDR_Model_Tpetra<SC, LO, GO, Node>::create_W() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::create_W() const
+{
   auto W_factory = this->get_W_factory();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -237,7 +251,8 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::create_W() const {
 
 template <typename SC, typename LO, typename GO, typename Node>
 Teuchos::RCP<Thyra::LinearOpBase<SC>>
-CDR_Model_Tpetra<SC, LO, GO, Node>::create_W_op() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::create_W_op() const
+{
   auto W_tpetra = Teuchos::rcp(new tpetra_matrix(wGraph_));
 
   return Thyra::tpetraLinearOp<SC, LO, GO, Node>(fSpace_, xSpace_, W_tpetra);
@@ -245,7 +260,8 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::create_W_op() const {
 
 template <typename SC, typename LO, typename GO, typename Node>
 Teuchos::RCP<::Thyra::PreconditionerBase<SC>>
-CDR_Model_Tpetra<SC, LO, GO, Node>::create_W_prec() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::create_W_prec() const
+{
   auto W_op = create_W_op();
   auto prec = Teuchos::rcp(new Thyra::DefaultPreconditioner<SC>);
 
@@ -256,13 +272,15 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::create_W_prec() const {
 
 template <typename SC, typename LO, typename GO, typename Node>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<SC>>
-CDR_Model_Tpetra<SC, LO, GO, Node>::get_W_factory() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::get_W_factory() const
+{
   return wFactory_;
 }
 
 template <typename SC, typename LO, typename GO, typename Node>
 Thyra::ModelEvaluatorBase::InArgs<SC>
-CDR_Model_Tpetra<SC, LO, GO, Node>::createInArgs() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::createInArgs() const
+{
   return prototypeInArgs_;
 }
 
@@ -270,14 +288,16 @@ CDR_Model_Tpetra<SC, LO, GO, Node>::createInArgs() const {
 
 template <typename SC, typename LO, typename GO, typename Node>
 Thyra::ModelEvaluatorBase::OutArgs<SC>
-CDR_Model_Tpetra<SC, LO, GO, Node>::createOutArgsImpl() const {
+CDR_Model_Tpetra<SC, LO, GO, Node>::createOutArgsImpl() const
+{
   return prototypeOutArgs_;
 }
 
 template <typename SC, typename LO, typename GO, typename Node>
 void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<SC> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<SC> &outArgs) const {
+    const Thyra::ModelEvaluatorBase::OutArgs<SC> &outArgs) const
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -285,12 +305,11 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
   TEUCHOS_ASSERT(nonnull(inArgs.get_x()));
   TEUCHOS_ASSERT(nonnull(inArgs.get_x_dot()));
 
-  auto f_out = outArgs.get_f();
-  auto W_out = outArgs.get_W_op();
+  auto f_out      = outArgs.get_f();
+  auto W_out      = outArgs.get_W_op();
   auto W_prec_out = outArgs.get_W_prec();
 
   if (nonnull(f_out) || nonnull(W_out) || nonnull(W_prec_out)) {
-
     // ****************
     // Get the underlying Tpetra objects
     // ****************
@@ -303,7 +322,7 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
     RCP<tpetra_matrix> J;
     if (nonnull(W_out)) {
       auto W_epetra = tpetra_extract::getTpetraOperator(W_out);
-      J = rcp_dynamic_cast<tpetra_matrix>(W_epetra);
+      J             = rcp_dynamic_cast<tpetra_matrix>(W_epetra);
       TEUCHOS_ASSERT(nonnull(J));
     }
 
@@ -323,9 +342,9 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
 
     // Set the boundary condition directly.  Works for both x and xDot solves.
     if (comm_->getRank() == 0) {
-      auto x = Teuchos::rcp_const_cast<Thyra::VectorBase<SC>>(inArgs.get_x());
-      auto xVec = tpetra_extract::getTpetraVector(x);
-      auto xView = xVec->getLocalViewHost(Tpetra::Access::ReadWrite);
+      auto x      = Teuchos::rcp_const_cast<Thyra::VectorBase<SC>>(inArgs.get_x());
+      auto xVec   = tpetra_extract::getTpetraVector(x);
+      auto xView  = xVec->getLocalViewHost(Tpetra::Access::ReadWrite);
       xView(0, 0) = 1.0;
     }
 
@@ -374,7 +393,7 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
     }
 
     const auto alpha = inArgs.get_alpha();
-    const auto beta = inArgs.get_beta();
+    const auto beta  = inArgs.get_beta();
 
     if (nonnull(J)) {
       JacobianEvaluatorFunctor<tpetra_vec, tpetra_matrix> jFunctor(
@@ -400,7 +419,6 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
     }
 
     if (nonnull(M_inv)) {
-
       // Invert the Jacobian diagonal for the preconditioner
       auto &diag = *jDiag_;
       M_inv->getLocalDiagCopy(diag);
@@ -412,6 +430,6 @@ void CDR_Model_Tpetra<SC, LO, GO, Node>::evalModelImpl(
   }
 }
 
-} // namespace Tempus_Test
+}  // namespace Tempus_Test
 
-#endif // TEMPUS_CDR_MODEL_TPETRA_IMPL_HPP
+#endif  // TEMPUS_CDR_MODEL_TPETRA_IMPL_HPP

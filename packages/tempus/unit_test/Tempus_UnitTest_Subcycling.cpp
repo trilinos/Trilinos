@@ -19,36 +19,35 @@
 #include "Tempus_StepperSubcyclingModifierXDefault.hpp"
 #include "Tempus_StepperSubcyclingObserverDefault.hpp"
 
-
 namespace Tempus_Unit_Test {
 
+using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
-using Teuchos::ParameterList;
 using Teuchos::sublist;
 
 using Tempus::StepperFactory;
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 {
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> >(model);
 
   // Setup SolutionHistory ------------------------------------
   auto inArgsIC = model->getNominalValues();
-  auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
-  auto icState = Tempus::createSolutionStateX(icSolution);
+  auto icSolution =
+      rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
+  auto icState         = Tempus::createSolutionStateX(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->addState(icState);
   solutionHistory->initWorkingState();
 
   // Default construction.
-  auto stepper = rcp(new Tempus::StepperSubcycling<double>());
+  auto stepper   = rcp(new Tempus::StepperSubcycling<double>());
   auto stepperBE = Tempus::createStepperBackwardEuler(modelME, Teuchos::null);
   stepper->setSubcyclingStepper(stepperBE);
   stepper->setInitialConditions(solutionHistory);
@@ -67,46 +66,60 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
 
   // Test the set functions
-  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
+  stepper->setSolver(solver);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifier);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setUseFSAL(useFSAL);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistency(ICConsistency);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistencyCheck(ICConsistencyCheck);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Full argument list construction.
   auto scIntegrator = Teuchos::rcp(new Tempus::IntegratorBasic<double>());
-  auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
+  auto stepperFE    = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   scIntegrator->setStepper(stepperFE);
   scIntegrator->setSolutionHistory(solutionHistory);
   scIntegrator->initialize();
 
   stepper = rcp(new Tempus::StepperSubcycling<double>(
-    model,scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
+      model, scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck,
+      modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 1);
 }
 
-
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(Subcycling, MaxTimeStepDoesNotChangeDuring_takeStep)
 {
   // Setup the stepper ----------------------------------------
-  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
-  auto stepper = rcp(new Tempus::StepperSubcycling<double>());
+  auto model     = rcp(new Tempus_Test::SinCosModel<double>());
+  auto modelME   = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> >(model);
+  auto stepper   = rcp(new Tempus::StepperSubcycling<double>());
   auto stepperBE = Tempus::createStepperBackwardEuler(modelME, Teuchos::null);
   stepper->setSubcyclingStepper(stepperBE);
 
   // Setup SolutionHistory ------------------------------------
   auto inArgsIC = model->getNominalValues();
-  auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
-  auto icState = Tempus::createSolutionStateX(icSolution);
+  auto icSolution =
+      rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
+  auto icState         = Tempus::createSolutionStateX(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->addState(icState);
   solutionHistory->initWorkingState();
@@ -122,54 +135,54 @@ TEUCHOS_UNIT_TEST(Subcycling, MaxTimeStepDoesNotChangeDuring_takeStep)
   stepper->takeStep(solutionHistory);
   double maxTimeStep_After = stepper->getSubcyclingMaxTimeStep();
 
-  TEST_FLOATING_EQUALITY(maxTimeStep_Set, maxTimeStep_After, 1.0e-14 );
+  TEST_FLOATING_EQUALITY(maxTimeStep_Set, maxTimeStep_After, 1.0e-14);
 }
-
 
 // ************************************************************
 // ************************************************************
 class StepperSubcyclingModifierTest
-  : virtual public Tempus::StepperSubcyclingModifierBase<double>
-{
-public:
-
+  : virtual public Tempus::StepperSubcyclingModifierBase<double> {
+ public:
   /// Constructor
   StepperSubcyclingModifierTest()
-    : testBEGIN_STEP(false), testEND_STEP(false),
-      testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(1.5), testName("")
-  {}
+    : testBEGIN_STEP(false),
+      testEND_STEP(false),
+      testCurrentValue(-0.99),
+      testWorkingValue(-0.99),
+      testDt(1.5),
+      testName("")
+  {
+  }
   /// Destructor
-  virtual ~StepperSubcyclingModifierTest(){}
+  virtual ~StepperSubcyclingModifierTest() {}
 
   /// Modify Subcycling Stepper at action location.
   virtual void modify(
-    Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-    Teuchos::RCP<Tempus::StepperSubcycling<double> > stepper,
-    const typename Tempus::StepperSubcyclingAppAction<double>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
+      Teuchos::RCP<Tempus::StepperSubcycling<double> > stepper,
+      const typename Tempus::StepperSubcyclingAppAction<double>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
-    case StepperSubcyclingAppAction<double>::BEGIN_STEP:
-    {
-      testBEGIN_STEP = true;
-      auto x = sh->getCurrentState()->getX();
-      testCurrentValue = get_ele(*(x), 0);
-      testName = "Subcycling - Modifier";
-      stepper->setStepperName(testName);
-      break;
-    }
-    case StepperSubcyclingAppAction<double>::END_STEP:
-    {
-      testEND_STEP = true;
-      auto x = sh->getWorkingState()->getX();
-      testWorkingValue = get_ele(*(x), 0);
-      testDt = sh->getWorkingState()->getTimeStep()/10.0;
-      sh->getWorkingState()->setTimeStep(testDt);
-      break;
-    }
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+    switch (actLoc) {
+      case StepperSubcyclingAppAction<double>::BEGIN_STEP: {
+        testBEGIN_STEP   = true;
+        auto x           = sh->getCurrentState()->getX();
+        testCurrentValue = get_ele(*(x), 0);
+        testName         = "Subcycling - Modifier";
+        stepper->setStepperName(testName);
+        break;
+      }
+      case StepperSubcyclingAppAction<double>::END_STEP: {
+        testEND_STEP     = true;
+        auto x           = sh->getWorkingState()->getX();
+        testWorkingValue = get_ele(*(x), 0);
+        testDt           = sh->getWorkingState()->getTimeStep() / 10.0;
+        sh->getWorkingState()->setTimeStep(testDt);
+        break;
+      }
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                   "Error - unknown action location.\n");
     }
   }
 
@@ -185,19 +198,19 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
 {
   // Setup the SinCosModel ------------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> >(model);
 
   // Setup Stepper for field solve ----------------------------
-  auto stepper = rcp(new Tempus::StepperSubcycling<double>());
+  auto stepper   = rcp(new Tempus::StepperSubcycling<double>());
   auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
-  auto modifier = rcp(new StepperSubcyclingModifierTest());
+  auto modifier  = rcp(new StepperSubcyclingModifierTest());
   stepper->setAppAction(modifier);
   stepper->setSubcyclingStepper(stepperFE);
 
-  stepper->setSubcyclingMinTimeStep      (15);
-  stepper->setSubcyclingInitTimeStep     (15.0);
-  stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingMaxFailures      (10);
+  stepper->setSubcyclingMinTimeStep(15);
+  stepper->setSubcyclingInitTimeStep(15.0);
+  stepper->setSubcyclingMaxTimeStep(15.0);
+  stepper->setSubcyclingMaxFailures(10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
   stepper->setSubcyclingPrintDtChanges(true);
@@ -205,18 +218,20 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   timeStepControl->setInitIndex(0);
-  timeStepControl->setInitTime (0.0);
+  timeStepControl->setInitTime(0.0);
   timeStepControl->setFinalTime(1.0);
   timeStepControl->setInitTimeStep(15.0);
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
   auto inArgsIC = model->getNominalValues();
-  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icSolution =
+      rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
-  icState->setTime    (timeStepControl->getInitTime());;
-  icState->setIndex   (timeStepControl->getInitIndex());
-  icState->setTimeStep(0.0);  // dt for ICs are indicated by zero.
+  icState->setTime(timeStepControl->getInitTime());
+  ;
+  icState->setIndex(timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);                           // dt for ICs are indicated by zero.
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
@@ -254,44 +269,45 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
 // ************************************************************
 // ************************************************************
 class StepperSubcyclingObserverTest
-  : virtual public Tempus::StepperSubcyclingObserverBase<double>
-{
-public:
-
+  : virtual public Tempus::StepperSubcyclingObserverBase<double> {
+ public:
   /// Constructor
   StepperSubcyclingObserverTest()
-    : testBEGIN_STEP(false), testEND_STEP(false),
-      testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(15.0), testName("Subcyling")
-  {}
+    : testBEGIN_STEP(false),
+      testEND_STEP(false),
+      testCurrentValue(-0.99),
+      testWorkingValue(-0.99),
+      testDt(15.0),
+      testName("Subcyling")
+  {
+  }
 
   /// Destructor
-  virtual ~StepperSubcyclingObserverTest(){}
+  virtual ~StepperSubcyclingObserverTest() {}
 
   /// Observe Subcycling Stepper at action location.
   virtual void observe(
-    Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
-    Teuchos::RCP<const Tempus::StepperSubcycling<double> > stepper,
-    const typename Tempus::StepperSubcyclingAppAction<double>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
+      Teuchos::RCP<const Tempus::StepperSubcycling<double> > stepper,
+      const typename Tempus::StepperSubcyclingAppAction<double>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
-    case StepperSubcyclingAppAction<double>::BEGIN_STEP:
-    {
-      testBEGIN_STEP = true;
-      auto x = sh->getCurrentState()->getX();
-      testCurrentValue = get_ele(*(x), 0);
-      break;
-    }
-    case StepperSubcyclingAppAction<double>::END_STEP:
-    {
-      testEND_STEP = true;
-      auto x = sh->getWorkingState()->getX();
-      testWorkingValue = get_ele(*(x), 0);
-      break;
-    }
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+    switch (actLoc) {
+      case StepperSubcyclingAppAction<double>::BEGIN_STEP: {
+        testBEGIN_STEP   = true;
+        auto x           = sh->getCurrentState()->getX();
+        testCurrentValue = get_ele(*(x), 0);
+        break;
+      }
+      case StepperSubcyclingAppAction<double>::END_STEP: {
+        testEND_STEP     = true;
+        auto x           = sh->getWorkingState()->getX();
+        testWorkingValue = get_ele(*(x), 0);
+        break;
+      }
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                   "Error - unknown action location.\n");
     }
   }
 
@@ -307,19 +323,19 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
 {
   // Setup the SinCosModel ------------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> >(model);
 
   // Setup Stepper for field solve ----------------------------
-  auto stepper = rcp(new Tempus::StepperSubcycling<double>());
+  auto stepper   = rcp(new Tempus::StepperSubcycling<double>());
   auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
-  auto observer = rcp(new StepperSubcyclingObserverTest());
+  auto observer  = rcp(new StepperSubcyclingObserverTest());
   stepper->setAppAction(observer);
   stepper->setSubcyclingStepper(stepperFE);
 
-  stepper->setSubcyclingMinTimeStep      (15);
-  stepper->setSubcyclingInitTimeStep     (15.0);
-  stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingMaxFailures      (10);
+  stepper->setSubcyclingMinTimeStep(15);
+  stepper->setSubcyclingInitTimeStep(15.0);
+  stepper->setSubcyclingMaxTimeStep(15.0);
+  stepper->setSubcyclingMaxFailures(10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
   stepper->setSubcyclingPrintDtChanges(true);
@@ -327,18 +343,20 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   timeStepControl->setInitIndex(0);
-  timeStepControl->setInitTime (0.0);
+  timeStepControl->setInitTime(0.0);
   timeStepControl->setFinalTime(1.0);
   timeStepControl->setInitTimeStep(15.0);
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
   auto inArgsIC = model->getNominalValues();
-  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icSolution =
+      rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
-  icState->setTime    (timeStepControl->getInitTime());;
-  icState->setIndex   (timeStepControl->getInitIndex());
-  icState->setTimeStep(0.0);  // dt for ICs are indicated by zero.
+  icState->setTime(timeStepControl->getInitTime());
+  ;
+  icState->setIndex(timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);                           // dt for ICs are indicated by zero.
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
@@ -372,47 +390,47 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
   TEST_COMPARE(observer->testName, ==, "Subcyling");
 }
 
-  // ************************************************************
-  // ************************************************************
+// ************************************************************
+// ************************************************************
 class StepperSubcyclingModifierXTest
-  : virtual public Tempus::StepperSubcyclingModifierXBase<double>
-{
-public:
-
+  : virtual public Tempus::StepperSubcyclingModifierXBase<double> {
+ public:
   /// Constructor
   StepperSubcyclingModifierXTest()
-    : testX_BEGIN_STEP(false), testXDOT_END_STEP(false),
-      testX(-0.99), testXDot(-0.99),
-      testDt(1.5), testTime(1.5)
-  {}
+    : testX_BEGIN_STEP(false),
+      testXDOT_END_STEP(false),
+      testX(-0.99),
+      testXDot(-0.99),
+      testDt(1.5),
+      testTime(1.5)
+  {
+  }
 
   /// Destructor
-  virtual ~StepperSubcyclingModifierXTest(){}
+  virtual ~StepperSubcyclingModifierXTest() {}
 
   /// Modify Subcycling Stepper at action location.
-  virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<double> > x,
-    const double time, const double dt,
-    const typename Tempus::StepperSubcyclingModifierXBase<double>::MODIFIER_TYPE modType)
+  virtual void modify(Teuchos::RCP<Thyra::VectorBase<double> > x,
+                      const double time, const double dt,
+                      const typename Tempus::StepperSubcyclingModifierXBase<
+                          double>::MODIFIER_TYPE modType)
   {
-    switch(modType) {
-    case StepperSubcyclingModifierXBase<double>::X_BEGIN_STEP:
-    {
-      testX_BEGIN_STEP = true;
-      testX = get_ele(*(x), 0);
-      testDt = dt;
-      break;
-    }
-    case StepperSubcyclingModifierXBase<double>::XDOT_END_STEP:
-    {
-      testXDOT_END_STEP = true;
-      testXDot = get_ele(*(x), 0);
-      testTime = time;
-      break;
-    }
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+    switch (modType) {
+      case StepperSubcyclingModifierXBase<double>::X_BEGIN_STEP: {
+        testX_BEGIN_STEP = true;
+        testX            = get_ele(*(x), 0);
+        testDt           = dt;
+        break;
+      }
+      case StepperSubcyclingModifierXBase<double>::XDOT_END_STEP: {
+        testXDOT_END_STEP = true;
+        testXDot          = get_ele(*(x), 0);
+        testTime          = time;
+        break;
+      }
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                   "Error - unknown action location.\n");
     }
   }
 
@@ -428,19 +446,19 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
 {
   // Setup the SinCosModel ------------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> >(model);
 
   // Setup Stepper for field solve ----------------------------
-  auto stepper = rcp(new Tempus::StepperSubcycling<double>());
+  auto stepper   = rcp(new Tempus::StepperSubcycling<double>());
   auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   auto modifierX = rcp(new StepperSubcyclingModifierXTest());
   stepper->setAppAction(modifierX);
   stepper->setSubcyclingStepper(stepperFE);
 
-  stepper->setSubcyclingMinTimeStep      (15);
-  stepper->setSubcyclingInitTimeStep     (15.0);
-  stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingMaxFailures      (10);
+  stepper->setSubcyclingMinTimeStep(15);
+  stepper->setSubcyclingInitTimeStep(15.0);
+  stepper->setSubcyclingMaxTimeStep(15.0);
+  stepper->setSubcyclingMaxFailures(10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
   stepper->setSubcyclingPrintDtChanges(true);
@@ -448,19 +466,22 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   timeStepControl->setInitIndex(0);
-  timeStepControl->setInitTime (0.0);
+  timeStepControl->setInitTime(0.0);
   timeStepControl->setFinalTime(1.0);
   timeStepControl->setInitTimeStep(15.0);
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
   auto inArgsIC = model->getNominalValues();
-  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icSolutionDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-  auto icState = Tempus::createSolutionStateX(icSolution,icSolutionDot);
-  icState->setTime    (timeStepControl->getInitTime());;
-  icState->setIndex   (timeStepControl->getInitIndex());
-  icState->setTimeStep(0.0);  // dt for ICs are indicated by zero.
+  auto icSolution =
+      rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
+  auto icSolutionDot =
+      rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x_dot());
+  auto icState = Tempus::createSolutionStateX(icSolution, icSolutionDot);
+  icState->setTime(timeStepControl->getInitTime());
+  ;
+  icState->setIndex(timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);                           // dt for ICs are indicated by zero.
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
@@ -497,7 +518,7 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
   auto xDot = solutionHistory->getWorkingState()->getXDot();
   if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
 
-  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-14);
+  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-14);
 
@@ -505,4 +526,4 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
   TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
 }
 
-} // namespace Tempus_Unit_Test
+}  // namespace Tempus_Unit_Test
