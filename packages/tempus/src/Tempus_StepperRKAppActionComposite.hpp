@@ -20,12 +20,10 @@ namespace Tempus {
  *  Individual AppActions are executed in the order in which they
  *  were added.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperRKAppActionComposite
-  : virtual public Tempus::StepperRKAppAction<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperRKAppAction<Scalar> {
+ public:
   /// Default constructor
   StepperRKAppActionComposite() {}
 
@@ -34,12 +32,11 @@ public:
 
   /// Execute application action for RK Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperRKBase<Scalar> > stepper,
-    const typename StepperRKAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperRKBase<Scalar> > stepper,
+      const typename StepperRKAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    for(auto& a : appActions_)
-      a->execute(sh, stepper, actLoc);
+    for (auto& a : appActions_) a->execute(sh, stepper, actLoc);
   }
 
   // Add AppAction to the AppAction vector.
@@ -49,17 +46,14 @@ public:
   }
 
   // Clear the AppAction vector.
-  void clearRKAppActions()
-  { appActions_.clear(); }
+  void clearRKAppActions() { appActions_.clear(); }
 
   // Return the size of the AppAction vector.
   std::size_t getSize() const { return appActions_.size(); }
 
-private:
-
-  std::vector<Teuchos::RCP<StepperRKAppAction<Scalar > > > appActions_;
-
+ private:
+  std::vector<Teuchos::RCP<StepperRKAppAction<Scalar> > > appActions_;
 };
 
-} // namespace Tempus
-#endif // Tempus_StepperRKAppActionComposite_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperRKAppActionComposite_hpp

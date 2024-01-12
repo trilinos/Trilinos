@@ -16,14 +16,13 @@
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 namespace Tempus {
 
-/** \brief Stepper_ErrorNorm provides error norm calcualtions for variable time stepping.
+/** \brief Stepper_ErrorNorm provides error norm calcualtions for variable time
+ * stepping.
  *
  */
-template<class Scalar>
-class Stepper_ErrorNorm
-{
-public:
-
+template <class Scalar>
+class Stepper_ErrorNorm {
+ public:
   /// Default Constructor
   Stepper_ErrorNorm();
 
@@ -31,7 +30,7 @@ public:
   Stepper_ErrorNorm(const Scalar relTol, const Scalar absTol);
 
   /// Destructor
-  ~Stepper_ErrorNorm() {};
+  ~Stepper_ErrorNorm(){};
 
   /** \brief Compute the weigthed root mean square norm.
    *
@@ -50,9 +49,9 @@ public:
    *  - \f$ N\f$ denotes the number of unknowns
    */
   Scalar computeWRMSNorm(
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &xNext,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &err);
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &xNext,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &err);
 
   /** \brief Compute the error Norm.
    *
@@ -70,17 +69,14 @@ public:
   void setRelativeTolerance(const Scalar relTol) { relTol_ = relTol; }
   void setAbsoluteTolerance(const Scalar absTol) { abssTol_ = absTol; }
 
-
-protected:
-
+ protected:
   Scalar relTol_;
   Scalar abssTol_;
   Teuchos::RCP<Thyra::VectorBase<Scalar>> u_;
   Teuchos::RCP<Thyra::VectorBase<Scalar>> uNext_;
   Teuchos::RCP<Thyra::VectorBase<Scalar>> errorWeightVector_;
   Teuchos::RCP<Thyra::VectorBase<Scalar>> scratchVector_;
-
 };
 
-} // namespace Tempus
-#endif //Tempus_Stepper_ErrorNorm_decl_hpp
+}  // namespace Tempus
+#endif  // Tempus_Stepper_ErrorNorm_decl_hpp

@@ -13,7 +13,7 @@
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_CombinedFSA_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(WrapperModelEvaluatorPairPartIMEX_CombinedFSA)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(WrapperModelEvaluatorPairPartIMEX_CombinedFSA)
 }
 
 #endif

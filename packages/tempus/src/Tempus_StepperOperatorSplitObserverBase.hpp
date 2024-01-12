@@ -13,7 +13,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperOperatorSplitAppAction.hpp"
 
-
 namespace Tempus {
 
 /** \brief Base observer for StepperOperatorSplit.
@@ -31,12 +30,10 @@ namespace Tempus {
  *  (StepperOperatorSplitAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperBackwardEuler.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperOperatorSplitObserverBase
-  : virtual public Tempus::StepperOperatorSplitAppAction<Scalar>
-{
-private:
-
+  : virtual public Tempus::StepperOperatorSplitAppAction<Scalar> {
+ private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -48,21 +45,23 @@ private:
    *  to the arguments.
    */
   void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
-    const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc)
-  { this->observe(sh, stepper, actLoc); }
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
+  {
+    this->observe(sh, stepper, actLoc);
+  }
 
-public:
-
+ public:
   /// Observe OperatorSplit Stepper.
   virtual void observe(
-    Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<const StepperOperatorSplit<Scalar> > /* stepper */,
-    const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
-
+      Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<const StepperOperatorSplit<Scalar> > /* stepper */,
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperOperatorSplitObserverBase_hpp
+#endif  // Tempus_StepperOperatorSplitObserverBase_hpp

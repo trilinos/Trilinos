@@ -30,27 +30,26 @@
 
 namespace Tempus_Test {
 
-using Teuchos::RCP;
-using Teuchos::ParameterList;
-using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
+using Teuchos::ParameterList;
+using Teuchos::RCP;
+using Teuchos::sublist;
 
 using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-
 // ************************************************************
 // ************************************************************
 void test_vdp_fsa(const bool use_combined_method,
-                  const bool use_dfdp_as_tangent,
-                  Teuchos::FancyOStream &out, bool &success)
+                  const bool use_dfdp_as_tangent, Teuchos::FancyOStream& out,
+                  bool& success)
 {
   std::vector<std::string> stepperTypes;
   stepperTypes.push_back("IMEX RK 1st order");
-  stepperTypes.push_back("IMEX RK SSP2"     );
-  stepperTypes.push_back("IMEX RK ARS 233"  );
-  stepperTypes.push_back("General IMEX RK"  );
+  stepperTypes.push_back("IMEX RK SSP2");
+  stepperTypes.push_back("IMEX RK ARS 233");
+  stepperTypes.push_back("General IMEX RK");
 
   std::vector<double> stepperOrders;
   std::vector<double> stepperErrors;
@@ -82,12 +81,11 @@ void test_vdp_fsa(const bool use_combined_method,
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<const Teuchos::Comm<int>> comm =
+      Teuchos::DefaultComm<int>::getComm();
 
   std::vector<std::string>::size_type m;
-  for(m = 0; m != stepperTypes.size(); m++) {
-
+  for (m = 0; m != stepperTypes.size(); m++) {
     std::string stepperType = stepperTypes[m];
     std::string stepperName = stepperTypes[m];
     std::replace(stepperName.begin(), stepperName.end(), ' ', '_');
@@ -98,10 +96,9 @@ void test_vdp_fsa(const bool use_combined_method,
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
     const int nTimeStepSizes = 3;  // 6 for error plot
-    double dt = stepperInitDt[m];
-    double order = 0.0;
-    for (int n=0; n<nTimeStepSizes; n++) {
-
+    double dt                = stepperInitDt[m];
+    double order             = 0.0;
+    for (int n = 0; n < nTimeStepSizes; n++) {
       // Read params from .xml file
       RCP<ParameterList> pList =
           getParametersFromXmlFile("Tempus_IMEX_RK_VanDerPol.xml");
@@ -109,20 +106,20 @@ void test_vdp_fsa(const bool use_combined_method,
       // Setup the explicit VanDerPol ModelEvaluator
       RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
       vdpmPL->set("Use DfDp as Tangent", use_dfdp_as_tangent);
-      RCP<VanDerPol_IMEX_ExplicitModel<double> > explicitModel =
-        Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+      RCP<VanDerPol_IMEX_ExplicitModel<double>> explicitModel =
+          Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
       // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-      RCP<VanDerPol_IMEX_ImplicitModel<double> > implicitModel =
-        Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
+      RCP<VanDerPol_IMEX_ImplicitModel<double>> implicitModel =
+          Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
       // Setup the IMEX Pair ModelEvaluator
-      RCP<Tempus::WrapperModelEvaluatorPairIMEX_Basic<double> > model =
+      RCP<Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>> model =
           Teuchos::rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
-                                                 explicitModel, implicitModel));
+              explicitModel, implicitModel));
 
       // Setup sensitivities
-      RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+      RCP<ParameterList> pl  = sublist(pList, "Tempus", true);
       ParameterList& sens_pl = pl->sublist("Sensitivities");
       if (use_combined_method)
         sens_pl.set("Sensitivity Method", "Combined");
@@ -131,30 +128,37 @@ void test_vdp_fsa(const bool use_combined_method,
         sens_pl.set("Reuse State Linear Solver", true);
       }
       sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
-      ParameterList& interp_pl =
-        pl->sublist("Default Integrator").sublist("Solution History").sublist("Interpolator");
+      ParameterList& interp_pl = pl->sublist("Default Integrator")
+                                     .sublist("Solution History")
+                                     .sublist("Interpolator");
       interp_pl.set("Interpolator Type", "Lagrange");
-      interp_pl.set("Order", 2); // All RK methods here are at most 3rd order
+      interp_pl.set("Order", 2);  // All RK methods here are at most 3rd order
 
       // Set the Stepper
-      if (stepperType == "General IMEX RK"){
-          // use the appropriate stepper sublist
-          pl->sublist("Default Integrator").set("Stepper Name", "General IMEX RK");
-      }  else {
-          pl->sublist("Default Stepper").set("Stepper Type", stepperType);
+      if (stepperType == "General IMEX RK") {
+        // use the appropriate stepper sublist
+        pl->sublist("Default Integrator")
+            .set("Stepper Name", "General IMEX RK");
+      }
+      else {
+        pl->sublist("Default Stepper").set("Stepper Type", stepperType);
       }
 
       // Set the step size
-      if (n == nTimeStepSizes-1) dt /= 10.0;
-      else dt /= 2;
+      if (n == nTimeStepSizes - 1)
+        dt /= 10.0;
+      else
+        dt /= 2;
 
       // Setup the Integrator and reset initial time step
       pl->sublist("Default Integrator")
-         .sublist("Time Step Control").set("Initial Time Step", dt);
+          .sublist("Time Step Control")
+          .set("Initial Time Step", dt);
       pl->sublist("Default Integrator")
-         .sublist("Time Step Control").remove("Time Step Control Strategy");
-      RCP<Tempus::IntegratorForwardSensitivity<double> > integrator =
-        Tempus::createIntegratorForwardSensitivity<double>(pl, model);
+          .sublist("Time Step Control")
+          .remove("Time Step Control Strategy");
+      RCP<Tempus::IntegratorForwardSensitivity<double>> integrator =
+          Tempus::createIntegratorForwardSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();
 
       // Integrate to timeMax
@@ -162,48 +166,46 @@ void test_vdp_fsa(const bool use_combined_method,
       TEST_ASSERT(integratorStatus)
 
       // Test if at 'Final Time'
-      double time = integrator->getTime();
-      double timeFinal =pl->sublist("Default Integrator")
-        .sublist("Time Step Control").get<double>("Final Time");
+      double time      = integrator->getTime();
+      double timeFinal = pl->sublist("Default Integrator")
+                             .sublist("Time Step Control")
+                             .get<double>("Final Time");
       double tol = 100.0 * std::numeric_limits<double>::epsilon();
       TEST_FLOATING_EQUALITY(time, timeFinal, tol);
 
       // Store off the final solution and step size
-      auto solution = Thyra::createMember(model->get_x_space());
+      auto solution    = Thyra::createMember(model->get_x_space());
       auto sensitivity = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(integrator->getX()),solution.ptr());
-      Thyra::copy(*(integrator->getDxDp()->col(0)),sensitivity.ptr());
+      Thyra::copy(*(integrator->getX()), solution.ptr());
+      Thyra::copy(*(integrator->getDxDp()->col(0)), sensitivity.ptr());
       solutions.push_back(solution);
       sensitivities.push_back(sensitivity);
       StepSize.push_back(dt);
 
       // Output finest temporal solution for plotting
-      if (comm->getRank() == 0 && ((n == 0) || (n == nTimeStepSizes-1))) {
+      if (comm->getRank() == 0 && ((n == 0) || (n == nTimeStepSizes - 1))) {
         typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
-        std::string fname = "Tempus_"+stepperName+"_VanDerPol_Sens-Ref.dat";
-        if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol_Sens.dat";
+        std::string fname = "Tempus_" + stepperName + "_VanDerPol_Sens-Ref.dat";
+        if (n == 0) fname = "Tempus_" + stepperName + "_VanDerPol_Sens.dat";
         std::ofstream ftmp(fname);
-        RCP<const SolutionHistory<double> > solutionHistory =
-          integrator->getSolutionHistory();
+        RCP<const SolutionHistory<double>> solutionHistory =
+            integrator->getSolutionHistory();
         int nStates = solutionHistory->getNumStates();
-        for (int i=0; i<nStates; i++) {
-          RCP<const SolutionState<double> > solutionState =
-            (*solutionHistory)[i];
+        for (int i = 0; i < nStates; i++) {
+          RCP<const SolutionState<double>> solutionState =
+              (*solutionHistory)[i];
           RCP<const DMVPV> x_prod =
-            Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
-          RCP<const Thyra::VectorBase<double> > x =
-            x_prod->getMultiVector()->col(0);
-          RCP<const Thyra::VectorBase<double> > dxdp =
-            x_prod->getMultiVector()->col(1);
+              Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
+          RCP<const Thyra::VectorBase<double>> x =
+              x_prod->getMultiVector()->col(0);
+          RCP<const Thyra::VectorBase<double>> dxdp =
+              x_prod->getMultiVector()->col(1);
           double ttime = solutionState->getTime();
-          ftmp << std::fixed << std::setprecision(7)
-               << ttime << "   "
-               << std::setw(11) << get_ele(*x, 0) << "   "
-               << std::setw(11) << get_ele(*x, 1) << "   "
-               << std::setw(11) << get_ele(*dxdp, 0) << "   "
-               << std::setw(11) << get_ele(*dxdp, 1)
-               << std::endl;
+          ftmp << std::fixed << std::setprecision(7) << ttime << "   "
+               << std::setw(11) << get_ele(*x, 0) << "   " << std::setw(11)
+               << get_ele(*x, 1) << "   " << std::setw(11) << get_ele(*dxdp, 0)
+               << "   " << std::setw(11) << get_ele(*dxdp, 1) << std::endl;
         }
         ftmp.close();
       }
@@ -211,10 +213,10 @@ void test_vdp_fsa(const bool use_combined_method,
 
     // Calculate the error - use the most temporally refined mesh for
     // the reference solution.
-    auto ref_solution = solutions[solutions.size()-1];
-    auto ref_sensitivity = sensitivities[solutions.size()-1];
+    auto ref_solution    = solutions[solutions.size() - 1];
+    auto ref_sensitivity = sensitivities[solutions.size() - 1];
     std::vector<double> StepSizeCheck;
-    for (std::size_t i=0; i < (solutions.size()-1); ++i) {
+    for (std::size_t i = 0; i < (solutions.size() - 1); ++i) {
       auto sol = solutions[i];
       auto sen = sensitivities[i];
       Thyra::Vp_StV(sol.ptr(), -1.0, *ref_solution);
@@ -222,31 +224,32 @@ void test_vdp_fsa(const bool use_combined_method,
       const double L2norm_sol = Thyra::norm_2(*sol);
       const double L2norm_sen = Thyra::norm_2(*sen);
       const double L2norm =
-        std::sqrt(L2norm_sol*L2norm_sol + L2norm_sen*L2norm_sen);
+          std::sqrt(L2norm_sol * L2norm_sol + L2norm_sen * L2norm_sen);
       StepSizeCheck.push_back(StepSize[i]);
       ErrorNorm.push_back(L2norm);
 
-      out << " n = " << i << " dt = " << StepSize[i]
-          << " error = " << L2norm << std::endl;
+      out << " n = " << i << " dt = " << StepSize[i] << " error = " << L2norm
+          << std::endl;
     }
 
     // Check the order and intercept
-    double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
+    double slope =
+        computeLinearRegressionLogLog<double>(StepSizeCheck, ErrorNorm);
     out << "  Stepper = " << stepperType << std::endl;
     out << "  =========================" << std::endl;
     out << "  Expected order: " << order << std::endl;
     out << "  Observed order: " << slope << std::endl;
     out << "  =========================" << std::endl;
-    TEST_FLOATING_EQUALITY( slope, stepperOrders[m], 0.02 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], stepperErrors[m], 1.0e-4 );
+    TEST_FLOATING_EQUALITY(slope, stepperOrders[m], 0.02);
+    TEST_FLOATING_EQUALITY(ErrorNorm[0], stepperErrors[m], 1.0e-4);
 
     // Write error data
     {
-      std::ofstream ftmp("Tempus_"+stepperName+"_VanDerPol_Sens-Error.dat");
-      double error0 = 0.8*ErrorNorm[0];
+      std::ofstream ftmp("Tempus_" + stepperName + "_VanDerPol_Sens-Error.dat");
+      double error0 = 0.8 * ErrorNorm[0];
       for (std::size_t n = 0; n < StepSizeCheck.size(); n++) {
-        ftmp << StepSizeCheck[n]  << "   " << ErrorNorm[n] << "   "
-             << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
+        ftmp << StepSizeCheck[n] << "   " << ErrorNorm[n] << "   "
+             << error0 * (pow(StepSize[n] / StepSize[0], order)) << std::endl;
       }
       ftmp.close();
     }
@@ -254,5 +257,4 @@ void test_vdp_fsa(const bool use_combined_method,
   Teuchos::TimeMonitor::summarize();
 }
 
-
-} // namespace Tempus_Test
+}  // namespace Tempus_Test

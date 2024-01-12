@@ -20,4 +20,4 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_Combined_FSA_Tangent)
   test_sincos_fsa(true, true, out, success);
 }
 
-} // namespace Tempus_Test
+}  // namespace Tempus_Test

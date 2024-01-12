@@ -14,14 +14,14 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperNewmarkImplicitAForm)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperNewmarkImplicitAForm)
 
-  // Nonmember constructor
-  template Teuchos::RCP<StepperNewmarkImplicitAForm<double> >
-  createStepperNewmarkImplicitAForm(
+// Nonmember constructor
+template Teuchos::RCP<StepperNewmarkImplicitAForm<double> >
+createStepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl);
 
-}
+}  // namespace Tempus
 
 #endif

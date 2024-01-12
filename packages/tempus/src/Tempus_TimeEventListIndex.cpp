@@ -14,12 +14,12 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(TimeEventListIndex)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(TimeEventListIndex)
 
-  // Nonmember constructor
-  template Teuchos::RCP<TimeEventListIndex<double> >
-  createTimeEventListIndex(Teuchos::RCP<Teuchos::ParameterList> pl);
+// Nonmember constructor
+template Teuchos::RCP<TimeEventListIndex<double> > createTimeEventListIndex(
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
-} // namespace Tempus
+}  // namespace Tempus
 
 #endif

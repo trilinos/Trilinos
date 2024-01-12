@@ -26,14 +26,12 @@ namespace Tempus {
 
 /** \brief Base strategy class for interpolation functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class Interpolator
   : virtual public Teuchos::Describable,
     virtual public Teuchos::ParameterListAcceptor,
-    virtual public Teuchos::VerboseObject<Interpolator<Scalar> >
-{
-public:
-
+    virtual public Teuchos::VerboseObject<Interpolator<Scalar> > {
+ public:
   /** \brief Store pointer to interpolation nodes
    *
    * This function represent a persisting relationship between the
@@ -43,7 +41,8 @@ public:
    * interpolant, this is important.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>nodes</tt> must have unique time values and be sorted in ascending time order
+   * <li><tt>nodes</tt> must have unique time values and be sorted in ascending
+   * time order
    * </ul>
    *
    * <b>Postconditions:</b><ul>
@@ -53,34 +52,35 @@ public:
    * </ul>
    */
   virtual void setNodes(
-    const Teuchos::RCP<const std::vector<Teuchos::RCP<SolutionState<Scalar> > > > & nodes) = 0;
+      const Teuchos::RCP<
+          const std::vector<Teuchos::RCP<SolutionState<Scalar> > > >&
+          nodes) = 0;
 
   /** \brief Perform an interpolation.
-  */
+   */
   virtual void interpolate(const Scalar& t,
                            SolutionState<Scalar>* state_out) const = 0;
 
   /** \brief Return the order of the interpolation.
    */
   virtual int order() const = 0;
-
 };
 
 /// Nonmember functions
-template<class Scalar>
-void interpolate(const Interpolator<Scalar>& interpolator,
-                 const Scalar& t,
+template <class Scalar>
+void interpolate(const Interpolator<Scalar>& interpolator, const Scalar& t,
                  SolutionState<Scalar>* state_out)
 {
   interpolator.interpolate(t, state_out);
 }
 
 /// Nonmember functions
-template<class Scalar>
-void interpolate(Interpolator<Scalar>& interpolator,
-                 const Teuchos::RCP<const std::vector<Teuchos::RCP<SolutionState<Scalar> > > >&  nodes,
-                 const Scalar& t,
-                 SolutionState<Scalar>* state_out)
+template <class Scalar>
+void interpolate(
+    Interpolator<Scalar>& interpolator,
+    const Teuchos::RCP<
+        const std::vector<Teuchos::RCP<SolutionState<Scalar> > > >& nodes,
+    const Scalar& t, SolutionState<Scalar>* state_out)
 {
   interpolator.setNodes(nodes);
   interpolator.interpolate(t, state_out);
@@ -94,12 +94,12 @@ bool floating_compare_equals(const Scalar& a, const Scalar& b,
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType mag_type;
 
-  const mag_type tol = ST::magnitude(scale)*ST::eps()*mag_type(1000.0);
-  const mag_type diff = ST::magnitude(a-b);
+  const mag_type tol  = ST::magnitude(scale) * ST::eps() * mag_type(1000.0);
+  const mag_type diff = ST::magnitude(a - b);
 
   return diff <= tol || diff <= ST::sfmin();
 }
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif //Tempus_Interpolator_hpp
+#endif  // Tempus_Interpolator_hpp

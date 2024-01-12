@@ -13,7 +13,7 @@
 #include "SteadyQuadraticModel_impl.hpp"
 
 namespace Tempus_Test {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SteadyQuadraticModel)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SteadyQuadraticModel)
 }
 
 #endif
