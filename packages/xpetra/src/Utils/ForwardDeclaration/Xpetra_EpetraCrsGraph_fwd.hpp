@@ -47,11 +47,12 @@
 #define XPETRA_EPETRACRSGRAPH_FWD_HPP
 
 namespace Xpetra {
-  template<class GO, class NO> class EpetraCrsGraphT;
+template <class GO, class NO>
+class EpetraCrsGraphT;
 }
 
 #ifndef XPETRA_EPETRACRSGRAPH_SHORT
 #define XPETRA_EPETRACRSGRAPH_SHORT
 #endif
 
-#endif // XPETRA_EPETRACRSGRAPH_FWD_HPP
+#endif  // XPETRA_EPETRACRSGRAPH_FWD_HPP

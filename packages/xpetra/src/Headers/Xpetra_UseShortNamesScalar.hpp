@@ -160,7 +160,7 @@ using TpetraBlockCrsMatrix [[maybe_unused]] = Xpetra::TpetraBlockCrsMatrix<Scala
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 using EpetraCrsMatrix64 [[maybe_unused]] = Xpetra::EpetraCrsMatrixT<long long, Xpetra::EpetraNode>;
 #endif
-using EpetraCrsMatrix [[maybe_unused]] = Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode>; // do we need this???
+using EpetraCrsMatrix [[maybe_unused]] = Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode>;  // do we need this???
 #endif
 // TODO remove above entries
 
@@ -177,7 +177,7 @@ using MapExtractor [[maybe_unused]] = Xpetra::MapExtractor<Scalar, LocalOrdinal,
 #endif
 
 #ifdef XPETRA_MAPEXTRACTORFACTORY_SHORT
-using MapExtractorFactory [[maybe_unused]] =  Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+using MapExtractorFactory [[maybe_unused]] = Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
 // TODO: add namespace {} for shortcut types
