@@ -153,6 +153,12 @@ class UncoupledAggregationFactory : public SingleLevelFactoryBase {
 
   RCP<const ParameterList> GetValidParameterList() const;
 
+  void DoGraphColoring(Level& currentLevel,
+                       const std::string& aggAlgo,
+                       const bool deterministic,
+                       const RCP<const LWGraph_kokkos> graph,
+                       RCP<Aggregates> aggregates) const;
+
   //@}
 
   //! @name Set/get methods.

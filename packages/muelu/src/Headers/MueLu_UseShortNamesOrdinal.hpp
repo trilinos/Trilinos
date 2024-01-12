@@ -77,9 +77,6 @@ using StructuredAggregationFactory_kokkos [[maybe_unused]] = MueLu::StructuredAg
 #ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
 using UncoupledAggregationFactory [[maybe_unused]] = MueLu::UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
-using UncoupledAggregationFactory_kokkos [[maybe_unused]] = MueLu::UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_UNCOUPLEDINDEXMANAGER_SHORT
 using UncoupledIndexManager [[maybe_unused]] = MueLu::UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>;
 #endif

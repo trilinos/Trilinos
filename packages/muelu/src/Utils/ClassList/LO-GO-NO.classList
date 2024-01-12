@@ -23,6 +23,5 @@ RebalanceMapFactory
 RepartitionInterface
 StructuredAggregationFactory_kokkos
 UncoupledAggregationFactory
-UncoupledAggregationFactory_kokkos
 UncoupledIndexManager
 UserAggregationFactory
