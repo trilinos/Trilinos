@@ -7,7 +7,7 @@ on:
       - synchronize
   pull_request_review:
     types: 
-      - edited
+      - submitted
     branches:
     - master
     - develop
