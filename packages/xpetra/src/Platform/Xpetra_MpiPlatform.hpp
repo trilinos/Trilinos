@@ -98,7 +98,7 @@ MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> /* node */, const Teuchos::RCP
 
 template <class Node>
 MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> /* node */)
-  : comm_(Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD))) {}
+  : comm_(Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD))) {}  // CHECK: ALLOW MPI_COMM_WORLD
 
 template <class Node>
 MpiPlatform<Node>::~MpiPlatform() {}
