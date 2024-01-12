@@ -11,7 +11,7 @@ jobs:
     - uses: DoozyX/clang-format-lint-action@v0.16.2
       with:
         source: './packages/muelu ./packages/tempus'
-        exclude: ''
+        exclude: './packages/tempus/examples'
         extensions: 'cpp,hpp'
         clangFormatVersion: 14
         inplace: true
