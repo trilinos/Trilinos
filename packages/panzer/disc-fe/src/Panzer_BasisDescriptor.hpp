@@ -66,8 +66,8 @@ public:
 
   /** \brief Constructor for basis description
    *
-   * \param[in] basis_order Basis order (e.g. 1 could be piecewise linear)
-   * \param[in] basis_type Basis type (e.g. HGrad, HDiv, HCurl, ...)
+   * \param[in] basis_order Basis order as defined by Intrepid2 (e.g. 1 could be piecewise linear)
+   * \param[in] basis_type Basis type (a string: "HGrad", "HDiv", "HCurl", or "HVol")
    */
   BasisDescriptor(const int basis_order, const std::string & basis_type);
 
@@ -90,7 +90,6 @@ public:
    */
   std::size_t getKey() const {return _key;}
 
-
   /** \brief Build a point descriptor that builds reference points for
    *  the DOF locations. This method throws if no points exist for this
    *  basis.
@@ -98,9 +97,8 @@ public:
   PointDescriptor getPointDescriptor() const;
 
 protected:
-
  
-  /// Basis type (HGrad, HDiv, HCurl,...)
+  /// Basis type (HGrad, HDiv, HCurl, HVol)
   std::string _basis_type;
 
   // Basis order (>0)
@@ -108,20 +106,16 @@ protected:
 
   // Unique key associated with basis.
   std::size_t _key;
-
 };
 
-}
-
+} // namespace panzer
 
 namespace std {
-
-template <>
-struct hash<panzer::BasisDescriptor>
-{
-  std::size_t operator()(const panzer::BasisDescriptor& desc) const;
-};
-
+  template <>
+  struct hash<panzer::BasisDescriptor>
+  {
+    std::size_t operator()(const panzer::BasisDescriptor& desc) const;
+  };
 }
 
 
