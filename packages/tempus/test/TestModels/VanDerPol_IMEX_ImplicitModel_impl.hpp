@@ -243,7 +243,6 @@ void VanDerPol_IMEX_ImplicitModel<Scalar>::evalModelImpl(
       f_out_view[0] = x_dot_in_view[0];
       f_out_view[1] = x_dot_in_view[1] -
                       (1.0 - x_in_view[0] * x_in_view[0]) * x_in_view[1] / eps;
-      ;
     }
     if (!is_null(DfDp_out)) {
       Thyra::DetachedMultiVectorView<Scalar> DfDp_out_view(*DfDp_out);

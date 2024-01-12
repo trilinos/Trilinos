@@ -73,8 +73,7 @@ TEUCHOS_UNIT_TEST(SolutionHistory, Full_Construction)
 {
   std::string name = "Unit Test";
 
-  auto history = rcp(new std::vector<RCP<Tempus::SolutionState<double> > >);
-  ;
+  auto history  = rcp(new std::vector<RCP<Tempus::SolutionState<double> > >);
   auto model    = rcp(new Tempus_Test::SinCosModel<double>());
   auto inArgsIC = model->getNominalValues();
   auto icSolution =

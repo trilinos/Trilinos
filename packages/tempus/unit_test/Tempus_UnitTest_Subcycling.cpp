@@ -229,7 +229,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
       rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime(timeStepControl->getInitTime());
-  ;
   icState->setIndex(timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);                           // dt for ICs are indicated by zero.
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
@@ -354,7 +353,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
       rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime(timeStepControl->getInitTime());
-  ;
   icState->setIndex(timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);                           // dt for ICs are indicated by zero.
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
@@ -479,7 +477,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
       rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x_dot());
   auto icState = Tempus::createSolutionStateX(icSolution, icSolutionDot);
   icState->setTime(timeStepControl->getInitTime());
-  ;
   icState->setIndex(timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);                           // dt for ICs are indicated by zero.
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.

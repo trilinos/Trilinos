@@ -532,22 +532,15 @@ class StepperERK_Merson45 : virtual public StepperExplicitRK<Scalar> {
 
     // Fill A:
     A(1, 0) = as<Scalar>(one / (3 * one));
-    ;
 
     A(2, 0) = as<Scalar>(one / (6 * one));
-    ;
     A(2, 1) = as<Scalar>(one / (6 * one));
-    ;
 
     A(3, 0) = as<Scalar>(one / (8 * one));
-    ;
     A(3, 2) = as<Scalar>(3 * one / (8 * one));
-    ;
 
     A(4, 0) = as<Scalar>(one / (2 * one));
-    ;
     A(4, 2) = as<Scalar>(-3 * one / (2 * one));
-    ;
     A(4, 3) = 2 * one;
 
     // Fill b:

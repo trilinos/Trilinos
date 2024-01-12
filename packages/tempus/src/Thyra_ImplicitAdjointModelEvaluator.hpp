@@ -73,7 +73,6 @@ class ImplicitAdjointModelEvaluator
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgs<Scalar> model_outArgs =
         this->getUnderlyingModel()->createOutArgs();
-    ;
 
     if (model_outArgs.supports(MEB::OUT_ARG_W) &&
         outArgs.get_W() != Teuchos::null) {
