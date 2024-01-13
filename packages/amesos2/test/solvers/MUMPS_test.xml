@@ -31,6 +31,7 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="strig" value="int"/>
           <!-- The Node parameter is not yet supported -->
+        </ParameterList>
       </ParameterList>
 
     </ParameterList> <!-- end MUMPS -->
