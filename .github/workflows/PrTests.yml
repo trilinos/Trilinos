@@ -15,6 +15,7 @@ on:
 
 jobs:
   triloamd01-gcc:
+    if: github.event.review.state == 'APPROVED'
     runs-on: [self-hosted, triloamd01]
     steps:
       - name: env
