@@ -1329,33 +1329,29 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
     {
       try
       {
-        safe_set_entry<double>(parent, key, quoted_as<double>(node));
+        safe_set_entry<long long>(parent, key, quoted_as<long long>(node));
       }
       catch(...)
       {
-        std::string rawString = quoted_as<std::string>(node);
-        if(rawString == "true")
+        try
         {
-          safe_set_entry<bool>(parent, key, true);
+          safe_set_entry<double>(parent, key, quoted_as<double>(node));
         }
-        else if(rawString == "false")
+        catch(...)
         {
-          safe_set_entry<bool>(parent, key, false);
-        }
-        else if (rawString.length() > 2 && (rawString.substr(rawString.length()-2) == "ll" || rawString.substr(rawString.length()-2) == "LL"))
-        {
-          try
+          std::string raw_string = quoted_as<std::string>(node);
+          if(raw_string == "true" || raw_string == "yes")
           {
-            safe_set_entry<long long int>(parent, key, std::stoll(rawString));
+            safe_set_entry<bool>(parent, key, true);
           }
-          catch(...)
+          else if(raw_string == "false" || raw_string == "no")
           {
-            safe_set_entry<std::string>(parent, key, rawString);
+            safe_set_entry<bool>(parent, key, false);
           }
-        }
-        else
-        {
-          safe_set_entry<std::string>(parent, key, rawString);
+          else
+          {
+            safe_set_entry<std::string>(parent, key, raw_string);
+          }
         }
       }
     }

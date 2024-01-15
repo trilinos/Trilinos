@@ -279,20 +279,34 @@ namespace TeuchosTests
     auto pl = Teuchos::getParametersFromYamlString(
       "List:\n"
       " small number: 54\n"
-      " test string: ends with ll\n"
-#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
-      " big number: 72057594037927936ll\n"
-      " other big number: 92057594037927936LL\n"
-#else
+      " small double: 3.0\n"
+      " scientific: 3.123e02\n"
       " big number: 72057594037927936\n"
-      " other big number: 92057594037927936\n"
-#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
     );
     TEST_EQUALITY(pl->isType<int>("small number"), true);
-    TEST_EQUALITY(pl->isType<std::string>("test string"), true);
+    TEST_EQUALITY(pl->isType<double>("small double"), true);
+    TEST_EQUALITY(pl->isType<double>("scientific"), true);
     TEST_EQUALITY(pl->isType<long long>("big number"), true);
     TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
-    TEST_EQUALITY(pl->isType<long long>("other big number"), true);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, bools)
+  {
+    auto pl = Teuchos::getParametersFromYamlString(
+      "List:\n"
+      " input_true: true\n"
+      " input_false: false\n"
+      " input_yes: yes\n"
+      " input_no: no\n"
+    );
+    TEST_EQUALITY(pl->isType<bool>("input_true"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_false"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_yes"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_no"), true);
+    TEST_EQUALITY(pl->get<bool>("input_true"), true);
+    TEST_EQUALITY(pl->get<bool>("input_false"), false);
+    TEST_EQUALITY(pl->get<bool>("input_yes"), true);
+    TEST_EQUALITY(pl->get<bool>("input_no"), false);
   }
 
   TEUCHOS_UNIT_TEST(YAML, flow_map)
