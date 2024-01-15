@@ -15,7 +15,7 @@ on:
 
 jobs:
   triloamd01-gcc:
-    if: github.event.review.state == 'APPROVED'
+    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
     runs-on: [self-hosted, triloamd01]
     steps:
       - name: env
