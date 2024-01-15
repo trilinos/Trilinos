@@ -13,7 +13,6 @@
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_Interpolator.hpp"
 
-
 namespace Tempus {
 
 enum StorageType {
@@ -23,7 +22,6 @@ enum StorageType {
   STORAGE_TYPE_STATIC      = 3,  ///< Keep a fix number of states
   STORAGE_TYPE_UNLIMITED   = 4,  ///< Grow the history as needed
 };
-
 
 /** \brief SolutionHistory is basically a container of SolutionStates.
  *  SolutionHistory maintains a collection of SolutionStates for later
@@ -114,183 +112,201 @@ enum StorageType {
  *  StorageLimit_ = 1, i.e., explicit one-step methods that can update
  *  the solution in-place).
  */
-template<class Scalar>
+template <class Scalar>
 class SolutionHistory
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> >
-{
-public:
-
+    virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> > {
+ public:
   /// Default Contructor
   SolutionHistory();
 
   /// Contructor
   SolutionHistory(
-    std::string                               name,
-    Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history,
-    Teuchos::RCP<Interpolator<Scalar> >       interpolator,
-    StorageType                               storageType,
-    int                                       storageLimit);
+      std::string name,
+      Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history,
+      Teuchos::RCP<Interpolator<Scalar> > interpolator, StorageType storageType,
+      int storageLimit);
 
   /// Destructor
   ~SolutionHistory() {}
 
   /// \name Basic SolutionHistory Methods
   //@{
-    /// Add solution state to history
-    void addState(const Teuchos::RCP<SolutionState<Scalar> >& state,
-                  bool doChecks = true);   // <-- Perform internal checks.
+  /// Add solution state to history
+  void addState(const Teuchos::RCP<SolutionState<Scalar> >& state,
+                bool doChecks = true);  // <-- Perform internal checks.
 
-    /// Add a working solution state to history
-    void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state,
-                         const bool updateTime = true);
+  /// Add a working solution state to history
+  void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state,
+                       const bool updateTime = true);
 
-    /// Remove solution state
-    void removeState(const Teuchos::RCP<SolutionState<Scalar> >& state);
+  /// Remove solution state
+  void removeState(const Teuchos::RCP<SolutionState<Scalar> >& state);
 
-    /// Remove solution state based on time
-    void removeState(const Scalar time);
+  /// Remove solution state based on time
+  void removeState(const Scalar time);
 
-    /// Find solution state at requested time (no interpolation)
-    Teuchos::RCP<SolutionState<Scalar> > findState(const Scalar time) const;
+  /// Find solution state at requested time (no interpolation)
+  Teuchos::RCP<SolutionState<Scalar> > findState(const Scalar time) const;
 
-    /// Generate and interpolate a new solution state at requested time
-    Teuchos::RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
+  /// Generate and interpolate a new solution state at requested time
+  Teuchos::RCP<SolutionState<Scalar> > interpolateState(
+      const Scalar time) const;
 
-    /// Interpolate solution state at requested time and store in supplied state
-    void interpolateState(const Scalar time,
-                          SolutionState<Scalar>* state_out) const;
+  /// Interpolate solution state at requested time and store in supplied state
+  void interpolateState(const Scalar time,
+                        SolutionState<Scalar>* state_out) const;
 
-    /// Initialize the working state
-    void initWorkingState();
+  /// Initialize the working state
+  void initWorkingState();
 
-    /// Promote the working state to current state
-    void promoteWorkingState();
+  /// Promote the working state to current state
+  void promoteWorkingState();
 
-    /// Clear the history.
-    void clear() {history_->clear(); isInitialized_ = false;}
+  /// Clear the history.
+  void clear()
+  {
+    history_->clear();
+    isInitialized_ = false;
+  }
 
-    /// Make a shallow copy of SolutionHistory (i.e., only RCPs to states and interpolator).
-    void copy(Teuchos::RCP<const SolutionHistory<Scalar> > sh);
+  /// Make a shallow copy of SolutionHistory (i.e., only RCPs to states and
+  /// interpolator).
+  void copy(Teuchos::RCP<const SolutionHistory<Scalar> > sh);
   //@}
 
   /// \name Accessor methods
   //@{
-    /// Get this SolutionHistory's name
-    std::string getName() const {return name_;}
+  /// Get this SolutionHistory's name
+  std::string getName() const { return name_; }
 
-    /// Set this SolutionHistory's name
-    void setName(std::string name) {name_ = name;}
+  /// Set this SolutionHistory's name
+  void setName(std::string name) { name_ = name; }
 
-    /// Get underlining history
-    Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > >
-      getHistory() const {return history_;}
+  /// Get underlining history
+  Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > getHistory()
+      const
+  {
+    return history_;
+  }
 
-    /// Set underlining history
-    void setHistory(
+  /// Set underlining history
+  void setHistory(
       Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > h)
-    { history_ = h; isInitialized_ = false; }
+  {
+    history_       = h;
+    isInitialized_ = false;
+  }
 
-    /// Subscript operator
-    Teuchos::RCP<SolutionState<Scalar> > operator[](const int i) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
+  /// Subscript operator
+  Teuchos::RCP<SolutionState<Scalar> > operator[](const int i)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
         !((0 <= i) && (i < (int)history_->size())), std::out_of_range,
         "Error - SolutionHistory index is out of range.\n"
-        << "    [Min, Max] = [ 0, " << history_->size()<< "]\n"
-        << "    index = " << i << "\n");
-      return (*history_)[i];
-    }
+            << "    [Min, Max] = [ 0, " << history_->size() << "]\n"
+            << "    index = " << i << "\n");
+    return (*history_)[i];
+  }
 
-    /// Subscript operator (const version)
-    Teuchos::RCP<const SolutionState<Scalar> > operator[](const int i) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(
+  /// Subscript operator (const version)
+  Teuchos::RCP<const SolutionState<Scalar> > operator[](const int i) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
         !((0 <= i) && (i < (int)history_->size())), std::out_of_range,
         "Error - SolutionHistory index is out of range.\n"
-        << "    [Min, Max] = [ 0, " << history_->size()<< "]\n"
-        << "    index = " << i << "\n");
-      return (*history_)[i];
+            << "    [Min, Max] = [ 0, " << history_->size() << "]\n"
+            << "    index = " << i << "\n");
+    return (*history_)[i];
+  }
+
+  /// Return the current state, i.e., the last accepted state
+  Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
+  {
+    const int m = history_->size();
+    Teuchos::RCP<SolutionState<Scalar> > state;
+    if (m == 0)
+      state = Teuchos::null;
+    else if (m == 1 || workingState_ == Teuchos::null)
+      state = (*history_)[m - 1];
+    else if (m > 1)
+      state = (*history_)[m - 2];
+    return state;
+  }
+
+  /// Return the working state
+  Teuchos::RCP<SolutionState<Scalar> > getWorkingState(bool warn = true) const
+  {
+    if (workingState_ == Teuchos::null && warn) {
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out, 1, "SolutionHistory::getWorkingState()");
+      *out << "Warning - WorkingState is null and likely has been promoted.  "
+           << "You might want to call getCurrentState() instead.\n"
+           << std::endl;
     }
+    return workingState_;
+  }
 
-    /// Return the current state, i.e., the last accepted state
-    Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
-    {
-      const int m = history_->size();
-      Teuchos::RCP<SolutionState<Scalar> > state;
-      if (m == 0)                                        state=Teuchos::null;
-      else if (m == 1 || workingState_ == Teuchos::null) state=(*history_)[m-1];
-      else if (m > 1)                                    state=(*history_)[m-2];
-      return state;
-    }
+  /// Get the number of states
+  int getNumStates() const { return history_->size(); }
 
-    /// Return the working state
-    Teuchos::RCP<SolutionState<Scalar> > getWorkingState(bool warn=true) const
-    {
-      if (workingState_ == Teuchos::null && warn) {
-        Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"SolutionHistory::getWorkingState()");
-        *out << "Warning - WorkingState is null and likely has been promoted.  "
-             << "You might want to call getCurrentState() instead.\n"
-             << std::endl;
-      }
-      return workingState_;
-    }
+  /// Get the current time
+  Scalar getCurrentTime() const { return getCurrentState()->getTime(); }
 
-    /// Get the number of states
-    int getNumStates() const {return history_->size();}
+  /// Get the current timestep index
+  int getCurrentIndex() const { return getCurrentState()->getIndex(); }
 
-    /// Get the current time
-    Scalar getCurrentTime() const {return getCurrentState()->getTime();}
+  /// Set the maximum storage of this history
+  void setStorageLimit(int storage_limit);
 
-    /// Get the current timestep index
-    int getCurrentIndex() const {return getCurrentState()->getIndex();}
+  /// Get the maximum storage of this history
+  int getStorageLimit() const { return storageLimit_; }
 
-    /// Set the maximum storage of this history
-    void setStorageLimit(int storage_limit);
+  /// Set the storage type via enum.
+  void setStorageType(StorageType st);
 
-    /// Get the maximum storage of this history
-    int getStorageLimit() const {return storageLimit_;}
+  /// Get the enum storage type.
+  StorageType getStorageType() const { return storageType_; }
 
-    /// Set the storage type via enum.
-    void setStorageType(StorageType st);
+  /// Set the storage type via string.
+  void setStorageTypeString(std::string st);
 
-    /// Get the enum storage type.
-    StorageType getStorageType() const {return storageType_;}
+  /// Set the string storage type.
+  std::string getStorageTypeString() const;
 
-    /// Set the storage type via string.
-    void setStorageTypeString(std::string st);
+  /// Return the current minimum time of the SolutionStates
+  Scalar minTime() const { return (history_->front())->getTime(); }
 
-    /// Set the string storage type.
-    std::string getStorageTypeString() const;
+  /// Return the current maximum time of the SolutionStates
+  Scalar maxTime() const { return (history_->back())->getTime(); }
 
-    /// Return the current minimum time of the SolutionStates
-    Scalar minTime() const {return (history_->front())->getTime();}
+  /** \brief Get the state with timestep index equal to n
+   *
+   *  If not available return Teuchos::null;
+   */
+  Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexN(
+      bool warn = true) const;
 
-    /// Return the current maximum time of the SolutionStates
-    Scalar maxTime() const {return (history_->back())->getTime();}
+  /** \brief Get the state with timestep index equal to n-1
+   *
+   *  If not available return Teuchos::null;
+   */
+  Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM1(
+      bool warn = true) const;
 
-    /** \brief Get the state with timestep index equal to n
-     *
-     *  If not available return Teuchos::null;
-     */
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexN(bool warn = true) const;
+  /** \brief Get the state with timestep index equal to n-2
+   *
+   *  If not available return Teuchos::null;
+   */
+  Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM2(
+      bool warn = true) const;
 
-    /** \brief Get the state with timestep index equal to n-1
-     *
-     *  If not available return Teuchos::null;
-     */
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM1(bool warn = true) const;
-
-    /** \brief Get the state with timestep index equal to n-2
-     *
-     *  If not available return Teuchos::null;
-     */
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM2(bool warn = true) const;
-
-    /** \brief Get the state with timestep index equal to "index"
-     *
-     *  If not available return Teuchos::null;
-     */
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndex(int index, bool warn = true) const;
+  /** \brief Get the state with timestep index equal to "index"
+   *
+   *  If not available return Teuchos::null;
+   */
+  Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndex(
+      int index, bool warn = true) const;
   //@}
 
   /// Return a valid ParameterList with current settings.
@@ -301,24 +317,23 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual std::string description() const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
   /// \name Interpolation Methods
   //@{
-    /// Set the interpolator for this history
-    void setInterpolator(
-      const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
-    Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
-    Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
-    /// Unset the interpolator for this history
-    Teuchos::RCP<Interpolator<Scalar> > unSetInterpolator();
+  /// Set the interpolator for this history
+  void setInterpolator(const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
+  Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
+  Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
+  /// Unset the interpolator for this history
+  Teuchos::RCP<Interpolator<Scalar> > unSetInterpolator();
   //@}
 
   /// Print information on States in the SolutionHistory.
-  void printHistory(std::string verb="low") const;
+  void printHistory(std::string verb = "low") const;
 
   /** \brief Initialize SolutionHistory
    *
@@ -331,44 +346,38 @@ public:
   /// Return if SolutionHistory is initialized.
   bool isInitialized() { return isInitialized_; }
 
-
-protected:
-
-  std::string                               name_;
+ protected:
+  std::string name_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
-  Teuchos::RCP<Interpolator<Scalar> >       interpolator_;
-  StorageType                               storageType_;
-  int                                       storageLimit_;
+  Teuchos::RCP<Interpolator<Scalar> > interpolator_;
+  StorageType storageType_;
+  int storageLimit_;
 
-  Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
+  Teuchos::RCP<SolutionState<Scalar> >
+      workingState_;  ///< The state being worked on
 
-  mutable bool isInitialized_;     ///< Bool if SolutionHistory is initialized.
-
+  mutable bool isInitialized_;  ///< Bool if SolutionHistory is initialized.
 };
 
-
 /// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> >
-createSolutionHistory();
+template <class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistory();
 
 /// Nonmember constructor from a ParameterList
-template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> >
-createSolutionHistoryPL(Teuchos::RCP<Teuchos::ParameterList> pList);
+template <class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistoryPL(
+    Teuchos::RCP<Teuchos::ParameterList> pList);
 
 /// Nonmember contructor from a SolutionState.
-template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> >
-createSolutionHistoryState(const Teuchos::RCP<SolutionState<Scalar> >& state);
+template <class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistoryState(
+    const Teuchos::RCP<SolutionState<Scalar> >& state);
 
 /// Nonmember contructor from a Thyra ModelEvaluator.
-template<class Scalar>
-Teuchos::RCP<SolutionHistory<Scalar> >
-createSolutionHistoryME(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model);
+template <class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistoryME(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model);
 
+}  // namespace Tempus
 
-} // namespace Tempus
-
-#endif // Tempus_SolutionHistory_decl_hpp
+#endif  // Tempus_SolutionHistory_decl_hpp

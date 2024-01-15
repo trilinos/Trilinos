@@ -13,7 +13,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperHHTAlphaAppAction.hpp"
 
-
 namespace Tempus {
 
 /** \brief Base modifier for StepperHHTAlpha.
@@ -29,12 +28,10 @@ namespace Tempus {
  *  Thus the user should be careful when accessing data through classes
  *  derived from the default modifier (i.e., USER BEWARE!!).
  */
-template<class Scalar>
+template <class Scalar>
 class StepperHHTAlphaModifierBase
-  : virtual public Tempus::StepperHHTAlphaAppAction<Scalar>
-{
-private:
-
+  : virtual public Tempus::StepperHHTAlphaAppAction<Scalar> {
+ private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -45,21 +42,22 @@ private:
    *  For the Modifier interface, this adaptor is a "simple pass through".
    */
   void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperHHTAlpha<Scalar> > stepper,
-    const typename StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION actLoc)
-  { this->modify(sh, stepper, actLoc); }
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperHHTAlpha<Scalar> > stepper,
+      const typename StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION actLoc)
+  {
+    this->modify(sh, stepper, actLoc);
+  }
 
-public:
-
+ public:
   /// Modify HHT Alpha Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperHHTAlpha<Scalar> > /* stepper */,
-    const typename StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
-
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperHHTAlpha<Scalar> > /* stepper */,
+      const typename StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperHHTAlphaModifierBase_hpp
+#endif  // Tempus_StepperHHTAlphaModifierBase_hpp

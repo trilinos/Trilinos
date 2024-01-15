@@ -13,7 +13,6 @@
 #include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperExplicit.hpp"
 
-
 namespace Tempus {
 
 /** \brief Explicit Runge-Kutta time stepper.
@@ -57,26 +56,21 @@ namespace Tempus {
  *    {\bf Algorithm} Explicit RK \\
  *    \rule{5in}{0.4pt} \vspace{-15pt}
  *    \begin{enumerate}
- *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
- *      \item $X \leftarrow x_{n-1}$
- *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *      \item {\bf for {$i = 0 \ldots s-1$}}
- *      \item \quad $X \leftarrow x_{n-1}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt}
+ * \setlength{\parsep}{0pt} \item $X \leftarrow x_{n-1}$ \item {\it
+ * appAction.execute(solutionHistory, stepper, BEGIN\_STEP)} \item {\bf for {$i
+ * = 0 \ldots s-1$}} \item \quad $X \leftarrow x_{n-1}
  *                    + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j$
- *      \item \quad {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
- *      \item \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *      \item \quad {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *      \item \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \item \quad {\bf if (i=0 and useFSAL and (previous step not failed)) then}
- *      \item \qquad  tmp = $\dot{X}_0$
- *      \item \qquad  $\dot{X}_0 = \dot{X}_s$
- *      \item \qquad  $\dot{X}_s$ = tmp
- *      \item \qquad  {\bf continue}
- *      \item \quad {\bf else}
- *      \item \qquad  $\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)$
- *      \item \quad {\bf endif}
- *      \item \quad {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
- *      \item {\bf end for}
+ *      \item \quad {\it appAction.execute(solutionHistory, stepper,
+ * BEGIN\_STAGE)} \item \quad {\it appAction.execute(solutionHistory, stepper,
+ * BEFORE\_SOLVE)} \item \quad {\it appAction.execute(solutionHistory, stepper,
+ * AFTER\_SOLVE)} \item \quad {\it appAction.execute(solutionHistory, stepper,
+ * BEFORE\_EXPLICIT\_EVAL)} \item \quad {\bf if (i=0 and useFSAL and (previous
+ * step not failed)) then} \item \qquad  tmp = $\dot{X}_0$ \item \qquad
+ * $\dot{X}_0 = \dot{X}_s$ \item \qquad  $\dot{X}_s$ = tmp \item \qquad  {\bf
+ * continue} \item \quad {\bf else} \item \qquad  $\dot{X}_i \leftarrow
+ * \bar{f}(X_i,t_{n-1}+c_i\Delta t)$ \item \quad {\bf endif} \item \quad {\it
+ * appAction.execute(solutionHistory, stepper, END\_STAGE)} \item {\bf end for}
  *      \item $x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i$
  *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
  *    \end{enumerate}
@@ -96,45 +90,44 @@ namespace Tempus {
  *                             & 7/24 & 1/4 & 1/3 & 1/8 \end{array}
  *   \f]
  */
-template<class Scalar>
+template <class Scalar>
 class StepperExplicitRK : virtual public Tempus::StepperExplicit<Scalar>,
-                          virtual public Tempus::StepperRKBase<Scalar>
-{
-
-public:
-
+                          virtual public Tempus::StepperRKBase<Scalar> {
+ public:
   /// \name Basic stepper methods
   //@{
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+  /// Initialize during construction and after changing input parameters.
+  virtual void initialize();
 
-    /// Set model
-    virtual void setModel(
+  /// Set model
+  virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
+  /// Get a default (initial) StepperState
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  virtual Scalar getInitTimeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
 
-    virtual bool isExplicit()         const {return true;}
-    virtual bool isImplicit()         const {return false;}
-    virtual bool isExplicitImplicit() const
-      {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod()   const {return true;}
-    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+  virtual bool isExplicit() const { return true; }
+  virtual bool isImplicit() const { return false; }
+  virtual bool isExplicitImplicit() const
+  {
+    return isExplicit() && isImplicit();
+  }
+  virtual bool isOneStepMethod() const { return true; }
+  virtual bool isMultiStepMethod() const { return !isOneStepMethod(); }
 
-    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+  virtual OrderODE getOrderODE() const { return FIRST_ORDER_ODE; }
 
-    virtual std::string getDescription() const = 0;
+  virtual std::string getDescription() const = 0;
   //@}
 
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -143,36 +136,30 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const;
 
-
-protected:
-
+ protected:
   /// Default setup for constructor.
   virtual void setupDefault();
 
   /// Setup for constructor.
   virtual void setup(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool useEmbedded,
-    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
+      bool useEmbedded,
+      const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
 
   virtual void setupTableau() = 0;
 
   virtual void setEmbeddedMemory();
 
-
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperExplicitRK_decl_hpp
+#endif  // Tempus_StepperExplicitRK_decl_hpp

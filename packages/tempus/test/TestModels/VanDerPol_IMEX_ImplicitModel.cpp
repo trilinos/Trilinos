@@ -13,7 +13,7 @@
 #include "VanDerPol_IMEX_ImplicitModel_impl.hpp"
 
 namespace Tempus_Test {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(VanDerPol_IMEX_ImplicitModel)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(VanDerPol_IMEX_ImplicitModel)
 }
 
 #endif

@@ -16,7 +16,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperNewmarkImplicitAForm.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperNewmarkImplicitAForm.
@@ -27,41 +26,38 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperNewmarkImplicitAFormModifierDefault
-  : virtual public Tempus::StepperNewmarkImplicitAFormModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperNewmarkImplicitAFormModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperNewmarkImplicitAFormModifierDefault(){}
+  StepperNewmarkImplicitAFormModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperNewmarkImplicitAFormModifierDefault(){}
+  virtual ~StepperNewmarkImplicitAFormModifierDefault() {}
 
   /// Modify NewmarkImplicitAForm Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > /* stepper */,
-    const typename StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > /* stepper */,
+      const typename StepperNewmarkImplicitAFormAppAction<
+          Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperNewmarkImplicitAFormAppAction<Scalar>::BEGIN_STEP:
       case StepperNewmarkImplicitAFormAppAction<Scalar>::BEFORE_SOLVE:
       case StepperNewmarkImplicitAFormAppAction<Scalar>::AFTER_SOLVE:
-      case StepperNewmarkImplicitAFormAppAction<Scalar>::END_STEP:
-      {
+      case StepperNewmarkImplicitAFormAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperNewmarkImplicitAFormModifierDefault_hpp
+#endif  // Tempus_StepperNewmarkImplicitAFormModifierDefault_hpp

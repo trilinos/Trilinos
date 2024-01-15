@@ -13,7 +13,7 @@
 #include "Tempus_IntegratorObserverLogging_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorObserverLogging)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorObserverLogging)
 }
 
 #endif

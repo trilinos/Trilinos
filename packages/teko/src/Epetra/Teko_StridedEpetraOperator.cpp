@@ -172,16 +172,12 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
 
    for(int i=0;i<rows;i++) {
       for(int j=0;j<rows;j++) {
-         // build the file name
-         std::stringstream ss;
-         ss << prefix << "_" << i << j << ".mm";
-
          // get the row matrix object (Note: can't use "GetBlock" method b/c matrix might be reordered)
          RCP<const Epetra_RowMatrix> mat
                = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*blockOp->getBlock(i,j)));
 
          // write to file
-         EpetraExt::RowMatrixToMatrixMarketFile(ss.str().c_str(),*mat);
+         EpetraExt::RowMatrixToMatrixMarketFile(formatBlockName(prefix,i,j,rows).c_str(),*mat);
       }
    }
 }

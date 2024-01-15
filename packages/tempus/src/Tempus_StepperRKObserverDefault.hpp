@@ -16,7 +16,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperRKBase.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default observer for StepperRK.
@@ -27,41 +26,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperRKObserverDefault
-  : virtual public Tempus::StepperRKObserverBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperRKObserverBase<Scalar> {
+ public:
   /// Constructor
-  StepperRKObserverDefault(){}
+  StepperRKObserverDefault() {}
 
   /// Destructor
-  virtual ~StepperRKObserverDefault(){}
+  virtual ~StepperRKObserverDefault() {}
 
   /// Observe RK Stepper at end of takeStep.
   virtual void observe(
-    Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<const StepperRKBase<Scalar> > /* stepper */,
-    const typename StepperRKAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<const StepperRKBase<Scalar> > /* stepper */,
+      const typename StepperRKAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperRKAppAction<Scalar>::BEGIN_STEP:
       case StepperRKAppAction<Scalar>::BEFORE_SOLVE:
       case StepperRKAppAction<Scalar>::AFTER_SOLVE:
-      case StepperRKAppAction<Scalar>::END_STEP:
-      {
+      case StepperRKAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperRKObserverDefault_hpp
+#endif  // Tempus_StepperRKObserverDefault_hpp

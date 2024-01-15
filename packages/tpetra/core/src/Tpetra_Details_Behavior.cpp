@@ -573,7 +573,7 @@ bool Behavior::overlapCommunicationAndComputation ()
 
 size_t Behavior::spacesIdWarnLimit ()
 {
-  constexpr char envVarName[] = "TPETRA_SPACES_ID_WARN_LIMT";
+  constexpr char envVarName[] = "TPETRA_SPACES_ID_WARN_LIMIT";
   constexpr size_t defaultValue(16);
 
   static size_t value_ = defaultValue;
@@ -645,4 +645,3 @@ bool Behavior::timeKokkosFunctions()
 
 } // namespace Details
 } // namespace Tpetra
-

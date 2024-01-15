@@ -96,25 +96,27 @@ fi
 # Set up symlinks to the desired *.ini files
 echo
 cd ${script_dir}/GenConfig/deps/LoadEnv/ini_files
+relative_path_to_script_dir="../../../.."
 if [[ -d ${script_dir}/srn-ini-files ]] && [[ "$ini_file_option" == "--srn" ]]; then
     echo "STATUS: Link files from srn-ini-files"
-    ln -sf ${script_dir}/srn-ini-files/trilinos/framework/environment-specs.ini
-    ln -sf ${script_dir}/srn-ini-files/trilinos/framework/supported-systems.ini
+    ln -sf ${relative_path_to_script_dir}/srn-ini-files/trilinos/framework/environment-specs.ini
+    ln -sf ${relative_path_to_script_dir}/srn-ini-files/trilinos/framework/supported-systems.ini
 elif [[ -d ${script_dir}/son-ini-files ]] && [[ "$ini_file_option" == "--son" ]]; then
     echo "STATUS: Link files from son-ini-files"
-    ln -sf ${script_dir}/son-ini-files/trilinos/framework/environment-specs.ini
-    ln -sf ${script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
+    ln -sf ${relative_path_to_script_dir}/son-ini-files/trilinos/framework/environment-specs.ini
+    ln -sf ${relative_path_to_script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
 else
     echo "STATUS: Link files from ini-files"
-    [ -e ${script_dir}/ini-files/environment-specs.ini ] && ln -sf ${script_dir}/ini-files/environment-specs.ini
-    [ -e ${script_dir}/ini-files/supported-systems.ini ] && ln -sf ${script_dir}/ini-files/supported-systems.ini
+    [ -e ${relative_path_to_script_dir}/ini-files/environment-specs.ini ] && ln -sf ${relative_path_to_script_dir}/ini-files/environment-specs.ini
+    [ -e ${relative_path_to_script_dir}/ini-files/supported-systems.ini ] && ln -sf ${relative_path_to_script_dir}/ini-files/supported-systems.ini
 fi
-ln -sf ${script_dir}/ini-files/supported-envs.ini
+ln -sf ${relative_path_to_script_dir}/ini-files/supported-envs.ini
 cd - > /dev/null
 
 cd ${script_dir}/GenConfig/ini_files
-ln -sf ${script_dir}/ini-files/config-specs.ini
-ln -sf ${script_dir}/ini-files/supported-config-flags.ini
+relative_path_to_script_dir="../.."
+ln -sf ${relative_path_to_script_dir}/ini-files/config-specs.ini
+ln -sf ${relative_path_to_script_dir}/ini-files/supported-config-flags.ini
 
 # Print summary of ini file settings
 cd ${script_dir}

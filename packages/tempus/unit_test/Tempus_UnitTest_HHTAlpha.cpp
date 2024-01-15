@@ -20,13 +20,12 @@
 
 namespace Tempus_Unit_Test {
 
+using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
-using Teuchos::ParameterList;
 using Teuchos::sublist;
-
 
 // ************************************************************
 // ************************************************************
@@ -39,7 +38,6 @@ TEUCHOS_UNIT_TEST(HHTAlpha, Default_Construction)
   stepper->setModel(model);
   stepper->initialize();
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
 
   // Default values for construction.
   auto solver = rcp(new Thyra::NOXNonlinearSolver());
@@ -60,33 +58,57 @@ TEUCHOS_UNIT_TEST(HHTAlpha, Default_Construction)
   auto observer  = rcp(new Tempus::StepperHHTAlphaObserverDefault<double>());
 
   // Test the set functions.
-  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setSolver(solver);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setUseFSAL(useFSAL);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistency(ICConsistency);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistencyCheck(ICConsistencyCheck);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setZeroInitialGuess(zeroInitialGuess);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifier);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-  stepper->setSchemeName(schemeName);                  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setBeta(beta);                              stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setGamma(gamma);                            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setAlphaF(alpha_f);                         stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-  stepper->setAlphaM(alpha_m);                         stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setSchemeName(schemeName);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setBeta(beta);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setGamma(gamma);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAlphaF(alpha_f);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAlphaM(alpha_m);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperHHTAlpha<double>(
-    model, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, zeroInitialGuess,
-    schemeName, beta, gamma, alpha_f, alpha_m,modifier));
+      model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
+      zeroInitialGuess, schemeName, beta, gamma, alpha_f, alpha_m, modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
-
 
 // ************************************************************
 // ************************************************************
@@ -99,59 +121,59 @@ TEUCHOS_UNIT_TEST(HHTAlpha, StepperFactory_Construction)
 // ************************************************************
 // ************************************************************
 class StepperHHTAlphaModifierTest
-  : virtual public Tempus::StepperHHTAlphaModifierBase<double>
-{
-public:
-
+  : virtual public Tempus::StepperHHTAlphaModifierBase<double> {
+ public:
   /// Constructor
   StepperHHTAlphaModifierTest()
-    : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
-      testAFTER_SOLVE(false), testEND_STEP(false),
-      testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testName("")
-  {}
+    : testBEGIN_STEP(false),
+      testBEFORE_SOLVE(false),
+      testAFTER_SOLVE(false),
+      testEND_STEP(false),
+      testCurrentValue(-0.99),
+      testWorkingValue(-0.99),
+      testDt(-1.5),
+      testName("")
+  {
+  }
 
   /// Destructor
-  virtual ~StepperHHTAlphaModifierTest(){}
+  virtual ~StepperHHTAlphaModifierTest() {}
 
   /// Modify HHT Alpha Stepper at action location.
   virtual void modify(
-    Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-    Teuchos::RCP<Tempus::StepperHHTAlpha<double> > stepper,
-    const typename Tempus::StepperHHTAlphaAppAction<double>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
+      Teuchos::RCP<Tempus::StepperHHTAlpha<double> > stepper,
+      const typename Tempus::StepperHHTAlphaAppAction<double>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
-    case StepperHHTAlphaAppAction<double>::BEGIN_STEP:
-      {
-        testBEGIN_STEP = true;
-        auto x = sh->getCurrentState()->getX();
+    switch (actLoc) {
+      case StepperHHTAlphaAppAction<double>::BEGIN_STEP: {
+        testBEGIN_STEP   = true;
+        auto x           = sh->getCurrentState()->getX();
         testCurrentValue = get_ele(*(x), 0);
         break;
       }
-    case StepperHHTAlphaAppAction<double>::BEFORE_SOLVE:
-      {
+      case StepperHHTAlphaAppAction<double>::BEFORE_SOLVE: {
         testBEFORE_SOLVE = true;
-        testDt = sh->getWorkingState()->getTimeStep()/10.0;
+        testDt           = sh->getWorkingState()->getTimeStep() / 10.0;
         sh->getWorkingState()->setTimeStep(testDt);
         break;
       }
-    case StepperHHTAlphaAppAction<double>::AFTER_SOLVE:
-      {
+      case StepperHHTAlphaAppAction<double>::AFTER_SOLVE: {
         testAFTER_SOLVE = true;
-        testName = "HHT Alpha - Modifier";
+        testName        = "HHT Alpha - Modifier";
         stepper->setStepperName(testName);
         break;
       }
-    case StepperHHTAlphaAppAction<double>::END_STEP:
-      {
-        testEND_STEP = true;
-        auto x = sh->getWorkingState()->getX();
+      case StepperHHTAlphaAppAction<double>::END_STEP: {
+        testEND_STEP     = true;
+        auto x           = sh->getWorkingState()->getX();
         testWorkingValue = get_ele(*(x), 0);
         break;
       }
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                   "Error - unknown action location.\n");
     }
   }
   bool testBEGIN_STEP;
@@ -166,8 +188,8 @@ public:
 
 TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Modifier)
 {
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-  model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
@@ -202,59 +224,60 @@ TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Modifier)
   TEST_COMPARE(modifier->testName, ==, "HHT Alpha - Modifier");
 }
 
-  // ************************************************************
-  // ************************************************************
+// ************************************************************
+// ************************************************************
 class StepperHHTAlphaObserverTest
-  : virtual public Tempus::StepperHHTAlphaObserverBase<double>
-{
-public:
+  : virtual public Tempus::StepperHHTAlphaObserverBase<double> {
+ public:
   /// Constructor
   StepperHHTAlphaObserverTest()
-    : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
-      testAFTER_SOLVE(false), testEND_STEP(false),
-      testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testName("")
-  {}
+    : testBEGIN_STEP(false),
+      testBEFORE_SOLVE(false),
+      testAFTER_SOLVE(false),
+      testEND_STEP(false),
+      testCurrentValue(-0.99),
+      testWorkingValue(-0.99),
+      testDt(-1.5),
+      testName("")
+  {
+  }
 
   /// Destructor
-  virtual ~StepperHHTAlphaObserverTest(){}
+  virtual ~StepperHHTAlphaObserverTest() {}
 
   /// Observe HHTAlpha Stepper at action location.
   virtual void observe(
-    Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
-    Teuchos::RCP<const Tempus::StepperHHTAlpha<double> > stepper,
-    const typename Tempus::StepperHHTAlphaAppAction<double>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
+      Teuchos::RCP<const Tempus::StepperHHTAlpha<double> > stepper,
+      const typename Tempus::StepperHHTAlphaAppAction<double>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
-    case StepperHHTAlphaAppAction<double>::BEGIN_STEP:
-     {
-      testBEGIN_STEP = true;
-      auto x = sh->getCurrentState()->getX();
-      testCurrentValue = get_ele(*(x), 0);
-      break;
-    }
-    case StepperHHTAlphaAppAction<double>::BEFORE_SOLVE:
-    {
-      testBEFORE_SOLVE = true;
-      testDt = sh->getWorkingState()->getTimeStep();
-      break;
-    }
-    case StepperHHTAlphaAppAction<double>::AFTER_SOLVE:
-    {
-      testAFTER_SOLVE = true;
-      testName = stepper->getStepperType();
-      break;
-    }
-    case StepperHHTAlphaAppAction<double>::END_STEP:
-    {
-      testEND_STEP = true;
-      auto x = sh->getWorkingState()->getX();
-      testWorkingValue = get_ele(*(x), 0);
-      break;
-    }
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+    switch (actLoc) {
+      case StepperHHTAlphaAppAction<double>::BEGIN_STEP: {
+        testBEGIN_STEP   = true;
+        auto x           = sh->getCurrentState()->getX();
+        testCurrentValue = get_ele(*(x), 0);
+        break;
+      }
+      case StepperHHTAlphaAppAction<double>::BEFORE_SOLVE: {
+        testBEFORE_SOLVE = true;
+        testDt           = sh->getWorkingState()->getTimeStep();
+        break;
+      }
+      case StepperHHTAlphaAppAction<double>::AFTER_SOLVE: {
+        testAFTER_SOLVE = true;
+        testName        = stepper->getStepperType();
+        break;
+      }
+      case StepperHHTAlphaAppAction<double>::END_STEP: {
+        testEND_STEP     = true;
+        auto x           = sh->getWorkingState()->getX();
+        testWorkingValue = get_ele(*(x), 0);
+        break;
+      }
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                   "Error - unknown action location.\n");
     }
   }
 
@@ -270,8 +293,8 @@ public:
 
 TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Observer)
 {
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-  model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
@@ -308,55 +331,55 @@ TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Observer)
 // ************************************************************
 // ************************************************************
 class StepperHHTAlphaModifierXTest
-  : virtual public Tempus::StepperHHTAlphaModifierXBase<double>
-{
-public:
-
+  : virtual public Tempus::StepperHHTAlphaModifierXBase<double> {
+ public:
   /// Constructor
   StepperHHTAlphaModifierXTest()
-    : testX_BEGIN_STEP(false), testX_BEFORE_SOLVE(false),
-      testX_AFTER_SOLVE(false), testX_END_STEP(false),
-      testXbegin(-0.99), testXend(-0.99),
-      testDt(-1.5), testTime(-1.5)
-  {}
+    : testX_BEGIN_STEP(false),
+      testX_BEFORE_SOLVE(false),
+      testX_AFTER_SOLVE(false),
+      testX_END_STEP(false),
+      testXbegin(-0.99),
+      testXend(-0.99),
+      testDt(-1.5),
+      testTime(-1.5)
+  {
+  }
 
   /// Destructor
-  virtual ~StepperHHTAlphaModifierXTest(){}
+  virtual ~StepperHHTAlphaModifierXTest() {}
 
   /// Modify HHTAlpha Stepper at action location.
   virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<double> > x,
-    const double time, const double dt,
-    const typename Tempus::StepperHHTAlphaModifierXBase<double>::MODIFIER_TYPE modType)
+      Teuchos::RCP<Thyra::VectorBase<double> > x, const double time,
+      const double dt,
+      const typename Tempus::StepperHHTAlphaModifierXBase<double>::MODIFIER_TYPE
+          modType)
   {
-    switch(modType) {
-    case StepperHHTAlphaModifierXBase<double>::X_BEGIN_STEP:
-    {
-      testX_BEGIN_STEP = true;
-      testXbegin = get_ele(*(x), 0);
-      break;
-    }
-    case StepperHHTAlphaModifierXBase<double>::X_BEFORE_SOLVE:
-    {
-      testX_BEFORE_SOLVE = true;
-      testDt = dt;
-      break;
-    }
-    case StepperHHTAlphaModifierXBase<double>::X_AFTER_SOLVE:
-    {
-      testX_AFTER_SOLVE = true;
-      testTime = time;
-      break;
-    }
-    case StepperHHTAlphaModifierXBase<double>::X_END_STEP:
-    {
-      testX_END_STEP = true;
-      testXend = get_ele(*(x), 0);
-      break;
-    }
-    default:
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error - unknown action location.\n");
+    switch (modType) {
+      case StepperHHTAlphaModifierXBase<double>::X_BEGIN_STEP: {
+        testX_BEGIN_STEP = true;
+        testXbegin       = get_ele(*(x), 0);
+        break;
+      }
+      case StepperHHTAlphaModifierXBase<double>::X_BEFORE_SOLVE: {
+        testX_BEFORE_SOLVE = true;
+        testDt             = dt;
+        break;
+      }
+      case StepperHHTAlphaModifierXBase<double>::X_AFTER_SOLVE: {
+        testX_AFTER_SOLVE = true;
+        testTime          = time;
+        break;
+      }
+      case StepperHHTAlphaModifierXBase<double>::X_END_STEP: {
+        testX_END_STEP = true;
+        testXend       = get_ele(*(x), 0);
+        break;
+      }
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                                   "Error - unknown action location.\n");
     }
   }
 
@@ -372,8 +395,8 @@ public:
 
 TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_ModifierX)
 {
-  Teuchos::RCP<const Thyra::ModelEvaluator<double> >
-  model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
+  Teuchos::RCP<const Thyra::ModelEvaluator<double> > model =
+      rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
@@ -401,11 +424,11 @@ TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_ModifierX)
   auto xbegin = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifierX->testXbegin, get_ele(*(xbegin), 0), 1.0e-14);
   auto xend = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(modifierX->testXend, get_ele(*(xend), 0),1.0e-14);
+  TEST_FLOATING_EQUALITY(modifierX->testXend, get_ele(*(xend), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-14);
   auto time = solutionHistory->getWorkingState()->getTime();
   TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
 }
 
-} // namespace Tempus_Unit_Test
+}  // namespace Tempus_Unit_Test

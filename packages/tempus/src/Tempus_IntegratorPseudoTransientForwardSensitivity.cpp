@@ -14,33 +14,33 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorPseudoTransientForwardSensitivity)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorPseudoTransientForwardSensitivity)
 
-  /// Nonmember constructor
-  template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
-  createIntegratorPseudoTransientForwardSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
+/// Nonmember constructor
+template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
+createIntegratorPseudoTransientForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& sens_residual_model,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& sens_solve_model);
 
-  /// Nonmember constructor
-  template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
-  createIntegratorPseudoTransientForwardSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
+/// Nonmember constructor
+template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
+createIntegratorPseudoTransientForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& sens_residual_model);
 
-  // Nonmember ctor
-  template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
-  createIntegratorPseudoTransientForwardSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>        parameterList,
+// Nonmember ctor
+template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
+createIntegratorPseudoTransientForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> parameterList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model);
 
-  // Nonmember ctor
-  template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
-  createIntegratorPseudoTransientForwardSensitivity();
+// Nonmember ctor
+template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
+createIntegratorPseudoTransientForwardSensitivity();
 
-} // namespace Tempus
+}  // namespace Tempus
 
 #endif

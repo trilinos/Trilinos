@@ -41,18 +41,18 @@ dt     dz    dz^2
  */
 template <typename SC, typename LO, typename GO, typename Node>
 class CDR_Model_Tpetra : public ::Thyra::StateFuncModelEvaluatorBase<SC> {
-public:
-  using tpetra_map = Tpetra::Map<LO, GO, Node>;
-  using tpetra_graph = Tpetra::CrsGraph<LO, GO, Node>;
+ public:
+  using tpetra_map    = Tpetra::Map<LO, GO, Node>;
+  using tpetra_graph  = Tpetra::CrsGraph<LO, GO, Node>;
   using tpetra_matrix = Tpetra::CrsMatrix<SC, LO, GO, Node>;
-  using tpetra_vec = Tpetra::Vector<SC, LO, GO, Node>;
+  using tpetra_vec    = Tpetra::Vector<SC, LO, GO, Node>;
   using tpetra_extract =
       ::Thyra::TpetraOperatorVectorExtraction<SC, LO, GO, Node>;
 
   CDR_Model_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int>> &comm,
                    const GO numGlobalElements, const SC zMin, const SC zMax,
-                   const SC a,  // convection
-                   const SC k); // source
+                   const SC a,   // convection
+                   const SC k);  // source
 
   /** \name Initializers/Accessors */
   //@{
@@ -75,13 +75,13 @@ public:
   ::Thyra::ModelEvaluatorBase::InArgs<SC> getNominalValues() const;
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double>> create_W() const;
   Teuchos::RCP<::Thyra::LinearOpBase<SC>> create_W_op() const;
-  Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<SC>>
-  get_W_factory() const;
+  Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<SC>> get_W_factory()
+      const;
   ::Thyra::ModelEvaluatorBase::InArgs<SC> createInArgs() const;
   Teuchos::RCP<::Thyra::PreconditionerBase<SC>> create_W_prec() const;
   //@}
 
-private:
+ private:
   /** Allocates and returns the Jacobian matrix graph */
   virtual Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node>> createGraph();
 
@@ -89,13 +89,13 @@ private:
   //@{
 
   ::Thyra::ModelEvaluatorBase::OutArgs<SC> createOutArgsImpl() const;
-  void
-  evalModelImpl(const ::Thyra::ModelEvaluatorBase::InArgs<SC> &inArgs,
-                const ::Thyra::ModelEvaluatorBase::OutArgs<SC> &outArgs) const;
+  void evalModelImpl(
+      const ::Thyra::ModelEvaluatorBase::InArgs<SC> &inArgs,
+      const ::Thyra::ModelEvaluatorBase::OutArgs<SC> &outArgs) const;
 
   //@}
 
-private: // data members
+ private:  // data members
   const Teuchos::RCP<const Teuchos::Comm<int>> comm_;
   const int numGlobalElements_;
   const SC zMin_;
@@ -132,6 +132,6 @@ private: // data members
   ::Thyra::ModelEvaluatorBase::OutArgs<SC> prototypeOutArgs_;
 };
 
-} // namespace Tempus_Test
+}  // namespace Tempus_Test
 
-#endif // TEMPUS_CDR_MODEL_TPETRA_DECL_HPP
+#endif  // TEMPUS_CDR_MODEL_TPETRA_DECL_HPP
