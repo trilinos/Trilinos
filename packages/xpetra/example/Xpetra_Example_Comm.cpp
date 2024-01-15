@@ -56,20 +56,19 @@
 
 // This driver simply tests Teuchos2Epetra_Comm
 
-int main(int argc, char** argv)
-{
-  typedef int                                                       Ordinal;
-  typedef double                                                    Scalar;
+int main(int argc, char** argv) {
+  typedef int Ordinal;
+  typedef double Scalar;
 
   using namespace Teuchos;
 
   oblackholestream blackhole;
-  GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
   {
-    RCP<const Comm<int> > serialTeuchosComm = rcp (new SerialComm<int>);
-    RCP<const Comm<int> > teuchosComm = rcp_implicit_cast<const SerialComm<int> > (serialTeuchosComm);
-    RCP<const Epetra_Comm> epetraComm = Teuchos2Epetra_Comm(teuchosComm);
+    RCP<const Comm<int> > serialTeuchosComm = rcp(new SerialComm<int>);
+    RCP<const Comm<int> > teuchosComm       = rcp_implicit_cast<const SerialComm<int> >(serialTeuchosComm);
+    RCP<const Epetra_Comm> epetraComm       = Teuchos2Epetra_Comm(teuchosComm);
 
     assert(epetraComm != Teuchos::null);
   }
@@ -81,5 +80,5 @@ int main(int argc, char** argv)
     assert(epetraComm != Teuchos::null);
   }
 
-  return(0);
-} //main
+  return (0);
+}  // main

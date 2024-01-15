@@ -48,14 +48,8 @@
 
 #include "Xpetra_VectorFactory_decl.hpp"
 
-
-
 namespace Xpetra {
 
+}  // namespace Xpetra
 
-}      // namespace Xpetra
-
-
-#endif      // XPETRA_VECTORFACTORY_DEF_HPP
-
-
+#endif  // XPETRA_VECTORFACTORY_DEF_HPP

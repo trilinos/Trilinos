@@ -47,12 +47,12 @@
 #define XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP
 
 namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TpetraBlockCrsMatrix;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class TpetraBlockCrsMatrix;
 }
 
 #ifndef XPETRA_TPETRABLOCKCRSMATRIX_SHORT
 #define XPETRA_TPETRABLOCKCRSMATRIX_SHORT
 #endif
 
-#endif // XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP
+#endif  // XPETRA_TPETRABLOCKCRSMATRIX_FWD_HPP

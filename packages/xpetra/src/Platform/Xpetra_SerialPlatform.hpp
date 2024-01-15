@@ -54,54 +54,51 @@
 
 namespace Xpetra {
 
-  //! \brief A implementation of the Platform class for serial platforms.
-  template<class Node=Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-  class SerialPlatform : public Teuchos::Describable {
-  public:
-    //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
-    typedef Node NodeType;
-    //! @name Constructor/Destructor Methods
-    //@{
+//! \brief A implementation of the Platform class for serial platforms.
+template <class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class SerialPlatform : public Teuchos::Describable {
+ public:
+  //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
+  typedef Node NodeType;
+  //! @name Constructor/Destructor Methods
+  //@{
 
-    //! Constructor
-    explicit SerialPlatform(const Teuchos::RCP<Node> &node);
+  //! Constructor
+  explicit SerialPlatform(const Teuchos::RCP<Node> &node);
 
-    //! Destructor
-    ~SerialPlatform();
+  //! Destructor
+  ~SerialPlatform();
 
-    //@}
+  //@}
 
-    //! @name Class Creation and Accessor Methods
-    //@{
+  //! @name Class Creation and Accessor Methods
+  //@{
 
-    //! Comm Instance
-    const Teuchos::RCP< const Teuchos::SerialComm<int> > getComm() const;
+  //! Comm Instance
+  const Teuchos::RCP<const Teuchos::SerialComm<int> > getComm() const;
 
+  //@}
+ private:
+  SerialPlatform(const SerialPlatform<Node> &platform);
 
-    //@}
-  private:
-    SerialPlatform(const SerialPlatform<Node> &platform);
+ protected:
+  //! Teuchos::Comm object instantiated for the platform.
+  Teuchos::RCP<const Teuchos::SerialComm<int> > comm_;
+};
 
-  protected:
-    //! Teuchos::Comm object instantiated for the platform.
-    Teuchos::RCP<const Teuchos::SerialComm<int> > comm_;
-  };
+template <class Node>
+SerialPlatform<Node>::SerialPlatform(const Teuchos::RCP<Node> & /* node */)
+  : comm_(Teuchos::rcp(new Teuchos::SerialComm<int>())) {}
 
-  template<class Node>
-  SerialPlatform<Node>::SerialPlatform(const Teuchos::RCP<Node>& /* node */) :
-    comm_ (Teuchos::rcp(new Teuchos::SerialComm<int>()))
-  {}
+template <class Node>
+SerialPlatform<Node>::~SerialPlatform() {}
 
-  template<class Node>
-  SerialPlatform<Node>::~SerialPlatform() {  }
+template <class Node>
+const Teuchos::RCP<const Teuchos::SerialComm<int> >
+SerialPlatform<Node>::getComm() const {
+  return comm_;
+}
 
-  template<class Node>
-  const Teuchos::RCP< const Teuchos::SerialComm<int> >
-  SerialPlatform<Node>::getComm() const {
-    return comm_;
-  }
+}  // namespace Xpetra
 
-
-} // namespace Xpetra
-
-#endif // XPETRA_SERIALPLATFORM_HPP
+#endif  // XPETRA_SERIALPLATFORM_HPP

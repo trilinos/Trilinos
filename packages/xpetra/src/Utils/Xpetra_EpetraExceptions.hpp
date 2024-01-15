@@ -58,21 +58,19 @@
 // It catchs exceptions that could be throwed by 'sourceCode'
 // If an exception is throw in any node, then all the node throws
 // an std::invalid_argument exceptions.
-#define IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG(sourceCode)   \
-  {                                                                     \
-    int localFailure = 0; /* 0 == success */                            \
-    try {                                                               \
-      sourceCode;                                                       \
-    }                                                                   \
-    catch (int /*epetraErrCode*/) {                                     \
-      localFailure = 1; /* 1 == failure */                              \
-    }                                                                   \
-                                                                        \
-    {                                                                   \
-      int globalFailure = 0; /* 0 == success */                         \
+#define IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG(sourceCode)                                    \
+  {                                                                                                      \
+    int localFailure = 0; /* 0 == success */                                                             \
+    try {                                                                                                \
+      sourceCode;                                                                                        \
+    } catch (int /*epetraErrCode*/) {                                                                    \
+      localFailure = 1; /* 1 == failure */                                                               \
+    }                                                                                                    \
+                                                                                                         \
+    {                                                                                                    \
+      int globalFailure = 0; /* 0 == success */                                                          \
       Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_SUM, localFailure, Teuchos::outArg(globalFailure)); \
-      TEUCHOS_TEST_FOR_EXCEPTION(globalFailure != 0, std::invalid_argument, "Epetra threw exception"); \
-    }                                                                   \
+      TEUCHOS_TEST_FOR_EXCEPTION(globalFailure != 0, std::invalid_argument, "Epetra threw exception");   \
+    }                                                                                                    \
   }
 #endif
-

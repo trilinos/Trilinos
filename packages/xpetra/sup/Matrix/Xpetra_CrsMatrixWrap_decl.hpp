@@ -70,7 +70,7 @@
 */
 namespace Xpetra {
 
-  typedef std::string viewLabel_t;
+typedef std::string viewLabel_t;
 
 /*!
   @class CrsMatrixWrap
@@ -80,9 +80,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-class CrsMatrixWrap :
-  public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-{
+class CrsMatrixWrap : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
@@ -93,38 +91,38 @@ class CrsMatrixWrap :
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
   typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 #ifdef HAVE_XPETRA_TPETRA
-    typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+  typedef typename CrsMatrix::local_matrix_type local_matrix_type;
 #endif
 
-public:
+ public:
   //! @name Constructor/Destructor Methods
   //@{
 
   //! Constructor for a dynamic profile matrix (Epetra only)
-  CrsMatrixWrap (const RCP<const Map>& rowMap);
+  CrsMatrixWrap(const RCP<const Map> &rowMap);
 
   //! Constructor specifying fixed number of entries for each row.
-  CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 size_t maxNumEntriesPerRow);
+  CrsMatrixWrap(const RCP<const Map> &rowMap,
+                size_t maxNumEntriesPerRow);
 
   //! Constructor specifying (possibly different) number of entries in each row.
-  CrsMatrixWrap (const RCP<const Map>& rowMap,
-                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc);
+  CrsMatrixWrap(const RCP<const Map> &rowMap,
+                const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, size_t maxNumEntriesPerRow);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map> &colMap, size_t maxNumEntriesPerRow);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map> &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc);
 
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map> &colMap, const local_matrix_type &lclMatrix, const Teuchos::RCP<Teuchos::ParameterList> &params = null);
 
   //! Constructor specifying fixed number of entries for each row and column map
-  CrsMatrixWrap(const local_matrix_type& lclMatrix, const RCP<const Map> &rowMap, const RCP<const Map>& colMap,
-                const RCP<const Map>& domainMap = Teuchos::null, const RCP<const Map>& rangeMap = Teuchos::null,
-                const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+  CrsMatrixWrap(const local_matrix_type &lclMatrix, const RCP<const Map> &rowMap, const RCP<const Map> &colMap,
+                const RCP<const Map> &domainMap = Teuchos::null, const RCP<const Map> &rangeMap = Teuchos::null,
+                const Teuchos::RCP<Teuchos::ParameterList> &params = null);
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -133,17 +131,16 @@ public:
 
   CrsMatrixWrap(RCP<CrsMatrix> matrix);
 
-  CrsMatrixWrap(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null);
+  CrsMatrixWrap(const RCP<const CrsGraph> &graph, const RCP<ParameterList> &paramList = Teuchos::null);
 
-  CrsMatrixWrap(const RCP<const CrsGraph>& graph, 
-                typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type & values, 
-                const RCP<ParameterList>& paramList = Teuchos::null);
+  CrsMatrixWrap(const RCP<const CrsGraph> &graph,
+                typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::values_type &values,
+                const RCP<ParameterList> &paramList = Teuchos::null);
 
   //! Destructor
   virtual ~CrsMatrixWrap();
 
   //@}
-
 
   //! @name Insertion/Removal Methods
   //@{
@@ -180,7 +177,7 @@ public:
   \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
   void replaceGlobalValues(GlobalOrdinal globalRow,
                            const ArrayView<const GlobalOrdinal> &cols,
-                           const ArrayView<const Scalar>        &vals);
+                           const ArrayView<const Scalar> &vals);
 
   //! Replace matrix entries, using local IDs.
   /** All index values must be in the local space.
@@ -188,7 +185,7 @@ public:
   */
   void replaceLocalValues(LocalOrdinal localRow,
                           const ArrayView<const LocalOrdinal> &cols,
-                          const ArrayView<const Scalar>       &vals);
+                          const ArrayView<const Scalar> &vals);
 
   //! Set all matrix entries equal to scalar
   virtual void setAllToScalar(const Scalar &alpha);
@@ -209,7 +206,7 @@ public:
     \post  <tt>isFillActive() == true<tt>
     \post  <tt>isFillComplete() == false<tt>
   */
-  void resumeFill(const RCP< ParameterList > &params=null);
+  void resumeFill(const RCP<ParameterList> &params = null);
 
   /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -237,7 +234,7 @@ public:
   \post <tt>isFillComplete() == true<tt>
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
-  //TODO : Get ride of "Tpetra"::OptimizeOption
+  // TODO : Get ride of "Tpetra"::OptimizeOption
   void fillComplete(const RCP<ParameterList> &params = null);
 
   //@}
@@ -304,8 +301,7 @@ public:
   void getLocalRowCopy(LocalOrdinal LocalRow,
                        const ArrayView<LocalOrdinal> &Indices,
                        const ArrayView<Scalar> &Values,
-                       size_t &NumEntries
-                       ) const;
+                       size_t &NumEntries) const;
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -334,22 +330,22 @@ public:
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+  void getLocalDiagCopy(Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const;
 
   //! Get offsets of the diagonal entries in the matrix.
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const;
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
-  void getLocalDiagCopy(Xpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const;
+  void getLocalDiagCopy(Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Teuchos::ArrayView<const size_t> &offsets) const;
 
   //! Get Frobenius norm of the matrix
   typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
 
   //! Left scale matrix using the given vector entries
-  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x);
 
   //! Right scale matrix using the given vector entries
-  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x);
 
   //! Returns true if globalConstants have been computed; false otherwise
   bool haveGlobalConstants() const;
@@ -369,10 +365,10 @@ public:
   If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
   will be accumulated into \c Y.
   */
-  //TODO virtual=0 // TODO: Add default parameters ?
-//   void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
-//      matrixData_->multiply(X, Y, trans, alpha, beta);
-//   }
+  // TODO virtual=0 // TODO: Add default parameters ?
+  //   void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
+  //      matrixData_->multiply(X, Y, trans, alpha, beta);
+  //   }
 
   //@}
 
@@ -383,38 +379,38 @@ public:
   /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
     - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
   */
-  virtual void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                   Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                   Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                   Scalar alpha = ScalarTraits<Scalar>::one(),
-                   Scalar beta = ScalarTraits<Scalar>::zero()) const;
+  virtual void apply(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
+                     Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &Y,
+                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                     Scalar alpha          = ScalarTraits<Scalar>::one(),
+                     Scalar beta           = ScalarTraits<Scalar>::zero()) const;
 
   //! Computes the matrix-multivector multiplication for region layout matrices
-  virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
-                    MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
-                    Teuchos::ETransp mode,
-                    Scalar alpha,
-                    Scalar beta,
-                    bool sumInterfaceValues,
-                    const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
-                    const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const;
+  virtual void apply(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
+                     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &Y,
+                     Teuchos::ETransp mode,
+                     Scalar alpha,
+                     Scalar beta,
+                     bool sumInterfaceValues,
+                     const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > &regionInterfaceImporter,
+                     const Teuchos::ArrayRCP<LocalOrdinal> &regionInterfaceLIDs) const;
 
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const;
 
   //! Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
   //! This might be <tt>null</tt> until fillComplete() is called.
-  const RCP<const Map> & getColMap() const;
+  const RCP<const Map> &getColMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  const RCP<const Map> & getColMap(viewLabel_t viewLabel) const;
+  const RCP<const Map> &getColMap(viewLabel_t viewLabel) const;
 
-  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap);
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map> &newMap);
 
   //@}
 
@@ -422,23 +418,23 @@ public:
   //{@
 
   //! Access function for the Tpetra::Map this DistObject was constructed with.
-  const Teuchos::RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const;
+  const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const;
 
   //! Import.
   void doImport(const Matrix &source,
-                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
+                const Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM);
 
   //! Export.
   void doExport(const Matrix &dest,
-                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM);
+                const Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM);
 
   //! Import (using an Exporter).
   void doImport(const Matrix &source,
-                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+                const Xpetra::Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM);
 
   //! Export (using an Importer).
   void doExport(const Matrix &dest,
-                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+                const Xpetra::Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM);
 
   // @}
 
@@ -449,19 +445,16 @@ public:
   std::string description() const;
 
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
   //! @name Overridden from Teuchos::LabeledObject
   //@{
-  void setObjectLabel( const std::string &objectLabel );
+  void setObjectLabel(const std::string &objectLabel);
   //@}
 
-
-
-
 #ifdef HAVE_XPETRA_TPETRA
-  virtual local_matrix_type getLocalMatrixDevice () const;
-  virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const;
+  virtual local_matrix_type getLocalMatrixDevice() const;
+  virtual typename local_matrix_type::HostMirror getLocalMatrixHost() const;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -477,28 +470,24 @@ public:
 
   RCP<CrsMatrix> getCrsMatrix() const;
 
-
   //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
   LocalOrdinal GetStorageBlockSize() const;
 
   //! Compute a residual R = B - (*this) * X
-  void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
-                const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
-                MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
-  
+  void residual(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
+                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B,
+                MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &R) const;
 
   //! Expert only
-  void replaceCrsMatrix(RCP<CrsMatrix> & M);
+  void replaceCrsMatrix(RCP<CrsMatrix> &M);
 
   //@}
-private:
-
+ private:
   // Default view is created after fillComplete()
   // Because ColMap might not be available before fillComplete().
   void CreateDefaultView();
 
-private:
-
+ private:
   // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called.
   // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated when getColMap() is called.
   void updateDefaultView() const;
@@ -509,12 +498,12 @@ private:
   // The underlying matrix object
   RCP<CrsMatrix> matrixData_;
 
-}; // class CrsMatrixWrap
+};  // class CrsMatrixWrap
 
-} // namespace Xpetra
+}  // namespace Xpetra
 
 #define XPETRA_CRSMATRIXWRAP_SHORT
-#endif //XPETRA_CRSMATRIXWRAP_DECL_HPP
+#endif  // XPETRA_CRSMATRIXWRAP_DECL_HPP
 
-//NOTE: if CrsMatrix and VbrMatrix share a common interface for fillComplete() etc, I can move some stuff in Xpetra_Matrix.hpp
-//TODO: getUnderlyingMatrix() method
+// NOTE: if CrsMatrix and VbrMatrix share a common interface for fillComplete() etc, I can move some stuff in Xpetra_Matrix.hpp
+// TODO: getUnderlyingMatrix() method
