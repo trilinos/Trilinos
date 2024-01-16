@@ -16,18 +16,7 @@
 #include "Tempus_StepperBackwardEuler.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/CDR_Model.hpp"
-#include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
-
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-
-#ifdef Tempus_ENABLE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
 
 #include <vector>
 #include <fstream>
