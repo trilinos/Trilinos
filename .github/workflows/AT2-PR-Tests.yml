@@ -1,11 +1,13 @@
-name: pr-test-AT2
+name: PR-gcc-openmpi
 
 on:
   pull_request:
     types:
-      - labeled
       - opened
       - synchronize
+  pull_request_review:
+    types: 
+      - submitted
     branches:
     - master
     - develop
@@ -14,7 +16,6 @@ on:
 jobs:
   triloamd01-gcc:
     runs-on: [self-hosted, triloamd01]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || (github.event.label.name == 'AT2-Start' && github.event.action == 'labeled') }}
     steps:
       - name: env
         env:
