@@ -73,103 +73,107 @@ using Teuchos::rcp;
 using Teuchos::RCP;
 using Thyra::tpetraLinearOp;
 
-void tParallelInverse_tpetra::initializeTest()
-{
-   tolerance_ = 1.0e-7;
+void tParallelInverse_tpetra::initializeTest() { tolerance_ = 1.0e-7; }
+
+void tParallelInverse_tpetra::loadMatrix() {
+  // Read in the matrix, store pointer as an RCP
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ptrA =
+      Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<ST, LO, GO, NT> >::readSparseFile(
+          "./data/lsc_F_2.mm", GetComm_tpetra());
+  F_ = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(ptrA->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(ptrA->getDomainMap()), ptrA);
 }
 
-void tParallelInverse_tpetra::loadMatrix()
-{
-   // Read in the matrix, store pointer as an RCP
-   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > ptrA = Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<ST,LO,GO,NT> >::readSparseFile("./data/lsc_F_2.mm",GetComm_tpetra());
-   F_ = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrA->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(ptrA->getDomainMap()),ptrA);
+void tParallelInverse_tpetra::loadStridedMatrix() {
+  // Read in the matrix, store pointer as an RCP
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > ptrA =
+      Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<ST, LO, GO, NT> >::readSparseFile(
+          "./data/nsjac.mm", GetComm_tpetra());
+  std::vector<int> vec(2);
+  vec[0] = 1;
+  vec[1] = 2;
+
+  // Block the linear system using a strided epetra operator
+  Teko::TpetraHelpers::StridedTpetraOperator sA(vec, ptrA);
+
+  // get 0,0 block
+  F_ = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(sA.GetBlock(0, 0)->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(sA.GetBlock(0, 0)->getDomainMap()),
+      sA.GetBlock(0, 0));
 }
 
-void tParallelInverse_tpetra::loadStridedMatrix()
-{
-   // Read in the matrix, store pointer as an RCP
-   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > ptrA = Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<ST,LO,GO,NT> >::readSparseFile("./data/nsjac.mm",GetComm_tpetra());
-   std::vector<int> vec(2); vec[0] = 1; vec[1] = 2;
+int tParallelInverse_tpetra::runTest(int verbosity, std::ostream& stdstrm, std::ostream& failstrm,
+                                     int& totalrun) {
+  bool allTests = true;
+  bool status;
+  int failcount = 0;
 
-   // Block the linear system using a strided epetra operator
-   Teko::TpetraHelpers::StridedTpetraOperator sA(vec,ptrA);
+  failstrm << "tParallelInverse_tpetra";
 
-   // get 0,0 block
-   F_ = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(sA.GetBlock(0,0)->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(sA.GetBlock(0,0)->getDomainMap()),sA.GetBlock(0,0));
-}
+  status = test_inverse(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"inverse\" ... PASSED", "   \"inverse\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-int tParallelInverse_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
-{
-   bool allTests = true;
-   bool status;
-   int failcount = 0;
-
-   failstrm << "tParallelInverse_tpetra";
-
-
-   status = test_inverse(verbosity,failstrm);
-   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"inverse\" ... PASSED","   \"inverse\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
-
-#ifdef Teko_ENABLE_DEV_MODE // so the file nsjac.mm isn't required for release mode
-   status = test_stridedInverse(verbosity,failstrm);
-   Teko_TEST_MSG_tpetra(stdstrm,1,"   \"stridedInverse\" ... PASSED","   \"stridedInverse\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+#ifdef Teko_ENABLE_DEV_MODE  // so the file nsjac.mm isn't required for release mode
+  status = test_stridedInverse(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"stridedInverse\" ... PASSED",
+                       "   \"stridedInverse\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 #endif
 
-   status = allTests;
-   if(verbosity >= 10) {
-      Teko_TEST_MSG_tpetra(failstrm,0,"tParallelInverse_tpetra...PASSED","tParallelInverse_tpetra...FAILED");
-   }
-   else {// Normal Operating Procedures (NOP)
-      Teko_TEST_MSG_tpetra(failstrm,0,"...PASSED","tParallelInverse_tpetra...FAILED");
-   }
+  status = allTests;
+  if (verbosity >= 10) {
+    Teko_TEST_MSG_tpetra(failstrm, 0, "tParallelInverse_tpetra...PASSED",
+                         "tParallelInverse_tpetra...FAILED");
+  } else {  // Normal Operating Procedures (NOP)
+    Teko_TEST_MSG_tpetra(failstrm, 0, "...PASSED", "tParallelInverse_tpetra...FAILED");
+  }
 
-   return failcount;
+  return failcount;
 }
 
-bool tParallelInverse_tpetra::test_inverse(int verbosity,std::ostream & os)
-{
-   // bool status = false;
-   bool allPassed = true;
+bool tParallelInverse_tpetra::test_inverse(int verbosity, std::ostream& os) {
+  // bool status = false;
+  bool allPassed = true;
 
-   loadMatrix();
+  loadMatrix();
 
-   // build an InverseLibrary
-   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+  // build an InverseLibrary
+  RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
-   // build the inverse factory needed by the example preconditioner
-   RCP<const Teko::InverseFactory> invFact  = invLib->getInverseFactory("Belos");
+  // build the inverse factory needed by the example preconditioner
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("Belos");
 
-   Teko::LinearOp inv = invFact->buildInverse(F_);
+  Teko::LinearOp inv = invFact->buildInverse(F_);
 
-   return allPassed;
+  return allPassed;
 }
 
-bool tParallelInverse_tpetra::test_stridedInverse(int verbosity,std::ostream & os)
-{
-   // bool status = false;
-   bool allPassed = true;
+bool tParallelInverse_tpetra::test_stridedInverse(int verbosity, std::ostream& os) {
+  // bool status = false;
+  bool allPassed = true;
 
-   loadStridedMatrix();
+  loadStridedMatrix();
 
-   // build an InverseLibrary
-   TEST_MSG("\n   Building inverse library");
-   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+  // build an InverseLibrary
+  TEST_MSG("\n   Building inverse library");
+  RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
-   // build the inverse factory needed by the example preconditioner
-   TEST_MSG("\n   Building inverse factory");
-   RCP<const Teko::InverseFactory> invFact  = invLib->getInverseFactory("Belos");
+  // build the inverse factory needed by the example preconditioner
+  TEST_MSG("\n   Building inverse factory");
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("Belos");
 
-   TEST_MSG("\n   Building inverse");
-   Teko::LinearOp inv = invFact->buildInverse(F_);
+  TEST_MSG("\n   Building inverse");
+  Teko::LinearOp inv = invFact->buildInverse(F_);
 
-   return allPassed;
+  return allPassed;
 }
 
-} // end namespace Tests
-} // end namespace Teko
+}  // namespace Test
+}  // end namespace Teko
