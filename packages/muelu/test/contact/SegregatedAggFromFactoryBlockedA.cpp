@@ -74,8 +74,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
@@ -85,11 +84,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  using ST = Teuchos::ScalarTraits<Scalar>;
+  using ST  = Teuchos::ScalarTraits<Scalar>;
   using GST = Teuchos::ScalarTraits<GO>;
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  auto numRanks = comm->getSize();
+  RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  auto numRanks                      = comm->getSize();
 
   std::string probName = "";
   clp.setOption("probName", &probName, "Short name of the problem. Used to read-in the problem from files.");
@@ -124,12 +123,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   TEUCHOS_TEST_FOR_EXCEPTION(numDualDofPerNode == -1, MueLu::Exceptions::InvalidArgument,
                              "Please specify the number of dual Dof per interface node on the command line.");
 
-  const std::string matrixFileName = probName + "_block_matrix.mm";
-  const std::string nullspace1FileName = probName + "_nullspace.mm";
+  const std::string matrixFileName             = probName + "_block_matrix.mm";
+  const std::string nullspace1FileName         = probName + "_nullspace.mm";
   const std::string primalInterfaceMapFileName = probName + "_interface_dof_map_MPI" + std::to_string(numRanks) + ".mm";
-  const std::string dropMap1Name = "dropMap1";
-  const std::string dropMap2Name = "dropMap2";
-  const std::string droppingScheme = "map-pair";
+  const std::string dropMap1Name               = "dropMap1";
+  const std::string dropMap2Name               = "dropMap2";
+  const std::string droppingScheme             = "map-pair";
 
   /// Rowmaps
   // Primal dofmap
@@ -147,15 +146,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
                                                                         stridingInfoDual, comm, -1, numGlobalDofPrimal);
 
   // Construct the blocked map of the global system
-  std::vector<RCP<const Map> > rowmaps;
+  std::vector<RCP<const Map>> rowmaps;
   rowmaps.push_back(StridedDofRowMapPrimal);
   rowmaps.push_back(StridedDofRowMapDual);
-  RCP<const Map> fullRowMap = MapUtils::concatenateMaps(rowmaps);
+  RCP<const Map> fullRowMap        = MapUtils::concatenateMaps(rowmaps);
   RCP<const BlockedMap> blockedMap = rcp(new BlockedMap(fullRowMap, rowmaps));
 
   /// Matrix A
   // Read the matrix from file and transform it into a block matrix
-  RCP<Matrix> mat = Xpetra::IO<SC, LO, GO, NO>::Read(matrixFileName, fullRowMap);
+  RCP<Matrix> mat                     = Xpetra::IO<SC, LO, GO, NO>::Read(matrixFileName, fullRowMap);
   RCP<MapExtractor> rangeMapExtractor = Xpetra::MapExtractorFactory<SC, LO, GO, NO>::Build(fullRowMap, rowmaps);
   RCP<BlockedCrsMatrix> blockedMatrix = Xpetra::MatrixUtils<SC, LO, GO, NO>::SplitMatrix(*mat, rangeMapExtractor,
                                                                                          rangeMapExtractor);
@@ -168,17 +167,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   // Create the default nullspace vector of the (1,1)-block
   RCP<MultiVector> nullspace2 = MultiVectorFactory::Build(StridedDofRowMapDual, 2, true);
-  const int dimNS = 2;
+  const int dimNS             = 2;
   for (int dim = 0; dim < dimNS; ++dim) {
     ArrayRCP<Scalar> nsValues = nullspace2->getDataNonConst(dim);
-    const int numBlocks = nsValues.size() / dimNS;
+    const int numBlocks       = nsValues.size() / dimNS;
     for (int j = 0; j < numBlocks; ++j)
       nsValues[j * dimNS + dim] = Teuchos::ScalarTraits<Scalar>::one();
   }
 
   // Read the interface slave dof row map from file
   TEUCHOS_ASSERT(!primalInterfaceMapFileName.empty());
-  RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC,LO,GO,NO>::ReadMap(primalInterfaceMapFileName, lib, comm);
+  RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(primalInterfaceMapFileName, lib, comm);
   // Create the interface master dof row map (for map-pair for matrix filtering in segregatedAFactory)
   std::vector<GO> mastermapEntries{0, 1, 6, 7, 22, 23};
   RCP<const Map> mastermap = Xpetra::MapFactory<LO, GO, NO>::Build(lib, mastermapEntries.size(), mastermapEntries, 0,
@@ -268,9 +267,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // define MapTransferFactory for "Primal interface DOF map"
   RCP<MapTransferFactory> primalInterfaceDofMapTransferFactLevelZero = rcp(new MapTransferFactory());
   primalInterfaceDofMapTransferFactLevelZero->SetParameter("map: factory", Teuchos::ParameterEntry(
-          std::string("Primal interface DOF map")));
+                                                                               std::string("Primal interface DOF map")));
   primalInterfaceDofMapTransferFactLevelZero->SetParameter("map: name", Teuchos::ParameterEntry(
-          std::string("Primal interface DOF map")));
+                                                                            std::string("Primal interface DOF map")));
   primalInterfaceDofMapTransferFactLevelZero->SetFactory("P", tentativePFact00LevelZero);
   primalInterfaceDofMapTransferFactLevelZero->SetParameter("nullspace vectors: limit to",
                                                            Teuchos::ParameterEntry(std::string("translations")));
@@ -348,7 +347,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   ///////////// Level Definition /////////////
   RCP<Level> levelZero = rcp(new Level());
-  RCP<Level> levelOne = rcp(new Level());
+  RCP<Level> levelOne  = rcp(new Level());
 
   levelZero->SetLevelID(0);
   levelOne->SetLevelID(1);
@@ -372,7 +371,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   TEUCHOS_ASSERT(levelZero->IsAvailable(dropMap2Name, MueLu::NoFactory::get()));
 
   levelZero->SetFactoryManager(managerLevelZero);
-//  levelOne->SetFactoryManager(managerLevelOne);
+  //  levelOne->SetFactoryManager(managerLevelOne);
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
@@ -390,7 +389,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<Aggregates> primalAggsLevelZero = levelZero->Get<RCP<Aggregates>>("Aggregates", uncoupledAggFactLevelZero.get());
   MueLuTests::checkAggregatesMapPair<SC, LO, GO, NO>(primalAggsLevelZero, stridingInfoPrimal,
                                                      levelZero->Get<RCP<const Map>>(dropMap1Name, MueLu::NoFactory::get()),
-                                                       levelZero->Get<RCP<const Map>>(dropMap2Name, MueLu::NoFactory::get()));
+                                                     levelZero->Get<RCP<const Map>>(dropMap2Name, MueLu::NoFactory::get()));
 
   return EXIT_SUCCESS;
 }
@@ -400,5 +399,5 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }

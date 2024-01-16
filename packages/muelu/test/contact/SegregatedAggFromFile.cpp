@@ -63,8 +63,7 @@
 #include <Xpetra_IO.hpp>
 #include <Xpetra_MatrixUtils.hpp>
 
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
@@ -73,7 +72,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
   std::string probName = "";
   clp.setOption("probName", &probName, "Short name of the problem. Used to read-in the problem from files.");
@@ -89,8 +88,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(probName=="", MueLu::Exceptions::InvalidArgument, "Please specify a valid problem name.");
-  TEUCHOS_TEST_FOR_EXCEPTION(numTotalDofs==-GST::one(), MueLu::Exceptions::InvalidArgument,
+  TEUCHOS_TEST_FOR_EXCEPTION(probName == "", MueLu::Exceptions::InvalidArgument, "Please specify a valid problem name.");
+  TEUCHOS_TEST_FOR_EXCEPTION(numTotalDofs == -GST::one(), MueLu::Exceptions::InvalidArgument,
                              "Please specify the global number of DOFs on the command line.");
 
   std::vector<size_t> stridingInfo;
@@ -98,8 +97,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   // Create the solid block dof row map
   std::string map1Name = "blockmap";
-  std::vector<GO> blockmapEntries {30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
-  RCP<const Map> blockmap = Xpetra::MapFactory<LO,GO,NO>::Build(lib, blockmapEntries.size(), blockmapEntries, 30, comm);
+  std::vector<GO> blockmapEntries{30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+  RCP<const Map> blockmap = Xpetra::MapFactory<LO, GO, NO>::Build(lib, blockmapEntries.size(), blockmapEntries, 30, comm);
 
   // Create the interface dof row maps
   std::vector<GO> slavemapEntries{42, 43, 44, 45, 52, 53};
@@ -112,8 +111,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // Read the matrix from file
   const std::string matrixFileName = probName + "_matrix.mm";
   TEUCHOS_ASSERT(!matrixFileName.empty());
-  RCP<Matrix> mat = Xpetra::IO<SC,LO,GO,NO>::Read(matrixFileName, lib, comm);
-  Xpetra::MatrixUtils<SC,LO,GO,NO>::convertMatrixToStridedMaps(mat, stridingInfo, stridingInfo);
+  RCP<Matrix> mat = Xpetra::IO<SC, LO, GO, NO>::Read(matrixFileName, lib, comm);
+  Xpetra::MatrixUtils<SC, LO, GO, NO>::convertMatrixToStridedMaps(mat, stridingInfo, stridingInfo);
 
   // define amalgamation factory
   RCP<AmalgamationFactory> amalgFact = RCP(new AmalgamationFactory());
@@ -127,7 +126,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   uncoupledAggFact->SetFactory("Graph", dropFact);
   uncoupledAggFact->SetOrdering("graph");
 
-  RCP<FactoryManager> M = rcp(new FactoryManager());
+  RCP<FactoryManager> M   = rcp(new FactoryManager());
   RCP<MueLu::Level> level = rcp(new MueLu::Level());
   level->SetLevelID(0);
   TEUCHOS_ASSERT_EQUALITY(level->GetLevelID(), 0);
@@ -156,6 +155,5 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }
-

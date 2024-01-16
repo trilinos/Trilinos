@@ -69,8 +69,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
@@ -79,11 +78,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
-  std::string probName = ""; clp.setOption("probName", &probName, "Short name of the problem. Used to read-in the problem from files.");
-  GO numTotalDofs = -GST::one(); clp.setOption("nDof", &numTotalDofs, "Total number of DOFs");
-  int nDofPerNode = -1; clp.setOption("nDofPerNode", &nDofPerNode, "Number of DOFS per Node");
+  std::string probName = "";
+  clp.setOption("probName", &probName, "Short name of the problem. Used to read-in the problem from files.");
+  GO numTotalDofs = -GST::one();
+  clp.setOption("nDof", &numTotalDofs, "Total number of DOFs");
+  int nDofPerNode = -1;
+  clp.setOption("nDofPerNode", &nDofPerNode, "Number of DOFS per Node");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -96,15 +98,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
       break;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(probName=="", MueLu::Exceptions::InvalidArgument, "Please specify the problem name on the command line.");
-  TEUCHOS_TEST_FOR_EXCEPTION(numTotalDofs==-GST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of DOF on the command line.");
-  TEUCHOS_TEST_FOR_EXCEPTION(nDofPerNode==-1, MueLu::Exceptions::InvalidArgument, "Please specify the number of DOF per mesh node on the command line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(probName == "", MueLu::Exceptions::InvalidArgument, "Please specify the problem name on the command line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(numTotalDofs == -GST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of DOF on the command line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(nDofPerNode == -1, MueLu::Exceptions::InvalidArgument, "Please specify the number of DOF per mesh node on the command line.");
 
-  const std::string matrixFileName = probName + "_matrix.mm";
+  const std::string matrixFileName    = probName + "_matrix.mm";
   const std::string nullspaceFileName = probName + "_nullspace.mm";
-  const std::string dropMap1Name = "dropMap1";
-  const std::string dropMap2Name = "dropMap2";
-  const std::string droppingScheme = "map-pair";
+  const std::string dropMap1Name      = "dropMap1";
+  const std::string dropMap2Name      = "dropMap2";
+  const std::string droppingScheme    = "map-pair";
 
   std::vector<size_t> stridingInfo;
   stridingInfo.push_back(nDofPerNode);
@@ -118,10 +120,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // Create the interface dof row maps
   std::vector<GO> slavemapEntries{42, 43, 44, 45, 52, 53};
   RCP<const Map> dropMap1 = Xpetra::MapFactory<LO, GO, NO>::Build(lib, slavemapEntries.size(), slavemapEntries, 0,
-                                                                            comm);
+                                                                  comm);
   std::vector<GO> mastermapEntries{0, 1, 6, 7, 22, 23};
   RCP<const Map> dropMap2 = Xpetra::MapFactory<LO, GO, NO>::Build(lib, mastermapEntries.size(), mastermapEntries, 0,
-                                                                             comm);
+                                                                  comm);
   ///////////// Factories Definitions /////////////
   //// Factories: level 0
   // define segregatedAFactory that provides Matrix A to CoalesceDropFactory
@@ -253,7 +255,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   ///////////// Level Definition /////////////
   RCP<Level> levelZero = rcp(new Level());
-  RCP<Level> levelOne = rcp(new Level());
+  RCP<Level> levelOne  = rcp(new Level());
 
   levelZero->SetLevelID(0);
   levelOne->SetLevelID(1);
@@ -320,5 +322,5 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }

@@ -56,24 +56,23 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
-
 namespace MueLuTests {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> createRedundantMaps(
-        Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> localDropMap) {
+    Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> localDropMap) {
 #include "MueLu_UseShortNames.hpp"
 
   Teuchos::RCP<const Teuchos::Comm<int>> comm = localDropMap->getComm();
 
   Teuchos::Array<GO> localDropMapGIDList = localDropMap->getLocalElementList();
-  const int GIDListSize = localDropMap->getMaxAllGlobalIndex()+1;
+  const int GIDListSize                  = localDropMap->getMaxAllGlobalIndex() + 1;
 
   //  Create a list of GID with only an incomplete/partial set of GIDs, which can then be completed by reduceAll
   Teuchos::Array<GO> partialDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
   Teuchos::Array<GO> redundantDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
 
-  for(GO gid : localDropMapGIDList){
+  for (GO gid : localDropMapGIDList) {
     partialDropMapGIDList[gid] = gid;
   }
 
@@ -82,12 +81,12 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> createRedunda
   redundantDropMapGIDList.erase(std::remove(redundantDropMapGIDList.begin(), redundantDropMapGIDList.end(), -1),
                                 redundantDropMapGIDList.end());
   Teuchos::RCP<const Map> redundantDropMap = MapFactory::Build(
-          localDropMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), redundantDropMapGIDList, 0, comm);
+      localDropMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), redundantDropMapGIDList, 0, comm);
 
   return redundantDropMap;
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>> aggregates,
                              std::vector<size_t> &stridingInfo,
                              Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> blockmap) {
@@ -104,11 +103,11 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
 
   // Create redundant maps to be absolutely sure no entry is missed during the check
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> blockmap_final;
-  blockmap_final = MueLuTests::createRedundantMaps<SC,LO,GO,NO>(blockmap);
+  blockmap_final = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(blockmap);
 
   // Loop over all aggregates
   for (size_t aggregate = 0; aggregate < aggPtr.extent(0) - 1; aggregate++) {
-    bool aggContainsNodesInBlockmap = false;
+    bool aggContainsNodesInBlockmap    = false;
     bool aggContainsNodesNotInBlockmap = false;
     // Loop over all nodes contained in the aggregate
     for (LO nodeIter = aggPtr[aggregate]; nodeIter < aggPtr[aggregate + 1]; nodeIter++) {
@@ -126,13 +125,11 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
     // Aggregates must not cross from one solid body to next and respect contact interface
     TEUCHOS_TEST_FOR_EXCEPTION(aggContainsNodesInBlockmap == aggContainsNodesNotInBlockmap,
                                MueLu::Exceptions::RuntimeError,
-                               "Aggregate " << aggregate <<
-                                            " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n")
+                               "Aggregate " << aggregate << " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n")
   }
 }
 
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>> aggregates,
                             std::vector<size_t> &stridingInfo,
                             Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> slavemap,
@@ -149,12 +146,12 @@ void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalO
   // Create redundant maps to be absolutely sure no entry is missed during the check
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> slavemap_final;
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mastermap_final;
-  slavemap_final = MueLuTests::createRedundantMaps<SC,LO,GO,NO>(slavemap);
-  mastermap_final = MueLuTests::createRedundantMaps<SC,LO,GO,NO>(mastermap);
+  slavemap_final  = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(slavemap);
+  mastermap_final = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(mastermap);
 
   // Loop over all aggregates
   for (size_t aggregate = 0; aggregate < aggPtr.extent(0) - 1; aggregate++) {
-    bool aggContainsNodesInSlavemap = false;
+    bool aggContainsNodesInSlavemap  = false;
     bool aggContainsNodesInMastermap = false;
     // Loop over all nodes contained in the aggregate
     for (LO nodeIter = aggPtr[aggregate]; nodeIter < aggPtr[aggregate + 1]; nodeIter++) {
@@ -173,10 +170,9 @@ void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalO
     // Aggregates must not cross from one solid body to next and respect contact interface
     TEUCHOS_TEST_FOR_EXCEPTION((aggContainsNodesInSlavemap == true) && (aggContainsNodesInMastermap == true),
                                MueLu::Exceptions::RuntimeError,
-                               "Aggregate " << aggregate <<
-                               " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n")
+                               "Aggregate " << aggregate << " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n")
   }
 }
-}
+}  // namespace MueLuTests
 
 #endif

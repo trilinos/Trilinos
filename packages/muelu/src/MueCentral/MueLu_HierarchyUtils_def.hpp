@@ -261,15 +261,11 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         } else if (name == "Primal interface DOF map") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
-        }
-        else if(name == "dropMap1")
-        {
-          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+        } else if (name == "dropMap1") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
-        }
-        else if(name == "dropMap2")
-        {
-          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+        } else if (name == "dropMap2") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
         }
 #ifdef HAVE_MUELU_INTREPID2
@@ -365,11 +361,11 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         } else if (name == "Primal interface DOF map") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());
-        } else if(name == "dropMap1"){
-          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+        } else if (name == "dropMap1") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());
-        } else if(name == "dropMap2"){
-          level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+        } else if (name == "dropMap2") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());
         }
 #ifdef HAVE_MUELU_INTREPID2

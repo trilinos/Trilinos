@@ -114,10 +114,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   TEUCHOS_TEST_FOR_EXCEPTION(probName == "", MueLu::Exceptions::InvalidArgument, "Please specify a valid problem name.");
   TEUCHOS_TEST_FOR_EXCEPTION(xmlFile == "", MueLu::Exceptions::InvalidArgument, "Please specify a valid xml-file for the MueLu preconditioner.");
 
-  const std::string matrixFileName            = probName + "_matrix.mm";
-  const std::string rhsFileName               = probName + "_rhs.mm";
-  const std::string nullspace1FileName        = probName + "_nullspace1.mm";
-  const std::string dualInterfaceMapFileName  = probName + "_interface_dof_map_MPI" + std::to_string(numRanks) + ".mm";
+  const std::string matrixFileName           = probName + "_matrix.mm";
+  const std::string rhsFileName              = probName + "_rhs.mm";
+  const std::string nullspace1FileName       = probName + "_nullspace1.mm";
+  const std::string dualInterfaceMapFileName = probName + "_interface_dof_map_MPI" + std::to_string(numRanks) + ".mm";
 
   // Create maps for primal DOFs
   std::vector<size_t> stridingInfoPrimal;
@@ -153,7 +153,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   // Read the interface slave dof row map from file
   TEUCHOS_ASSERT(!dualInterfaceMapFileName.empty());
-  RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC,LO,GO,NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
+  RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
 
   // Create the default nullspace vector of the (1,1)-block
   RCP<MultiVector> nullspace2 = MultiVectorFactory::Build(dofRowMapDual, 2, true);

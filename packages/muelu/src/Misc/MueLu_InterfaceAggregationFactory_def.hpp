@@ -285,7 +285,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
    * - is 2 or 3 (for 2d or 3d problems) on coarser levels (same as on finest level, whereas there
    *   are 3 or 6 displacement dofs per node)
    */
-  GlobalOrdinal dualDofOffset = A01->getRowMap()->getMaxAllGlobalIndex()+1;
+  GlobalOrdinal dualDofOffset = A01->getRowMap()->getMaxAllGlobalIndex() + 1;
   LocalOrdinal dualBlockDim   = numDofsPerDualNode;
   // Generate global replicated mapping "lagrNodeId -> dispNodeId"
   RCP<const Map> dualDofMap    = A01->getDomainMap();
@@ -330,14 +330,14 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
       TEUCHOS_TEST_FOR_EXCEPTION(local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] != -GO_ONE,
                                  MueLu::Exceptions::RuntimeError,
                                  "PROC: " << myRank << " gDualNodeId " << gDualNodeId
-                                 << " is already connected to primal nodeId "
-                                 << local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId]
-                                 << ". This shouldn't be. A possible reason might be: "
-                                    "Check if parallel dist. of primalInterfaceDofRowMap corresponds "
-                                    "to the parallel dist. of subblock matrix A01.");
+                                          << " is already connected to primal nodeId "
+                                          << local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId]
+                                          << ". This shouldn't be. A possible reason might be: "
+                                             "Check if parallel dist. of primalInterfaceDofRowMap corresponds "
+                                             "to the parallel dist. of subblock matrix A01.");
 
       local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] = gPrimalNodeId;
-      local_dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId] = primalAggId;
+      local_dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId]  = primalAggId;
     }
   }
   const int dualNodeId2primalNodeIdSize = Teuchos::as<int>(local_dualNodeId2primalNodeId.size());
@@ -386,9 +386,9 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     dualProcWinner[lDualNodeID]   = myRank;
   }
 
-  const LocalOrdinal fullblocksize = numDofsPerDualNode;
-  const LocalOrdinal blockid = -1;
-  const LocalOrdinal nStridedOffset = 0;
+  const LocalOrdinal fullblocksize    = numDofsPerDualNode;
+  const LocalOrdinal blockid          = -1;
+  const LocalOrdinal nStridedOffset   = 0;
   const LocalOrdinal stridedblocksize = fullblocksize;
 
   RCP<Array<LO>> rowTranslation = rcp(new Array<LO>());
@@ -404,8 +404,8 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   TEUCHOS_ASSERT(A01->isFillComplete());
 
   RCP<AmalgamationInfo> dualAmalgamationInfo = rcp(new AmalgamationInfo(rowTranslation, colTranslation,
-      A01->getDomainMap(), A01->getDomainMap(), A01->getDomainMap(),
-      fullblocksize, dualDofOffset, blockid, nStridedOffset, stridedblocksize));
+                                                                        A01->getDomainMap(), A01->getDomainMap(), A01->getDomainMap(),
+                                                                        fullblocksize, dualDofOffset, blockid, nStridedOffset, stridedblocksize));
 
   dualAggregates->SetNumAggregates(nLocalAggregates);
   dualAggregates->AggregatesCrossProcessors(primalAggregates->AggregatesCrossProcessors());
