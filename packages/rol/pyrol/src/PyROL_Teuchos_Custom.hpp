@@ -4,7 +4,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-#include <pybind11/stl.h>
+//#include <pybind11/stl.h>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
