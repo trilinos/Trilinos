@@ -75,8 +75,9 @@ public:
   using V  = Vector<Real>;
   using TS = TimeStamp<Real>;
 
+  DynamicObjective() : DynamicObjective<Real>( {} ) {}
 
-  DynamicObjective( std::initializer_list<std::string> zero_deriv_terms={} ) :
+  DynamicObjective( std::initializer_list<std::string> zero_deriv_terms ) :
     DynamicFunction<Real>( zero_deriv_terms ) {}
   
   virtual ~DynamicObjective() {}
