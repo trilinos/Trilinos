@@ -282,10 +282,7 @@ namespace Intrepid2 {
     virtual
     const char*
     getName() const override {
-      if constexpr (serendipity)
-        return "Intrepid2_HGRAD_WEDGE_I2_FEM";
-      else
-        return "Intrepid2_HGRAD_WEDGE_C2_FEM";
+      return serendipity ? "Intrepid2_HGRAD_WEDGE_I2_FEM" : "Intrepid2_HGRAD_WEDGE_C2_FEM";
     }
 
     /** \brief returns the basis associated to a subCell.
