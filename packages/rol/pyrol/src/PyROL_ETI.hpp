@@ -12,6 +12,7 @@
 #include <ROL_Reduced_Objective_SimOpt.hpp>
 #include <ROL_SimConstraint.hpp>
 #include <ROL_BoundConstraint_SimOpt.hpp>
+#include <ROL_SerialConstraint.hpp>
 
 #include <ROL_OED_Factory.hpp>
 #include <ROL_ReducedDynamicObjective.hpp>
@@ -38,7 +39,8 @@
 #define BINDER_ROL_CONSTRAINT(SCALAR) \
   BINDER_ETI_ABSTRACT(Constraint<SCALAR>) \
   BINDER_ETI_ABSTRACT(SimConstraint<SCALAR>) \
-  BINDER_ETI_ABSTRACT(BoundConstraint_SimOpt<SCALAR>)
+  BINDER_ETI_ABSTRACT(BoundConstraint_SimOpt<SCALAR>) \
+  BINDER_ETI_ABSTRACT(SerialConstraint<SCALAR>)
 
 #define BINDER_ROL_SOLVER(SCALAR) \
   BINDER_ETI_ABSTRACT(Solver<SCALAR>)
