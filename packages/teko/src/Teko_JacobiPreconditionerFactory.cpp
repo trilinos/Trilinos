@@ -119,14 +119,19 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END();
 
-  const std::string inverse_type = "Inverse Type";
+  const std::string inverse_type        = "Inverse Type";
+  const std::string preconditioner_type = "Preconditioner Type";
   std::vector<RCP<InverseFactory> > inverses;
+  std::vector<RCP<InverseFactory> > preconditioners;
 
   RCP<const InverseLibrary> invLib = getInverseLibrary();
 
   // get string specifying default inverse
-  std::string invStr = "Amesos";
+  std::string invStr  = "Amesos";
+  std::string precStr = "None";
   if (pl.isParameter(inverse_type)) invStr = pl.get<std::string>(inverse_type);
+  RCP<InverseFactory> defaultPrec;
+  if (precStr != "None") defaultPrec = invLib->getInverseFactory(precStr);
 
   Teko_DEBUG_MSG("JacobiPrecFact: Building default inverse \"" << invStr << "\"", 5);
   RCP<InverseFactory> defaultInverse = invLib->getInverseFactory(invStr);
@@ -160,6 +165,28 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
         inverses[position - 1] = invLib->getInverseFactory(invStr2);
       } else
         inverses[position - 1] = invLib->getInverseFactory(invStr2);
+    } else if (fieldName.compare(0, preconditioner_type.length(), preconditioner_type) == 0 &&
+               fieldName != preconditioner_type) {
+      int position = -1;
+      std::string preconditioner, type;
+
+      // figure out position
+      std::stringstream ss(fieldName);
+      ss >> preconditioner >> type >> position;
+
+      if (position <= 0) {
+        Teko_DEBUG_MSG("Jacobi \"Preconditioner Type\" must be a (strictly) positive integer", 1);
+      }
+
+      // inserting preconditioner factory into vector
+      std::string precStr2 = pl.get<std::string>(fieldName);
+      Teko_DEBUG_MSG(
+          "JacobiPrecFact: Building preconditioner " << position << " \"" << precStr2 << "\"", 5);
+      if (position > (int)preconditioners.size()) {
+        preconditioners.resize(position, defaultPrec);
+        preconditioners[position - 1] = invLib->getInverseFactory(precStr2);
+      } else
+        preconditioners[position - 1] = invLib->getInverseFactory(precStr2);
     }
   }
 
@@ -167,7 +194,8 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   if (inverses.size() == 0) inverses.push_back(defaultInverse);
 
   // based on parameter type build a strategy
-  invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(inverses, defaultInverse));
+  invOpsStrategy_ =
+      rcp(new InvFactoryDiagStrategy(inverses, preconditioners, defaultInverse, defaultPrec));
 }
 
 }  // namespace Teko

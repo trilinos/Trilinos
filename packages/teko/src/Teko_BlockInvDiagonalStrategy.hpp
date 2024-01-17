@@ -139,6 +139,12 @@ class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > &factories,
                          const Teuchos::RCP<InverseFactory> &defaultFact = Teuchos::null);
 
+  InvFactoryDiagStrategy(
+      const std::vector<Teuchos::RCP<InverseFactory> > &inverseFactories,
+      const std::vector<Teuchos::RCP<InverseFactory> > &preconditionerFactories,
+      const Teuchos::RCP<InverseFactory> &defaultInverseFact        = Teuchos::null,
+      const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact = Teuchos::null);
+
   virtual ~InvFactoryDiagStrategy() {}
 
   /** returns an (approximate) inverse of the diagonal blocks of A
@@ -157,11 +163,14 @@ class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
  protected:
   // stored inverse operators
   std::vector<Teuchos::RCP<InverseFactory> > invDiagFact_;
+  std::vector<Teuchos::RCP<InverseFactory> > precDiagFact_;
   Teuchos::RCP<InverseFactory> defaultInvFact_;
+  Teuchos::RCP<InverseFactory> defaultPrecFact_;
 
   //! Conveinence function for building inverse operators
-  LinearOp buildInverse(const InverseFactory &invFact, const LinearOp &matrix,
-                        BlockPreconditionerState &state, const std::string &opPrefix, int i) const;
+  LinearOp buildInverse(const InverseFactory &invFact, Teuchos::RCP<InverseFactory> &precFact,
+                        const LinearOp &matrix, BlockPreconditionerState &state,
+                        const std::string &opPrefix, int i) const;
 
  private:
   InvFactoryDiagStrategy();

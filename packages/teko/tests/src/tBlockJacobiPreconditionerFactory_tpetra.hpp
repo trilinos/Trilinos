@@ -73,6 +73,7 @@ class tBlockJacobiPreconditionerFactory_tpetra : public UnitTest {
   bool test_initializePrec(int verbosity, std::ostream& os);
   bool test_uninitializePrec(int verbosity, std::ostream& os);
   bool test_isCompatible(int verbosity, std::ostream& os);
+  bool test_iterativeSolves(int verbosity, std::ostream& os);
 
  protected:
   double tolerance_;
