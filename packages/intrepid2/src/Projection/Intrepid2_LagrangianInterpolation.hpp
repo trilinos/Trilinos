@@ -225,13 +225,7 @@ public:
   );
 };
 
-// temporary fix to allow applications keep using the Experimental namespace. It will be removed soon.
-namespace Experimental {
-template<typename DeviceType>
-class LagrangianInterpolation: public Intrepid2::LagrangianInterpolation<DeviceType>{};
-}
-
-}
+} // Intrepid2 namespace
 
 // include templated function definitions
 #include "Intrepid2_LagrangianInterpolationDef.hpp"
