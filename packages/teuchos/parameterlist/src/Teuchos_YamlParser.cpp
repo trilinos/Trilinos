@@ -1339,18 +1339,29 @@ void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuch
         }
         catch(...)
         {
-          std::string raw_string = quoted_as<std::string>(node);
-          if(raw_string == "true" || raw_string == "yes")
+          try
           {
-            safe_set_entry<bool>(parent, key, true);
+            bool raw_bool = quoted_as<bool>(node);
+
+            /* yaml-cpp parses ON/OFF as a bool, but the in-house parser does not.
+               To preserve backwards compatibility, make sure the string passes
+               the in-house parser's is_parseable_as<bool> function (which protects
+               against the ON/OFF case).
+               Otherwise, a failure is observed in YAML_ConvertFromXML unit test.*/
+
+            std::string raw_string = quoted_as<std::string>(node);
+            if (is_parseable_as<bool>(raw_string))
+            {
+              safe_set_entry<bool>(parent, key, raw_bool);
+            }
+            else
+            {
+              safe_set_entry<std::string>(parent, key, raw_string);
+            }
           }
-          else if(raw_string == "false" || raw_string == "no")
+          catch(...)
           {
-            safe_set_entry<bool>(parent, key, false);
-          }
-          else
-          {
-            safe_set_entry<std::string>(parent, key, raw_string);
+            safe_set_entry<std::string>(parent, key, quoted_as<std::string>(node));
           }
         }
       }

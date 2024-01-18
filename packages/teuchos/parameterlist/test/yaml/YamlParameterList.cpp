@@ -296,6 +296,10 @@ namespace TeuchosTests
       "List:\n"
       " input_true: true\n"
       " input_false: false\n"
+      " input_TRUE: TRUE\n"
+      " input_FALSE: FALSE\n"
+      " input_True: True\n"
+      " input_False: False\n"
       " input_yes: yes\n"
       " input_no: no\n"
     );
@@ -303,10 +307,18 @@ namespace TeuchosTests
     TEST_EQUALITY(pl->isType<bool>("input_false"), true);
     TEST_EQUALITY(pl->isType<bool>("input_yes"), true);
     TEST_EQUALITY(pl->isType<bool>("input_no"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_TRUE"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_True"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_FALSE"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_False"), true);
     TEST_EQUALITY(pl->get<bool>("input_true"), true);
     TEST_EQUALITY(pl->get<bool>("input_false"), false);
     TEST_EQUALITY(pl->get<bool>("input_yes"), true);
     TEST_EQUALITY(pl->get<bool>("input_no"), false);
+    TEST_EQUALITY(pl->get<bool>("input_TRUE"), true);
+    TEST_EQUALITY(pl->get<bool>("input_True"), true);
+    TEST_EQUALITY(pl->get<bool>("input_FALSE"), false);
+    TEST_EQUALITY(pl->get<bool>("input_False"), false);
   }
 
   TEUCHOS_UNIT_TEST(YAML, flow_map)
