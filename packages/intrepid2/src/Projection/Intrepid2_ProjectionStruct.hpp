@@ -526,12 +526,6 @@ public:
   ordinal_type maxNumTargetDerivEvalPoints;
 };
 
-//Temporary fix, to allow application keep using the Experimental namespace. It will be removed soon.
-namespace Experimental {
-template<typename DeviceType, typename ValueType>
-class ProjectionStruct: public Intrepid2::ProjectionStruct<DeviceType, ValueType>{};
-}
-
 } // Intrepid2 namespace
 #include "Intrepid2_ProjectionStructDef.hpp"
 #endif
