@@ -418,11 +418,13 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "MINRES",
         "TFQMR",
         "BiCGStab",
-        "Fixed Point",
-        "TPETRA GMRES",
+        "Fixed Point"
+#ifdef HAVE_BELOS_TPETRA
+        ,"TPETRA GMRES",
         "TPETRA GMRES PIPELINE",
         "TPETRA GMRES SINGLE REDUCE",
         "TPETRA GMRES S-STEP"
+#endif
         ),
       tuple<std::string>(
         "Block GMRES solver for nonsymmetric linear systems.  It can also solve "
