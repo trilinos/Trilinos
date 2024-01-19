@@ -86,6 +86,7 @@ protected:
    // matrix to invert
    Teko::ModifiableLinearOp F_;
    Teko::ModifiableLinearOp G_;
+   Teko::ModifiableLinearOp H_;
    Teko::LinearOp D_;
 };
 

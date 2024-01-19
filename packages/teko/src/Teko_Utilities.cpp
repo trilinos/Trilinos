@@ -2066,7 +2066,10 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & op
          }
          catch (std::exception & e) {
            RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-           *out << "Teko: explicitAdd unable to reuse existing operator. Creating new operator." << std::endl;
+           *out << "*** THROWN EXCEPTION ***\n";
+           *out << e.what() << std::endl;
+           *out << "************************\n";
+           *out << "Teko: explicitAdd unable to reuse existing operator. Creating new operator.\n" << std::endl;
            explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr);
          }
       }else{

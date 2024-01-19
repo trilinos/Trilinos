@@ -102,6 +102,14 @@ void tExplicitOps_tpetra::initializeTest()
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraG = Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(rcpFromRef(epetraG),comm_tpetra);
    G_ = Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraG->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraG->getRangeMap()),tpetraG);
 
+   // create some big blocks to play with
+   Trilinos_Util::CrsMatrixGallery HGallery("eye",comm_epetra,false);
+   HGallery.Set("nx",nx*ny);
+   //HGallery.Set("ny",ny);
+   Epetra_CrsMatrix & epetraH = HGallery.GetMatrixRef();
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraH = Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(rcpFromRef(epetraH),comm_tpetra);
+   H_ = Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraH->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraH->getRangeMap()),tpetraH);
+
    RCP<Tpetra::Vector<ST,LO,GO,NT> > v = rcp(new Tpetra::Vector<ST,LO,GO,NT> (tpetraF->getRangeMap()));
    v->randomize();
    RCP<Thyra::VectorBase<ST> > tV = Thyra::createVector<ST,LO,GO,NT>(v,Thyra::createVectorSpace<ST,LO,GO,NT>(tpetraF->getRowMap())); 
@@ -404,6 +412,20 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity,std::ostream & os)
    RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp2 = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(expOp,true);
    RCP<const Tpetra::Operator<ST,LO,GO,NT> > eop2 = tOp2->getConstTpetraOperator();
 
+   // check that underlying pointers are the same
+   // since the sparsity pattern of expOp entering the explicitAdd
+   // should match the sparsity pattern returned by the explicitAdd
+   // the pointer will be reused
+   {
+      std::stringstream ss;
+      Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
+      TEST_ASSERT( eop2.getRawPtr() == eop1.getRawPtr(),
+            std::endl << " tExplicitOps_tpetra::test_add_mod"
+             << ": Testing matrix addition preserves pointer");
+      if(not (eop2.getRawPtr() == eop1.getRawPtr()) || verbosity>=10)
+         os << ss.str();
+   }
+
    {
       std::stringstream ss;
       Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
@@ -414,6 +436,44 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity,std::ostream & os)
       if(not result || verbosity>=10) 
          os << ss.str(); 
    }
+
+   Teko::ModifiableLinearOp expOp2;
+
+   // Create a target linear operator, with a known sparsity pattern (diagonal)
+   expOp2 = Teko::explicitAdd(H_,H_,expOp2);
+   RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp3 = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(expOp2,true);
+   RCP<const Tpetra::Operator<ST,LO,GO,NT> > eop3 = tOp3->getConstTpetraOperator();
+
+   // Try to add matricies with sparsity patterns that differ from the target operator
+   expOp2 = Teko::explicitAdd(Teko::scale(-4.0,F_),Teko::adjoint(G_),expOp2);
+   RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp4 = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(expOp2,true);
+   RCP<const Tpetra::Operator<ST,LO,GO,NT> > eop4 = tOp4->getConstTpetraOperator();
+
+   // check that underlying pointers are different
+   // since the sparsity pattern of expOp entering the explicitAdd
+   // does not match the sparsity pattern returned by the explicitAdd
+   // a new tpetra operator will be created
+   {
+      std::stringstream ss;
+      Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
+      TEST_ASSERT( eop3.getRawPtr() != eop4.getRawPtr(),
+            std::endl << " tExplicitOps_tpetra::test_add_mod"
+             << ": Testing matrix addition returns new pointer");
+      if(not (eop3.getRawPtr() == eop4.getRawPtr()) || verbosity>=10)
+         os << ss.str();
+   }
+   // check the result
+   {
+      std::stringstream ss;
+      Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
+      const bool result = tester.compare( *thyOp, *expOp2, Teuchos::ptrFromRef(fos) );
+      TEST_ASSERT(result,
+             std::endl << "   tExplicitOps_tpetra::test_add_mod"
+             << ": Testing matrix addition");
+      if(not result || verbosity>=10)
+         os << ss.str();
+   }
+
 
    return allPassed;
 }
