@@ -943,10 +943,6 @@ namespace Intrepid2 {
     using FT23FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,2,3, false, false>;
     using FT22FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,2,2, false, false>;
 
-    typedef       Kokkos::DynRankView<outputValueType,    outputProperties...>      OutputViewType;
-    typedef const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
-    typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
-    
     const ordinal_type l = leftInput.rank();
     const ordinal_type r = rightInput.rank();
     

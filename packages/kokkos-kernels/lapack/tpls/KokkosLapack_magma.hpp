@@ -30,6 +30,6 @@ struct MagmaSingleton {
 };
 
 }  // namespace Impl
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#endif // KOKKOSLAPACK_MAGMA_HPP_
+#endif  // KOKKOSLAPACK_MAGMA_HPP_

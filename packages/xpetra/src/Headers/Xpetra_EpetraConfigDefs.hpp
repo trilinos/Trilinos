@@ -52,4 +52,4 @@
 #error This file should be included only if HAVE_XPETRA_EPETRA is defined.
 #endif
 
-#endif // XPETRA_EPETRACONFIGDEFS_HPP
+#endif  // XPETRA_EPETRACONFIGDEFS_HPP

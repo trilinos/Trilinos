@@ -47,12 +47,12 @@
 #define XPETRA_MAPEXTRACTORFACTORY_FWD_HPP
 
 namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MapExtractorFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MapExtractorFactory;
 }
 
 #ifndef XPETRA_MAPEXTRACTORFACTORY_SHORT
 #define XPETRA_MAPEXTRACTORFACTORY_SHORT
 #endif
 
-#endif // XPETRA_MAPEXTRACTORFACTORY_FWD_HPP
+#endif  // XPETRA_MAPEXTRACTORFACTORY_FWD_HPP
