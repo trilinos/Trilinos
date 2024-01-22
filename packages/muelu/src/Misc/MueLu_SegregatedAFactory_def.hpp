@@ -51,9 +51,9 @@
 
 #include "MueLu_SegregatedAFactory_decl.hpp"
 
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities_decl.hpp"
 
 namespace MueLu {
 
@@ -61,20 +61,14 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-#undef SET_VALID_ENTRY
-
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A to be filtered");
   validParamList->set<std::string>("droppingScheme", "vague", "Strategy to drop entries from matrix A based on the input of some map(s) [blockmap, map-pair]");
 
-  validParamList->set<RCP<const FactoryBase>>("dropMap1", Teuchos::null, "Generating factory for dropMap1");
-  validParamList->set<bool>("Call ReduceAll on dropMap1", false, "Boolean for calling reduceAll on dropMap1");
-
+  validParamList->set<RCP<const FactoryBase>>("dropMap1", Teuchos::null, "Generating factory for dropMap1");  ////
   validParamList->set<RCP<const FactoryBase>>("dropMap2", Teuchos::null, "Generating factory for dropMap2'");
-  validParamList->set<bool>("Call ReduceAll on dropMap2", false, "Boolean for calling reduceAll on dropMap2");
 
   return validParamList;
-}
+}  // GetValidParameterList
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
@@ -87,19 +81,26 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput
   TEUCHOS_TEST_FOR_EXCEPTION(
       (pL.get<std::string>("droppingScheme") != "blockmap" && pL.get<std::string>("droppingScheme") != "map-pair"),
       Exceptions::InvalidArgument,
-      "Unknown User Input: map type (=" << pL.get<std::string>("droppingScheme") << ")")
+      "Unknown User Input: droppingScheme (=" << pL.get<std::string>("droppingScheme") << ")")
 
   Input(currentLevel, "A");
 
-  if (currentLevel.GetLevelID() == 0) {
-    // Not needed, as the map is provided as user data
-    currentLevel.DeclareInput("dropMap1", NoFactory::get(), this);
-    currentLevel.DeclareInput("dropMap2", NoFactory::get(), this);
-  } else {
-    // check whether user has provided a specific name for "map: factory"
-    Input(currentLevel, "dropMap1");
-    Input(currentLevel, "dropMap2");
-  }
+  if (pL.get<std::string>("droppingScheme") == "blockmap") {
+    if (currentLevel.GetLevelID() == 0) {
+      currentLevel.DeclareInput("dropMap1", NoFactory::get(), this);
+    } else {
+      Input(currentLevel, "dropMap1");
+    }
+  } else if (pL.get<std::string>("droppingScheme") == "map-pair") {
+    if (currentLevel.GetLevelID() == 0) {
+      currentLevel.DeclareInput("dropMap1", NoFactory::get(), this);
+      currentLevel.DeclareInput("dropMap2", NoFactory::get(), this);
+    } else {
+      Input(currentLevel, "dropMap1");
+      Input(currentLevel, "dropMap2");
+    }
+  } else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::InvalidArgument, "Unknown droppingScheme.")
 
 }  // DeclareInput
 
@@ -118,7 +119,7 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level 
                                "Set a valid value for the parameter \""
                                    << parameterName << "\".")
   }
-}
+}  // Build
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOnBlockmap(Level &currentLevel) const {
@@ -146,22 +147,23 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
     bool isInMap       = dropMap1->isNodeGlobalElement(grid);
 
     // extract row information from input matrix
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> vals;
-    Ain->getLocalRowView(row, indices, vals);
+    auto lclMat  = Ain->getLocalMatrixHost();
+    auto rowView = lclMat.row(row);
 
     // just copy all values in output
-    Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(), Teuchos::ScalarTraits<GlobalOrdinal>::zero());
-    Teuchos::ArrayRCP<Scalar> valout(indices.size(), Teuchos::ScalarTraits<Scalar>::zero());
+    Teuchos::ArrayRCP<GO> indout(rowView.length, Teuchos::ScalarTraits<GO>::zero());
+    Teuchos::ArrayRCP<SC> valout(rowView.length, Teuchos::ScalarTraits<SC>::zero());
 
     size_t nNonzeros = 0;
-    for (size_t i = 0; i < (size_t)indices.size(); i++) {
-      GlobalOrdinal gcid = Ain->getColMap()->getGlobalElement(indices[i]);  // global column id
-      bool isInMap2      = dropMap1->isNodeGlobalElement(gcid);
+    for (LO jj = 0; jj < rowView.length; ++jj) {
+      LO lcid       = rowView.colidx(jj);
+      GO gcid       = Ain->getColMap()->getGlobalElement(lcid);
+      auto val      = rowView.value(jj);
+      bool isInMap2 = dropMap1->isNodeGlobalElement(gcid);
 
       if (isInMap == isInMap2) {
         indout[nNonzeros] = gcid;
-        valout[nNonzeros] = vals[i];
+        valout[nNonzeros] = val;
         nNonzeros++;
       }
     }
@@ -179,7 +181,7 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
   GetOStream(Statistics0, 0) << "Nonzeros in A (input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering A: " << Aout->getGlobalNumEntries() << std::endl;
 
   Set(currentLevel, "A", Aout);
-}
+}  // BuildBasedOnBlockmap
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOnMapPair(Level &currentLevel) const {
@@ -213,52 +215,43 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
   // create new empty Operator
   Teuchos::RCP<Matrix> Aout = MatrixFactory::Build(Ain->getRowMap(), Ain->getGlobalMaxNumRowEntries());
 
+  // import the dropping information from other procs for off Rank entries
   Teuchos::RCP<const Map> finalDropMap1 = Teuchos::null;
   Teuchos::RCP<const Map> finalDropMap2 = Teuchos::null;
 
-  if (pL.get<bool>("Call ReduceAll on dropMap1")) {
-    finalDropMap1 = CreateRedundantMaps(dropMap1);
-  } else {
-    // if reduceAll is not called, we simply work with the local dropMap
-    finalDropMap1 = dropMap1;
-  }
-
-  if (pL.get<bool>("Call ReduceAll on dropMap2")) {
-    finalDropMap2 = CreateRedundantMaps(dropMap2);
-  } else {
-    // if reduceAll is not called, we simply work with the local dropMap
-    finalDropMap2 = dropMap2;
-  }
+  finalDropMap1 = MueLu::importOffRankDroppingInfo(dropMap1, Ain);
+  finalDropMap2 = MueLu::importOffRankDroppingInfo(dropMap2, Ain);
 
   // Start copying the matrix row by row and dropping any entries that are contained as a combination of entries of
   // dropMap1 and dropMap2
   size_t numLocalMatrixRows = Ain->getLocalNumRows();
 
   for (size_t row = 0; row < numLocalMatrixRows; row++) {
-    GlobalOrdinal grid = Ain->getRowMap()->getGlobalElement(row);  // global row id
-    bool rowIsInMap1   = finalDropMap1->isNodeGlobalElement(grid);
-    bool rowIsInMap2   = finalDropMap2->isNodeGlobalElement(grid);
+    GO grid          = Ain->getRowMap()->getGlobalElement(row);  // global row id
+    bool rowIsInMap1 = finalDropMap1->isNodeGlobalElement(grid);
+    bool rowIsInMap2 = finalDropMap2->isNodeGlobalElement(grid);
 
     // extract row information from input matrix
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> vals;
-    Ain->getLocalRowView(row, indices, vals);
+    auto lclMat  = Ain->getLocalMatrixHost();
+    auto rowView = lclMat.row(row);
 
     // just copy all values in output
-    Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(), Teuchos::ScalarTraits<GlobalOrdinal>::zero());
-    Teuchos::ArrayRCP<Scalar> valout(indices.size(), Teuchos::ScalarTraits<Scalar>::zero());
+    Teuchos::ArrayRCP<GO> indout(rowView.length, Teuchos::ScalarTraits<GO>::zero());
+    Teuchos::ArrayRCP<SC> valout(rowView.length, Teuchos::ScalarTraits<SC>::zero());
 
     size_t nNonzeros = 0;
-    for (size_t i = 0; i < (size_t)indices.size(); i++) {
-      GlobalOrdinal gcid = Ain->getColMap()->getGlobalElement(indices[i]);  // global column id
-      bool colIsInMap1   = finalDropMap1->isNodeGlobalElement(gcid);
-      bool colIsInMap2   = finalDropMap2->isNodeGlobalElement(gcid);
+    for (LO jj = 0; jj < rowView.length; ++jj) {
+      LO lcid          = rowView.colidx(jj);
+      GO gcid          = Ain->getColMap()->getGlobalElement(lcid);  // global column id
+      auto val         = rowView.value(jj);
+      bool colIsInMap1 = finalDropMap1->isNodeGlobalElement(gcid);
+      bool colIsInMap2 = finalDropMap2->isNodeGlobalElement(gcid);
 
       if ((rowIsInMap1 && colIsInMap2) || (rowIsInMap2 && colIsInMap1)) {
         // do nothing == drop this entry
       } else {
         indout[nNonzeros] = gcid;
-        valout[nNonzeros] = vals[i];
+        valout[nNonzeros] = val;
         nNonzeros++;
       }
     }
@@ -274,35 +267,8 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
 
   GetOStream(Statistics0, 0) << "Nonzeros in A (input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering A: " << Aout->getGlobalNumEntries() << std::endl;
 
-  Set(currentLevel, "A", Aout);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
-SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRedundantMaps(
-    Teuchos::RCP<const Map> localDropMap) const {
-  Teuchos::RCP<const Teuchos::Comm<int>> comm = localDropMap->getComm();
-
-  Array<GO> localDropMapGIDList = localDropMap->getLocalElementList();
-  const int GIDListSize         = localDropMap->getMaxAllGlobalIndex() + 1;
-
-  //  Create a list of GID with only an incomplete/partial set of GIDs, which can then be completed by reduceAll
-  Array<GO> partialDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
-  Array<GO> redundantDropMapGIDList(GIDListSize, -Teuchos::ScalarTraits<GlobalOrdinal>::one());
-
-  for (GO gid : localDropMapGIDList) {
-    partialDropMapGIDList[gid] = gid;
-  }
-
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, GIDListSize, &partialDropMapGIDList[0],
-                     &redundantDropMapGIDList[0]);
-  redundantDropMapGIDList.erase(std::remove(redundantDropMapGIDList.begin(), redundantDropMapGIDList.end(), -1),
-                                redundantDropMapGIDList.end());
-  Teuchos::RCP<const Map> redundantDropMap = MapFactory::Build(
-      localDropMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), redundantDropMapGIDList, 0, comm);
-
-  return redundantDropMap;
-}
+  currentLevel.Set("A", Aout, this);
+}  // BuildBasedOnMapPair
 
 }  // namespace MueLu
 

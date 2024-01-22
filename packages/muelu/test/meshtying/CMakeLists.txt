@@ -53,75 +53,44 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
     COMM serial mpi
     )
 
-  # The MortarSurfaceCoupling tests only work with real Scalar types,
-  # so choose an instantiation with real scalars (if any is available)
-  SET(MortarSurfaceCoupling_Instatiation "")
-  IF(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-    SET(MortarSurfaceCoupling_Instatiation "DOUBLE_INT_LONGLONGINT")
-  ELSEIF(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-    SET(MortarSurfaceCoupling_Instatiation "DOUBLE_INT_LONGINT")
-  ELSEIF(HAVE_MUELU_INST_DOUBLE_INT_INT)
-    SET(MortarSurfaceCoupling_Instatiation "DOUBLE_INT_INT")
-  ELSEIF(HAVE_MUELU_INST_FLOAT_INT_INT)
-    SET(MortarSurfaceCoupling_Instatiation "FLOAT_INT_INT")
-  ENDIF()
-
-  IF(MortarSurfaceCoupling_Instatiation)
-    TRIBITS_ADD_TEST(
-      MortarSurfaceCoupling_DofBased
-      NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_small"
-      ARGS "--linAlgebra=Tpetra --xml=meshtying2D_small_simple.xml --nPrimalDofs=78 --nDualDofs=14 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_small --expectedNumIts=16 --instantiation=${MortarSurfaceCoupling_Instatiation}"
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      )
-
-    TRIBITS_ADD_TEST(
-      MortarSurfaceCoupling_DofBased
-      NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_medium"
-      ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=6 --instantiation=${MortarSurfaceCoupling_Instatiation}"
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      )
-
-    TRIBITS_ADD_TEST(
-      MortarSurfaceCoupling_DofBased
-      NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_medium"
-      ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=12 --instantiation=${MortarSurfaceCoupling_Instatiation}"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-      )
-
-    TRIBITS_ADD_TEST(
-      MortarSurfaceCoupling_DofBased
-      NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_medium_spai"
-      ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple_spai.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=7 --instantiation=${MortarSurfaceCoupling_Instatiation}"
-      COMM serial mpi
-      NUM_MPI_PROCS 1
+  TRIBITS_ADD_TEST(
+    MortarSurfaceCoupling_DofBased
+    NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_small"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_small_simple.xml --nPrimalDofs=78 --nDualDofs=14 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_small --expectedNumIts=16"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
     )
 
-  ENDIF()
-
-  # The MeshTyingBlocked_SimpleSmoother tests only work with real Scalar types,
-  # so choose an instantiation with real scalars (if any is available)
-  SET(MeshTyingBlocked_NodeBased_Instantiation "")
-  IF(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-    SET(MeshTyingBlocked_NodeBased_Instantiation "DOUBLE_INT_LONGLONGINT")
-  ELSEIF(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-    SET(MeshTyingBlocked_NodeBased_Instantiation "DOUBLE_INT_LONGINT")
-  ELSEIF(HAVE_MUELU_INST_DOUBLE_INT_INT)
-    SET(MeshTyingBlocked_NodeBased_Instantiation "DOUBLE_INT_INT")
-  ELSEIF(HAVE_MUELU_INST_FLOAT_INT_INT)
-    SET(MeshTyingBlocked_NodeBased_Instantiation "FLOAT_INT_INT")
-  ENDIF()
-
-  IF(MeshTyingBlocked_NodeBased_Instantiation)
   TRIBITS_ADD_TEST(
-      MeshTyingBlocked_NodeBased
-      NAME "MeshTyingBlocked_NodeBased_simpleSmoother"
-      ARGS "-linAlgebra=Tpetra --instantiation=${MeshTyingBlocked_NodeBased_Instantiation}"
-      COMM serial mpi
-      NUM_MPI_PROCS 1
+    MortarSurfaceCoupling_DofBased
+    NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_medium"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=6"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    MortarSurfaceCoupling_DofBased
+    NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_medium"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=12"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    MortarSurfaceCoupling_DofBased
+    NAME "MortarSurfaceCoupling_DofBased_Blocked_SimpleSmoother_2dof_medium_spai"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple_spai.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=7"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
   )
-  ENDIF()
+
+  TRIBITS_ADD_TEST(
+    MeshTyingBlocked_NodeBased
+    NAME "MeshTyingBlocked_NodeBased_simpleSmoother"
+    ARGS "-linAlgebra=Tpetra"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+  )
 
 ENDIF()

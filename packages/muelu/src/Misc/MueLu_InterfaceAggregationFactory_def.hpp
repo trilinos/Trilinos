@@ -333,8 +333,8 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
                                           << " is already connected to primal nodeId "
                                           << local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId]
                                           << ". This shouldn't be. A possible reason might be: "
-                                             "Check if parallel dist. of primalInterfaceDofRowMap corresponds "
-                                             "to the parallel dist. of subblock matrix A01.");
+                                             "Check if parallel distribution of primalInterfaceDofRowMap corresponds "
+                                             "to the parallel distribution of subblock matrix A01.");
 
       local_dualNodeId2primalNodeId[gDualNodeId - gMinDualNodeId] = gPrimalNodeId;
       local_dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId]  = primalAggId;

@@ -67,6 +67,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
+  //  The SegregatedAFactory tests only work with real Scalar types,
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return EXIT_SUCCESS;
+
   using GST = Teuchos::ScalarTraits<GO>;
 
   using Teuchos::RCP;
@@ -101,12 +104,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<const Map> blockmap = Xpetra::MapFactory<LO, GO, NO>::Build(lib, blockmapEntries.size(), blockmapEntries, 30, comm);
 
   // Create the interface dof row maps
-  std::vector<GO> slavemapEntries{42, 43, 44, 45, 52, 53};
-  RCP<const Map> slavemap = Xpetra::MapFactory<LO, GO, NO>::Build(lib, slavemapEntries.size(), slavemapEntries, 0,
-                                                                  comm);
-  std::vector<GO> mastermapEntries{0, 1, 6, 7, 22, 23};
-  RCP<const Map> mastermap = Xpetra::MapFactory<LO, GO, NO>::Build(lib, mastermapEntries.size(), mastermapEntries, 0,
-                                                                   comm);
+  std::vector<GO> integration_side_map_entries{42, 43, 44, 45, 52, 53};
+  RCP<const Map> integration_side_map = Xpetra::MapFactory<LO, GO, NO>::Build(lib, integration_side_map_entries.size(), integration_side_map_entries, 0,
+                                                                              comm);
+  std::vector<GO> projection_side_map_entries{0, 1, 6, 7, 22, 23};
+  RCP<const Map> projection_side_map = Xpetra::MapFactory<LO, GO, NO>::Build(lib, projection_side_map_entries.size(), projection_side_map_entries, 0,
+                                                                             comm);
 
   // Read the matrix from file
   const std::string matrixFileName = probName + "_matrix.mm";
@@ -146,7 +149,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
 
   MueLuTests::checkAggregatesBlockmap<SC, LO, GO, NO>(aggregates, stridingInfo, blockmap);
-  MueLuTests::checkAggregatesMapPair<SC, LO, GO, NO>(aggregates, stridingInfo, slavemap, mastermap);
+  MueLuTests::checkAggregatesMapPair<SC, LO, GO, NO>(aggregates, stridingInfo, integration_side_map, projection_side_map);
   return EXIT_SUCCESS;
 }
 

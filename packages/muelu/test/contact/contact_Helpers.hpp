@@ -92,28 +92,34 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
                              Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> blockmap) {
 #include "MueLu_UseShortNames.hpp"
 
-  // Check if Graph filtering worked
-  typename Aggregates::LO_view aggPtr;
-  typename Aggregates::LO_view aggNodes;
-  typename Aggregates::LO_view unaggregated;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-
-  aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+  // Lists of nodes in each aggregate
+  struct {
+    // GH: For now, copy everything to host until we properly set this factory to run device code
+    // Instead, we'll copy data into HostMirrors and run the algorithms on host, saving optimization for later.
+    typename Aggregates::LO_view ptr, nodes, unaggregated;
+    typename Aggregates::LO_view::HostMirror ptr_h, nodes_h, unaggregated_h;
+  } nodesInAgg;
+  aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
+  nodesInAgg.ptr_h          = Kokkos::create_mirror_view(nodesInAgg.ptr);
+  nodesInAgg.nodes_h        = Kokkos::create_mirror_view(nodesInAgg.nodes);
+  nodesInAgg.unaggregated_h = Kokkos::create_mirror_view(nodesInAgg.unaggregated);
+  Kokkos::deep_copy(nodesInAgg.ptr_h, nodesInAgg.ptr);
+  Kokkos::deep_copy(nodesInAgg.nodes_h, nodesInAgg.nodes);
+  Kokkos::deep_copy(nodesInAgg.unaggregated_h, nodesInAgg.unaggregated);
 
   // Create redundant maps to be absolutely sure no entry is missed during the check
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> blockmap_final;
   blockmap_final = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(blockmap);
 
   // Loop over all aggregates
-  for (size_t aggregate = 0; aggregate < aggPtr.extent(0) - 1; aggregate++) {
+  for (LO aggregate = 0; aggregate < (LO)nodesInAgg.ptr_h.extent(0) - 1; aggregate++) {
     bool aggContainsNodesInBlockmap    = false;
     bool aggContainsNodesNotInBlockmap = false;
     // Loop over all nodes contained in the aggregate
-    for (LO nodeIter = aggPtr[aggregate]; nodeIter < aggPtr[aggregate + 1]; nodeIter++) {
-      LO node = aggNodes[nodeIter];
+    for (LO nodeIter = nodesInAgg.ptr_h[aggregate]; nodeIter < (LO)nodesInAgg.ptr_h[aggregate + 1]; nodeIter++) {
+      LO node = nodesInAgg.nodes_h[nodeIter];
       // Loop over all node dofs
-      for (size_t i = 0; i < stridingInfo[0]; i++) {
+      for (LO i = 0; i < (LO)stridingInfo[0]; i++) {
         // Check if dof is contained in rowmap (inner + interface dofs) of one of the bodies in contact
         if (blockmap_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
           aggContainsNodesInBlockmap = true;
@@ -132,43 +138,51 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>> aggregates,
                             std::vector<size_t> &stridingInfo,
-                            Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> slavemap,
-                            Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mastermap) {
+                            Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> integration_side_map,
+                            Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> projection_side_map) {
 #include "MueLu_UseShortNames.hpp"
 
-  // Check if Graph filtering worked
-  typename Aggregates::LO_view aggPtr;
-  typename Aggregates::LO_view aggNodes;
-  typename Aggregates::LO_view unaggregated;
-
-  aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+  // Lists of nodes in each aggregate
+  struct {
+    // GH: For now, copy everything to host until we properly set this factory to run device code
+    // Instead, we'll copy data into HostMirrors and run the algorithms on host, saving optimization for later.
+    typename Aggregates::LO_view ptr, nodes, unaggregated;
+    typename Aggregates::LO_view::HostMirror ptr_h, nodes_h, unaggregated_h;
+  } nodesInAgg;
+  aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
+  nodesInAgg.ptr_h          = Kokkos::create_mirror_view(nodesInAgg.ptr);
+  nodesInAgg.nodes_h        = Kokkos::create_mirror_view(nodesInAgg.nodes);
+  nodesInAgg.unaggregated_h = Kokkos::create_mirror_view(nodesInAgg.unaggregated);
+  Kokkos::deep_copy(nodesInAgg.ptr_h, nodesInAgg.ptr);
+  Kokkos::deep_copy(nodesInAgg.nodes_h, nodesInAgg.nodes);
+  Kokkos::deep_copy(nodesInAgg.unaggregated_h, nodesInAgg.unaggregated);
 
   // Create redundant maps to be absolutely sure no entry is missed during the check
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> slavemap_final;
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mastermap_final;
-  slavemap_final  = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(slavemap);
-  mastermap_final = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(mastermap);
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> integration_side_map_final;
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> projection_side_map_final;
+  integration_side_map_final = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(integration_side_map);
+  projection_side_map_final  = MueLuTests::createRedundantMaps<SC, LO, GO, NO>(projection_side_map);
 
   // Loop over all aggregates
-  for (size_t aggregate = 0; aggregate < aggPtr.extent(0) - 1; aggregate++) {
-    bool aggContainsNodesInSlavemap  = false;
-    bool aggContainsNodesInMastermap = false;
+  for (LO aggregate = 0; aggregate < (LO)nodesInAgg.ptr_h.extent(0) - 1; aggregate++) {
+    bool aggContainsNodesInIntegrationSideMap = false;
+    bool aggContainsNodesInProjectionSideMap  = false;
     // Loop over all nodes contained in the aggregate
-    for (LO nodeIter = aggPtr[aggregate]; nodeIter < aggPtr[aggregate + 1]; nodeIter++) {
-      LO node = aggNodes[nodeIter];
+    for (LO nodeIter = nodesInAgg.ptr_h[aggregate]; nodeIter < (LO)nodesInAgg.ptr_h[aggregate + 1]; nodeIter++) {
+      LO node = nodesInAgg.nodes_h[nodeIter];
       // Loop over all node dofs
-      for (size_t i = 0; i < stridingInfo[0]; i++) {
+      for (LO i = 0; i < (LO)stridingInfo[0]; i++) {
         // Check if dof is contained in interface mapping of one of the bodies in contact
-        if (slavemap_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
-          aggContainsNodesInSlavemap = true;
+        if (integration_side_map_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
+          aggContainsNodesInIntegrationSideMap = true;
         }
-        if (mastermap_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
-          aggContainsNodesInMastermap = true;
+        if (projection_side_map_final->isNodeGlobalElement(node * stridingInfo[0] + i)) {
+          aggContainsNodesInProjectionSideMap = true;
         }
       }
     }
     // Aggregates must not cross from one solid body to next and respect contact interface
-    TEUCHOS_TEST_FOR_EXCEPTION((aggContainsNodesInSlavemap == true) && (aggContainsNodesInMastermap == true),
+    TEUCHOS_TEST_FOR_EXCEPTION((aggContainsNodesInIntegrationSideMap == true) && (aggContainsNodesInProjectionSideMap == true),
                                MueLu::Exceptions::RuntimeError,
                                "Aggregate " << aggregate << " crosses contact interface! Not allowed. Error in segregated aggregation procedure. \n")
   }

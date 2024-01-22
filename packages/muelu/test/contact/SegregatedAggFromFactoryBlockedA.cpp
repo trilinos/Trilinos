@@ -78,6 +78,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
+  //  The SegregatedAFactory tests only work with real Scalar types,
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return EXIT_SUCCESS;
+
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
@@ -175,13 +178,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
       nsValues[j * dimNS + dim] = Teuchos::ScalarTraits<Scalar>::one();
   }
 
-  // Read the interface slave dof row map from file
+  // Read the interface integration side dof row map from file
   TEUCHOS_ASSERT(!primalInterfaceMapFileName.empty());
   RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(primalInterfaceMapFileName, lib, comm);
-  // Create the interface master dof row map (for map-pair for matrix filtering in segregatedAFactory)
-  std::vector<GO> mastermapEntries{0, 1, 6, 7, 22, 23};
-  RCP<const Map> mastermap = Xpetra::MapFactory<LO, GO, NO>::Build(lib, mastermapEntries.size(), mastermapEntries, 0,
-                                                                   comm);
+  // Create the interface projection side dof row map (for map-pair for matrix filtering in segregatedAFactory)
+  std::vector<GO> projection_side_map_entries{0, 1, 6, 7, 22, 23};
+  RCP<const Map> projection_side_map = Xpetra::MapFactory<LO, GO, NO>::Build(lib, projection_side_map_entries.size(), projection_side_map_entries, 0,
+                                                                             comm);
 
   ///////////// Factories Definitions /////////////
   /// Factories: level 0
@@ -196,8 +199,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<SegregatedAFactory> segregatedAFactLevelZero = rcp(new SegregatedAFactory());
   segregatedAFactLevelZero->SetFactory("A", subBlockAFact00LevelZero);
   segregatedAFactLevelZero->SetParameter("droppingScheme", Teuchos::ParameterEntry(droppingScheme));
-  segregatedAFactLevelZero->SetParameter("Call ReduceAll on dropMap1", Teuchos::ParameterEntry(true));
-  segregatedAFactLevelZero->SetParameter("Call ReduceAll on dropMap2", Teuchos::ParameterEntry(true));
+  segregatedAFactLevelZero->SetFactory("dropMap1", MueLu::NoFactory::getRCP());
+  segregatedAFactLevelZero->SetFactory("dropMap2", MueLu::NoFactory::getRCP());
 
   // define coarse Map factory
   RCP<CoarseMapFactory> coarseMapFact00LevelZero = rcp(new CoarseMapFactory());
@@ -232,20 +235,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   nullspace1FactLevelZero->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace1")));
   nullspace1FactLevelZero->SetFactory("Nullspace1", tentativePFact00LevelZero);
 
-  // Setup Map Transfer Factory for map1
-  RCP<MapTransferFactory> slaveMapTransferFactLevelZero = Teuchos::rcp(new MapTransferFactory());
-  slaveMapTransferFactLevelZero->SetParameter("map: name", Teuchos::ParameterEntry(dropMap1Name));
-  slaveMapTransferFactLevelZero->SetParameter("map: factory", Teuchos::ParameterEntry(dropMap1Name));
-  slaveMapTransferFactLevelZero->SetFactory("P", tentativePFact00LevelZero);
-
-  RCP<MapTransferFactory> masterMapTransferFactLevelZero = Teuchos::rcp(new MapTransferFactory());
-  masterMapTransferFactLevelZero->SetParameter("map: name", Teuchos::ParameterEntry(dropMap2Name));
-  masterMapTransferFactLevelZero->SetParameter("map: factory", Teuchos::ParameterEntry(dropMap2Name));
-  masterMapTransferFactLevelZero->SetFactory("P", tentativePFact00LevelZero);
-
-  segregatedAFactLevelZero->SetFactory(dropMap1Name, slaveMapTransferFactLevelZero);
-  segregatedAFactLevelZero->SetFactory(dropMap2Name, masterMapTransferFactLevelZero);
-
   /// Block (1,1)
   // SubBlockAFact for block (1,1)
   RCP<SubBlockAFactory> subBlockAFact11LevelZero = rcp(new SubBlockAFactory());
@@ -262,17 +251,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   // define BlockedCoarseMapFactory
   RCP<BlockedCoarseMapFactory> coarseMapFact01LevelZero = rcp(new BlockedCoarseMapFactory());
-  coarseMapFact01LevelZero->SetFactory("CoarseMap", coarseMapFact00LevelZero);
-
-  // define MapTransferFactory for "Primal interface DOF map"
-  RCP<MapTransferFactory> primalInterfaceDofMapTransferFactLevelZero = rcp(new MapTransferFactory());
-  primalInterfaceDofMapTransferFactLevelZero->SetParameter("map: factory", Teuchos::ParameterEntry(
-                                                                               std::string("Primal interface DOF map")));
-  primalInterfaceDofMapTransferFactLevelZero->SetParameter("map: name", Teuchos::ParameterEntry(
-                                                                            std::string("Primal interface DOF map")));
-  primalInterfaceDofMapTransferFactLevelZero->SetFactory("P", tentativePFact00LevelZero);
-  primalInterfaceDofMapTransferFactLevelZero->SetParameter("nullspace vectors: limit to",
-                                                           Teuchos::ParameterEntry(std::string("translations")));
 
   // define factory for interface aggregates
   RCP<InterfaceAggregationFactory> interfaceAggFactLevelZero = rcp(new InterfaceAggregationFactory());
@@ -280,7 +258,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   interfaceAggFactLevelZero->SetFactory("Aggregates", uncoupledAggFactLevelZero);
   interfaceAggFactLevelZero->SetParameter("Dual/primal mapping strategy",
                                           Teuchos::ParameterEntry(std::string("dof-based")));
-  interfaceAggFactLevelZero->SetFactory("Primal interface DOF map", primalInterfaceDofMapTransferFactLevelZero);
+  interfaceAggFactLevelZero->SetFactory("Primal interface DOF map", MueLu::NoFactory::getRCP());
 
   // define tentativeP Factory
   RCP<TentativePFactory> tentativePFact01LevelZero = rcp(new TentativePFactory());
@@ -299,7 +277,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // define CoarseMapFact01 dependencies
   coarseMapFact01LevelZero->SetFactory("Aggregates", interfaceAggFactLevelZero);
   coarseMapFact01LevelZero->SetFactory("CoarseMap", coarseMapFact00LevelZero);
-  coarseMapFact01LevelZero->SetFactory("Nullspace", nullspace2FactLevelZero);
 
   /// Factory Managers
   // First group
@@ -310,9 +287,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   M1LevelZero->SetFactory("Nullspace", nullspace1FactLevelZero);
   M1LevelZero->SetFactory("CoarseMap", coarseMapFact00LevelZero);
   M1LevelZero->SetFactory("UnAmalgamationInfo", amalgFact00LevelZero);
-  M1LevelZero->SetFactory(dropMap1Name, slaveMapTransferFactLevelZero);
-  M1LevelZero->SetFactory(dropMap2Name, masterMapTransferFactLevelZero);
-  M1LevelZero->SetKokkosRefactor(false);
 
   // Second group
   RCP<FactoryManager> M2LevelZero = rcp(new FactoryManager());
@@ -321,8 +295,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   M2LevelZero->SetFactory("Aggregates", interfaceAggFactLevelZero);
   M2LevelZero->SetFactory("Nullspace", nullspace2FactLevelZero);
   M2LevelZero->SetFactory("CoarseMap", coarseMapFact01LevelZero);
-  M2LevelZero->SetFactory("Primal interface DOF map", primalInterfaceDofMapTransferFactLevelZero);
-  M2LevelZero->SetKokkosRefactor(false);
 
   /// Blocked Transfer Operators
   RCP<BlockedPFactory> blockedPFactLevelZero = rcp(new BlockedPFactory);
@@ -361,7 +333,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   levelZero->Set("Nullspace2", nullspace2);
   levelZero->Set("Primal interface DOF map", primalInterfaceDofMap);
   levelZero->Set(dropMap1Name, primalInterfaceDofMap);
-  levelZero->Set(dropMap2Name, mastermap);
+  levelZero->Set(dropMap2Name, projection_side_map);
 
   TEUCHOS_ASSERT(levelZero->IsAvailable("A", MueLu::NoFactory::get()));
   TEUCHOS_ASSERT(levelZero->IsAvailable("Nullspace1", MueLu::NoFactory::get()));
@@ -371,9 +343,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   TEUCHOS_ASSERT(levelZero->IsAvailable(dropMap2Name, MueLu::NoFactory::get()));
 
   levelZero->SetFactoryManager(managerLevelZero);
-  //  levelOne->SetFactoryManager(managerLevelOne);
-
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   ///////////// Request and build level info /////////////
   // Check level 0

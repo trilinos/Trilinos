@@ -73,6 +73,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
+  //  The SegregatedAFactory tests only work with real Scalar types,
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return EXIT_SUCCESS;
+
   using GST = Teuchos::ScalarTraits<GO>;
 
   using Teuchos::RCP;
@@ -118,11 +121,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<MultiVector> nullspace = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspaceFileName, rowmap);
 
   // Create the interface dof row maps
-  std::vector<GO> slavemapEntries{42, 43, 44, 45, 52, 53};
-  RCP<const Map> dropMap1 = Xpetra::MapFactory<LO, GO, NO>::Build(lib, slavemapEntries.size(), slavemapEntries, 0,
+  std::vector<GO> integration_side_map_Entries{42, 43, 44, 45, 52, 53};
+  RCP<const Map> dropMap1 = Xpetra::MapFactory<LO, GO, NO>::Build(lib, integration_side_map_Entries.size(), integration_side_map_Entries, 0,
                                                                   comm);
-  std::vector<GO> mastermapEntries{0, 1, 6, 7, 22, 23};
-  RCP<const Map> dropMap2 = Xpetra::MapFactory<LO, GO, NO>::Build(lib, mastermapEntries.size(), mastermapEntries, 0,
+  std::vector<GO> projection_side_map_Entries{0, 1, 6, 7, 22, 23};
+  RCP<const Map> dropMap2 = Xpetra::MapFactory<LO, GO, NO>::Build(lib, projection_side_map_Entries.size(), projection_side_map_Entries, 0,
                                                                   comm);
   ///////////// Factories Definitions /////////////
   //// Factories: level 0
@@ -130,8 +133,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<SegregatedAFactory> segregatedAFactLevelZero = RCP(new SegregatedAFactory());
   segregatedAFactLevelZero->SetFactory("A", MueLu::NoFactory::getRCP());
   segregatedAFactLevelZero->SetParameter("droppingScheme", Teuchos::ParameterEntry(droppingScheme));
-  segregatedAFactLevelZero->SetParameter("Call ReduceAll on dropMap1", Teuchos::ParameterEntry(true));
-  segregatedAFactLevelZero->SetParameter("Call ReduceAll on dropMap2", Teuchos::ParameterEntry(true));
+  segregatedAFactLevelZero->SetFactory(dropMap1Name, MueLu::NoFactory::getRCP());
+  segregatedAFactLevelZero->SetFactory(dropMap2Name, MueLu::NoFactory::getRCP());
 
   // define amalgamation factory
   RCP<AmalgamationFactory> amalgFactLevelZero = RCP(new AmalgamationFactory());
@@ -169,22 +172,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   rapFactLevelZero->SetFactory("P", tentativePFactLevelZero);
   rapFactLevelZero->SetFactory("R", transPFactLevelZero);
 
-  // Setup Map Transfer Factory for dropMap1
-  RCP<MapTransferFactory> slaveMapTransferFactLevelZero = Teuchos::rcp(new MapTransferFactory());
-  slaveMapTransferFactLevelZero->SetParameter("map: factory", Teuchos::ParameterEntry(dropMap1Name));
-  slaveMapTransferFactLevelZero->SetParameter("map: name", Teuchos::ParameterEntry(dropMap1Name));
-  slaveMapTransferFactLevelZero->SetFactory("P", tentativePFactLevelZero);
-  rapFactLevelZero->AddTransferFactory(slaveMapTransferFactLevelZero);
-  segregatedAFactLevelZero->SetFactory(dropMap1Name, slaveMapTransferFactLevelZero);
-
-  // Setup Map Transfer Factory for dropMap2
-  RCP<MapTransferFactory> masterMapTransferFactLevelZero = Teuchos::rcp(new MapTransferFactory());
-  masterMapTransferFactLevelZero->SetParameter("map: factory", Teuchos::ParameterEntry(dropMap2Name));
-  masterMapTransferFactLevelZero->SetParameter("map: name", Teuchos::ParameterEntry(dropMap2Name));
-  masterMapTransferFactLevelZero->SetFactory("P", tentativePFactLevelZero);
-  rapFactLevelZero->AddTransferFactory(masterMapTransferFactLevelZero);
-  segregatedAFactLevelZero->SetFactory(dropMap2Name, masterMapTransferFactLevelZero);
-
   // Main Factory manager
   RCP<FactoryManager> M0 = rcp(new FactoryManager());
   M0->SetFactory("A", MueLu::NoFactory::getRCP());
@@ -196,62 +183,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   M0->SetFactory("Aggregates", uncoupledAggFactLevelZero);
   M0->SetFactory(dropMap1Name, MueLu::NoFactory::getRCP());
   M0->SetFactory(dropMap2Name, MueLu::NoFactory::getRCP());
-
-  //// Factories: level 1
-  // define Segregated A factory
-  RCP<SegregatedAFactory> segregatedAFactLevelOne = rcp(new SegregatedAFactory());
-  segregatedAFactLevelOne->SetFactory("A", rapFactLevelZero);
-  segregatedAFactLevelOne->SetParameter("droppingScheme", Teuchos::ParameterEntry(droppingScheme));
-  segregatedAFactLevelOne->SetParameter("Call ReduceAll on dropMap1", Teuchos::ParameterEntry(true));
-  segregatedAFactLevelOne->SetParameter("Call ReduceAll on dropMap2", Teuchos::ParameterEntry(true));
-
-  // define amalgamation factory
-  RCP<AmalgamationFactory> amalgFactLevelOne = RCP(new AmalgamationFactory());
-
-  // define CoalesceDropFactory that provides Graph
-  RCP<CoalesceDropFactory> dropFactLevelOne = RCP(new CoalesceDropFactory());
-  dropFactLevelOne->SetFactory("UnAmalgamationInfo", amalgFactLevelOne);
-  dropFactLevelOne->SetFactory("A", segregatedAFactLevelOne);
-
-  // Setup aggregation factory
-  RCP<UncoupledAggregationFactory> uncoupledAggFactLevelOne = rcp(new UncoupledAggregationFactory());
-  uncoupledAggFactLevelOne->SetFactory("Graph", dropFactLevelOne);
-  uncoupledAggFactLevelOne->SetFactory("DofsPerNode", dropFactLevelOne);
-  uncoupledAggFactLevelOne->SetOrdering("graph");
-  uncoupledAggFactLevelOne->SetParameter("aggregation: min agg size", Teuchos::ParameterEntry(2));
-  uncoupledAggFactLevelOne->SetParameter("aggregation: max agg size", Teuchos::ParameterEntry(3));
-
-  // Setup TentativePFactory
-  RCP<TentativePFactory> tentativePFactLevelOne = rcp(new TentativePFactory());
-  tentativePFactLevelOne->SetFactory("A", segregatedAFactLevelOne);
-  tentativePFactLevelOne->SetFactory("Aggregates", uncoupledAggFactLevelOne);
-
-  // Setup transPFact for generating R
-  RCP<TransPFactory> transPFactLevelOne = rcp(new TransPFactory());
-  transPFactLevelOne->SetFactory("P", tentativePFactLevelOne);
-
-  // Setup nullspace Factory
-  RCP<NullspaceFactory> nullspaceFactLevelOne = rcp(new NullspaceFactory());
-  nullspaceFactLevelOne->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace")));
-  nullspaceFactLevelOne->SetFactory("Nullspace", tentativePFactLevelOne);
-
-  // Setup RAP Factory
-  RCP<RAPFactory> rapFactLevelOne = rcp(new RAPFactory());
-  rapFactLevelOne->SetFactory("A", MueLu::NoFactory::getRCP());
-  rapFactLevelOne->SetFactory("P", tentativePFactLevelOne);
-  rapFactLevelOne->SetFactory("R", transPFactLevelOne);
-
-  // Main Factory manager
-  RCP<FactoryManager> M1 = rcp(new FactoryManager());
-  M1->SetFactory("A", rapFactLevelZero);
-  M1->SetFactory("Graph", dropFactLevelOne);
-  M1->SetFactory("UnAmalgamationInfo", amalgFactLevelOne);
-  M1->SetFactory("Nullspace", nullspaceFactLevelOne);
-  M1->SetFactory("P", tentativePFactLevelOne);
-  M1->SetFactory("R", transPFactLevelOne);
-  M1->SetFactory("Aggregates", uncoupledAggFactLevelOne);
-  M1->SetFactory(dropMap1Name, MueLu::NoFactory::getRCP());
-  M1->SetFactory(dropMap2Name, MueLu::NoFactory::getRCP());
 
   ///////////// Level Definition /////////////
   RCP<Level> levelZero = rcp(new Level());
@@ -276,7 +207,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   TEUCHOS_ASSERT(levelZero->IsAvailable(dropMap2Name, MueLu::NoFactory::get()));
 
   levelZero->SetFactoryManager(M0);
-  levelOne->SetFactoryManager(M1);
 
   ///////////// Request and build level info /////////////
   levelZero->Request("Aggregates", uncoupledAggFactLevelZero.get());
@@ -288,7 +218,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   rapFactLevelZero->Build(*levelZero, *levelOne);
 
-  TEUCHOS_ASSERT(levelOne->IsAvailable("A", rapFactLevelZero.get()));
   TEUCHOS_ASSERT(levelZero->IsAvailable("Aggregates", uncoupledAggFactLevelZero.get()));
 
   RCP<Aggregates> aggsLevelZero = levelZero->Get<RCP<Aggregates>>("Aggregates", uncoupledAggFactLevelZero.get());
@@ -296,24 +225,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
                                                      levelZero->Get<RCP<const Map>>(dropMap1Name, MueLu::NoFactory::get()),
                                                      levelZero->Get<RCP<const Map>>(dropMap2Name, MueLu::NoFactory::get()));
 
-  levelOne->Request(dropMap1Name, MueLu::NoFactory::get());
-  levelOne->Request(dropMap2Name, MueLu::NoFactory::get());
-  levelOne->Request("Aggregates", uncoupledAggFactLevelOne.get());
-
-  TEUCHOS_ASSERT(levelOne->IsRequested(dropMap1Name, MueLu::NoFactory::get()));
-  TEUCHOS_ASSERT(levelOne->IsRequested(dropMap2Name, MueLu::NoFactory::get()));
-  TEUCHOS_ASSERT(levelOne->IsRequested("Aggregates", uncoupledAggFactLevelOne.get()));
-
-  uncoupledAggFactLevelOne->Build(*levelOne);
-
-  TEUCHOS_ASSERT(levelOne->IsAvailable(dropMap1Name, MueLu::NoFactory::get()));
-  TEUCHOS_ASSERT(levelOne->IsAvailable(dropMap2Name, MueLu::NoFactory::get()));
-  TEUCHOS_ASSERT(levelOne->IsAvailable("Aggregates", uncoupledAggFactLevelOne.get()));
-
-  RCP<Aggregates> primalAggsLevelOne = levelOne->Get<RCP<Aggregates>>("Aggregates", uncoupledAggFactLevelOne.get());
-  MueLuTests::checkAggregatesMapPair<SC, LO, GO, NO>(primalAggsLevelOne, stridingInfo,
-                                                     levelOne->Get<RCP<const Map>>(dropMap1Name, MueLu::NoFactory::get()),
-                                                     levelOne->Get<RCP<const Map>>(dropMap2Name, MueLu::NoFactory::get()));
   return EXIT_SUCCESS;
 }
 

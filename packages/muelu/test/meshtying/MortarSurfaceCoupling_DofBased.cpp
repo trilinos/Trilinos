@@ -70,6 +70,10 @@
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
+
+  // The MMortarSurfaceCoupline_DofBased tests only work with real Scalar types,
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return EXIT_SUCCESS;
+
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
@@ -151,7 +155,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // Read the nullspace vector of the (0,0)-block from file
   RCP<MultiVector> nullspace1 = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace1FileName, dofRowMapPrimal);
 
-  // Read the interface slave dof row map from file
+  // Read the primal interface dof row map from file
   TEUCHOS_ASSERT(!dualInterfaceMapFileName.empty());
   RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
 
