@@ -2064,7 +2064,7 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & op
            explicitCrsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getTpetraOperator(),true);
            Tpetra::MatrixMatrix::Add<ST,LO,GO,NT>(*tCrsOpl,transpl,scalarl,*tCrsOpr,transpr,scalarr,explicitCrsOp);
          }
-         catch (std::exception & e) {
+         catch (std::logic_error & e) {
            RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
            *out << "*** THROWN EXCEPTION ***\n";
            *out << e.what() << std::endl;
