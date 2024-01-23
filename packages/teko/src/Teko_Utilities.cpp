@@ -1977,20 +1977,19 @@ const LinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in)
   *
   * \returns Matrix sum with a Epetra_CrsMatrix implementation
   */
-const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
+const ModifiableLinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in,
                                      const ModifiableLinearOp & destOp)
 {
    // if blocked, add block by block
-   if(isPhysicallyBlockedLinearOp(opl)){
-     TEUCHOS_ASSERT(isPhysicallyBlockedLinearOp(opr));
+   if(isPhysicallyBlockedLinearOp(opl_in) && isPhysicallyBlockedLinearOp(opr_in)){
 
      double scalarl = 0.0;
      bool transpl = false;
-     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opl = getPhysicallyBlockedLinearOp(opl, &scalarl, &transpl);
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opl = getPhysicallyBlockedLinearOp(opl_in, &scalarl, &transpl);
 
      double scalarr = 0.0;
      bool transpr = false;
-     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opr = getPhysicallyBlockedLinearOp(opr, &scalarr, &transpr);
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opr = getPhysicallyBlockedLinearOp(opr_in, &scalarr, &transpr);
 
      int numRows = blocked_opl->productRange()->numBlocks();
      int numCols = blocked_opl->productDomain()->numBlocks();
@@ -2022,6 +2021,26 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
      return blocked_sum;
    }
 
+   LinearOp opl = opl_in;
+   LinearOp opr = opr_in;
+   // if only one is blocked, it must be 1x1
+   if(isPhysicallyBlockedLinearOp(opl)){
+     double scalarl = 0.0;
+     bool transpl = false;
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opl = getPhysicallyBlockedLinearOp(opl, &scalarl, &transpl);
+     TEUCHOS_ASSERT(blocked_opl->productRange()->numBlocks() == 1);
+     TEUCHOS_ASSERT(blocked_opl->productDomain()->numBlocks() == 1);
+     opl = Thyra::scale(scalarl,blocked_opl->getBlock(0,0));
+   }
+   if(isPhysicallyBlockedLinearOp(opr)){
+     double scalarr = 0.0;
+     bool transpr = false;
+     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_opr = getPhysicallyBlockedLinearOp(opr, &scalarr, &transpr);
+     TEUCHOS_ASSERT(blocked_opr->productRange()->numBlocks() == 1);
+     TEUCHOS_ASSERT(blocked_opr->productDomain()->numBlocks() == 1);
+     opr = Thyra::scale(scalarr,blocked_opr->getBlock(0,0));
+   }
+
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
 
@@ -2037,14 +2056,29 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
 
       // Build output operator
       RCP<Thyra::LinearOpBase<ST> > explicitOp;
-      if(destOp!=Teuchos::null)
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp;
+      if(destOp!=Teuchos::null){
          explicitOp = destOp;
-      else
+         try {// try to reuse matrix sparsity with Add. If it fails, build new operator with add
+           RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(destOp);
+           explicitCrsOp = rcp_dynamic_cast<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getTpetraOperator(),true);
+           Tpetra::MatrixMatrix::Add<ST,LO,GO,NT>(*tCrsOpl,transpl,scalarl,*tCrsOpr,transpr,scalarr,explicitCrsOp);
+         }
+         catch (std::logic_error & e) {
+           RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+           *out << "*** THROWN EXCEPTION ***\n";
+           *out << e.what() << std::endl;
+           *out << "************************\n";
+           *out << "Teko: explicitAdd unable to reuse existing operator. Creating new operator.\n" << std::endl;
+           explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr);
+         }
+      }else{
          explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+         explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr);
+      }
       RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
       // Do explicit matrix-matrix add
-      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr);
       tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
       return tExplicitOp;
 
