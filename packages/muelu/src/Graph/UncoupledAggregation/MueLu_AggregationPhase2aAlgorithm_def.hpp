@@ -53,7 +53,7 @@
 
 #include "MueLu_AggregationPhase2aAlgorithm_decl.hpp"
 
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
@@ -61,7 +61,7 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
@@ -130,11 +130,11 @@ void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggreg
       numNeighbors++;
     }
 
-    ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(rootCandidate);
+    auto neighOfINode = graph.getNeighborVertices(rootCandidate);
 
     LO num_nonaggd_neighbors = 0, num_local_neighbors = 0;
-    for (int j = 0; j < neighOfINode.size(); j++) {
-      LO neigh = neighOfINode[j];
+    for (int j = 0; j < neighOfINode.length; j++) {
+      LO neigh = neighOfINode(j);
       if (graph.isLocalNeighborVertex(neigh))
         num_local_neighbors++;
 

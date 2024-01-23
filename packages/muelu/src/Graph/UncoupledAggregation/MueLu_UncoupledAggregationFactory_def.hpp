@@ -65,7 +65,7 @@
 #include "MueLu_AggregationPhase3Algorithm.hpp"
 
 #include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -210,7 +210,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   std::string mapInterfaceName = pL.get<std::string>("Interface aggregate map name");
   RCP<Map> InterfaceMap        = Teuchos::null;
 
-  RCP<const GraphBase> graph = Get<RCP<GraphBase>>(currentLevel, "Graph");
+  RCP<const LWGraph> graph = Get<RCP<LWGraph>>(currentLevel, "Graph");
 
   // Build
   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
@@ -230,11 +230,10 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     }
   }
 
-  ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-  if (dirichletBoundaryMap != Teuchos::null)
-    for (LO i = 0; i < numRows; i++)
-      if (dirichletBoundaryMap[i] == true)
-        aggStat[i] = BOUNDARY;
+  auto dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+  for (LO i = 0; i < numRows; i++)
+    if (dirichletBoundaryMap[i] == true)
+      aggStat[i] = BOUNDARY;
 
   LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
   GO indexBase    = graph->GetDomainMap()->getIndexBase();

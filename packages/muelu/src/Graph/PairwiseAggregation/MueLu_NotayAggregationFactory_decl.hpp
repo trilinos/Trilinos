@@ -53,7 +53,7 @@
 
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include "MueLu_GraphBase_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 

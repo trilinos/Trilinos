@@ -118,8 +118,8 @@ void gimmeUncoupledAggregates(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrd
   auto coloringHandle = kh.get_distance2_graph_coloring_handle();
 
   // Create device views for graph rowptrs/colinds
-  typename graph_t::row_map_type aRowptrs = graph->getLocalLWGraph().getRowPtrs();
-  typename graph_t::entries_type aColinds = graph->getLocalLWGraph().getEntries();
+  typename graph_t::row_map_type aRowptrs = graph->getRowPtrs();
+  typename graph_t::entries_type aColinds = graph->getEntries();
 
   // run d2 graph coloring
   // graph is symmetric so row map/entries and col map/entries are the same
@@ -191,7 +191,7 @@ LocalOrdinal checkAggregatesContiguous(MueLu::LWGraph_kokkos<LocalOrdinal, Globa
   auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
   auto aggSizes     = aggregates.ComputeAggregateSizes(true);
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   Kokkos::View<LO*, device_type> discontiguousAggs("discontiguous aggregates",
                                                    aggregates.GetNumAggregates());
@@ -665,7 +665,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, AllowDroppingToCreateAdditi
   aggFact->Build(level);
   RCP<Aggregates> aggregates                                  = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
   RCP<LWGraph_kokkos> graph                                   = level.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
-  Kokkos::View<const bool*, device_type> dirichletBoundaryMap = graph->getLocalLWGraph().GetBoundaryNodeMap();
+  Kokkos::View<const bool*, device_type> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
   int numDirichletRows                                        = 0;
   using execution_space                                       = typename LWGraph_kokkos::execution_space;
   LO numRows                                                  = graph->GetNodeNumVertices();
@@ -705,7 +705,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, AllowDroppingToCreateAdditi
   aggFact->Build(level);
   aggregates           = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
   graph                = level.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
-  dirichletBoundaryMap = graph->getLocalLWGraph().GetBoundaryNodeMap();
+  dirichletBoundaryMap = graph->GetBoundaryNodeMap();
   numDirichletRows     = 0;
   Kokkos::parallel_reduce(
       "Count Dirichlet rows",

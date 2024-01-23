@@ -295,7 +295,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, Kn_Matrix_, GmhdA_Matrix_;
 
   //! Vectors for BCs
-  Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
+  Kokkos::View<bool*, typename Node::device_type::memory_space> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
   int BCedges_, BCnodes_;
   Teuchos::ArrayRCP<bool> BCrows_, BCcols_, BCdomain_;
   //! Nullspace

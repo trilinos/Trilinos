@@ -44,6 +44,7 @@
 //
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
+#include <ostream>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
@@ -97,7 +98,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWitho
   bool bCorrectGraph = false;
   int reduction_val  = 0;
   int comm_size = comm->getSize(), comm_rank = comm->getRank();
-  auto lclLWGraph = graph->getLocalLWGraph();
+  auto lclLWGraph = *graph;
   Kokkos::parallel_reduce(
       "MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t>(0, 1),
       KOKKOS_LAMBDA(const LO i, int &correct) {
@@ -174,7 +175,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithF
   bool bCorrectGraph = false;
   int reduction_val  = 0;
   int comm_size = comm->getSize(), comm_rank = comm->getRank();
-  auto lclLWGraph = graph->getLocalLWGraph();
+  auto lclLWGraph = *graph;
   Kokkos::parallel_reduce(
       "MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t>(0, 1),
       KOKKOS_LAMBDA(const LO i, int &correct) {
@@ -253,7 +254,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithou
   bool bCorrectGraph = false;
   int reduction_val  = 0;
   int comm_size = comm->getSize(), comm_rank = comm->getRank();
-  auto lclLWGraph = graph->getLocalLWGraph();
+  auto lclLWGraph = *graph;
   Kokkos::parallel_reduce(
       "MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t>(0, 1),
       KOKKOS_LAMBDA(const LO i, int &correct) {
@@ -774,7 +775,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingI
 
     RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
 
-    auto boundaryNodes     = graph->getLocalLWGraph().GetBoundaryNodeMap();
+    auto boundaryNodes     = graph->GetBoundaryNodeMap();
     auto boundaryNodesHost = Kokkos::create_mirror_view(boundaryNodes);
     Kokkos::deep_copy(boundaryNodesHost, boundaryNodes);
     bool allNodesAreOnBoundary = true;

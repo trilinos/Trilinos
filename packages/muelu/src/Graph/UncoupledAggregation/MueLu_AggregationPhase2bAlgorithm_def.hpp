@@ -55,7 +55,7 @@
 
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -63,7 +63,7 @@ namespace MueLu {
 // Try to stick unaggregated nodes into a neighboring aggregate if they are
 // not already too big
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
   bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2b");
 
@@ -93,10 +93,10 @@ void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggreg
       if (aggStat[i] != READY)
         continue;
 
-      ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
+      auto neighOfINode = graph.getNeighborVertices(i);
 
-      for (int j = 0; j < neighOfINode.size(); j++) {
-        LO neigh = neighOfINode[j];
+      for (int j = 0; j < neighOfINode.length; j++) {
+        LO neigh = neighOfINode(j);
 
         // We don't check (neigh != i), as it is covered by checking (aggStat[neigh] == AGGREGATED)
         if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
@@ -107,8 +107,8 @@ void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggreg
       int bestAggId   = -1;
       int bestConnect = -1;
 
-      for (int j = 0; j < neighOfINode.size(); j++) {
-        LO neigh  = neighOfINode[j];
+      for (int j = 0; j < neighOfINode.length; j++) {
+        LO neigh  = neighOfINode(j);
         int aggId = vertex2AggId[neigh];
 
         // Note: The third condition is only relevant if the ML matching is enabled

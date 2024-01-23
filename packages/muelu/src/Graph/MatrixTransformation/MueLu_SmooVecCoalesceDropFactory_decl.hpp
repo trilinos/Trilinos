@@ -58,8 +58,8 @@
 #include "MueLu_SmooVecCoalesceDropFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_LWGraph.hpp"
+
 #include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
 
@@ -153,7 +153,7 @@ class SmooVecCoalesceDropFactory : public SingleLevelFactoryBase {
   mutable RCP<PreDropFunctionBaseClass> predrop_;
 
   //! Methods to support compatible-relaxation style dropping
-  void badGuysCoalesceDrop(const Matrix& Amat, Teuchos::ArrayRCP<Scalar>& dropParams, LO nPDEs, const MultiVector& smoothedTVecs, const MultiVector& smoothedNull, RCP<GraphBase>& filteredGraph) const;
+  void badGuysCoalesceDrop(const Matrix& Amat, Teuchos::ArrayRCP<Scalar>& dropParams, LO nPDEs, const MultiVector& smoothedTVecs, const MultiVector& smoothedNull, RCP<LWGraph>& filteredGraph) const;
   void badGuysDropfunc(LO row, const Teuchos::ArrayView<const LocalOrdinal>& indices, const Teuchos::ArrayView<const Scalar>& vals, const MultiVector& smoothedTVecs, LO nPDEs, Teuchos::ArrayRCP<Scalar>& penalties, const MultiVector& smoothedNull, Teuchos::ArrayRCP<LO>& Bcols, Teuchos::ArrayRCP<bool>& keepOrNot, LO& Nbcols, LO nLoc) const;
 
 };  // class SmooVecCoalesceDropFactory

@@ -205,7 +205,7 @@ void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   // getLocalMap to have a Kokkos::View on the appropriate memory_space
   // instead of an ArrayRCP.
   {
-    typename LWGraph_kokkos::boundary_nodes_type dirichletBoundaryMap = graph->getLocalLWGraph().GetBoundaryNodeMap();
+    auto dirichletBoundaryMap = graph->GetBoundaryNodeMap();
     Kokkos::parallel_for(
         "MueLu - UncoupledAggregation: tagging boundary nodes in aggStat",
         Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numRows),
@@ -251,8 +251,8 @@ void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
     using rowmap_t     = typename graph_t::row_map_type;
     using colinds_t    = typename graph_t::entries_type;
     using lno_t        = typename colinds_t::non_const_value_type;
-    rowmap_t aRowptrs  = graph->getLocalLWGraph().getRowPtrs();
-    colinds_t aColinds = graph->getLocalLWGraph().getEntries();
+    rowmap_t aRowptrs  = graph->getRowPtrs();
+    colinds_t aColinds = graph->getEntries();
     lno_t numAggs      = 0;
     typename colinds_t::non_const_type labels;
 
@@ -335,8 +335,8 @@ void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
       }
 
       // Create device views for graph rowptrs/colinds
-      typename graph_t::row_map_type aRowptrs = graph->getLocalLWGraph().getRowPtrs();
-      typename graph_t::entries_type aColinds = graph->getLocalLWGraph().getEntries();
+      typename graph_t::row_map_type aRowptrs = graph->getRowPtrs();
+      typename graph_t::entries_type aColinds = graph->getEntries();
 
       // run d2 graph coloring
       // graph is symmetric so row map/entries and col map/entries are the same

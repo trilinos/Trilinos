@@ -1327,13 +1327,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, AllowDroppingToCreateAdditionalDir
 
   level.Request(*aggFact);
   aggFact->Build(level);
-  RCP<Aggregates> aggregates                = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
-  RCP<GraphBase> graph                      = level.Get<RCP<GraphBase>>("Graph", dropFact.get());
-  ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-  int numDirichletRows                      = 0;
-  LO numRows                                = graph->GetNodeNumVertices();
+  RCP<Aggregates> aggregates = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
+  RCP<LWGraph> graph         = level.Get<RCP<LWGraph>>("Graph", dropFact.get());
+  auto dirichletBoundaryMap  = graph->GetBoundaryNodeMap();
+  int numDirichletRows       = 0;
+  LO numRows                 = graph->GetNodeNumVertices();
   for (LO i = 0; i < numRows; i++)
-    if (dirichletBoundaryMap[i] == true)
+    if (dirichletBoundaryMap(i) == true)
       numDirichletRows++;
   TEST_EQUALITY(numDirichletRows, 0);
 
@@ -1361,7 +1361,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, AllowDroppingToCreateAdditionalDir
   level.Request(*aggFact);
   aggFact->Build(level);
   aggregates           = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
-  graph                = level.Get<RCP<GraphBase>>("Graph", dropFact.get());
+  graph                = level.Get<RCP<LWGraph>>("Graph", dropFact.get());
   dirichletBoundaryMap = graph->GetBoundaryNodeMap();
   numDirichletRows     = 0;
   for (LO i = 0; i < numRows; i++)

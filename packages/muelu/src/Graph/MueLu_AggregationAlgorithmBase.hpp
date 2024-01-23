@@ -52,7 +52,7 @@
 #include "MueLu_Aggregates_fwd.hpp"
 
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Types.hpp"
 
 namespace MueLu {
@@ -83,7 +83,7 @@ class AggregationAlgorithmBase : public BaseClass {
 
   //! BuildAggregates routine.
   virtual void BuildAggregates(const Teuchos::ParameterList& params,
-                               const GraphBase& graph,
+                               const LWGraph& graph,
                                Aggregates& aggregates,
                                std::vector<unsigned>& aggStat,
                                LO& numNonAggregatedNodes) const = 0;

@@ -52,7 +52,7 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 
 namespace MueLu {
 /*!
@@ -103,7 +103,7 @@ class PreserveDirichletAggregationAlgorithm : public MueLu::AggregationAlgorithm
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase - (Dirichlet)"; }

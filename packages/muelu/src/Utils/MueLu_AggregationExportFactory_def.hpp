@@ -60,7 +60,7 @@
 #include "MueLu_AggregationExportFactory_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_Graph.hpp"
+
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
@@ -159,12 +159,12 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     Ac = Get<RCP<Matrix> >(coarseLevel, "A");
   Teuchos::RCP<CoordinateMultiVector> coords       = Teuchos::null;
   Teuchos::RCP<CoordinateMultiVector> coordsCoarse = Teuchos::null;
-  Teuchos::RCP<GraphBase> fineGraph                = Teuchos::null;
-  Teuchos::RCP<GraphBase> coarseGraph              = Teuchos::null;
+  Teuchos::RCP<LWGraph> fineGraph                  = Teuchos::null;
+  Teuchos::RCP<LWGraph> coarseGraph                = Teuchos::null;
   if (doFineGraphEdges_)
-    fineGraph = Get<RCP<GraphBase> >(fineLevel, "Graph");
+    fineGraph = Get<RCP<LWGraph> >(fineLevel, "Graph");
   if (doCoarseGraphEdges_)
-    coarseGraph = Get<RCP<GraphBase> >(coarseLevel, "Graph");
+    coarseGraph = Get<RCP<LWGraph> >(coarseLevel, "Graph");
   if (useVTK)  // otherwise leave null, will not be accessed by non-vtk code
   {
     coords  = Get<RCP<CoordinateMultiVector> >(fineLevel, "Coordinates");
@@ -337,10 +337,9 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConv
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const {
+void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<LWGraph>& G, bool fine, int dofs) const {
   using namespace std;
   ArrayView<const Scalar> values;
-  ArrayView<const LocalOrdinal> neighbors;
   // Allow two different colors of connections (by setting "aggregates" scalar to CONTRAST_1 or CONTRAST_2)
   vector<pair<int, int> > vert1;  // vertices (node indices)
   vector<pair<int, int> > vert2;  // size of every cell is assumed to be 2 vertices, since all edges are drawn as lines
@@ -362,24 +361,24 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGrap
     for (GlobalOrdinal globRow = 0; globRow < GlobalOrdinal(A->getGlobalNumRows()); globRow++) {
       if (dofs == 1)
         A->getGlobalRowView(globRow, indices, values);
-      neighbors = G->getNeighborVertices((LocalOrdinal)globRow);
-      int gEdge = 0;
-      int aEdge = 0;
-      while (gEdge != int(neighbors.size())) {
+      auto neighbors = G->getNeighborVertices((LocalOrdinal)globRow);
+      int gEdge      = 0;
+      int aEdge      = 0;
+      while (gEdge != int(neighbors.length)) {
         if (dofs == 1) {
-          if (neighbors[gEdge] == indices[aEdge]) {
+          if (neighbors(gEdge) == indices[aEdge]) {
             // graph and matrix both have this edge, wasn't filtered, show as color 1
-            vert1.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
+            vert1.push_back(pair<int, int>(int(globRow), neighbors(gEdge)));
             gEdge++;
             aEdge++;
           } else {
             // graph contains an edge at gEdge which was filtered from A, show as color 2
-            vert2.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
+            vert2.push_back(pair<int, int>(int(globRow), neighbors(gEdge)));
             gEdge++;
           }
         } else  // for multiple DOF problems, don't try to detect filtered edges and ignore A
         {
-          vert1.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
+          vert1.push_back(pair<int, int>(int(globRow), neighbors(gEdge)));
           gEdge++;
         }
       }
@@ -389,22 +388,22 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGrap
     for (LocalOrdinal locRow = 0; locRow < LocalOrdinal(A->getLocalNumRows()); locRow++) {
       if (dofs == 1)
         A->getLocalRowView(locRow, indices, values);
-      neighbors = G->getNeighborVertices(locRow);
+      auto neighbors = G->getNeighborVertices(locRow);
       // Add those local indices (columns) to the list of connections (which are pairs of the form (localM, localN))
       int gEdge = 0;
       int aEdge = 0;
-      while (gEdge != int(neighbors.size())) {
+      while (gEdge != int(neighbors.length)) {
         if (dofs == 1) {
-          if (neighbors[gEdge] == indices[aEdge]) {
-            vert1.push_back(pair<int, int>(locRow, neighbors[gEdge]));
+          if (neighbors(gEdge) == indices[aEdge]) {
+            vert1.push_back(pair<int, int>(locRow, neighbors(gEdge)));
             gEdge++;
             aEdge++;
           } else {
-            vert2.push_back(pair<int, int>(locRow, neighbors[gEdge]));
+            vert2.push_back(pair<int, int>(locRow, neighbors(gEdge)));
             gEdge++;
           }
         } else {
-          vert1.push_back(pair<int, int>(locRow, neighbors[gEdge]));
+          vert1.push_back(pair<int, int>(locRow, neighbors(gEdge)));
           gEdge++;
         }
       }

@@ -273,7 +273,8 @@ class UtilitiesBase {
 
     @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
   */
-  static Kokkos::View<bool*, typename NO::device_type> DetectDirichletRows_kokkos(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero(), const bool count_twos_as_dirichlet = false);
+  static Kokkos::View<bool*, typename NO::device_type::memory_space> DetectDirichletRows_kokkos(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero(), const bool count_twos_as_dirichlet = false);
+  static Kokkos::View<bool*, typename Kokkos::HostSpace> DetectDirichletRows_kokkos_host(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero(), const bool count_twos_as_dirichlet = false);
 
   /*! @brief Detect Dirichlet rows (extended version)
 
@@ -350,7 +351,21 @@ class UtilitiesBase {
 
   static void ApplyRowSumCriterion(const Matrix& A,
                                    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
-                                   Kokkos::View<bool*, typename NO::device_type>& dirichletRows);
+                                   Kokkos::View<bool*, typename NO::device_type::memory_space>& dirichletRows);
+
+  static void ApplyRowSumCriterionHost(const Matrix& A,
+                                       const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                       Kokkos::View<bool*, Kokkos::HostSpace>& dirichletRows);
+
+  static void ApplyRowSumCriterion(const Matrix& A,
+                                   const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber,
+                                   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                   Kokkos::View<bool*, typename NO::device_type::memory_space>& dirichletRows);
+
+  static void ApplyRowSumCriterionHost(const Matrix& A,
+                                       const Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>& BlockNumber,
+                                       const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                       Kokkos::View<bool*, Kokkos::HostSpace>& dirichletRows);
 
   /*! @brief Detect Dirichlet columns based on Dirichlet rows
 

@@ -77,7 +77,7 @@ void IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>:
     aggStat[idx] = aggstatHost(idx);
   }
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   const LO numRows = graph.GetNodeNumVertices();
 

@@ -43,61 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_LOCALLWGRAPH_KOKKOS_DEF_HPP
-#define MUELU_LOCALLWGRAPH_KOKKOS_DEF_HPP
-
-#include <Kokkos_Core.hpp>
-
-#include <Teuchos_ArrayView.hpp>
-#include <Xpetra_Map.hpp>
-
-#include "MueLu_LocalLWGraph_kokkos_decl.hpp"
+#ifndef MUELU_LWGRAPHBASE_FWD_HPP
+#define MUELU_LWGRAPHBASE_FWD_HPP
 
 namespace MueLu {
-
-namespace {  // anonymous
-
-template <class LocalOrdinal, class RowType>
-class MaxNumRowEntriesFunctor {
- public:
-  MaxNumRowEntriesFunctor(RowType rowPointers)
-    : rowPointers_(rowPointers) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const LocalOrdinal i, size_t& maxLength) const {
-    size_t d = rowPointers_(i + 1) - rowPointers_(i);
-
-    maxLength = (d > maxLength ? d : maxLength);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void join(volatile size_t& dest, const volatile size_t& src) {
-    dest = (dest > src ? dest : src);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void init(size_t& initValue) {
-    initValue = 0;
-  }
-
- private:
-  RowType rowPointers_;
-};
-
-}  // namespace
-
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-LocalLWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-    LocalLWGraph_kokkos(const local_graph_type& graph,
-                        const RCP<const map_type>& domainMap)
-  : graph_(graph) {
-  minLocalIndex_ = domainMap->getMinLocalIndex();
-  maxLocalIndex_ = domainMap->getMaxLocalIndex();
-
-  MaxNumRowEntriesFunctor<LO, typename local_graph_type::row_map_type> maxNumRowEntriesFunctor(graph_.row_map);
-  Kokkos::parallel_reduce("MueLu:LocalLWGraph:LWGraph:maxnonzeros", range_type(0, graph_.numRows()), maxNumRowEntriesFunctor, maxNumRowEntries_);
+class LWGraphBase;
 }
 
-}  // namespace MueLu
+#ifndef MUELU_LWGRAPHBASE_SHORT
+#define MUELU_LWGRAPHBASE_SHORT
+#endif
 
-#endif  // MUELU_LWGRAPH_KOKKOS_DEF_HPP
+#endif  // MUELU_LWGRAPHBASE_FWD_HPP

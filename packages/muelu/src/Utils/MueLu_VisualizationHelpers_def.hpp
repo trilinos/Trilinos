@@ -53,7 +53,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include "MueLu_VisualizationHelpers_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
+
 #include <vector>
 #include <list>
 #include <algorithm>
@@ -545,18 +545,17 @@ void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHu
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& /* fx */, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& /* fy */, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& /* fz */) {
+void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<LWGraph>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& /* fx */, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& /* fy */, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType>& /* fz */) {
   ArrayView<const Scalar> values;
-  ArrayView<const LocalOrdinal> neighbors;
 
   std::vector<std::pair<int, int> > vert1;  // vertices (node indices)
 
   ArrayView<const LocalOrdinal> indices;
   for (LocalOrdinal locRow = 0; locRow < LocalOrdinal(G->GetNodeNumVertices()); locRow++) {
-    neighbors = G->getNeighborVertices(locRow);
+    auto neighbors = G->getNeighborVertices(locRow);
     // Add those local indices (columns) to the list of connections (which are pairs of the form (localM, localN))
-    for (int gEdge = 0; gEdge < int(neighbors.size()); ++gEdge) {
-      vert1.push_back(std::pair<int, int>(locRow, neighbors[gEdge]));
+    for (int gEdge = 0; gEdge < int(neighbors.length); ++gEdge) {
+      vert1.push_back(std::pair<int, int>(locRow, neighbors(gEdge)));
     }
   }
   for (size_t i = 0; i < vert1.size(); i++) {

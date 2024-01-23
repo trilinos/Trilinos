@@ -60,7 +60,7 @@
 
 #include "MueLu_IsolatedNodeAggregationAlgorithm_decl.hpp"
 
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
@@ -68,14 +68,14 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& /* params */, const GraphBase& graph, Aggregates& /* aggregates */, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& /* params */, const LWGraph& graph, Aggregates& /* aggregates */, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   const LO numRows = graph.GetNodeNumVertices();
 
   // Remove all isolated nodes
   for (LO i = 0; i < numRows; i++)
-    if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).size() == 1) {
+    if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).length == 1) {
       aggStat[i] = IGNORED;
       numNonAggregatedNodes--;
     }
