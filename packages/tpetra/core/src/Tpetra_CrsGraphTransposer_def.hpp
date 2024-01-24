@@ -271,7 +271,6 @@ namespace Tpetra {
     auto nrows = rowptrs.extent(0) - 1;
     auto rowptrsSym = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("row ptrs sym"), nrows + 1);
 
-    auto ncols = graph->getGlobalNumCols();
     col_inds_array colindsSym;
 
     if(!matchingColMaps) {

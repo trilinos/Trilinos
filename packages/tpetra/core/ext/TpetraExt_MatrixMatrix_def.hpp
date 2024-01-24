@@ -3711,8 +3711,6 @@ addSorted(
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
 #if KOKKOSKERNELS_VERSION >= 40299
   GO numGlobalCols,
-#else
-  GO /* numGlobalCols */,
 #endif
   typename MMdetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
