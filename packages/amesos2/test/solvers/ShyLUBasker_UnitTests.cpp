@@ -243,6 +243,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, NumericFactorization, SCALAR, LO, GO )
   {
+    std::cout << "  BEGIN SHYLUBASKER NUMFAC TEST" << std::endl;
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
@@ -362,7 +363,7 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
- /* TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( KLU2, SolveTrans, SCALAR, LO, GO )
+ /* TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, SolveTrans, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef ScalarTraits<SCALAR> ST;
@@ -391,13 +392,13 @@ namespace {
 
     Xhat->randomize();
 
-    // Solve A*Xhat = B for Xhat using the KLU2 solver
+    // Solve A*Xhat = B for Xhat using the ShyLUBasker solver
     cout <<"I am in solvetrans create" << endl;
     RCP<Amesos2::Solver<MAT,MV> > solver
-      = Amesos2::create<MAT,MV>("KLU2", A, Xhat, B );
+      = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B );
 
     Teuchos::ParameterList amesos2_params("Amesos2");
-    amesos2_params.sublist("KLU2").set("Trans","TRANS","Solve with transpose");
+    amesos2_params.sublist("ShyLUBasker").set("Trans","TRANS","Solve with transpose");
 
     cout <<"Setting parameters" << amesos2_params << endl;
     solver->setParameters( rcpFromRef(amesos2_params) );
@@ -769,28 +770,20 @@ namespace {
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-  //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO )
+  //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, SolveTrans, SCALAR, LO, GO )
 
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, Solve, SCALAR, LO, GO )
 
-
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
-  UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
-
-#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
-  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)       \
-  UNIT_TEST_GROUP_ORDINAL(int)
-
-#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
+#define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
   UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)                 \
   UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
+
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
   //Add JDB (10-19-215)
 #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
@@ -809,9 +802,11 @@ namespace {
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongInt)
   #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+  typedef long long int LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongLongInt)
+  #endif
 #endif  // EXPL-INST
 
-
-#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 } // end anonymous namespace
