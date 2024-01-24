@@ -693,7 +693,9 @@ struct AddKernels
     const row_ptrs_array_const& Browptrs,
     const col_inds_array& Bcolinds,
     const impl_scalar_type scalarB,
+#if KOKKOSKERNELS_VERSION >= 40299
     GlobalOrdinal numGlobalCols,
+#endif
     values_array& Cvals,
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);

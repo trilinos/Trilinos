@@ -911,7 +911,11 @@ add (const Scalar& alpha,
            << "Call AddKern::addSorted(...)" << std::endl;
         std::cerr << os.str ();
       }
+#if KOKKOSKERNELS_VERSION >= 40299
       AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, Aprime->getGlobalNumCols(), vals, rowptrs, colinds);
+#else
+      AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, vals, rowptrs, colinds);
+#endif
     }
     else
     {
