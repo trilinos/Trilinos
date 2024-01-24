@@ -363,6 +363,86 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, SolveTrans, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    //typedef ScalarTraits<Mag> MT;
+    const size_t numVecs = 1;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+    // NDE: Beginning changes towards passing parameter list to shylu basker
+    // for controlling various parameters per test, matrix, etc.
+
+    Teuchos::ParameterList amesos2_paramlist;
+    amesos2_paramlist.setName("Amesos2");
+    Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
+
+      shylubasker_paramlist.set("num_threads", 1,
+        "Number of threads");
+      shylubasker_paramlist.set("pivot", false,
+        "Should not pivot");
+      shylubasker_paramlist.set("pivot_tol", .0001,
+        "Tolerance before pivot, currently not used");
+      shylubasker_paramlist.set("symmetric", false,
+        "Should Symbolic assume symmetric nonzero pattern");
+      shylubasker_paramlist.set("realloc" , false,
+        "Should realloc space if not enough");
+      shylubasker_paramlist.set("verbose", false,
+        "Information about factoring");
+      shylubasker_paramlist.set("verbose_matrix", false,
+        "Give Permuted Matrices");
+      shylubasker_paramlist.set("btf", true,
+        "Use BTF ordering");
+      shylubasker_paramlist.set("transpose", true,
+        "Solve the transpose A");
+
+    RCP<MAT> A =
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm);
+
+    RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
+    RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+
+    RCP<MV> X = rcp(new MV(dmnmap,numVecs));
+    RCP<MV> B = rcp(new MV(rngmap,numVecs));
+    RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
+    X->setObjectLabel("X");
+    B->setObjectLabel("B");
+    Xhat->setObjectLabel("Xhat");
+    X->randomize();
+
+    A->apply(*X,*B,Teuchos::TRANS);            // use transpose
+
+    Xhat->randomize();
+    //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+
+
+    // Solve A*Xhat = B for Xhat using the Bakser solver
+    RCP<Amesos2::Solver<MAT,MV> > solver
+      = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B );
+
+    solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+
+    solver->symbolicFactorization();
+    solver->numericFactorization();
+    solver->solve();
+
+    //Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    //B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+
+    // Check result of solve
+    Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
+    Xhat->norm2(xhatnorms());
+    X->norm2(xnorms());
+    TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+  }
+
  /* TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, SolveTrans, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -370,7 +450,7 @@ namespace {
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const size_t numVecs = 7;
+    const size_t numVecs = 1;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
@@ -775,7 +855,8 @@ namespace {
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, NumericFactorization, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, Solve, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, Solve, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ShyLUBasker, SolveTrans, SCALAR, LO, GO )
 
 #define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
   UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)                 \
