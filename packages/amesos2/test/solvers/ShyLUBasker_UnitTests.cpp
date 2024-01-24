@@ -243,7 +243,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, NumericFactorization, SCALAR, LO, GO )
   {
-    std::cout << "  BEGIN SHYLUBASKER NUMFAC TEST" << std::endl;
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
