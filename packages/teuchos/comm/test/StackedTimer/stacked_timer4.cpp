@@ -19,27 +19,43 @@
 #include "Kokkos_Core.hpp"
 #endif
 
+// ***************************************************
+// These tests must be run on exactly 4 MPI processes!
+// ***************************************************
 
 TEUCHOS_UNIT_TEST(StackedTimer, minmax_hist)
 {
-
   Teuchos::StackedTimer timer("L0");
   timer.stopBaseTimer();
 
   const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
-  if (comm->getSize() != 4)
-    return;
+  TEST_ASSERT(comm->getSize() == 4)
   const int myRank = Teuchos::rank(*comm);
 
   if ((myRank == 1) || (myRank == 2)) {
     timer.start("T0");
     timer.stop("T0");
+    if(myRank == 1) {
+      timer.start("T0");
+      timer.stop("T0");
+      timer.start("T0");
+      timer.stop("T0");
+    }
     const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@T0"))->setAccumulatedTime(Teuchos::as<double>(myRank));
   } else {
     timer.start("T1");
     timer.stop("T1");
+    if (myRank == 3) {
+      timer.start("T1");
+      timer.stop("T1");
+    }
     const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0@T1"))->setAccumulatedTime(Teuchos::as<double>(myRank));
   }
+
+  // Throws since the mpi aggregation has not been called yet
+  TEST_THROW(timer.getMpiAverageTime("L0@T0"),std::runtime_error);
+  TEST_THROW(timer.getMpiAverageCount("L0@T1"),std::runtime_error);
+  TEST_THROW(timer.isTimer("L0@T1"),std::runtime_error);
 
   Teuchos::StackedTimer::OutputOptions options;
 
@@ -57,6 +73,19 @@ TEUCHOS_UNIT_TEST(StackedTimer, minmax_hist)
       TEST_ASSERT(os.str().find("min=1, max=2, proc min=1, proc max=2") != std::string::npos);
       TEST_ASSERT(os.str().find("<1, 1>") != std::string::npos);
       TEST_ASSERT(os.str().find("min=0, max=3, proc min=0, proc max=3") != std::string::npos);
+
+      constexpr double tol = 10.0*std::numeric_limits<double>::epsilon();
+      TEST_FLOATING_EQUALITY(timer.getMpiAverageTime("L0@T0"),1.5,tol);
+      TEST_FLOATING_EQUALITY(timer.getMpiAverageTime("L0@T1"),1.5,tol);
+      TEST_FLOATING_EQUALITY(timer.getMpiAverageCount("L0@T0"),2.0,tol);
+      TEST_FLOATING_EQUALITY(timer.getMpiAverageCount("L0@T1"),1.5,tol);
+
+      TEST_THROW(timer.getMpiAverageTime("INCORRECT TIMER NAME"),std::runtime_error);
+      TEST_THROW(timer.getMpiAverageCount("INCORRECT TIMER NAME"),std::runtime_error);
+
+      TEST_ASSERT(timer.isTimer("L0@T0"));
+      TEST_ASSERT(timer.isTimer("L0@T1"));
+      TEST_ASSERT(!timer.isTimer("INCORRECT TIMER NAME"));
     }
   }
 }
