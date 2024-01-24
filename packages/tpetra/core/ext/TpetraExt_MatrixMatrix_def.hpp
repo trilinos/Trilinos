@@ -911,7 +911,7 @@ add (const Scalar& alpha,
            << "Call AddKern::addSorted(...)" << std::endl;
         std::cerr << os.str ();
       }
-      AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, vals, rowptrs, colinds);
+      AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, Aprime->getGlobalNumCols(), vals, rowptrs, colinds);
     }
     else
     {
@@ -3709,6 +3709,11 @@ addSorted(
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+#if KOKKOSKERNELS_VERSION >= 40299
+  GO numGlobalCols,
+#else
+  GO /* numGlobalCols */,
+#endif
   typename MMdetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -3725,7 +3730,11 @@ addSorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-    (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
+    (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+     nrows, numGlobalCols,
+#endif
+     Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //KokkosKernels requires values to be zeroed
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
@@ -3734,6 +3743,9 @@ addSorted(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+     nrows, numGlobalCols,
+#endif
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
     Crowptrs, Ccolinds, Cvals);
@@ -3750,7 +3762,11 @@ addUnsorted(
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+#if KOKKOSKERNELS_VERSION >= 40299
+  GO numGlobalCols,
+#else
   GO /* numGlobalCols */,
+#endif
   typename MMdetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -3768,7 +3784,11 @@ addUnsorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-      (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
+      (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+       nrows, numGlobalCols,
+#endif
+       Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //Cvals must be zeroed out
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
@@ -3777,6 +3797,9 @@ addUnsorted(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: unsorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+    nrows, numGlobalCols,
+#endif
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
     Crowptrs, Ccolinds, Cvals);
@@ -3850,7 +3873,11 @@ convertToGlobalAndAdd(
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   KokkosSparse::Experimental::spadd_symbolic
-    (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
+    (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+     nrows, A.numCols(),
+#endif
+     Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -3858,6 +3885,9 @@ convertToGlobalAndAdd(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+    nrows, A.numCols(),
+#endif
     Arowptrs, AcolindsConverted, Avals, scalarA,
     Browptrs, BcolindsConverted, Bvals, scalarB,
     Crowptrs, Ccolinds, Cvals);
