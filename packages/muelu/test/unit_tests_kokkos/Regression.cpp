@@ -57,6 +57,8 @@
 #include <MueLu_Version.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_CreateXpetraPreconditioner.hpp>
+#include <MueLu_CoalesceDropFactory_kokkos.hpp>
+#include <MueLu_UncoupledAggregationFactory_kokkos.hpp>
 
 #include <Tpetra_Details_KokkosCounter.hpp>
 
@@ -137,8 +139,62 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
 
 }  // H2D
 
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Regression, H2D, Scalar, LO, GO, Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, Aggregration, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+  RCP<const Teuchos::Comm<int> > comm               = TestHelpers_kokkos::Parameters::getDefaultComm();
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = rcp(new Teuchos::StackedTimer("H2D"));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
+  // Make a Matrix with multiple degrees of freedom per node
+  GlobalOrdinal nx = 20, ny = 20;
+
+  // Describes the initial layout of matrix rows across processors.
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
+
+  using test_factory = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+  Teuchos::CommandLineProcessor clp(false);
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                    // manage parameters of xpetra
+
+  RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build2DPoisson(nx, ny);
+
+  Tpetra::Details::DeepCopyCounter::reset();
+  Tpetra::Details::DeepCopyCounter::start();
+
+  Level aLevel;
+  TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
+  aLevel.Request("A");
+  aLevel.Set("A", A);
+
+  RCP<CoalesceDropFactory_kokkos> dropFact        = rcp(new CoalesceDropFactory_kokkos());
+  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  aggFact->SetFactory("Graph", dropFact);
+  aLevel.Request(*aggFact);
+  aggFact->Build(aLevel);
+
+  Tpetra::Details::DeepCopyCounter::stop();
+
+  if (Node::is_cpu) {
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 0);
+  } else {
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 23);
+  }
+
+  stacked_timer->stopBaseTimer();
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = options.output_histogram = options.output_minmax = true;
+  stacked_timer->report(out, comm, options);
+
+}  // Aggregration
+
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                 \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Regression, H2D, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Regression, Aggregration, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
