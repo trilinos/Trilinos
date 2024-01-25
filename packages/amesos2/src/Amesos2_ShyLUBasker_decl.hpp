@@ -226,10 +226,7 @@ private:
   "Kokkos node type not support by experimental ShyLUBasker Amesos2");
   */
   typedef Kokkos::OpenMP Exe_Space;
-   // Instance for non-transpose solves
    ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space> *ShyLUbasker;
-   // Instance for transpose solves
-   ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space> *ShyLUbaskerTr;
 #else
   #pragma message("Amesos_ShyLUBasker_decl Error: ENABLED SHYLU_NODEBASKER BUT NOT KOKKOS or NOT OPENMP!")
 #endif
