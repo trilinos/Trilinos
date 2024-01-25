@@ -64,14 +64,14 @@ namespace panzer {
     typedef enum { HGRAD=0, HCURL=1, HDIV=2, HVOL=3, CONST=4 } EElementSpace;
     
     /** Build a basis given a type, order and CellData object
-      \param[in] basis_type String name that describes the type of basis
+      \param[in] basis_type String name that describes the type of basis ("HGrad", "HDiv", "HCurl", or "HVol")
       \param[in] basis_order Order of the basis
       \param[in] cell_data Description of the basis
     */
     PureBasis(const std::string & basis_type,const int basis_order,const CellData & cell_data);
 
     /** Build a basis given a type, order, number of cells (for data layouts) and shards topology
-      \param[in] basis_type String name that describes the type of basis
+      \param[in] basis_type String name that describes the type of basis ("HGrad", "HDiv", "HCurl", or "HVol")
       \param[in] basis_order Order of the basis
       \param[in] num_cells Number of cells used in the data layouts for this basis
       \param[in] cell_topo A shards topology description
