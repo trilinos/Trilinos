@@ -317,6 +317,12 @@ public:
     std::string const& paramName,
     std::string const& sublistName
     ) const;
+  
+  void validateAndModify(
+    std::string const& paramName,
+    std::string const& sublistName,
+    ParameterEntry * entry
+  ) const;
 
   //@}
 
@@ -2676,6 +2682,17 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 }
 
 
+template<class IntegralType>
+void StringToIntegralParameterEntryValidator<IntegralType>::validateAndModify(
+  std::string const& paramName,
+  std::string const& sublistName,
+  ParameterEntry * entry
+  ) const
+{
+  entry->setValue(this->getIntegralValue(*entry, paramName, sublistName, false));
+}
+
+
 // private
 
 template<class IntegralType>
@@ -2889,12 +2906,16 @@ IntegralType Teuchos::getIntegralValue(
   )
 {
   const ParameterEntry &entry = paramList.getEntry(paramName);
-  RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
-    integralValidator = getStringToIntegralParameterEntryValidator<IntegralType>(
-      entry, paramList, paramName
-      );
-  return integralValidator->getIntegralValue(
-    entry, paramName, paramList.name(), true );
+  if (entry.isType<IntegralType>()){
+    return getValue<IntegralType>(entry);
+  } else{
+    RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+      integralValidator = getStringToIntegralParameterEntryValidator<IntegralType>(
+        entry, paramList, paramName
+        );
+    return integralValidator->getIntegralValue(
+      entry, paramName, paramList.name(), true );
+  }
 }
 
 
