@@ -1,0 +1,8 @@
+#Official Tool: clang-format version 14.0.0
+#Kokkos options
+BasedOnStyle: google
+SortIncludes: false
+AlignConsecutiveAssignments: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+ColumnLimit: 100

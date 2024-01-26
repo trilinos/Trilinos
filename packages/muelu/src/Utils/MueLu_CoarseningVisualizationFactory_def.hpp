@@ -98,9 +98,9 @@ void CoarseningVisualizationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CoarseningVisualizationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
-  RCP<GraphBase> fineGraph = Teuchos::null;
-  RCP<Matrix> P            = Teuchos::null;
-  const ParameterList &pL  = this->GetParameterList();
+  RCP<LWGraph> fineGraph  = Teuchos::null;
+  RCP<Matrix> P           = Teuchos::null;
+  const ParameterList &pL = this->GetParameterList();
   if (this->GetFactory("P") != Teuchos::null && this->GetFactory("Ptent") == Teuchos::null)
     P = Get<RCP<Matrix> >(coarseLevel, "P");
   if (GetFactory("Ptent") != Teuchos::null && GetFactory("P") == Teuchos::null)
@@ -192,7 +192,7 @@ void CoarseningVisualizationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // communicate fine level coordinates if necessary
   if (pL.get<bool>("visualization: fine graph edges")) {
-    fineGraph = Get<RCP<GraphBase> >(fineLevel, "Graph");
+    fineGraph = Get<RCP<LWGraph> >(fineLevel, "Graph");
 
     RCP<Import> coordImporter                                                                                                          = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords->getMap(), fineGraph->GetImportMap());
     RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>::Build(fineGraph->GetImportMap(), coords->getNumVectors());
@@ -311,7 +311,7 @@ void CoarseningVisualizationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // communicate fine level coordinates if necessary
 #if 0  // we don't have access to the coarse graph
     if (pL.get<bool>("visualization: coarse graph edges")) {
-      RCP<GraphBase> coarseGraph = Get<RCP<GraphBase> >(coarseLevel, "Graph");
+      RCP<LWGraph> coarseGraph = Get<RCP<LWGraph> >(coarseLevel, "Graph");
 
       Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coarsecoords = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >(coarseLevel, "Coordinates");
 

@@ -60,8 +60,7 @@
 
 #include "MueLu_InterfaceAggregationAlgorithm_decl.hpp"
 
-//#include "MueLu_Graph.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
@@ -73,7 +72,7 @@ InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::InterfaceAggre
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& /* params */, GraphBase const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& /* params */, LWGraph const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
@@ -93,10 +92,10 @@ void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggr
       int aggIndex = numLocalAggregates;
       std::vector<int> aggList;
       aggList.push_back(iNode1);
-      ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode1);
+      auto neighOfINode = graph.getNeighborVertices(iNode1);
 
-      for (int j = 0; j < neighOfINode.size(); ++j) {
-        LO neigh = neighOfINode[j];
+      for (int j = 0; j < neighOfINode.length; ++j) {
+        LO neigh = neighOfINode(j);
         if (neigh != iNode1 && graph.isLocalNeighborVertex(neigh)) {
           if (aggStat[neigh] != AGGREGATED && aggStat[neigh] != INTERFACE &&
               aggStat[neigh] != IGNORED) {

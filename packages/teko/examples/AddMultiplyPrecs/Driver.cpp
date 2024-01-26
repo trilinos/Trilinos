@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -63,10 +63,10 @@
 
 // include basic Epetra information
 #ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-   #include "mpi.h"
+#include "Epetra_MpiComm.h"
+#include "mpi.h"
 #else
-   #include "Epetra_SerialComm.h"
+#include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
@@ -74,7 +74,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Export.h"
 
-// EpetraExt 
+// EpetraExt
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 #include "EpetraExt_VectorOut.h"
@@ -110,83 +110,87 @@
 #include <fstream>
 #include <cmath>
 
+using Teuchos::null;
+using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
-using Teuchos::null;
-using Teuchos::ParameterList;
 
 //
-// Exercise the use of additive and multiplicative preconditioners 
+// Exercise the use of additive and multiplicative preconditioners
 // using AddPreconditionerFactory and MultPreconditionerFactory
 //
-int main(int argc,char * argv[])
-{
-   // calls MPI_Init and MPI_Finalize
-   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+int main(int argc, char* argv[]) {
+  // calls MPI_Init and MPI_Finalize
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-   // Handles some I/O to the output screen
-   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  // Handles some I/O to the output screen
+  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-   #ifdef HAVE_MPI
-      Epetra_MpiComm Comm(MPI_COMM_WORLD);
-   #else
-      Epetra_SerialComm Comm;
-   #endif
- 
-   // get process information
-   int numProc = Comm.NumProc();
-   int myPID   = Comm.MyPID();
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
 
-   // output garbage
-   *out << "Approaching Barrier: proc = " << numProc << ", pid = " << myPID << std::endl;
-   Comm.Barrier();
+  // get process information
+  int numProc = Comm.NumProc();
+  int myPID   = Comm.MyPID();
 
-   RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("solverparams.xml");
+  // output garbage
+  *out << "Approaching Barrier: proc = " << numProc << ", pid = " << myPID << std::endl;
+  Comm.Barrier();
 
-   Epetra_Map map(15444,0,Comm);
-   Epetra_CrsMatrix * ptrA = 0;
-   Epetra_Vector    * ptrf = 0;
-   Epetra_Vector    * ptrx = 0;
+  RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("solverparams.xml");
 
-   std::cout << "Reading matrix market file" << std::endl;
-   EpetraExt::MatrixMarketFileToCrsMatrix("./modified.mm",map,map,map,ptrA);
-   EpetraExt::MatrixMarketFileToVector("./rhs_test.mm",map,ptrf);
-   EpetraExt::MatrixMarketFileToVector("./lhs_test.mm",map,ptrx);
+  Epetra_Map map(15444, 0, Comm);
+  Epetra_CrsMatrix* ptrA = 0;
+  Epetra_Vector* ptrf    = 0;
+  Epetra_Vector* ptrx    = 0;
 
-   RCP<Epetra_CrsMatrix> A = rcp(ptrA);
-   RCP<Epetra_Vector>    b = rcp(ptrf);
-   RCP<Epetra_Vector>    x = rcp(ptrx);
+  std::cout << "Reading matrix market file" << std::endl;
+  EpetraExt::MatrixMarketFileToCrsMatrix("./modified.mm", map, map, map, ptrA);
+  EpetraExt::MatrixMarketFileToVector("./rhs_test.mm", map, ptrf);
+  EpetraExt::MatrixMarketFileToVector("./lhs_test.mm", map, ptrx);
 
-   std::cout << "Building strided operator" << std::endl;
-   std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
-   Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA
-         = Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec,A));
+  RCP<Epetra_CrsMatrix> A = rcp(ptrA);
+  RCP<Epetra_Vector> b    = rcp(ptrf);
+  RCP<Epetra_Vector> x    = rcp(ptrx);
 
-   RCP<Teko::InverseFactory>      inverse = Teko::invFactoryFromParamList(*paramList,"Amesos");
-   RCP<Teko::BlockInvDiagonalStrategy> strategy = rcp(new Teko::InvFactoryDiagStrategy(inverse));
+  std::cout << "Building strided operator" << std::endl;
+  std::vector<int> vec(2);
+  vec[0] = 2;
+  vec[1] = 1;
+  Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA =
+      Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec, A));
 
-   RCP<Teko::BlockPreconditionerFactory>     GSFactory = rcp(new Teko::GaussSeidelPreconditionerFactory(
-                                                           Teko::GS_UseLowerTriangle,strategy));
-   RCP<Teko::BlockPreconditionerFactory> JacobiFactory = rcp(new Teko::JacobiPreconditionerFactory(strategy));
-   #ifdef ADD_PREC
-   RCP<Teko::BlockPreconditionerFactory> MasterFactory = rcp(new Teko::AddPreconditionerFactory(GSFactory,JacobiFactory));
-   #else
-   RCP<Teko::BlockPreconditionerFactory> MasterFactory = rcp(new Teko::MultPreconditionerFactory(GSFactory,JacobiFactory));
-   #endif
+  RCP<Teko::InverseFactory> inverse = Teko::invFactoryFromParamList(*paramList, "Amesos");
+  RCP<Teko::BlockInvDiagonalStrategy> strategy = rcp(new Teko::InvFactoryDiagStrategy(inverse));
 
-   Teko::Epetra::EpetraBlockPreconditioner MyPreconditioner(MasterFactory);
-   MyPreconditioner.buildPreconditioner(sA);
-   Epetra_LinearProblem problem(&*A,&*x,&*b);
+  RCP<Teko::BlockPreconditionerFactory> GSFactory =
+      rcp(new Teko::GaussSeidelPreconditionerFactory(Teko::GS_UseLowerTriangle, strategy));
+  RCP<Teko::BlockPreconditionerFactory> JacobiFactory =
+      rcp(new Teko::JacobiPreconditionerFactory(strategy));
+#ifdef ADD_PREC
+  RCP<Teko::BlockPreconditionerFactory> MasterFactory =
+      rcp(new Teko::AddPreconditionerFactory(GSFactory, JacobiFactory));
+#else
+  RCP<Teko::BlockPreconditionerFactory> MasterFactory =
+      rcp(new Teko::MultPreconditionerFactory(GSFactory, JacobiFactory));
+#endif
 
-   // build solver
-   AztecOO solver(problem);
-   solver.SetAztecOption(AZ_solver,AZ_gmres);
-   solver.SetAztecOption(AZ_precond,AZ_none);
-   solver.SetAztecOption(AZ_kspace,50);
-   solver.SetAztecOption(AZ_output,10);
-   solver.SetPrecOperator(&MyPreconditioner);
-   solver.Iterate(100,1e-5);
+  Teko::Epetra::EpetraBlockPreconditioner MyPreconditioner(MasterFactory);
+  MyPreconditioner.buildPreconditioner(sA);
+  Epetra_LinearProblem problem(&*A, &*x, &*b);
 
-   return 0;
+  // build solver
+  AztecOO solver(problem);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_precond, AZ_none);
+  solver.SetAztecOption(AZ_kspace, 50);
+  solver.SetAztecOption(AZ_output, 10);
+  solver.SetPrecOperator(&MyPreconditioner);
+  solver.Iterate(100, 1e-5);
+
+  return 0;
 }

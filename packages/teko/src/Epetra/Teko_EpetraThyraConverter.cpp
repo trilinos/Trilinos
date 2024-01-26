@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -60,238 +60,245 @@
 #include <iostream>
 #include <vector>
 
-using Teuchos::RCP;
-using Teuchos::Ptr;
-using Teuchos::rcp;
-using Teuchos::rcpFromRef;
-using Teuchos::rcp_dynamic_cast;
-using Teuchos::ptr_dynamic_cast;
 using Teuchos::null;
+using Teuchos::Ptr;
+using Teuchos::ptr_dynamic_cast;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_dynamic_cast;
+using Teuchos::rcpFromRef;
 
 namespace Teko {
 namespace Epetra {
 
-// const Teuchos::RCP<const Thyra::MultiVectorBase<double> > 
-// blockEpetraToThyra(int numVectors,const double * epetraData,int leadingDim,const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & vs,int & localDim)
+// const Teuchos::RCP<const Thyra::MultiVectorBase<double> >
+// blockEpetraToThyra(int numVectors,const double * epetraData,int leadingDim,const
+// Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & vs,int & localDim)
 
-void blockEpetraToThyra(int numVectors,const double * epetraData,int leadingDim,const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & mv,int & localDim)
-{
-   localDim = 0;
+void blockEpetraToThyra(int numVectors, const double* epetraData, int leadingDim,
+                        const Teuchos::Ptr<Thyra::MultiVectorBase<double> >& mv, int& localDim) {
+  localDim = 0;
 
-   // check the base case
-   const Ptr<Thyra::ProductMultiVectorBase<double> > prodMV 
-         = ptr_dynamic_cast<Thyra::ProductMultiVectorBase<double> > (mv);
-   if(prodMV==Teuchos::null) {
-      // VS object must be a SpmdMultiVector object
-      const Ptr<Thyra::SpmdMultiVectorBase<double> > spmdX  = ptr_dynamic_cast<Thyra::SpmdMultiVectorBase<double> >(mv,true);
-      const RCP<const Thyra::SpmdVectorSpaceBase<double> > spmdVS = spmdX->spmdSpace();
+  // check the base case
+  const Ptr<Thyra::ProductMultiVectorBase<double> > prodMV =
+      ptr_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(mv);
+  if (prodMV == Teuchos::null) {
+    // VS object must be a SpmdMultiVector object
+    const Ptr<Thyra::SpmdMultiVectorBase<double> > spmdX =
+        ptr_dynamic_cast<Thyra::SpmdMultiVectorBase<double> >(mv, true);
+    const RCP<const Thyra::SpmdVectorSpaceBase<double> > spmdVS = spmdX->spmdSpace();
 
-      int localSubDim = spmdVS->localSubDim();
+    int localSubDim = spmdVS->localSubDim();
 
-      Thyra::Ordinal thyraLeadingDim=0;
-      // double * thyraData=0;
-      // spmdX->getLocalData(&thyraData,&thyraLeadingDim);
+    Thyra::Ordinal thyraLeadingDim = 0;
+    // double * thyraData=0;
+    // spmdX->getLocalData(&thyraData,&thyraLeadingDim);
 
-      Teuchos::ArrayRCP<double> thyraData_arcp;
-      Teuchos::ArrayView<double> thyraData;
-      spmdX->getNonconstLocalData(Teuchos::outArg(thyraData_arcp),Teuchos::outArg(thyraLeadingDim));
-      thyraData = thyraData_arcp(); // build array view
+    Teuchos::ArrayRCP<double> thyraData_arcp;
+    Teuchos::ArrayView<double> thyraData;
+    spmdX->getNonconstLocalData(Teuchos::outArg(thyraData_arcp), Teuchos::outArg(thyraLeadingDim));
+    thyraData = thyraData_arcp();  // build array view
 
-      for(int i=0;i<localSubDim;i++) {
-         // copy each vector
-         for(int v=0;v<numVectors;v++)
-            thyraData[i+thyraLeadingDim*v] = epetraData[i+leadingDim*v];
-      }
+    for (int i = 0; i < localSubDim; i++) {
+      // copy each vector
+      for (int v = 0; v < numVectors; v++)
+        thyraData[i + thyraLeadingDim * v] = epetraData[i + leadingDim * v];
+    }
 
-      // spmdX->commitLocalData(&thyraData[0]);
+    // spmdX->commitLocalData(&thyraData[0]);
 
-      // set the local dimension
-      localDim = localSubDim;
+    // set the local dimension
+    localDim = localSubDim;
 
-      return;
-   }
+    return;
+  }
 
-   // this keeps track of current location in the epetraData vector
-   const double * localData = epetraData;
+  // this keeps track of current location in the epetraData vector
+  const double* localData = epetraData;
 
-   // loop over all the blocks in the vector space
-   for(int blkIndex=0;blkIndex<prodMV->productSpace()->numBlocks();blkIndex++) {
-      int subDim = 0;
-      const RCP<Thyra::MultiVectorBase<double> > blockVec = prodMV->getNonconstMultiVectorBlock(blkIndex);
+  // loop over all the blocks in the vector space
+  for (int blkIndex = 0; blkIndex < prodMV->productSpace()->numBlocks(); blkIndex++) {
+    int subDim = 0;
+    const RCP<Thyra::MultiVectorBase<double> > blockVec =
+        prodMV->getNonconstMultiVectorBlock(blkIndex);
 
-      // perorm the recusive copy
-      blockEpetraToThyra(numVectors, localData,leadingDim,blockVec.ptr(),subDim);
+    // perorm the recusive copy
+    blockEpetraToThyra(numVectors, localData, leadingDim, blockVec.ptr(), subDim);
 
-      // shift to the next block
-      localData += subDim;
+    // shift to the next block
+    localData += subDim;
 
-      // account for the size of this subblock
-      localDim += subDim;
-   }
+    // account for the size of this subblock
+    localDim += subDim;
+  }
 }
 
 // Convert a Epetra_MultiVector with assumed block structure dictated by the
 // vector space into a Thyra::MultiVectorBase object.
-// const Teuchos::RCP<const Thyra::MultiVectorBase<double> > blockEpetraToThyra(const Epetra_MultiVector & e,const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & vs)
-void blockEpetraToThyra(const Epetra_MultiVector & epetraX,const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraX) 
-{
-   TEUCHOS_ASSERT(thyraX->range()->dim()==epetraX.GlobalLength());
+// const Teuchos::RCP<const Thyra::MultiVectorBase<double> > blockEpetraToThyra(const
+// Epetra_MultiVector & e,const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & vs)
+void blockEpetraToThyra(const Epetra_MultiVector& epetraX,
+                        const Teuchos::Ptr<Thyra::MultiVectorBase<double> >& thyraX) {
+  TEUCHOS_ASSERT(thyraX->range()->dim() == epetraX.GlobalLength());
 
-   // extract local information from the Epetra_MultiVector
-   int leadingDim=0,numVectors=0,localDim=0;
-   double * epetraData=0;
-   epetraX.ExtractView(&epetraData,&leadingDim);
+  // extract local information from the Epetra_MultiVector
+  int leadingDim = 0, numVectors = 0, localDim = 0;
+  double* epetraData = 0;
+  epetraX.ExtractView(&epetraData, &leadingDim);
 
-   numVectors = epetraX.NumVectors();
+  numVectors = epetraX.NumVectors();
 
-   blockEpetraToThyra(numVectors,epetraData,leadingDim,thyraX.ptr(),localDim);   
+  blockEpetraToThyra(numVectors, epetraData, leadingDim, thyraX.ptr(), localDim);
 
-   TEUCHOS_ASSERT(localDim==epetraX.MyLength());
+  TEUCHOS_ASSERT(localDim == epetraX.MyLength());
 }
 
-void blockThyraToEpetra(int numVectors,double * epetraData,int leadingDim,const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,int & localDim)
-{
-   localDim = 0;
+void blockThyraToEpetra(int numVectors, double* epetraData, int leadingDim,
+                        const Teuchos::RCP<const Thyra::MultiVectorBase<double> >& tX,
+                        int& localDim) {
+  localDim = 0;
 
-   // check the base case
-   const RCP<const Thyra::ProductMultiVectorBase<double> > prodX
-         = rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> > (tX);
-   if(prodX==Teuchos::null) {
-      // the base case
+  // check the base case
+  const RCP<const Thyra::ProductMultiVectorBase<double> > prodX =
+      rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> >(tX);
+  if (prodX == Teuchos::null) {
+    // the base case
 
-      // VS object must be a SpmdMultiVector object
-      RCP<const Thyra::SpmdMultiVectorBase<double> > spmdX  = rcp_dynamic_cast<const Thyra::SpmdMultiVectorBase<double> >(tX,true);
-      RCP<const Thyra::SpmdVectorSpaceBase<double> > spmdVS = spmdX->spmdSpace();
+    // VS object must be a SpmdMultiVector object
+    RCP<const Thyra::SpmdMultiVectorBase<double> > spmdX =
+        rcp_dynamic_cast<const Thyra::SpmdMultiVectorBase<double> >(tX, true);
+    RCP<const Thyra::SpmdVectorSpaceBase<double> > spmdVS = spmdX->spmdSpace();
 
-      int localSubDim = spmdVS->localSubDim();
+    int localSubDim = spmdVS->localSubDim();
 
-      Thyra::Ordinal thyraLeadingDim=0;
-      // const double * thyraData=0;
-      // spmdX->getLocalData(&thyraData,&thyraLeadingDim);
-    
-      Teuchos::ArrayView<const double> thyraData;
-      Teuchos::ArrayRCP<const double> thyraData_arcp;
-      spmdX->getLocalData(Teuchos::outArg(thyraData_arcp),Teuchos::outArg(thyraLeadingDim));
-      thyraData = thyraData_arcp(); // grab the array view
+    Thyra::Ordinal thyraLeadingDim = 0;
+    // const double * thyraData=0;
+    // spmdX->getLocalData(&thyraData,&thyraLeadingDim);
 
-      for(int i=0;i<localSubDim;i++) {
-         // copy each vector
-         for(int v=0;v<numVectors;v++)
-            epetraData[i+leadingDim*v] = thyraData[i+thyraLeadingDim*v];
-      }
+    Teuchos::ArrayView<const double> thyraData;
+    Teuchos::ArrayRCP<const double> thyraData_arcp;
+    spmdX->getLocalData(Teuchos::outArg(thyraData_arcp), Teuchos::outArg(thyraLeadingDim));
+    thyraData = thyraData_arcp();  // grab the array view
 
-      // set the local dimension
-      localDim = localSubDim;
+    for (int i = 0; i < localSubDim; i++) {
+      // copy each vector
+      for (int v = 0; v < numVectors; v++)
+        epetraData[i + leadingDim * v] = thyraData[i + thyraLeadingDim * v];
+    }
 
-      return;
-   }
+    // set the local dimension
+    localDim = localSubDim;
 
-   const RCP<const Thyra::ProductVectorSpaceBase<double> > prodVS = prodX->productSpace();
+    return;
+  }
 
-   // this keeps track of current location in the epetraData vector
-   double * localData = epetraData;
+  const RCP<const Thyra::ProductVectorSpaceBase<double> > prodVS = prodX->productSpace();
 
-   // loop over all the blocks in the vector space
-   for(int blkIndex=0;blkIndex<prodVS->numBlocks();blkIndex++) {
-      int subDim = 0;
+  // this keeps track of current location in the epetraData vector
+  double* localData = epetraData;
 
-      // construct the block vector
-      blockThyraToEpetra(numVectors, localData,leadingDim,prodX->getMultiVectorBlock(blkIndex),subDim);
+  // loop over all the blocks in the vector space
+  for (int blkIndex = 0; blkIndex < prodVS->numBlocks(); blkIndex++) {
+    int subDim = 0;
 
-      // shift to the next block
-      localData += subDim;
+    // construct the block vector
+    blockThyraToEpetra(numVectors, localData, leadingDim, prodX->getMultiVectorBlock(blkIndex),
+                       subDim);
 
-      // account for the size of this subblock
-      localDim += subDim;
-   }
+    // shift to the next block
+    localData += subDim;
 
-   return;
+    // account for the size of this subblock
+    localDim += subDim;
+  }
+
+  return;
 }
 
 // Convert a Thyra::MultiVectorBase object to a Epetra_MultiVector object with
 // the map defined by the Epetra_Map.
-// const Teuchos::RCP<const Epetra_MultiVector> 
-// blockThyraToEpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,const RCP<const Epetra_Map> & map)
-void blockThyraToEpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & thyraX,Epetra_MultiVector & epetraX)
-{
-   // build an Epetra_MultiVector object
-   int numVectors = thyraX->domain()->dim();
+// const Teuchos::RCP<const Epetra_MultiVector>
+// blockThyraToEpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,const RCP<const
+// Epetra_Map> & map)
+void blockThyraToEpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<double> >& thyraX,
+                        Epetra_MultiVector& epetraX) {
+  // build an Epetra_MultiVector object
+  int numVectors = thyraX->domain()->dim();
 
-   // make sure the number of vectors are the same
-   TEUCHOS_ASSERT(numVectors==epetraX.NumVectors());
-   TEUCHOS_ASSERT(thyraX->range()->dim()==epetraX.GlobalLength());
+  // make sure the number of vectors are the same
+  TEUCHOS_ASSERT(numVectors == epetraX.NumVectors());
+  TEUCHOS_ASSERT(thyraX->range()->dim() == epetraX.GlobalLength());
 
-   // extract local information from the Epetra_MultiVector
-   int leadingDim=0,localDim=0;
-   double * epetraData=0;
-   epetraX.ExtractView(&epetraData,&leadingDim);
+  // extract local information from the Epetra_MultiVector
+  int leadingDim = 0, localDim = 0;
+  double* epetraData = 0;
+  epetraX.ExtractView(&epetraData, &leadingDim);
 
-   // perform recursive copy
-   blockThyraToEpetra(numVectors,epetraData,leadingDim,thyraX,localDim);
+  // perform recursive copy
+  blockThyraToEpetra(numVectors, epetraData, leadingDim, thyraX, localDim);
 
-   // sanity check
-   TEUCHOS_ASSERT(localDim==epetraX.Map().NumMyElements());
+  // sanity check
+  TEUCHOS_ASSERT(localDim == epetraX.Map().NumMyElements());
 }
 
-void thyraVSToEpetraMap(std::vector<int> & myIndicies, int blockOffset, const Thyra::VectorSpaceBase<double> & vs, int & localDim)
-{
-   // zero out set local dimension
-   localDim = 0;
+void thyraVSToEpetraMap(std::vector<int>& myIndicies, int blockOffset,
+                        const Thyra::VectorSpaceBase<double>& vs, int& localDim) {
+  // zero out set local dimension
+  localDim = 0;
 
-   const RCP<const Thyra::ProductVectorSpaceBase<double> > prodVS
-         = rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(rcpFromRef(vs));
+  const RCP<const Thyra::ProductVectorSpaceBase<double> > prodVS =
+      rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(rcpFromRef(vs));
 
-   // is more recursion needed?
-   if(prodVS==Teuchos::null) {
-      // base case
+  // is more recursion needed?
+  if (prodVS == Teuchos::null) {
+    // base case
 
-      // try to cast to an SPMD capable vector space
-      const RCP<const Thyra::SpmdVectorSpaceBase<double> > spmdVS 
-            = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(rcpFromRef(vs));
-      TEUCHOS_TEST_FOR_EXCEPTION(spmdVS==Teuchos::null,std::runtime_error,
-                         "thyraVSToEpetraMap requires all subblocks to be SPMD");
+    // try to cast to an SPMD capable vector space
+    const RCP<const Thyra::SpmdVectorSpaceBase<double> > spmdVS =
+        rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(rcpFromRef(vs));
+    TEUCHOS_TEST_FOR_EXCEPTION(spmdVS == Teuchos::null, std::runtime_error,
+                               "thyraVSToEpetraMap requires all subblocks to be SPMD");
 
-      // get local data storage information
-      int localOffset = spmdVS->localOffset();
-      int localSubDim = spmdVS->localSubDim();
+    // get local data storage information
+    int localOffset = spmdVS->localOffset();
+    int localSubDim = spmdVS->localSubDim();
 
-      // add indicies to matrix
-      for(int i=0;i<localSubDim;i++)
-         myIndicies.push_back(blockOffset+localOffset+i);
+    // add indicies to matrix
+    for (int i = 0; i < localSubDim; i++) myIndicies.push_back(blockOffset + localOffset + i);
 
-      localDim += localSubDim;
+    localDim += localSubDim;
 
-      return;
-   }
+    return;
+  }
 
-   // loop over all the blocks in the vector space
-   for(int blkIndex=0;blkIndex<prodVS->numBlocks();blkIndex++) {
-      int subDim = 0;
+  // loop over all the blocks in the vector space
+  for (int blkIndex = 0; blkIndex < prodVS->numBlocks(); blkIndex++) {
+    int subDim = 0;
 
-      // construct the block vector
-      thyraVSToEpetraMap(myIndicies, blockOffset,*prodVS->getBlock(blkIndex),subDim);
+    // construct the block vector
+    thyraVSToEpetraMap(myIndicies, blockOffset, *prodVS->getBlock(blkIndex), subDim);
 
-      blockOffset += prodVS->getBlock(blkIndex)->dim();
+    blockOffset += prodVS->getBlock(blkIndex)->dim();
 
-      // account for the size of this subblock
-      localDim += subDim;
-   }
+    // account for the size of this subblock
+    localDim += subDim;
+  }
 }
 
 // From a Thyra vector space create a compatable Epetra_Map
-const RCP<Epetra_Map> thyraVSToEpetraMap(const Thyra::VectorSpaceBase<double> & vs,const RCP<const Epetra_Comm> & comm)
-{
-   int localDim = 0;
-   std::vector<int> myGIDs;
-   
-   // call recursive routine that constructs the mapping
-   thyraVSToEpetraMap(myGIDs,0,vs,localDim);
+const RCP<Epetra_Map> thyraVSToEpetraMap(const Thyra::VectorSpaceBase<double>& vs,
+                                         const RCP<const Epetra_Comm>& comm) {
+  int localDim = 0;
+  std::vector<int> myGIDs;
 
-   TEUCHOS_ASSERT(myGIDs.size()==(unsigned int) localDim);
+  // call recursive routine that constructs the mapping
+  thyraVSToEpetraMap(myGIDs, 0, vs, localDim);
 
-   // create the map
-   return rcp(new Epetra_Map(vs.dim(), myGIDs.size(), &(myGIDs[0]), 0, *comm));
+  TEUCHOS_ASSERT(myGIDs.size() == (unsigned int)localDim);
+
+  // create the map
+  return rcp(new Epetra_Map(vs.dim(), myGIDs.size(), &(myGIDs[0]), 0, *comm));
 }
 
-} // end namespace Epetra
-} // end namespace Teko
+}  // end namespace Epetra
+}  // end namespace Teko

@@ -548,7 +548,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // Trivial LWGraph construction
     graph = rcp(new LWGraph_kokkos(A->getCrsGraph()->getLocalGraphDevice(), A->getRowMap(), A->getColMap(), "graph of A"));
-    graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
+    graph->SetBoundaryNodeMap(boundaryNodes);
 
     numTotal    = A->getLocalNumEntries();
     dofsPerNode = 1;
@@ -769,7 +769,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       SubFactoryMonitor m2(*this, "LWGraph construction", currentLevel);
 
       graph = rcp(new LWGraph_kokkos(kokkosGraph, A->getRowMap(), A->getColMap(), "filtered graph of A"));
-      graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
+      graph->SetBoundaryNodeMap(boundaryNodes);
     }
 
     numTotal = A->getLocalNumEntries();
@@ -890,7 +890,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     graph = rcp(new LWGraph_kokkos(kokkosGraph, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
 
     boundaryNodes = bndNodes;
-    graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
+    graph->SetBoundaryNodeMap(boundaryNodes);
     numTotal = A->getLocalNumEntries();
 
     dofsPerNode = blkSize;

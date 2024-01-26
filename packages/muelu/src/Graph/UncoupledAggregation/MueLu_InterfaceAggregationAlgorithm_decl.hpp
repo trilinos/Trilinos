@@ -59,8 +59,8 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-//#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+
+#include "MueLu_LWGraph.hpp"
 
 namespace MueLu {
 /*!
@@ -102,7 +102,7 @@ class InterfaceAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<Loc
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(Teuchos::ParameterList const& params, GraphBase const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregates(Teuchos::ParameterList const& params, LWGraph const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
   //@}
 
 };  // class InterfaceAggregationAlgorithm

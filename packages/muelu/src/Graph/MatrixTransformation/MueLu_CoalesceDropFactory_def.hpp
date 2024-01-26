@@ -66,8 +66,8 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph.hpp"
+#include "MueLu_LWGraph.hpp"
+
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph.hpp"
 #include "MueLu_MasterList.hpp"
@@ -438,11 +438,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       // Therefore, it is sufficient to check only threshold
       if (BlockSize == 1 && threshold == STS::zero() && !useSignedClassicalRS && !useSignedClassicalSA && A->hasCrsGraph()) {
         // Case 1:  scalar problem, no dropping => just use matrix graph
-        RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+        RCP<LWGraph> graph = rcp(new LWGraph(A->getCrsGraph(), "graph of A"));
         // Detect and record rows that correspond to Dirichlet boundary conditions
-        ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows(*A, dirichletThreshold));
+        auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
         if (rowSumTol > 0.)
-          Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);
+          Utilities::ApplyRowSumCriterionHost(*A, rowSumTol, boundaryNodes);
 
         graph->SetBoundaryNodeMap(boundaryNodes);
         numTotal = A->getLocalNumEntries();
@@ -450,7 +450,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         if (GetVerbLevel() & Statistics1) {
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
-          for (LO i = 0; i < boundaryNodes.size(); ++i)
+          for (size_t i = 0; i < boundaryNodes.size(); ++i)
             if (boundaryNodes[i])
               numLocalBoundaryNodes++;
           RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
@@ -470,8 +470,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         // OR a matrix without a CrsGraph
 
         // allocate space for the local graph
-        ArrayRCP<LO> rows(A->getLocalNumRows() + 1);
-        ArrayRCP<LO> columns(A->getLocalNumEntries());
+        typename LWGraph::row_type::non_const_type rows("rows", A->getLocalNumRows() + 1);
+        typename LWGraph::entries_type::non_const_type columns("columns", A->getLocalNumEntries());
 
         using MT = typename STS::magnitudeType;
         RCP<Vector> ghostedDiag;
@@ -492,21 +492,21 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           ghostedDiag     = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixOverlappedDiagonal(*A);
           ghostedDiagVals = ghostedDiag->getData(0);
         }
-        ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows(*A, dirichletThreshold));
+        auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
         if (rowSumTol > 0.) {
           if (ghostedBlockNumber.is_null()) {
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Applying point row sum criterion." << std::endl;
-            Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);
+            Utilities::ApplyRowSumCriterionHost(*A, rowSumTol, boundaryNodes);
           } else {
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Applying block row sum criterion." << std::endl;
-            Utilities::ApplyRowSumCriterion(*A, *ghostedBlockNumber, rowSumTol, boundaryNodes);
+            Utilities::ApplyRowSumCriterionHost(*A, *ghostedBlockNumber, rowSumTol, boundaryNodes);
           }
         }
 
         LO realnnz = 0;
-        rows[0]    = 0;
+        rows(0)    = 0;
         for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
           size_t nnz          = A->getNumEntriesInLocalRow(row);
           bool rowIsDirichlet = boundaryNodes[row];
@@ -537,7 +537,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                 } else
                   numDropped++;
               }
-              rows[row + 1] = realnnz;
+              rows(row + 1) = realnnz;
             } else if (useSignedClassicalSA) {
               // Signed classical SA style
               for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
@@ -552,7 +552,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                 */
 
                 if ((!rowIsDirichlet && aij > aiiajj) || row == col) {
-                  columns[realnnz++] = col;
+                  columns(realnnz++) = col;
                   rownnz++;
                 } else
                   numDropped++;
@@ -566,12 +566,12 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                 MT aij    = STS::magnitude(vals[colID] * vals[colID]);                                            // |a_ij|^2
 
                 if ((!rowIsDirichlet && aij > aiiajj) || row == col) {
-                  columns[realnnz++] = col;
+                  columns(realnnz++) = col;
                   rownnz++;
                 } else
                   numDropped++;
               }
-              rows[row + 1] = realnnz;
+              rows(row + 1) = realnnz;
             }
           } else {
             /* Cut Algorithm */
@@ -677,7 +677,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           }
         }  // end for row
 
-        columns.resize(realnnz);
         numTotal = A->getLocalNumEntries();
 
         if (aggregationMayCreateDirichlet) {
@@ -688,13 +687,13 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           }
         }
 
-        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
+        RCP<LWGraph> graph = rcp(new LWGraph(rows, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), A->getRowMap(), A->getColMap(), "thresholded graph of A"));
         graph->SetBoundaryNodeMap(boundaryNodes);
         if (GetVerbLevel() & Statistics1) {
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
-          for (LO i = 0; i < boundaryNodes.size(); ++i)
-            if (boundaryNodes[i])
+          for (size_t i = 0; i < boundaryNodes.size(); ++i)
+            if (boundaryNodes(i))
               numLocalBoundaryNodes++;
           RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
           MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
@@ -705,7 +704,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
         // If we're doing signed classical, we might want to block-diagonalize *after* the dropping
         if (generateColoringGraph) {
-          RCP<GraphBase> colorGraph;
+          RCP<LWGraph> colorGraph;
           RCP<const Import> importer = A->getCrsGraph()->getImporter();
           BlockDiagonalizeGraph(graph, ghostedBlockNumber, colorGraph, importer);
           Set(currentLevel, "Coloring Graph", colorGraph);
@@ -748,10 +747,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getLocalNumElements());
 
         // Allocate space for the local graph
-        ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows + 1);
-        ArrayRCP<LO> columns = ArrayRCP<LO>(A->getLocalNumEntries());
+        typename LWGraph::row_type::non_const_type rows("rows", numRows + 1);
+        typename LWGraph::entries_type::non_const_type columns("columns", A->getLocalNumEntries());
 
-        const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+        typename LWGraph::boundary_nodes_type amalgBoundaryNodes("amalgBoundaryNodes", numRows);
+        Kokkos::deep_copy(amalgBoundaryNodes, false);
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
         // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
@@ -778,7 +778,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
         // loop over all local nodes
         LO realnnz = 0;
-        rows[0]    = 0;
+        rows(0)    = 0;
         Array<LO> indicesExtra;
         for (LO row = 0; row < numRows; row++) {
           ArrayView<const LO> indices;
@@ -822,7 +822,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           LO nnz = indices.size(), rownnz = 0;
           for (LO colID = 0; colID < nnz; colID++) {
             LO col             = indices[colID];
-            columns[realnnz++] = col;
+            columns(realnnz++) = col;
             rownnz++;
           }
 
@@ -835,19 +835,18 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             // and boundary nodes in the aggregation algorithms
             amalgBoundaryNodes[row] = true;
           }
-          rows[row + 1] = realnnz;
+          rows(row + 1) = realnnz;
         }  // for (LO row = 0; row < numRows; row++)
-        columns.resize(realnnz);
 
-        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+        RCP<LWGraph> graph = rcp(new LWGraph(rows, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), uniqueMap, nonUniqueMap, "amalgamated graph of A"));
         graph->SetBoundaryNodeMap(amalgBoundaryNodes);
 
         if (GetVerbLevel() & Statistics1) {
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
 
-          for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
-            if (amalgBoundaryNodes[i])
+          for (size_t i = 0; i < amalgBoundaryNodes.size(); ++i)
+            if (amalgBoundaryNodes(i))
               numLocalBoundaryNodes++;
 
           RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
@@ -878,19 +877,19 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getLocalNumElements());
 
         // Allocate space for the local graph
-        ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows + 1);
-        ArrayRCP<LO> columns = ArrayRCP<LO>(A->getLocalNumEntries());
+        typename LWGraph::row_type::non_const_type rows("rows", numRows + 1);
+        typename LWGraph::entries_type::non_const_type columns("columns", A->getLocalNumEntries());
 
-        const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+        typename LWGraph::boundary_nodes_type amalgBoundaryNodes("amalgBoundaryNodes", numRows);
+        Kokkos::deep_copy(amalgBoundaryNodes, false);
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
         // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
         // TODO the array one bigger than the number of local rows, and the last entry can
         // TODO hold the actual number of boundary nodes.  Clever, huh?
-        ArrayRCP<bool> pointBoundaryNodes;
-        pointBoundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows(*A, dirichletThreshold));
+        auto pointBoundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
         if (rowSumTol > 0.)
-          Utilities::ApplyRowSumCriterion(*A, rowSumTol, pointBoundaryNodes);
+          Utilities::ApplyRowSumCriterionHost(*A, rowSumTol, pointBoundaryNodes);
 
         // extract striding information
         LO blkSize     = A->GetFixedBlockSize();  //< the full block size (number of dofs per node in strided map)
@@ -971,17 +970,17 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           }
           rows[row + 1] = realnnz;
         }  // for (LO row = 0; row < numRows; row++)
-        columns.resize(realnnz);
+        // columns.resize(realnnz);
 
-        RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+        RCP<LWGraph> graph = rcp(new LWGraph(rows, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), uniqueMap, nonUniqueMap, "amalgamated graph of A"));
         graph->SetBoundaryNodeMap(amalgBoundaryNodes);
 
         if (GetVerbLevel() & Statistics1) {
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
 
-          for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
-            if (amalgBoundaryNodes[i])
+          for (size_t i = 0; i < amalgBoundaryNodes.size(); ++i)
+            if (amalgBoundaryNodes(i))
               numLocalBoundaryNodes++;
 
           RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
@@ -1007,14 +1006,13 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
       // TODO the array one bigger than the number of local rows, and the last entry can
       // TODO hold the actual number of boundary nodes.  Clever, huh?
-      ArrayRCP<bool> pointBoundaryNodes;
-      pointBoundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows(*A, dirichletThreshold));
+      auto pointBoundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
       if (rowSumTol > 0.)
-        Utilities::ApplyRowSumCriterion(*A, rowSumTol, pointBoundaryNodes);
+        Utilities::ApplyRowSumCriterionHost(*A, rowSumTol, pointBoundaryNodes);
 
       if ((blkSize == 1) && (threshold == STS::zero())) {
         // Trivial case: scalar problem, no dropping. Can return original graph
-        RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+        RCP<LWGraph> graph = rcp(new LWGraph(A->getCrsGraph(), "graph of A"));
         graph->SetBoundaryNodeMap(pointBoundaryNodes);
         graphType = "unamalgamated";
         numTotal  = A->getLocalNumEntries();
@@ -1022,8 +1020,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         if (GetVerbLevel() & Statistics1) {
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
-          for (LO i = 0; i < pointBoundaryNodes.size(); ++i)
-            if (pointBoundaryNodes[i])
+          for (size_t i = 0; i < pointBoundaryNodes.size(); ++i)
+            if (pointBoundaryNodes(i))
               numLocalBoundaryNodes++;
           RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
           MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
@@ -1161,8 +1159,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         // NOTE: ghostedLaplDiagData might be zero if we don't actually calculate the laplacian
 
         // allocate space for the local graph
-        ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows + 1);
-        ArrayRCP<LO> columns = ArrayRCP<LO>(A->getLocalNumEntries());
+        typename LWGraph::row_type::non_const_type rows("rows", numRows + 1);
+        typename LWGraph::entries_type::non_const_type columns("columns", A->getLocalNumEntries());
 
 #ifdef HAVE_MUELU_DEBUG
         // DEBUGGING
@@ -1173,12 +1171,14 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         ArrayRCP<LO> rows_stop;
         bool use_stop_array = threshold != STS::zero() && distanceLaplacianAlgo == scaled_cut_symmetric;
         if (use_stop_array)
+          // rows_stop = typename LWGraph::row_type::non_const_type("rows_stop", numRows);
           rows_stop.resize(numRows);
 
-        const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+        typename LWGraph::boundary_nodes_type amalgBoundaryNodes("amalgBoundaryNodes", numRows);
+        Kokkos::deep_copy(amalgBoundaryNodes, false);
 
         LO realnnz = 0;
-        rows[0]    = 0;
+        rows(0)    = 0;
 
         Array<LO> indicesExtra;
         {
@@ -1224,8 +1224,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             LO nnz = indices.size(), rownnz = 0;
 
             if (use_stop_array) {
-              rows[row + 1] = rows[row] + nnz;
-              realnnz       = rows[row];
+              rows(row + 1) = rows(row) + nnz;
+              realnnz       = rows(row);
             }
 
             if (threshold != STS::zero()) {
@@ -1236,7 +1236,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                   LO col = indices[colID];
 
                   if (row == col) {
-                    columns[realnnz++] = col;
+                    columns(realnnz++) = col;
                     rownnz++;
                     continue;
                   }
@@ -1258,7 +1258,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                   real_type aij    = STS::magnitude(laplVal * laplVal);
 
                   if (aij > aiiajj) {
-                    columns[realnnz++] = col;
+                    columns(realnnz++) = col;
                     rownnz++;
                   } else {
                     numDropped++;
@@ -1359,14 +1359,14 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
                   // don't drop diagonal
                   if (row == col) {
-                    columns[realnnz++] = col;
+                    columns(realnnz++) = col;
                     rownnz++;
                     //		    printf("(%d,%d) KEEP %13s matrix = %6.4e\n",row,row,"DIAGONAL",drop_vec[idxID].aux_val);
                     continue;
                   }
 
                   if (!drop_vec[idxID].drop) {
-                    columns[realnnz++] = col;
+                    columns(realnnz++) = col;
                     //		    printf("(%d,%d) KEEP dlap = %6.4e matrix = %6.4e\n",row,col,drop_vec[idxID].val/drop_vec[idxID].diag,drop_vec[idxID].aux_val);
                     rownnz++;
                   } else {
@@ -1379,7 +1379,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               // Skip laplace calculation and threshold comparison for zero threshold
               for (LO colID = 0; colID < nnz; colID++) {
                 LO col             = indices[colID];
-                columns[realnnz++] = col;
+                columns(realnnz++) = col;
                 rownnz++;
               }
             }
@@ -1411,13 +1411,13 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               if (col >= numRows) continue;
 
               bool found = false;
-              for (LO t_col = rows[col]; !found && t_col < rows_stop[col]; t_col++) {
+              for (LO t_col = rows(col); !found && t_col < rows_stop[col]; t_col++) {
                 if (columns[t_col] == row)
                   found = true;
               }
               // We didn't find the transpose buddy, so let's symmetrize, unless we'd be symmetrizing
               // into a Dirichlet unknown.  In that case don't.
-              if (!found && !pointBoundaryNodes[col] && rows_stop[col] < rows[col + 1]) {
+              if (!found && !pointBoundaryNodes[col] && Teuchos::as<typename LWGraph::row_type::value_type>(rows_stop[col]) < rows[col + 1]) {
                 LO new_idx = rows_stop[col];
                 //		  printf("(%d,%d) SYMADD entry\n",col,row);
                 columns[new_idx] = row;
@@ -1431,23 +1431,21 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           LO current_start = 0;
           for (LO row = 0; row < numRows; row++) {
             LO old_start = current_start;
-            for (LO col = rows[row]; col < rows_stop[row]; col++) {
+            for (LO col = rows(row); col < rows_stop[row]; col++) {
               if (current_start != col) {
-                columns[current_start] = columns[col];
+                columns(current_start) = columns(col);
               }
               current_start++;
             }
             rows[row] = old_start;
           }
-          rows[numRows] = realnnz = current_start;
+          rows(numRows) = realnnz = current_start;
         }
 
-        columns.resize(realnnz);
-
-        RCP<GraphBase> graph;
+        RCP<LWGraph> graph;
         {
           SubFactoryMonitor m1(*this, "Build amalgamated graph", currentLevel);
-          graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          graph = rcp(new LWGraph(rows, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), uniqueMap, nonUniqueMap, "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(amalgBoundaryNodes);
         }  // subtimer
 
@@ -1455,8 +1453,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
 
-          for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
-            if (amalgBoundaryNodes[i])
+          for (size_t i = 0; i < amalgBoundaryNodes.size(); ++i)
+            if (amalgBoundaryNodes(i))
               numLocalBoundaryNodes++;
 
           RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
@@ -1522,7 +1520,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
     LO numRows  = A->getRowMap()->getLocalNumElements();
     LO numNodes = nodeMap->getLocalNumElements();
-    const ArrayRCP<bool> amalgBoundaryNodes(numNodes, false);
+    typename LWGraph::boundary_nodes_type amalgBoundaryNodes("amalgBoundaryNodes", numNodes);
+    Kokkos::deep_copy(amalgBoundaryNodes, false);
     const ArrayRCP<int> numberDirichletRowsPerNode(numNodes, 0);  // helper array counting the number of Dirichlet nodes associated with node
     bool bIsDiagonalEntry = false;                                // boolean flag stating that grid==gcid
 
@@ -1573,7 +1572,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     crsGraph->fillComplete(nodeMap, nodeMap);
 
     // 5) create MueLu Graph object
-    RCP<GraphBase> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
+    RCP<LWGraph> graph = rcp(new LWGraph(crsGraph, "amalgamated graph of A"));
 
     // Detect and record rows that correspond to Dirichlet boundary conditions
     graph->SetBoundaryNodeMap(amalgBoundaryNodes);
@@ -1581,8 +1580,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
-      for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
-        if (amalgBoundaryNodes[i])
+      for (size_t i = 0; i < amalgBoundaryNodes.size(); ++i)
+        if (amalgBoundaryNodes(i))
           numLocalBoundaryNodes++;
       RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
       MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
@@ -1759,19 +1758,20 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
   Teuchos::ArrayRCP<const LO> col_block_number = ghostedBlockNumber->getData(0);
 
   // allocate space for the local graph
-  ArrayRCP<size_t> rows_mat;
-  ArrayRCP<LO> rows_graph, columns;
-  ArrayRCP<SC> values;
+  typename CrsMatrix::local_matrix_type::row_map_type::HostMirror::non_const_type rows_mat;
+  typename LWGraph::row_type::non_const_type rows_graph;
+  typename LWGraph::entries_type::non_const_type columns;
+  typename CrsMatrix::local_matrix_type::values_type::HostMirror::non_const_type values;
   RCP<CrsMatrixWrap> crs_matrix_wrap;
 
   if (generate_matrix) {
     crs_matrix_wrap = rcp(new CrsMatrixWrap(A->getRowMap(), A->getColMap(), 0));
-    crs_matrix_wrap->getCrsMatrix()->allocateAllValues(A->getLocalNumEntries(), rows_mat, columns, values);
+    rows_mat        = typename CrsMatrix::local_matrix_type::row_map_type::HostMirror::non_const_type("rows_mat", A->getLocalNumRows() + 1);
   } else {
-    rows_graph.resize(A->getLocalNumRows() + 1);
-    columns.resize(A->getLocalNumEntries());
-    values.resize(A->getLocalNumEntries());
+    rows_graph = typename LWGraph::row_type::non_const_type("rows_graph", A->getLocalNumRows() + 1);
   }
+  columns = typename LWGraph::entries_type::non_const_type("columns", A->getLocalNumEntries());
+  values  = typename CrsMatrix::local_matrix_type::values_type::HostMirror::non_const_type("values", A->getLocalNumEntries());
 
   LO realnnz    = 0;
   GO numDropped = 0, numTotal = 0;
@@ -1800,22 +1800,17 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
       rows_graph[row + 1] = realnnz;
   }
 
-  ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows(*A, dirichletThreshold));
+  auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
   if (rowSumTol > 0.)
-    Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);
+    Utilities::ApplyRowSumCriterionHost(*A, rowSumTol, boundaryNodes);
 
-  if (!generate_matrix) {
-    // We can't resize an Arrayrcp and pass the checks for setAllValues
-    values.resize(realnnz);
-    columns.resize(realnnz);
-  }
   numTotal = A->getLocalNumEntries();
 
   if (GetVerbLevel() & Statistics1) {
     GO numLocalBoundaryNodes  = 0;
     GO numGlobalBoundaryNodes = 0;
-    for (LO i = 0; i < boundaryNodes.size(); ++i)
-      if (boundaryNodes[i])
+    for (size_t i = 0; i < boundaryNodes.size(); ++i)
+      if (boundaryNodes(i))
         numLocalBoundaryNodes++;
     RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
     MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
@@ -1836,10 +1831,21 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
     // NOTE: Trying to use A's Import/Export objects will cause the code to segfault back in Build() with errors on the Import
     // if you're using Epetra.  I'm not really sure why. By using the Col==Domain and Row==Range maps, we get null Import/Export objects
     // here, which is legit, because we never use them anyway.
-    crs_matrix_wrap->getCrsMatrix()->setAllValues(rows_mat, columns, values);
+    if constexpr (std::is_same<typename LWGraph::row_type,
+                               typename CrsMatrix::local_matrix_type::row_map_type>::value) {
+      crs_matrix_wrap->getCrsMatrix()->setAllValues(rows_mat, columns, values);
+    } else {
+      auto rows_mat2 = typename CrsMatrix::local_matrix_type::row_map_type::non_const_type("rows_mat2", rows_mat.extent(0));
+      Kokkos::deep_copy(rows_mat2, rows_mat);
+      auto columns2 = typename CrsMatrix::local_graph_type::entries_type::non_const_type("columns2", columns.extent(0));
+      Kokkos::deep_copy(columns2, columns);
+      auto values2 = typename CrsMatrix::local_matrix_type::values_type::non_const_type("values2", values.extent(0));
+      Kokkos::deep_copy(values2, values);
+      crs_matrix_wrap->getCrsMatrix()->setAllValues(rows_mat2, columns2, values2);
+    }
     crs_matrix_wrap->getCrsMatrix()->expertStaticFillComplete(A->getColMap(), A->getRowMap());
   } else {
-    RCP<GraphBase> graph = rcp(new LWGraph(rows_graph, columns, A->getRowMap(), A->getColMap(), "block-diagonalized graph of A"));
+    RCP<LWGraph> graph = rcp(new LWGraph(rows_graph, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), A->getRowMap(), A->getColMap(), "block-diagonalized graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
     Set(currentLevel, "Graph", graph);
   }
@@ -1849,7 +1855,7 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagonalizeGraph(const RCP<GraphBase>& inputGraph, const RCP<LocalOrdinalVector>& ghostedBlockNumber, RCP<GraphBase>& outputGraph, RCP<const Import>& importer) const {
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagonalizeGraph(const RCP<LWGraph>& inputGraph, const RCP<LocalOrdinalVector>& ghostedBlockNumber, RCP<LWGraph>& outputGraph, RCP<const Import>& importer) const {
   TEUCHOS_TEST_FOR_EXCEPTION(ghostedBlockNumber.is_null(), Exceptions::RuntimeError, "BlockDiagonalizeGraph(): ghostedBlockNumber is null.");
   const ParameterList& pL = GetParameterList();
 
@@ -1867,36 +1873,34 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagon
 
   // allocate space for the local graph
   ArrayRCP<size_t> rows_mat;
-  ArrayRCP<LO> rows_graph, columns;
-
-  rows_graph.resize(inputGraph->GetNodeNumVertices() + 1);
-  columns.resize(inputGraph->GetNodeNumEdges());
+  typename LWGraph::row_type::non_const_type rows_graph("rows_graph", inputGraph->GetNodeNumVertices() + 1);
+  typename LWGraph::entries_type::non_const_type columns("columns", inputGraph->GetNodeNumEdges());
 
   LO realnnz    = 0;
   GO numDropped = 0, numTotal = 0;
   const LO numRows = Teuchos::as<LO>(inputGraph->GetDomainMap()->getLocalNumElements());
   if (localizeColoringGraph) {
     for (LO row = 0; row < numRows; ++row) {
-      LO row_block                = row_block_number[row];
-      ArrayView<const LO> indices = inputGraph->getNeighborVertices(row);
+      LO row_block = row_block_number[row];
+      auto indices = inputGraph->getNeighborVertices(row);
 
       LO rownnz = 0;
-      for (LO colID = 0; colID < Teuchos::as<LO>(indices.size()); colID++) {
-        LO col       = indices[colID];
+      for (LO colID = 0; colID < Teuchos::as<LO>(indices.length); colID++) {
+        LO col       = indices(colID);
         LO col_block = col_block_number[col];
 
         if ((row_block == col_block) && (col < numRows)) {
-          columns[realnnz++] = col;
+          columns(realnnz++) = col;
           rownnz++;
         } else
           numDropped++;
       }
-      rows_graph[row + 1] = realnnz;
+      rows_graph(row + 1) = realnnz;
     }
   } else {
     // ghosting of boundary node map
-    Teuchos::ArrayRCP<const bool> boundaryNodes = inputGraph->GetBoundaryNodeMap();
-    auto boundaryNodesVector                    = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(inputGraph->GetDomainMap());
+    auto boundaryNodes       = inputGraph->GetBoundaryNodeMap();
+    auto boundaryNodesVector = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(inputGraph->GetDomainMap());
     for (size_t i = 0; i < inputGraph->GetNodeNumVertices(); i++)
       boundaryNodesVector->getDataNonConst(0)[i] = boundaryNodes[i];
     // Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Write("boundary",*boundaryNodesVector);
@@ -1905,25 +1909,24 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagon
     auto boundaryColumn = boundaryColumnVector->getData(0);
 
     for (LO row = 0; row < numRows; ++row) {
-      LO row_block                = row_block_number[row];
-      ArrayView<const LO> indices = inputGraph->getNeighborVertices(row);
+      LO row_block = row_block_number[row];
+      auto indices = inputGraph->getNeighborVertices(row);
 
       LO rownnz = 0;
-      for (LO colID = 0; colID < Teuchos::as<LO>(indices.size()); colID++) {
-        LO col       = indices[colID];
+      for (LO colID = 0; colID < Teuchos::as<LO>(indices.length); colID++) {
+        LO col       = indices(colID);
         LO col_block = col_block_number[col];
 
         if ((row_block == col_block) && ((row == col) || (boundaryColumn[col] == 0))) {
-          columns[realnnz++] = col;
+          columns(realnnz++) = col;
           rownnz++;
         } else
           numDropped++;
       }
-      rows_graph[row + 1] = realnnz;
+      rows_graph(row + 1) = realnnz;
     }
   }
 
-  columns.resize(realnnz);
   numTotal = inputGraph->GetNodeNumEdges();
 
   if (GetVerbLevel() & Statistics1) {
@@ -1938,25 +1941,23 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagon
   }
 
   if (localizeColoringGraph) {
-    outputGraph = rcp(new LWGraph(rows_graph, columns, inputGraph->GetDomainMap(), inputGraph->GetImportMap(), "block-diagonalized graph of A"));
+    outputGraph = rcp(new LWGraph(rows_graph, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), inputGraph->GetDomainMap(), inputGraph->GetImportMap(), "block-diagonalized graph of A"));
     outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
   } else {
     TEUCHOS_ASSERT(inputGraph->GetDomainMap()->lib() == Xpetra::UseTpetra);
 #ifdef HAVE_XPETRA_TPETRA
-    auto outputGraph2 = rcp(new LWGraph(rows_graph, columns, inputGraph->GetDomainMap(), inputGraph->GetImportMap(), "block-diagonalized graph of A"));
+    auto outputGraph2 = rcp(new LWGraph(rows_graph, Kokkos::subview(columns, Kokkos::make_pair(0, realnnz)), inputGraph->GetDomainMap(), inputGraph->GetImportMap(), "block-diagonalized graph of A"));
 
-    auto tpGraph    = Xpetra::toTpetra(rcp_const_cast<const CrsGraph>(outputGraph2->GetCrsGraph()));
-    auto sym        = rcp(new Tpetra::CrsGraphTransposer<LocalOrdinal, GlobalOrdinal, Node>(tpGraph));
-    auto tpGraphSym = sym->symmetrize();
-
-    auto colIndsSym =  // FIXME persistingView is temporary; better fix would be change to LWGraph constructor
-        Kokkos::Compat::persistingView(tpGraphSym->getLocalIndicesHost());
+    auto tpGraph     = Xpetra::toTpetra(rcp_const_cast<const CrsGraph>(outputGraph2->GetCrsGraph()));
+    auto sym         = rcp(new Tpetra::CrsGraphTransposer<LocalOrdinal, GlobalOrdinal, Node>(tpGraph));
+    auto tpGraphSym  = sym->symmetrize();
+    auto lclGraphSym = tpGraphSym->getLocalGraphHost();
+    auto colIndsSym  = lclGraphSym.entries;
 
     auto rowsSym = tpGraphSym->getLocalRowPtrsHost();
-    ArrayRCP<LO> rows_graphSym;
-    rows_graphSym.resize(rowsSym.size());
+    typename LWGraph::row_type::non_const_type rows_graphSym("rows_graphSym", rowsSym.size());
     for (size_t row = 0; row < rowsSym.size(); row++)
-      rows_graphSym[row] = rowsSym[row];
+      rows_graphSym(row) = rowsSym(row);
     outputGraph = rcp(new LWGraph(rows_graphSym, colIndsSym, inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
     outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
 #endif

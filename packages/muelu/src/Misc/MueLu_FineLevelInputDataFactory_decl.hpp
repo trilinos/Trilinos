@@ -58,7 +58,6 @@
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
 
 namespace MueLuTests {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

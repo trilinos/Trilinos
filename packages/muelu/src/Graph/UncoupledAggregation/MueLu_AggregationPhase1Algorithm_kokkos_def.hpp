@@ -112,7 +112,7 @@ void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   auto procWinner   = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
   auto colors       = aggregates.GetGraphColors();
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   LO numAggregatedNodes = 0;
   LO numLocalAggregates = aggregates.GetNumAggregates();
@@ -216,7 +216,7 @@ void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   auto procWinner   = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
   auto colors       = aggregates.GetGraphColors();
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   LO numLocalAggregates = aggregates.GetNumAggregates();
   Kokkos::View<LO, device_type> numLocalAggregatesView("Num aggregates");

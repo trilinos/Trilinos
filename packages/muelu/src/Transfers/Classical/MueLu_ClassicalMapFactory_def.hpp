@@ -62,10 +62,10 @@
 
 #include "MueLu_ClassicalMapFactory_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Graph.hpp"
+
 #include "MueLu_LWGraph.hpp"
 
 #ifdef HAVE_MUELU_ZOLTAN2
@@ -117,12 +117,12 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   const ParameterList& pL = GetParameterList();
   RCP<const Matrix> A     = Get<RCP<Matrix> >(currentLevel, "A");
 
-  RCP<const GraphBase> graph;
+  RCP<const LWGraph> graph;
   bool use_color_graph = pL.get<bool>("aggregation: coloring: use color graph");
   if (use_color_graph)
-    graph = Get<RCP<GraphBase> >(currentLevel, "Coloring Graph");
+    graph = Get<RCP<LWGraph> >(currentLevel, "Coloring Graph");
   else
-    graph = Get<RCP<GraphBase> >(currentLevel, "Graph");
+    graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
 
   /* ============================================================= */
   /* Phase 1 : Compute an initial MIS                              */
@@ -306,7 +306,7 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    DoGraphColoring(const GraphBase& graph, ArrayRCP<LO>& myColors_out, LO& numColors) const {
+    DoGraphColoring(const LWGraph& graph, ArrayRCP<LO>& myColors_out, LO& numColors) const {
   const ParameterList& pL = GetParameterList();
   using graph_t           = typename LWGraph_kokkos::local_graph_type;
   using KernelHandle      = KokkosKernels::Experimental::
@@ -355,50 +355,28 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Create device views for graph rowptrs/colinds
   size_t numRows = graph.GetNodeNumVertices();
-  auto graphLWK  = dynamic_cast<const LWGraph_kokkos*>(&graph);
-  auto graphLW   = dynamic_cast<const LWGraph*>(&graph);
-  auto graphG    = dynamic_cast<const Graph*>(&graph);
-  TEUCHOS_TEST_FOR_EXCEPTION(!graphLW && !graphLWK && !graphG, std::invalid_argument, "Graph is not a LWGraph or LWGraph_kokkos object");
+  // auto graphLWK  = dynamic_cast<const LWGraph_kokkos*>(&graph);
+  auto graphLW = dynamic_cast<const LWGraph*>(&graph);
+  TEUCHOS_TEST_FOR_EXCEPTION(!graphLW, std::invalid_argument, "Graph is not a LWGraph object");
   // Run d1 graph coloring
   // Assume that the graph is symmetric so row map/entries and col map/entries are the same
 
-  if (graphLWK) {
-    KokkosGraph::Experimental::graph_color(&kh,
-                                           numRows,
-                                           numRows,  // FIXME: This should be the number of columns
-                                           graphLWK->getLocalLWGraph().getRowPtrs(),
-                                           graphLWK->getLocalLWGraph().getEntries(),
-                                           true);
-  } else if (graphLW) {
+  // if (graphLWK) {
+  //   KokkosGraph::Experimental::graph_color(&kh,
+  //                                          numRows,
+  //                                          numRows,  // FIXME: This should be the number of columns
+  //                                          graphLWK->getRowPtrs(),
+  //                                          graphLWK->getEntries(),
+  //                                          true);
+  // } else
+  if (graphLW) {
     auto rowptrs = graphLW->getRowPtrs();
     auto entries = graphLW->getEntries();
-    // Copy rowptrs to a size_t, because kokkos-kernels doesn't like rowptrs as LO's
-    Teuchos::Array<size_t> rowptrs_s(rowptrs.size());
-    std::copy(rowptrs.begin(), rowptrs.end(), rowptrs_s.begin());
-    Kokkos::View<const size_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> rowptrs_v(rowptrs_s.data(), (size_t)rowptrs.size());
-    Kokkos::View<const LO*, Kokkos::LayoutLeft, Kokkos::HostSpace> entries_v(entries.getRawPtr(), (size_t)entries.size());
     KokkosGraph::Experimental::graph_color(&kh,
                                            numRows,
                                            numRows,  // FIXME: This should be the number of columns
-                                           rowptrs_v,
-                                           entries_v,
-                                           true);
-  } else if (graphG) {
-    // FIXME:  This is a terrible, terrible hack, based on 0-based local indexing.
-    RCP<const CrsGraph> graphC = graphG->GetGraph();
-    size_t numEntries          = graphC->getLocalNumEntries();
-    ArrayView<const LO> indices;
-    graphC->getLocalRowView(0, indices);
-    Kokkos::View<size_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> rowptrs_v("rowptrs_v", graphC->getLocalNumRows() + 1);
-    rowptrs_v[0] = 0;
-    for (LO i = 0; i < (LO)graphC->getLocalNumRows() + 1; i++)
-      rowptrs_v[i + 1] = rowptrs_v[i] + graphC->getNumEntriesInLocalRow(i);
-    Kokkos::View<const LO*, Kokkos::LayoutLeft, Kokkos::HostSpace> entries_v(&indices[0], numEntries);
-    KokkosGraph::Experimental::graph_color(&kh,
-                                           numRows,
-                                           numRows,  // FIXME: This should be the number of columns
-                                           rowptrs_v,
-                                           entries_v,
+                                           rowptrs,
+                                           entries,
                                            true);
   }
 
@@ -420,7 +398,7 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    DoMISNaive(const GraphBase& graph, ArrayRCP<LO>& myColors, LO& numColors) const {
+    DoMISNaive(const LWGraph& graph, ArrayRCP<LO>& myColors, LO& numColors) const {
   // This is a fall-back routine for when we don't have Kokkos or when it isn't initialized
   // We just do greedy MIS because this is easy to write.
 
@@ -436,11 +414,11 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   for (LO row = 0; row < Nrows; row++) {
     if (boundaryNodes[row])
       continue;
-    ArrayView<const LO> indices = graph.getNeighborVertices(row);
-    bool has_colored_neighbor   = false;
-    for (LO j = 0; !has_colored_neighbor && j < (LO)indices.size(); j++) {
+    auto indices              = graph.getNeighborVertices(row);
+    bool has_colored_neighbor = false;
+    for (LO j = 0; !has_colored_neighbor && j < (LO)indices.length; j++) {
       // FIXME: This does not handle ghosting correctly
-      if (myColors[indices[j]] == MIS)
+      if (myColors[indices(j)] == MIS)
         has_colored_neighbor = true;
     }
     if (!has_colored_neighbor)
@@ -452,7 +430,7 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    DoDistributedGraphColoring(RCP<const GraphBase>& graph, ArrayRCP<LO>& myColors_out, LO& numColors) const {
+    DoDistributedGraphColoring(RCP<const LWGraph>& graph, ArrayRCP<LO>& myColors_out, LO& numColors) const {
 #ifdef HAVE_MUELU_ZOLTAN2
   //  const ParameterList& pL = GetParameterList();
   Teuchos::ParameterList params;
@@ -465,7 +443,7 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // params.set("recolor_degrees",recolorDegrees);
 
   // Do the coloring via Zoltan2
-  using GraphAdapter = MueLuGraphBaseAdapter<GraphBase>;
+  using GraphAdapter = MueLuGraphBaseAdapter<LWGraph>;
   GraphAdapter z_adapter(graph);
 
   // We need to provide the MPI Comm, or else we wind up using the default (eep!)

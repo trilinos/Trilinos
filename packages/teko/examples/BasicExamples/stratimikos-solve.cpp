@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -52,10 +52,10 @@
 
 // Epetra includes
 #ifdef HAVE_MPI
-   #include "mpi.h"
-   #include "Epetra_MpiComm.h"
+#include "mpi.h"
+#include "Epetra_MpiComm.h"
 #else
-   #include "Epetra_SerialComm.h"
+#include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
@@ -77,57 +77,57 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-int main(int argc,char * argv[])
-{
-   // calls MPI_Init and MPI_Finalize
-   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+int main(int argc, char* argv[]) {
+  // calls MPI_Init and MPI_Finalize
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-   // read in parameter list
-   Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("strat_example.xml"); 
+  // read in parameter list
+  Teuchos::RCP<Teuchos::ParameterList> paramList =
+      Teuchos::getParametersFromXmlFile("strat_example.xml");
 
-   // build global communicator
+  // build global communicator
 #ifdef HAVE_MPI
-   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
-   Epetra_SerialComm Comm;
+  Epetra_SerialComm Comm;
 #endif
 
-   // Read in the matrix, store pointer as an RCP
-   Epetra_CrsMatrix * ptrA = 0;
-   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm",Comm,ptrA);
-   RCP<Epetra_CrsMatrix> A = rcp(ptrA);
+  // Read in the matrix, store pointer as an RCP
+  Epetra_CrsMatrix* ptrA = 0;
+  EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm", Comm, ptrA);
+  RCP<Epetra_CrsMatrix> A = rcp(ptrA);
 
-   // read in the RHS vector
-   Epetra_Vector * ptrb = 0;
-   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->OperatorRangeMap(),ptrb);
-   RCP<const Epetra_Vector> b = rcp(ptrb);
+  // read in the RHS vector
+  Epetra_Vector* ptrb = 0;
+  EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm", A->OperatorRangeMap(), ptrb);
+  RCP<const Epetra_Vector> b = rcp(ptrb);
 
-   // allocate vectors
-   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
-   x->PutScalar(0.0);
+  // allocate vectors
+  RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
+  x->PutScalar(0.0);
 
-   // Build Thyra linear algebra objects
-   RCP<const Thyra::LinearOpBase<double> > th_A = Thyra::epetraLinearOp(A);
-   RCP<const Thyra::VectorBase<double> > th_b = Thyra::create_Vector(b,th_A->range());
-   RCP<Thyra::VectorBase<double> > th_x = Thyra::create_Vector(x,th_A->domain());
+  // Build Thyra linear algebra objects
+  RCP<const Thyra::LinearOpBase<double> > th_A = Thyra::epetraLinearOp(A);
+  RCP<const Thyra::VectorBase<double> > th_b   = Thyra::create_Vector(b, th_A->range());
+  RCP<Thyra::VectorBase<double> > th_x         = Thyra::create_Vector(x, th_A->domain());
 
-   // Build stratimikos solver
-   /////////////////////////////////////////////////////////
+  // Build stratimikos solver
+  /////////////////////////////////////////////////////////
 
-   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+  Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
-   Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
-   linearSolverBuilder.setParameterList(paramList);
+  Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
+  linearSolverBuilder.setParameterList(paramList);
 
-   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory 
-       = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+      Thyra::createLinearSolveStrategy(linearSolverBuilder);
 
-   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > th_invA 
-      = Thyra::linearOpWithSolve(*lowsFactory, th_A);
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > th_invA =
+      Thyra::linearOpWithSolve(*lowsFactory, th_A);
 
-   Thyra::assign(th_x.ptr(), 0.0);
-   Thyra::SolveStatus<double> status 
-       = Thyra::solve<double>(*th_invA, Thyra::NOTRANS, *th_b, th_x.ptr());
+  Thyra::assign(th_x.ptr(), 0.0);
+  Thyra::SolveStatus<double> status =
+      Thyra::solve<double>(*th_invA, Thyra::NOTRANS, *th_b, th_x.ptr());
 
-   return 0;
+  return 0;
 }

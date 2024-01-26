@@ -55,10 +55,10 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_ClassicalMapFactory_fwd.hpp"
-#include "MueLu_GraphBase_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_Graph_fwd.hpp"
+
 #include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
 
@@ -133,11 +133,11 @@ class ClassicalMapFactory : public SingleLevelFactoryBase {
  protected:
   virtual void GenerateCoarseMap(const Map &fineMap, LO num_c_points, Teuchos::RCP<const Map> &coarseMap) const;
 
-  virtual void DoGraphColoring(const GraphBase &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
+  virtual void DoGraphColoring(const LWGraph &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
 
-  virtual void DoMISNaive(const GraphBase &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
+  virtual void DoMISNaive(const LWGraph &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
 
-  virtual void DoDistributedGraphColoring(RCP<const GraphBase> &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
+  virtual void DoDistributedGraphColoring(RCP<const LWGraph> &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
 
 };  // class ClassicalMapFactory
 

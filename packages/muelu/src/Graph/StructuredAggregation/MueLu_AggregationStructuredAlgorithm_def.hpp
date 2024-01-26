@@ -56,7 +56,7 @@
 
 #include "MueLu_AggregationStructuredAlgorithm_decl.hpp"
 
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_IndexManager.hpp"
 #include "MueLu_Exceptions.hpp"
@@ -66,7 +66,7 @@ namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-    BuildAggregates(const Teuchos::ParameterList& /* params */, const GraphBase& graph,
+    BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph& graph,
                     Aggregates& aggregates, std::vector<unsigned>& aggStat,
                     LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
@@ -134,7 +134,7 @@ void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-    BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
+    BuildGraph(const LWGraph& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
                RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
                RCP<const Map>& coarseCoordinatesMap) const {
   Monitor m(*this, "BuildGraphP");
@@ -266,7 +266,7 @@ void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-    ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
+    ComputeGraphDataConstant(const LWGraph& graph, RCP<IndexManager>& geoData,
                              const LO dofsPerNode, const int /* numInterpolationPoints */,
                              ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                              Array<LO>& colIndex) const {
@@ -325,7 +325,7 @@ void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-    ComputeGraphDataLinear(const GraphBase& /* graph */, RCP<IndexManager>& geoData,
+    ComputeGraphDataLinear(const LWGraph& /* graph */, RCP<IndexManager>& geoData,
                            const LO dofsPerNode, const int numInterpolationPoints,
                            ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                            Array<LO>& colIndex) const {

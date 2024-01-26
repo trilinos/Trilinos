@@ -98,7 +98,7 @@ void AggregationPhase2aAlgorithm_kokkos<LO, GO, Node>::
   auto colors        = aggregates.GetGraphColors();
   const LO numColors = aggregates.GetGraphNumColors();
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   LO numLocalNodes      = numRows;
   LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;
@@ -215,7 +215,7 @@ void AggregationPhase2aAlgorithm_kokkos<LO, GO, Node>::
   auto colors        = aggregates.GetGraphColors();
   const LO numColors = aggregates.GetGraphNumColors();
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   LO numLocalNodes      = procWinner.size();
   LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;

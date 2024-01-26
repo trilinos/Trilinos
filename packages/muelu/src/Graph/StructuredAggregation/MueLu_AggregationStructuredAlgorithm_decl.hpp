@@ -53,7 +53,7 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_IndexManager_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 
 namespace MueLu {
 /*!
@@ -98,13 +98,13 @@ class AggregationStructuredAlgorithm : public MueLu::AggregationAlgorithmBase<Lo
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph,
+  void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph& graph,
                        Aggregates& aggregates, std::vector<unsigned>& aggStat,
                        LO& numNonAggregatedNodes) const;
 
   /*! @brief Local aggregation. */
 
-  void BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
+  void BuildGraph(const LWGraph& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
                   RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
                   RCP<const Map>& coarseCoordinatesMap) const;
   //@}
@@ -112,12 +112,12 @@ class AggregationStructuredAlgorithm : public MueLu::AggregationAlgorithmBase<Lo
   std::string description() const { return "Aggretation: structured algorithm"; }
 
  private:
-  void ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
+  void ComputeGraphDataConstant(const LWGraph& graph, RCP<IndexManager>& geoData,
                                 const LO dofsPerNode, const int numInterpolationPoints,
                                 ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                                 Array<LO>& colIndex) const;
 
-  void ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
+  void ComputeGraphDataLinear(const LWGraph& graph, RCP<IndexManager>& geoData,
                               const LO dofsPerNode, const int numInterpolationPoints,
                               ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                               Array<LO>& colIndex) const;
