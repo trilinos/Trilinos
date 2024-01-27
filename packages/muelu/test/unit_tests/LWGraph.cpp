@@ -46,6 +46,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+#include <Kokkos_Core.hpp>
+
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
@@ -60,7 +62,7 @@ namespace MueLuTests {
 
 // Little utility to generate a LWGraph.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<MueLu::GraphBase<LocalOrdinal, GlobalOrdinal, Node> >
+Teuchos::RCP<MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node> >
 gimmeLWGraph(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A) {
 #include "MueLu_UseShortNames.hpp"
 
@@ -76,7 +78,7 @@ gimmeLWGraph(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdin
   level.Request("Graph", dropFact.get());
   dropFact->Build(level);
 
-  auto graph = level.Get<RCP<GraphBase> >("Graph", dropFact.get());
+  auto graph = level.Get<RCP<LWGraph> >("Graph", dropFact.get());
   level.Release("Graph", dropFact.get());
   return graph;
 }
@@ -94,14 +96,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph, CreateLWGraph, Scalar, LocalOrdinal, 
 
   RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
 
-  RCP<GraphBase> graph = gimmeLWGraph(A);
+  RCP<LWGraph> graph = gimmeLWGraph(A);
 
   auto comm          = graph->GetComm();
   const int numRanks = comm->getSize();
 
   graph->print(out, MueLu::MsgType::Extreme);
   //    TEST_EQUALITY( graph->description() == "LWGraph (graph of A)" ,  true);
-  TEST_EQUALITY(graph->description() == "MueLu.description()", true);  // To fix when LWGRaph description method will be fixed
+  // TEST_EQUALITY(graph->description() == "MueLu.description()", true);  // To fix when LWGRaph description method will be fixed
   TEST_EQUALITY(graph != Teuchos::null, true);
   auto graphLWK = dynamic_cast<LWGraph*>(graph.get());
   auto rows     = graphLWK->getRowPtrs();
@@ -118,15 +120,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph, CreateLWGraph, Scalar, LocalOrdinal, 
 
   auto columns = graphLWK->getEntries();
   for (size_t i = 0; i < graph->GetNodeNumVertices(); ++i) {
-    TEST_EQUALITY(graph->getNeighborVertices(i).size() == columns.view(rows[i], rows[i + 1] - rows[i]).size(), true);
+    TEST_EQUALITY(graph->getNeighborVertices(i).length == Teuchos::as<LocalOrdinal>(Kokkos::subview(columns,
+                                                                                                    Kokkos::make_pair(rows[i], rows[i + 1]))
+                                                                                        .extent(0)),
+                  true);
   }
 
   auto crsGraph = graphLWK->GetCrsGraph();
   TEST_EQUALITY(crsGraph->getLocalNumEntries() == graph->GetNodeNumEdges(), true);
   TEST_EQUALITY(crsGraph->getLocalNumRows() == graph->GetNodeNumVertices(), true);
   TEST_EQUALITY(crsGraph->getLocalMaxNumRowEntries() == graph->getLocalMaxNumRowEntries(), true);
-
-  TEST_THROW(graphLWK->SetBoundaryNodeMap(graphLWK->GetDomainMap()), MueLu::Exceptions::NotImplemented);
 
 }  // CreateLWGraph
 

@@ -95,7 +95,7 @@ void AggregationPhase2bAlgorithm_kokkos<LO, GO, Node>::
   const LO numColors          = aggregates.GetGraphNumColors();
   const LO numLocalAggregates = aggregates.GetNumAggregates();
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   const LO defaultConnectWeight = 100;
   const LO penaltyConnectWeight = 10;
@@ -200,7 +200,7 @@ void AggregationPhase2bAlgorithm_kokkos<LO, GO, Node>::
   const LO numColors    = aggregates.GetGraphNumColors();
   LO numLocalAggregates = aggregates.GetNumAggregates();
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   const int defaultConnectWeight = 100;
   const int penaltyConnectWeight = 10;

@@ -11,8 +11,6 @@ AggregationStructuredAlgorithm
 AggregationStructuredAlgorithm_kokkos
 AmalgamationInfo
 GlobalLexicographicIndexManager
-Graph
-GraphBase
 HybridAggregationFactory
 IndexManager
 IndexManager_kokkos
@@ -23,7 +21,6 @@ IsolatedNodeAggregationAlgorithm_kokkos
 IsorropiaInterface - #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 LWGraph
 LWGraph_kokkos
-LocalLWGraph_kokkos
 LocalLexicographicIndexManager
 LocalOrdinalTransferFactory
 OnePtAggregationAlgorithm

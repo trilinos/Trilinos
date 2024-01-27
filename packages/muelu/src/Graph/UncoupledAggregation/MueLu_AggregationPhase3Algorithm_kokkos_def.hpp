@@ -101,7 +101,7 @@ void AggregationPhase3Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   auto colors        = aggregates.GetGraphColors();
   const LO numColors = aggregates.GetGraphNumColors();
 
-  auto lclLWGraph = graph.getLocalLWGraph();
+  auto lclLWGraph = graph;
 
   Kokkos::View<LO, device_type> numAggregates("numAggregates");
   Kokkos::deep_copy(numAggregates, aggregates.GetNumAggregates());

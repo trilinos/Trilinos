@@ -72,7 +72,7 @@
 
 // Shared
 #include "MueLu_Level.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -253,10 +253,10 @@ void HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::
   RCP<const FactoryBase> graphFact = GetFactory("Graph");
 
   // General problem informations are gathered from data stored in the problem matix.
-  RCP<const GraphBase> graph = Get<RCP<GraphBase> >(currentLevel, "Graph");
-  RCP<const Map> fineMap     = graph->GetDomainMap();
-  const int myRank           = fineMap->getComm()->getRank();
-  const int numRanks         = fineMap->getComm()->getSize();
+  RCP<const LWGraph> graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
+  RCP<const Map> fineMap   = graph->GetDomainMap();
+  const int myRank         = fineMap->getComm()->getRank();
+  const int numRanks       = fineMap->getComm()->getSize();
 
   out->setProcRankAndSize(graph->GetImportMap()->getComm()->getRank(),
                           graph->GetImportMap()->getComm()->getSize());
@@ -369,11 +369,10 @@ void HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::
 
     *out << "Treat Dirichlet BC" << std::endl;
     // Dirichlet boundary
-    ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-    if (dirichletBoundaryMap != Teuchos::null)
-      for (LO i = 0; i < numRows; i++)
-        if (dirichletBoundaryMap[i] == true)
-          aggStat[i] = BOUNDARY;
+    auto dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    for (LO i = 0; i < numRows; i++)
+      if (dirichletBoundaryMap[i] == true)
+        aggStat[i] = BOUNDARY;
 
     // OnePt aggregation
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");

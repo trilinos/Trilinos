@@ -112,28 +112,6 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #endif
 
-  ShyLUbaskerTr = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space>();
-  ShyLUbaskerTr->Options.no_pivot      = BASKER_FALSE;
-  ShyLUbaskerTr->Options.static_delayed_pivot = 0;
-  ShyLUbaskerTr->Options.symmetric      = BASKER_FALSE;
-  ShyLUbaskerTr->Options.realloc        = BASKER_TRUE;
-  ShyLUbaskerTr->Options.verbose        = BASKER_FALSE;
-  ShyLUbaskerTr->Options.prune          = BASKER_TRUE;
-  ShyLUbaskerTr->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
-  ShyLUbaskerTr->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
-  ShyLUbaskerTr->Options.matrix_scaling = 0; // use matrix scaling on a big A block
-  ShyLUbaskerTr->Options.min_block_size = 0; // no merging small blocks
-  ShyLUbaskerTr->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
-  ShyLUbaskerTr->Options.use_metis         = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
-  ShyLUbaskerTr->Options.use_nodeNDP       = BASKER_TRUE;  // use nodeNDP to compute ND partition
-  ShyLUbaskerTr->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
-  ShyLUbaskerTr->Options.run_amd_on_leaves = BASKER_FALSE; // run ND on the final leaf-nodes
-  ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
-  ShyLUbaskerTr->Options.replace_tiny_pivot = BASKER_FALSE;
-  ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
-
-  ShyLUbaskerTr->Options.user_fill     = (double)BASKER_FILL_USER;
-  ShyLUbaskerTr->Options.use_sequential_diag_facto = BASKER_FALSE;
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
      std::runtime_error,
@@ -148,9 +126,7 @@ ShyLUBasker<Matrix,Vector>::~ShyLUBasker( )
   /* ShyLUBasker will cleanup its own internal memory*/
 #if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
   ShyLUbasker->Finalize();
-  ShyLUbaskerTr->Finalize();
   delete ShyLUbasker;
-  delete ShyLUbaskerTr;
 #endif
 }
 
@@ -183,7 +159,6 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   if(this->root_)
   {
     ShyLUbasker->SetThreads(num_threads); 
-    ShyLUbaskerTr->SetThreads(num_threads); 
 
 
     // NDE: Special case 
@@ -221,19 +196,6 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
-
-      if (info == BASKER_SUCCESS) {
-        info = ShyLUbaskerTr->Symbolic(this->globalNumRows_,
-            this->globalNumCols_,
-            this->globalNumNonZeros_,
-            sp_rowptr.data(),
-            sp_colind.data(),
-            sp_values,
-            true);
- 
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
-          std::runtime_error, "Error in ShyLUBaskerTr Symbolic");
-      }
     }
     else 
     { //follow original code path if conditions not met
@@ -248,19 +210,6 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
-
-      if (info == BASKER_SUCCESS) {
-        info = ShyLUbaskerTr->Symbolic(this->globalNumRows_,
-            this->globalNumCols_,
-            this->globalNumNonZeros_,
-            colptr_view_.data(),
-            rowind_view_.data(),
-            sp_values,
-            false);
-
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
-          std::runtime_error, "Error in ShyLUBaskerTr Symbolic");
-      }
     }
   } // end if (this->root_)
   /*No symbolic factoriztion*/
@@ -319,18 +268,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
 
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
             std::runtime_error, "Error ShyLUBasker Factor");
-
-        if (info == 0) {
-          info = ShyLUbaskerTr->Factor( this->globalNumRows_,
-              this->globalNumCols_,
-              this->globalNumNonZeros_,
-              sp_rowptr.data(),
-              sp_colind.data(),
-              sp_values);
-
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
-            std::runtime_error, "Error ShyLUBaskerTr Factor");
-        }
       }
       else 
       {
@@ -345,19 +282,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
 
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
             std::runtime_error, "Error ShyLUBasker Factor");
-
-        if (info == 0) {
-          info = ShyLUbaskerTr->Factor(this->globalNumRows_,
-              this->globalNumCols_,
-              this->globalNumNonZeros_,
-              colptr_view_.data(),
-              rowind_view_.data(),
-              sp_values);
-
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
-            std::runtime_error, "Error ShyLUBaskerTr Factor");
-        }
-        //We need to handle the realloc options
       }
 
       //ShyLUbasker->DEBUG_PRINT();
@@ -366,11 +290,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       local_ordinal_type bunnz = local_ordinal_type(0); 
       ShyLUbasker->GetLnnz(blnnz); // Add exception handling?
       ShyLUbasker->GetUnnz(bunnz);
-
-      local_ordinal_type Trblnnz = local_ordinal_type(0); 
-      local_ordinal_type Trbunnz = local_ordinal_type(0); 
-      ShyLUbaskerTr->GetLnnz(Trblnnz); // Add exception handling?
-      ShyLUbaskerTr->GetUnnz(Trbunnz);
 
       // This is set after numeric factorization complete as pivoting can be used;
       // In this case, a discrepancy between symbolic and numeric nnz total can occur.
@@ -418,9 +337,9 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
-    const bool initialize_data = true;
-    const bool do_not_initialize_data = false;
+  const bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
+  const bool initialize_data = true;
+  const bool do_not_initialize_data = false;
 
   if ( single_proc_optimization() && nrhs == 1 ) {
 
@@ -454,7 +373,7 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
     if (!ShyluBaskerTransposeRequest)
       ierr = ShyLUbasker->Solve(nrhs, pbValues, pxValues);
     else
-      ierr = ShyLUbaskerTr->Solve(nrhs, pbValues, pxValues);
+      ierr = ShyLUbasker->Solve(nrhs, pbValues, pxValues, true);
   }
 
   /* All processes should have the same error code */
@@ -507,67 +426,54 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
   if(parameterList->isParameter("pivot"))
     {
       ShyLUbasker->Options.no_pivot = (!parameterList->get<bool>("pivot"));
-      ShyLUbaskerTr->Options.no_pivot = (!parameterList->get<bool>("pivot"));
     }
   if(parameterList->isParameter("delayed pivot"))
     {
       ShyLUbasker->Options.static_delayed_pivot = (parameterList->get<int>("delayed pivot"));
-      ShyLUbaskerTr->Options.static_delayed_pivot = (parameterList->get<int>("delayed pivot"));
     }
   if(parameterList->isParameter("pivot_tol"))
     {
       ShyLUbasker->Options.pivot_tol = parameterList->get<double>("pivot_tol");
-      ShyLUbaskerTr->Options.pivot_tol = parameterList->get<double>("pivot_tol");
     }
   if(parameterList->isParameter("symmetric"))
     {
       ShyLUbasker->Options.symmetric = parameterList->get<bool>("symmetric");
-      ShyLUbaskerTr->Options.symmetric = parameterList->get<bool>("symmetric");
     }
   if(parameterList->isParameter("realloc"))
     {
       ShyLUbasker->Options.realloc = parameterList->get<bool>("realloc");
-      ShyLUbaskerTr->Options.realloc = parameterList->get<bool>("realloc");
     }
   if(parameterList->isParameter("verbose"))
     {
       ShyLUbasker->Options.verbose = parameterList->get<bool>("verbose");
-      ShyLUbaskerTr->Options.verbose = parameterList->get<bool>("verbose");
     }
   if(parameterList->isParameter("verbose_matrix"))
     {
       ShyLUbasker->Options.verbose_matrix_out = parameterList->get<bool>("verbose_matrix");
-      ShyLUbaskerTr->Options.verbose_matrix_out = parameterList->get<bool>("verbose_matrix");
     }
   if(parameterList->isParameter("btf"))
     {
       ShyLUbasker->Options.btf = parameterList->get<bool>("btf");
-      ShyLUbaskerTr->Options.btf = parameterList->get<bool>("btf");
     }
   if(parameterList->isParameter("use_metis"))
     {
       ShyLUbasker->Options.use_metis = parameterList->get<bool>("use_metis");
-      ShyLUbaskerTr->Options.use_metis = parameterList->get<bool>("use_metis");
     }
   if(parameterList->isParameter("use_nodeNDP"))
     {
       ShyLUbasker->Options.use_nodeNDP = parameterList->get<bool>("use_nodeNDP");
-      ShyLUbaskerTr->Options.use_nodeNDP = parameterList->get<bool>("use_nodeNDP");
     }
   if(parameterList->isParameter("run_nd_on_leaves"))
     {
       ShyLUbasker->Options.run_nd_on_leaves = parameterList->get<bool>("run_nd_on_leaves");
-      ShyLUbaskerTr->Options.run_nd_on_leaves = parameterList->get<bool>("run_nd_on_leaves");
     }
   if(parameterList->isParameter("run_amd_on_leaves"))
     {
       ShyLUbasker->Options.run_amd_on_leaves = parameterList->get<bool>("run_amd_on_leaves");
-      ShyLUbaskerTr->Options.run_amd_on_leaves = parameterList->get<bool>("run_amd_on_leaves");
     }
   if(parameterList->isParameter("amd_on_blocks"))
     {
       ShyLUbasker->Options.amd_dom = parameterList->get<bool>("amd_on_blocks");
-      ShyLUbaskerTr->Options.amd_dom = parameterList->get<bool>("amd_on_blocks");
     }
   if(parameterList->isParameter("transpose"))
     {
@@ -575,55 +481,43 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       const auto transpose = parameterList->get<bool>("transpose");
       if (transpose == true)
         this->control_.useTranspose_ = true;
-      //ShyLUbasker->Options.transpose = parameterList->get<bool>("transpose");
-      //ShyLUbaskerTr->Options.transpose = parameterList->get<bool>("transpose");
     }
   if(parameterList->isParameter("use_sequential_diag_facto"))
     {
       ShyLUbasker->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
-      ShyLUbaskerTr->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
     }
   if(parameterList->isParameter("user_fill"))
     {
       ShyLUbasker->Options.user_fill = parameterList->get<double>("user_fill");
-      ShyLUbaskerTr->Options.user_fill = parameterList->get<double>("user_fill");
     }
   if(parameterList->isParameter("prune"))
     {
       ShyLUbasker->Options.prune = parameterList->get<bool>("prune");
-      ShyLUbaskerTr->Options.prune = parameterList->get<bool>("prune");
     }
   if(parameterList->isParameter("replace_tiny_pivot"))
     {
       ShyLUbasker->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
-      ShyLUbaskerTr->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
     }
   if(parameterList->isParameter("btf_matching"))
     {
       ShyLUbasker->Options.btf_matching = parameterList->get<int>("btf_matching");
-      ShyLUbaskerTr->Options.btf_matching = parameterList->get<int>("btf_matching");
       if (ShyLUbasker->Options.btf_matching == 1 || ShyLUbasker->Options.btf_matching == 2) {
         ShyLUbasker->Options.matching = true;
-        ShyLUbaskerTr->Options.matching = true;
       } else {
         ShyLUbasker->Options.matching = false;
-        ShyLUbaskerTr->Options.matching = false;
       }
     }
   if(parameterList->isParameter("blk_matching"))
     {
       ShyLUbasker->Options.blk_matching = parameterList->get<int>("blk_matching");
-      ShyLUbaskerTr->Options.blk_matching = parameterList->get<int>("blk_matching");
     }
   if(parameterList->isParameter("matrix_scaling"))
     {
       ShyLUbasker->Options.matrix_scaling = parameterList->get<int>("matrix_scaling");
-      ShyLUbaskerTr->Options.matrix_scaling = parameterList->get<int>("matrix_scaling");
     }
   if(parameterList->isParameter("min_block_size"))
     {
       ShyLUbasker->Options.min_block_size = parameterList->get<int>("min_block_size");
-      ShyLUbaskerTr->Options.min_block_size = parameterList->get<int>("min_block_size");
     }
 }
 

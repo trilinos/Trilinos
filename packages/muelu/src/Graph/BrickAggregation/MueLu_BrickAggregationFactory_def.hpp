@@ -66,8 +66,8 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph.hpp"
+#include "MueLu_LWGraph.hpp"
+
 #include "MueLu_LWGraph.hpp"
 
 namespace MueLu {
@@ -486,15 +486,15 @@ void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildGr
     FactoryMonitor m(*this, "Generating Graph (trivial)", currentLevel);
     /*** Case 1: Use the matrix is the graph ***/
     // Bricks are of non-trivial size in all active dimensions
-    RCP<GraphBase> graph         = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-    ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows(*A, dirichletThreshold));
+    RCP<LWGraph> graph = rcp(new LWGraph(A->getCrsGraph(), "graph of A"));
+    auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
     graph->SetBoundaryNodeMap(boundaryNodes);
 
     if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
-      for (LO i = 0; i < boundaryNodes.size(); ++i)
-        if (boundaryNodes[i])
+      for (size_t i = 0; i < boundaryNodes.size(); ++i)
+        if (boundaryNodes(i))
           numLocalBoundaryNodes++;
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
@@ -512,8 +512,8 @@ void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildGr
     bool drop_y = (nDim_ > 1 && by_ == 1);
     bool drop_z = (nDim_ > 2 && bz_ == 1);
 
-    ArrayRCP<LO> rows(A->getLocalNumRows() + 1);
-    ArrayRCP<LO> columns(A->getLocalNumEntries());
+    typename LWGraph::row_type::non_const_type rows("rows", A->getLocalNumRows() + 1);
+    typename LWGraph::entries_type::non_const_type columns("columns", A->getLocalNumEntries());
 
     size_t N = A->getRowMap()->getLocalNumElements();
 
@@ -523,7 +523,7 @@ void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildGr
     auto colind = G.entries;
 
     int ct  = 0;
-    rows[0] = 0;
+    rows(0) = 0;
     for (size_t row = 0; row < N; row++) {
       // NOTE: Assumes that the first part of the colmap is the rowmap
       int ir, jr, kr;
@@ -541,23 +541,23 @@ void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildGr
         } else {
           // Keep it
           //            printf("[%4d] KEEP row = (%d,%d,%d) col = (%d,%d,%d)\n",(int)row,ir,jr,kr,ic,jc,kc);
-          columns[ct] = col;
+          columns(ct) = col;
           ct++;
         }
       }
-      rows[row + 1] = ct;
+      rows(row + 1) = ct;
     }  // end for
 
-    RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
+    RCP<LWGraph> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
 
-    ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows(*A, dirichletThreshold));
+    auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos_host(*A, dirichletThreshold);
     graph->SetBoundaryNodeMap(boundaryNodes);
 
     if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
-      for (LO i = 0; i < boundaryNodes.size(); ++i)
-        if (boundaryNodes[i])
+      for (size_t i = 0; i < boundaryNodes.size(); ++i)
+        if (boundaryNodes(i))
           numLocalBoundaryNodes++;
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);

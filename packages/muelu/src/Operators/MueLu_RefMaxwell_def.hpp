@@ -146,17 +146,17 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   params->set<RCP<Matrix> >("M1_beta", Teuchos::null);
   params->set<RCP<Matrix> >("M1_alpha", Teuchos::null);
-  // for backwards compatiblity
+  // for backwards compatibility
   params->set<RCP<Matrix> >("Ms", Teuchos::null);
 
   params->set<RCP<Matrix> >("Mk_one", Teuchos::null);
   params->set<RCP<Matrix> >("Mk_1_one", Teuchos::null);
-  // for backwards compatiblity
+  // for backwards compatibility
   params->set<RCP<Matrix> >("M1", Teuchos::null);
 
   params->set<RCP<Matrix> >("invMk_1_invBeta", Teuchos::null);
   params->set<RCP<Matrix> >("invMk_2_invAlpha", Teuchos::null);
-  // for backwards compatiblity
+  // for backwards compatibility
   params->set<RCP<Matrix> >("M0inv", Teuchos::null);
 
   params->set<RCP<MultiVector> >("Nullspace", Teuchos::null);
@@ -333,6 +333,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
+  using memory_space = typename Node::device_type::memory_space;
+
 #ifdef HAVE_MUELU_CUDA
   if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStart();
 #endif
@@ -368,12 +370,12 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
                                                               globalNumberBoundaryUnknowns22_,
                                                               onlyBoundary11_, onlyBoundary22_);
     if (spaceNumber_ == 2) {
-      Kokkos::View<bool *, typename Node::device_type> BCcolsEdge   = Kokkos::View<bool *, typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), Dk_1_->getColMap()->getLocalNumElements());
-      Kokkos::View<bool *, typename Node::device_type> BCdomainEdge = Kokkos::View<bool *, typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), Dk_1_->getDomainMap()->getLocalNumElements());
+      Kokkos::View<bool *, memory_space> BCcolsEdge   = Kokkos::View<bool *, memory_space>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), Dk_1_->getColMap()->getLocalNumElements());
+      Kokkos::View<bool *, memory_space> BCdomainEdge = Kokkos::View<bool *, memory_space>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), Dk_1_->getDomainMap()->getLocalNumElements());
       Utilities::DetectDirichletColsAndDomains(*Dk_1_, BCrows11_, BCcolsEdge, BCdomainEdge);
 
-      Kokkos::View<bool *, typename Node::device_type> BCcolsNode   = Kokkos::View<bool *, typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_->getColMap()->getLocalNumElements());
-      Kokkos::View<bool *, typename Node::device_type> BCdomainNode = Kokkos::View<bool *, typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_->getDomainMap()->getLocalNumElements());
+      Kokkos::View<bool *, memory_space> BCcolsNode   = Kokkos::View<bool *, memory_space>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_->getColMap()->getLocalNumElements());
+      Kokkos::View<bool *, memory_space> BCdomainNode = Kokkos::View<bool *, memory_space>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_->getDomainMap()->getLocalNumElements());
       Utilities::DetectDirichletColsAndDomains(*D0_, BCdomainEdge, BCcolsNode, BCdomainNode);
       BCdomain22_ = BCdomainNode;
     }

@@ -66,7 +66,7 @@
 #include "MueLu_ClassicalPFactory_decl.hpp"
 #include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 
 //#define CMS_DEBUG
 //#define CMS_DUMP
@@ -151,7 +151,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   RCP<const Matrix> A                              = Get<RCP<Matrix> >(fineLevel, "A");
   RCP<const Map> ownedCoarseMap                    = Get<RCP<const Map> >(fineLevel, "CoarseMap");
   RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel, "FC Splitting");
-  RCP<const GraphBase> graph                       = Get<RCP<GraphBase> >(fineLevel, "Graph");
+  RCP<const LWGraph> graph                         = Get<RCP<LWGraph> >(fineLevel, "Graph");
   //    LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
   //    RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
   RCP<const Import> Importer = A->getCrsGraph()->getImporter();
@@ -362,7 +362,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    Coarsen_ClassicalModified(const Matrix& A, const RCP<const Matrix>& Aghost, const GraphBase& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<const Import> remoteOnlyImporter, RCP<Matrix>& P) const {
+    Coarsen_ClassicalModified(const Matrix& A, const RCP<const Matrix>& Aghost, const LWGraph& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<const Import> remoteOnlyImporter, RCP<Matrix>& P) const {
   /* ============================================================= */
   /* Phase 3 : Classical Modified Interpolation                    */
   /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -749,7 +749,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    Coarsen_Direct(const Matrix& A, const RCP<const Matrix>& Aghost, const GraphBase& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<Matrix>& P) const {
+    Coarsen_Direct(const Matrix& A, const RCP<const Matrix>& Aghost, const LWGraph& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<Matrix>& P) const {
   /* ============================================================= */
   /* Phase 3 : Direct Interpolation                                */
   /* We do not use De Sterck, Falgout, Nolting and Yang (2008)     */
@@ -972,7 +972,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    Coarsen_Ext_Plus_I(const Matrix& A, const RCP<const Matrix>& Aghost, const GraphBase& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<Matrix>& P) const {
+    Coarsen_Ext_Plus_I(const Matrix& A, const RCP<const Matrix>& Aghost, const LWGraph& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& myPointType_ghost, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<Matrix>& P) const {
   /* ============================================================= */
   /* Phase 3 : Extended+i Interpolation                            */
   /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -1013,7 +1013,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GenerateStrengthFlags(const Matrix& A, const GraphBase& graph, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong) const {
+    GenerateStrengthFlags(const Matrix& A, const LWGraph& graph, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong) const {
   // To make this easier, we'll create a bool array equal to the nnz in the matrix
   // so we know whether each edge is strong or not.  This will save us a bunch of
   // trying to match the graph and matrix later
@@ -1036,8 +1036,8 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     A.getLocalRowView(i, A_indices, A_values);
     LO A_size = (LO)A_indices.size();
 
-    ArrayView<const LO> G_indices = graph.getNeighborVertices(i);
-    LO G_size                     = (LO)G_indices.size();
+    auto G_indices = graph.getNeighborVertices(i);
+    LO G_size      = (LO)G_indices.length;
 
     // Both of these guys should be in the same (sorted) order, but let's check
     bool is_ok = true;
@@ -1047,7 +1047,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         break;
       }
     for (LO j = 0; j < G_size - 1; j++)
-      if (G_indices[j] >= G_indices[j + 1]) {
+      if (G_indices(j) >= G_indices(j + 1)) {
         is_ok = false;
         break;
       }
@@ -1055,7 +1055,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // Now cycle through and set the flags - if the edge is in G it is strong
     for (LO g_idx = 0, a_idx = 0; g_idx < G_size; g_idx++) {
-      LO col = G_indices[g_idx];
+      LO col = G_indices(g_idx);
       while (A_indices[a_idx] != col && a_idx < A_size) a_idx++;
       if (a_idx == A_size) {
         is_ok = false;

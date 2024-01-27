@@ -60,8 +60,8 @@
 #include "MueLu_VisualizationHelpers.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 
@@ -152,7 +152,7 @@ class AggregationExportFactory : public TwoLevelFactoryBase, public Visualizatio
   // Break different viz styles into separate functions for organization:
   void doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
   void doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-  void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const;  // add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
+  void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<LWGraph>& G, bool fine, int dofs) const;  // add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
 
   // write VTK data
   void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const;

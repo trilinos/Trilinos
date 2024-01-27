@@ -59,7 +59,7 @@
 #include "MueLu_NotayAggregationFactory_decl.hpp"
 
 #include "MueLu_Aggregates.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -149,8 +149,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
                              "NotayAggregationFactory::Build(): \"aggregation: pairwise: size\""
                              " must be a strictly positive integer");
 
-  RCP<const GraphBase> graph = Get<RCP<GraphBase> >(currentLevel, "Graph");
-  RCP<const Matrix> A        = Get<RCP<Matrix> >(currentLevel, "A");
+  RCP<const LWGraph> graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
+  RCP<const Matrix> A      = Get<RCP<Matrix> >(currentLevel, "A");
 
   // Setup aggregates & aggStat objects
   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));

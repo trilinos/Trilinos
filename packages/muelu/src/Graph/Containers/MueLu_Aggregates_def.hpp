@@ -52,15 +52,15 @@
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_GraphBase.hpp"
+
+#include "MueLu_LWGraph.hpp"
 #include "MueLu_Utilities_decl.hpp"
 #include "MueLu_Aggregates_decl.hpp"
 
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const GraphBase& graph) {
+Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const LWGraph& graph) {
   numAggregates_       = 0;
   numGlobalAggregates_ = 0;
 

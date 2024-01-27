@@ -59,7 +59,7 @@
 #include <Zoltan2_GraphAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph.hpp"
 
 // Zoltab2 InputTraits for MueLu Graph objects
 namespace Zoltan2 {
@@ -67,7 +67,7 @@ namespace Zoltan2 {
 template <typename LocalOrdinal,
           typename GlobalOrdinal,
           typename Node>
-struct InputTraits<MueLu::GraphBase<LocalOrdinal, GlobalOrdinal, Node> > {
+struct InputTraits<MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node> > {
   typedef Zoltan2::default_scalar_t scalar_t;
   typedef LocalOrdinal lno_t;
   typedef GlobalOrdinal gno_t;
@@ -112,7 +112,7 @@ class MueLuGraphBaseAdapter : public Zoltan2::GraphAdapter<User, UserCoord> {
   size_t getLocalNumCols() const { return getColMap()->getLocalNumElements(); }
 
   void getLocalRowView(lno_t LocalRow, Teuchos::ArrayView<const lno_t> &indices) const {
-    indices = graph_->getNeighborVertices(LocalRow);
+    indices = graph_->getNeighborVertices_av(LocalRow);
   }
 
   /*! \brief Destructor

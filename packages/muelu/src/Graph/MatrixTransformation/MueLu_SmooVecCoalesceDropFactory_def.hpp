@@ -61,8 +61,8 @@
 #include "MueLu_SmooVecCoalesceDropFactory_decl.hpp"
 
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph.hpp"
+#include "MueLu_LWGraph.hpp"
+
 #include "MueLu_Level.hpp"
 #include "MueLu_LWGraph.hpp"
 #include "MueLu_MasterList.hpp"
@@ -204,7 +204,7 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     for (size_t i = as<size_t>(inputPolyCoef.size()); i < as<size_t>(penaltyPolyCoef.size()); i++) penaltyPolyCoef[i] = Teuchos::ScalarTraits<Scalar>::zero();
   }
 
-  RCP<GraphBase> filteredGraph;
+  RCP<LWGraph> filteredGraph;
   badGuysCoalesceDrop(*A, penaltyPolyCoef, nPDEs, *testVecs, *nearNull, filteredGraph);
 
 #ifdef takeOut
@@ -214,7 +214,7 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
   fprintf(fp, "%d %d %d\n", (int)filteredGraph->GetNodeNumVertices(), (int)filteredGraph->GetNodeNumVertices(),
           (int)filteredGraph->GetNodeNumEdges());
   for (size_t i = 0; i < filteredGraph->GetNodeNumVertices(); i++) {
-    ArrayView<const LO> inds = filteredGraph->getNeighborVertices(as<LO>(i));
+    auto inds = filteredGraph->getNeighborVertices(as<LO>(i));
     for (size_t j = 0; j < as<size_t>(inds.size()); j++) {
       fprintf(fp, "%d %d 1.00e+00\n", (int)i + 1, (int)inds[j] + 1);
     }
@@ -230,7 +230,7 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
 }  // Build
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badGuysCoalesceDrop(const Matrix& Amat, Teuchos::ArrayRCP<Scalar>& penaltyPolyCoef, LO nPDEs, const MultiVector& testVecs, const MultiVector& nearNull, RCP<GraphBase>& filteredGraph) const {
+void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badGuysCoalesceDrop(const Matrix& Amat, Teuchos::ArrayRCP<Scalar>& penaltyPolyCoef, LO nPDEs, const MultiVector& testVecs, const MultiVector& nearNull, RCP<LWGraph>& filteredGraph) const {
   /*
    * Compute coalesce/drop graph (in filteredGraph) for A. The basic idea is to
    * balance trade-offs associated with
@@ -275,8 +275,8 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badG
   if (nBlks * nPDEs != nLoc)
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Number of local dofs not divisible by BlkSize");
 
-  Teuchos::ArrayRCP<LO> newRowPtr(nBlks + 1); /* coalesce & drop matrix     */
-  Teuchos::ArrayRCP<LO> newCols(numMyNnz);    /* arrays                     */
+  typename LWGraph::row_type::non_const_type newRowPtr("newRowPtr", nBlks + 1); /* coalesce & drop matrix     */
+  Teuchos::ArrayRCP<LO> newCols(numMyNnz);                                      /* arrays                     */
 
   Teuchos::ArrayRCP<LO> bcols(nBlks);       /* returned by dropfun(j,...) */
   Teuchos::ArrayRCP<bool> keepOrNot(nBlks); /* gives cols for jth row and */
@@ -303,7 +303,8 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badG
                                                            /* processing different pt    */
                                                            /* rows within a block.       */
 
-  Teuchos::ArrayRCP<bool> boundaryNodes(nBlks, false);
+  typename LWGraph::boundary_nodes_type boundaryNodes("boundaryNodes", nBlks);
+  Kokkos::deep_copy(boundaryNodes, false);
 
   for (LO i = 0; i < maxNzPerRow; i++)
     penalties[i] = penaltyPolyCoef[poly0thOrderCoef] +
@@ -313,7 +314,7 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badG
                    (penaltyPolyCoef[poly4thOrderCoef] * (as<Scalar>(i * i)) * (as<Scalar>(i * i)));
 
   LO nzTotal = 0, numBCols = 0, row = -1, Nbcols, bcol;
-  newRowPtr[0] = 0;
+  newRowPtr(0) = 0;
 
   /* proceed block by block */
   for (LO i = 0; i < as<LO>(nBlks); i++) {
@@ -362,7 +363,7 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badG
       bcol = bColList[j];
       if (keepStatus[bcol] == true) {
         newCols[nzTotal] = bColList[j];
-        newRowPtr[i + 1]++;
+        newRowPtr(i + 1)++;
         nzTotal = nzTotal + 1;
       }
       keepStatus[bcol]        = true;
@@ -374,8 +375,8 @@ void SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::badG
 
   /* create array of the correct size and copy over newCols to it */
 
-  Teuchos::ArrayRCP<LO> finalCols(nzTotal);
-  for (LO i = 0; i < nzTotal; i++) finalCols[i] = newCols[i];
+  typename LWGraph::entries_type::non_const_type finalCols("finalCols", nzTotal);
+  for (LO i = 0; i < nzTotal; i++) finalCols(i) = newCols[i];
 
   // Not using column map because we do not allow for any off-proc stuff.
   // Not sure if this is okay.  FIXME
