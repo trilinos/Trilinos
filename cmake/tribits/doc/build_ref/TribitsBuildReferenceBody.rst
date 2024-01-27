@@ -376,6 +376,7 @@ See the following use cases:
 * `Enable all packages (and optionally all tests)`_
 * `Disable a package and all its dependencies`_
 * `Remove all package enables in the cache`_
+* `Speed up debugging dependency handling`_
 
 
 Determine the list of packages that can be enabled
@@ -654,6 +655,22 @@ expensive configure time checks (like the standard CMake compiler checks) and
 to preserve other cache variables that you have set and don't want to loose.
 For example, one would want to do this to avoid more expensive compiler and
 TPL checks.
+
+
+Speed up debugging dependency handling
++++++++++++++++++++++++++++++++++++++++
+
+To speed up debugging the package enable/disable dependency handling, set the
+cache variable::
+
+  -D <Project>_TRACE_DEPENDENCY_HANDLING_ONLY=ON
+
+This will result in only performing the package enable/disable dependency
+handling logic and tracing what would be done to configure the compilers and
+configure the various enabled packages but not actually do that work.  This
+can greatly speed up the time to complete the ``cmake`` configure command when
+debugging the dependency handling (or when creating tests that check that
+behavior).
 
 
 Selecting compiler and linker options
@@ -2932,6 +2949,20 @@ the source distribution tarball.
 NOTE: If the base ``.git/`` directory is missing, then no
 ``<Project>RepoVersion.txt`` file will get generated and a ``NOTE`` message is
 printed to cmake STDOUT.
+
+
+Show parent(s) commit info in the repo version output
+----------------------------------------------------
+
+.. _<Project>_SHOW_GIT_COMMIT_PARENTS:
+
+When working with local git repos for the project sources, one can include
+the repo's head commit parent(s) info in the repo version output using::
+
+   -D <Project>_SHOW_GIT_COMMIT_PARENTS=ON
+
+For each parent commit, this will include their SHA1, author name, date, email
+and its 80 character summary message in the repo version output string.
 
 
 Generating git version date files

@@ -88,6 +88,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
+* `${PROJECT_NAME}_SHOW_GIT_COMMIT_PARENTS`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
 * `${PROJECT_NAME}_SKIP_INSTALL_PROJECT_CMAKE_CONFIG_FILES`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
@@ -649,6 +650,21 @@ These options are described below.
 
   in the project's `<projectDir>/ProjectName.cmake`_ file (see `RPATH
   Handling`_).
+
+
+.. _${PROJECT_NAME}_SHOW_GIT_COMMIT_PARENTS:
+
+**${PROJECT_NAME}_SHOW_GIT_COMMIT_PARENTS**
+
+  The cache variable ``${PROJECT_NAME}_SHOW_GIT_COMMIT_PARENTS`` results in
+  the repo version file showing the parent commits for each repo commit.  By
+  default, this variable is set to ``OFF`` but projects can set to to ``ON``
+  by default by setting::
+
+    set(${PROJECT_NAME}_SHOW_GIT_COMMIT_PARENTS_DEFAULT ON)
+
+  in the project's ``ProjectName.cmake`` file.  (That way, it will also impact
+  ``cmake -P`` scripts don't configure the project itself to be built.)
 
 
 .. _${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME:
