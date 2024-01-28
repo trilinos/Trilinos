@@ -193,7 +193,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   perturbX = currentX;
   Y = X;
   Y.Scale(eta);
-  perturbX.update(1.0,nevY,1.0);
+  perturbX.update(scaleFactor,nevY,1.0);
 
   if (!useGroupForComputeF)
       interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(),
