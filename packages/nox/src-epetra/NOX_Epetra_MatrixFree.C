@@ -188,8 +188,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     eta = userEta;
 
   // Compute the perturbed RHS
-  perturbX = currentX;
-  perturbX.update(eta*scaleFactor,nevX,1.0);
+  perturbX.update(1.0,currentX,eta*scaleFactor,nevX,0.0);
 
   if (!useGroupForComputeF)
       interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(),
