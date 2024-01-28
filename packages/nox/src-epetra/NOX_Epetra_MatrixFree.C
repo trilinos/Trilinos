@@ -220,7 +220,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
   else {
     nevY.update(1.0, fp, -1.0, *fmPtr, 0.0);
-    nevY.scale( 1.0/(2.0 * eta) );
+    nevY.scale( 1.0/(2.0 * eta * scaleFactor) );
   }
 
   return 0;
