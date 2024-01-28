@@ -170,9 +170,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if ( Teuchos::is_null(fmPtr) )
       fmPtr = Teuchos::rcp(new NOX::Epetra::Vector(fo));
 
-  double scaleFactor = 1.0;
-  if ( diffType == Backward )
-  scaleFactor = -1.0;
+  const double scaleFactor = (diffType == Backward ? -1.0 : 1.0);
 
   if (computeEta) {
     if (useNewPerturbation) {
