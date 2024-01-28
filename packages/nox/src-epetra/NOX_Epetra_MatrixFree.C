@@ -190,8 +190,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Compute the perturbed RHS
   perturbX = currentX;
   Y = X;
-  Y.Scale(eta);
-  perturbX.update(scaleFactor,nevY,1.0);
+  perturbX.update(eta*scaleFactor,nevY,1.0);
 
   if (!useGroupForComputeF)
       interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(),
@@ -204,8 +203,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
 
   if ( diffType == Centered ) {
-    Y.Scale(-2.0);
-    perturbX.update(scaleFactor,nevY,1.0);
+    perturbX.update(-2.0*eta*scaleFactor,nevY,1.0);
     if (!useGroupForComputeF)
       interface->computeF(perturbX.getEpetraVector(), fmPtr->getEpetraVector(),
               NOX::Epetra::Interface::Required::MF_Res);
