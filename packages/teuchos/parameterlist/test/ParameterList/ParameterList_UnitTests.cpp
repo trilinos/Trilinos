@@ -866,8 +866,9 @@ TEUCHOS_UNIT_TEST( ParameterList, validateAgainstSelf )
 }
 
 
-TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults )
+TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults_default )
 {
+  // Test for proper behavior when the user doesn't set `Nonlinear Solver`
   ParameterList PL_Main = createMainPL();
   ParameterList PL_Main_valid = createValidMainPL();
   ECHO(PL_Main.validateParametersAndSetDefaults(PL_Main_valid));
@@ -878,9 +879,17 @@ TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults )
   const ParameterEntry &default_entry = PL_Main.getEntry("Nonlinear Solver");
   TEST_EQUALITY(default_entry.isDefault(), true);
   TEST_EQUALITY(default_entry.isUsed(), false);
+  // Make sure the value is stored as an integer after validation
+  TEST_NOTHROW(Teuchos::any_cast<int>(default_entry.getAny()));
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults_noDefault )
+{
   // Now make sure we have the correct behavior when not using a default value
-  PL_Main = createMainPL();
+  ParameterList PL_Main = createMainPL();
   PL_Main.set("Nonlinear Solver", "Trust Region Based");
+  ParameterList PL_Main_valid = createValidMainPL();
   PL_Main.validateParametersAndSetDefaults(PL_Main_valid);
   const ParameterEntry &entry = PL_Main.getEntry("Nonlinear Solver");
   TEST_EQUALITY(entry.isDefault(), false);
