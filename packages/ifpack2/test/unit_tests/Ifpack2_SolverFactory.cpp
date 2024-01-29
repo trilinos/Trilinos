@@ -252,10 +252,10 @@ namespace {
       "RILUK",
       "MDF",
       "RBILUK",
-      // "FAST_IC",  // Fails when run with SerialNode in a build with DefaultNode=Cuda
+      "FAST_IC",
       "FAST_ILU",
       "FAST_ILU_B",
-      // "FAST_ILDL",  // Fails when run with SerialNode in a build with DefaultNode=Cuda
+      "FAST_ILDL",
       "BLOCK RELAXATION",
       // "DATABASE SCHWARZ",  // Skipping because it fails
       "SPARSE_BLOCK_RELAXATION"
