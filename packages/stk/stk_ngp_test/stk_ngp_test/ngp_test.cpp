@@ -48,13 +48,13 @@ void Test::TearDown() {
 
 inline
 int get_max_failure_reports_per_test() {
-  return get_reporter()->get_capacity();
+  return get_host_reporter()->get_capacity();
 }
 
 inline
 void set_max_failure_reports_per_test(const int n) {
-  get_reporter()->resize(n);
-  get_device_reporter()->resize(n);
+  get_host_reporter()->resize(n);
+  get_device_reporter_on_host()->resize(n);
 }
 
 
@@ -62,20 +62,21 @@ namespace internal {
 
 NGP_TEST_INLINE
 void add_failure(const char* condition, const char* location) {
-  get_reporter()->add_failure(condition, location);
+  KOKKOS_IF_ON_HOST((get_host_reporter()->add_failure(condition, location);))
+  KOKKOS_IF_ON_DEVICE((get_device_reporter()->add_failure(condition, location);))
 }
 
 inline
 int report_failures() {
-  int numFailures = get_reporter()->report_failures();
-  numFailures += get_device_reporter()->report_failures();
+  int numFailures = get_host_reporter()->report_failures();
+  numFailures += get_device_reporter_on_host()->report_failures();
   return numFailures;
 }
 
 inline
 void clear_failures() {
-  get_reporter()->clear();
-  get_device_reporter()->clear();
+  get_host_reporter()->clear();
+  get_device_reporter_on_host()->clear();
 }
 
 }

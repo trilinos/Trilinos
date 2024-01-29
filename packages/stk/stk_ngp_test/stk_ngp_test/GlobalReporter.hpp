@@ -5,13 +5,18 @@
 
 namespace ngp_testing {
 
-class ReporterBase;
+template <typename DeviceType>
+class Reporter;
+
+using DeviceReporter = Reporter<Kokkos::DefaultExecutionSpace::device_type>;
+using HostReporter = Reporter<Kokkos::DefaultHostExecutionSpace::device_type>;
 
 void initialize_reporters();
 void finalize_reporters();
 
-NGP_TEST_FUNCTION ReporterBase* get_reporter();
-ReporterBase* get_device_reporter();
+NGP_TEST_FUNCTION HostReporter*  get_host_reporter();
+NGP_TEST_FUNCTION DeviceReporter* get_device_reporter();
+DeviceReporter* get_device_reporter_on_host();
 
 }
 
