@@ -77,20 +77,20 @@ private:
 
 public:
   CuSolver() {
-    _status = cusolverSpCreate(&_handle);
-    checkStatus("cusolverSpCreate");
-    _status = cusolverSpCreateCsrcholInfo(&_chol_info);
-    checkStatus("cusolverSpCreateCsrcholInfo");
-    _status = cusparseCreateMatDescr(&_desc);
-    checkStatus("cusparseCreateMatDescr");
+    // _status = cusolverSpCreate(&_handle);
+    // checkStatus("cusolverSpCreate");
+    // _status = cusolverSpCreateCsrcholInfo(&_chol_info);
+    // checkStatus("cusolverSpCreateCsrcholInfo");
+    // _status = cusparseCreateMatDescr(&_desc);
+    // checkStatus("cusparseCreateMatDescr");
   }
   virtual ~CuSolver() {
-    _status = cusparseDestroyMatDescr(_desc);
-    checkStatus("cusparseDestroyMatDescr");
-    _status = cusolverSpDestroyCsrcholInfo(_chol_info);
-    checkStatus("cusolverSpDestroyCsrcholInfo");
-    _status = cusolverSpDestroy(_handle);
-    checkStatus("cusolverSpDestroy");
+    // _status = cusparseDestroyMatDescr(_desc);
+    // checkStatus("cusparseDestroyMatDescr");
+    // _status = cusolverSpDestroyCsrcholInfo(_chol_info);
+    // checkStatus("cusolverSpDestroyCsrcholInfo");
+    // _status = cusolverSpDestroy(_handle);
+    // checkStatus("cusolverSpDestroy");
   }
 
   void setVerbose(const ordinal_type verbose = 1) { _verbose = verbose; }
