@@ -88,6 +88,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   clp.setOption("tests", "notests", &doTests, "Test operator using known LHS & RHS.");
   bool doUnPrecSolve = true;
   clp.setOption("unPrec", "noUnPrec", &doUnPrecSolve, "Solve unpreconditioned");
+  bool failOnUnPrecSolve = true;
+  clp.setOption("failOnUnPrec", "noFailOnUnPrec", &failOnUnPrecSolve, "Set error condition if unpreconditioned solve does not converge.");
   bool doPrecSolve = true;
   clp.setOption("prec", "noPrec", &doPrecSolve, "Solve preconditioned with AMG");
 
@@ -257,7 +259,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << "|X-X_ex| = " << X->getVector(0)->norm2() << std::endl
         << std::endl;
 
-    success &= (ret == Belos::Converged);
+    if (failOnUnPrecSolve)
+      success &= (ret == Belos::Converged);
   }
 #endif  // HAVE_MUELU_BELOS
 

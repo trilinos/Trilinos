@@ -161,6 +161,10 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense") || (coarseningCriterion_ == "transferLevels"));
   debugOutput_ = params_->get<bool>("debugOutput");
 
+  auto comm = getComm();
+  if (debugOutput_ && (comm->getRank() == 0))
+    std::cout << *params_ << std::endl;
+
   if (doDebugChecks) {
     // near field matrix lives on map and is nonlocal
     TEUCHOS_ASSERT(map->isSameAs(*nearField_->getRangeMap()));
@@ -523,6 +527,8 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar HALF = ONE / (ONE + ONE);
 
+  RCP<Teuchos::ParameterList> coarseParams = rcp(new Teuchos::ParameterList(*params_));
+
   // newBasisMatrix = P^T * basisMatrix
   RCP<matrix_type> newBasisMatrix = rcp(new matrix_type(P->getDomainMap(), clusterCoeffMap_, 0));
   MatrixMatrix::Multiply(*P, true, *basisMatrix_, false, *newBasisMatrix);
@@ -636,38 +642,40 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
       size_t totalNumClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
       RCP<vec_type> tempV         = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
       RCP<vec_type> tempV2        = Teuchos::rcp(new vec_type(kernelApproximations_->blockMap_->blockMap_, false));
-      int keepTransfers           = params_->get<int>("keepTransfers", -1);
+      // keepTransfers == transferMatrices_.size(): keep all transfers
+      // keepTransfers == 0: keep no transfers
+      int keepTransfers                 = params_->get<int>("keepTransfers", -1);
+      const double treeCoarseningFactor = params_->get<double>("treeCoarseningFactor");
       if (keepTransfers == -1) {
-        double leftOverFactor             = params_->get<double>("leftOverFactor");
-        keepTransfers                     = transferMatrices_.size();
-        double temp                       = (1.0 / coarseningRate) * leftOverFactor;
-        const double treeCoarseningFactor = params_->get<double>("treeCoarseningFactor");
-        while (temp >= 2.0) {
+        double leftOverFactor = params_->get<double>("leftOverFactor");
+        keepTransfers         = transferMatrices_.size();
+        double temp           = (1.0 / coarseningRate) * leftOverFactor;
+        while (temp >= 1.0) {
           --keepTransfers;
           temp /= treeCoarseningFactor;
         }
         keepTransfers = std::max(keepTransfers, 0);
-        params_->set("leftOverFactor", temp);
+        coarseParams->set("leftOverFactor", temp);
       }
+      coarseParams->set("keepTransfers", -1);
+      TEUCHOS_ASSERT((0 <= keepTransfers) && (keepTransfers <= transferMatrices_.size()));
 
+      size_t droppedTransfers = 0;
       for (int k = Teuchos::as<int>(transferMatrices_.size()) - 1; k >= 0; --k) {
-        size_t clustersInLevel = transferMatrices_[k]->blockA_->getGlobalNumEntries();
+        size_t numTreeEdgesBetweenLevels = transferMatrices_[k]->blockA_->getGlobalNumEntries();
+        size_t numClusters_k1            = numTreeEdgesBetweenLevels;
+        size_t numClusters_k             = Teuchos::as<size_t>(numTreeEdgesBetweenLevels / treeCoarseningFactor);
 
         if (debugOutput_ && (comm->getRank() == 0))
-          std::cout << "level " << k << " clustersInLevel " << clustersInLevel << std::endl;
+          std::cout << "transfer " << k << " between levels " << k + 1 << " and " << k << " maps " << numClusters_k1 << " to " << numClusters_k << " clusters" << std::endl;
 
         tempV->putScalar(ONE);
         transferMatrices_[k]->blockA_->apply(*tempV, *tempV2, Teuchos::TRANS);
-
-        size_t numClusters = tempV2->norm1();
-        if (debugOutput_ && (comm->getRank() == 0))
-          std::cout << "numClusters " << numClusters << std::endl;
         tempV->putScalar(ZERO);
         kernelApproximations_->blockA_->apply(*tempV2, *tempV);
-
         Scalar numClusterPairs = tempV->dot(*tempV2);
         if (debugOutput_ && (comm->getRank() == 0))
-          std::cout << "numClusterPairs " << numClusterPairs << std::endl;
+          std::cout << "cluster pairs on level " << k + 1 << ": " << numClusterPairs << std::endl;
 
         bool doDrop;
         if (keepTransfers >= 0) {
@@ -681,13 +689,12 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
           for (LocalOrdinal j = 0; j < lcl_transfer_graph.entries.extent_int(0); j++)
             blidsToDrop.insert(lcl_transfer_graph.entries(j));
 
+          droppedTransfers += 1;
           droppedClusterPairs += numClusterPairs;
-        } else {
-          if (debugOutput_ && (comm->getRank() == 0))
-            std::cout << "Dropped " << transferMatrices_.size() - 1 - k << " transfers of " << transferMatrices_.size() << " dropped cp: " << droppedClusterPairs << std::endl;
-          break;
         }
       }
+      if (debugOutput_ && (comm->getRank() == 0))
+        std::cout << "Dropped " << droppedTransfers << " transfers of " << transferMatrices_.size() << ", dropped cluster pairs: " << droppedClusterPairs << std::endl;
     }
 
     // number of cluster pairs dropped
@@ -781,7 +788,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &kept, &gbl_kept);
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ignored, &gbl_ignored);
       if (comm->getRank() == 0)
-        std::cout << "dropped " << gbl_dropped << " kept " << gbl_kept << " ignored " << gbl_ignored << std::endl;
+        std::cout << "dropped " << gbl_dropped << " cluster pairs, kept " << gbl_kept << " cluster pairs, ignored " << gbl_ignored << " cluster pairs" << std::endl;
     }
   }
 
@@ -874,7 +881,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
                                                                                           newBlockedKernelApproximation,
                                                                                           newBasisMatrix,
                                                                                           newTransferMatrices,
-                                                                                          params_));
+                                                                                          coarseParams));
 }
 
 template <class Scalar,
