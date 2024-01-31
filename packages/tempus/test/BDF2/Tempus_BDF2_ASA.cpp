@@ -21,8 +21,6 @@
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
 #include <fstream>
