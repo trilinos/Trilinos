@@ -47,6 +47,8 @@ fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.5" ]]; then
   module load sparc-dev/arm-20.1_openmpi-4.0.5
+  # devpack includes cmake/3.17.1 which is too old; swap it for this version
+  module load cmake/3.27.4
   module unload yaml-cpp
   # We'll use TPL_ROOT for consistency across ATDM environments
   export MPI_ROOT=${MPI_DIR}
@@ -66,18 +68,35 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.5" ]]; then
 elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-22.1_OPENMPI-4.0.5" ]]; then
   export BLAS_ROOT=${ARMPL_DIR}
   module load sparc-dev/arm-22.1_openmpi-4.0.5
+  module unload sparc-cmake/3.23.2
+  module load cmake/3.27.4
   module unload yaml-cpp
-  # superlu and binutils are not included in the devpack:
+  # These TPLs are not included in the devpack:
   module load superlu/5.2.1
+  module load superlu_dist/5.4.0
   module load binutils/2.33.1
-  # This version of sparc-dev sets most of the $TPL_ROOT style variables,
-  # except these:
+  module load boost/1.72.0
+  module load phdf5/1.10.5
+  module load netcdf/4.6.3
+  module load pnetcdf/1.11.1
+  module load metis/5.1.0
+  module load parmetis/4.0.3
+  module load cgns/3.4.0
+  # Most <TPL>_ROOT paths are not set by TPLs, instead we have
+  # <TPL>_DIR. Trilinos looks for the _ROOT form.
   export MPI_ROOT=${MPI_DIR}
+  export HDF5_ROOT=${HDF5_DIR}
+  export NETCDF_ROOT=${NETCDF_DIR}
+  export PNetCDF_ROOT=${PNETCDF_DIR}
+  export PNETCDF_ROOT=${PNETCDF_DIR}
   export SUPERLU_ROOT=${SUPERLU_DIR}
+  export SUPERLUDist_ROOT=${SUPERLU_DIST_DIR}
+  export SuperLUDist_ROOT=${SUPERLU_DIST_DIR}
+  export METIS_ROOT=${METIS_DIR}
+  export PARMETIS_ROOT=${PARMETIS_DIR}
+  export CGNS_ROOT=${CGNS_DIR}
   export BINUTILS_ROOT=${BINUTILS_DIR}
-  # SUPERLU_DIST and NETCDF libraries live in $ROOT/lib64 in this version
-  export ATDM_CONFIG_SUPERLUDIST_LIBS="-L${SUPERLUDIST_ROOT}/lib64;-lsuperlu_dist"
-  export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib64;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
+  export ATDM_CONFIG_SUPERLUDIST_LIBS="-L${SUPERLUDIST_ROOT}/lib;-lsuperlu_dist"
 else
   echo
   echo "***"
@@ -99,12 +118,6 @@ else
   export OMP_PROC_BIND=FALSE
   export OMP_NUM_THREADS=1
 fi
-
-# Also unload this cmake module as 3.17 is too old to configure Trilinos.
-# sparc-cmake/3.23.2 is the version we want to use
-# (and both devpacks load it), but because it has a
-# different name it won't unload this older version.
-module unload cmake/3.17.1
 
 # Common modules for all builds
 module load ninja
