@@ -219,7 +219,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
 
     auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
-    const auto& kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    const auto& kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Class data fields for lambda capture
     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
