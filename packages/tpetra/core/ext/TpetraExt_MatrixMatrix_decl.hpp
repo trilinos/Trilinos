@@ -680,6 +680,7 @@ struct AddKernels
   /// \param Browptrs Row pointers array for B
   /// \param Bcolinds Column indices array for B
   /// \param scalarB Scaling factor for B
+  /// \param numGlobalCols The global size of the column map
   /// \param[Out] Cvals Values array for C (allocated inside function)
   /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
   /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
@@ -692,6 +693,9 @@ struct AddKernels
     const row_ptrs_array_const& Browptrs,
     const col_inds_array& Bcolinds,
     const impl_scalar_type scalarB,
+#if KOKKOSKERNELS_VERSION >= 40299
+    GlobalOrdinal numGlobalCols,
+#endif
     values_array& Cvals,
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);
@@ -728,7 +732,7 @@ struct AddKernels
   /// \param Browptrs Row pointers array for B
   /// \param Bcolinds Column indices array for B
   /// \param scalarB Scaling factor for B
-  /// \param globalNumCols The global size of the column map
+  /// \param numGlobalCols The global size of the column map
   /// \param[Out] Cvals Values array for C (allocated inside function)
   /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
   /// \param[Out] Ccolinds Column indices array for C (allocated inside function)

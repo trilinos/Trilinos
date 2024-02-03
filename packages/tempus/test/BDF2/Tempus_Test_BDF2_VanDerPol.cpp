@@ -15,21 +15,8 @@
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_StepperBDF2.hpp"
 
-#include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/CDR_Model.hpp"
-#include "../TestModels/CDR_Model_Tpetra.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
-
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Tpetra_Core.hpp"
-
-#ifdef Tempus_ENABLE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
 
 #include <fstream>
 #include <limits>

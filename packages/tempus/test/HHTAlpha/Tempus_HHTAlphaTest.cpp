@@ -17,12 +17,6 @@
 #include "../TestModels/HarmonicOscillatorModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_DetachedVectorView.hpp"
-#include "Thyra_DetachedMultiVectorView.hpp"
-#include "NOX_Thyra.H"
-
 #include <fstream>
 #include <limits>
 #include <sstream>

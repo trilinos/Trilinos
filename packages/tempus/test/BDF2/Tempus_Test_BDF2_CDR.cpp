@@ -15,21 +15,22 @@
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_StepperBDF2.hpp"
 
-#include "../TestModels/SinCosModel.hpp"
+#ifdef TEMPUS_ENABLE_EPETRA_STACK
 #include "../TestModels/CDR_Model.hpp"
-#include "../TestModels/CDR_Model_Tpetra.hpp"
-#include "../TestModels/VanDerPolModel.hpp"
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
-
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Tpetra_Core.hpp"
-
 #ifdef Tempus_ENABLE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#endif
+#ifdef TEMPUS_ENABLE_TPETRA_STACK
+#include "../TestModels/CDR_Model_Tpetra.hpp"
+#include "Tpetra_Core.hpp"
+#endif
+#include "../TestModels/VanDerPolModel.hpp"
+#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
+
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include <fstream>
 #include <limits>
@@ -201,6 +202,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   Teuchos::TimeMonitor::summarize();
 }
 
+#ifdef TEMPUS_ENABLE_EPETRA_STACK
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, CDR)
@@ -216,7 +218,9 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
   CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
                                                    success);
 }
+#endif
 
+#ifdef TEMPUS_ENABLE_TPETRA_STACK
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, CDR_Tpetra)
@@ -232,5 +236,6 @@ TEUCHOS_UNIT_TEST(BDF2, CDR_Tpetra)
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
       comm, comm->getSize(), out, success);
 }
+#endif
 
 }  // namespace Tempus_Test

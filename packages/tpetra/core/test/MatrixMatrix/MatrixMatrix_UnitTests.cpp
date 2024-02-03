@@ -2154,6 +2154,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addSorted(
                                 valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, 
                                 valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, 
+#if KOKKOSKERNELS_VERSION >= 40299
+                                nrows, // assumes square matrices
+#endif
                                 valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
 
   ExecSpace().fence();

@@ -37,6 +37,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFourByFourMtx
   SOURCE_PREFIX "In_"
 )
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+
 IF (${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
   TRIBITS_ADD_EXECUTABLE(
     test_epetra_stratimikos_solver_driver
@@ -151,6 +154,8 @@ IF (${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters AND ${PACKAGE_NAME}_ENABLE_Belos)
 
   ENDIF()
 
+
+ENDIF()
 
 ENDIF()
 
