@@ -167,7 +167,6 @@
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_MatrixFreeTentativePFactory.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_RegionRFactory_kokkos.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
@@ -311,7 +310,6 @@ class FactoryFactory : public BaseClass {
     if (factoryName == "StructuredAggregationFactory_kokkos") return Build2<StructuredAggregationFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "TentativePFactory_kokkos") return Build2<TentativePFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "MatrixFreeTentativePFactory") return Build2<MatrixFreeTentativePFactory>(paramList, factoryMapIn, factoryManagersIn);
-    if (factoryName == "UncoupledAggregationFactory_kokkos") return Build2<UncoupledAggregationFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 
     // Handle removed Kokkos factories
     if (factoryName == "CoarseMapFactory_kokkos") return Build2<CoarseMapFactory>(paramList, factoryMapIn, factoryManagersIn);

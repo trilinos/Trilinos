@@ -161,8 +161,10 @@ class HybridAggregationFactory : public SingleLevelFactoryBase {
   void Build(Level& currentLevel) const;
 
   /*! @brief Specifically build aggregates along interfaces */
-  void BuildInterfaceAggregates(Level& currentLevel, RCP<Aggregates> aggregates,
-                                std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
+  void BuildInterfaceAggregates(Level& currentLevel,
+                                RCP<Aggregates> aggregates,
+                                typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
+                                LO& numNonAggregatedNodes,
                                 Array<LO> coarseRate) const;
 
   //@}

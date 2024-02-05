@@ -72,8 +72,8 @@ InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::InterfaceAggre
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& /* params */, LWGraph const& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregates");
+void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesNonKokkos(Teuchos::ParameterList const& /* params */, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesNonKokkos");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   const int myRank         = graph.GetComm()->getRank();
@@ -117,6 +117,11 @@ void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggr
 
   // update aggregate object
   aggregates.SetNumAggregates(numLocalAggregates);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const& /* params */, LWGraph_kokkos const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat, LO& numNonAggregatedNodes) const {
+  TEUCHOS_ASSERT(false);
 }
 
 }  // namespace MueLu

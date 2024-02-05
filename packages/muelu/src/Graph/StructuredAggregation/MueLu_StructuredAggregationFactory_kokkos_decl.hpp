@@ -51,7 +51,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#include "MueLu_AggregationStructuredAlgorithm_kokkos_fwd.hpp"
+#include "MueLu_AggregationStructuredAlgorithm_fwd.hpp"
 
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
