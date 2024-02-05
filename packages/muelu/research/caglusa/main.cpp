@@ -92,6 +92,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   clp.setOption("failOnUnPrec", "noFailOnUnPrec", &failOnUnPrecSolve, "Set error condition if unpreconditioned solve does not converge.");
   bool doPrecSolve = true;
   clp.setOption("prec", "noPrec", &doPrecSolve, "Solve preconditioned with AMG");
+  bool debugOutput = false;
+  clp.setOption("debug", "noDebug", &debugOutput, "Debug output");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
@@ -138,8 +140,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     hop = Teuchos::rcp_dynamic_cast<HOp>(op);
   }
 
-  if (!hop.is_null())
+  if (!hop.is_null()) {
+    if (debugOutput)
+      hop->setDebugOutput(debugOutput);
     out << "Compression: " << hop->getCompression() << " of dense matrix." << std::endl;
+  }
 
   Teuchos::ParameterList problemParams;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlProblem, Teuchos::Ptr<Teuchos::ParameterList>(&problemParams), *comm);

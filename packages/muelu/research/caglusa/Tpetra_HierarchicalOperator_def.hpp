@@ -3,6 +3,7 @@
 
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
+#include <Tpetra_HierarchicalOperator_decl.hpp>
 
 namespace Tpetra {
 
@@ -18,7 +19,7 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
   using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
   using vals_type    = typename crs_matrix::local_matrix_device_type::values_type;
 
-  typedef Kokkos::ArithTraits<Scalar> ATS;
+  using ATS      = Kokkos::ArithTraits<Scalar>;
   using impl_SC  = typename ATS::val_type;
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;
 
@@ -48,8 +49,6 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
       },
       nnz);
 
-  // auto nnz = rowptr(lclA.numRows());
-
   auto idx  = col_idx_type("idx", nnz);
   auto vals = vals_type("vals", nnz);
 
@@ -67,6 +66,8 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
           }
         }
       });
+
+  Kokkos::fence();
 
   auto newA = Teuchos::rcp(new crs_matrix(A->getRowMap(), A->getColMap(), rowptr, idx, vals));
   newA->fillComplete(A->getDomainMap(),
@@ -159,7 +160,7 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sendTypeKernelApproximations = params_->get<std::string>("Send type kernelApproximations");
   coarseningCriterion_         = params_->get<std::string>("Coarsening criterion");
   TEUCHOS_ASSERT((coarseningCriterion_ == "numClusters") || (coarseningCriterion_ == "equivalentDense") || (coarseningCriterion_ == "transferLevels"));
-  debugOutput_ = params_->get<bool>("debugOutput");
+  setDebugOutput(params_->get<bool>("debugOutput"));
 
   auto comm = getComm();
   if (debugOutput_ && (comm->getRank() == 0))
@@ -628,7 +629,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
       }
       std::sort(clusterPairSizes.begin(), clusterPairSizes.end());
       double coarseningRate = Teuchos::as<double>(P->getGlobalNumCols()) / Teuchos::as<double>(P->getGlobalNumRows());
-      tgt_clusterPairSize   = clusterPairSizes[Teuchos::as<size_t>(clusterPairSizes.size() * (1 - coarseningRate))];
+      tgt_clusterPairSize   = clusterPairSizes[Teuchos::as<size_t>(static_cast<double>(clusterPairSizes.size()) * (1 - coarseningRate))];
       // std::cout << "HERE " << clusterPairSizes[0] << " " << tgt_clusterPairSize << " " << clusterPairSizes[clusterPairSizes.size()-1] << std::endl;
     }
 
@@ -664,7 +665,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
       for (int k = Teuchos::as<int>(transferMatrices_.size()) - 1; k >= 0; --k) {
         size_t numTreeEdgesBetweenLevels = transferMatrices_[k]->blockA_->getGlobalNumEntries();
         size_t numClusters_k1            = numTreeEdgesBetweenLevels;
-        size_t numClusters_k             = Teuchos::as<size_t>(numTreeEdgesBetweenLevels / treeCoarseningFactor);
+        auto numClusters_k               = Teuchos::as<size_t>(static_cast<double>(numTreeEdgesBetweenLevels) / treeCoarseningFactor);
 
         if (debugOutput_ && (comm->getRank() == 0))
           std::cout << "transfer " << k << " between levels " << k + 1 << " and " << k << " maps " << numClusters_k1 << " to " << numClusters_k << " clusters" << std::endl;
@@ -681,7 +682,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
         if (keepTransfers >= 0) {
           doDrop = (keepTransfers <= k);
         } else {
-          doDrop = (droppedClusterPairs + numClusterPairs < (1.0 - coarseningRate) * totalNumClusterPairs);
+          doDrop = (droppedClusterPairs + numClusterPairs < (1.0 - coarseningRate) * static_cast<double>(totalNumClusterPairs));
         }
         if (doDrop) {
           auto lcl_transfer       = transferMatrices_[k]->blockA_->getLocalMatrixHost();

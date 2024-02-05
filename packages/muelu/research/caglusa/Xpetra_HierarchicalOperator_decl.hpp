@@ -87,6 +87,10 @@ class HierarchicalOperator : public OperatorWithDiagonal<Scalar, LocalOrdinal, G
     return op_->getCompression();
   }
 
+  void setDebugOutput(const bool debugOutput) {
+    op_->setDebugOutput(debugOutput);
+  }
+
   RCP<matrix_type> nearFieldMatrix() {
     auto tpMat = Teuchos::rcp(new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op_->nearFieldMatrix()));
     return Teuchos::rcp(new CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Teuchos::rcp_dynamic_cast<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(tpMat)));
