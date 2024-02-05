@@ -9,7 +9,7 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #don't assert that this is defined anymore
 #ASSERT_DEFINED(TPL_ENABLE_yamlcpp)
 
-IF(TPL_ENABLE_yamlcpp)
+IF(${PACKAGE_NAME}_ENABLE_yamlcpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     performance_validate
