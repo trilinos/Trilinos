@@ -105,7 +105,7 @@ class OnePtAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOr
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregatesOnHost(Teuchos::ParameterList const& params, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregatesNonKokkos(Teuchos::ParameterList const& params, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
 
   void BuildAggregates(Teuchos::ParameterList const& params,
                        LWGraph_kokkos const& graph,

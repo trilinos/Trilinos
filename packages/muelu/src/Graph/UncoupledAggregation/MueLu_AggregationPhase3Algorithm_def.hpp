@@ -63,8 +63,8 @@ namespace MueLu {
 // Try to stick unaggregated nodes into a neighboring aggregate if they are
 // not already too big. Otherwise, make a new aggregate
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesOnHost(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregatesOnHost");
+void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesNonKokkos");
 
   bool makeNonAdjAggs    = false;
   bool error_on_isolated = false;
@@ -173,7 +173,7 @@ void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggrega
       if (error_on_isolated) {
         // Error on this isolated node, as the user has requested
         std::ostringstream oss;
-        oss << "MueLu::AggregationPhase3Algorithm::BuildAggregatesOnHost: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). " << std::endl;
+        oss << "MueLu::AggregationPhase3Algorithm::BuildAggregatesNonKokkos: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). " << std::endl;
         oss << "If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix." << std::endl;
         oss << "If this error is being generated at any other level, try turning on repartitioning, which may fix this problem." << std::endl;
         throw Exceptions::RuntimeError(oss.str());

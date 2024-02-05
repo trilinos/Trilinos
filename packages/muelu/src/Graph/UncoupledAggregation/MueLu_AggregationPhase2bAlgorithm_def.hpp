@@ -63,8 +63,8 @@ namespace MueLu {
 // Try to stick unaggregated nodes into a neighboring aggregate if they are
 // not already too big
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesOnHost(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregatesOnHost");
+void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesNonKokkos");
   bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2b");
 
   const LO numRows = graph.GetNodeNumVertices();

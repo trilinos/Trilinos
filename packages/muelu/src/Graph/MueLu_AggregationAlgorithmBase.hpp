@@ -86,12 +86,12 @@ class AggregationAlgorithmBase : public BaseClass {
   //! @name Build routines
   //@{
 
-  //! BuildAggregatesOnHost routine.
-  virtual void BuildAggregatesOnHost(const Teuchos::ParameterList& params,
-                                     const LWGraphHostType& graph,
-                                     Aggregates& aggregates,
-                                     AggStatHostType& aggStat,
-                                     LO& numNonAggregatedNodes) const = 0;
+  //! BuildAggregatesNonKokkos routine.
+  virtual void BuildAggregatesNonKokkos(const Teuchos::ParameterList& params,
+                                        const LWGraphHostType& graph,
+                                        Aggregates& aggregates,
+                                        AggStatHostType& aggStat,
+                                        LO& numNonAggregatedNodes) const = 0;
 
   //! BuildAggregates routine.
   virtual void BuildAggregates(const Teuchos::ParameterList& params,

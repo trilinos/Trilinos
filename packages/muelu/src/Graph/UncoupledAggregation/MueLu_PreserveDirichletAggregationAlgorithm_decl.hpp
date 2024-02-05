@@ -103,7 +103,7 @@ class PreserveDirichletAggregationAlgorithm : public MueLu::AggregationAlgorithm
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregatesOnHost(const Teuchos::ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregatesNonKokkos(const Teuchos::ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
 
   void BuildAggregates(const Teuchos::ParameterList& params,
                        const LWGraph_kokkos& graph,

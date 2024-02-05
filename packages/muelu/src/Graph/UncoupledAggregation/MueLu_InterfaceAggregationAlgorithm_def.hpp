@@ -72,8 +72,8 @@ InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::InterfaceAggre
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesOnHost(Teuchos::ParameterList const& /* params */, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregatesOnHost");
+void InterfaceAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesNonKokkos(Teuchos::ParameterList const& /* params */, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesNonKokkos");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   const int myRank         = graph.GetComm()->getRank();

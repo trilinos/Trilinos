@@ -113,10 +113,10 @@ class AggregationStructuredAlgorithm : public MueLu::AggregationAlgorithmBase<Lo
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregatesOnHost(const Teuchos::ParameterList& params, const LWGraph& graph,
-                             Aggregates& aggregates,
-                             typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
-                             LO& numNonAggregatedNodes) const;
+  void BuildAggregatesNonKokkos(const Teuchos::ParameterList& params, const LWGraph& graph,
+                                Aggregates& aggregates,
+                                typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
+                                LO& numNonAggregatedNodes) const;
 
   /*! @brief Local aggregation. */
 

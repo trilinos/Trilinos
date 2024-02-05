@@ -68,10 +68,10 @@ namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-    BuildAggregatesOnHost(const Teuchos::ParameterList& /* params */, const LWGraph& graph,
-                          Aggregates& aggregates,
-                          typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
-                          LO& numNonAggregatedNodes) const {
+    BuildAggregatesNonKokkos(const Teuchos::ParameterList& /* params */, const LWGraph& graph,
+                             Aggregates& aggregates,
+                             typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
+                             LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   RCP<Teuchos::FancyOStream> out;

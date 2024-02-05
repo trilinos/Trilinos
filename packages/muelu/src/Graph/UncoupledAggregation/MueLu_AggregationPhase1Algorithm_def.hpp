@@ -67,9 +67,9 @@ namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
-    BuildAggregatesOnHost(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
-                          LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregatesOnHost");
+    BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
+                             LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesNonKokkos");
 
   std::string orderingStr     = params.get<std::string>("aggregation: ordering");
   int maxNeighAlreadySelected = params.get<int>("aggregation: max selected neighbors");
@@ -78,7 +78,7 @@ void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
   bool matchMLBehavior        = params.get<bool>("aggregation: match ML phase1");
 
   TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
-                             "MueLu::UncoupledAggregationAlgorithm::BuildAggregatesOnHost: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
+                             "MueLu::UncoupledAggregationAlgorithm::BuildAggregatesNonKokkos: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
 
   enum {
     O_NATURAL,

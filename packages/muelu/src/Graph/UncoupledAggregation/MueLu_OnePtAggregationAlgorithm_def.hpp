@@ -72,8 +72,8 @@ OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::OnePtAggregationAl
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesOnHost(Teuchos::ParameterList const& /* params */, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregatesOnHost");
+void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesNonKokkos(Teuchos::ParameterList const& /* params */, LWGraph const& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesNonKokkos");
 
   const LocalOrdinal nRows = graph.GetNodeNumVertices();
   const int myRank         = graph.GetComm()->getRank();

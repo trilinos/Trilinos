@@ -63,8 +63,8 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesOnHost(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregatesOnHost");
+void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
+  Monitor m(*this, "BuildAggregatesNonKokkos");
 
   int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
   int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");

@@ -103,7 +103,7 @@ class AggregationPhase1Algorithm : public MueLu::AggregationAlgorithmBase<LocalO
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregatesOnHost(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
+  void BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
 
   void BuildAggregates(const Teuchos::ParameterList& params,
                        const LWGraph_kokkos& graph,

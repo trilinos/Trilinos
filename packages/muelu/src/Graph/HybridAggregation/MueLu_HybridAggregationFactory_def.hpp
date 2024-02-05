@@ -415,7 +415,7 @@ void HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::
     *out << regionType << " | Executing phase " << a << std::endl;
 
     int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
-    algos_[a]->BuildAggregatesOnHost(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
+    algos_[a]->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
     algos_[a]->SetProcRankVerbose(oldRank);
     *out << regionType << " | Done Executing phase " << a << std::endl;
   }

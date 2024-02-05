@@ -316,8 +316,8 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Kokkos::deep_copy(aggStat, READY);
     LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
 
-    myStructuredAlgorithm->BuildAggregatesOnHost(pL, *graph, *aggregates, aggStat,
-                                                 numNonAggregatedNodes);
+    myStructuredAlgorithm->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStat,
+                                                    numNonAggregatedNodes);
 
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
                                "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");

@@ -368,7 +368,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
       int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
       if (runOnHost)
-        algos_[a]->BuildAggregatesOnHost(pL, *graph, *aggregates, aggStatHost, numNonAggregatedNodes);
+        algos_[a]->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStatHost, numNonAggregatedNodes);
       else
         algos_[a]->BuildAggregates(pL, *graph_kokkos, *aggregates, aggStat, numNonAggregatedNodes);
       algos_[a]->SetProcRankVerbose(oldRank);
