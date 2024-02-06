@@ -100,7 +100,6 @@
 #endif
 
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
-#include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
