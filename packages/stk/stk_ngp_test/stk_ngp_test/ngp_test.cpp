@@ -62,8 +62,13 @@ namespace internal {
 
 NGP_TEST_INLINE
 void add_failure(const char* condition, const char* location) {
-  KOKKOS_IF_ON_HOST((get_host_reporter()->add_failure(condition, location);))
-  KOKKOS_IF_ON_DEVICE((get_device_reporter()->add_failure(condition, location);))
+  KOKKOS_IF_ON_HOST((
+    get_host_reporter()->add_failure(condition, location);
+  ))
+
+  KOKKOS_IF_ON_DEVICE((
+    get_device_reporter()->add_failure(condition, location);
+  ))
 }
 
 inline

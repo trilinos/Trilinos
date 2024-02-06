@@ -53,7 +53,7 @@ namespace mesh {
  */
 
 template<>
-struct FieldTraits<FieldBase>
+struct STK_DEPRECATED FieldTraits<FieldBase>
 {
 public:
   typedef shards::array_traits::Helper<void,shards::RankZero,
@@ -78,7 +78,7 @@ public:
 
 /** \brief  Scalar type and multi-dimensional array traits of a Field */
 template< typename Scalar >
-struct FieldTraits< Field<Scalar,void,void,void,void,void,void,void> >
+struct STK_DEPRECATED FieldTraits< Field<Scalar,void,void,void,void,void,void,void> >
 {
 public:
   typedef shards::array_traits::Helper<Scalar,shards::RankZero,
@@ -104,7 +104,7 @@ public:
 template< typename Scalar ,
           class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7 >
-struct FieldTraits< Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> >
+struct STK_DEPRECATED FieldTraits< Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> >
 {
 public:
   typedef shards::array_traits::Helper<Scalar,shards::FortranOrder,

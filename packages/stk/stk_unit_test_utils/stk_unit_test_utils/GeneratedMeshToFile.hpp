@@ -39,7 +39,7 @@
 #include <stddef.h>                             // for size_t
 #include <stk_io/StkMeshIoBroker.hpp>           // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>           // for BulkData, etc
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/LegacyCoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>              // for Field
 #include <stk_mesh/base/MetaData.hpp>           // for MetaData
 #include <string>                               // for string
@@ -94,7 +94,7 @@ public:
 protected:
   stk::topology::rank_t fieldRank;
   stk::mesh::Field<double> &scalarField;
-  stk::mesh::Field<double, stk::mesh::Cartesian> &vectorField;
+  stk::mesh::Field<double, stk::mesh::legacy::Cartesian> &vectorField;
 
 private:
   GeneratedMeshToFileWithTransientFields();

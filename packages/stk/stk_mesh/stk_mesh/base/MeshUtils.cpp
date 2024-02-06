@@ -40,6 +40,8 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_topology/topology.hpp>
 
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -171,6 +173,56 @@ void fixup_ghosted_to_shared_nodes(stk::mesh::BulkData & bulk)
         }
     }
 }
+
+namespace impl {
+void cleanup_orphan_entities_of_rank(BulkData& bulk, stk::mesh::EntityRank orphanRank)
+{
+  if(orphanRank >= stk::topology::ELEM_RANK) return;
+
+  const stk::mesh::Selector allSelect = bulk.mesh_meta_data().universal_part();
+  const stk::mesh::BucketVector &buckets = bulk.get_buckets(orphanRank, allSelect);
+  stk::mesh::EntityVector entities;
+
+  for(const stk::mesh::Bucket* bucket : buckets) {
+    for(const stk::mesh::Entity entity : *bucket) {
+      bool hasUpwardConnections = impl::has_upward_connectivity(bulk, entity);
+
+      if(!hasUpwardConnections && !bulk.does_entity_have_orphan_protection(entity)) {
+        entities.push_back(entity);
+      }
+    }
+  }
+
+  bulk.modification_begin();
+  for(auto entity : entities) {
+    bulk.destroy_entity(entity);
+  }
+  bulk.modification_end();
+}
+}
+
+void cleanup_orphan_nodes(BulkData& bulk)
+{
+  impl::cleanup_orphan_entities_of_rank(bulk, stk::topology::NODE_RANK);
+}
+
+void cleanup_orphan_edges(BulkData& bulk)
+{
+  impl::cleanup_orphan_entities_of_rank(bulk, stk::topology::EDGE_RANK);
+}
+
+void cleanup_orphan_faces(BulkData& bulk)
+{
+  impl::cleanup_orphan_entities_of_rank(bulk, stk::topology::FACE_RANK);
+}
+
+void cleanup_all_downward_orphan_entities(BulkData& bulk, stk::mesh::EntityRank maxOrphanRank)
+{
+  for(int rank = maxOrphanRank; rank >= static_cast<int>(stk::topology::NODE_RANK); rank--) {
+    impl::cleanup_orphan_entities_of_rank(bulk, static_cast<stk::topology::rank_t>(rank));
+  }
+}
+
 
 } // namespace mesh
 } // namespace stk

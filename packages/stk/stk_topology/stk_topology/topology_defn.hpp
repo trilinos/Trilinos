@@ -207,7 +207,6 @@ bool topology::is_super_topology() const
 STK_INLINE_FUNCTION
 bool topology::is_shell_side_ordinal(unsigned ord) const
 {
-  STK_NGP_ThrowAssert(ord < num_sides());
   return is_shell_with_face_sides() && ord >= num_faces();
 }
 

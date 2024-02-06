@@ -71,6 +71,8 @@ const char * topology::char_name() const
   case NODE:                  return "NODE";
   case LINE_2:                return "LINE_2";
   case LINE_3:                return "LINE_3";
+  case SHELL_LINE_2:          return "SHELL_LINE_2";
+  case SHELL_LINE_3:          return "SHELL_LINE_3";
   case TRI_3:                 return "TRIANGLE_3";
   case TRI_4:                 return "TRIANGLE_4";
   case TRI_6:                 return "TRIANGLE_6";
@@ -78,15 +80,13 @@ const char * topology::char_name() const
   case QUAD_6:                return "QUADRILATERAL_6";
   case QUAD_8:                return "QUADRILATERAL_8";
   case QUAD_9:                return "QUADRILATERAL_9";
+  case SHELL_SIDE_BEAM_2:     return "SHELL_SIDE_BEAM_2";
+  case SHELL_SIDE_BEAM_3:     return "SHELL_SIDE_BEAM_3";
   case PARTICLE:              return "PARTICLE";
   case LINE_2_1D:             return "LINE_2_1D";
   case LINE_3_1D:             return "LINE_3_1D";
   case BEAM_2:                return "BEAM_2";
   case BEAM_3:                return "BEAM_3";
-  case SHELL_LINE_2:          return "SHELL_LINE_2";
-  case SHELL_LINE_3:          return "SHELL_LINE_3";
-  case SHELL_SIDE_BEAM_2:     return "SHELL_SIDE_BEAM_2";
-  case SHELL_SIDE_BEAM_3:     return "SHELL_SIDE_BEAM_3";
   case SPRING_2:              return "SPRING_2";
   case SPRING_3:              return "SPRING_3";
   case TRI_3_2D:              return "TRIANGLE_3_2D";

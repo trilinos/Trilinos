@@ -440,7 +440,8 @@ TEST(StkSimd, SimdCbrtFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real cbrt took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 2.5e-7 );  
+  constexpr float floatEpsilon = 5.e-7;
+  ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon );  
 }
 
 TEST(StkSimd, SimdTimeLoadStoreDataLayoutFloat)

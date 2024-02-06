@@ -64,8 +64,8 @@ SelectorFixture::SelectorFixture()
     m_entity3( ),
     m_entity4( ),
     m_entity5( ),
-    m_fieldA(m_meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "FieldA")),
-    m_fieldABC(m_meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "FieldABC"))
+    m_fieldA(stk::mesh::legacy::declare_field<stk::mesh::Field<double> >(m_meta_data, stk::topology::NODE_RANK, "FieldA")),
+    m_fieldABC(stk::mesh::legacy::declare_field<stk::mesh::Field<double> >(m_meta_data, stk::topology::NODE_RANK, "FieldABC"))
 {
   stk::mesh::put_field_on_mesh(m_fieldA, m_partA, nullptr);
 

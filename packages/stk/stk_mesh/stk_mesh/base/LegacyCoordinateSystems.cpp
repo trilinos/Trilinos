@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/LegacyCoordinateSystems.hpp>
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <stk_util/util/string_case_compare.hpp>  // for not_equal_case
@@ -41,6 +41,7 @@
 
 namespace stk {
 namespace mesh {
+namespace legacy {
 
 //----------------------------------------------------------------------
 
@@ -136,6 +137,7 @@ const char * Matrix33::name() const
 
 //----------------------------------------------------------------------
 
+}
 } // namespace mesh
 } // namespace stk
 

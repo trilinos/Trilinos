@@ -243,17 +243,14 @@ template <typename T1, typename T2>
 KOKKOS_FORCEINLINE_FUNCTION
 bool intersects(Box<T1> const& a, Box<T2> const& b)
 {
-  Point<T1> const& amin = a.min_corner();
   Point<T1> const& amax = a.max_corner();
-
   Point<T2> const& bmin = b.min_corner();
+  if (amax[0] < bmin[0] || amax[1] < bmin[1] || amax[2] < bmin[2]) return false;
+
   Point<T2> const& bmax = b.max_corner();
-
-  // check that the boxes are not disjoint
-  return !((amax[0] < bmin[0]) || (bmax[0] < amin[0])
-        || (amax[1] < bmin[1]) || (bmax[1] < amin[1])
-        || (amax[2] < bmin[2]) || (bmax[2] < amin[2]));
-
+  Point<T1> const& amin = a.min_corner();
+  const bool disjoint2 = bmax[0] < amin[0] || bmax[1] < amin[1] || bmax[2] < amin[2];
+  return !disjoint2;
 }
 
 // intersects: Plane,Box

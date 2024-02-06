@@ -131,7 +131,11 @@ std::ostream& operator<<(std::ostream& os, EntityState state)
   return os;
 }
 
-template< class FieldType > struct FieldTraits ;
+template< class FieldType > struct STK_DEPRECATED FieldTraits ;
+
+namespace legacy {
+template< class FieldType > struct FieldTraits;
+}
 
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,
 //and the offset (ordinal) into that bucket.

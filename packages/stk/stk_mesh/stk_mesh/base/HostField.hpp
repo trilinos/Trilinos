@@ -110,6 +110,18 @@ class HostField : public NgpFieldBase
     return stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
   }
 
+  unsigned get_extent0_per_entity(const stk::mesh::FastMeshIndex& entity) const {
+    return stk::mesh::field_extent0_per_entity(*field, entity.bucket_id);
+  }
+
+  unsigned get_extent1_per_entity(const stk::mesh::FastMeshIndex& entity) const {
+    return stk::mesh::field_extent1_per_entity(*field, entity.bucket_id);
+  }
+
+  unsigned get_extent_per_entity(const stk::mesh::FastMeshIndex& entity, unsigned dimension) const {
+    return stk::mesh::field_extent_per_entity(*field, dimension, entity.bucket_id);
+  }
+
   unsigned debug_get_bucket_offset(unsigned bucketOrdinal) const override {
     return bucketOrdinal;
   }
@@ -260,6 +272,8 @@ class HostField : public NgpFieldBase
   stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }
 
   unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
+
+  const FieldBase* get_field_base() const { return field; }
 
   void debug_initialize_debug_views() override {}
   void debug_modification_begin() override {}

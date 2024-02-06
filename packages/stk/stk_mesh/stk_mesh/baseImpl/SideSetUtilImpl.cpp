@@ -121,7 +121,8 @@ void add_boundary_face_connectivity_info(const ElemElemGraph& eeGraph, const Gra
   const Permutation remoteSidePermutation = sideInfoValue->sidePermutation;
   const EntityKey remoteSideKey = sideInfoValue->sideKey;
 
-  Part* remoteElementBlockPart = get_element_block_part(cache.bulk, otherElementPartOrdinals);
+  stk::mesh::EntityId otherElemId = eeGraph.convert_negative_local_id_to_global_id(graphEdge.elem2());
+  Part* remoteElementBlockPart = get_element_block_part(cache.bulk, otherElementPartOrdinals, otherElemId);
 
   const bool isRemoteActive = cache.activeSelector(remoteElementBlockPart);
   const bool isRemoteInSideset = std::binary_search(otherSidesetPartOrdinals.begin(), otherSidesetPartOrdinals.end(),

@@ -685,6 +685,453 @@ TEST(UnitTestEvaluator, testStandaloneParsedEval_withInvalidParse)
   EXPECT_EQ(standaloneParsedEval2.evaluate(deviceVariableMap2Standalone), 9.0);
 }
 
+
+TEST(UnitTestEvaluator, nonConstScalarInputVariableBinding)
+{
+  stk::expreval::Eval eval("x+y");
+  eval.parse();
+
+  double x = 2.0;
+  int y = 3;
+  eval.bindVariable("x", x);
+  eval.bindVariable("y", y);
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 5.0);
+  EXPECT_DOUBLE_EQ(x, 2.0);
+  EXPECT_EQ(y, 3);
+}
+
+TEST(UnitTestEvaluator, constScalarInputVariableBinding)
+{
+  stk::expreval::Eval eval("x+y");
+  eval.parse();
+
+  const double x = 2.0;
+  const int y = 3;
+  eval.bindVariable("x", x);
+  eval.bindVariable("y", y);
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 5.0);
+  EXPECT_DOUBLE_EQ(x, 2.0);
+  EXPECT_EQ(y, 3);
+}
+
+
+template <typename xType, typename yType>
+void evaluate_scalar_inputs_on_device(xType & x, yType & y, const std::string & expression, double expectedResult) {
+  stk::expreval::Eval eval(expression);
+  eval.parse();
+
+  const int xIndex = eval.get_variable_index("x");
+  const int yIndex = eval.get_variable_index("y");
+  auto & parsedEval = eval.get_parsed_eval();
+
+  Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
+  typename Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  xHostValues[0] = x;
+  Kokkos::deep_copy(xDeviceValues, xHostValues);
+
+  Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
+  typename Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  yHostValues[0] = y;
+  Kokkos::deep_copy(yDeviceValues, yHostValues);
+
+  double result = 0.0;
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
+    KOKKOS_LAMBDA (const int & i, double & localResult) {
+      stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
+      deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]));
+      deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]));
+
+      localResult = parsedEval.evaluate(deviceVariableMap);
+
+    }, result);
+
+  Kokkos::deep_copy(xHostValues, xDeviceValues);
+  Kokkos::deep_copy(yHostValues, yDeviceValues);
+
+  EXPECT_DOUBLE_EQ(result, expectedResult);
+  EXPECT_DOUBLE_EQ(xHostValues[0], x);
+  EXPECT_EQ(yHostValues[0], y);
+}
+
+TEST(UnitTestEvaluator, device_nonConstScalarInputVariableBinding)
+{
+  double x = 2.0;
+  int y = 3.0;
+
+  evaluate_scalar_inputs_on_device(x, y, "x+y", x+y);
+}
+
+TEST(UnitTestEvaluator, device_constScalarInputVariableBinding)
+{
+  const double x = 2.0;
+  const int y = 3.0;
+
+  evaluate_scalar_inputs_on_device(x, y, "x+y", x+y);
+}
+
+
+TEST(UnitTestEvaluator, nonConstScalarDoubleAssignmentVariableBinding_modifiesVariable)
+{
+  stk::expreval::Eval eval("x=y");
+  eval.parse();
+
+  double x = 0.0;
+  const int y = 5;
+  eval.bindVariable("x", x);
+  eval.bindVariable("y", y);
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 5.0);
+  EXPECT_DOUBLE_EQ(x, 5.0);
+  EXPECT_EQ(y, 5);
+}
+
+TEST(UnitTestEvaluator, nonConstScalarIntAssignmentVariableBinding_modifiesVariable)
+{
+  stk::expreval::Eval eval("x=y");
+  eval.parse();
+
+  int x = 0;
+  const double y = 5.0;
+  eval.bindVariable("x", x);
+  eval.bindVariable("y", y);
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 5.0);
+  EXPECT_EQ(x, 5);
+  EXPECT_DOUBLE_EQ(y, 5.0);
+}
+
+TEST(UnitTestEvaluator, constScalarDoubleAssignmentVariableBinding_throws)
+{
+  stk::expreval::Eval eval("x=y");
+  eval.parse();
+
+  const double x = 0.0;
+  const double y = 5.0;
+  eval.bindVariable("x", x);
+  eval.bindVariable("y", y);
+
+  EXPECT_ANY_THROW(eval.evaluate());
+}
+
+TEST(UnitTestEvaluator, constScalarIntAssignmentVariableBinding_throws)
+{
+  stk::expreval::Eval eval("x=y");
+  eval.parse();
+
+  const int x = 0.0;
+  const int y = 5.0;
+  eval.bindVariable("x", x);
+  eval.bindVariable("y", y);
+
+  EXPECT_ANY_THROW(eval.evaluate());
+}
+
+
+template <typename xType, typename yType>
+void evaluate_scalar_assignment_on_device(xType & x, yType & y, const std::string & expression, double expectedResult) {
+  stk::expreval::Eval eval(expression);
+  eval.parse();
+
+  const int xIndex = eval.get_variable_index("x");
+  const int yIndex = eval.get_variable_index("y");
+  auto & parsedEval = eval.get_parsed_eval();
+
+  Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
+  typename Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  xHostValues[0] = x;
+  Kokkos::deep_copy(xDeviceValues, xHostValues);
+
+  Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
+  typename Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  yHostValues[0] = y;
+  Kokkos::deep_copy(yDeviceValues, yHostValues);
+
+  double result = 0.0;
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
+    KOKKOS_LAMBDA (const int & i, double & localResult) {
+      stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
+      deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]));
+      deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]));
+
+      localResult = parsedEval.evaluate(deviceVariableMap);
+
+    }, result);
+
+  Kokkos::deep_copy(xHostValues, xDeviceValues);
+  Kokkos::deep_copy(yHostValues, yDeviceValues);
+
+  EXPECT_DOUBLE_EQ(result, expectedResult);
+  EXPECT_EQ(xHostValues[0], expectedResult);  // Assigned to expression result
+  EXPECT_EQ(yHostValues[0], y);               // Unchanged
+}
+
+TEST(UnitTestEvaluator, device_nonConstScalarDoubleAssignmentVariableBinding_modifiesVariable)
+{
+  double x = 2.0;
+  const int y = 3;
+
+  evaluate_scalar_assignment_on_device(x, y, "x=y", y);
+}
+
+TEST(UnitTestEvaluator, device_nonConstScalarIntAssignmentVariableBinding_modifiesVariable)
+{
+  int x = 2;
+  const double y = 3.0;
+
+  evaluate_scalar_assignment_on_device(x, y, "x=y", y);
+}
+
+// Can't properly test device-side abort
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
+TEST(UnitTestEvaluator, device_constScalarDoubleAssignmentVariableBinding_throws)
+{
+  const double x = 2.0;
+  const int y = 3;
+
+  EXPECT_ANY_THROW(evaluate_scalar_assignment_on_device(x, y, "x=y", y));
+}
+
+TEST(UnitTestEvaluator, device_constScalarIntAssignmentVariableBinding_throws)
+{
+  const int x = 2;
+  const double y = 3.0;
+
+  EXPECT_ANY_THROW(evaluate_scalar_assignment_on_device(x, y, "x=y", y));
+}
+#endif
+
+
+TEST(UnitTestEvaluator, nonConstArrayInputVariableBinding)
+{
+  stk::expreval::Eval eval("x[0]*y[0] + x[1]*y[1] + x[2]*y[2]");
+  eval.parse();
+
+  std::vector<double> x {1.0, 2.0, 3.0};
+  std::vector<int> y {1, 2, 3};
+  eval.bindVariable("x", x[0], x.size());
+  eval.bindVariable("y", y[0], y.size());
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 14.0);
+  EXPECT_EQ(x, (std::vector<double>{1.0, 2.0, 3.0}));
+  EXPECT_EQ(y, (std::vector<int>{1, 2, 3}));
+}
+
+TEST(UnitTestEvaluator, constArrayInputVariableBinding)
+{
+  stk::expreval::Eval eval("x[0]*y[0] + x[1]*y[1] + x[2]*y[2]");
+  eval.parse();
+
+  const std::vector<double> x {1.0, 2.0, 3.0};
+  const std::vector<int> y {1, 2, 3};
+  eval.bindVariable("x", x[0], x.size());
+  eval.bindVariable("y", y[0], y.size());
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 14.0);
+  EXPECT_EQ(x, (std::vector<double>{1.0, 2.0, 3.0}));
+  EXPECT_EQ(y, (std::vector<int>{1, 2, 3}));
+}
+
+
+template <typename xType, typename yType>
+void evaluate_array_inputs_on_device(xType x[3], yType y[3], const std::string & expression, double expectedResult) {
+  stk::expreval::Eval eval(expression);
+  eval.parse();
+
+  const int xIndex = eval.get_variable_index("x");
+  const int yIndex = eval.get_variable_index("y");
+  auto & parsedEval = eval.get_parsed_eval();
+
+  Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
+  typename Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  std::memcpy(xHostValues.data(), x, 3*sizeof(xType));
+  Kokkos::deep_copy(xDeviceValues, xHostValues);
+
+  Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
+  typename Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  std::memcpy(yHostValues.data(), y, 3*sizeof(yType));
+  Kokkos::deep_copy(yDeviceValues, yHostValues);
+
+  double result = 0.0;
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
+    KOKKOS_LAMBDA (const int & i, double & localResult) {
+      stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
+      deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]), 3);
+      deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]), 3);
+
+      localResult = parsedEval.evaluate(deviceVariableMap);
+
+    }, result);
+
+  Kokkos::deep_copy(xHostValues, xDeviceValues);
+  Kokkos::deep_copy(yHostValues, yDeviceValues);
+
+  EXPECT_DOUBLE_EQ(result, expectedResult);
+  EXPECT_EQ(xHostValues[0], x[0]);
+  EXPECT_EQ(xHostValues[1], x[1]);
+  EXPECT_EQ(xHostValues[2], x[2]);
+  EXPECT_EQ(yHostValues[0], y[0]);
+  EXPECT_EQ(yHostValues[1], y[1]);
+  EXPECT_EQ(yHostValues[2], y[2]);
+}
+
+TEST(UnitTestEvaluator, device_nonConstArrayInputVariableBinding)
+{
+  double x[3] {1.0, 2.0, 3.0};
+  int y[3] {1, 2, 3};
+
+  evaluate_array_inputs_on_device(x, y, "x[0]*y[0] + x[1]*y[1] + x[2]*y[2]", x[0]*y[0] + x[1]*y[1] + x[2]*y[2]);
+}
+
+TEST(UnitTestEvaluator, device_constArrayInputVariableBinding)
+{
+  const double x[3] {1.0, 2.0, 3.0};
+  const int y[3] {1, 2, 3};
+
+  evaluate_array_inputs_on_device(x, y, "x[0]*y[0] + x[1]*y[1] + x[2]*y[2]", x[0]*y[0] + x[1]*y[1] + x[2]*y[2]);
+}
+
+
+TEST(UnitTestEvaluator, nonConstDoubleArrayAssignmentVariableBinding_modifiesVariable)
+{
+  stk::expreval::Eval eval("x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]");
+  eval.parse();
+
+  std::vector<double> x {1.0, 2.0, 3.0};
+  const std::vector<int> y {1, 2, 3};
+  eval.bindVariable("x", x[0], x.size());
+  eval.bindVariable("y", y[0], y.size());
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 14.0);
+  EXPECT_EQ(x, (std::vector<double>{1.0, 14.0, 3.0}));
+  EXPECT_EQ(y, (std::vector<int>{1, 2, 3}));
+}
+
+TEST(UnitTestEvaluator, nonConstIntArrayAssignmentVariableBinding_modifiesVariable)
+{
+  stk::expreval::Eval eval("x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]");
+  eval.parse();
+
+  std::vector<int> x {1, 2, 3};
+  const std::vector<double> y {1.0, 2.0, 3.0};
+  eval.bindVariable("x", x[0], x.size());
+  eval.bindVariable("y", y[0], y.size());
+
+  EXPECT_DOUBLE_EQ(eval.evaluate(), 14.0);
+  EXPECT_EQ(x, (std::vector<int>{1, 14, 3}));
+  EXPECT_EQ(y, (std::vector<double>{1.0, 2.0, 3.0}));
+}
+
+TEST(UnitTestEvaluator, constDoubleArrayAssignmentVariableBinding_throws)
+{
+  stk::expreval::Eval eval("x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]");
+  eval.parse();
+
+  const std::vector<double> x {1.0, 2.0, 3.0};
+  const std::vector<int> y {1, 2, 3};
+  eval.bindVariable("x", x[0], x.size());
+  eval.bindVariable("y", y[0], y.size());
+
+  EXPECT_ANY_THROW(eval.evaluate());
+}
+
+TEST(UnitTestEvaluator, constIntArrayAssignmentVariableBinding_throws)
+{
+  stk::expreval::Eval eval("x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]");
+  eval.parse();
+
+  const std::vector<int> x {1, 2, 3};
+  const std::vector<double> y {1.0, 2.0, 3.0};
+  eval.bindVariable("x", x[0], x.size());
+  eval.bindVariable("y", y[0], y.size());
+
+  EXPECT_ANY_THROW(eval.evaluate());
+}
+
+
+template <typename xType, typename yType>
+void evaluate_array_assignment_on_device(xType x[3], yType y[3], const std::string & expression, double expectedResult) {
+  stk::expreval::Eval eval(expression);
+  eval.parse();
+
+  const int xIndex = eval.get_variable_index("x");
+  const int yIndex = eval.get_variable_index("y");
+  auto & parsedEval = eval.get_parsed_eval();
+
+  Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
+  typename Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  std::memcpy(xHostValues.data(), x, 3*sizeof(xType));
+  Kokkos::deep_copy(xDeviceValues, xHostValues);
+
+  Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
+  typename Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  std::memcpy(yHostValues.data(), y, 3*sizeof(yType));
+  Kokkos::deep_copy(yDeviceValues, yHostValues);
+
+  double result = 0.0;
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
+    KOKKOS_LAMBDA (const int & i, double & localResult) {
+      stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
+      deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]), 3);
+      deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]), 3);
+
+      localResult = parsedEval.evaluate(deviceVariableMap);
+
+    }, result);
+
+  Kokkos::deep_copy(xHostValues, xDeviceValues);
+  Kokkos::deep_copy(yHostValues, yDeviceValues);
+
+  EXPECT_DOUBLE_EQ(result, expectedResult);
+  EXPECT_EQ(xHostValues[0], x[0]);
+  EXPECT_EQ(xHostValues[1], expectedResult);
+  EXPECT_EQ(xHostValues[2], x[2]);
+  EXPECT_EQ(yHostValues[0], y[0]);
+  EXPECT_EQ(yHostValues[1], y[1]);
+  EXPECT_EQ(yHostValues[2], y[2]);
+}
+
+TEST(UnitTestEvaluator, device_nonConstDoubleArrayAssignmentVariableBinding_modifiesVariable)
+{
+  double x[3] {1.0, 2.0, 3.0};
+  const int y[3] {1, 2, 3};
+
+  evaluate_array_assignment_on_device(x, y, "x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]",
+                                      x[0]*y[0] + x[1]*y[1] + x[2]*y[2]);
+}
+
+TEST(UnitTestEvaluator, device_nonConstIntArrayAssignmentVariableBinding_modifiesVariable)
+{
+  int x[3] {1, 2, 3};
+  const double y[3] {1.0, 2.0, 3.0};
+
+  evaluate_array_assignment_on_device(x, y, "x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]",
+                                      x[0]*y[0] + x[1]*y[1] + x[2]*y[2]);
+}
+
+// Can't properly test device-side abort
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
+TEST(UnitTestEvaluator, device_constDoubleArrayAssignmentVariableBinding_throws)
+{
+  const double x[3] {1.0, 2.0, 3.0};
+  const int y[3] {1, 2, 3};
+
+  EXPECT_ANY_THROW(evaluate_array_assignment_on_device(x, y, "x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]",
+                                                       x[0]*y[0] + x[1]*y[1] + x[2]*y[2]));
+}
+
+TEST(UnitTestEvaluator, device_constIntArrayAssignmentVariableBinding_throws)
+{
+  const int x[3] {1, 2, 3};
+  const double y[3] {1.0, 2.0, 3.0};
+
+  EXPECT_ANY_THROW(evaluate_array_assignment_on_device(x, y, "x[1] = x[0]*y[0] + x[1]*y[1] + x[2]*y[2]",
+                                                       x[0]*y[0] + x[1]*y[1] + x[2]*y[2]));
+}
+#endif
+
+
 bool
 isValidFunction(const char *expr)
 {
@@ -727,7 +1174,7 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isInvalidFunction("gamma(1)"));
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
 TEST(UnitTestEvaluator, deviceVariableMap_too_small)
 {
   stk::expreval::Eval eval("x+y+z");
@@ -1276,16 +1723,16 @@ TEST(UnitTestEvaluator, unbindScalar)
 
 TEST(UnitTestEvaluator, deactivateScalar)
 {
-  EXPECT_DOUBLE_EQ(evaluate("x=5",             {{"x", 2}}, {}, {}, {"x"}), 5);
-  EXPECT_ANY_THROW(evaluate("x",               {{"x", 2}}, {}, {}, {"x"}));
-  EXPECT_ANY_THROW(evaluate("x*x",             {{"x", 2}}, {}, {}, {"x"}));
-  EXPECT_ANY_THROW(evaluate("x*y",             {{"x", 2}, {"y", 3}}, {}, {}, {"x"}));
-  EXPECT_ANY_THROW(evaluate("x*y",             {{"x", 2}, {"y", 3}}, {}, {}, {"y"}));
+  EXPECT_ANY_THROW(evaluate("x=5",             {{"x", 2}},                     {}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("x",               {{"x", 2}},                     {}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("x*x",             {{"x", 2}},                     {}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("x*y",             {{"x", 2}, {"y", 3}},           {}, {}, {"x"}));
+  EXPECT_ANY_THROW(evaluate("x*y",             {{"x", 2}, {"y", 3}},           {}, {}, {"y"}));
   EXPECT_ANY_THROW(evaluate("x+y*z",           {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"x", "y"}));
   EXPECT_ANY_THROW(evaluate("x+y*z",           {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"z"}));
   EXPECT_ANY_THROW(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"z"}));
   EXPECT_ANY_THROW(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"y"}));
-  EXPECT_DOUBLE_EQ(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"x"}), 12);
+  EXPECT_ANY_THROW(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}, {}, {}, {"x"}));
 }
 
 
@@ -1377,7 +1824,7 @@ TEST(UnitTestEvaluator, deactivateVector)
   EXPECT_ANY_THROW(evaluate("(a[1]*b[1] + a[2]*b[2] + a[3]*b[3])^0.5",
                             {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}, {}, {"b"},
                             stk::expreval::Variable::ONE_BASED_INDEX));
-  EXPECT_DOUBLE_EQ(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}, {}, {"z"}), 6);
+  EXPECT_ANY_THROW(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}, {}, {"z"}));
   EXPECT_ANY_THROW(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}, {}, {"a"}));
   EXPECT_ANY_THROW(evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
                             {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}, {}, {"z"}));
