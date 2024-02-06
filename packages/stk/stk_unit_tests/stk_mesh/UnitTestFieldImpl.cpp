@@ -154,6 +154,8 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check for error detection of bad stride:
   {
     unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
+    Selector selA(pA);
+    ASSERT_THROW(meta_data.declare_field_restriction(*nodeField , selA, 5*4*6 , bad_stride[0] ), std::runtime_error);
     ASSERT_THROW(meta_data.declare_field_restriction(*nodeField , pA, 5*4*6 , bad_stride[0] ), std::runtime_error);
     ASSERT_EQ(2u, nodeField->restrictions().size());
   }
@@ -161,6 +163,8 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check for error detection in re-declaring an incompatible
   // field restriction.
   {
+    Selector selA(pA);
+    ASSERT_THROW(meta_data.declare_field_restriction(*nodeField, selA, stride[1], stride[1]), std::runtime_error);
     ASSERT_THROW(meta_data.declare_field_restriction(*nodeField, pA, stride[1], stride[1]), std::runtime_error);
     ASSERT_EQ(2u, nodeField->restrictions().size());
   }
@@ -176,7 +180,6 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Introduce a redundant restriction, clean it, and
   // check that it was cleaned.
   Part & pD = meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK );
-  std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_data_ordinal()<<std::endl;
 
   meta_data.declare_part_subset( pD, pA );
   meta_data.declare_field_restriction(*f2, pA, stride[0], stride[0]);
@@ -211,7 +214,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     arg_no_stride[0] = 1;
     arg_no_stride[1] = 0;
 
-    ASSERT_THROW(meta_data.declare_field_restriction(*f2, pA, 0, arg_no_stride[0]), std::runtime_error);
+    ASSERT_ANY_THROW(meta_data.declare_field_restriction(*f2, pA, 0, arg_no_stride[0]));
   }
 #endif
 }

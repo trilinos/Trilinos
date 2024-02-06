@@ -24,8 +24,7 @@ DeviceReporter*& getDeviceReporterOnHost()
 
 #ifdef KOKKOS_ENABLE_SYCL
 namespace{
-sycl::ext::oneapi::experimental::device_global<DeviceReporter*>
-  deviceReporterOnDevice;
+  sycl::ext::oneapi::experimental::device_global<DeviceReporter*> deviceReporterOnDevice;
 }
 #endif
 
@@ -56,8 +55,7 @@ DeviceReporter*& getDeviceReporterAddress()
 }
 
 inline
-void copy_to_device(const DeviceReporter& reporter,
-                    DeviceReporter* const addr) {
+void copy_to_device(const DeviceReporter& reporter, DeviceReporter* const addr) {
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int){
     global::getDeviceReporterOnDevice() = addr;
     new (global::getDeviceReporterOnDevice()) DeviceReporter(reporter);
@@ -83,11 +81,11 @@ void finalize_reporters() {
 }
 
 NGP_TEST_INLINE HostReporter* get_host_reporter() {
-    return global::getHostReporter();
+  return global::getHostReporter();
 }
 
 NGP_TEST_INLINE DeviceReporter* get_device_reporter() {
-    return global::getDeviceReporterOnDevice();
+  return global::getDeviceReporterOnDevice();
 }
 
 inline

@@ -266,6 +266,13 @@ void StkMeshIoBroker::set_mesh_builder(std::shared_ptr<stk::mesh::MeshBuilder> m
 
 void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
+    {
+      const bool sameBulkDataAlreadySet = m_bulkData.get() == arg_bulk_data.get();
+      if (sameBulkDataAlreadySet) {
+        return;
+      }
+    }
+
     STK_ThrowErrorMsgIf(m_bulkData, "BulkData already initialized.");
     m_bulkData = arg_bulk_data;
 
@@ -632,17 +639,6 @@ int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index, const
 {
     validate_output_file_index(output_file_index);
     int current_output_step = m_outputFiles[output_file_index]->write_defined_output_fields(*m_bulkData, state);
-    return current_output_step;
-}
-
-int StkMeshIoBroker::write_defined_output_fields_for_selected_subset(size_t output_file_index,
-                                                                     std::vector<stk::mesh::Part*>& selectOutputElementParts,
-                                                                     const stk::mesh::FieldState *state) const
-{
-    validate_output_file_index(output_file_index);
-    int current_output_step = m_outputFiles[output_file_index]->write_defined_output_fields_for_selected_subset(*m_bulkData,
-                                                                                                                 selectOutputElementParts,
-                                                                                                                 state);
     return current_output_step;
 }
 
@@ -1108,10 +1104,28 @@ void StkMeshIoBroker::add_all_mesh_fields_as_input_fields(MeshField::TimeMatchOp
     m_inputFiles[m_activeMeshIndex]->add_all_mesh_fields_as_input_fields(meta_data(), tmo);
 }
 
-bool StkMeshIoBroker::read_input_field(stk::io::MeshField &mf)
+bool StkMeshIoBroker::read_input_field(stk::io::MeshField &mf, stk::io::FieldReadStatus &readStatus)
 {
     validate_input_file_index(m_activeMeshIndex);
-    return m_inputFiles[m_activeMeshIndex]->read_input_field(mf, bulk_data());
+    bool status =  m_inputFiles[m_activeMeshIndex]->read_input_field(mf, bulk_data());
+
+    readStatus.fieldRead = mf.field_restored();
+    readStatus.timeRead = mf.time_restored();
+
+    double timeToRead = mf.get_read_time();
+    double lastTime = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region()->get_max_time().second;
+
+    if(timeToRead > lastTime) {
+      readStatus.possiblyCorrupt = true;
+    }
+
+    return status;
+}
+
+bool StkMeshIoBroker::read_input_field(stk::io::MeshField &mf)
+{
+    stk::io::FieldReadStatus readStatus;
+    return read_input_field(mf, readStatus);
 }
 
 double StkMeshIoBroker::read_defined_input_fields(double time,

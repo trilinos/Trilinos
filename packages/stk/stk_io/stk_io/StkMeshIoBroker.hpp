@@ -397,6 +397,7 @@ namespace stk {
 				       std::vector<stk::io::MeshField> *missing=nullptr);
 
       bool read_input_field(stk::io::MeshField &mf);
+      bool read_input_field(stk::io::MeshField &mf, stk::io::FieldReadStatus &readStatus);
       
       void get_global_variable_names(std::vector<std::string> &names) const;
       size_t get_global_variable_length(const std::string& name) const;
@@ -522,9 +523,6 @@ namespace stk {
       // the step added by "begin_output_step".  End step with a call
       // to "end_output_step"
       int write_defined_output_fields(size_t output_file_index, const stk::mesh::FieldState *state = nullptr) const;
-      int write_defined_output_fields_for_selected_subset(size_t output_file_index,
-                                                          std::vector<stk::mesh::Part*>& selectOutputElementParts,
-                                                          const stk::mesh::FieldState *state = nullptr) const;
 
       // Force all output databases to "flush" their data to disk (if possible)
       // Typically called by the application during a planned or unplanned

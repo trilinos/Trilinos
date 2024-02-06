@@ -187,8 +187,9 @@ public:
     }
     case OPCODE_ASSIGN: {
       if (get_left_node()) {
-        deviceVariableMap[m_data.variable.variableIndex].getArrayValue(get_left_node()->getResult(resultBuffer),
-                                                                       deviceVariableMap.get_array_offset_type()) = get_right_node()->getResult(resultBuffer);
+        deviceVariableMap[m_data.variable.variableIndex].assignArrayValue(get_left_node()->getResult(resultBuffer),
+                                                                          deviceVariableMap.get_array_offset_type(),
+                                                                          get_right_node()->getResult(resultBuffer));
       }
       else {
         deviceVariableMap[m_data.variable.variableIndex] = get_right_node()->getResult(resultBuffer);

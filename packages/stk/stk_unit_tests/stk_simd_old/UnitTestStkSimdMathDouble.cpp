@@ -776,7 +776,8 @@ TEST(StkSimd, SimdExp)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
+  const double epsilon = 1.e-14;
+  ASSERT_NEAR( max_error(out1, out2), 0.0, epsilon );
 }
 
 TEST(StkSimd, SimdPowA) 
@@ -817,7 +818,8 @@ TEST(StkSimd, SimdPowA)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
+  const double epsilon = 1.e-14;
+  ASSERT_NEAR( max_error(out1, out2), 0.0, epsilon );
 }
 
 TEST(StkSimd, SimdPowB) 

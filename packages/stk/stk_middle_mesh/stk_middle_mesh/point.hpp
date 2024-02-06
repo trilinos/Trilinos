@@ -4,6 +4,7 @@
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <array>
 #include "is_point.hpp"
 #include "complex_utils.hpp"
 
@@ -50,8 +51,16 @@ struct PointT
     constexpr T get_y() const { return y; }
     constexpr T get_z() const { return z; }
 
-    constexpr T& operator[](int idx) { return *(&(x) + idx); }
-    constexpr const T& operator[](int idx) const { return *(&(x) + idx); }
+    constexpr T& operator[](int idx)
+    { 
+      std::array<T*, 3> vals = {&x, &y, &z};
+      return *(vals[idx]);
+    }
+    constexpr const T& operator[](int idx) const
+    { 
+      std::array<const T*, 3> vals = {&x, &y, &z};
+      return *(vals[idx]);
+    }
 
     T x;
     T y;

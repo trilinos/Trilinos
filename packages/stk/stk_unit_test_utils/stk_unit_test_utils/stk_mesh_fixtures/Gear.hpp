@@ -37,7 +37,7 @@
 
 #include <cmath>
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/LegacyCoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityVector
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -82,8 +82,8 @@ struct GearMovement
 
 class Gear {
 
-  typedef Field<double, Cartesian>    CartesianField;
-  typedef Field<double, Cylindrical>  CylindricalField;
+  typedef Field<double, legacy::Cartesian>    CartesianField;
+  typedef Field<double, legacy::Cylindrical>  CylindricalField;
 
   enum { SpatialDimension = 3 };
 

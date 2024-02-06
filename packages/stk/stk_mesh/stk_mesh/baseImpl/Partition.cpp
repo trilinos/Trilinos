@@ -455,6 +455,27 @@ void Partition::clear_pending_removes_by_filling_from_end()
   m_removeMode = FILL_HOLE_THEN_SORT;
 }
 
+void Partition::check_sorted(const std::string& prefixMsg)
+{
+  EntityLess entityLess(m_mesh);
+  Entity prevEnt = Entity();
+  unsigned prevBktId = 0;
+  unsigned prevBktOffset = 0;
+  for(const Bucket* bptr : m_buckets) {
+    unsigned offset = 0;
+    for(Entity ent : *bptr) {
+      if(m_mesh.is_valid(ent)){
+      if (m_mesh.is_valid(prevEnt)) {
+        STK_ThrowRequireMsg(entityLess(prevEnt, ent), "check_sorted "<<prefixMsg<<", m_buckets.size()="<<m_buckets.size()<<", found ent ID "<<m_mesh.identifier(ent)<<" at bktId "<<bptr->bucket_id()<<" offset "<<offset<<", after prevEnt ID "<<m_mesh.identifier(prevEnt)<<" at bktId "<<prevBktId<<" offset "<<prevBktOffset);
+      }
+      prevEnt = ent;
+      prevBktId = bptr->bucket_id();
+      prevBktOffset = offset++;
+      }
+    }
+  }
+}
+
 void Partition::finalize_pending_removes_by_sliding_memory()
 {
   if (m_removeMode == TRACK_THEN_SLIDE && !m_removedEntities.empty()) {
@@ -503,6 +524,15 @@ void Partition::finalize_pending_removes_by_sliding_memory()
   }
 
   m_updated_since_sort = false;
+}
+
+void Partition::set_remove_mode(RemoveMode removeMode)
+{
+  if(m_removeMode!=removeMode && m_updated_since_sort) {
+    default_sort_if_needed();
+  }
+
+  m_removeMode = removeMode;
 }
 
 stk::mesh::Bucket *Partition::get_bucket_for_adds()

@@ -562,6 +562,7 @@ void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const
 
   if (alreadySyncd_or_HostNewest) {
 #endif
+
     int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp parallel for schedule(static)
@@ -584,9 +585,9 @@ void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const
     auto ngpYview = impl::get_device_data(ngpY);
 
     Kokkos::deep_copy(ngpYview, ngpXview);
-
     yField.modify_on_device();
   }
+
 #endif
 }
 

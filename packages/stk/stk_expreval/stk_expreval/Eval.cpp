@@ -468,7 +468,37 @@ Eval::getValue(const std::string &name)
 }
 
 Eval &
+Eval::bindVariable(const std::string &name, const double &value_ref, int definedLength)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->bind(value_ref, definedLength);
+  }
+  return *this;
+}
+
+Eval &
 Eval::bindVariable(const std::string &name, double &value_ref, int definedLength)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->bind(value_ref, definedLength);
+  }
+  return *this;
+}
+
+Eval &
+Eval::bindVariable(const std::string &name, const int &value_ref, int definedLength)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->bind(value_ref, definedLength);
+  }
+  return *this;
+}
+
+Eval &
+Eval::bindVariable(const std::string &name, int &value_ref, int definedLength)
 {
   VariableMap::iterator it = m_variableMap.find(name);
   if (it != m_variableMap.end()) {

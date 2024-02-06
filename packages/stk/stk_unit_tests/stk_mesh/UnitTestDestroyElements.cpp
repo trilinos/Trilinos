@@ -232,6 +232,32 @@ TEST_F(TetMesh, DeleteOneElement_DontDeleteAnyOrphans)
   }
 }
 
+TEST_F(TetMesh, DeleteElement_afterChangeParts)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    initialize_my_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), {}, false);
+
+    stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2)};
+
+    expect_valid(get_bulk(), elementToDestroy, __LINE__);
+
+    stk::mesh::Part* block1 = get_meta().get_part("block_TETRAHEDRON_4"); //huh?? why not 'block_1'?
+    ASSERT_TRUE(block1 != nullptr);
+    stk::mesh::PartVector empty;
+    stk::mesh::PartVector rmParts = {block1};
+
+    get_bulk().modification_begin();
+    get_bulk().change_entity_parts(elementToDestroy, empty, rmParts);
+    get_bulk().modification_end(stk::mesh::ModEndOptimizationFlag::MOD_END_NO_SORT);
+
+    stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
+
+    expect_invalid(get_bulk(), elementToDestroy, __LINE__);
+  }
+}
+
 TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)

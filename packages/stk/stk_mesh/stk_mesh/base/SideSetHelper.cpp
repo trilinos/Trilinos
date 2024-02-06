@@ -240,7 +240,8 @@ bool SideSetHelper::graph_edge_can_be_distinguished(const ElemElemGraph& eeGraph
 
     const std::vector<stk::mesh::PartOrdinal>& otherElementPartOrdinals = iter->second.elementPartOrdinals;
 
-    stk::mesh::Part* otherElementBlockPart = get_element_block_part(mesh, otherElementPartOrdinals);
+    stk::mesh::EntityId otherElemId = eeGraph.convert_negative_local_id_to_global_id(graphEdge.elem2());
+    stk::mesh::Part* otherElementBlockPart = get_element_block_part(mesh, otherElementPartOrdinals, otherElemId);
 
     bool elemSelectorValue = selector(otherElementBlockPart) && activeSelector(otherElementBlockPart);
     if(selectorValue != elemSelectorValue) {
