@@ -70,7 +70,7 @@ BuildAggregatesDeterministic (Phase 2a (secondary))
 BuildAggregatesDeterministic (Phase 2b (expansion))
 BuildAggregatesDeterministic (Phase 3 (cleanup))
 aggregation: deterministic = 1   [unused]
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -94,7 +94,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.34
-Smoother complexity = 1.58
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows   nnz    nnz/row  c ratio  procs
