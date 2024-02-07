@@ -18,6 +18,7 @@
 namespace Tempus_Test {
 
 /** \brief Simple quadratic equation with a stable steady-state.
+ *
  * This is a simple differential equation
  *   \f[
  *   \mathbf{\dot{x}}=\mathbf{x}^2 - b^2
