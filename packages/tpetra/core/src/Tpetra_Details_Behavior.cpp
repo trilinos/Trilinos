@@ -88,6 +88,12 @@ and is parsed as an int instead of a long long
 
 */
 
+// environ should be available on posix platforms
+#if not(defined(WIN) && (_MSC_VER >= 1900))
+// needs to be in the global namespace
+extern char **environ;
+#endif
+
 namespace Tpetra {
 namespace Details {
 
@@ -135,6 +141,24 @@ constexpr const std::string_view TIME_KOKKOS_FENCE = "TPETRA_TIME_KOKKOS_FENCE";
 constexpr const std::string_view TIME_KOKKOS_FUNCTIONS =
     "TPETRA_TIME_KOKKOS_FUNCTIONS";
 
+// construct an std::array of string_view with any number of provided
+// string_views
+template <typename... Elems>
+constexpr std::array<std::string_view, sizeof...(Elems)>
+make_array(Elems &&... elems) {
+  return {std::forward<Elems>(elems)...};
+}
+
+constexpr const auto RECOGNIZED_VARS = make_array(
+    ASSUME_GPU_AWARE_MPI, CUDA_LAUNCH_BLOCKING, MM_TAFC_OptimizationCoreCount,
+    VERBOSE_PRINT_COUNT_THRESHOLD, ROW_IMBALANCE_THRESHOLD,
+    MULTIVECTOR_USE_MERGE_PATH, VECTOR_DEVICE_THRESHOLD,
+    HIERARCHICAL_UNPACK_BATCH_SIZE, HIERARCHICAL_UNPACK_TEAM_SIZE,
+    USE_TEUCHOS_TIMERS, USE_KOKKOS_PROFILING, DEBUG, VERBOSE, TIMING,
+    HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, OVERLAP, SPACES_ID_WARN_LIMIT,
+    TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
+    TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS);
+
 // clang-format off
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
 bool verboseDisabled_ = false;
@@ -162,7 +186,7 @@ namespace { // (anonymous)
   }
 
   void
-  split(const std::string& s,
+  split(const std::string_view s,
         std::function<void(const std::string&)> f,
         const char sep=',')
   {
@@ -393,6 +417,48 @@ T idempotentlyGetEnvironmentVariable(
 
 } // namespace (anonymous)
 // clang-format on
+
+void Behavior::reject_unrecognized_env_vars() {
+  const char prefix[] = "Tpetra::Details::Behavior: ";
+  char **env;
+#if defined(WIN) && (_MSC_VER >= 1900)
+  env = *__p__environ();
+#else
+  env = environ; // defined at the top of this file as extern char **environ;
+#endif
+  for (; *env; ++env) {
+
+    std::string name;
+    std::string value;
+    const std::string_view ev(*env);
+
+    // split name=value on the first =, everything before = is name
+    split(
+        ev,
+        [&](const std::string &s) {
+          if (name.empty()) {
+            name = s;
+          } else {
+            value = s;
+          }
+        },
+        '=');
+
+    if (name.size() >= BehaviorDetails::RESERVED_PREFIX.size() &&
+        name.substr(0, BehaviorDetails::RESERVED_PREFIX.size()) ==
+            BehaviorDetails::RESERVED_PREFIX) {
+      const auto it = std::find(BehaviorDetails::RECOGNIZED_VARS.begin(),
+                                BehaviorDetails::RECOGNIZED_VARS.end(), name);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          it == BehaviorDetails::RECOGNIZED_VARS.end(), std::out_of_range,
+          prefix << "Environment "
+                    "variable \""
+                 << name << "\" (prefixed with \""
+                 << BehaviorDetails::RESERVED_PREFIX
+                 << "\") is not a recognized Tpetra variable.");
+    }
+  }
+}
 
 bool Behavior::debug() {
   constexpr bool defaultValue = debugDefault();
