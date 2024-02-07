@@ -869,8 +869,46 @@ void spmv_block_impl_rocsparse(
   rocsparse_mat_info info;
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_info(&info));
 
+  // *_ex* functions deprecated in introduced in 6+
+#if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
+  if constexpr (std::is_same_v<value_type, float>) {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv_analysis(
+        handle, dir, trans, mb, nb, nnzb, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv(
+        handle, dir, trans, mb, nb, nnzb, alpha_, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info, x_, beta_, y_));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_bsrsv_clear(handle, info));
+  } else if constexpr (std::is_same_v<value_type, double>) {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_dbsrmv_analysis(
+        handle, dir, trans, mb, nb, nnzb, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_dbsrmv(
+        handle, dir, trans, mb, nb, nnzb, alpha_, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info, x_, beta_, y_));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_bsrsv_clear(handle, info));
+  } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_cbsrmv_analysis(
+        handle, dir, trans, mb, nb, nnzb, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_cbsrmv(
+        handle, dir, trans, mb, nb, nnzb, alpha_, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info, x_, beta_, y_));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_bsrsv_clear(handle, info));
+  } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_zbsrmv_analysis(
+        handle, dir, trans, mb, nb, nnzb, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_zbsrmv(
+        handle, dir, trans, mb, nb, nnzb, alpha_, descr, bsr_val, bsr_row_ptr,
+        bsr_col_ind, block_dim, info, x_, beta_, y_));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_bsrsv_clear(handle, info));
+  } else {
+    static_assert(KokkosKernels::Impl::always_false_v<value_type>,
+                  "unsupported value type for rocsparse_*bsrmv");
+  }
   // *_ex* functions introduced in 5.4.0
-#if KOKKOSSPARSE_IMPL_ROCM_VERSION < 50400
+#elif KOKKOSSPARSE_IMPL_ROCM_VERSION < 50400
   if constexpr (std::is_same_v<value_type, float>) {
     KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_sbsrmv(
         handle, dir, trans, mb, nb, nnzb, alpha_, descr, bsr_val, bsr_row_ptr,
