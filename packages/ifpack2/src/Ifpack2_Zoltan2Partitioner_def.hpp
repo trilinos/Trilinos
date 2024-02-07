@@ -80,9 +80,7 @@ void Zoltan2Partitioner<GraphType>::computePartitions()
   Teuchos::ParameterList zoltan2_params;
   zoltan2_params.set("partitioning_approach", "partition");
   zoltan2_params.set("num_local_parts", this->NumLocalParts_);
-  printf( " zoltan2AlgoName = %s\n",zoltan2AlgoName_.c_str() );
   if (zoltan2AlgoName_ == "parmetis") {
-    printf( " PARMETIS..\n" );
     zoltan2_params.set("algorithm", "parmetis");
     zoltan2_params.set("symmetrize_input", "transpose"); // not sure if this does anything, and may fail with non-symm graph
     zoltan2_params.set("partitioning_objective", "minimize_cut_edge_weight");
@@ -100,43 +98,6 @@ void Zoltan2Partitioner<GraphType>::computePartitions()
   for (size_t i = 0; i < this->Graph_->getLocalNumRows (); ++i) {
     this->Partition_[i] = parts[i];
   }
-  #if 0
-  {
-    int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    int *sizes = (int*)calloc(1+this->NumLocalParts_, sizeof(int));
-    for (size_t i = 0; i < this->Graph_->getLocalNumRows (); ++i) sizes[this->Partition_[i]+1] ++;
-    if (rank == 0) for (size_t i = 0; i <= this->NumLocalParts_; ++i) printf( " + sizes[%d] = %d\n",i,sizes[i]);
-    for (size_t i = 0; i < this->NumLocalParts_; ++i) sizes[i+1] += sizes[i];
-    if (rank == 0) for (size_t i = 0; i <= this->NumLocalParts_; ++i) printf( " sizes[%d] = %d\n",i,sizes[i]);
-
-    int *perm = (int*)malloc(this->Graph_->getLocalNumRows () * sizeof(int));
-    int *iperm = (int*)malloc(this->Graph_->getLocalNumRows () * sizeof(int));
-    for (size_t i = 0; i < this->Graph_->getLocalNumRows (); ++i) perm[i] = -1;
-    for (size_t i = 0; i < this->Graph_->getLocalNumRows (); ++i) {
-      perm[sizes[this->Partition_[i]]] = i;
-      iperm[i] = sizes[this->Partition_[i]];
-      sizes[this->Partition_[i]] ++;
-    }
-    char filename[200];
-    sprintf(filename,"p%d.dat",rank);
-    FILE *fp = fopen(filename,"w");
-    for (size_t i = 0; i < this->Graph_->getLocalNumRows (); ++i) fprintf(fp,"%d %d %d %d\n",i,this->Partition_[i],perm[i],iperm[i]);
-    fclose(fp);
-
-    {
-      typename Zoltan2GraphAdapterType::Base::ConstOffsetsHostView offsets;
-      typename Zoltan2GraphAdapterType::Base::ConstIdsHostView adjIds;
-      zoltan2_graph.getEdgesHostView(offsets, adjIds);
-      sprintf(filename,"a%d.dat",rank);
-      std::cout << rank << " :: " << offsets.size() << " " << adjIds.size() << std::endl;
-      fp = fopen(filename,"w");
-      for (int i=0; i<offsets.extent(0)-1; i++) {
-        for (int k = offsets(i); k < offsets(i+1); k++) fprintf(fp,"%d %d\n",i,adjIds(k));
-      }
-      fclose(fp);
-    }
-  }
-  #endif
 }
 
 
