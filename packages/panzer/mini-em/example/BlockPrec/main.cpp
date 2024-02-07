@@ -684,9 +684,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
               std::string responseName = elem.second;
               std::transform(responseName.begin(), responseName.end(), responseName.begin(), ::toupper);
               if ((responseName.find("ERROR") != std::string::npos) ||
-                  (responseName.find("NORM") != std::string::npos))
+                  (responseName.find("NORM") != std::string::npos)) {
                 strStream << elem.second << " = " << std::sqrt(Thyra::get_ele(*g,0)) << std::endl;
-              else
+                if (elem.second == "L2 Error E maxwell - analyticSolution")
+                  TEUCHOS_ASSERT_INEQUALITY(std::sqrt(Thyra::get_ele(*g,0)), <, 0.065);
+              } else
                 strStream << elem.second << " = " << Thyra::get_ele(*g,0) << std::endl;
             }
             (*out) << strStream.str();
