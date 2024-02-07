@@ -287,29 +287,35 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   }
 
   if (OnePtMap != Teuchos::null) {
-    /* FIXME: This chunk of code is still executing on the host */
-
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
-    GO indexBase;
 
-    if (!runOnHost) {
-      aggStatHost = Kokkos::create_mirror_view(aggStat);
-      Kokkos::deep_copy(aggStatHost, aggStat);
-      indexBase = graph_kokkos->GetDomainMap()->getIndexBase();
-    } else
-      indexBase = graph->GetDomainMap()->getIndexBase();
+    if (runOnHost) {
+      GO indexBase = graph->GetDomainMap()->getIndexBase();
+      for (LO i = 0; i < numRows; i++) {
+        // reconstruct global row id (FIXME only works for contiguous maps)
+        GO grid = (graph->GetDomainMap()->getGlobalElement(i) - indexBase) * nDofsPerNode + indexBase;
 
-    for (LO i = 0; i < numRows; i++) {
-      // reconstruct global row id (FIXME only works for contiguous maps)
-      GO grid = (graph->GetDomainMap()->getGlobalElement(i) - indexBase) * nDofsPerNode + indexBase;
+        for (LO kr = 0; kr < nDofsPerNode; kr++)
+          if (OnePtMap->isNodeGlobalElement(grid + kr))
+            aggStatHost(i) = ONEPT;
+      }
+    } else {
+      GO indexBase               = graph_kokkos->GetDomainMap()->getIndexBase();
+      auto lclDomainMap          = graph_kokkos->GetDomainMap()->getLocalMap();
+      auto lclOnePtMap           = OnePtMap->getLocalMap();
+      const LocalOrdinal INVALID = Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid();
+      Kokkos::parallel_for(
+          "MueLu - UncoupledAggregation: tagging OnePt map",
+          Kokkos::RangePolicy<LocalOrdinal, typename LWGraph_kokkos::execution_space>(0, numRows),
+          KOKKOS_LAMBDA(const LocalOrdinal i) {
+            // reconstruct global row id (FIXME only works for contiguous maps)
+            GO grid = (lclDomainMap.getGlobalElement(i) - indexBase) * nDofsPerNode + indexBase;
 
-      for (LO kr = 0; kr < nDofsPerNode; kr++)
-        if (OnePtMap->isNodeGlobalElement(grid + kr))
-          aggStatHost[i] = ONEPT;
+            for (LO kr = 0; kr < nDofsPerNode; kr++)
+              if (lclOnePtMap.getLocalElement(grid + kr) != INVALID)
+                aggStat(i) = ONEPT;
+          });
     }
-
-    if (!runOnHost)
-      Kokkos::deep_copy(aggStat, aggStatHost);
   }
 
   LO numNonAggregatedNodes = numRows;
