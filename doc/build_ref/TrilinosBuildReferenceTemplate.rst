@@ -142,7 +142,6 @@ Advanced options:
 * Enable dualview modify chk    ``KOKKOS_ENABLE_DUALVIEW_MODIFY_CHECK``
 Kokkos TPLs:                 
 * Use hwloc library             ``TPL_ENABLE_HWLOC``
-* Use memkind library           ``KOKKOS_ENABLE_MEMKIND``
 * Use librt                     ``KOKKOS_ENABLE_LIBRT``
 CUDA Options:                
 * Enable CUDA LDG               ``KOKKOS_ENABLE_CUDA_LDG_INTRINSIC`` (global mem load)
