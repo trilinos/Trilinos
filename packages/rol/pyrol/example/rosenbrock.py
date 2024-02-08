@@ -1,7 +1,9 @@
-import numpy as np
+from pyrol import getCout, Objective, Problem, Solver
+from pyrol.vectors import NumPyVector
 
-from pyrol import *
-from pyrol.vectors import NumPyVector as myVector
+from pyrol.pyrol.Teuchos import ParameterList
+
+import numpy as np
 
 
 class RosenbrockObjective(Objective):
@@ -27,21 +29,26 @@ class RosenbrockObjective(Objective):
         hv[1] = h12*v[0] + h22*v[1]
 
 
+def build_parameter_list():
+    params = ParameterList()
+    params['General'] =  ParameterList()
+    params['General']['Output Level'] = 1
+    params['Step'] = ParameterList()
+    params['Step']['Trust Region'] = ParameterList()
+    params['Step']['Trust Region']['Subproblem Solver'] = 'Truncated CG'
+    return params
+
+
 def main():
     
     # Configure parameter list.  ################
-    params = getParametersFromXmlFile("input.xml")
-    # How do we initialize an instance without the command above?
-    # ROL::ParameterList parlist;
-    params.sublist("General").sublist("Secant").set("Use as Hessian", False)
-    # params.sublist("Step").set("Type", "Trust Region");
-    params.sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG")
+    params = build_parameter_list()
     
     # Set the output stream.  ###################
     stream = getCout()
     
     # Set up vectors.  ##########################
-    x = myVector(np.array([-3., -4.]))
+    x = NumPyVector(np.array([-3., -4.]))
     g = x.dual()
     
     # Set up the problem.  ######################
