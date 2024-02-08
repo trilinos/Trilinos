@@ -12,7 +12,7 @@ on:
 
 jobs:
   triloamd01-gcc:
-    runs-on: [self-hosted, triloamd01-gh-actions-*]
+    runs-on: [self-hosted, triloamd01-gh-actions]
     steps:
       - name: env
         env:
