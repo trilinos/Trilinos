@@ -1,0 +1,69 @@
+name: Spack-nonblocking-PR
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  pull_request_review:
+    types: 
+      - submitted
+  workflow_dispatch:
+
+jobs:
+  triloamd01-gcc:
+    runs-on: [self-hosted, triloamd01-gh-actions-*]
+    steps:
+      - name: env
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          env
+      - name: module list
+        shell: bash
+        run: |
+          bash -l -c "module list"
+          printenv PATH
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+      - name: make dirs
+        working-directory: /
+        run: |
+          mkdir -p /home/Trilinos/src/Trilinos
+          mkdir -p /home/Trilinos/build
+      - name: Clone trilinos
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Repo status
+        run: |
+          git fetch --all
+          pwd
+          ls -lhat
+          git status
+          git branch -vv
+          git branch -a
+      - name: get dependencies
+        working-directory: ./packages/framework
+        run: |
+          bash -l -c "./get_dependencies.sh --container"
+      - name: Generate PR cmake fragment
+        working-directory: /home/Trilinos/build
+        run: |
+          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --force --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
+      - name: Generate enable packages cmake fragment
+        working-directory: /home/Trilinos/build
+        run: |
+          bash -l -c "TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD origin/develop package-enables.cmake ctest-labels.cmake" || bash -l -c "cat TribitsDumpDepsXmlScript.log"
+      - name: configure trilinos
+        working-directory: /home/Trilinos/build
+        run: |
+          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
+      - name: build trilinos
+        working-directory: /home/Trilinos/build
+        run: bash -l -c "ninja"
+      - name: ctest
+        working-directory: /home/Trilinos/build
+        run: bash -l -c "ctest -j36"
