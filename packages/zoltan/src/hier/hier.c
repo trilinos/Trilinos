@@ -1746,6 +1746,7 @@ int Zoltan_Hier(
       ZOLTAN_FREE(&hpp.adjproc);
       ZOLTAN_FREE(&hpp.geom_vec);
       MPI_Comm_free(&hpp.hier_comm);
+      hpp.hier_comm = MPI_COMM_NULL;
     }
 
     ierr = Zoltan_LB_Free_Part(&hier_import_gids, &hier_import_lids,
