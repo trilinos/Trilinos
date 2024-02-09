@@ -54,7 +54,7 @@ namespace Ifpack2 {
 template<class GraphType>
 Zoltan2Partitioner<GraphType>::
 Zoltan2Partitioner (const Teuchos::RCP<const row_graph_type>& graph) :
-  zoltan2AlgoName_ ("phg"), OverlappingPartitioner<GraphType> (graph)
+  OverlappingPartitioner<GraphType> (graph), zoltan2AlgoName_ ("phg")
 {}
 
 
