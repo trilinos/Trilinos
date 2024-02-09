@@ -108,6 +108,9 @@ protected:
   std::size_t _key;
 };
 
+bool operator==(const panzer::BasisDescriptor& left,
+                const panzer::BasisDescriptor& right);
+
 } // namespace panzer
 
 namespace std {

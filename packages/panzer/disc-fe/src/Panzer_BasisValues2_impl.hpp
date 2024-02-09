@@ -127,6 +127,7 @@ BasisValues2(const std::string & pre,
     , num_cells_(0)
     , num_evaluate_cells_(0)
     , is_uniform_(false)
+    , num_orientations_cells_(0)
 
 {
   // Default all lazy evaluated components to not-evaluated
@@ -687,6 +688,13 @@ setCellNodeCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates)
 }
 
 template <typename Scalar>
+panzer::BasisDescriptor BasisValues2<Scalar>::getBasisDescriptor() const
+{
+  auto pure_basis = basis_layout->getBasis();
+  return {pure_basis->order(),pure_basis->type()};
+}
+
+template <typename Scalar>
 void
 BasisValues2<Scalar>::
 resetArrays()
@@ -1201,7 +1209,6 @@ getBasisValues(const bool weighted,
     // should only be reached if non-weighted. This is a by-product of
     // the two construction paths in panzer. Unification should help
     // fix the logic.
-
     if(orientations_.size() > 0)
       applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_scalar.get_view(), orientations_, *intrepid_basis);
 
