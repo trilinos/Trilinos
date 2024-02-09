@@ -77,6 +77,7 @@ namespace stk {
 namespace io {
 
 bool is_part_element_block_io_part(const stk::mesh::Part &part);
+bool is_part_assembly_io_part(const stk::mesh::Part &part);
 
 struct OutputParams
 {
@@ -259,11 +260,19 @@ private:
       stk::mesh::ConstPartVector elementParts;
       elementParts.reserve(parts.size());
 
+      bool hasAssembly = false;
+
       for (const stk::mesh::Part * part : parts) {
         if (is_part_element_block_io_part(*part)) {
           elementParts.push_back(part);
         }
+
+        if (is_part_assembly_io_part(*part)) {
+          hasAssembly = true;
+        }
       }
+
+      if(!hasAssembly) return;
 
       size_t length = elementParts.size();
       std::vector<size_t> localBlockSizes(length, 0);

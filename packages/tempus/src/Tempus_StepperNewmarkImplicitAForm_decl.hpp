@@ -62,19 +62,17 @@ namespace Tempus {
  *    {\bf Algorithm} Newmark Implicit A-form \\
  *    \rule{5in}{0.4pt} \vspace{-15pt}
  *    \begin{enumerate}
- *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt}
- *\setlength{\parsep}{0pt} \item {\it appAction.execute(solutionHistory,
- *stepper, BEGIN\_STEP)} \item $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t
- *\mathbf{v}^{n-1}
- *                               + \Delta t^2 (1-2 \beta) \mathbf{a}^{n-1} / 2$
- *      \item $\mathbf{v}^{\ast} = \mathbf{v}^{n-1} + \Delta t (1-\gamma)
- *\mathbf{a}^{n-1}$ \item {\it appAction.execute(solutionHistory, stepper,
- *BEFORE\_SOLVE)} \item {\bf Solve
- *            $\mathbf{f}(\mathbf{d}^n, \mathbf{v}^n, \mathbf{a}^n, t^n) = 0$
- *            for $\mathbf{a}^n$ where} \\
- *            $\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n$
- *\\
- *            $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
+ *                                     + \Delta t^2 (1-2 \beta) \mathbf{a}^{n-1} / 2$
+ *      \item $\mathbf{v}^{\ast} = \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}$
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \item {\bf Solve
+ *                 $\mathbf{f}(\mathbf{d}^n, \mathbf{v}^n, \mathbf{a}^n, t^n) = 0$
+ *                 for $\mathbf{a}^n$ where} \\
+ *                 $\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n$ \\
+ *                 $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$
  *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
  *      \item $\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n$
  *      \item $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$

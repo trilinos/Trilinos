@@ -73,7 +73,6 @@
 #include "MueLu_Maxwell_Utils.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include <Kokkos_Core.hpp>
@@ -1746,19 +1745,18 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildNodalProlongato
     std::string algo = parameterList_.get<std::string>("multigrid algorithm");
 
     RCP<Factory> amalgFact, dropFact, UncoupledAggFact, coarseMapFact, TentativePFact, Tfact, SaPFact;
-    amalgFact     = rcp(new AmalgamationFactory());
-    coarseMapFact = rcp(new CoarseMapFactory());
-    Tfact         = rcp(new CoordinatesTransferFactory());
+    amalgFact        = rcp(new AmalgamationFactory());
+    coarseMapFact    = rcp(new CoarseMapFactory());
+    Tfact            = rcp(new CoordinatesTransferFactory());
+    UncoupledAggFact = rcp(new UncoupledAggregationFactory());
     if (useKokkos_) {
-      dropFact         = rcp(new CoalesceDropFactory_kokkos());
-      UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
-      TentativePFact   = rcp(new TentativePFactory_kokkos());
+      dropFact       = rcp(new CoalesceDropFactory_kokkos());
+      TentativePFact = rcp(new TentativePFactory_kokkos());
       if (algo == "sa")
         SaPFact = rcp(new SaPFactory_kokkos());
     } else {
-      dropFact         = rcp(new CoalesceDropFactory());
-      UncoupledAggFact = rcp(new UncoupledAggregationFactory());
-      TentativePFact   = rcp(new TentativePFactory());
+      dropFact       = rcp(new CoalesceDropFactory());
+      TentativePFact = rcp(new TentativePFactory());
       if (algo == "sa")
         SaPFact = rcp(new SaPFactory());
     }

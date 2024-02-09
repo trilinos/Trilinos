@@ -146,7 +146,7 @@ struct TeamReductionFunctor
   KOKKOS_FUNCTION
   void operator()(const TeamHandleType& team, value_type& team_reduction) const
   {
-    const int bucketIndex = bucketIds.device_get(team.league_rank());
+    const int bucketIndex = bucketIds.get<typename Mesh::MeshExecSpace>(team.league_rank());
     const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
     unsigned numElements = bucket.size();
 

@@ -337,6 +337,9 @@ namespace io {
       STK_ThrowErrorMsgIf (m_region == nullptr,
                        "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
 
+      mf.m_fieldRestored = false;
+      mf.m_timeRestored = std::numeric_limits<double>::max();
+
       Ioss::Region *region = m_region.get();
       double time = mf.m_timeToRead;
       if (time < m_startTime || time > m_stopTime)
@@ -745,17 +748,17 @@ namespace io {
     {
       double db_time = time;
       if (time > m_startupTime && m_periodLength > 0.0) {
-	if (m_periodType == CYCLIC) {
-	  db_time = m_startupTime + fmod(time-m_startupTime, m_periodLength);
-	} else if (m_periodType == REVERSING) {
-	  double pmod = fmod((time-m_startupTime), 2.0*m_periodLength);
-	  if (pmod <= m_periodLength) {
-	    db_time = m_startupTime + pmod;
-	  }
-	  else {
-	    db_time = m_startupTime + 2.0 * m_periodLength - pmod;
-	  }
-	}
+        if (m_periodType == CYCLIC) {
+          db_time = m_startupTime + fmod(time-m_startupTime, m_periodLength);
+        } else if (m_periodType == REVERSING) {
+          double pmod = fmod((time-m_startupTime), 2.0*m_periodLength);
+          if (pmod <= m_periodLength) {
+            db_time = m_startupTime + pmod;
+          }
+          else {
+            db_time = m_startupTime + 2.0 * m_periodLength - pmod;
+          }
+        }
       }
       db_time *= m_scaleTime;
       db_time += m_offsetTime;
@@ -772,19 +775,19 @@ namespace io {
       bool ignore_missing_fields = (missingFields != nullptr);
 
       if (!m_fieldsInitialized) {
-	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-	while (I != m_fields.end()) {
-	  (*I).set_inactive(); ++I;
-	}
+        std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+        while (I != m_fields.end()) {
+          (*I).set_inactive(); ++I;
+        }
 
-	build_field_part_associations(bulk, missingFields);
-	build_field_part_associations_from_grouping_entity(bulk, missingFields);
+        build_field_part_associations(bulk, missingFields);
+        build_field_part_associations_from_grouping_entity(bulk, missingFields);
 
-	m_fieldsInitialized = true;
+        m_fieldsInitialized = true;
       }
 
       if (time < m_startTime || time > m_stopTime)
-	return 0.0;
+        return 0.0;
 
       // Map analysis time to database time using offset, periodic, ...
       // See details in header file.
@@ -805,24 +808,24 @@ namespace io {
       std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
       double time_read = -1.0;
       while (I != m_fields.end()) {
-	// NOTE: If the fields being restored have different settings, the time
-	// value can be different for each field and this will return the value
-	// of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
-	// and one is TIME_INTERPOLATION, then the time value to return is
-	// ambiguous.  Also an issue if some of the fields are inactive.
-	double time_t = (*I).restore_field_data(bulk, sti, ignore_missing_fields, m_multiStateSuffixes);
-	if ((*I).is_active()) {
-	  time_read = time_t > time_read ? time_t : time_read;
-	}
-	++I;
+        // NOTE: If the fields being restored have different settings, the time
+        // value can be different for each field and this will return the value
+        // of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
+        // and one is TIME_INTERPOLATION, then the time value to return is
+        // ambiguous.  Also an issue if some of the fields are inactive.
+        double time_t = (*I).restore_field_data(bulk, sti, ignore_missing_fields, m_multiStateSuffixes);
+        if ((*I).is_active()) {
+          time_read = time_t > time_read ? time_t : time_read;
+        }
+        ++I;
       }
 
       size_t step = sti.get_closest_step();
       int current_step = region->get_current_state();
       if (current_step != -1 && current_step != static_cast<int>(step))
-	region->end_state(current_step);
+        region->end_state(current_step);
       if (current_step != static_cast<int>(step))
-	region->begin_state(step);
+        region->begin_state(step);
 
       return time_read;
     }

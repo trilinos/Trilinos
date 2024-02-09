@@ -104,15 +104,12 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                EntityRank erank,
                                                const Part & part)
 {
-  if (field.entity_rank() == erank)
-  {
-      const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
-      for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
-        const Selector& selector = it->selector();
-        if (selector(part)) {
-          return *it;
-        }
+  if (field.entity_rank() == erank) {
+    for(const FieldBase::Restriction& restr : field.restrictions()) {
+      if (restr.selects(part)) {
+        return restr;
       }
+    }
   }
 
   return empty_field_restriction();

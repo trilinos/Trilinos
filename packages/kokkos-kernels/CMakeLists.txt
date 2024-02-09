@@ -11,7 +11,7 @@ SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(KokkosKernels_VERSION_MAJOR 4)
 SET(KokkosKernels_VERSION_MINOR 2)
-SET(KokkosKernels_VERSION_PATCH 00)
+SET(KokkosKernels_VERSION_PATCH 1)
 SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
@@ -133,7 +133,7 @@ ELSE()
         MESSAGE(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
       ENDIF()
     ELSE()
-      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires 4.1.00, 4.2.00 or develop")
+      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires 4.1.00, 4.2.00, 4.2.01 or develop")
     ENDIF()
   ENDIF()
 

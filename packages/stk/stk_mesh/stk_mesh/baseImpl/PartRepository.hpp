@@ -98,7 +98,7 @@ inline
 const T *
 PartRepository::declare_attribute_with_delete( Part & p, const T * a )
 {
-  return p.m_partImpl.declare_attribute_with_delete<T>( a );
+  return p.declare_attribute_with_delete<T>( a );
 }
 
 template<class T>
@@ -106,7 +106,7 @@ inline
 const T *
 PartRepository::declare_attribute_no_delete( Part & p, const T * a )
 {
-  return p.m_partImpl.declare_attribute_no_delete<T>( a );
+  return p.declare_attribute_no_delete<T>( a );
 }
 
 template<class T>
@@ -114,7 +114,7 @@ inline
 bool
 PartRepository::remove_attribute( Part & p, const T * a )
 {
-  return p.m_partImpl.remove_attribute<T>( a );
+  return p.remove_attribute<T>( a );
 }
 
 inline

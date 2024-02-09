@@ -99,19 +99,21 @@ FieldRepository::verify_field_type(const FieldBase                   & arg_field
                     "[ #states = " << arg_num_states << " ]");
   }
   else {
-    bool ok_dimension = ! arg_rank || arg_rank     == arg_field.field_array_rank() ||
-                                      arg_rank + 1 == arg_field.field_array_rank() ||
-                                      arg_rank - 1 == arg_field.field_array_rank() ;
+    bool ok_dimension = ! arg_rank || arg_rank     == stk::mesh::legacy::field_array_rank(arg_field) ||
+                                      arg_rank + 1 == stk::mesh::legacy::field_array_rank(arg_field) ||
+                                      arg_rank - 1 == stk::mesh::legacy::field_array_rank(arg_field) ;
 
-    const unsigned check_rank = (arg_rank < arg_field.field_array_rank()) ? arg_rank : arg_field.field_array_rank();
+    const unsigned check_rank = (arg_rank < stk::mesh::legacy::field_array_rank(arg_field)) ? arg_rank
+                                                                                            : stk::mesh::legacy::field_array_rank(arg_field);
 
     for (unsigned i = 0; i < check_rank && ok_dimension; ++i) {
-      ok_dimension = arg_dim_tags[i] == arg_field.dimension_tags()[i];
+      ok_dimension = arg_dim_tags[i] == stk::mesh::legacy::dimension_tags(arg_field)[i];
     }
 
     STK_ThrowErrorMsgIf(not ok_traits || not ok_number_states || not ok_dimension,
                     " verify_field_type FAILED: Existing field = " <<
-                    print_field_type(arg_field.data_traits(), arg_field.field_array_rank(), arg_field.dimension_tags()) <<
+                    print_field_type(arg_field.data_traits(), stk::mesh::legacy::field_array_rank(arg_field),
+                                     stk::mesh::legacy::dimension_tags(arg_field)) <<
                     "[ name = \"" << arg_field.name() <<
                     "\" , #states = " << arg_field.number_of_states() << " ]" <<
                     " Expected field info = " <<

@@ -183,10 +183,7 @@ public:
     void begin_output_step(double time, const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
     void end_output_step();
 
-    int write_defined_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::FieldState *state = nullptr);
-    int write_defined_output_fields_for_selected_subset(const stk::mesh::BulkData& bulk_data,
-                                                        std::vector<stk::mesh::Part*>& selectOutputElementParts,
-                                                        const stk::mesh::FieldState *state = nullptr);
+    int write_defined_output_fields(const stk::mesh::BulkData &bulk_data, const stk::mesh::FieldState *state = nullptr);
 
     int process_output_request(double time, const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
 

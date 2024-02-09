@@ -7,7 +7,7 @@ set_tests_properties(Package1_Prg-advanced
   PROPERTIES PASS_REGULAR_EXPRESSION "something_extra")
 
 # NOTE: With raw CMake/CTest, it is not possible to require the matches of
-# multiple regexes (i.e. not the require the match of *both* "Package1 Deps:
+# multiple regexes (i.e. require the match of *both* "Package1 Deps:
 # tpl1" and "something_extra").  Also, it is not possible to require a
 # non-zero return code in addition to requiring a regex match the output.
 # These more advanced features of tribits_add_advanced_test() would need to be

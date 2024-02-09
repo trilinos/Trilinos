@@ -113,7 +113,7 @@ TEST(Verify, selectorFixtureDoesNotSegFault)
   EXPECT_TRUE(true);
 }
 
-TEST(Verify, twoSelectorFixturesCreatedSequetiallyDoNotSegFault)
+TEST(Verify, twoSelectorFixturesCreatedSequentiallyDoNotSegFault)
 {
   {
     SelectorFixture fix;
@@ -222,6 +222,16 @@ TEST(Verify, selectorEmptyDuringMeshMod)
   else {
     EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
   }
+}
+
+TEST(Verify, selector_declarePartSubset)
+{
+  SelectorFixture fix;
+  stk::mesh::Part& partAsub = fix.m_meta_data.declare_part_with_topology("subPart", stk::topology::NODE);
+  fix.m_meta_data.declare_part_subset(fix.m_partA, partAsub);
+  EXPECT_EQ(1u, fix.m_fieldABC->restrictions().size());
+  const stk::mesh::Selector& fieldABCselector = fix.m_fieldABC->restrictions()[0].selector();
+  EXPECT_TRUE(fieldABCselector(partAsub));
 }
 
 TEST(Verify, complementOfPartASelector)

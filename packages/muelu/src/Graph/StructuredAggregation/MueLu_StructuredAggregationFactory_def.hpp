@@ -311,11 +311,13 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     aggregates->SetIndexManager(geoData);
     aggregates->AggregatesCrossProcessors(coupled);
     aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
-    std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
+    using AggStatHostType = typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType;
+    AggStatHostType aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"), geoData->getNumLocalFineNodes());
+    Kokkos::deep_copy(aggStat, READY);
     LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
 
-    myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat,
-                                           numNonAggregatedNodes);
+    myStructuredAlgorithm->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStat,
+                                                    numNonAggregatedNodes);
 
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
                                "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
@@ -327,8 +329,8 @@ void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Create the graph of the prolongator
     *out << "Compute CrsGraph" << std::endl;
     RCP<CrsGraph> myGraph;
-    myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph,
-                                      coarseCoordinatesFineMap, coarseCoordinatesMap);
+    myStructuredAlgorithm->BuildGraphOnHost(*graph, geoData, dofsPerNode, myGraph,
+                                            coarseCoordinatesFineMap, coarseCoordinatesMap);
     Set(currentLevel, "prolongatorGraph", myGraph);
   }
 

@@ -9,7 +9,7 @@
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"           // for StkMeshIoBroker
 #include "stk_mesh/base/BulkData.hpp"           // for BulkData, etc
-#include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian
+#include "stk_mesh/base/LegacyCoordinateSystems.hpp"  // for Cartesian
 #include "stk_mesh/base/Field.hpp"              // for Field
 #include "stk_mesh/base/MetaData.hpp"           // for MetaData, put_field
 #include "stk_unit_test_utils/ioUtils.hpp"      // for FieldValueSetter
@@ -55,8 +55,8 @@ GeneratedMeshToFileWithTransientFields::GeneratedMeshToFileWithTransientFields(s
                                                                                stk::topology::rank_t rank)
   : GeneratedMeshToFile(comm, auraOption),
     fieldRank(rank),
-    scalarField(meta.declare_field<stk::mesh::Field<double                      > >(fieldRank, fieldBaseName+"_scalar", 1)),
-    vectorField(meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(fieldRank, fieldBaseName+"_vector", 1))
+    scalarField(stk::mesh::legacy::declare_field<stk::mesh::Field<double                      > >(meta, fieldRank, fieldBaseName+"_scalar", 1)),
+    vectorField(stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::legacy::Cartesian> >(meta, fieldRank, fieldBaseName+"_vector", 1))
 {
   stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(), nullptr);
   stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3, nullptr);

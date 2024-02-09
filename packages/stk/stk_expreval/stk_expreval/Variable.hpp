@@ -62,23 +62,25 @@ public:
   enum Use         {DEPENDENT, INDEPENDENT};
   enum ArrayOffset {ZERO_BASED_INDEX, ONE_BASED_INDEX};
 
-  Variable(const std::string & name)
+  explicit Variable(const std::string & name)
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(1),
       m_doublePtr(&m_doubleValue),
       m_doubleValue(0.0),
       m_name(name),
-      m_index(0)
+      m_index(0),
+      m_isModifiable(true)
   {
   }
 
-  explicit Variable(Type type, const std::string & name)
+  Variable(Type type, const std::string & name)
     : m_type(type),
       m_use(INDEPENDENT),
       m_size(1),
       m_name(name),
-      m_index(0)
+      m_index(0),
+      m_isModifiable(true)
   {
     switch (type) {
     case DOUBLE:
@@ -92,55 +94,64 @@ public:
     }
   }
 
-  explicit Variable(double & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
+  Variable(const double & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(definedLength),
       m_doublePtr(&address),
       m_doubleValue(0.0),
       m_name(name),
-      m_index(0)
+      m_index(0),
+      m_isModifiable(false)
   {
   }
 
-  explicit Variable(int & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
+  Variable(double & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
+    : m_type(DOUBLE),
+      m_use(INDEPENDENT),
+      m_size(definedLength),
+      m_doublePtr(&address),
+      m_doubleValue(0.0),
+      m_name(name),
+      m_index(0),
+      m_isModifiable(true)
+  {
+  }
+
+  Variable(const int & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(INTEGER),
       m_use(INDEPENDENT),
       m_size(definedLength),
       m_intPtr(&address),
       m_intValue(0),
       m_name(name),
-      m_index(0)
+      m_index(0),
+      m_isModifiable(false)
   {
   }
 
-  Variable &operator=(const double & value) {
-    STK_ThrowRequireMsg(m_size == 1 || m_size == std::numeric_limits<int>::max(),
-                        "Invalid use of equal on the multi-component variable " + m_name);
-
-    if (m_type == INTEGER) {
-       m_intPtr = &m_intValue;
-      m_intValue = static_cast<int>(value);
-    }
-    else if (m_type == DOUBLE) {
-      m_doublePtr = &m_doubleValue;
-      m_doubleValue = value;
-    }
-
-    return *this;
+  Variable(int & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
+    : m_type(INTEGER),
+      m_use(INDEPENDENT),
+      m_size(definedLength),
+      m_intPtr(&address),
+      m_intValue(0),
+      m_name(name),
+      m_index(0),
+      m_isModifiable(true)
+  {
   }
 
-  Variable &operator=(const int & value) {
+  Variable &operator=(double value) {
     STK_ThrowRequireMsg(m_size == 1 || m_size == std::numeric_limits<int>::max(),
                         "Invalid use of equal on the multi-component variable " + m_name);
+    STK_ThrowRequireMsg(m_isModifiable, "Variable " + m_name + " is const and cannot be modified.");
 
     if (m_type == INTEGER) {
-      m_intPtr = &m_intValue;
-      m_intValue = value;
+      *const_cast<int*>(m_intPtr) = static_cast<int>(value);
     }
     else if (m_type == DOUBLE) {
-      m_doublePtr = &m_doubleValue;
-      m_doubleValue = static_cast<double>(value);
+      *const_cast<double*>(m_doublePtr) = value;
     }
 
     return *this;
@@ -156,34 +167,115 @@ public:
 
   bool isDependent() const { return m_use == DEPENDENT; }
 
-  inline double & getArrayValue(int index, ArrayOffset offsetType) const {
+  inline double getArrayValue(int index, ArrayOffset offsetType) const
+  {
+    if (m_type == DOUBLE) {
+      STK_ThrowRequireMsg(m_doublePtr != nullptr, "Variable " + m_name + " does not have a valid value.");
 
-    STK_ThrowRequireMsg(m_type == DOUBLE, "Only double arrays allowed for variable " + m_name);
+      if (offsetType == ZERO_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 0, "Provided index for variable array " + m_name + " is less than 0.");
+        STK_ThrowRequireMsg(index < m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
 
-    STK_ThrowRequireMsg(m_doublePtr != nullptr, "Variable " + m_name + " does not have a valid value."); 
+        return m_doublePtr[index];
+      }
+      else if (offsetType == ONE_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 1, "Provided index for variable array " + m_name + " is less than 1.");
+        STK_ThrowRequireMsg(index <= m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
 
-    if (offsetType == ZERO_BASED_INDEX) {
-      STK_ThrowRequireMsg(index >= 0, "Provided index for variable array " + m_name + " is less than 0.");
-      STK_ThrowRequireMsg(index < m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
-
-      return m_doublePtr[index];
-    }
-    else if (offsetType == ONE_BASED_INDEX) {
-      STK_ThrowRequireMsg(index >= 1, "Provided index for variable array " + m_name + " is less than 1.");
-      STK_ThrowRequireMsg(index <= m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
-
-      return m_doublePtr[index-1];
+        return m_doublePtr[index-1];
+      }
+      else {
+        STK_ThrowErrorMsg("Invalid ArrayOffsetType for variable " + m_name);
+        return m_doublePtr[0];
+      }
     }
     else {
-      STK_ThrowErrorMsg("Invalid ArrayOffsetType for variable " + m_name);
-      return m_doublePtr[0];
+      STK_ThrowRequireMsg(m_intPtr != nullptr, "Variable " + m_name + " does not have a valid value.");
+
+      if (offsetType == ZERO_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 0, "Provided index for variable array " + m_name + " is less than 0.");
+        STK_ThrowRequireMsg(index < m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
+        return static_cast<double>(m_intPtr[index]);
+      }
+      else if (offsetType == ONE_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 1, "Provided index for variable array " + m_name + " is less than 1.");
+        STK_ThrowRequireMsg(index <= m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
+        return static_cast<double>(m_intPtr[index-1]);
+      }
+      else {
+        STK_ThrowErrorMsg("Invalid ArrayOffsetType for variable " + m_name);
+        return static_cast<double>(m_intPtr[0]);
+      }
     }
+  }
+
+  inline void assignArrayValue(int index, ArrayOffset offsetType, double value) const
+  {
+    STK_ThrowRequireMsg(m_isModifiable, "Variable " + m_name + " is const and cannot be modified.");
+
+    if (m_type == DOUBLE) {
+      STK_ThrowRequireMsg(m_doublePtr != nullptr, "Variable " + m_name + " does not have a valid value.");
+
+      if (offsetType == ZERO_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 0, "Provided index for variable array " + m_name + " is less than 0.");
+        STK_ThrowRequireMsg(index < m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
+        const_cast<double &>(m_doublePtr[index]) = value;
+      }
+      else if (offsetType == ONE_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 1, "Provided index for variable array " + m_name + " is less than 1.");
+        STK_ThrowRequireMsg(index <= m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
+        const_cast<double &>(m_doublePtr[index-1]) = value;
+      }
+      else {
+        STK_ThrowErrorMsg("Invalid ArrayOffsetType for variable " + m_name);
+      }
+    }
+    else {
+      STK_ThrowRequireMsg(m_intPtr != nullptr, "Variable " + m_name + " does not have a valid value.");
+
+      if (offsetType == ZERO_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 0, "Provided index for variable array " + m_name + " is less than 0.");
+        STK_ThrowRequireMsg(index < m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
+        const_cast<int &>(m_intPtr[index]) = static_cast<int>(value);
+      }
+      else if (offsetType == ONE_BASED_INDEX) {
+        STK_ThrowRequireMsg(index >= 1, "Provided index for variable array " + m_name + " is less than 1.");
+        STK_ThrowRequireMsg(index <= m_size, "Provided index for variable array " + m_name + " exceeds array upper bound.");
+
+        const_cast<int &>(m_intPtr[index-1]) = static_cast<int>(value);
+      }
+      else {
+        STK_ThrowErrorMsg("Invalid ArrayOffsetType for variable " + m_name);
+      }
+    }
+  }
+
+  inline Variable & bind(const double & value_ref, int definedLength=std::numeric_limits<int>::max()) {
+    m_type = DOUBLE;
+    m_doublePtr = &value_ref;
+    m_size = definedLength;
+    m_isModifiable = false;
+    return *this;
   }
 
   inline Variable & bind(double & value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = DOUBLE;
     m_doublePtr = &value_ref;
     m_size = definedLength;
+    m_isModifiable = true;
+    return *this;
+  }
+
+  inline Variable & bind(const int & value_ref, int definedLength=std::numeric_limits<int>::max()) {
+    m_type = INTEGER;
+    m_intPtr = &value_ref;
+    m_size = definedLength;
+    m_isModifiable = false;
     return *this;
   }
 
@@ -191,6 +283,7 @@ public:
     m_type = INTEGER;
     m_intPtr = &value_ref;
     m_size = definedLength;
+    m_isModifiable = true;
     return *this;
   }
 
@@ -200,11 +293,13 @@ public:
     case DOUBLE: {
       m_doublePtr = &m_doubleValue;
       m_doubleValue = 0.0;
+      m_isModifiable = true;
       break;
     }
     case INTEGER: {
       m_intPtr = &m_intValue;
       m_intValue = 0;
+      m_isModifiable = true;
       break;
     }
     }
@@ -217,18 +312,20 @@ public:
     case DOUBLE: {
       m_doublePtr = nullptr;
       m_doubleValue = 0.0;
+      m_isModifiable = false;
       break;
     }
     case INTEGER: {
       m_intPtr = nullptr;
       m_intValue = 0;
+      m_isModifiable = false;
       break;
     }
     }
     return *this;
   }
 
-  double * getAddress() const { return m_doublePtr; }
+  const double * getAddress() const { return m_doublePtr; }
 
   KOKKOS_FUNCTION
   int getLength() const { return m_size; }
@@ -266,8 +363,8 @@ private:
   int m_size;
 
   union {
-    double * m_doublePtr;
-    int * m_intPtr;
+    const double * m_doublePtr;
+    const int * m_intPtr;
   };
 
   union {
@@ -277,6 +374,7 @@ private:
 
   const std::string m_name;
   int m_index;
+  bool m_isModifiable;
 };
 
 
@@ -321,7 +419,8 @@ public:
   virtual ~VariableMap() {}
 
   Variable* operator[](const std::string & s) {
-    std::pair<iterator,bool> i = insert(std::pair<const std::string, std::shared_ptr<Variable>>(s, std::shared_ptr<Variable>(nullptr)));
+    std::pair<iterator,bool> i = insert(std::pair<const std::string,
+                                        std::shared_ptr<Variable>>(s, std::shared_ptr<Variable>(nullptr)));
     if (i.second) {
       (*i.first).second = std::make_shared<Variable>(s);
     }

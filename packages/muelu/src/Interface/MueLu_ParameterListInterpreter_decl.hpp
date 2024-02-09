@@ -104,7 +104,6 @@
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 
 #ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"

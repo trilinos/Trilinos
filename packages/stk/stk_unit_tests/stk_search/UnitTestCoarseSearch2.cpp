@@ -43,7 +43,6 @@
 namespace
 {
 
-
 void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double distanceBetweenSphereCenters, const double radius, std::vector< std::pair<Ident, Ident> > &boxIdPairResults)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -58,17 +57,9 @@ void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double dist
 
 const double radiusOfOneHalf = 0.5;
 
-int numProcessors()
+TEST(CoarseSearchCorrectness, OverlappingSpheres_KDTREE)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
-    return stk::parallel_machine_size(comm);
-}
-
-TEST(Verification, OverlappingSpheres_KDTREE)
-{
-    if (numProcessors() > 1) {
-        return;
-    }
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
     double distanceBetweenSphereCenters = 0.5;
     std::vector< std::pair<Ident, Ident> > boxIdPairResults;
@@ -77,7 +68,7 @@ TEST(Verification, OverlappingSpheres_KDTREE)
     ASSERT_EQ(1u, boxIdPairResults.size());
 }
 
-TEST(Verification, NonOverlappingSpheres_KDTREE)
+TEST(CoarseSearchCorrectness, NonOverlappingSpheres_KDTREE)
 {
     double distanceBetweenSphereCenters = 2.0;
     std::vector< std::pair<Ident, Ident> > boxIdPairResults;
@@ -86,11 +77,9 @@ TEST(Verification, NonOverlappingSpheres_KDTREE)
     ASSERT_EQ(0u, boxIdPairResults.size());
 }
 
-TEST(Verification, JustEdgeOverlappingSpheres_KDTREE)
+TEST(CoarseSearchCorrectness, JustEdgeOverlappingSpheres_KDTREE)
 {
-    if (numProcessors() > 1) {
-        return;
-    }
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
     double distanceBetweenSphereCenters = 0.999999999;
     std::vector< std::pair<Ident, Ident> > boxIdPairResults;
@@ -99,7 +88,7 @@ TEST(Verification, JustEdgeOverlappingSpheres_KDTREE)
     ASSERT_EQ(1u, boxIdPairResults.size());
 }
 
-TEST(Verification, NotQuiteEdgeOverlappingSpheres_KDTREE)
+TEST(CoarseSearchCorrectness, NotQuiteEdgeOverlappingSpheres_KDTREE)
 {
     double distanceBetweenSphereCenters = 1.0000000001;
     std::vector< std::pair<Ident, Ident> > boxIdPairResults;
@@ -111,8 +100,8 @@ TEST(Verification, NotQuiteEdgeOverlappingSpheres_KDTREE)
 template<class InnerBoundingBoxType, class OuterBoundingBoxType>
 void runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod searchMethod, const double radius, const unsigned numExpectedResults)
 {
-    int numProc = numProcessors();
     MPI_Comm comm = MPI_COMM_WORLD;
+    int numProc = stk::parallel_machine_size(comm);
     int procId = stk::parallel_machine_rank(comm);
 
     std::vector< std::pair<OuterBoundingBoxType,Ident> > boxVector1;
@@ -151,63 +140,63 @@ void runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod searchMeth
     }
 }
 
-TEST(Verification, SphereOverlappingEightSurroundingSpheres_KDTREE)
+TEST(CoarseSearchCorrectness, SphereOverlappingEightSurroundingSpheres_KDTREE)
 {
     const double radius = 0.708;
     const unsigned numExpectedResults = 8;
     runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, SphereOverlappingNoSurroundingPoints_KDTREE)
+TEST(CoarseSearchCorrectness, SphereOverlappingNoSurroundingPoints_KDTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
     runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, SphereOverlappingFourSurroundingPoints_KDTREE)
+TEST(CoarseSearchCorrectness, SphereOverlappingFourSurroundingPoints_KDTREE)
 {
     const double radius = 1.41;
     const unsigned numExpectedResults = 4;
     runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, SphereOverlappingEightSurroundingPoints_KDTREE)
+TEST(CoarseSearchCorrectness, SphereOverlappingEightSurroundingPoints_KDTREE)
 {
     const double radius = 1.42;
     const unsigned numExpectedResults = 8;
     runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, SphereOverlappingFourOfEightSurroundingSpheres_KDTREE)
+TEST(CoarseSearchCorrectness, SphereOverlappingFourOfEightSurroundingSpheres_KDTREE)
 {
     const double radius = 0.706;
     const unsigned numExpectedResults = 4;
     runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, BoxOverlappingNoSurroundingPoints_KDTREE)
+TEST(CoarseSearchCorrectness, BoxOverlappingNoSurroundingPoints_KDTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
     runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, BoxOverlappingEightSurroundingPoints_KDTREE)
+TEST(CoarseSearchCorrectness, BoxOverlappingEightSurroundingPoints_KDTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
     runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, PointOverlappingNoSurroundingBoxes_KDTREE)
+TEST(CoarseSearchCorrectness, PointOverlappingNoSurroundingBoxes_KDTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
     runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::KDTREE, radius, numExpectedResults);
 }
 
-TEST(Verification, PointOverlappingEightSurroundingBoxes_KDTREE)
+TEST(CoarseSearchCorrectness, PointOverlappingEightSurroundingBoxes_KDTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
@@ -280,17 +269,17 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
     ASSERT_EQ(numExpectedResults, boxIdPairResults.size()) << "on proc id " << procId;
 }
 
-TEST(Verification, LineOfSpheres_KDTREE)
+TEST(CoarseSearchCorrectness, LineOfSpheres_KDTREE)
 {
     runLineOfBoundingBoxes<Sphere>(stk::search::KDTREE, xDim);
 }
 
-TEST(Verification, LineOfBoxes_KDTREE)
+TEST(CoarseSearchCorrectness, LineOfBoxes_KDTREE)
 {
     runLineOfBoundingBoxes<StkBox>(stk::search::KDTREE, yDim);
 }
 
-TEST(Verification, LineOfSpheresZDimension_KDTREE)
+TEST(CoarseSearchCorrectness, LineOfSpheresZDimension_KDTREE)
 {
     runLineOfBoundingBoxes<Sphere>(stk::search::KDTREE, zDim);
 }

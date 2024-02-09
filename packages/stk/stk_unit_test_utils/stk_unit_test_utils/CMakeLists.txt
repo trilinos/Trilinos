@@ -51,12 +51,10 @@ SET(HEADERS_NEED_MESH_BUT_NOT_IO
   MeshFileFixture.hpp
   MeshUtilsForBoundingVolumes.hpp
   ParticleUtils.hpp
-  WriteSelectedEntities.hpp
   unittestMeshUtils.hpp
   )
 SET(SOURCES_NEED_MESH_BUT_NOT_IO
   ParticleUtils.cpp
-  WriteSelectedEntities.cpp
   unittestMeshUtils.cpp
   )
 
