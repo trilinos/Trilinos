@@ -89,5 +89,5 @@ private:
 
 }// namespace Ifpack2
 
-#endif // HAVE_IFPACK2_XPETRA && HAVE_IFPACK2_ZOLTAN2
+#endif // HAVE_IFPACK2_ZOLTAN2
 #endif // IFPACK2_ZOLTAN2PARTITIONER_DECL_HPP

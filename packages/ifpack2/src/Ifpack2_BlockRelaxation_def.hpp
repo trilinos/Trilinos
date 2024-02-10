@@ -50,7 +50,9 @@
 #include "Ifpack2_Zoltan2Partitioner_def.hpp"
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
-#include <Ifpack2_Parameters.hpp>
+#include "Ifpack2_LocalFilter.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
+#include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 namespace Ifpack2 {
@@ -655,8 +657,44 @@ initialize ()
         rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
     } else if (PartitionerType_ == "zoltan2") {
       #if defined(HAVE_IFPACK2_ZOLTAN2)
-      Partitioner_ =
-        rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_->getGraph () ) );
+      if (A_->getGraph ()->getComm ()->getSize () == 1) {
+        // only one MPI, so call zoltan2 with global graph
+        Partitioner_ =
+          rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_->getGraph ()) );
+      } else {
+        // form local matrix
+        Teuchos::RCP<const row_matrix_type> A_local = rcp (new LocalFilter<row_matrix_type> (A_));
+        Teuchos::RCP<const crs_matrix_type> A_local_crs = Details::getCrsMatrix(A_local);
+        if(!A_local_crs.is_null()) {
+          // call zoltan2 with local graph
+          Partitioner_ =
+            rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_local_crs->getGraph ()) );
+	} else {
+          // failed, so explicity form local graph
+          local_ordinal_type numRows = A_local->getLocalNumRows();
+          Teuchos::Array<size_t> entriesPerRow(numRows);
+          for(local_ordinal_type i = 0; i < numRows; i++) {
+            entriesPerRow[i] = A_local->getNumEntriesInLocalRow(i);
+          }
+          Teuchos::RCP<crs_graph_type> A_local_graph_nc =
+            rcp (new crs_graph_type (A_local->getRowMap (),
+                                     A_local->getColMap (),
+                                     entriesPerRow()));
+          // copy entries into 
+          typename crs_matrix_type::nonconst_local_inds_host_view_type indices("indices",A_local->getLocalMaxNumRowEntries());
+          typename crs_matrix_type::nonconst_values_host_view_type values("values",A_local->getLocalMaxNumRowEntries());
+          for(local_ordinal_type i = 0; i < numRows; i++) {
+            size_t numEntries = 0;
+            A_local->getLocalRowCopy(i, indices, values, numEntries); // get indices & values
+            A_local_graph_nc->insertLocalIndices (i, numEntries, indices.data());
+          }
+          A_local_graph_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+          auto A_local_graph = Teuchos::rcp_const_cast<const crs_graph_type> (A_local_graph_nc);
+          // call zoltan2 with local graph
+          Partitioner_ =
+            rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_local_graph) );
+        }
+      }
       #else
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "Ifpack2::BlockRelaxation::initialize: Zoltan2 not enabled.");
