@@ -89,14 +89,13 @@ RCP<const ParameterList> HybridAggregationFactory<LocalOrdinal, GlobalOrdinal, N
     GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   // From UncoupledAggregationFactory
   SET_VALID_ENTRY("aggregation: max agg size");
   SET_VALID_ENTRY("aggregation: min agg size");
   SET_VALID_ENTRY("aggregation: max selected neighbors");
   SET_VALID_ENTRY("aggregation: ordering");
-  validParamList->getEntry("aggregation: ordering").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
+  validParamList->getEntry("aggregation: ordering").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("natural", "graph", "random"))));
   SET_VALID_ENTRY("aggregation: enable phase 1");
   SET_VALID_ENTRY("aggregation: enable phase 2a");
   SET_VALID_ENTRY("aggregation: enable phase 2b");
