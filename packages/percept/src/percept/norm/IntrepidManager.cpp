@@ -61,25 +61,25 @@
       static BasisTypeRCP a4 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       static BasisTypeRCP a5 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a6 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_Serendipity_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a6 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double >() );
       static BasisTypeRCP a7 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       static BasisTypeRCP a8 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a9 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_I2_Serendipity_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a9 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_I2_FEM<Kokkos::HostSpace, double, double >() );
       static BasisTypeRCP a10 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       static BasisTypeRCP a11 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C1_FEM<Kokkos::HostSpace, double, double >() );
       static BasisTypeRCP a12 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       static BasisTypeRCP a13 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a14 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_I2_Serendipity_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a14 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_I2_FEM<Kokkos::HostSpace, double, double >() );
 
 
       // Shells
       static BasisTypeRCP a15 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C1_FEM<Kokkos::HostSpace, double, double >() );
       static BasisTypeRCP a16 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double >() );
       static BasisTypeRCP a17 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
-      static BasisTypeRCP a18 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_Serendipity_FEM<Kokkos::HostSpace, double, double >() );
+      static BasisTypeRCP a18 = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double >() );
     }
 #endif
 
