@@ -170,7 +170,7 @@ namespace panzer {
       auto& orts = orientations[eBlockNames[i]];
       orts.resize(num_elems);
 
-      for (int c=0;c<num_elems;++c) {
+      for (size_t c=0;c<num_elems;++c) {
         const int lid = lids[c];
         Kokkos::View<const panzer::GlobalOrdinal*,Kokkos::HostSpace> 
           vertices(connMgr.getConnectivity(lid),numVerticesPerCell);
