@@ -43,18 +43,18 @@
       m_basisTable[shards::getCellTopologyData<shards::Triangle<6> >()-> key]      = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TRI_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       m_basisTable[shards::getCellTopologyData<shards::Quadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
-      m_basisTable[shards::getCellTopologyData<shards::Quadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_Serendipity_FEM<Kokkos::HostSpace, double, double >() );
+      m_basisTable[shards::getCellTopologyData<shards::Quadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double >() );
       m_basisTable[shards::getCellTopologyData<shards::Quadrilateral<9> >()-> key] = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       m_basisTable[shards::getCellTopologyData<shards::Hexahedron<8> >()-> key]    = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::HostSpace, double, double >() );
-      m_basisTable[shards::getCellTopologyData<shards::Hexahedron<20> >()-> key]   = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_I2_Serendipity_FEM<Kokkos::HostSpace, double, double >() );
+      m_basisTable[shards::getCellTopologyData<shards::Hexahedron<20> >()-> key]   = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_I2_FEM<Kokkos::HostSpace, double, double >() );
       m_basisTable[shards::getCellTopologyData<shards::Hexahedron<27> >()-> key]   = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_HEX_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       m_basisTable[shards::getCellTopologyData<shards::Tetrahedron<4> >()-> key]   = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C1_FEM<Kokkos::HostSpace, double, double >() );
       m_basisTable[shards::getCellTopologyData<shards::Tetrahedron<10> >()-> key]  = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::HostSpace, double, double >() );
 
       m_basisTable[shards::getCellTopologyData<shards::Wedge<6> >()-> key]         = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_C1_FEM<Kokkos::HostSpace, double, double >() );
-      m_basisTable[shards::getCellTopologyData<shards::Wedge<15> >()-> key]        = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_I2_Serendipity_FEM<Kokkos::HostSpace, double, double >() );
+      m_basisTable[shards::getCellTopologyData<shards::Wedge<15> >()-> key]        = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_WEDGE_I2_FEM<Kokkos::HostSpace, double, double >() );
 
 
       // Shells
@@ -63,7 +63,7 @@
 
       m_basisTable[shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()-> key] = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Kokkos::HostSpace, double, double >() );
 
-      m_basisTable[shards::getCellTopologyData<shards::ShellQuadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_Serendipity_FEM<Kokkos::HostSpace, double, double>() );
+      m_basisTable[shards::getCellTopologyData<shards::ShellQuadrilateral<8> >()-> key] = Teuchos::rcp ( new Intrepid2::Basis_HGRAD_QUAD_I2_FEM<Kokkos::HostSpace, double, double>() );
 
       //#endif
 
