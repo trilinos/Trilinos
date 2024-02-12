@@ -178,7 +178,7 @@ void LinearSolverBuilder<Scalar>::setPreconditioningStrategyFactory(
       validPfNames_(), precStrategyName);
   if (existingNameIdx >= 0) {
     validPfNames_[existingNameIdx] = precStrategyName;
-    pfArray_[existingNameIdx] = precStrategyFactory;
+    pfArray_[existingNameIdx-1] = precStrategyFactory; // We offset by -1 since "None" is first!
   }
   else {
     validPfNames_.push_back(precStrategyName);
@@ -540,6 +540,15 @@ void LinearSolverBuilder<Scalar>::initializeDefaults()
     "Belos", true
     );
 #endif
+
+#ifdef HAVE_STRATIMIKOS_IFPACK2
+  setPreconditioningStrategyFactory(
+    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
+    Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),
+    "Ifpack2", true
+    );
+#endif
+
 
   // Note: Above, the last PF object set will be the default!
 

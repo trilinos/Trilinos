@@ -201,7 +201,35 @@ bool Part::contains(const Part& part) const
   if (this == &part) { // same part
     return true;
   }
-  return stk::mesh::contains(subsets(), part);
+  return m_subsetsEmpty ? false : stk::mesh::contains(subsets(), part);
+}
+
+void Part::set_primary_entity_rank( EntityRank entity_rank )
+{
+  if ( entity_rank == InvalidEntityRank || entity_rank == m_entity_rank ) return;
+
+  const bool rank_already_set = m_entity_rank != InvalidEntityRank && entity_rank != m_entity_rank;
+
+  if (rank_already_set) {
+    std::stringstream str;
+    str << "A part with name '" << m_name << "' "
+        << "is defined in two different contexts " << m_mesh_meta_data->entity_rank_name(entity_rank) << " and "
+        << m_mesh_meta_data->entity_rank_name(m_entity_rank) << ".";
+    STK_ThrowErrorMsg(str.str());
+  }
+
+  m_entity_rank = entity_rank;
+}
+
+bool Part::add_part_to_subset(Part & part)
+{
+  m_subsetsEmpty = false;
+  return insert(m_subsets, part);
+}
+
+bool Part::add_part_to_superset(Part & part)
+{
+  return insert(m_supersets, part);
 }
 
 namespace impl {

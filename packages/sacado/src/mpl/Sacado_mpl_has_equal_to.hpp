@@ -32,18 +32,16 @@
 
 #include <type_traits>
 
-#include "Sacado_mpl_void.hpp"
-
 namespace Sacado {
 
   namespace mpl {
 
-    template <typename T1, typename T2 = T1, typename = void_t<> >
+    template <typename T1, typename T2 = T1, typename = std::void_t<> >
     struct has_equal_to : std::false_type {};
 
     template <typename T1, typename T2>
-    struct has_equal_to<T1, T2, void_t<decltype(std::declval<T1>() ==
-                                                std::declval<T2>())> >
+    struct has_equal_to<T1, T2, std::void_t<decltype(std::declval<T1>() ==
+                                                     std::declval<T2>())> >
     : std::true_type {};
 
   }

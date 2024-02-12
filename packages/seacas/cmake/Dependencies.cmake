@@ -42,7 +42,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Nemslice    applications/nem_slice  PT  OPTIONAL
   Nemspread   applications/nem_spread PT  OPTIONAL
   Numbers     applications/numbers    PT  OPTIONAL
-  Slice       applications/slice      ST  OPTIONAL
+  Slice       applications/slice      PT  OPTIONAL
   Txtexo      applications/txtexo     PT  OPTIONAL
   Ex2ex1v2    applications/ex2ex1v2   PT  OPTIONAL
 )

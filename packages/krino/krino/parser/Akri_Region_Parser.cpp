@@ -58,7 +58,7 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     }
     region->associate_input_mesh(fem_model_name, use_32bit_ids, force_64bit_ids);
 
-    stk::mesh::MetaData & meta = region->get_stk_mesh_meta_data();
+    stk::mesh::MetaData & meta = region->mesh_meta_data();
     RefinementSupport & refinementSupport = RefinementSupport::get(meta);
 
     int initial_refinement_levels = 0;

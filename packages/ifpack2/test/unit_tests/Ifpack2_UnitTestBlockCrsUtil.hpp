@@ -549,7 +549,7 @@ struct BlockCrsMatrixMaker {
 #endif
       ;
     struct ThreadData {
-      Kokkos::View<typename Kokkos::Details::ArithTraits<Scalar>::val_type***, Kokkos::HostSpace> blockrow;
+      Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type***, Kokkos::HostSpace> blockrow;
       std::vector<GO> cids;
       ThreadData (const Int max_bpr, const Int bs)
         : blockrow("blockrow", max_bpr, bs, bs), cids(max_bpr)

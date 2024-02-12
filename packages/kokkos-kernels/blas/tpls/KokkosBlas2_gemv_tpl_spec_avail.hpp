@@ -20,7 +20,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AT, class XT, class YT>
+template <class ExecutionSpace, class AT, class XT, class YT>
 struct gemv_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -32,6 +32,7 @@ struct gemv_tpl_spec_avail {
                                              LAYOUTY, MEMSPACE)           \
   template <class ExecSpace>                                              \
   struct gemv_tpl_spec_avail<                                             \
+      ExecSpace,                                                          \
       Kokkos::View<const SCALAR**, LAYOUTA,                               \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
@@ -78,6 +79,7 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
                                                LAYOUTY, MEMSPACE)         \
   template <class ExecSpace>                                              \
   struct gemv_tpl_spec_avail<                                             \
+      ExecSpace,                                                          \
       Kokkos::View<const SCALAR**, LAYOUTA,                               \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
@@ -125,22 +127,20 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 // rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
-#define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)    \
-  template <>                                                      \
-  struct gemv_tpl_spec_avail<                                      \
-      Kokkos::View<const SCALAR**, LAYOUT,                         \
-                   Kokkos::Device<Kokkos::Experimental::HIP,       \
-                                  Kokkos::Experimental::HIPSpace>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
-      Kokkos::View<const SCALAR*, LAYOUT,                          \
-                   Kokkos::Device<Kokkos::Experimental::HIP,       \
-                                  Kokkos::Experimental::HIPSpace>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
-      Kokkos::View<SCALAR*, LAYOUT,                                \
-                   Kokkos::Device<Kokkos::Experimental::HIP,       \
-                                  Kokkos::Experimental::HIPSpace>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {   \
-    enum : bool { value = true };                                  \
+#define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)   \
+  template <class ExecSpace>                                      \
+  struct gemv_tpl_spec_avail<                                     \
+      ExecSpace,                                                  \
+      Kokkos::View<const SCALAR**, LAYOUT,                        \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
+      Kokkos::View<const SCALAR*, LAYOUT,                         \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,     \
+      Kokkos::View<SCALAR*, LAYOUT,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {  \
+    enum : bool { value = true };                                 \
   };
 
 KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft)
@@ -158,6 +158,49 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
                                         Kokkos::LayoutRight)
 
 #endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+
+#if defined(KOKKOS_ENABLE_SYCL) && \
+    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+
+#define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, LAYOUT)               \
+  template <class ExecSpace>                                                 \
+  struct gemv_tpl_spec_avail<                                                \
+      ExecSpace,                                                             \
+      Kokkos::View<const SCALAR**, LAYOUT,                                   \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,                \
+                                  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const SCALAR*, LAYOUT,                                    \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,                \
+                                  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR*, LAYOUT,                                          \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,                \
+                                  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
+    enum : bool { value = true };                                            \
+  };
+
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(double, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(float, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<double>,
+                                       Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<float>,
+                                       Kokkos::LayoutLeft)
+
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(double, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(float, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<double>,
+                                       Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<float>,
+                                       Kokkos::LayoutRight)
+
+#endif
+
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 

@@ -82,8 +82,8 @@ public:
   ///
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
-    using TrsvAlgoType = typename TrsvAlgorithm::type;
-    using GemvAlgoType = typename GemvAlgorithm::type;
+    using GemvAlgoType = typename GemvAlgorithm_Team::type;
+    using TrsvAlgoType = typename TrsvAlgorithm_Team::type;
 
     const value_type minus_one(-1), zero(0);
     {
@@ -307,10 +307,10 @@ public:
       else if (solve_tag_type::variant == 2)
         solve_var2(member, s, bptr);
       else
-        printf("Error: TeamFunctorSolveLowerChol::SolveTag, algorithm variant is not supported\n");
+        Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, algorithm variant is not supported\n");
     }
     if (mode == -1) {
-      printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
+      Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
     } else {
       // skip
     }
@@ -331,7 +331,7 @@ public:
       else if (update_tag_type::variant == 2)
         update_var2(member, s, bptr);
       else
-        printf("Error: TeamFunctorSolveLowerChol::UpdateTag, algorithm variant is not supported\n");
+        Kokkos::printf("Error: TeamFunctorSolveLowerChol::UpdateTag, algorithm variant is not supported\n");
     } else {
       // skip
     }

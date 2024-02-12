@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -101,44 +101,6 @@ void lanczos_SO_float(struct vtx_data **A,       /* sparse matrix in row linked 
   int    ritzval_flag;                   /* status flag for get_ritzvals() */
   int    memory_ok;                      /* True until lanczos runs out of memory */
   float *vwsqrt_float;                   /* float version of vwsqrt */
-
-  struct orthlink_float *makeorthlnk_float();   /* makes space for new entry in orthog. set */
-  struct scanlink       *mkscanlist();          /* makes initial scan list for min ritz vecs */
-  double                *mkvec(int nl, int nh); /* allocates space for a vector, dies if problem */
-  float *mkvec_float(int nl, int nh);           /* allocates space for a vector, dies if problem */
-  float *mkvec_ret_float(int nl, int nh); /* allocates space for a vector, returns error code */
-  double dot_float(float *vec1, int beg, int end, float *vec2); /* standard dot product routine */
-  double norm_float();                                          /* vector norm */
-  double Tevec(double *, double *, int, double,
-               double *);    /* calc eigenvector of T by linear recurrence */
-  double checkeig();         /* calculate residual of eigenvector of A */
-  double lanc_seconds(void); /* switcheable timer */
-                             /* free allocated memory safely */
-  int  lanpause_float();     /* figure when to pause Lanczos iteration */
-  int  get_ritzvals();       /* compute eigenvalues of T */
-  void assign();             /* generate a set assignment from eigenvectors */
-  void setvec();             /* initialize a vector */
-  void setvec_float();       /* initialize a vector */
-  void vecscale_float();     /* scale a vector */
-  void splarax_float();      /* matrix vector multiply */
-  void update_float(float *vec1, int beg, int end, float *vec2, float fac,
-                    float *vec3);     /* add a scalar multiple of a vector to another */
-  void sorthog_float();               /* orthogonalize a vector against a list of others */
-  void bail();                        /* our exit routine */
-  void scanmin();                     /* find small values in vector, store in linked list */
-  void frvec(double *v, int nl);      /* free vector */
-  void frvec_float(float *v, int nl); /* free vector */
-  void scadd_float();                 /* add scalar multiple of vector to another */
-  void scadd_mixed();                 /* add scalar multiple of vector to another */
-  void orthog1_float();               /* efficiently orthogonalize against vector of ones */
-  void vecran_float();                /* fill vector with random entries */
-  void solistout_float();             /* print out orthogonalization list */
-  void doubleout();                   /* print a double precision number */
-  void orthogvec_float();             /* orthogonalize one vector against another */
-  void double_to_float();             /* copy a double vector to a float vector */
-  void float_to_double();             /* convert float to double vector */
-  void warnings();                    /* post various warnings about computation */
-  void strout(char *msg);             /* print string to screen and output file */
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering lanczos_so_float>\n");

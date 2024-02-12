@@ -74,6 +74,14 @@ protected:
     return os.str();
   }
 
+  std::string get_mesh_spec(unsigned nX, unsigned nY, unsigned nZ)
+  {
+    std::ostringstream os;
+    os<<"generated:"<<nX<<"x"<<nY<<"x"<<nZ
+      <<"|shell:xXyYzZ|sideset:xXyYzZ";
+    return os.str();
+  }
+
   std::string get_mesh_spec_without_sidesets(unsigned numElemsPerDim, unsigned numBlocks)
   {
     std::ostringstream os;
@@ -81,15 +89,30 @@ protected:
     return os.str();
   }
 
-  void setup_multi_block_mesh(unsigned numElemsPerDim, unsigned numBlocks, unsigned numFields=0)
+  void setup_multi_block_mesh(unsigned numElemsPerDim, unsigned numBlocks, unsigned numFields=0, bool allFieldsSameSize=true)
   {
     stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::NO_AUTO_AURA;
     setup_empty_mesh(auraOption);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
-    stk::performance_tests::setup_elem_fields_on_blocks(get_meta(), numFields);
+    stk::performance_tests::setup_elem_fields_on_blocks(get_meta(), numFields, allFieldsSameSize);
     stk::performance_tests::setup_sidesets_between_blocks(get_meta());
     setup_mesh(get_mesh_spec(numElemsPerDim), auraOption);
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
+    stk::performance_tests::fill_sidesets_between_blocks(get_bulk());
+  }
+
+  void setup_multi_block_mesh(unsigned nX, unsigned nY, unsigned nZ, unsigned numBlocks, unsigned numFields=0,
+                              bool allFieldsSameSize=true,
+                         unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                         unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity())
+  {
+    stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::NO_AUTO_AURA;
+    setup_empty_mesh(auraOption, initialBucketCapacity, maximumBucketCapacity);
+    stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
+    stk::performance_tests::setup_elem_fields_on_blocks(get_meta(), numFields, allFieldsSameSize);
+    stk::performance_tests::setup_sidesets_between_blocks(get_meta());
+    setup_mesh(get_mesh_spec(nX, nY, nZ), auraOption, initialBucketCapacity, maximumBucketCapacity);
+    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), nX);
     stk::performance_tests::fill_sidesets_between_blocks(get_bulk());
   }
 
@@ -98,7 +121,8 @@ protected:
     stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::NO_AUTO_AURA;
     setup_empty_mesh(auraOption);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
-    stk::performance_tests::setup_elem_fields_on_blocks(get_meta(), numFields);
+    const bool allFieldsSameSize = true;
+    stk::performance_tests::setup_elem_fields_on_blocks(get_meta(), numFields, allFieldsSameSize);
     setup_mesh(get_mesh_spec_without_sidesets(numElemsPerDim, numBlocks), auraOption);
     stk::performance_tests::move_elements_to_other_contiguous_blocks(get_bulk(), numBlocks);
   }
@@ -310,6 +334,135 @@ TEST_F(ManyBlocksSidesets, noSidesets_writeRestart)
       int outputTimeStep = static_cast<int>(i);
       double outputTime = 1.0*outputTimeStep;
       write_restart_null_database(ioBroker, outputTimeStep, outputTime);
+    }
+
+    batchTimer.stop_batch_timer();
+    reset_mesh();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+TEST_F(ManyBlocksSidesets, find_restriction)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  const unsigned NUM_RUNS = 1;
+  const unsigned NUM_ITERS = 200;
+  unsigned numElemsX = 400;
+  unsigned numElemsY = 1;
+  unsigned numElemsZ = 2;
+  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 400);
+  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 50);
+
+  unsigned initialBucketCapacity = 1;
+  unsigned maxBucketCapacity = 8;
+
+  stk::mesh::PartVector elemBlockParts;
+
+  batchTimer.initialize_batch_timer();
+
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    const bool allFieldsSameSize = false;
+    setup_multi_block_mesh(numElemsX, numElemsY, numElemsZ, NUM_BLOCKS, NUM_FIELDS, allFieldsSameSize, initialBucketCapacity, maxBucketCapacity);
+
+    stk::mesh::fill_element_block_parts(get_meta(), stk::topology::INVALID_TOPOLOGY, elemBlockParts);
+
+    stk::parallel_machine_barrier(get_bulk().parallel());
+
+    batchTimer.start_batch_timer();
+
+    for(unsigned i=0; i<NUM_ITERS; ++i) {
+      for(const stk::mesh::Part* part : elemBlockParts) { 
+        for(const stk::mesh::FieldBase* fieldPtr : get_meta().get_fields()) {
+          unsigned fieldLen = fieldPtr->length(*part);
+          STK_ThrowRequireMsg(fieldLen <= static_cast<unsigned>(NUM_BLOCKS), "Silly throw-require just to reference the fieldLen variable...");
+        }
+      }
+    }
+
+    batchTimer.stop_batch_timer();
+    reset_mesh();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+TEST_F(ManyBlocksSidesets, find_restriction_part_union)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  const unsigned NUM_RUNS = 1;
+  const unsigned NUM_ITERS = 700;
+  unsigned numElemsX = 400;
+  unsigned numElemsY = 1;
+  unsigned numElemsZ = 2;
+  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 400);
+  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 50);
+
+  unsigned initialBucketCapacity = 1;
+  unsigned maxBucketCapacity = 8;
+
+  stk::mesh::PartVector elemBlockParts;
+
+  batchTimer.initialize_batch_timer();
+
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    const bool allFieldsSameSize = true;
+    setup_multi_block_mesh(numElemsX, numElemsY, numElemsZ, NUM_BLOCKS, NUM_FIELDS, allFieldsSameSize, initialBucketCapacity, maxBucketCapacity);
+
+    stk::mesh::fill_element_block_parts(get_meta(), stk::topology::INVALID_TOPOLOGY, elemBlockParts);
+
+    stk::parallel_machine_barrier(get_bulk().parallel());
+
+    batchTimer.start_batch_timer();
+
+    for(unsigned i=0; i<NUM_ITERS; ++i) {
+      for(const stk::mesh::Part* part : elemBlockParts) { 
+        for(const stk::mesh::FieldBase* fieldPtr : get_meta().get_fields()) {
+          unsigned fieldLen = fieldPtr->length(*part);
+          STK_ThrowRequireMsg(fieldLen <= static_cast<unsigned>(NUM_BLOCKS), "Silly throw-require just to reference the fieldLen variable...");
+        }
+      }
+    }
+
+    batchTimer.stop_batch_timer();
+    reset_mesh();
+  }
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+TEST_F(ManyBlocksSidesets, selectUnion)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  const unsigned NUM_RUNS = 1;
+  const unsigned NUM_ITERS = 700;
+  unsigned numElemsX = 400;
+  unsigned numElemsY = 1;
+  unsigned numElemsZ = 2;
+  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 400);
+  int NUM_FIELDS = stk::unit_test_util::simple_fields::get_command_line_option("--nf", 50);
+
+  unsigned initialBucketCapacity = 1;
+  unsigned maxBucketCapacity = 8;
+
+  stk::mesh::PartVector elemBlockParts;
+
+  batchTimer.initialize_batch_timer();
+
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    const bool allFieldsSameSize = true;
+    setup_multi_block_mesh(numElemsX, numElemsY, numElemsZ, NUM_BLOCKS, NUM_FIELDS, allFieldsSameSize, initialBucketCapacity, maxBucketCapacity);
+
+    stk::mesh::fill_element_block_parts(get_meta(), stk::topology::INVALID_TOPOLOGY, elemBlockParts);
+
+    stk::parallel_machine_barrier(get_bulk().parallel());
+
+    batchTimer.start_batch_timer();
+
+    for(unsigned i=0; i<NUM_ITERS; ++i) {
+      for(int f=0; f<NUM_FIELDS; ++f) {
+        stk::mesh::selectUnion(elemBlockParts);
+      }
     }
 
     batchTimer.stop_batch_timer();

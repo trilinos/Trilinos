@@ -11,32 +11,29 @@ namespace impl {
 
 using predicates::impl::PointClassification;
 
-void ElementMeshClassifier::classify(ElementMeshData& elementMeshData, int numConstraintEdges)
+void ElementMeshClassifier::classify(ElementMeshData& elementMeshData, int numConstraintEdges, const std::vector<mesh::MeshEntityPtr>& mesh2Els)
 {
   m_elementMeshData = elementMeshData;
+  m_mesh2Els = mesh2Els;
   get_mesh2_element_classification(numConstraintEdges);
 }
 
 void ElementMeshClassifier::get_mesh2_element_classification(int numConstraintEdges)
 {
-  auto& mesh1ElToMesh2Els = *(m_relationalData->mesh1ElementsToMesh2Elements);
-  std::vector<mesh::MeshEntityPtr> mesh2Els;
-  for (int i = 0; i < mesh1ElToMesh2Els.get_num_comp(m_elementMeshData.el1, 0); ++i)
-    mesh2Els.push_back(mesh1ElToMesh2Els(m_elementMeshData.el1, 0, i));
-
   if (M_OUTPUT)
   {
-    mesh::impl::print_vert_edges("mesh1_el", {m_elementMeshData.el1});
-    mesh::impl::print_vert_edges("mesh2_els", mesh2Els);
-    std::cout << "\nclassifying mesh" << std::endl;
+    int myrank = utils::impl::comm_rank(MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
+    mesh::impl::print_vert_edges(std::string("mesh1_el_") + std::to_string(myrank) , {m_elementMeshData.el1});
+    mesh::impl::print_vert_edges(std::string("mesh2_els_") + std::to_string(myrank), m_mesh2Els);
+    mesh::impl::print_vert_edges(std::string("meshIn_els_") + std::to_string(myrank), m_elementMeshData.elementMeshIn);
   }
 
   // printTIN("mesh_class", class_i.mesh_in);
 
   // handle special case
-  if (mesh2Els.size() == 1)
+  if (m_mesh2Els.size() == 1)
   {
-    classify_all(mesh2Els[0]);
+    classify_all(m_mesh2Els[0]);
     return;
   }
 
@@ -45,7 +42,7 @@ void ElementMeshClassifier::get_mesh2_element_classification(int numConstraintEd
   if (!need_numerical_classification())
   {
     std::vector<mesh::MeshEntityPtr> els2List;
-    mesh::MeshEntityPtr el22 = classification_pass1(mesh2Els, agg, els2List);
+    mesh::MeshEntityPtr el22 = classification_pass1(m_mesh2Els, agg, els2List);
 
     if (el22)
     {
@@ -65,7 +62,7 @@ void ElementMeshClassifier::get_mesh2_element_classification(int numConstraintEd
     //-----------------------------------------------------------------
     // if there are any remaining mesh_in elements not classified, fall back
     // to using PointClassifier to determine the status of the third vertex
-    classification_pass3(mesh2Els, agg);
+    classification_pass3(m_mesh2Els, agg);
   }
 
   // std::cout << "\nfinished classification" << std::endl;
@@ -131,12 +128,8 @@ mesh::impl::MeshAgglomerator ElementMeshClassifier::setup_agglomerations(int num
 void ElementMeshClassifier::get_mesh2_edges(std::vector<mesh::MeshEntityPtr>& edges2)
 {
   edges2.clear();
-  mesh::MeshEntityPtr el1 = m_elementMeshData.el1;
-
-  auto& mesh1ElToMesh2Els = *(m_relationalData->mesh1ElementsToMesh2Elements);
-  for (int i = 0; i < mesh1ElToMesh2Els.get_num_comp(el1, 0); ++i)
+  for (auto& el2 : m_mesh2Els)
   {
-    mesh::MeshEntityPtr el2 = mesh1ElToMesh2Els(el1, 0, i);
     for (int j = 0; j < el2->count_down(); ++j)
       edges2.push_back(el2->get_down(j));
   }
@@ -188,10 +181,13 @@ bool ElementMeshClassifier::need_numerical_classification()
     {
       FakeVert fv                                 = edges2ToFakeVertsIn(edge2, 0, i).vert;
       mesh::MeshEntityPtr vertIn                  = fakeVertsToRealVertsIn[fv.id];
-      const predicates::impl::PointRecord& record = vertsInClassOnMesh1(vertIn, 0, 0);
-      if (is_classified_on_element(record))
+      if (vertIn)
       {
-        vertsFromEdges2.insert(vertIn);
+        const predicates::impl::PointRecord& record = vertsInClassOnMesh1(vertIn, 0, 0);
+        if (is_classified_on_element(record))
+        {
+          vertsFromEdges2.insert(vertIn);
+        }
       }
     }
   }
@@ -222,9 +218,9 @@ mesh::MeshEntityPtr ElementMeshClassifier::classification_pass1(const std::vecto
       std::cout << "el2 = " << el2->get_id() << ", " << el2 << std::endl;
 
       std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> el2Verts;
-      mesh::get_downward(el2, 0, el2Verts.data());
+      int ndown = mesh::get_downward(el2, 0, el2Verts.data());
       std::cout << "  el2 vert ids = ";
-      for (int i=0; i < 4; ++i)
+      for (int i=0; i < ndown; ++i)
         std::cout << el2Verts[i]->get_id() << ", ";
       std::cout << std::endl;
     }
@@ -271,7 +267,7 @@ mesh::MeshEntityPtr ElementMeshClassifier::classification_pass1(const std::vecto
       std::cout << std::endl;
     }
     assert(idxs.size() == 1);
-
+    
     // std::cout << "classifying group " << idxs[0] << std::endl;
 
     for (auto& elIn : agg.get_group_elements(idxs[0]))
@@ -516,10 +512,13 @@ void ElementMeshClassifier::get_verts_in(mesh::MeshEntityPtr el1, mesh::MeshEnti
     {
       FakeVert fv                                 = edges2ToFakeVertsIn(edgeI, 0, j).vert;
       mesh::MeshEntityPtr vertIn                  = fakeVertsToRealVertsIn[fv.id];
-      const predicates::impl::PointRecord& record = vertsInClassOnMesh1(vertIn, 0, 0);
+      if (vertIn)
+      {
+        const predicates::impl::PointRecord& record = vertsInClassOnMesh1(vertIn, 0, 0);
 
-      if (is_classified_on_element(record))
-        vertsIn.insert(vertIn);
+        if (is_classified_on_element(record))
+          vertsIn.insert(vertIn);
+      }
     }
   }
 }

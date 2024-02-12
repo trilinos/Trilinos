@@ -50,7 +50,7 @@
 #ifndef Intrepid2_TensorPoints_h
 #define Intrepid2_TensorPoints_h
 
-#include <Kokkos_Vector.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace Intrepid2 {
 /** \class Intrepid2::TensorPoints

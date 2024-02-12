@@ -17,11 +17,9 @@ namespace Tempus {
 /** \brief Concrete implemenation of <tt>Interpolator</tt> that does
  * simple lagrange interpolation.
  */
-template<class Scalar>
-class InterpolatorLagrange : virtual public Interpolator<Scalar>
-{
-public:
-
+template <class Scalar>
+class InterpolatorLagrange : virtual public Interpolator<Scalar> {
+ public:
   /// Contructor
   InterpolatorLagrange() : order_(0) {}
 
@@ -33,7 +31,11 @@ public:
 
   /// Store pointer to interpolation nodes
   void setNodes(
-    const Teuchos::RCP<const std::vector<Teuchos::RCP<SolutionState<Scalar> > > > & nodes) { nodes_ = nodes; }
+      const Teuchos::RCP<
+          const std::vector<Teuchos::RCP<SolutionState<Scalar> > > >& nodes)
+  {
+    nodes_ = nodes;
+  }
 
   /// Perform an interpolation
   void interpolate(const Scalar& t, SolutionState<Scalar>* state_out) const;
@@ -46,7 +48,7 @@ public:
   /// \name Overridden from Teuchos::Describable
   //@{
   std::string description() const { return "Tempus::InterpolatorLagrange"; }
-  void describe(Teuchos::FancyOStream &out,
+  void describe(Teuchos::FancyOStream& out,
                 const Teuchos::EVerbosityLevel /* verbLevel */) const
   {
     out.setOutputToRootOnly(0);
@@ -62,24 +64,23 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
-private:
-
+ private:
   void lagrange(const int p, const Scalar& t,
                 SolutionState<Scalar>* state_out) const;
 
-  Teuchos::RCP<const std::vector<Teuchos::RCP<SolutionState<Scalar> > > > nodes_;
+  Teuchos::RCP<const std::vector<Teuchos::RCP<SolutionState<Scalar> > > >
+      nodes_;
   Teuchos::RCP<Teuchos::ParameterList> pl_;
   int order_;
-
 };
 
 // Nonmember constructor
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<InterpolatorLagrange<Scalar> > lagrangeInterpolator()
 {
   return Teuchos::rcp(new InterpolatorLagrange<Scalar>);
 }
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_InterpolatorLagrange_decl_hpp
+#endif  // Tempus_InterpolatorLagrange_decl_hpp

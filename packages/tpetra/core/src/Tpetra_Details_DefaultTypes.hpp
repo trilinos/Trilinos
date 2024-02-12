@@ -91,7 +91,7 @@ namespace DefaultTypes {
   using execution_space = ::Kokkos::Experimental::SYCL;
   using node_type = Tpetra::KokkosCompat::KokkosSYCLWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
-  using execution_space = ::Kokkos::Experimental::HIP;
+  using execution_space = ::Kokkos::HIP;
   using node_type = Tpetra::KokkosCompat::KokkosHIPWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
   using execution_space = ::Kokkos::Cuda;
@@ -129,9 +129,9 @@ namespace DefaultTypes {
 
 #ifdef KOKKOS_ENABLE_HIP
   template<>
-  struct CommBufferMemorySpace<Kokkos::Experimental::HIP>
+  struct CommBufferMemorySpace<Kokkos::HIP>
   {
-    using type = Kokkos::Experimental::HIPSpace;
+    using type = Kokkos::HIPSpace;
   };
 #endif
 

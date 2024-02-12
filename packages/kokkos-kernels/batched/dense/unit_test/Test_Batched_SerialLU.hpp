@@ -32,6 +32,7 @@ namespace Test {
 
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 struct Functor_TestBatchedSerialLU {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a;
 
   KOKKOS_INLINE_FUNCTION
@@ -52,7 +53,7 @@ struct Functor_TestBatchedSerialLU {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, _a.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -61,7 +62,7 @@ struct Functor_TestBatchedSerialLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_lu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize);

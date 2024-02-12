@@ -46,18 +46,13 @@
 #ifndef MUELU_MAXWELL_UTILS_FWD_HPP
 #define MUELU_MAXWELL_UTILS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Maxwell_Utils;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class Maxwell_Utils;
 }
 
 #ifndef MUELU_MAXWELL_UTILS_SHORT
 #define MUELU_MAXWELL_UTILS_SHORT
 #endif
 
-
-
-#endif // MUELU_MAXWELL_UTILS_FWD_HPP
+#endif  // MUELU_MAXWELL_UTILS_FWD_HPP

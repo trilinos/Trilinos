@@ -16,9 +16,6 @@
 #ifndef TEST_BLAS_HPP
 #define TEST_BLAS_HPP
 
-#include "Test_Blas_gesv.hpp"
-#include "Test_Blas_trtri.hpp"
-
 // Blas 1
 #include "Test_Blas1_abs.hpp"
 #include "Test_Blas1_asum.hpp"
@@ -61,6 +58,8 @@
 
 // Blas 2
 #include "Test_Blas2_gemv.hpp"
+#include "Test_Blas2_ger.hpp"
+#include "Test_Blas2_syr.hpp"
 
 // Serial Blas 2
 #include "Test_Blas2_serial_gemv.hpp"
@@ -73,9 +72,6 @@
 #include "Test_Blas3_gemm.hpp"
 #include "Test_Blas3_trmm.hpp"
 #include "Test_Blas3_trsm.hpp"
-
-// Stuff that should move later on
-#include "Test_Blas_Newton.hpp"
 
 // TPLs
 #include "Test_Blas_rocblas.hpp"

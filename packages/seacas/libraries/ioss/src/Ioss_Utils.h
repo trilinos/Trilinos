@@ -17,9 +17,13 @@
 #include <algorithm> // for sort, lower_bound, copy, etc
 #include <cassert>
 #include <cmath>
-#include <cstddef>   // for size_t
-#include <cstdint>   // for int64_t
-#include <cstdlib>   // for nullptrr
+#include <cstddef> // for size_t
+#include <cstdint> // for int64_t
+#include <cstdlib> // for nullptrr
+#if __has_include(<filesystem>)
+#include <filesystem>
+#define HAS_FILESYSTEM
+#endif
 #include <iostream>  // for ostringstream, etcstream, etc
 #include <stdexcept> // for runtime_error
 #include <string>    // for string
@@ -33,7 +37,10 @@ namespace Ioss {
   class PropertyManager;
 } // namespace Ioss
 
-#define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
+[[noreturn]] inline void IOSS_ERROR(const std::ostringstream &errmsg)
+{
+  throw std::runtime_error((errmsg).str());
+}
 
 #ifdef NDEBUG
 #define IOSS_ASSERT_USED(x) (void)x
@@ -110,11 +117,19 @@ namespace Ioss {
 
     static bool is_path_absolute(const std::string &path)
     {
-#ifdef __IOSS_WINDOWS__
-      return path[0] == '\\' || path[1] == ':';
+      if (!path.empty()) {
+#ifdef HAS_FILESYSTEM
+        std::filesystem::path p1 = path;
+        return p1.is_absolute();
 #else
-      return path[0] == '/';
+#ifdef __IOSS_WINDOWS__
+        return path[0] == '\\' && path[1] == ':';
+#else
+        return path[0] == '/';
 #endif
+#endif
+      }
+      return false;
     }
 
     /** \brief guess file type from extension */
@@ -524,8 +539,9 @@ namespace Ioss {
     // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
     template <typename T> static size_t unique(std::vector<T> &out, bool skip_first)
     {
-      if (out.empty())
+      if (out.empty()) {
         return 0;
+      }
       size_t i    = 1;
       size_t pos  = 1;
       T      oldv = out[0];

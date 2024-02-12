@@ -69,108 +69,106 @@
 
 namespace MueLu {
 
-  /*!
-    @class PermutingSmoother
-    @ingroup MueLuSmootherClasses
-    @brief This class first calculates row- and column permutation operators and applies a smoother to the permuted linear system.
+/*!
+  @class PermutingSmoother
+  @ingroup MueLuSmootherClasses
+  @brief This class first calculates row- and column permutation operators and applies a smoother to the permuted linear system.
 
-  */
+*/
 
-  template <class Scalar = SmootherPrototype<>::scalar_type,
-            class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class PermutingSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-  {
+template <class Scalar        = SmootherPrototype<>::scalar_type,
+          class LocalOrdinal  = typename SmootherPrototype<Scalar>::local_ordinal_type,
+          class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node          = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class PermutingSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_PERMUTINGSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors / destructors
+  //@{
 
-    //! @name Constructors / destructors
-    //@{
+  //! @brief Constructor
+  //!    @param[in] mapName   Name of map object in level class, which rows/cols can be permuted
+  //!    @param[in] mapFact   generating factory of map with name mapName
+  //!    @param[in] type      string that contains type of smoother (e.g. "RELAXATION" or "ILU")
+  //!    @param[in] paramList parameter list with parameters for smoother (default: empty)
+  //!    @param[in] overlap   LocalOrdinal with overlap inforation (default: 0)
+  //!    @param[in] permFact  factory, generating permutation and scaling matrices (default: Teuchos::null -> use internal PermutationFactory instance)
+  PermutingSmoother(std::string const& mapName, const RCP<const FactoryBase>& mapFact, std::string const& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), LO const& overlap = 0, RCP<FactoryBase> permFact = Teuchos::null);
 
-    //! @brief Constructor
-    //!    @param[in] mapName   Name of map object in level class, which rows/cols can be permuted
-    //!    @param[in] mapFact   generating factory of map with name mapName
-    //!    @param[in] type      string that contains type of smoother (e.g. "RELAXATION" or "ILU")
-    //!    @param[in] paramList parameter list with parameters for smoother (default: empty)
-    //!    @param[in] overlap   LocalOrdinal with overlap inforation (default: 0)
-    //!    @param[in] permFact  factory, generating permutation and scaling matrices (default: Teuchos::null -> use internal PermutationFactory instance)
-    PermutingSmoother(std::string const & mapName, const RCP<const FactoryBase> & mapFact, std::string const & type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), LO const & overlap = 0, RCP<FactoryBase> permFact = Teuchos::null);
+  //! Destructor
+  virtual ~PermutingSmoother();
+  //@}
 
-    //! Destructor
-    virtual ~PermutingSmoother();
-    //@}
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& currentLevel) const;
 
-    void DeclareInput(Level &currentLevel) const;
+  //@}
 
-    //@}
+  //! @name Setup and Apply methods.
+  //@{
 
-    //! @name Setup and Apply methods.
-    //@{
+  //! @brief Set up the direct solver.
+  void Setup(Level& currentLevel);
 
-    //! @brief Set up the direct solver.
-    void Setup(Level &currentLevel);
+  /*! @brief Apply the direct solver.
+  Solves the linear system <tt>AX=B</tt> using the constructed solver.
+  @param X initial guess
+  @param B right-hand side
+  @param InitialGuessIsZero This option has no effect.
+  */
+  void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
+  //@}
 
-    /*! @brief Apply the direct solver.
-    Solves the linear system <tt>AX=B</tt> using the constructed solver.
-    @param X initial guess
-    @param B right-hand side
-    @param InitialGuessIsZero This option has no effect.
-    */
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
-    //@}
+  RCP<SmootherPrototype> Copy() const;
 
-    RCP<SmootherPrototype> Copy() const;
+  //! @name Overridden from Teuchos::Describable
+  //@{
 
-    //! @name Overridden from Teuchos::Describable
-    //@{
+  //! Return a simple one-line description of this object.
+  std::string description() const;
 
-    //! Return a simple one-line description of this object.
-    std::string description() const;
+  //! Print the object with some verbosity level to an FancyOStream object.
+  // using MueLu::Describable::describe; // overloading, not hiding
+  void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const { return s_->getNodeSmootherComplexity(); }
 
-    //! Get a rough estimate of cost per iteration
-    size_t getNodeSmootherComplexity() const {return s_->getNodeSmootherComplexity();}
+  //@}
 
-    //@}
+ private:
+  //! ifpack1/2-specific key phrase that denote smoother type
+  std::string type_;
 
-  private:
-    //! ifpack1/2-specific key phrase that denote smoother type
-    std::string type_;
+  //! overlap when using the smoother in additive Schwarz mode
+  LO overlap_;
 
-    //! overlap when using the smoother in additive Schwarz mode
-    LO overlap_;
+  //! Permutation Factory
+  RCP<FactoryBase> permFact_;
 
-    //! Permutation Factory
-    RCP<FactoryBase> permFact_;
+  //! permQT matrix object
+  RCP<Matrix> permQT_;
 
-    //! permQT matrix object
-    RCP<Matrix> permQT_;
+  //! permP matrix object
+  RCP<Matrix> permP_;
 
-    //! permP matrix object
-    RCP<Matrix> permP_;
+  //! scaling matrix object
+  Teuchos::RCP<Matrix> diagScalingOp_;
 
-    //! scaling matrix object
-    Teuchos::RCP<Matrix> diagScalingOp_;
+  //
+  // Underlying Smoother
+  //
 
-    //
-    // Underlying Smoother
-    //
+  //! Smoother
+  RCP<SmootherPrototype> s_;  // TrilinosSmoother object
 
-    //! Smoother
-    RCP<SmootherPrototype> s_; // TrilinosSmoother object
+};  // class PermutingSmoother
 
-  }; // class PermutingSmoother
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_PERMUTINGSMOOTHER_SHORT
 #endif /* MUELU_PERMUTINGSMOOTHER_DECL_HPP */

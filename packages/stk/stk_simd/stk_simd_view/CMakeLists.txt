@@ -32,37 +32,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-#
-# A) Package-specific configuration options
-#
-
-#TRIBITS_CONFIGURE_FILE(STK_config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
-#
-# Core headers
-#
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-
 FILE(GLOB HEADERS *.hpp)
-
-#
-# C) Define the targets for package's library(s)
-#
 
 INSTALL(FILES ${HEADERS} DESTINATION
 ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_simd_view)

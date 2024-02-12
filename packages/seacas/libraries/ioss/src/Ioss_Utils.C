@@ -98,7 +98,7 @@ namespace {
 
       // determine if current character is a separator
       bool is_sep = is_separator(separator, curr_char);
-      if (is_sep && curr_token != "") {
+      if (is_sep && !curr_token.empty()) {
         // we just completed a token
         tokens.push_back(curr_token);
         curr_token.clear();
@@ -111,7 +111,7 @@ namespace {
         curr_token += curr_char;
       }
     }
-    if (curr_token != "") {
+    if (!curr_token.empty()) {
       tokens.push_back(curr_token);
     }
   }
@@ -262,7 +262,7 @@ std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int6
 
 char **Ioss::Utils::get_name_array(size_t count, int size)
 {
-  auto names = new char *[count];
+  auto *names = new char *[count];
   for (size_t i = 0; i < count; i++) {
     names[i] = new char[size + 1];
     std::memset(names[i], '\0', size + 1);
@@ -561,7 +561,7 @@ namespace {
           std::vector<std::string> subtokens;
           field_tokenize(tst_name, suffix_separator, subtokens);
           if ((truth_table == nullptr || truth_table[id] == 1) && // Defined on this entity
-              std::strncmp(name, tst_name, bn_len) == 0 &&       // base portion must match
+              std::strncmp(name, tst_name, bn_len) == 0 &&        // base portion must match
               (!same_length || (strlen(tst_name) == name_length)) &&
               subtokens.size() == num_tokens) {
             which_names.push_back(id);
@@ -838,7 +838,7 @@ std::string Ioss::Utils::platform_information()
       fmt::format("Node: {0}, OS: {1} {2}, {3}, Machine: {4}", sys_info.nodename, sys_info.sysname,
                   sys_info.release, sys_info.version, sys_info.machine);
 #else
-  std::string                 info = "Node: Unknown, OS: Unknown, Machine: Unknown";
+  std::string info = "Node: Unknown, OS: Unknown, Machine: Unknown";
 #endif
   return info;
 }
@@ -1219,7 +1219,7 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
   // scope names unique...
   std::string s = std::string(name).substr(len - maxlen, len);
   assert(s.length() <= maxlen);
-  new_str = s;
+  new_str = std::move(s);
 
   // NOTE: The hash is not added if the name is not shortened.
   std::string hash_string = two_letter_hash(name.c_str());
@@ -1329,13 +1329,11 @@ std::string Ioss::Utils::get_type_from_file(const std::string &filename)
   if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
     return "exodus";
   }
-  else if (extension == "cgns") {
+  if (extension == "cgns") {
     return "cgns";
   }
-  else {
-    // "exodus" is default...
-    return "exodus";
-  }
+  // "exodus" is default...
+  return "exodus";
 }
 
 void Ioss::Utils::info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
@@ -1460,5 +1458,4 @@ void Ioss::Utils::copyright(std::ostream &out, const std::string &year_range)
              "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
              "\n",
              year_range);
-  return;
 }

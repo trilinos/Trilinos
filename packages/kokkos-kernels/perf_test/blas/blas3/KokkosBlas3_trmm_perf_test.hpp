@@ -27,6 +27,8 @@
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
 
+#include <chrono>
+
 //#define PERF_TEST_DEBUG
 
 // Forward declarations
@@ -611,7 +613,8 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
   using execution_space = typename device_type::execution_space;
 
   trmm_args_t trmm_args;
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
   typename vta::HostMirror host_A;

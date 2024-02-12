@@ -122,6 +122,16 @@ void setInitialValue(unsigned char* data_location, const FieldBase& field, const
   }
 }
 
+FieldDataManager::FieldDataManager(unsigned alignmentIncrementBytes,
+                                   std::unique_ptr<AllocatorAdaptorInterface> allocatorAdaptor)
+  : m_fieldDataAllocator(std::move(allocatorAdaptor)),
+    alignment_increment_bytes(alignmentIncrementBytes)
+{
+  if (not m_fieldDataAllocator) {
+    m_fieldDataAllocator = std::make_unique<AllocatorAdaptor<stk::impl::FieldDataAllocator<unsigned char>>>();
+  }
+}
+
 void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
                                                          const std::vector<FieldBase *> & fields,
                                                          const PartVector& superset_parts,
@@ -170,7 +180,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
 
   // Allocate all field data for this bucket
   if (total_field_data_size > 0) {
-    unsigned char* all_data = (*field_data_allocator).allocate(total_field_data_size);
+    unsigned char* all_data = m_fieldDataAllocator->allocate(total_field_data_size);
     m_field_raw_data[rank].push_back(all_data);
 
     // Set data ptrs in field meta datas
@@ -341,13 +351,13 @@ void DefaultFieldDataManager::reallocate_bucket_field_data(const EntityRank rank
     const BucketFieldSegment & lastFieldSegment = newOffsetForField[newOffsetForField.size()-2];
     m_num_bytes_allocated_per_field.back() += lastFieldSegment.size;
 
-    unsigned char* newAllocationAllFields = (*field_data_allocator).allocate(newBucketAllocationSize);
+    unsigned char* newAllocationAllFields = m_fieldDataAllocator->allocate(newBucketAllocationSize);
     const unsigned char* oldAllocationAllFields = m_field_raw_data[rank][bucketId];
 
     copy_field_data_from_old_to_new_bucket(rank, bucketSize, bucketId, allFields, oldOffsetForField, newOffsetForField,
                                            oldAllocationAllFields, newAllocationAllFields);
 
-    (*field_data_allocator).deallocate(m_field_raw_data[rank][bucketId], oldBucketAllocationSize);
+    m_fieldDataAllocator->deallocate(m_field_raw_data[rank][bucketId], oldBucketAllocationSize);
     m_field_raw_data[rank][bucketId] = newAllocationAllFields;
     m_bucketCapacity[rank][bucketId] = bucketCapacity;
 
@@ -383,7 +393,7 @@ void DefaultFieldDataManager::deallocate_bucket_field_data(const EntityRank rank
                 field_data.m_data = nullptr;
             }
         }
-        (*field_data_allocator).deallocate(m_field_raw_data[rank][bucket_id], bytes_to_delete);
+        m_fieldDataAllocator->deallocate(m_field_raw_data[rank][bucket_id], bytes_to_delete);
         m_field_raw_data[rank][bucket_id] = nullptr;
         m_bucketCapacity[rank][bucket_id] = 0;
     }
@@ -490,13 +500,13 @@ void DefaultFieldDataManager::grow_bucket_capacity(const FieldVector & allFields
     }
   }
 
-  unsigned char* newAllocationAllFields = (*field_data_allocator).allocate(newBucketAllocationSize);
+  unsigned char* newAllocationAllFields = m_fieldDataAllocator->allocate(newBucketAllocationSize);
   const unsigned char* oldAllocationAllFields = m_field_raw_data[rank][bucketId];
 
   copy_field_data_from_old_to_new_bucket(rank, bucketSize, bucketId, allFields, oldOffsetForField, newOffsetForField,
                                          oldAllocationAllFields, newAllocationAllFields);
 
-  (*field_data_allocator).deallocate(m_field_raw_data[rank][bucketId], oldBucketAllocationSize);
+  m_fieldDataAllocator->deallocate(m_field_raw_data[rank][bucketId], oldBucketAllocationSize);
   m_field_raw_data[rank][bucketId] = newAllocationAllFields;
 
   update_field_pointers_to_new_bucket(rank, bucketId, allFields, bucketCapacity, newAllocationAllFields);
@@ -533,7 +543,7 @@ ContiguousFieldDataManager::~ContiguousFieldDataManager()
 {
     for (size_t i=0;i<m_field_raw_data.size();i++)
     {
-        (*field_data_allocator).deallocate(m_field_raw_data[i], m_num_bytes_allocated_per_field[i]);
+        m_fieldDataAllocator->deallocate(m_field_raw_data[i], m_num_bytes_allocated_per_field[i]);
         m_field_raw_data[i] = nullptr;
         m_num_bytes_allocated_per_field[i] = 0;
         m_num_bytes_used_per_field[i] = 0;
@@ -649,7 +659,7 @@ void ContiguousFieldDataManager::reorder_bucket_field_data(EntityRank rank, cons
             FieldMetaDataVector &oldMetaData = const_cast<FieldMetaDataVector &>(fields[field_index]->get_meta_data_for_field());
             unsigned field_ordinal = fields[field_index]->mesh_meta_data_ordinal();
             const size_t newFieldSize = m_num_bytes_used_per_field[field_ordinal] + m_extra_capacity;
-            unsigned char* new_field_data = (*field_data_allocator).allocate(newFieldSize);
+            unsigned char* new_field_data = m_fieldDataAllocator->allocate(newFieldSize);
 
             FieldMetaData fieldMeta;
             FieldMetaDataVector newMetaData(reorderedBucketIds.size(), fieldMeta);
@@ -677,7 +687,7 @@ void ContiguousFieldDataManager::reorder_bucket_field_data(EntityRank rank, cons
                 }
             }
 
-            (*field_data_allocator).deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
+            m_fieldDataAllocator->deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
             STK_ThrowRequire(new_offset == m_num_bytes_used_per_field[field_ordinal]);
             m_num_bytes_allocated_per_field[field_ordinal] = newFieldSize;
             m_field_raw_data[field_ordinal] = new_field_data;
@@ -763,7 +773,7 @@ void ContiguousFieldDataManager::allocate_field_data(EntityRank rank,
       }
 
       m_num_bytes_allocated_per_field[field_ordinal] += m_num_bytes_used_per_field[field_ordinal];
-      m_field_raw_data[field_ordinal] = (*field_data_allocator).allocate(m_num_bytes_allocated_per_field[field_ordinal]);
+      m_field_raw_data[field_ordinal] = m_fieldDataAllocator->allocate(m_num_bytes_allocated_per_field[field_ordinal]);
 
       size_t offset = 0;
       for(size_t i = 0; i < buckets.size(); ++i)
@@ -886,12 +896,12 @@ void ContiguousFieldDataManager::reallocate_field_data(EntityRank rank, const st
         const size_t newFieldBucketAllocationSize = newOffsetForBucket.back() + m_extra_capacity;
 
         if (newFieldBucketAllocationSize > oldFieldBucketAllocationSize) {
-            unsigned char* newAllocationAllBuckets = (*field_data_allocator).allocate(newFieldBucketAllocationSize);
+            unsigned char* newAllocationAllBuckets = m_fieldDataAllocator->allocate(newFieldBucketAllocationSize);
             const unsigned char* oldAllocationAllBuckets = m_field_raw_data[fieldOrdinal];
 
             copy_bucket_data_from_old_to_new_field(oldOffsetForBucket, newOffsetForBucket, oldAllocationAllBuckets, newAllocationAllBuckets);
 
-            (*field_data_allocator).deallocate(m_field_raw_data[fieldOrdinal], oldFieldBucketAllocationSize);
+            m_fieldDataAllocator->deallocate(m_field_raw_data[fieldOrdinal], oldFieldBucketAllocationSize);
             m_field_raw_data[fieldOrdinal] = newAllocationAllBuckets;
             m_num_bytes_allocated_per_field[fieldOrdinal] = newFieldBucketAllocationSize;
 
@@ -946,7 +956,7 @@ void ContiguousFieldDataManager::add_field_data_for_entity(const std::vector<Fie
 
                 if (requiresNewAllocation)
                 {
-                    new_field_data = (*field_data_allocator).allocate(newFieldSize);
+                    new_field_data = m_fieldDataAllocator->allocate(newFieldSize);
                     resetFieldMetaDataPointers(0, dst_bucket_id, field_meta_data_vector, m_field_raw_data[field_ordinal], new_field_data);
                 }
 
@@ -973,7 +983,7 @@ void ContiguousFieldDataManager::add_field_data_for_entity(const std::vector<Fie
                     std::memcpy(new_field_data, m_field_raw_data[field_ordinal], leftHalfSize);
                     std::memcpy(new_field_data + sizeOfBucketsToTheLeft + newBucketAllocation,
                                 m_field_raw_data[field_ordinal] + sizeOfBucketsToTheLeft + currentBucketAllocation, rightHalfSize);
-                    (*field_data_allocator).deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
+                    m_fieldDataAllocator->deallocate(m_field_raw_data[field_ordinal], m_num_bytes_allocated_per_field[field_ordinal]);
                     m_num_bytes_allocated_per_field[field_ordinal] = newFieldSize;
                 }
                 else

@@ -30,12 +30,13 @@
 #ifndef SACADO_MPL_FIND_HPP
 #define SACADO_MPL_FIND_HPP
 
+#include <type_traits>
+
 #include "Sacado_mpl_none.hpp"
 #include "Sacado_mpl_begin.hpp"
 #include "Sacado_mpl_end.hpp"
 #include "Sacado_mpl_deref.hpp"
 #include "Sacado_mpl_next.hpp"
-#include "Sacado_mpl_is_same.hpp"
 #include "Sacado_mpl_if.hpp"
 
 namespace Sacado {
@@ -51,7 +52,7 @@ namespace Sacado {
               class Iter2 = typename mpl::end<Seq>::type>
     struct find {
       typedef typename
-        mpl::mpl_if< mpl::is_same<typename mpl::deref<Iter1>::type, T>,
+        mpl::mpl_if< std::is_same<typename mpl::deref<Iter1>::type, T>,
                      Iter1,
                      find<Seq, T, typename mpl::next<Iter1>::type,
                           Iter2> >::type type;

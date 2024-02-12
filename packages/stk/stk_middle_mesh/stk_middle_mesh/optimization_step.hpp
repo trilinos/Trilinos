@@ -5,6 +5,9 @@
 #include "patch_energy_objective.hpp"
 #include "patch_objective.hpp"
 
+#include "mesh_io.hpp"
+#include "utils.hpp"
+
 namespace stk {
 namespace middle_mesh {
 namespace opt {
@@ -30,6 +33,7 @@ class OptimizationStep
         if (*vert)
         {
           ActiveVertData* activePtr = *vert;
+
           auto deltaX               = improve_quality_single(*activePtr);
           maxDeltaX                 = std::max(maxDeltaX, deltaX);
 

@@ -44,13 +44,16 @@
 #include "apr_util.h"
 #include "aprepro.h"
 
+#if defined FMT_SUPPORT
+#include <fmt/format.h>
+#endif
 #include <cerrno>
 #include <cfenv>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <stdlib.h>
 
 namespace {
   void reset_error()
@@ -176,7 +179,7 @@ namespace SEAMS {
   {
   }
 
-  Parser::~Parser() {}
+  Parser::~Parser() = default;
 
   Parser::syntax_error::~syntax_error() YY_NOEXCEPT YY_NOTHROW {}
 
@@ -529,10 +532,22 @@ namespace SEAMS {
 #line 130 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (echo) {
-              static char    tmpstr[512];
               SEAMS::symrec *format = aprepro.getsym("_FORMAT");
-              int len = snprintf(tmpstr, 512, format->value.svar.c_str(), (yystack_[1].value.val));
-              aprepro.lexer->LexerOutput(tmpstr, len);
+              if (format->value.svar.empty()) {
+#if defined FMT_SUPPORT
+                auto tmpstr = fmt::format("{}", (yystack_[1].value.val));
+                aprepro.lexer->LexerOutput(tmpstr.c_str(), tmpstr.size());
+#else
+                yyerror(aprepro, "Empty _FORMAT string -- no output will be printed. Optional "
+                                 "Lib::FMT dependency is not enabled.");
+#endif
+              }
+              else {
+                static char tmpstr[512];
+                int         len =
+                    snprintf(tmpstr, 512, format->value.svar.c_str(), (yystack_[1].value.val));
+                aprepro.lexer->LexerOutput(tmpstr, len);
+              }
             }
           }
 #line 644 "apr_parser.cc"

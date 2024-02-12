@@ -29,6 +29,13 @@ KOKKOSKERNELS_ADD_OPTION(
         "Whether to build the blas component. Default: OFF"
 )
 
+KOKKOSKERNELS_ADD_OPTION(
+       "ENABLE_COMPONENT_LAPACK"
+        OFF
+        BOOL
+        "Whether to build the lapack component. Default: OFF"
+)
+
 # SPARSE depends on everything else at the moment.
 KOKKOSKERNELS_ADD_OPTION(
        "ENABLE_COMPONENT_SPARSE"
@@ -43,6 +50,12 @@ KOKKOSKERNELS_ADD_OPTION(
         OFF
         BOOL
         "Whether to build the graph component. Default: OFF"
+)
+KOKKOSKERNELS_ADD_OPTION(
+       "ENABLE_COMPONENT_ODE"
+        OFF
+        BOOL
+        "Whether to build the ode component. Default: OFF"
 )
 
 
@@ -61,6 +74,7 @@ ENDIF()
 IF (KokkosKernels_ENABLE_COMPONENT_SPARSE)
   SET(KokkosKernels_ENABLE_COMPONENT_BATCHED ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_BLAS ON CACHE BOOL "" FORCE)
+  SET(KokkosKernels_ENABLE_COMPONENT_LAPACK ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_GRAPH ON CACHE BOOL "" FORCE)
 ENDIF()
 
@@ -68,8 +82,10 @@ ENDIF()
 IF (KokkosKernels_ENABLE_ALL_COMPONENTS)
   SET(KokkosKernels_ENABLE_COMPONENT_BATCHED ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_BLAS ON CACHE BOOL "" FORCE)
+  SET(KokkosKernels_ENABLE_COMPONENT_LAPACK ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_SPARSE ON CACHE BOOL "" FORCE)
   SET(KokkosKernels_ENABLE_COMPONENT_GRAPH ON CACHE BOOL "" FORCE)
+  SET(KokkosKernels_ENABLE_COMPONENT_ODE ON CACHE BOOL "" FORCE)
 ENDIF()
 
 # KOKKOSKERNELS_ALL_COMPONENTS_ENABLED says whether all components are on,
@@ -78,8 +94,10 @@ ENDIF()
 # but marking it as advanced should hide it from GUIs
 IF (    KokkosKernels_ENABLE_COMPONENT_BATCHED 
     AND KokkosKernels_ENABLE_COMPONENT_BLAS
+    AND KokkosKernels_ENABLE_COMPONENT_LAPACK
     AND KokkosKernels_ENABLE_COMPONENT_GRAPH 
-    AND KokkosKernels_ENABLE_COMPONENT_SPARSE)
+    AND KokkosKernels_ENABLE_COMPONENT_SPARSE
+    AND KokkosKernels_ENABLE_COMPONENT_ODE)
   SET(KOKKOSKERNELS_ALL_COMPONENTS_ENABLED ON CACHE BOOL "" FORCE)
 ELSE()
   SET(KOKKOSKERNELS_ALL_COMPONENTS_ENABLED OFF CACHE BOOL "" FORCE)

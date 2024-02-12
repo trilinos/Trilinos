@@ -39,6 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include <type_traits>
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
@@ -62,7 +64,7 @@ typedef Kokkos::Serial node_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ScalarType, ad_type, scalar_type )
 {
   const bool is_same =
-    Sacado::mpl::is_same< typename Sacado::ScalarType<ad_type>::type, scalar_type >::value;
+    std::is_same< typename Sacado::ScalarType<ad_type>::type, scalar_type >::value;
 
   TEUCHOS_TEST_EQUALITY(is_same, true, out, success);
 }
@@ -70,7 +72,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ScalarType, ad_type, scalar_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ValueType, ad_type, value_type )
 {
   const bool is_same =
-    Sacado::mpl::is_same< typename Sacado::ValueType<ad_type>::type, value_type >::value;
+    std::is_same< typename Sacado::ValueType<ad_type>::type, value_type >::value;
   TEUCHOS_TEST_EQUALITY(is_same, true, out, success);
 }
 

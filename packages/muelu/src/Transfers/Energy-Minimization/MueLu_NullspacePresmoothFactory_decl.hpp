@@ -52,54 +52,52 @@
 
 namespace MueLu {
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class NullspacePresmoothFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class NullspacePresmoothFactory : public SingleLevelFactoryBase {
 #undef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! Constructor
+  NullspacePresmoothFactory() {}
 
-    //! Constructor
-    NullspacePresmoothFactory() { }
+  //! Destructor
+  virtual ~NullspacePresmoothFactory() {}
 
-    //! Destructor
-    virtual ~NullspacePresmoothFactory() { }
+  //@}
 
-    //@}
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! @name Input
+  //@{
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-    //! @name Input
-    //@{
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
+  void DeclareInput(Level &currentLevel) const;
 
-    void DeclareInput(Level &currentLevel) const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  //! Build an object with this factory.
+  void Build(Level &currentLevel) const;
 
-    //! Build an object with this factory.
-    void Build(Level &currentLevel) const;
+  //@}
 
-    //@}
+ private:
+};  // class NullspacePresmoothFactory
 
-  private:
-
-  }; //class NullspacePresmoothFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
-#endif // MUELU_NULLSPACEPRESMOOTHFACTORY_DECL_HPP
+#endif  // MUELU_NULLSPACEPRESMOOTHFACTORY_DECL_HPP

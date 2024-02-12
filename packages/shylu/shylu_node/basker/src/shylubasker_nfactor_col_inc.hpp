@@ -715,7 +715,7 @@ namespace BaskerNS
 	    printf("--------------ERROR---------");
 	    printf("kid: %d k: %d i: %d ws[i]=%d L.scol: %d \n",
 		   kid, k, i, ws[i], L.scol);
-	    ASSERT(ws[i] == 0);
+	    BASKER_ASSERT(ws[i] == 0);
 	  }
       }
     #endif
@@ -1970,14 +1970,14 @@ namespace BaskerNS
     ucnt = 0;
     
    #ifdef BASKER_DEBUG_NFACTOR_COL
-   ASSERT(top == ws_size);
+   BASKER_ASSERT(top == ws_size);
    for(i = 0 ; i < ws_size; i++){
      if(X[i] !=0)
        {
 	 printf("--Error, kid: %d X[%d] = %f \n", kid, i,X[i]); 
        }
-     ASSERT(X[i] == 0);}
-   for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
+     BASKER_ASSERT(X[i] == 0);}
+   for(i = 0; i <  ws_size; i++){BASKER_ASSERT(ws[i] == 0 );}
    #endif
 
 

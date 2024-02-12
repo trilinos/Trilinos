@@ -56,18 +56,16 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergedBlockedMatrixFactory()
-{ }
+MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergedBlockedMatrixFactory() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set< RCP<const FactoryBase> >("A", MueLu::NoFactory::getRCP()/*Teuchos::null*/, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator, default = MueLu::NoFactory::getRCP())");
+  validParamList->set<RCP<const FactoryBase> >("A", MueLu::NoFactory::getRCP() /*Teuchos::null*/, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator, default = MueLu::NoFactory::getRCP())");
 
   return validParamList;
 }
-
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
@@ -75,9 +73,8 @@ void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Decl
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const
-{
-  FactoryMonitor  m(*this, "MergedBlockedMatrix", currentLevel);
+void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
+  FactoryMonitor m(*this, "MergedBlockedMatrix", currentLevel);
   Teuchos::RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");
 
   RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
@@ -93,6 +90,6 @@ void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
   }
 }
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #endif /* MUELU_MERGEDBLOCKEDMATRIXFACTORY_DEF_HPP_ */

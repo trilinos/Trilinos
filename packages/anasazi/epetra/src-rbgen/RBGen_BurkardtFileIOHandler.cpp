@@ -54,13 +54,14 @@
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#include "AnasaziGlobalComm.hpp"
 #else
 #include "Epetra_SerialComm.h"
 #endif
 
 
 namespace RBGen {
-  
+
   BurkardtFileIOHandler::BurkardtFileIOHandler()
     : num_nodes(0), isInit(false)
   {
@@ -70,27 +71,27 @@ namespace RBGen {
   {
 
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( MPI_COMM_WORLD );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
 #endif
 
     // Get the "File I/O" sublist.
     Teuchos::ParameterList& fileio_params = params->sublist( "File IO" );
-    
-    if( fileio_params.isParameter("Burkardt Data Format File") ) 
-      {      
+
+    if( fileio_params.isParameter("Burkardt Data Format File") )
+      {
         std::string format_file = Teuchos::getParameter<std::string>( fileio_params, "Burkardt Data Format File" );
         //
         // The first processor get the number of nodes from the data format file and then broadcasts it.
         //
-        if ( comm.MyPID() == 0 ) 
+        if ( comm.MyPID() == 0 )
           num_nodes = data_size( format_file );
         comm.Broadcast( &num_nodes, 1, 0 );
         // if (!num_nodes) { TO DO:  THROW EXCEPTION! }
         isInit = true;
-      } 
-    else 
+      }
+    else
     {
       // Can't find the data size or data format file
       isInit = false;
@@ -99,7 +100,7 @@ namespace RBGen {
 
     // Get the input path.
     in_path = "";
-    if ( fileio_params.isParameter( "Data Input Path" ) ) {       
+    if ( fileio_params.isParameter( "Data Input Path" ) ) {
       in_path = Teuchos::getParameter<std::string>( fileio_params, "Data Input Path" );
     }
 
@@ -112,7 +113,7 @@ namespace RBGen {
     // This file i/o handler is not initialized.
     isInit = true;
   }
-  
+
   Teuchos::RCP<Epetra_MultiVector> BurkardtFileIOHandler::Read( const std::vector<std::string>& filenames )
   {
 
@@ -121,7 +122,7 @@ namespace RBGen {
     if (isInit) {
 
 #ifdef EPETRA_MPI
-      Epetra_MpiComm comm( MPI_COMM_WORLD );
+      Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
       Epetra_SerialComm comm;
 #endif
@@ -195,17 +196,17 @@ namespace RBGen {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!");
-    }      
+    }
     // Return.
     return newMV;
   }
-  
+
   void BurkardtFileIOHandler::Write( const Teuchos::RCP<const Epetra_MultiVector>& MV, const std::string& filename )
   {
     if (isInit) {
 
 #ifdef EPETRA_MPI
-      Epetra_MpiComm comm( MPI_COMM_WORLD );
+      Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
       Epetra_SerialComm comm;
 #endif
@@ -262,7 +263,7 @@ namespace RBGen {
           for (int j=curr_places; j<num_places; j++) {
             out_file += "0";
           }
- 
+
           // Add the file number.
           out_file += Teuchos::Utils::toString( i );
 
@@ -281,11 +282,11 @@ namespace RBGen {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!");
-    }      
+    }
   }
 
   /* -----------------------------------------------------------------------------
-     GET NUMBER OF NODES IN THE DATA FROM A FORMAT FILE 
+     GET NUMBER OF NODES IN THE DATA FROM A FORMAT FILE
      ----------------------------------------------------------------------------- */
   int BurkardtFileIOHandler::data_size( const std::string filename )
   {
@@ -299,11 +300,11 @@ namespace RBGen {
     }
     //
     // Count how many lines are in the file.
-    // 
+    //
     while( fgets( temp_str, 100, in_file ) != NULL ) { i++; }
 
     fclose(in_file);
-    return( i );  
+    return( i );
   }
 
   /* -----------------------------------------------------------------------------
@@ -333,7 +334,7 @@ namespace RBGen {
         fscanf(in_file, "%lf", x+i);
     }
     fclose(in_file);
-    return( 0 );  
+    return( 0 );
     /* end read_vec */
   }
 
@@ -365,7 +366,7 @@ namespace RBGen {
     }
 
     fclose(out_file);
-    return( 0 );  
+    return( 0 );
     /* end write_vec */
   }
 

@@ -19,6 +19,8 @@
 #include "KokkosKernels_config.h"  // KOKKOSKERNELS_INST_LAYOUTLEFT, KOKKOSKERNELS_INST_LAYOUTRIGHT
 #include "KokkosKernels_default_types.hpp"  // default_layout
 
+#include <type_traits>
+
 namespace KokkosKernels {
 namespace Impl {
 
@@ -66,6 +68,13 @@ struct GetUnifiedScalarViewType<T, TX, true, true> {
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       type;
 };
+
+template <class... Ts>
+struct are_integral : std::bool_constant<((std::is_integral_v<Ts> ||
+                                           std::is_enum_v<Ts>)&&...)> {};
+
+template <class... Ts>
+inline constexpr bool are_integral_v = are_integral<Ts...>::value;
 
 }  // namespace Impl
 }  // namespace KokkosKernels

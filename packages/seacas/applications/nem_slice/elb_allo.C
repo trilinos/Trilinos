@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,7 +13,9 @@
 #include <cstdlib> // for exit, malloc
 #include <fmt/ostream.h>
 
-static void *smalloc(size_t n);
+namespace {
+  void *smalloc(size_t n);
+}
 
 /******************************************************************************
  *
@@ -121,27 +123,25 @@ void *array_alloc(int numdim, ...)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-static void *smalloc(size_t n)
-{
-  void *pntr = nullptr; /* return value */
+namespace {
+  void *smalloc(size_t n)
+  {
+    void *pntr = nullptr; /* return value */
 
-  if (n == 0) {
-    pntr = nullptr;
-  }
-  else {
-    pntr = malloc(n);
-  }
+    if (n == 0) {
+      pntr = nullptr;
+    }
+    else {
+      pntr = malloc(n);
+    }
 
-  if (pntr == nullptr && n != 0) {
-    fmt::print(stderr,
-               "smalloc: Out of space - number of bytes "
-               "requested = {}\n",
-               fmt::group_digits(n));
-    exit(0);
+    if (pntr == nullptr && n != 0) {
+      fmt::print(stderr,
+                 "smalloc: Out of space - number of bytes "
+                 "requested = {}\n",
+                 fmt::group_digits(n));
+      exit(0);
+    }
+    return (pntr);
   }
-  return (pntr);
-}
-
-/*****************************************************************************/
-/*                       END of elb_allo.c                                   */
-/*****************************************************************************/
+} // namespace

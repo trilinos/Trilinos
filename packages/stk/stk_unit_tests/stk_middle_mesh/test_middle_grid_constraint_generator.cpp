@@ -1,4 +1,3 @@
-#include "stk_middle_mesh/mesh_io.hpp"
 #include "stk_middle_mesh/mesh_projection_calculator.hpp"
 #include "stk_middle_mesh/middle_grid_constraint_generator.hpp"
 #include "gtest/gtest.h"
@@ -37,7 +36,7 @@ class MiddleGridConstraintGeneratorTester : public ::testing::Test
           mMesh2, PointClassifierNormalWrapperTolerances(eps));
       mRelationalData = std::make_shared<nonconformal4::impl::MeshRelationalData>(mMesh1, mMesh2, mMeshIn);
       mProjector      = std::make_shared<nonconformal4::impl::MeshProjectionCalculator>(
-          mMesh1, mMesh2, mMeshIn, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
+          mMesh1, mMesh2, mRelationalData, mClassifier, middle_mesh::impl::EdgeTracerTolerances(eps));
       mConstraintGenerator = std::make_shared<nonconformal4::impl::MiddleGridConstraintGenerator>(
           mMesh1, mMesh2, mMeshIn, mRelationalData, mClassifier);
       mProjector->project();
@@ -106,6 +105,28 @@ TEST_F(MiddleGridConstraintGeneratorTester, El1ContainedInEl2)
   check_entity_counts(mMeshIn, 8, 12, 0);
 }
 
+TEST_F(MiddleGridConstraintGeneratorTester, El1ContainedInEl2Tri)
+{
+  // No intersections.  Element 1 is completely inside element 2
+  std::vector<utils::Point> mesh1Verts = {
+      utils::Point(0, 0),         utils::Point(1, 0),        utils::Point(0, 1),
+      utils::Point(-0.25, -0.5), utils::Point(2, -0.5), utils::Point(-0.25, 1.5)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, -1},
+                                              {3, 4, 0, -1}, {0, 4, 1, -1},
+                                              {1, 4, 2, -1}, {2, 4, 5, -1},
+                                              {3, 0, 5, -1}, {0, 2, 5, -1}
+                                              };
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {mesh1Verts[3], mesh1Verts[4], mesh1Verts[5]};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 2, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 6, 12, 0);
+}
+
 TEST_F(MiddleGridConstraintGeneratorTester, SingleEdgeOverlap)
 {
   // The top edge of el1 overlaps with the top edge of el2.  No other
@@ -126,6 +147,24 @@ TEST_F(MiddleGridConstraintGeneratorTester, SingleEdgeOverlap)
   check_entity_counts(mMeshIn, 8, 11, 0);
 }
 
+TEST_F(MiddleGridConstraintGeneratorTester, SingleEdgeOverlapTri)
+{
+  // The left edge of el1 overlaps with the top edge of el2.  No other
+  // edges itnersect
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),    utils::Point(1, 0), utils::Point(0, 1),    
+                                              utils::Point(0.25, 0.25)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 3, 2, -1}, {0, 1, 3, -1}, {3, 1, 2, -1}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts = {mesh1Verts[0], mesh1Verts[1], mesh1Verts[2]};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 2, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 4, 6, 0);
+}
+
 TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapBisection)
 {
   // One edge of mesh2 cuts el1 in half.
@@ -143,6 +182,22 @@ TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapBisection)
   run();
 
   check_entity_counts(mMeshIn, 12, 19, 0);
+}
+
+TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapBisectionTri)
+{
+  // One edge of mesh2 cuts el1 in half.
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0), utils::Point(1, 0), utils::Point(0, 1)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, -1}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0), utils::Point(1, 0), utils::Point(0, 1), utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 3, -1}, {0, 3, 2, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 4, 5, 0);
 }
 
 TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapSharedCorner)
@@ -185,6 +240,24 @@ TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapCutCorner)
   check_entity_counts(mMeshIn, 12, 22, 0);
 }
 
+TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapCutCornerTri)
+{
+  // An edge of the first element on mesh2 cuts off the top left corner of el1.
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),    utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.75, 0.75),  utils::Point(-0.25, 0.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, -1},  {1, 3, 2, -1},  {0, 2, 4, -1}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0),    utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.75, 0.75),  utils::Point(-0.25, 0.75)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 3, -1}, {0, 3, 4, -1}, {4, 3, 2, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 8, 15, 0);
+}
+
 TEST_F(MiddleGridConstraintGeneratorTester, ThreeEdgeOverlapCutCorners)
 {
   // edges of an element on mesh2 cut off the top left and top right corners
@@ -204,6 +277,25 @@ TEST_F(MiddleGridConstraintGeneratorTester, ThreeEdgeOverlapCutCorners)
   run();
 
   check_entity_counts(mMeshIn, 15, 25, 0);
+}
+
+TEST_F(MiddleGridConstraintGeneratorTester, ThreeEdgeOverlapCutCornersTri)
+{
+  // edges of an element on mesh2 cut off the top left and top right corners
+  // of el1.  No other edges are intersected
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),     utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.2, 0.9), utils::Point(0.9, 0.2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, -1}, {1, 4, 2, -1}, {4, 3, 2, -1}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0),     utils::Point(1, 0),     utils::Point(0, 1),
+                                              utils::Point(0.2, 0.9), utils::Point(0.9, 0.2)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, -1}, {0, 4, 3, -1}, {0, 3, 2, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 8, 15, 0);
 }
 
 TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapBisection2)
@@ -226,6 +318,25 @@ TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapBisection2)
   check_entity_counts(mMeshIn, 10, 13, 0);
 }
 
+TEST_F(MiddleGridConstraintGeneratorTester, TwoEdgeOverlapBisection2Tri)
+{
+  // One edge of mesh2 cuts el1 in half.  The top edges of mesh2 elements overlap
+  // the top edge of el1, and similarly for the bottom edges
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0), utils::Point(1, 0),  utils::Point(1, 1),
+                                              utils::Point(0, 1)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, 0), utils::Point(1, 0),  utils::Point(1, 1),
+                                              utils::Point(0, 1), utils::Point(0.5, 0), utils::Point(0.5, 1)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 4, 3, -1}, {4, 5, 3, -1}, {4, 2, 5, -1}, {4, 1, 2, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 6, 9, 0);
+}
+
 TEST_F(MiddleGridConstraintGeneratorTester, TwoVertexOverlapDiagonal)
 {
   // One edge of mesh2 cuts el1 in half.  The top edges of mesh2 elements overlap
@@ -245,6 +356,26 @@ TEST_F(MiddleGridConstraintGeneratorTester, TwoVertexOverlapDiagonal)
   run();
 
   check_entity_counts(mMeshIn, 10, 17, 0);
+}
+
+TEST_F(MiddleGridConstraintGeneratorTester, TwoVertexOverlapDiagonalTri)
+{
+  // One edge of mesh2 cuts el1 in half.  The top edges of mesh2 elements overlap
+  // the top edge of el1, and similarly for the bottom edges
+  std::vector<utils::Point> mesh1Verts = {
+      utils::Point(0, 0),   utils::Point(1, 0),  utils::Point(1, 1), utils::Point(0, 1),
+      utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 6, 2}, {3, 2, 6, 7},
+                                              {4, 0, 3, 7}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 3, -1}, {1, 2, 3, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 8, 13, 0);
 }
 
 TEST_F(MiddleGridConstraintGeneratorTester, FourVertexOverlapDiagonals)
@@ -270,6 +401,26 @@ TEST_F(MiddleGridConstraintGeneratorTester, FourVertexOverlapDiagonals)
   check_entity_counts(mMeshIn, 13, 24, 0);
 }
 
+TEST_F(MiddleGridConstraintGeneratorTester, FourVertexOverlapDiagonalsTri)
+{
+  // mesh2 edges cross both diagonals of element 1, dividing it into 4 triangles
+  std::vector<utils::Point> mesh1Verts = {
+      utils::Point(0, 0),   utils::Point(1, 0),  utils::Point(1, 1), utils::Point(0, 1),
+      utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 6, 2}, {3, 2, 6, 7},
+                                              {4, 0, 3, 7}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(2, -1), utils::Point(2, 2), utils::Point(-1, 2),
+                                              utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 4, 3, -1}, {0, 1, 4, -1}, {1, 2, 4, -1}, {2, 3, 4, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+
+  check_entity_counts(mMeshIn, 9, 16, 0);
+}
+
 TEST_F(MiddleGridConstraintGeneratorTester, ThreeVertexOverlapDiagonals)
 {
   // mesh2 edges cross 3 vertices and one edge of el1
@@ -290,6 +441,25 @@ TEST_F(MiddleGridConstraintGeneratorTester, ThreeVertexOverlapDiagonals)
 
   run();
   check_entity_counts(mMeshIn, 14, 26, 0);
+}
+
+TEST_F(MiddleGridConstraintGeneratorTester, ThreeVertexOverlapDiagonalsTri)
+{
+  // mesh2 edges cross 3 vertices and one edge of el1
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),   utils::Point(1, 0),    utils::Point(1, 1),
+                                              utils::Point(0, 1),   utils::Point(-1, -1), utils::Point(2, -1),
+                                              utils::Point(-1, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 2, -1},
+                                              {3, 2, 6, -1}, {4, 0, 3, 6}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(2, -1), utils::Point(1, 1),
+                                              utils::Point(-1, 2),  utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, -1}, {1, 2, 4, -1}, {4, 2, 3, -1}, {0, 4, 3, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+  check_entity_counts(mMeshIn, 8, 15, 0);
 }
 
 TEST_F(MiddleGridConstraintGeneratorTester, ThreeVertexNonCentroid)
@@ -316,6 +486,25 @@ TEST_F(MiddleGridConstraintGeneratorTester, ThreeVertexNonCentroid)
   check_entity_counts(mMeshIn, 14, 26, 0);
 }
 
+TEST_F(MiddleGridConstraintGeneratorTester, ThreeVertexNonCentroidTri)
+{
+  // mesh2 edges cross 3 vertices and one edge of el1
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),   utils::Point(1, 0),    utils::Point(1, 1),
+                                              utils::Point(0, 1),   utils::Point(-1, -1), utils::Point(1.75, -0.25),
+                                              utils::Point(-0.25, 1.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 2, -1},
+                                              {3, 2, 6, -1}, {4, 0, 3, 6}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(-1, -1), utils::Point(1.75, -0.25), utils::Point(1, 1),
+                                              utils::Point(-0.25, 1.75),  utils::Point(0.25, 0.25)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, -1}, {1, 2, 4, -1}, {4, 2, 3, -1}, {0, 4, 3, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+  check_entity_counts(mMeshIn, 8, 15, 0);
+}
+
 TEST_F(MiddleGridConstraintGeneratorTester, DoubleEdgeIntersection)
 {
   // Two edges of a mesh2 element intersect the same edge of the mesh1 element
@@ -340,6 +529,24 @@ TEST_F(MiddleGridConstraintGeneratorTester, DoubleEdgeIntersection)
   check_entity_counts(mMeshIn, 21, 40, 0);
 }
 
+TEST_F(MiddleGridConstraintGeneratorTester, DoubleEdgeIntersectionTri)
+{
+  // Two edges of a mesh2 element intersect the same edge of the mesh1 element
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),     utils::Point(1, 0),         utils::Point(1, 1),
+                                              utils::Point(0, 1),     utils::Point(-0.25, 0.25),  utils::Point(-0.25, 0.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3},   {4, 0, 3, 5}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts = {utils::Point(0, 0),     utils::Point(1, 0),         utils::Point(1, 1),
+                                          utils::Point(0, 1),     utils::Point(-0.25, 0.25),  utils::Point(-0.25, 0.75),
+                                          utils::Point(0.5, 0.5)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 6, 4, -1}, {0, 1, 6, -1}, {1, 2, 6, -1}, {6, 2, 3, -1}, {5, 6, 3, -1}, {4, 6, 5, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+  check_entity_counts(mMeshIn, 9, 17, 0);
+}
+
 TEST_F(MiddleGridConstraintGeneratorTester, EdgeCrossThroughCornerVertex)
 {
   // Edge starts on midpoint of one edge of el1 and passes through a vertex that
@@ -356,11 +563,27 @@ TEST_F(MiddleGridConstraintGeneratorTester, EdgeCrossThroughCornerVertex)
   std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 2, 3}, {1, 4, 5, 2}, {3, 2, 5, 6}};
   create_mesh2(mesh2Verts, mesh2Els);
 
-  print_vert_edges("mesh1", mMesh1);
-  print_vert_edges("mesh2", mMesh2);
-
   run();
   check_entity_counts(mMeshIn, 10, 16, 0);
+}
+
+TEST_F(MiddleGridConstraintGeneratorTester, EdgeCrossThroughCornerVertexTri)
+{
+  // Edge starts on midpoint of one edge of el1 and passes through a vertex that
+  // is not adjacent to the edge
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),  utils::Point(1, 0),  utils::Point(1, 1),
+                                              utils::Point(0, 1),  utils::Point(0, -1), utils::Point(1.5, -1),
+                                              utils::Point(1.5, 2)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0}, {1, 5, 6, -1}, {1, 6, 2, -1}, {3, 2, 6, -1}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts     = {utils::Point(0, -1), utils::Point(1.5, -1), utils::Point(1.5, 2),
+                                              utils::Point(0, 1),  utils::Point(0.5, 1)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 4, 3}, {1, 2, 4, -1}, {3, 4, 2, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+  check_entity_counts(mMeshIn, 8, 14, 0);
 }
 
 TEST_F(MiddleGridConstraintGeneratorTester, ThreeElementsWithCutCorner)
@@ -382,6 +605,24 @@ TEST_F(MiddleGridConstraintGeneratorTester, ThreeElementsWithCutCorner)
 
   run();
   check_entity_counts(mMeshIn, 16, 28, 0);
+}
+
+TEST_F(MiddleGridConstraintGeneratorTester, ThreeElementsWithCutCornerTri)
+{
+  // two elements cover most of el1, but a third element cuts off a corner
+  std::vector<utils::Point> mesh1Verts     = {utils::Point(0, 0),       utils::Point(1, 0),      utils::Point(1, 1),
+                                              utils::Point(0, 1),       utils::Point(-1, -1),    utils::Point(0.75, -0.5),
+                                              utils::Point(-0.5, 0.75)};
+  std::vector<std::array<int, 4>> mesh1Els = {{0, 1, 2, 3}, {4, 5, 1, 0},  {4, 0, 3, 6}};
+  create_mesh1(mesh1Verts, mesh1Els);
+
+  std::vector<utils::Point> mesh2Verts = {utils::Point(0.75, -0.5), utils::Point(1, 0),   utils::Point(0, 1),
+                                          utils::Point(-0.5, 0.75), utils::Point(-1, -1), utils::Point(1, 1)};
+  std::vector<std::array<int, 4>> mesh2Els = {{0, 1, 2, 3}, {1, 5, 2, -1}, {4, 0, 3, -1}};
+  create_mesh2(mesh2Verts, mesh2Els);
+
+  run();
+  check_entity_counts(mMeshIn, 9, 15, 0);
 }
 
 } // namespace impl

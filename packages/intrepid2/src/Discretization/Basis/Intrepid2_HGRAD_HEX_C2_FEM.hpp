@@ -65,7 +65,7 @@ namespace Intrepid2 {
 
       When the serendipity template argument is true, the basis has
       cardinality 20 and spans an INCOMPLETE tri-quadratic polynomial space (Dofs are associated only to vertices and edges).
-      Note, Basis_HGRAD_HEX_I2_Serendipity_FEM = Basis_HGRAD_HEX_DEG2_FEM<true>
+      Note, Basis_HGRAD_HEX_I2_FEM = Basis_HGRAD_HEX_DEG2_FEM<true>
 
       Basis functions are dual to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
 
@@ -305,10 +305,7 @@ namespace Intrepid2 {
     virtual
     const char*
     getName() const override {
-      if constexpr (serendipity)
-        return "Intrepid2_HGRAD_HEX_I2_Serendipity_FEM";
-      else
-        return "Intrepid2_HGRAD_HEX_C2_FEM";
+      return serendipity ? "Intrepid2_HGRAD_HEX_I2_FEM" : "Intrepid2_HGRAD_HEX_C2_FEM";
     }
 
     /** \brief returns the basis associated to a subCell.
@@ -341,7 +338,7 @@ namespace Intrepid2 {
   using Basis_HGRAD_HEX_C2_FEM = Basis_HGRAD_HEX_DEG2_FEM<false, DeviceType, outputValueType, pointValueType>;
 
   template<typename DeviceType = void, typename outputValueType = double, typename pointValueType = double>
-  using Basis_HGRAD_HEX_I2_Serendipity_FEM = Basis_HGRAD_HEX_DEG2_FEM<true, DeviceType, outputValueType, pointValueType>;
+  using Basis_HGRAD_HEX_I2_FEM = Basis_HGRAD_HEX_DEG2_FEM<true, DeviceType, outputValueType, pointValueType>;
 
 }// namespace Intrepid2
 

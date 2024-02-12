@@ -54,56 +54,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include "UnitTestReadWriteUtils.hpp"
 
-#ifndef STK_USE_SIMPLE_FIELDS
-
-class StkEdgeIoTest_legacy : public stk::unit_test_util::MeshFixture
-{
-public:
-  StkEdgeIoTest_legacy(unsigned spatialDim=3) : stk::unit_test_util::MeshFixture(spatialDim)
-  {
-  }
-
-  virtual void setup_edge_mesh(unsigned numBlocks);
-
-  void setup_mesh_with_edges(unsigned numBlocks);
-
-  void setup_mesh_with_edges_and_faces(unsigned numBlocks);
-
-  void test_connectivity_to_element(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank);
-
-  void test_entity_count(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank,
-                         unsigned expectedNumLocalEntities, unsigned expectedNumEntities);
-
-  void test_edges(const stk::mesh::BulkData& bulk);
-
-  void test_faces(const stk::mesh::BulkData& bulk);
-
-  virtual void output_mesh();
-
-  void test_output_mesh();
-
-  void test_output_mesh(stk::mesh::BulkData& bulk);
-
-  virtual void load_output_mesh(stk::mesh::BulkData& bulk);
-
-  void set_expected_values(io_test_utils::ExpectedValues& expectedValues_);
-
-  virtual ~StkEdgeIoTest_legacy()
-  {
-    unlink(fileName.c_str());
-  }
-
-protected:
-  std::string fileName = "output.exo";
-  std::string edgePartName = "edgeBlock";
-  std::string facePartName = "faceBlock";
-  io_test_utils::ExpectedValues expectedValues;
-};
-
-#endif // STK_USE_SIMPLE_FIELDS
-
-namespace simple_fields {
-
 class StkEdgeIoTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
@@ -148,7 +98,5 @@ protected:
   std::string facePartName = "faceBlock";
   io_test_utils::ExpectedValues expectedValues;
 };
-
-} // namespace simple_fields
 
 #endif

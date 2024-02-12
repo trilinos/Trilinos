@@ -108,6 +108,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: absolute threshold", 0.0);
   params.set("fact: relative threshold", 1.0);
   params.set("fact: relax value", 0.0);
+  params.set("fact: type", "serial");
+  params.sublist("parallel ILUT options"); //FIXME this should be validated
 
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");
@@ -152,6 +154,15 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", 0);
+  params.set("schwarz: num iterations", 1);
+  params.set("subdomain solver name", "");
+  Teuchos::ParameterList dummyListSubdomain;
+  params.set("subdomain solver parameters",dummyListSubdomain);
+  params.sublist("subdomain solver parameters").disableRecursiveValidation();
+  Teuchos::ParameterList dummyListReordering;
+  params.set("schwarz: reordering list",dummyListReordering);
+  // Ifpack2 doesn't attempt to validate options for Zoltan2
+  params.sublist("schwarz: reordering list").disableRecursiveValidation();
 
   // Ifpack2_BlockRelaxation.hpp
   // params.set("relaxation: type", "Jacobi"); // already set

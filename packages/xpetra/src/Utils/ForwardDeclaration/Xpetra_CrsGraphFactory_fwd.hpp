@@ -47,12 +47,12 @@
 #define XPETRA_CRSGRAPHFACTORY_FWD_HPP
 
 namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class CrsGraphFactory;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class CrsGraphFactory;
 }
 
 #ifndef XPETRA_CRSGRAPHFACTORY_SHORT
 #define XPETRA_CRSGRAPHFACTORY_SHORT
 #endif
 
-#endif // XPETRA_CRSGRAPHFACTORY_FWD_HPP
+#endif  // XPETRA_CRSGRAPHFACTORY_FWD_HPP

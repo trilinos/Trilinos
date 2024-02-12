@@ -7,6 +7,7 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
@@ -21,11 +22,11 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -42,6 +43,7 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
@@ -56,11 +58,11 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -82,7 +84,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
-Smoother complexity = 0.00
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

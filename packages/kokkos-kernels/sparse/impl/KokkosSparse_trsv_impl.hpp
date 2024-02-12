@@ -17,7 +17,7 @@
 #ifndef KOKKOSSPARSE_IMPL_TRSM_HPP_
 #define KOKKOSSPARSE_IMPL_TRSM_HPP_
 
-/// \file Kokkos_Sparse_impl_trsm.hpp
+/// \file KokkosSparse_impl_trsm.hpp
 /// \brief Implementation(s) of sparse triangular solve.
 
 #include <KokkosKernels_config.h>
@@ -72,7 +72,7 @@ void lowerTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
       local_ordinal_type;
   typedef typename CrsMatrixType::values_type::non_const_value_type
       matrix_scalar_type;
-  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+  typedef Kokkos::ArithTraits<matrix_scalar_type> STS;
 
   const local_ordinal_type numRows = A.numRows();
   // const local_ordinal_type numCols = A.numCols ();
@@ -190,7 +190,7 @@ void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind   = A.graph.entries;
   typename CrsMatrixType::values_type val  = A.values;
-  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+  typedef Kokkos::ArithTraits<matrix_scalar_type> STS;
 
   // If local_ordinal_type is unsigned and numRows is 0, the loop
   // below will have entirely the wrong number of iterations.
@@ -425,7 +425,7 @@ void upperTriSolveCscUnitDiagConj(RangeMultiVectorType X,
       local_ordinal_type;
   typedef typename CrsMatrixType::values_type::non_const_value_type
       matrix_scalar_type;
-  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+  typedef Kokkos::ArithTraits<matrix_scalar_type> STS;
 
   const local_ordinal_type numRows         = A.numRows();
   const local_ordinal_type numCols         = A.numCols();
@@ -486,7 +486,7 @@ void upperTriSolveCscConj(RangeMultiVectorType X, const CrsMatrixType& A,
       local_ordinal_type;
   typedef typename CrsMatrixType::values_type::non_const_value_type
       matrix_scalar_type;
-  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+  typedef Kokkos::ArithTraits<matrix_scalar_type> STS;
 
   const local_ordinal_type numRows         = A.numRows();
   const local_ordinal_type numCols         = A.numCols();
@@ -600,7 +600,7 @@ void lowerTriSolveCscUnitDiagConj(RangeMultiVectorType X,
       local_ordinal_type;
   typedef typename CrsMatrixType::values_type::non_const_value_type
       matrix_scalar_type;
-  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+  typedef Kokkos::ArithTraits<matrix_scalar_type> STS;
 
   const local_ordinal_type numRows         = A.numRows();
   const local_ordinal_type numCols         = A.numCols();
@@ -638,7 +638,7 @@ void lowerTriSolveCscConj(RangeMultiVectorType X, const CrsMatrixType& A,
       local_ordinal_type;
   typedef typename CrsMatrixType::values_type::non_const_value_type
       matrix_scalar_type;
-  typedef Kokkos::Details::ArithTraits<matrix_scalar_type> STS;
+  typedef Kokkos::ArithTraits<matrix_scalar_type> STS;
 
   const local_ordinal_type numRows         = A.numRows();
   const local_ordinal_type numCols         = A.numCols();

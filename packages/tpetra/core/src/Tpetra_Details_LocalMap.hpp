@@ -85,20 +85,11 @@ public:
   //! The Kokkos memory space.
   using memory_space = typename device_type::memory_space;
 
-  //! The hash will be CudaSpace, not CudaUVMSpace
-#ifdef KOKKOS_ENABLE_CUDA
-  using no_uvm_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
-    Kokkos::CudaSpace, memory_space>::type;
-  using no_uvm_device_type = Kokkos::Device<execution_space, no_uvm_memory_space>;
-#else
-  using no_uvm_device_type = device_type;
-#endif
-
   //! Default constructor.
   KOKKOS_DEFAULTED_FUNCTION LocalMap() = default;
 
-  LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, no_uvm_device_type>& glMap,
-            const ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, no_uvm_device_type>& lgMap,
+  LocalMap (const ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>& glMap,
+            const ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, device_type>& lgMap,
             const GlobalOrdinal indexBase,
             const GlobalOrdinal myMinGid,
             const GlobalOrdinal myMaxGid,
@@ -199,7 +190,7 @@ public:
 
 private:
   //! Table that maps from global index to local index.
-  ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, no_uvm_device_type> glMap_;
+  ::Tpetra::Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type> glMap_;
   /// \brief Mapping from local indices to global indices.
   ///
   /// If this is empty, then it could be either that the Map is
@@ -214,7 +205,7 @@ private:
   /// LayoutRight because LayoutRight is the default on non-CUDA
   /// Devices, and we want to make sure we catch assignment or
   /// copying from the default to the nondefault layout.
-  ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, no_uvm_device_type> lgMap_;
+  ::Kokkos::View<const GlobalOrdinal*, ::Kokkos::LayoutLeft, device_type> lgMap_;
 
   GlobalOrdinal indexBase_          = 0;
   GlobalOrdinal myMinGid_           = Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid();

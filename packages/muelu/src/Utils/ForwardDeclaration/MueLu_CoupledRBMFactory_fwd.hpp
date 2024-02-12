@@ -46,18 +46,13 @@
 #ifndef MUELU_COUPLEDRBMFACTORY_FWD_HPP
 #define MUELU_COUPLEDRBMFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class CoupledRBMFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class CoupledRBMFactory;
 }
 
 #ifndef MUELU_COUPLEDRBMFACTORY_SHORT
 #define MUELU_COUPLEDRBMFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_COUPLEDRBMFACTORY_FWD_HPP
+#endif  // MUELU_COUPLEDRBMFACTORY_FWD_HPP

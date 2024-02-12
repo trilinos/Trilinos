@@ -135,6 +135,5 @@ struct Rotg<ExecutionSpace, SViewType, MViewType, false,
       false, true>;
 
 #include <KokkosBlas1_rotg_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_rotg_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_ROTG_SPEC_HPP_

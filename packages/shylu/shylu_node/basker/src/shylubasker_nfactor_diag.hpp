@@ -45,35 +45,33 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*
           thread.team_size()+
           thread.team_rank());
-      //Int total_threads = thread.league_size()*
-      //	thread.team_size(); //Not used
+      //Int total_threads = thread.league_size()*thread.team_size(); //Not used
 
 
       //================OLD EQ BLK=================//
 
       //divide equally and launch
       //Int nchunks = (basker->btf_nblks - 
-      //			   basker->btf_tabs_offset);
+      //               basker->btf_tabs_offset);
       //Int chunk_size = nchunks/total_threads;
-      //	    Int chunks_left_over = nchunks - 
-      //	      (chunk_size*total_threads);
-      //	    Int chunk_start = kid*chunk_size;
+      //Int chunks_left_over = nchunks - 
+      //                       (chunk_size*total_threads);
+      //Int chunk_start = kid*chunk_size;
 
       //Divid into chunks based on work
 
       //printf("kid: %d c_size: %d numc: %d schunk: %d \n", kid, chunk_size, nchunks, chunk_start);
 
       //basker->t_nfactor_diag(kid, chunk_start, 
-      //			     chunk_size);
+      //                       chunk_size);
 
       //extra
       //if(kid == 0)
       //{
-      //	  Int extra_start=chunk_size*total_threads;
-      //	  basker->t_nfactor_diag(kid, extra_start,
-      //				 chunks_left_over);
-
-      //	}
+      //  Int extra_start=chunk_size*total_threads;
+      //  basker->t_nfactor_diag(kid, extra_start,
+      //                         chunks_left_over);
+      //}
 
 
       //============= NEW EQ  =============//
@@ -200,7 +198,7 @@ namespace BaskerNS
     #endif
 
     //for(Int c = schunk+btf_tabs_offset;
-    //	c < schunk+nchunk+btf_tabs_offset; ++c)
+    //    c < schunk+nchunk+btf_tabs_offset; ++c)
     //printf( "\n >> t_nfactor_diag( c = %d .. %d) <<\n",schunk,schunk+nchunk-1 );
     for(Int c = schunk; c < schunk+nchunk; ++c)
     {
@@ -274,9 +272,9 @@ namespace BaskerNS
     //Int j = M.row_idx[i];
     //will have to make a c and c'
     //printf("kid: %d chunk: %d col: %d bcol: %d j: %d\n",
-    //	   kid, c, k, bcol, j);
+    //       kid, c, k, bcol, j);
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
-    //	   kid, M.val[j], M.row_idx[j], M.srow);
+    //       kid, M.val[j], M.row_idx[j], M.srow);
 
     if(pivot == zero || pivot != pivot)
     {
@@ -508,7 +506,8 @@ namespace BaskerNS
           continue;
         }
 
-        if (M.val(i) != zero) 
+        if (M.val(i) != zero ||
+           (i+1 == M.col_ptr(k-bcol+1) && top == ws_size)) // the last element, and have not found non-zero entry, then go ahead and process this zero entry 
         {
           X(j) = M.val(i);
           if(color[j] == 0)
@@ -546,7 +545,7 @@ namespace BaskerNS
       #endif
 
       //Future add
-      //t_locate_pivot(kid, top)	  
+      //t_locate_pivot(kid, top)  
       //find pivot
       maxv = abs(zero);
       digv = abs(zero);
@@ -1142,7 +1141,7 @@ namespace BaskerNS
     /*
     printf("ws_size: %d \n", ws_size);
     printf("total size: %d \n", 
-	   thread_array(kid).iws_size*thread_array(kid).iws_mult);
+           thread_array(kid).iws_size*thread_array(kid).iws_mult);
     */
  
     Int brow        = L.srow;
@@ -1182,7 +1181,7 @@ namespace BaskerNS
       #else
       if(color[j] == 0)
       #endif
-        {	    
+        {    
         #ifdef BASKER_2DL
           //color[j-brow] = 1;
           color[j] = 1;
@@ -1290,7 +1289,7 @@ namespace BaskerNS
     Int *pattern = &(color[ws_size]);
  
     //printf("back solve called. nnz: %d \n",
-    //	   xnnz);
+    //       xnnz);
 
     for(Int top1 = top; top1 < top+xnnz; ++top1)
     {
@@ -1353,7 +1352,7 @@ namespace BaskerNS
   )
   {
     //printf("prune_btf called. kid: %d k: %d pr: %d \n",
-    //	   kid, k, pivotrow);
+    //       kid, k, pivotrow);
 
     for(Int ui = U.col_ptr(k); ui < U.col_ptr(k+1)-1; ++ui)
     {

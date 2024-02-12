@@ -74,7 +74,9 @@ Eval::Eval(const Eval& otherEval)
     m_parseStatus(otherEval.m_parseStatus),
     m_headNode(otherEval.m_headNode),
     m_nodes(otherEval.m_nodes),
+    m_evaluationNodes(otherEval.m_evaluationNodes),
     m_arrayOffsetType(otherEval.m_arrayOffsetType),
+    m_resultBuffer(otherEval.m_resultBuffer),
     m_parsedEval(nullptr)
 {}
 
@@ -466,7 +468,37 @@ Eval::getValue(const std::string &name)
 }
 
 Eval &
+Eval::bindVariable(const std::string &name, const double &value_ref, int definedLength)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->bind(value_ref, definedLength);
+  }
+  return *this;
+}
+
+Eval &
 Eval::bindVariable(const std::string &name, double &value_ref, int definedLength)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->bind(value_ref, definedLength);
+  }
+  return *this;
+}
+
+Eval &
+Eval::bindVariable(const std::string &name, const int &value_ref, int definedLength)
+{
+  VariableMap::iterator it = m_variableMap.find(name);
+  if (it != m_variableMap.end()) {
+    (*it).second->bind(value_ref, definedLength);
+  }
+  return *this;
+}
+
+Eval &
+Eval::bindVariable(const std::string &name, int &value_ref, int definedLength)
 {
   VariableMap::iterator it = m_variableMap.find(name);
   if (it != m_variableMap.end()) {

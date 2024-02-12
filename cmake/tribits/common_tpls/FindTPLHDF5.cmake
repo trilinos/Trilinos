@@ -6,10 +6,9 @@ set(HDF5_INTERNAL_IS_MODERN FALSE)
 
 if (Netcdf_ALLOW_MODERN)
 
-  set(minimum_modern_HDF5_version 1.10.9)
   print_var(Netcdf_ALLOW_MODERN)
-  message("-- Using find_package(HDF5 ${minimum_modern_HDF5_version} CONFIG) ...")
-  find_package(HDF5  ${minimum_modern_HDF5_version}  CONFIG)
+  message("-- Using find_package(HDF5 CONFIG) ...")
+  find_package(HDF5 CONFIG)
   if (HDF5_FOUND)
     message("-- Found HDF5_CONFIG=${HDF5_CONFIG}")
     message("-- Generating Netcdf::all_libs and NetcdfConfig.cmake")

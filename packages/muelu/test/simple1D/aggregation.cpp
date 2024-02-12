@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   /**********************************************************************************/
@@ -89,21 +89,21 @@ int main(int argc, char *argv[]) {
 
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
-  //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+  // Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                    // manage parameters of xpetra
 
   // custom parameters
   LO maxLevels = 3;
-  LO its=10;
-  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
-  clp.setOption("its",&its,"number of multigrid cycles");
+  LO its       = 10;
+  clp.setOption("maxLevels", &maxLevels, "maximum number of levels allowed");
+  clp.setOption("its", &its, "number of multigrid cycles");
 
-  switch (clp.parse(argc,argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
   matrixParameters.check();
@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());  // TODO: Matrix vs. CrsMatrixWrap
   RCP<Matrix> Op = Pr->BuildMatrix();
   /**********************************************************************************/
   /*                                                                                */
@@ -133,12 +133,11 @@ int main(int argc, char *argv[]) {
   aggOptions.SetMaxNeighAlreadySelected(0);
   aggOptions.SetOrdering("natural");
   UncoupledAggregationFactory aggFact(aggOptions);
-  RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
-  double t0 = MPI_Wtime();
+  RCP<Graph> graph           = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
+  double t0                  = MPI_Wtime();
   RCP<Aggregates> aggregates = aggFact.Build(*graph);
-  double t1 = MPI_Wtime() - t0;
-  printf("Aggregation time only: %g\n",t1);
+  double t1                  = MPI_Wtime() - t0;
+  printf("Aggregation time only: %g\n", t1);
 
   return EXIT_SUCCESS;
-
 }

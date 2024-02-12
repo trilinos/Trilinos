@@ -17,8 +17,9 @@
 
 namespace Tempus {
 
-template<class Scalar>
-/** \brief StepperState is a simple class to hold state information about the stepper.
+template <class Scalar>
+/** \brief StepperState is a simple class to hold state information about the
+ * stepper.
  *
  * <b>Design Considerations</b>
  *   - The purpose of StepperState is to provide a means to store any stepper
@@ -34,49 +35,48 @@ template<class Scalar>
  *   - The base class currently has the Stepper name so the Stepper can
  *     check if the StepperState is usable.
  */
-class StepperState :
-  public Teuchos::Describable,
-  public Teuchos::VerboseObject<Tempus::StepperState<Scalar> >
+class StepperState
+  : public Teuchos::Describable,
+    public Teuchos::VerboseObject<Tempus::StepperState<Scalar> >
 
 {
-public:
+ public:
   /// Constructor
-  StepperState(std::string name = "Default") : stepperName_(name){}
+  StepperState(std::string name = "Default") : stepperName_(name) {}
 
   /// Clone copy constructor
   virtual Teuchos::RCP<StepperState<Scalar> > clone() const
   {
-     Teuchos::RCP<StepperState<Scalar> > ss_out =
-       Teuchos::rcp(new StepperState<Scalar> (this->stepperName_));
-     return ss_out;
+    Teuchos::RCP<StepperState<Scalar> > ss_out =
+        Teuchos::rcp(new StepperState<Scalar>(this->stepperName_));
+    return ss_out;
   }
 
   /// This is a deep copy
   virtual void copy(const Teuchos::RCP<const StepperState<Scalar> >& ss)
   {
-     stepperName_   = ss->stepperName_;
+    stepperName_ = ss->stepperName_;
   }
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const
-    {
-      return "Tempus::StepperState - '" + stepperName_ + "'";
-    }
+  virtual std::string description() const
+  {
+    return "Tempus::StepperState - '" + stepperName_ + "'";
+  }
 
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel /* verbLevel */) const
-    {
-      auto l_out = Teuchos::fancyOStream( out.getOStream() );
-      Teuchos::OSTab ostab(*l_out,2, this->description());
-      l_out->setOutputToRootOnly(0);
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel /* verbLevel */) const
+  {
+    auto l_out = Teuchos::fancyOStream(out.getOStream());
+    Teuchos::OSTab ostab(*l_out, 2, this->description());
+    l_out->setOutputToRootOnly(0);
 
-      *l_out << "\n--- " << this->description() << " ---" << std::endl;
-    }
+    *l_out << "\n--- " << this->description() << " ---" << std::endl;
+  }
   //@}
 
-  std::string stepperName_;    ///< Name of the creating Stepper.
-
+  std::string stepperName_;  ///< Name of the creating Stepper.
 };
-} // namespace Tempus
-#endif // Tempus_StepperState_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperState_hpp

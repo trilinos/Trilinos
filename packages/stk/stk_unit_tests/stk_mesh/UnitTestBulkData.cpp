@@ -146,11 +146,10 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
   Entity node = mesh.get_entity(node_key);
   ASSERT_TRUE( mesh.is_valid(node));
 
-  Entity const *node_elems_i = mesh.begin_elements(node);
-  Entity const *node_elems_e = mesh.end_elements(node);
-  for(; (node_elems_i != node_elems_e) && !mesh.is_valid(elem); ++node_elems_i)
+  const stk::mesh::ConnectedEntities node_elems = mesh.get_connected_entities(node, stk::topology::ELEM_RANK);
+  for(unsigned i=0; i<node_elems.size() && !mesh.is_valid(elem); ++i)
   {
-    elem = *node_elems_i;
+    elem = node_elems[i];
     if(mesh.parallel_owner_rank(elem) != p_rank)
     {
       elem = Entity();
@@ -3009,7 +3008,9 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
   {
     const stk::mesh::RelationIdentifier node_rel_id = 1;
     EXPECT_FALSE(no_aura_declare_relation(bulk, element0, sharedNodeB, node_rel_id));
-  }EXPECT_NO_THROW( bulk.modification_end());
+  }
+
+  EXPECT_NO_THROW( bulk.modification_end());
 
   {
     stk::mesh::Bucket & nodeBBucket = bulk.bucket(sharedNodeB);
@@ -3056,7 +3057,16 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     const stk::mesh::RelationIdentifier node_rel_id = 1;
     bulk.declare_relation(element0, sharedNodeB, node_rel_id);
     EXPECT_TRUE( sharedNodeB == bulk.begin_nodes(element0)[1]);
-  }EXPECT_NO_THROW( bulk.modification_end());
+  }
+
+{
+stk::parallel_machine_barrier(bulk.parallel());
+std::ostringstream os;
+os<<"P"<<bulk.parallel_rank()<<" about to call mod-end"<<std::endl;
+std::cerr<<os.str();
+stk::parallel_machine_barrier(bulk.parallel());
+}
+  bulk.modification_end();
 
   {
     stk::mesh::Bucket & nodeBBucket = bulk.bucket(sharedNodeB);
@@ -6037,46 +6047,42 @@ TEST( BulkData, AddSharedNodesInTwoSteps)
 
 TEST(ChangeEntityId, test_throw_on_shared_node)
 {
-  int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-  if (numProcs==2)
-  {
-    const unsigned spatialDim = 3;
-    std::shared_ptr<BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
-    stk::mesh::BulkData& mesh = *bulkPtr;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD)!=2) { GTEST_SKIP(); }
 
-    const std::string generatedMeshSpec = "generated:1x1x2";
-    stk::io::fill_mesh(generatedMeshSpec, mesh);
+  const unsigned spatialDim = 3;
+  std::shared_ptr<BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::BulkData& mesh = *bulkPtr;
 
-    stk::mesh::Entity sharedNode5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
+  const std::string generatedMeshSpec = "generated:1x1x2";
+  stk::io::fill_mesh(generatedMeshSpec, mesh);
 
-    EXPECT_TRUE(mesh.bucket(sharedNode5).shared());
+  stk::mesh::Entity sharedNode5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
 
-    mesh.modification_begin();
+  EXPECT_TRUE(mesh.bucket(sharedNode5).shared());
 
-    EXPECT_THROW(mesh.change_entity_id(99, sharedNode5), std::logic_error);
+  mesh.modification_begin();
 
-    mesh.modification_end();
-  }
+  EXPECT_THROW(mesh.change_entity_id(99, sharedNode5), std::logic_error);
+
+  mesh.modification_end();
 }
 
 TEST(AmbiguousTopology, hexRedefinedAsShell)
 {
-  int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-  if (numProcs==1)
-  {
-    const unsigned spatialDim = 3;
-    std::shared_ptr<BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
-    stk::mesh::MetaData& meta= bulkPtr->mesh_meta_data();
-    stk::mesh::BulkData& mesh = *bulkPtr;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD)!=1) { GTEST_SKIP(); }
 
-    const std::string generatedMeshSpec = "generated:1x1x1";
-    stk::io::fill_mesh(generatedMeshSpec, mesh);
+  const unsigned spatialDim = 3;
+  std::shared_ptr<BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta= bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
 
-    stk::mesh::Part& shellPart = meta.get_topology_root_part(stk::topology::SHELL_QUAD_4);
-    stk::mesh::EntityId elemId = 1;
-    mesh.modification_begin();
-    ASSERT_THROW(mesh.declare_element(elemId, stk::mesh::ConstPartVector{&shellPart}), std::runtime_error);
-  }
+  const std::string generatedMeshSpec = "generated:1x1x1";
+  stk::io::fill_mesh(generatedMeshSpec, mesh);
+
+  stk::mesh::Part& shellPart = meta.get_topology_root_part(stk::topology::SHELL_QUAD_4);
+  stk::mesh::EntityId elemId = 1;
+  mesh.modification_begin();
+  ASSERT_THROW(mesh.declare_element(elemId, stk::mesh::ConstPartVector{&shellPart}), std::runtime_error);
 }
 
 }// empty namespace

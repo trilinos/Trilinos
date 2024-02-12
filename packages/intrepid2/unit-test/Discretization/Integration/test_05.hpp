@@ -58,6 +58,7 @@
 #include "Intrepid2_Utils_ExtData.hpp"
 
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
+#include "Intrepid2_CubatureDirectTriSymmetric.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -77,7 +78,7 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     };
-    
+
     template<typename ValueType, typename DeviceType>
     int Integration_Test05(const bool verbose) {
 
@@ -119,39 +120,20 @@ namespace Intrepid2 {
         << "===============================================================================\n";
       
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
       typedef CubatureDirectTriDefault<DeviceType,pointValueType,weightValueType> CubatureTriType;
+      typedef CubatureDirectTriSymmetric<DeviceType,pointValueType,weightValueType> CubatureTriSymType;
 
       const auto tol = 10.0 * tolerence();
 
       int errorFlag = 0;
-      
-      // get names of files with analytic values
-      std::string basedir = "./data";
-      std::stringstream namestream;
-      std::string filename;
-      namestream << basedir << "/TRI_integrals" << ".dat";
-      namestream >> filename;
-      *outStream << "filename = " << filename << std::endl;
-      std::ifstream filecompare(filename);
 
       // compute and compare integrals
       try {
-        const auto maxDeg   = 10; //Parameters::MaxCubatureDegreeTri;
-        const auto polySize = (maxDeg+1)*(maxDeg+2)/2;
-        
-        // test inegral values
-        DynRankViewHost ConstructWithLabel(testInt, maxDeg+1, polySize);
-        
-        // analytic integral values
-        const auto analyticMaxDeg = 20;
-        const auto analyticPolySize = (analyticMaxDeg+1)*(analyticMaxDeg+2)/2;
-        DynRankViewHost ConstructWithLabel(analyticInt, analyticPolySize, 1);
-        
+        const auto maxDeg   = Parameters::MaxCubatureDegreeTri;
         // storage for cubatrue points and weights
         DynRankView ConstructWithLabel(cubPoints,
                                        Parameters::MaxIntegrationPoints,
@@ -161,41 +143,76 @@ namespace Intrepid2 {
                                        Parameters::MaxIntegrationPoints);
         
         // compute integrals
-        for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+        for (auto cubDeg=0;cubDeg<=20;++cubDeg) {
           CubatureTriType triCub(cubDeg);
-          *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << "  Testing\n";   
+
+          *outStream << "Default Cubature of rder " << std::setw(2) << std::left << cubDeg << " Testing\n";   
           ordinal_type cnt = 0;
-          for (auto xDeg=0;xDeg<=cubDeg;++xDeg) 
-            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt) 
-              testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(triCub,
+          for (auto xDeg=0;xDeg<=cubDeg;++xDeg) {
+            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt) {
+              auto computedIntegral = computeIntegralOfMonomial<ValueType>(triCub,
                                                                           cubPoints,
                                                                           cubWeights,
                                                                           xDeg, 
                                                                           yDeg);
+
+              auto anlyticIntegral = analyticIntegralOfMonomialOverTri<ValueType>(xDeg,yDeg);
+              const auto abstol  = std::fabs(tol*anlyticIntegral );
+              const auto absdiff = std::fabs(anlyticIntegral - computedIntegral);
+              if (absdiff > abstol) {
+                *outStream << "Default Cubature of order " << std::setw(2) << std::left << cubDeg << " integrating "
+                        << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg << ":" << "   "
+                        << std::scientific << std::setprecision(16) << computedIntegral << "   " << anlyticIntegral << "   "
+                        << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
+                *outStream << std::right << std::setw(111) << "^^^^---FAILURE!\n";
+                errorFlag++;
+              }
+            }
+          }
         }
 
-        // get analytic values
-        if (filecompare.is_open()) {
-          getAnalytic(analyticInt, filecompare);
-          filecompare.close();
-        }
-        
-        // perform comparison
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
-          ordinal_type offset = 0, cnt = 0;
-          for (auto xDeg=0;xDeg<=cubDeg;++xDeg,offset += (analyticMaxDeg - cubDeg)) {
+
+          *outStream << "Symmetric Cubature of order " << std::setw(2) << std::left << cubDeg << "  Testing\n";   
+
+          CubatureTriSymType triCub(cubDeg);
+          triCub.getCubature(cubPoints, cubWeights);
+          bool isInvariant = IsQuadratureInvariantToOrientation(triCub, cubPoints, cubWeights, shards::Triangle<3>::key);
+
+          if (!isInvariant) {
+            errorFlag++;
+            *outStream << "   Cubature Rule is not invariant to rotations!\n" << std::right << std::setw(111) << "^^^^---FAILURE!\n";
+          }
+
+          auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
+          ValueType minWeigth = 1.0;
+          for(int i=0; i<triCub.getNumPoints();++i)
+            minWeigth = std::min(minWeigth,cubWeights_host(i));
+
+          if (minWeigth <= 0.0) {
+            errorFlag++;
+            *outStream << "   Cubature Rule is not positive!\n" << std::right << std::setw(111) << "^^^^---FAILURE!\n";
+          }
+
+          
+          ordinal_type cnt = 0;
+          for (auto xDeg=0;xDeg<=cubDeg;++xDeg) {
             for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt) {
-              const auto loc = cnt + offset;
-              
-              const auto abstol  = ( analyticInt(loc,0) == 0.0 ? tol : std::fabs(tol*analyticInt(loc,0)) );
-              const auto absdiff = std::fabs(analyticInt(loc,0) - testInt(cubDeg,cnt));
-              *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
-                         << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg << ":" << "   "
-                         << std::scientific << std::setprecision(16) << testInt(cubDeg,cnt) << "   " << analyticInt(loc,0) << "   "
-                         << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
+              auto computedIntegral = computeIntegralOfMonomial<ValueType>(triCub,
+                                                                          cubPoints,
+                                                                          cubWeights,
+                                                                          xDeg, 
+                                                                          yDeg);
+              auto anlyticIntegral = analyticIntegralOfMonomialOverTri<ValueType>(xDeg,yDeg);
+              const auto abstol  = std::fabs(tol*anlyticIntegral );
+              const auto absdiff = std::fabs(anlyticIntegral - computedIntegral);
               if (absdiff > abstol) {
-                errorFlag++;
+                *outStream << "Symmetric Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
+                        << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg << ":" << "   "
+                        << std::scientific << std::setprecision(16) << computedIntegral << "   " << anlyticIntegral << "   "
+                        << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
                 *outStream << std::right << std::setw(111) << "^^^^---FAILURE!\n";
+                errorFlag++;
               }
             }
           }

@@ -6,6 +6,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Computing Ac (MueLu::RAPFactory)
@@ -16,6 +17,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
@@ -24,7 +26,7 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesDeterministic (Phase 1 (main))
 BuildAggregatesDeterministic (Phase 2a (secondary))
@@ -47,6 +49,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 3
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
@@ -55,7 +58,7 @@ Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesDeterministic (Phase 1 (main))
 BuildAggregatesDeterministic (Phase 2a (secondary))
@@ -86,7 +89,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.34
-Smoother complexity = 1.57
+Smoother complexity = 1.58
 Cycle type          = V
 
 level  rows   nnz    nnz/row  c ratio  procs

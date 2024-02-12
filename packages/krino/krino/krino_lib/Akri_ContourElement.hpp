@@ -19,7 +19,7 @@
 #include <Akri_Facet.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MasterElement.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -63,11 +63,11 @@ public:
 
   bool dist_is_linear() const { return dist_topology() == stk::topology::TRIANGLE_3_2D || dist_topology() == stk::topology::TETRAHEDRON_4; }
 
-  Vector3d coordinates( const Vector3d & p_coords ) const;
-  double distance( const Vector3d & p_coords ) const;
-  double determinant( const Vector3d & p_coords ) const;
+  stk::math::Vector3d coordinates( const stk::math::Vector3d & p_coords ) const;
+  double distance( const stk::math::Vector3d & p_coords ) const;
+  double determinant( const stk::math::Vector3d & p_coords ) const;
 
-  Vector3d distance_gradient( const Vector3d & p_coords ) const;
+  stk::math::Vector3d distance_gradient( const stk::math::Vector3d & p_coords ) const;
   void compute_distance_gradient( const sierra::Array<const double,DIM,NINT> & intg_pt_locations,
 				  sierra::ArrayContainer<double,DIM,NINT> & grad_dist ) const;
 
@@ -119,7 +119,6 @@ public:
 
   double volume() const;
   double elem_size() const;
-  double average_edge_length() const;
 
   void compute_subelement_decomposition(const double length_scale, const double edge_linear_tolerance = 1.e-4, const double edge_nonlinear_tolerance = 1.0e-2);
 

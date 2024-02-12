@@ -93,21 +93,19 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(projectedBasisNodes.extent_int(2) != spaceDim, std::invalid_argument, "projectedBasisNodes must have shape (C,F,D)");
       
       using ExecutionSpace = typename DeviceType::execution_space;
-      using ProjectionTools  = Experimental::ProjectionTools<ExecutionSpace>; // TODO: when ProjectionTools supports it, replace template argument with DeviceType
-      using ProjectionStruct = Experimental::ProjectionStruct<ExecutionSpace,PointScalar>; // TODO: when ProjectionTools supports it, replace template argument with DeviceType
+      using ProjectionTools  = ProjectionTools<DeviceType>; 
+      using ProjectionStruct = ProjectionStruct<DeviceType,PointScalar>;
       
       ProjectionStruct projectionStruct;
       ordinal_type targetQuadratureDegree(targetHGradBasis->getDegree()), targetDerivativeQuadratureDegree(targetHGradBasis->getDegree());
       projectionStruct.createHGradProjectionStruct(targetHGradBasis, targetQuadratureDegree, targetDerivativeQuadratureDegree);
-      
-      const ordinal_type numPoints     = projectionStruct.getNumTargetEvalPoints();
-      const ordinal_type numGradPoints = projectionStruct.getNumTargetDerivEvalPoints();
-      
-      ViewType evaluationPointsRefSpace    ("ProjectedGeometry evaluation points ref space (value)",    numCells, numPoints,     spaceDim);
-      ViewType evaluationGradPointsRefSpace("ProjectedGeometry evaluation points ref space (gradient)", numCells, numGradPoints, spaceDim);
-      
+    
+      auto evaluationPointsRefSpace = projectionStruct.getAllEvalPoints();
+      auto evaluationGradPointsRefSpace = projectionStruct.getAllDerivEvalPoints();
+      const ordinal_type numPoints     = evaluationPointsRefSpace.extent(0);
+      const ordinal_type numGradPoints = evaluationGradPointsRefSpace.extent(0);
+
       auto elementOrientations = flatCellGeometry.getOrientations();
-      ProjectionTools::getHGradEvaluationPoints(evaluationPointsRefSpace, evaluationGradPointsRefSpace, elementOrientations, targetHGradBasis.get(), &projectionStruct);
       
 //      printFunctor1(elementOrientations, std::cout);
       
@@ -179,8 +177,6 @@ namespace Intrepid2
         ProjectionTools::getHGradBasisCoeffs(projectedBasisNodesForComp,
                                              evaluationValues,
                                              transformedGradientData.getUnderlyingView(),
-                                             evaluationPointsRefSpace,
-                                             evaluationGradPointsRefSpace,
                                              elementOrientations,
                                              targetHGradBasis.get(),
                                              &projectionStruct);

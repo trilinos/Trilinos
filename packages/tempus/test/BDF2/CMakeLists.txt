@@ -2,8 +2,31 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BDF2
-  SOURCES Tempus_BDF2Test.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  BDF2_SinCos
+  SOURCES Tempus_Test_BDF2_SinCos.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BDF2_CDR
+    SOURCES Tempus_Test_BDF2_CDR.cpp ${TEMPUS_UNIT_TEST_MAIN}
+    TESTONLYLIBS tempus_test_models
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BDF2_SinCosAdapt
+  SOURCES Tempus_Test_BDF2_SinCosAdapt.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BDF2_VanDerPol
+  SOURCES Tempus_Test_BDF2_VanDerPol.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
@@ -36,7 +59,34 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_CopyFiles
-  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_SinCos_AdaptDt.xml Tempus_BDF2_SinCos_SA.xml Tempus_BDF2_CDR.xml Tempus_BDF2_VanDerPol.xml Tempus_BDF2_SteadyQuadratic.xml Tempus_BDF2_SinCos_AdaptDt_gold.dat 
-  EXEDEPS BDF2
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_SinCos_CopyFiles
+  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_SinCos_AdaptDt_gold.dat
+  EXEDEPS BDF2_SinCos
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_SinCosAdapt_CopyFiles
+  DEST_FILES Tempus_BDF2_SinCos_AdaptDt.xml Tempus_BDF2_SinCos_AdaptDt_gold.dat
+  EXEDEPS BDF2_SinCosAdapt
+  )
+
+IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_CDR_CopyFiles
+    DEST_FILES Tempus_BDF2_CDR.xml Tempus_BDF2_SinCos_AdaptDt_gold.dat
+    EXEDEPS BDF2_CDR
+    )
+ENDIF()
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_VanDerPol_CopyFiles
+  DEST_FILES Tempus_BDF2_VanDerPol.xml Tempus_BDF2_SinCos_AdaptDt_gold.dat
+  EXEDEPS BDF2_VanDerPol
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_SinCos_SA_CopyFiles
+  DEST_FILES Tempus_BDF2_SinCos_SA.xml
+  EXEDEPS BDF2_Combined_FSA BDF2_Staggered_FSA
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_SteadyQuadratic_CopyFiles
+  DEST_FILES Tempus_BDF2_SteadyQuadratic.xml  
+  EXEDEPS BDF2_PseudoTransient_SA
   )

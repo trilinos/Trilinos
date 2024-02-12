@@ -107,6 +107,17 @@ private:
   Real interpfPS_; ///< Backtracking rate for projected search (default: 0.5)
   int pslim_;      ///< Maximum number of projected search steps (default: 20)
 
+  // Inexactness Parameters
+  std::vector<bool> useInexact_;
+  Real scale0_;
+  Real scale1_;
+  Real scale_;
+  Real omega_;
+  Real force_;
+  int updateIter_;
+  Real forceFactor_;
+  Real gtol_;
+
   mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
   bool writeHeader_;   ///< Flag to write header at every iteration
@@ -141,6 +152,25 @@ private:
                   Objective<Real>       &obj,
                   BoundConstraint<Real> &bnd,
                   std::ostream &outStream = std::cout);
+
+  Real computeValue(Real inTol,
+                    Real &outTol,
+                    Real pRed,
+                    Real &fold,
+                    int iter,
+                    const Vector<Real> &x,
+                    const Vector<Real> &xold,
+                    Objective<Real> &obj);
+
+  void computeGradient(const Vector<Real> &x,
+                       Vector<Real> &g,
+                       Vector<Real> &pwa,
+                       Real del,
+                       Objective<Real> &obj,
+                       bool accept,
+                       Real &gtol,
+                       Real &gnorm,
+                       std::ostream &outStream = std::cout) const;
 
   // Compute the projected step s = P(x + alpha*w) - x
   // Returns the norm of the projected step s

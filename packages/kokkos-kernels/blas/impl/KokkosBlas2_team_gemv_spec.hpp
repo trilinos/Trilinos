@@ -61,7 +61,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "KokkosBlas::TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
@@ -76,7 +76,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "KokkosBlas::TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
         member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
@@ -95,7 +95,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
@@ -110,7 +110,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
         member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
@@ -129,7 +129,7 @@ struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, Impl::OpConj{}, A.extent(1), A.extent(0), alpha, A.data(),
@@ -145,7 +145,7 @@ struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Blocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
     return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
         member, Impl::OpConj{}, A.extent(1), A.extent(0), alpha, A.data(),
@@ -165,7 +165,7 @@ struct TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "Batched TeamVectorGemv requires rank-2 A matrix");
     return Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
@@ -184,7 +184,7 @@ struct TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "Batched TeamVectorGemv requires rank-2 A matrix");
     return Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
@@ -203,7 +203,7 @@ struct TeamVectorGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
-    static_assert(AViewType::Rank == 2,
+    static_assert(AViewType::rank == 2,
                   "Batched TeamVectorGemv requires rank-2 A matrix");
     return Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, Impl::OpConj{}, A.extent(1), A.extent(0), alpha, A.data(),

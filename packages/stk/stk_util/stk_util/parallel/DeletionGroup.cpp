@@ -1,3 +1,4 @@
+#include <iostream>
 #include "stk_util/parallel/DeletionGroup.hpp"
 
 namespace stk {

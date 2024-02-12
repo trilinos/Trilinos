@@ -60,21 +60,21 @@ size_t total_leak = 0;
 void test_function()
 {
 MPI_Comm local_comm;
-int myproc, nprocs;               // MPI info wrt MPI_COMM_WORLD.
+int myproc, nprocs;               // MPI info wrt comm from zoltan_get_global_comm().
 size_t oldheap, newheap;
 size_t used, freed;
 static int itercnt = 0;
 int ierr;
 
-  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
+  MPI_Comm_size(zoltan_get_global_comm(), &nprocs);
+  MPI_Comm_rank(zoltan_get_global_comm(), &myproc);
 
-  //  Duplicate MPI_COMM_WORLD to local communicator.
+  //  Duplicate zoltan_get_global_comm() to local communicator.
   oldheap = get_heap_usage();
   std::cout << "KDD " << myproc 
             << " ITER " << itercnt
             << " BEFORE Comm_dup:  " << oldheap << std::endl;
-  ierr = MPI_Comm_dup(MPI_COMM_WORLD,&local_comm);
+  ierr = MPI_Comm_dup(zoltan_get_global_comm(),&local_comm);
   newheap = get_heap_usage();
   used = newheap - oldheap;
   if (ierr != MPI_SUCCESS) std::cout << " ERROR DUP " << ierr << std::endl;
@@ -120,11 +120,11 @@ main(int argc, char *argv[])
   size_t finalheap = get_heap_usage();
 
   int myproc;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
+  MPI_Comm_rank(zoltan_get_global_comm(), &myproc);
 
   int localmax, globalmax;
   localmax = total_leak;
-  MPI_Allreduce(&localmax, &globalmax, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(&localmax, &globalmax, 1, MPI_INTEGER, MPI_MAX, zoltan_get_global_comm());
 
   MPI_Finalize();
   size_t ending = get_heap_usage();

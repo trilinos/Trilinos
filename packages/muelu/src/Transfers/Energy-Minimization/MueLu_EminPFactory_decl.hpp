@@ -64,58 +64,57 @@
 
 namespace MueLu {
 
-  /*!
-    @class EminPFactory class.
-    @brief Factory for building Energy Minimization prolongators.
-    @ingroup MueLuTransferClasses
-    */
+/*!
+  @class EminPFactory class.
+  @brief Factory for building Energy Minimization prolongators.
+  @ingroup MueLuTransferClasses
+  */
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class EminPFactory : public PFactory {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class EminPFactory : public PFactory {
 #undef MUELU_EMINPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! @brief Constructor.
+  EminPFactory() {}
 
-    //! @brief Constructor.
-    EminPFactory() { }
+  //! Destructor.
+  virtual ~EminPFactory() {}
 
-    //! Destructor.
-    virtual ~EminPFactory() { }
+  //@}
 
-    //@}
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! @name Input
+  //@{
 
-    //! @name Input
-    //@{
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  /*!
+    @brief Build method.
 
-    /*!
-      @brief Build method.
+    Builds energy minimization prolongator and returns it in <tt>coarseLevel</tt>.
+    */
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-      Builds energy minimization prolongator and returns it in <tt>coarseLevel</tt>.
-      */
-    void Build(Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+};  // class EminPFactory
 
-  }; // class EminPFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_EMINPFACTORY_SHORT
-#endif // MUELU_EMINPFACTORY_DECL_HPP
+#endif  // MUELU_EMINPFACTORY_DECL_HPP

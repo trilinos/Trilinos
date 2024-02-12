@@ -4,7 +4,6 @@
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
-#include <stk_coupling/Version.hpp>
 #include <stk_transfer/ReducedDependencyGeometricTransfer.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
@@ -14,8 +13,8 @@
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
 #include "MockMeshUtils.hpp"
+#include "StkSendAdapter.hpp"
 #include "StkRecvAdapter.hpp"
-#include "EmptySendAdapter.hpp"
 #include "RecvInterpolate.hpp"
 #include <iostream>
 #include <sstream>
@@ -23,7 +22,7 @@
 class MockSalinas
 {
   using RecvTransfer = stk::transfer::ReducedDependencyGeometricTransfer<
-                                    mock::RecvInterpolate<mock::EmptySendAdapter, mock::StkRecvAdapter>>;
+                                    mock::RecvInterpolate<mock::StkSendAdapter, mock::StkRecvAdapter>>;
 public:
   MockSalinas()
     : m_appName("Mock-Salinas"),
@@ -70,7 +69,7 @@ public:
 
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
     m_splitComms.set_free_comms_in_destructor(true);
-    stk::util::impl::set_coupling_version(coupling_version_override);
+    stk::util::impl::set_coupling_version(commWorld, coupling_version_override);
     const std::vector<int>& otherColors = m_splitComms.get_other_colors();
     if (otherColors.size() != 1) {
       if (otherColors.empty()) {
@@ -204,10 +203,10 @@ public:
     check_field_sizes(otherSendFields, myRecvFields);
 
     MPI_Comm pairwiseComm = m_splitComms.get_pairwise_comm(m_otherColor);
-    std::shared_ptr<mock::EmptySendAdapter> sendAdapter;
+    std::shared_ptr<mock::StkSendAdapter> nullSendAdapter;
     std::shared_ptr<mock::StkRecvAdapter> recvAdapter =
        std::make_shared<mock::StkRecvAdapter>(pairwiseComm, *m_mesh, m_recvFieldName);
-    m_recvTransfer.reset(new RecvTransfer(sendAdapter, recvAdapter, "MockSalinasRecvTransfer", pairwiseComm));
+    m_recvTransfer.reset(new RecvTransfer(nullSendAdapter, recvAdapter, "MockSalinasRecvTransfer", pairwiseComm));
 
     m_recvTransfer->coarse_search();
     m_recvTransfer->communication();

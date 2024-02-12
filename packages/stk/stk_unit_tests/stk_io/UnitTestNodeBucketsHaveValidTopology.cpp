@@ -37,34 +37,6 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 
-#ifndef STK_USE_SIMPLE_FIELDS
-
-TEST(UnitTestNodeBucketsHaveValidTopology_legacy, testUnit)
-{
-  std::string generated_mesh("generated:2x3x4");
-
-  stk::ParallelMachine comm = MPI_COMM_WORLD;
-  stk::io::StkMeshIoBroker meshReader(comm);
-  meshReader.add_mesh_database(generated_mesh, stk::io::READ_MESH);
-
-  meshReader.create_input_mesh();
-  meshReader.populate_bulk_data();
-
-  const stk::mesh::BulkData& stkmesh = meshReader.bulk_data();
-
-  const stk::mesh::BucketVector& nodeBuckets = stkmesh.buckets(stk::topology::NODE_RANK);
-
-  for(size_t i=0; i<nodeBuckets.size(); ++i) {
-    const stk::mesh::Bucket& bucket = *nodeBuckets[i];
-
-    EXPECT_EQ(stk::topology::NODE, bucket.topology());
-  }
-}
-
-#endif // STK_USE_SIMPLE_FIELDS
-
-namespace simple_fields {
-
 TEST(UnitTestNodeBucketsHaveValidTopology, testUnit)
 {
   std::string generated_mesh("generated:2x3x4");
@@ -87,5 +59,3 @@ TEST(UnitTestNodeBucketsHaveValidTopology, testUnit)
     EXPECT_EQ(stk::topology::NODE, bucket.topology());
   }
 }
-
-} // namespace simple_fields

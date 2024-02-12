@@ -87,8 +87,8 @@ BlockMultiVector (const map_type& meshMap,
                   const LO numVecs) :
   dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
   meshMap_ (meshMap),
-  pointMap_ (makePointMap (meshMap, blockSize)),
-  mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
+  pointMap_ (makePointMapRCP (meshMap, blockSize)),
+  mv_ (pointMap_, numVecs), // nonowning RCP is OK, since pointMap_ won't go away
   blockSize_ (blockSize)
 {}
 
@@ -100,8 +100,8 @@ BlockMultiVector (const map_type& meshMap,
                   const LO numVecs) :
   dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
   meshMap_ (meshMap),
-  pointMap_ (pointMap),
-  mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
+  pointMap_ (new map_type(pointMap)),
+  mv_ (pointMap_, numVecs),
   blockSize_ (blockSize)
 {}
 
@@ -156,9 +156,8 @@ BlockMultiVector (const mv_type& X_mv,
 
   // At this point, mv_ has been assigned, so we can ignore X_mv.
   Teuchos::RCP<const map_type> pointMap = mv_.getMap ();
-  if (! pointMap.is_null ()) {
-    pointMap_ = *pointMap; // Map::operator= also does a shallow copy
-  }
+  pointMap_ = pointMap; 
+
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -169,7 +168,7 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
                   const size_t offset) :
   dist_object_type (Teuchos::rcp (new map_type (newMeshMap))), // shallow copy
   meshMap_ (newMeshMap),
-  pointMap_ (newPointMap),
+  pointMap_ (new map_type(newPointMap)),
   mv_ (X.mv_, newPointMap, offset * X.getBlockSize ()), // MV "offset view" constructor
   blockSize_ (X.getBlockSize ())
 {}
@@ -181,7 +180,7 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
                   const size_t offset) :
   dist_object_type (Teuchos::rcp (new map_type (newMeshMap))), // shallow copy
   meshMap_ (newMeshMap),
-  pointMap_ (makePointMap (newMeshMap, X.getBlockSize ())),
+  pointMap_ (makePointMapRCP (newMeshMap, X.getBlockSize ())),
   mv_ (X.mv_, pointMap_, offset * X.getBlockSize ()), // MV "offset view" constructor
   blockSize_ (X.getBlockSize ())
 {}
@@ -198,7 +197,7 @@ typename BlockMultiVector<Scalar, LO, GO, Node>::map_type
 BlockMultiVector<Scalar, LO, GO, Node>::
 makePointMap (const map_type& meshMap, const LO blockSize)
 {
-  typedef Tpetra::global_size_t GST;
+typedef Tpetra::global_size_t GST;
   typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
 
   const GST gblNumMeshMapInds =
@@ -234,9 +233,55 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     }
     return map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
                      meshMap.getComm ());
+
   }
 }
 
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<const typename BlockMultiVector<Scalar, LO, GO, Node>::map_type>
+BlockMultiVector<Scalar, LO, GO, Node>::
+makePointMapRCP (const map_type& meshMap, const LO blockSize)
+{
+typedef Tpetra::global_size_t GST;
+  typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
+
+  const GST gblNumMeshMapInds =
+    static_cast<GST> (meshMap.getGlobalNumElements ());
+  const size_t lclNumMeshMapIndices =
+    static_cast<size_t> (meshMap.getLocalNumElements ());
+  const GST gblNumPointMapInds =
+    gblNumMeshMapInds * static_cast<GST> (blockSize);
+  const size_t lclNumPointMapInds =
+    lclNumMeshMapIndices * static_cast<size_t> (blockSize);
+  const GO indexBase = meshMap.getIndexBase ();
+
+  if (meshMap.isContiguous ()) {
+    return Teuchos::rcp(new map_type (gblNumPointMapInds, lclNumPointMapInds, indexBase,
+                                     meshMap.getComm ()));
+  }
+  else {
+    // "Hilbert's Hotel" trick: multiply each process' GIDs by
+    // blockSize, and fill in.  That ensures correctness even if the
+    // mesh Map is overlapping.
+    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getLocalElementList ();
+    const size_type lclNumMeshGblInds = lclMeshGblInds.size ();
+    Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
+    for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
+      const GO meshGid = lclMeshGblInds[g];
+      const GO pointGidStart = indexBase +
+        (meshGid - indexBase) * static_cast<GO> (blockSize);
+      const size_type offset = g * static_cast<size_type> (blockSize);
+      for (LO k = 0; k < blockSize; ++k) {
+        const GO pointGid = pointGidStart + static_cast<GO> (k);
+        lclPointGblInds[offset + static_cast<size_type> (k)] = pointGid;
+      }
+    }
+    return Teuchos::rcp(new map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
+                                      meshMap.getComm ()));
+
+  }
+}
 
 template<class Scalar, class LO, class GO, class Node>
 void
@@ -539,7 +584,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const Size k) const {
-    const auto zero = Kokkos::Details::ArithTraits<Scalar>::zero();
+    const auto zero = Kokkos::ArithTraits<Scalar>::zero();
     auto D_curBlk = Kokkos::subview(D_, k, Kokkos::ALL (), Kokkos::ALL ());
     const auto num_vecs = X_.extent(1);
     for (Size i = 0; i < num_vecs; ++i) {
@@ -618,7 +663,7 @@ public:
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef Kokkos::pair<LO, LO> range_type;
-    typedef Kokkos::Details::ArithTraits<Scalar> KAT;
+    typedef Kokkos::ArithTraits<Scalar> KAT;
 
     // We only have to implement the alpha != 0 case.
 

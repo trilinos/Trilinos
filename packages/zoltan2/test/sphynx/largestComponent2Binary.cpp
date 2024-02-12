@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
 
   std::stringstream ss1(line);
   ss1 >> nrows >> nrows >> nnzs;
-
+  std::cout << "Number of Rows " << nrows << " Number of Columns " << nrows << std::endl;
   std::vector<bool> diag(nrows, false);
 
   ord_type *rowPtr = new ord_type[nrows+2];

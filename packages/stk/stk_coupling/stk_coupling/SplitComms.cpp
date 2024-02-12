@@ -8,7 +8,6 @@
 /*--------------------------------------------------------------------*/
 
 #include <stk_util/Version.hpp>
-#include <stk_coupling/Version.hpp>
 #include <stk_coupling/SplitComms.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/ReportHandler.hpp>

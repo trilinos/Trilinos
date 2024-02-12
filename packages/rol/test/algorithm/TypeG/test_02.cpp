@@ -75,7 +75,11 @@ int main(int argc, char *argv[]) {
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
+    list.sublist("Step").sublist("Moreau-Yosida Penalty").set("Initial Penalty Parameter",1e1);
+    list.sublist("Step").sublist("Moreau-Yosida Penalty").set("Penalty Parameter Growth Factor",1e1);
     list.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Iteration Limit",200);
+    list.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Print History",false);
+    //list.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Step Type","Composite Step");
     list.sublist("Step").sublist("Augmented Lagrangian").set("Use Default Problem Scaling",false);
     list.sublist("Status Test").set("Gradient Tolerance",1e-8);
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);

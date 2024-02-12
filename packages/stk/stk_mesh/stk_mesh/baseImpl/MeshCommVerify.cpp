@@ -224,7 +224,8 @@ bool verify_parallel_attributes_for_bucket(const Bucket& bucket,
     if ( ! this_result ) {
       result = false ;
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "P" << mesh.parallel_rank() << ": " << " entity " << mesh.entity_key(entity) << " " << mesh.bucket(entity).topology();
+      error_log << "P" << mesh.parallel_rank() << " sync-count="<<mesh.synchronized_count();
+      error_log << ": entity " << mesh.entity_key(entity) << " " << mesh.bucket(entity).topology();
       error_log << " details: owner(" << p_owner<<"), shared=" << (bucket.shared() ? "true" : "false");
       error_log << ", aura=" << (bucket.in_aura() ? "true" : "false");
       error_log <<", custom-recv-ghost="<<mesh.in_receive_custom_ghost(mesh.entity_key(entity));

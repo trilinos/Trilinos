@@ -230,6 +230,15 @@ inline void MKLSparseMatrix<Kokkos::complex<double>>::export_data(
 }  // namespace Impl
 }  // namespace KokkosSparse
 
+// Utilities for oneMKL SYCL code
+#ifdef KOKKOS_ENABLE_SYCL
+#include "oneapi/mkl/spblas.hpp"
+
+namespace KokkosSparse {
+namespace Impl {}
+}  // namespace KokkosSparse
+#endif  // KOKKOS_ENABLE_SYCL
+
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #endif  // _KOKKOSKERNELS_SPARSEUTILS_MKL_HPP

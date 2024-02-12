@@ -109,10 +109,10 @@ test_trilinos_filter_packages_to_test() {
   filtered_packages=$(trilinos_filter_packages_to_test "Teuchos,Tpetra,PyTrilinos,Panzer")
   ${_ASSERT_EQUALS_} "${filtered_packages}" "Teuchos,Tpetra,PyTrilinos,Panzer"
 
-  filtered_packages=$(trilinos_filter_packages_to_test "TriKota,Teuchos,Tpetra,PyTrilinos,Panzer")
-  ${_ASSERT_EQUALS_} "${filtered_packages}" "TriKota,Teuchos,Tpetra,PyTrilinos,Panzer"
+  filtered_packages=$(trilinos_filter_packages_to_test "Teuchos,Tpetra,PyTrilinos,Panzer")
+  ${_ASSERT_EQUALS_} "${filtered_packages}" "Teuchos,Tpetra,PyTrilinos,Panzer"
 
-  TRILINOS_EXCLUDE_PACKAGES_FROM_PR_TESTING=(TriKota PyTrilinos)
+  TRILINOS_EXCLUDE_PACKAGES_FROM_PR_TESTING=(PyTrilinos)
 
   filtered_packages=$(trilinos_filter_packages_to_test "")
   assertEquals "${filtered_packages}" ""
@@ -123,7 +123,7 @@ test_trilinos_filter_packages_to_test() {
   filtered_packages=$(trilinos_filter_packages_to_test "Teuchos,Tpetra,PyTrilinos,Panzer")
   ${_ASSERT_EQUALS_} "${filtered_packages}" "Teuchos,Tpetra,Panzer"
 
-  filtered_packages=$(trilinos_filter_packages_to_test "TriKota,Teuchos,Tpetra,PyTrilinos,Panzer")
+  filtered_packages=$(trilinos_filter_packages_to_test "Teuchos,Tpetra,PyTrilinos,Panzer")
   ${_ASSERT_EQUALS_} "${filtered_packages}" "Teuchos,Tpetra,Panzer"
 
 }
@@ -139,7 +139,6 @@ test_trilinos_filter_packages_to_test() {
   assertContains "${all_toplevel_packages}" ",TrilinosATDMConfigTests,"
   assertContains "${all_toplevel_packages}" ",Teuchos,"
   assertContains "${all_toplevel_packages}" ",Tpetra,"
-  assertContains "${all_toplevel_packages}" ",TriKota,"
   assertContains "${all_toplevel_packages}" ",PyTrilinos,"
   assertContains "${all_toplevel_packages}" ",NewPackage,"
   assertContains "${all_toplevel_packages}" ",Panzer,"

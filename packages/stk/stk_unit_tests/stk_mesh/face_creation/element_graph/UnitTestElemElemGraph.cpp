@@ -4540,6 +4540,62 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
   }
 }
 
+TEST(TestAuraHex, TestKeyHoleSimilarProblemBInParallel)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+  if(stk::parallel_machine_size(comm) != 3) { GTEST_SKIP(); }
+
+  const int procRank = stk::parallel_machine_rank(comm);
+  unsigned spatialDim = 3;
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, comm);
+  stk::mesh::BulkData& bulkData = *bulkPtr;
+  stk::io::fill_mesh("generated:3x1x3", bulkData);
+
+  {
+    stk::mesh::EntityProcVec elementProcChanges;
+    if (procRank == 1) {
+      elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,4),2));
+      elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,6),2));
+    }
+    bulkData.change_entity_owner(elementProcChanges);
+  }
+
+{
+stk::parallel_machine_barrier(bulkData.parallel());
+std::ostringstream os;
+os<<"P"<<bulkData.parallel_rank()<<" ****************** about to do test mod"<<std::endl;
+stk::mesh::EntityVector elems;
+stk::mesh::get_entities(bulkData, stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part(), elems);
+for(stk::mesh::Entity elem : elems) {
+os<<bulkData.entity_key(elem)<<" nodes: ";
+const stk::mesh::Entity* nodes = bulkData.begin_nodes(elem);
+for(int i=0; i<8; ++i) os<<bulkData.identifier(nodes[i])<<" o="<<bulkData.parallel_owner_rank(nodes[i])<<",s="<<bulkData.bucket(nodes[i]).shared()<<",a="<<bulkData.bucket(nodes[i]).in_aura()<<"; ";
+os<<std::endl;
+}
+std::cerr<<os.str();
+stk::parallel_machine_barrier(bulkData.parallel());
+}
+  bulkData.modification_begin();
+  if (procRank == 1) {
+    stk::mesh::Entity elem5 = bulkData.get_entity(stk::topology::ELEM_RANK,5);
+    ASSERT_TRUE(bulkData.parallel_owner_rank(elem5)==1);
+{
+std::ostringstream os;
+os<<"P"<<bulkData.parallel_rank()<<" elem5 nodes: ";
+const stk::mesh::Entity* nodes = bulkData.begin_nodes(elem5);
+for(int i=0; i<8; ++i) {
+os<<bulkData.identifier(nodes[i])<<" o="<<bulkData.parallel_owner_rank(nodes[i])<<",s="<<bulkData.bucket(nodes[i]).shared()<<",a="<<bulkData.bucket(nodes[i]).in_aura()<<"; ";
+}
+os<<std::endl;
+std::cerr<<os.str();
+}
+    EXPECT_TRUE(bulkData.destroy_entity(elem5));
+  }
+  bulkData.modification_end();
+}
+
 // element ids / proc_id:
 // |-------|-------|-------|
 // |       |       |       |
@@ -4560,50 +4616,57 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-  if(stk::parallel_machine_size(comm) == 3)
-  {
-    const int procRank = stk::parallel_machine_rank(comm);
-    unsigned spatialDim = 3;
+  if(stk::parallel_machine_size(comm) != 3) { GTEST_SKIP(); }
 
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, comm);
-    stk::mesh::BulkData& bulkData = *bulkPtr;
-    stk::io::fill_mesh("generated:3x1x3", bulkData);
+  const int procRank = stk::parallel_machine_rank(comm);
+  unsigned spatialDim = 3;
 
-    stk::mesh::EntityProcVec elementProcChanges;
-    if (procRank == 1) {
-      elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,4),2));
-      elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,6),2));
-    }
-    bulkData.change_entity_owner(elementProcChanges);
-    bulkData.modification_begin();
-    if (procRank == 1) {
-      stk::mesh::Entity local_element5 = bulkData.get_entity(stk::topology::ELEM_RANK,5);
-      bulkData.destroy_entity(local_element5);
-    }
-    bulkData.modification_end();
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, comm);
+  stk::mesh::BulkData& bulkData = *bulkPtr;
+  stk::io::fill_mesh("generated:3x1x3", bulkData);
 
-    ElemElemGraphTester graph(bulkData);
-    if (procRank == 0) {
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,1)));
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,2)));
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,3)));
-      EXPECT_EQ(6u, graph.num_edges());
-      EXPECT_EQ(2u, graph.num_parallel_edges());
-    }
-    if (procRank == 1) {
-      EXPECT_EQ(0u, graph.size());
-      EXPECT_EQ(0u, graph.num_edges());
-      EXPECT_EQ(0u, graph.num_parallel_edges());
-    }
-    if (procRank == 2) {
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,4)));
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,6)));
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,7)));
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,8)));
-      EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,9)));
-      EXPECT_EQ(10u, graph.num_edges());
-      EXPECT_EQ( 2u, graph.num_parallel_edges());
-    }
+  stk::mesh::EntityProcVec elementProcChanges;
+  if (procRank == 1) {
+    elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,4),2));
+    elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,6),2));
+  }
+
+  bulkData.change_entity_owner(elementProcChanges);
+{
+stk::parallel_machine_barrier(bulkData.parallel());
+std::ostringstream os;
+os<<"P"<<bulkData.parallel_rank()<<" about to do test mod"<<std::endl;
+std::cerr<<os.str();
+stk::parallel_machine_barrier(bulkData.parallel());
+}
+  bulkData.modification_begin();
+  if (procRank == 1) {
+    stk::mesh::Entity local_element5 = bulkData.get_entity(stk::topology::ELEM_RANK,5);
+    bulkData.destroy_entity(local_element5);
+  }
+  bulkData.modification_end();
+
+  ElemElemGraphTester graph(bulkData);
+  if (procRank == 0) {
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,1)));
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,2)));
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,3)));
+    EXPECT_EQ(6u, graph.num_edges());
+    EXPECT_EQ(2u, graph.num_parallel_edges());
+  }
+  if (procRank == 1) {
+    EXPECT_EQ(0u, graph.size());
+    EXPECT_EQ(0u, graph.num_edges());
+    EXPECT_EQ(0u, graph.num_parallel_edges());
+  }
+  if (procRank == 2) {
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,4)));
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,6)));
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,7)));
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,8)));
+    EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,9)));
+    EXPECT_EQ(10u, graph.num_edges());
+    EXPECT_EQ( 2u, graph.num_parallel_edges());
   }
 }
 

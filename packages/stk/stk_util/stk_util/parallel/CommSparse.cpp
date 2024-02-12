@@ -347,8 +347,9 @@ bool CommSparse::communicate(bool deallocateSendBuffers)
   if (stk::util::get_common_coupling_version() >= 6) {
     if (m_exchanger) 
     {
-        auto f = [](int rank, stk::CommBuffer& buf) {};
-        communicate_with_unpacker(f);
+        auto noExtraWork = [](){};
+        auto noUnpacker = [](int rank, stk::CommBuffer& buf) {};
+        communicate_with_extra_work_and_unpacker(noExtraWork, noUnpacker, false);
     }
   } else {
     verify_send_buffers_filled();
@@ -374,7 +375,10 @@ bool CommSparse::communicate(bool deallocateSendBuffers)
   return returnValue;
 }
 
-void CommSparse::communicate_with_unpacker(const std::function<void(int fromProc, CommBuffer& buf)>& functor)
+void CommSparse::communicate_with_extra_work_and_unpacker(
+                    const std::function<void()>& workFunctor,
+                    const std::function<void(int fromProc, CommBuffer& buf)>& unpackFunctor,
+                    bool deallocateSendBuffers)
 {
 #ifdef STK_HAS_MPI
   stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
@@ -385,16 +389,23 @@ void CommSparse::communicate_with_unpacker(const std::function<void(int fromProc
       verify_send_buffers_filled();
     
       m_exchanger->start_nonblocking(m_num_recvs);
+      workFunctor();
       m_exchanger->post_nonblocking_receives();
-      m_exchanger->complete_receives(functor);
+      m_exchanger->complete_receives(unpackFunctor);
       m_exchanger->complete_sends();
     }
   } else {
     verify_send_buffers_filled();
 
     if (1 < m_size) {
-      communicate_unpack(m_comm , m_send , m_recv, m_send_procs, m_recv_procs, functor);
+      communicate_unpack(m_comm , m_send , m_recv, m_send_procs, m_recv_procs, unpackFunctor);
     }    
+  }
+
+  if (deallocateSendBuffers) {
+    if (m_exchanger) {
+      m_exchanger->deallocate_send_bufs();
+    }
   }
 #endif
 }

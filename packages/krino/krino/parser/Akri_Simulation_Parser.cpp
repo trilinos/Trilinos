@@ -18,13 +18,11 @@
 namespace krino {
 
 void
-Simulation_Parser::parse(const Parser::Node & node)
+Simulation_Parser::parse(Simulation & simulation, const Parser::Node & node)
 {
   const Parser::Node sim_node = node.get_map_if_present("simulation");
   if ( sim_node )
   {
-    Simulation & simulation = Simulation::build("krino simulation");
-
     double start_time = 0.0;
     if (sim_node.get_if_present("start_time", start_time))
     {

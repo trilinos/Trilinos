@@ -57,45 +57,45 @@
 
 namespace MueLu {
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class UserPFactory : public PFactory {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class UserPFactory : public PFactory {
 #undef MUELU_USERPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor
-    UserPFactory() { }
+  //! Constructor
+  UserPFactory() {}
 
-    //! Destructor.
-    virtual ~UserPFactory() { }
-    //@}
+  //! Destructor.
+  virtual ~UserPFactory() {}
+  //@}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    void Build (Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-  }; //class UserPFactory
+};  // class UserPFactory
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_USERPFACTORY_SHORT
-#endif // MUELU_USERPFACTORY_DECL_HPP
+#endif  // MUELU_USERPFACTORY_DECL_HPP

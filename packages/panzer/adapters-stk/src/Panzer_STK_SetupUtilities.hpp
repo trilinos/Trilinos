@@ -139,6 +139,8 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 // collisions with previously implemented code in tests
 namespace workset_utils { 
 
+///// TO BE DEPRECATED...
+
 /** Get vertices and local cell IDs of a paricular element block.
   *
   * \param[in] mesh Reference to STK_Interface object
@@ -152,6 +154,22 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 		       std::string blockId,
 		       std::vector<std::size_t>& localIds,
 		       ArrayT& vertices);
+
+///// END TO BE DEPRECATED
+
+/** Get nodes and local cell IDs of a particular element block.
+  *
+  * \param[in] mesh Reference to STK_Interface object
+  * \param[in] blockId Element block identifier string
+  * \param[out] localIds On processor local element IDs for the element block
+  * \param[out] nodes Abstract array type (requires resize) containing
+  *                   the coordinates of the nodes. Of size (#Cells, #Nodes, #Dim).
+  */
+template<typename ArrayT>
+void getIdsAndNodes(const panzer_stk::STK_Interface& mesh,
+		       std::string blockId,
+		       std::vector<std::size_t>& localIds,
+		       ArrayT& nodes);
 
 /** This function loops over the passed in set of entities and looks
  * at their related elements. It is then determined which elements

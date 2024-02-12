@@ -62,48 +62,48 @@
 
 namespace MueLu {
 
-  /*!
-    @class GenericRFactory class.
-    @brief Factory for building restriction operators using a prolongator factory
-  */
+/*!
+  @class GenericRFactory class.
+  @brief Factory for building restriction operators using a prolongator factory
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class GenericRFactory : public TwoLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class GenericRFactory : public TwoLevelFactoryBase {
 #undef MUELU_GENERICRFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    GenericRFactory() { }
+  //! Constructor.
+  GenericRFactory() {}
 
-    //! Destructor.
-    virtual ~GenericRFactory() { }
-    //@}
+  //! Destructor.
+  virtual ~GenericRFactory() {}
+  //@}
 
-    //! Input
-    //@{
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! Input
+  //@{
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+  void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    void Build(Level & fineLevel, Level & coarseLevel) const;
+  void Build(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-  }; //class GenericRFactory
+};  // class GenericRFactory
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_GENERICRFACTORY_SHORT
-#endif // MUELU_GENERICRFACTORY_DECL_HPP
+#endif  // MUELU_GENERICRFACTORY_DECL_HPP

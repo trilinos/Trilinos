@@ -268,7 +268,7 @@ private:
     using DeviceMemSpaceType = typename Kokkos::CudaSpace;
   #elif KOKKOS_ENABLE_HIP
     // same as above, make the solver UVM off
-    using DeviceMemSpaceType = typename Kokkos::Experimental::HIPSpace;
+    using DeviceMemSpaceType = typename Kokkos::HIPSpace;
   #else
     using DeviceMemSpaceType = typename DeviceExecSpaceType::memory_space;
   #endif

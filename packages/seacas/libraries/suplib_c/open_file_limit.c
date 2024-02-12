@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,7 +12,7 @@
 #include <unistd.h>
 #endif
 
-int open_file_limit()
+int open_file_limit(void)
 {
   // Returns maximum number of files that one process can have open
   // at one time. (POSIX)

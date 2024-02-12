@@ -12,16 +12,16 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration
-template<class Scalar> class StepperTrapezoidal;
+template <class Scalar>
+class StepperTrapezoidal;
 
 /** \brief Application Action for StepperTrapezoidal.
  *
- *  This class provides a means to apply various actions with the Trapezoidal time step.
- *  The data available to this class is solution variables (through
+ *  This class provides a means to apply various actions with the Trapezoidal
+ * time step. The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
  *  the application to just observe this data, i.e., use but not change
  *  any of it (USER BEWARE!).
@@ -29,33 +29,32 @@ template<class Scalar> class StepperTrapezoidal;
  *  The locations for these AppAction calls
  *  (StepperTrapezoidalAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperTrapezoidal.
-*/
-template<class Scalar>
-class StepperTrapezoidalAppAction
-{
-public:
-
+ */
+template <class Scalar>
+class StepperTrapezoidalAppAction {
+ public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.
-    BEFORE_SOLVE,   ///< Before the solve
-    AFTER_SOLVE,    ///< After then solve
-    END_STEP        ///< At the end of the step.
+    BEGIN_STEP,    ///< At the beginning of the step.
+    BEFORE_SOLVE,  ///< Before the solve
+    AFTER_SOLVE,   ///< After then solve
+    END_STEP       ///< At the end of the step.
   };
 
   /// Constructor
-  StepperTrapezoidalAppAction(){}
+  StepperTrapezoidalAppAction() {}
 
   /// Destructor
-  virtual ~StepperTrapezoidalAppAction(){}
+  virtual ~StepperTrapezoidalAppAction() {}
 
   /// Execute application action for Trapezoidal Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperTrapezoidal<Scalar> > stepper,
-    const typename StepperTrapezoidalAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperTrapezoidal<Scalar> > stepper,
+      const typename StepperTrapezoidalAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperTrapezoidalAppAction_hpp
+#endif  // Tempus_StepperTrapezoidalAppAction_hpp

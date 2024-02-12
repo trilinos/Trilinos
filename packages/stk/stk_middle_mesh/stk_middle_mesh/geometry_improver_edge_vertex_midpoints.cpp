@@ -1,4 +1,6 @@
 #include "geometry_improver_edge_vertex_midpoints.hpp"
+#include "stk_util/util/ReportHandler.hpp"
+#include "utils.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -9,7 +11,19 @@ GeometryImproverEdgeVertexMidPoints::GeometryImproverEdgeVertexMidPoints(
     std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2, std::shared_ptr<mesh::Mesh> meshIn,
     std::shared_ptr<MeshRelationalData> relationalData)
   : GeometryImprover(mesh1, mesh2, meshIn, relationalData)
-{}
+{
+  if (mesh1)
+  {
+    STK_ThrowRequireMsg(utils::impl::comm_size(mesh1->get_comm()) == 1,
+                        "GeometryImproverEdgeVertexMidPoints is not supported in parallel");
+  }
+
+  if (mesh2)
+  {
+    STK_ThrowRequireMsg(utils::impl::comm_size(mesh2->get_comm()) == 1,
+                        "GeometryImproverEdgeVertexMidPoints is not supported in parallel");
+  }  
+}
 
 void GeometryImproverEdgeVertexMidPoints::run()
 {

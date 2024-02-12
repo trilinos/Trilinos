@@ -39,7 +39,7 @@ IF(Kokkos_ENABLE_CUDA)
 ENDIF()
 IF(Kokkos_ENABLE_HIP)
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
-  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::HIP,Kokkos::HIPSpace>")
 ENDIF()
 
 LIST(LENGTH Intrepid2_TEST_ETI_DEVICE_NAME ETI_DEVICE_COUNT)
@@ -77,6 +77,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(HGRAD_HEX_C2TestDataCopy
     HEX_C2_D3Vals.dat
     HEX_C2_D4Vals.dat
     HEX_C2_GradVals.dat
+    HEX_I2_D2Vals.dat
+    HEX_I2_D3Vals.dat
+    HEX_I2_GradVals.dat
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/testdata"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/testdata"
 )

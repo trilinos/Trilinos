@@ -66,67 +66,66 @@
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
 
-
 namespace MueLu {
-  /*!
-    @class TwoLevelMatlabFactory
-    @ingroup MueMexClasses
-    @brief Factory for interacting with Matlab
-  */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-  class TwoLevelMatlabFactory : public TwoLevelFactoryBase {
+/*!
+  @class TwoLevelMatlabFactory
+  @ingroup MueMexClasses
+  @brief Factory for interacting with Matlab
+*/
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class TwoLevelMatlabFactory : public TwoLevelFactoryBase {
 #undef MUELU_TWOLEVELMATLABFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    TwoLevelMatlabFactory();
+  TwoLevelMatlabFactory();
 
-    virtual ~TwoLevelMatlabFactory() { }
+  virtual ~TwoLevelMatlabFactory() {}
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! @name Input
+  //@{
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
-    void Build(Level& fineLevel, Level& coarseLevel) const;
-    //@}
+  //! @name Build methods.
+  //@{
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //! @ name Description
-    //@{
-    std::string description() const;
-    //@}
-  private:
-    //@{
+  //! @ name Description
+  //@{
+  std::string description() const;
+  //@}
+ private:
+  //@{
 
-    mutable bool hasDeclaredInput_;
+  mutable bool hasDeclaredInput_;
 
-    //@}
+  //@}
 
-    //@{
+  //@{
 
-    //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the fine level.  These must be listed before coarse needs.
-    mutable std::vector<std::string> needsFine_;
+  //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the fine level.  These must be listed before coarse needs.
+  mutable std::vector<std::string> needsFine_;
 
-    //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the coarse level.  These must be listed after fine needs.
-    mutable std::vector<std::string> needsCoarse_;
+  //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects for the coarse level.  These must be listed after fine needs.
+  mutable std::vector<std::string> needsCoarse_;
 
-    //@}
+  //@}
 
-  }; //class TwoLevelMatlabFactory
+};  // class TwoLevelMatlabFactory
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_TWOLEVELMATLABFACTORY_SHORT
 
-#endif // HAVE_MUELU_MATLAB
-#endif // MUELU TWOLEVELMATLABFACTORY_DECL_HPP
+#endif  // HAVE_MUELU_MATLAB
+#endif  // MUELU TWOLEVELMATLABFACTORY_DECL_HPP

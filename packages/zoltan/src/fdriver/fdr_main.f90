@@ -138,8 +138,8 @@ end interface
   call MPI_Init(error)
 
 !   get some machine information 
-  call MPI_Comm_rank(MPI_COMM_WORLD, Proc, error)
-  call MPI_Comm_size(MPI_COMM_WORLD, Num_Proc, error)
+  call MPI_Comm_rank(zoltan_get_global_comm(), Proc, error)
+  call MPI_Comm_size(zoltan_get_global_comm(), Num_Proc, error)
 
   call MPI_Get_processor_name(procname, namelen, error)
   print *,"Processor ",Proc," of ",Num_Proc," on host ",procname(1:namelen)

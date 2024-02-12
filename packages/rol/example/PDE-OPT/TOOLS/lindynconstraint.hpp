@@ -247,7 +247,7 @@ public:
                    const ROL::Ptr<MeshManager<Real>> &meshMgr,
                    const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                    Teuchos::ParameterList &parlist,
-                   const bool isLTI = false,
+                   bool isLTI = false,
                    std::ostream &outStream = std::cout)
     : pde_         (   pde ),
       isLTI_       ( isLTI ),
@@ -305,7 +305,7 @@ public:
       cf->update(one, *cvec_, one);
     }
     if (zp != ROL::nullPtr) {
-      applyJacobian_zp(cvec_,zp,false);
+      applyJacobian_zp(cvec_, zp, true);
       cf->update(one, *cvec_, one);
     }
     // Add new state contribution
@@ -338,15 +338,15 @@ public:
       cf->update(one, *cvec_, one);
     }
     if (zp != ROL::nullPtr) {
-      applyJacobian_zp(cvec_,zp,false);
+      applyJacobian_zp(cvec_, zp, true);
       cf->update(one, *cvec_, one);
     }
     // Apply inverse of new state jacobian
-    solveForward(unf,cf);
+    solveForward(unf, cf);
     unf->scale(static_cast<Real>(-1));
     // Compute residual
-    applyJacobian_un(cvec_,unf,false);
-    cf->update(one,*cvec_,one);
+    applyJacobian_un(cvec_, unf, false);
+    cf->update(one, *cvec_, one);
   }
 
   void applyJacobian_uo(ROL::Vector<Real>    &jv,

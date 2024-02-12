@@ -44,7 +44,7 @@
 // The initial guesses are all set to zero.
 //
 // NOTE: No preconditioner is used in this case.
-//
+
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
@@ -54,41 +54,46 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
+
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
 #include <Trilinos_Util_iohb.h>
 
-using namespace Teuchos;
-using Tpetra::Operator;
-using Tpetra::CrsMatrix;
-using Tpetra::MultiVector;
-using std::endl;
-using std::cout;
-using std::vector;
-using Teuchos::tuple;
+template <typename ScalarType>
+int run(int argc, char *argv[])
+{
+  using BSC = typename Tpetra::MultiVector<ScalarType>::scalar_type;
+  using ST  = typename std::complex<BSC>;
+  
+  using OP = typename Tpetra::Operator<ST>;
+  using MV = typename Tpetra::MultiVector<ST>;
+  using tcrsmatrix_t = Tpetra::CrsMatrix<ST>;
+  
+  using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV>;
 
-int main(int argc, char *argv[]) {
-  typedef Tpetra::MultiVector<>::scalar_type BSC;
-  typedef std::complex<BSC>                ST;
-  typedef ScalarTraits<ST>                SCT;
-  typedef SCT::magnitudeType               MT;
-  typedef Tpetra::Operator<ST>             OP;
-  typedef Tpetra::MultiVector<ST>          MV;
-  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  using SCT = typename Teuchos::ScalarTraits<ST>;
+  using MT  = typename SCT::magnitudeType;
 
-  GlobalMPISession mpisess(&argc,&argv,&cout);
+  using Tpetra::Operator;
+  using Tpetra::CrsMatrix;
+  using Tpetra::MultiVector;
 
-  const ST one  = SCT::one();
+  using Teuchos::GlobalMPISession;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::CommandLineProcessor;
+  using Teuchos::ParameterList;
 
+  const ST one = SCT::one();
+
+  GlobalMPISession mpisess(&argc,&argv,&std::cout);
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   int MyPID = rank(*comm);
 
-  //
   // Get test parameters from command-line processor
-  //
   bool verbose = false, proc_verbose = false, debug = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;      // total number of right-hand sides to solve for
@@ -117,13 +122,12 @@ int main(int argc, char *argv[]) {
   }
 
   proc_verbose = ( verbose && (MyPID==0) );
-
   if (proc_verbose) {
     std::cout << Belos::Belos_Version() << std::endl << std::endl;
   }
 
-  Belos::Tpetra::HarwellBoeingReader<Tpetra::CrsMatrix<ST> > reader( comm );
-  RCP<Tpetra::CrsMatrix<ST> > A = reader.readFromFile( filename );
+  Belos::Tpetra::HarwellBoeingReader<tcrsmatrix_t> reader( comm );
+  RCP<tcrsmatrix_t> A = reader.readFromFile( filename );
   RCP<const Tpetra::Map<> > map = A->getMap();
 
   // Create initial vectors
@@ -134,15 +138,12 @@ int main(int argc, char *argv[]) {
   OPT::Apply( *A, *X, *B );
   MVT::MvInit( *X, 0.0 );
 
-  //
-  // ********Other information used by block solver***********
-  // *****************(can be user specified)******************
-  //
+  // Other information used by block solver (can be user specified)
   const int NumGlobalElements = B->getGlobalLength();
   if (maxiters == -1) {
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   }
-  //
+
   ParameterList belosList;
   belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
@@ -160,9 +161,8 @@ int main(int argc, char *argv[]) {
       belosList.set( "Output Frequency", frequency );
     }
   }
-  //
+  
   // Construct an unpreconditioned linear problem instance.
-  //
   Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
@@ -170,16 +170,11 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
-  //
-  // *******************************************************************
-  // *************Start the block CG iteration***********************
-  // *******************************************************************
-  //
+
+  // Start the block CG iteration
   Belos::BlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
-  //
-  // **********Print out information about problem*******************
-  //
+  // Print out information about problem
   if (proc_verbose) {
     std::cout << std::endl << std::endl;
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
@@ -189,13 +184,11 @@ int main(int argc, char *argv[]) {
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
-  //
+  
   // Perform solve
-  //
   Belos::ReturnType ret = solver.solve();
-  //
+
   // Compute actual residuals.
-  //
   bool badRes = false;
   std::vector<MT> actual_resids( numrhs );
   std::vector<MT> rhs_norm( numrhs );
@@ -205,12 +198,12 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( resid, actual_resids );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+    std::cout << "---------- Actual Residuals (normalized) ----------" << std::endl<<std::endl;
   }
   for ( int i=0; i<numrhs; i++) {
     MT actRes = actual_resids[i]/rhs_norm[i];
     if (proc_verbose) {
-      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+      std::cout << "Problem "<<i<<" : \t"<< actRes << std::endl;
     }
     if (actRes > tol) badRes = true;
   }
@@ -221,12 +214,19 @@ int main(int argc, char *argv[]) {
     }
     return -1;
   }
-  //
+  
   // Default return value
-  //
   if (proc_verbose) {
     std::cout << "\nEnd Result: TEST PASSED" << std::endl;
   }
+
   return 0;
-  //
 } // end test_bl_cg_complex_hb.cpp
+
+int main(int argc, char *argv[]) {
+  return run<double>(argc,argv);
+
+  // wrapped with a check: CMake option Trilinos_ENABLE_FLOAT=ON
+  // return run<float>(argc,argv);
+}
+

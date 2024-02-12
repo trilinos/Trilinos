@@ -63,6 +63,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+ADVANCED_SET(${CMAKE_PROJECT_NAME}_ENABLE_SEACASIoss_Applications ON CACHE BOOL
+								  "Build the io_shell, io_info, io_modify and other ioss executables")
+
 IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
 # For some reason, this variable is undefined if fortran is disabled and it causes a cmake error.
 # define it to a nonsense variable to avoid error.

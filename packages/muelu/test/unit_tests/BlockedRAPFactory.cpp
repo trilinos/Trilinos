@@ -56,20 +56,19 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedRAPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedRAPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
 
-    out << "version: " << MueLu::Version() << std::endl;
+  out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<BlockedRAPFactory> blockedRAPFactory = rcp(new BlockedRAPFactory());
-    TEST_EQUALITY(blockedRAPFactory != Teuchos::null, true);
-  } // Constructor
+  RCP<BlockedRAPFactory> blockedRAPFactory = rcp(new BlockedRAPFactory());
+  TEST_EQUALITY(blockedRAPFactory != Teuchos::null, true);
+}  // Constructor
 
-# define MUELU_ETI_GROUP(SC, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedRAPFactory, Constructor, SC, LO, GO, Node)
+#define MUELU_ETI_GROUP(SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedRAPFactory, Constructor, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
-}
+}  // namespace MueLuTests

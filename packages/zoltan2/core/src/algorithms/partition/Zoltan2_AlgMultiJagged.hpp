@@ -3544,11 +3544,6 @@ struct Zoltan2_MJArrayType {
 
   KOKKOS_INLINE_FUNCTION
   Zoltan2_MJArrayType(scalar_t * pSetPtr) : ptr(pSetPtr) {};
-
-  Zoltan2_MJArrayType<scalar_t>& operator=(const volatile Zoltan2_MJArrayType<scalar_t>& zmj) {
-      ptr = zmj.ptr;
-      return *this;
-  }
 };
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)

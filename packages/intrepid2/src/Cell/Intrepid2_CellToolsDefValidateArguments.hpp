@@ -225,15 +225,19 @@ namespace Intrepid2 {
                                     const worksetCellViewType  worksetCell,
                                     const shards::CellTopology cellTopo ) {
     // Validate worksetCell array
-    INTREPID2_TEST_FOR_EXCEPTION( worksetCell.rank() != 3, std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): rank = 3 required for worksetCell array." );
+    INTREPID2_TEST_FOR_EXCEPTION( (worksetCell.rank() != 3) || (physPoints.rank() != 3), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): rank = 3 required for worksetCell and physPoints arrays." );
  
     //TODO: check this, not working for tria6 
     //INTREPID2_TEST_FOR_EXCEPTION( worksetCell.extent(1) != cellTopo.getSubcellCount(0), std::invalid_argument,
     //                              ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): dim 1 (number of cell nodes) of worksetCell array does not match cell topology." );
   
-    INTREPID2_TEST_FOR_EXCEPTION( worksetCell.extent(2) != cellTopo.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): dim 2 (spatial dimension) of worksetCell array  does not match cell dimension." );
+    //we allow cells immersed in a higher-dimensional space  (e.g. 2d cell in a 3d space)
+    INTREPID2_TEST_FOR_EXCEPTION( worksetCell.extent(2) < cellTopo.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): dim 2 (spatial dimension) of worksetCell array is smaller than the cell dimension." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( physPoints.extent(2) !=  worksetCell.extent(2), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): physPoints and worksetCell should have the same spatial dimension." );
 
 
     // Validate refPoints array: can be rank-2 (P,D) or rank-3 (C,P,D) array
@@ -259,8 +263,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( physPoints.extent(1) != refPoints.extent(0), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): dim 1 (number of points) of physPoints array must equal dim 0 of refPoints array." ); 
       
-      INTREPID2_TEST_FOR_EXCEPTION( physPoints.extent(2) != cellTopo.getDimension(), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): dim 2 (spatial dimension) does not match cell dimension." );  
+  
       break;
     }
     case 3: {
@@ -276,7 +279,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( refPointRank != physPointRank, std::invalid_argument, 
                                     " >>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): refPoints rank does not match to physPoints rank." );
       
-      for (ordinal_type i=0;i<refPointRank;++i) {
+      for (ordinal_type i=0;i<refPointRank-1;++i) {
         INTREPID2_TEST_FOR_EXCEPTION( refPoints.extent(i) != physPoints.extent(i), std::invalid_argument, 
                                       " >>> ERROR (Intrepid2::CellTools::mapToPhysicalFrame): refPoints dimension(i) does not match to physPoints dimension(i)." );
       }

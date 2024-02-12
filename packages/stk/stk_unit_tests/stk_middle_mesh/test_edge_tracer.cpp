@@ -12,43 +12,41 @@ using namespace stk::middle_mesh::predicates::impl;
 
 namespace testing {
 
-class EdgeTracerTester : public ::testing::Test
+
+class EdgeTracerTesterBase
 {
   protected:
-    EdgeTracerTester()
-      : mesh(create_test_mesh())
-      , mesh1(create_test_mesh())
-      , tracer(mesh, create_normal_field(), middle_mesh::impl::EdgeTracerTolerances(1e-13))
+    EdgeTracerTesterBase()
     {}
 
     // forward to private members of class
-    std::vector<mesh::MeshEntityPtr> get_elements(mesh::MeshEntityPtr entity) { return tracer.get_elements(entity); }
+    std::vector<mesh::MeshEntityPtr> get_elements(mesh::MeshEntityPtr entity) { return tracer->get_elements(entity); }
     std::vector<mesh::MeshEntityPtr> get_excluded_elements(const predicates::impl::PointRecord& prevIntersection,
                                                            const predicates::impl::PointRecord& currentIntersection)
     {
-      return tracer.get_excluded_elements(prevIntersection, currentIntersection);
+      return tracer->get_excluded_elements(prevIntersection, currentIntersection);
     }
 
     std::vector<mesh::MeshEntityPtr> get_included_entities(std::vector<mesh::MeshEntityPtr>& allEntities,
                                                            const std::vector<mesh::MeshEntityPtr>& excludedEntities)
     {
-      return tracer.get_included_entities(allEntities, excludedEntities);
+      return tracer->get_included_entities(allEntities, excludedEntities);
     }
 
     bool at_end_of_line(const std::vector<mesh::MeshEntityPtr>& includedElements,
                         const predicates::impl::PointRecord& endVert)
     {
-      return tracer.at_end_of_line(includedElements, endVert);
+      return tracer->at_end_of_line(includedElements, endVert);
     }
 
     std::vector<mesh::MeshEntityPtr> get_edges(const std::vector<mesh::MeshEntityPtr>& elements)
     {
-      return tracer.get_edges(elements);
+      return tracer->get_edges(elements);
     }
 
     std::vector<mesh::MeshEntityPtr> get_excluded_edges(const predicates::impl::PointRecord& record)
     {
-      return tracer.get_excluded_edges(record);
+      return tracer->get_excluded_edges(record);
     }
 
     int choose_intersection_with_minimum_angle(const std::vector<double>& alphas, const std::vector<double>& betas,
@@ -57,7 +55,7 @@ class EdgeTracerTester : public ::testing::Test
                                                const std::vector<int>& intersectionIdxToEdgeIdx,
                                                const utils::Point& edgeStartPt, const utils::Point& edgeEndPt)
     {
-      return tracer.choose_intersection_with_minimum_angle(alphas, betas, intersectionsInRange, edges,
+      return tracer->choose_intersection_with_minimum_angle(alphas, betas, intersectionsInRange, edges,
                                                            intersectionIdxToEdgeIdx, edgeStartPt, edgeEndPt);
     }
 
@@ -65,7 +63,7 @@ class EdgeTracerTester : public ::testing::Test
     create_edge_intersection(mesh::MeshEntityPtr edge, const std::vector<mesh::MeshEntityPtr>& includedElements,
                              double alpha, double beta)
     {
-      return tracer.create_edge_intersection(edge, includedElements, alpha, beta);
+      return tracer->create_edge_intersection(edge, includedElements, alpha, beta);
     }
 
     void trace_edge(const utils::Point& ptStart, const utils::Point& normalStart,
@@ -73,47 +71,18 @@ class EdgeTracerTester : public ::testing::Test
                     const utils::Point& normalEnd, const predicates::impl::PointRecord& recordEnd,
                     std::vector<nonconformal4::impl::EdgeIntersection>& intersections)
     {
-      tracer.trace_edge(ptStart, normalStart, recordStart, ptEnd, normalEnd, recordEnd, intersections);
+      tracer->trace_edge(ptStart, normalStart, recordStart, ptEnd, normalEnd, recordEnd, intersections);
     }
 
     void redistribute_points_near_endpoints(std::vector<nonconformal4::impl::EdgeIntersection>& intersections,
                                             double eps)
     {
-      tracer.redistribute_points_near_endpoints(intersections, eps);
+      tracer->redistribute_points_near_endpoints(intersections, eps);
     }
 
-    std::shared_ptr<mesh::Mesh> mesh;
-    std::shared_ptr<mesh::Mesh> mesh1;
-    mesh::MeshEntityPtr interiorVert;
-    mesh::MeshEntityPtr interiorEdge;
-    mesh::MeshEntityPtr interiorEl;
-    nonconformal4::impl::EdgeTracer tracer;
+    std::shared_ptr<nonconformal4::impl::EdgeTracer> tracer;
 
-  private:
-    std::shared_ptr<mesh::Mesh> create_test_mesh()
-    {
-      mesh::impl::MeshSpec spec;
-      spec.xmin   = 0;
-      spec.xmax   = 1;
-      spec.ymin   = 0;
-      spec.ymax   = 1;
-      spec.numelX = 3;
-      spec.numelY = 3;
-
-      auto mesh = create_mesh(
-          spec, [](const utils::Point& pt) { return pt; }, MPI_COMM_SELF);
-      interiorVert = mesh->get_vertices()[5];
-      assert(interiorVert->count_up() == 4);
-
-      interiorEdge = mesh->get_edges()[6];
-      assert(interiorEdge->count_up() == 2);
-
-      interiorEl = mesh->get_elements()[4];
-
-      return mesh;
-    }
-
-    mesh::FieldPtr<utils::Point> create_normal_field()
+    mesh::FieldPtr<utils::Point> create_normal_field(std::shared_ptr<mesh::Mesh> mesh)
     {
       auto field = mesh::create_field<utils::Point>(mesh, mesh::impl::FieldShape(1, 0, 0), 1);
       for (auto& vert : mesh->get_vertices())
@@ -127,7 +96,81 @@ class EdgeTracerTester : public ::testing::Test
 } // namespace testing
 
 namespace {
-using EdgeTracerTester = testing::EdgeTracerTester;
+class EdgeTracerTesterQuad : public ::testing::Test,
+                             public testing::EdgeTracerTesterBase
+{
+  protected:
+      EdgeTracerTesterQuad()
+      : mesh(create_test_mesh(false))
+      , mesh1(create_test_mesh(false))
+    {
+      tracer = std::make_shared<nonconformal4::impl::EdgeTracer>(mesh, create_normal_field(mesh), middle_mesh::impl::EdgeTracerTolerances(1e-13));
+    }
+
+    std::shared_ptr<mesh::Mesh> create_test_mesh(bool createTris=false)
+    {
+      mesh::impl::MeshSpec spec;
+      spec.xmin   = 0;
+      spec.xmax   = 1;
+      spec.ymin   = 0;
+      spec.ymax   = 1;
+      spec.numelX = 3;
+      spec.numelY = 3;
+
+      auto mesh = create_mesh(
+          spec, [](const utils::Point& pt) { return pt; }, MPI_COMM_SELF, createTris);
+      interiorVert = mesh->get_vertices()[5];
+      assert(interiorVert->count_up() == 4);
+
+      interiorEdge = mesh->get_edges()[6];
+      assert(interiorEdge->count_up() == 2);
+
+      interiorEl = mesh->get_elements()[4];
+
+      return mesh;
+    }
+
+    std::shared_ptr<mesh::Mesh> mesh;
+    std::shared_ptr<mesh::Mesh> mesh1;
+    mesh::MeshEntityPtr interiorVert;
+    mesh::MeshEntityPtr interiorEdge;
+    mesh::MeshEntityPtr interiorEl;
+};
+
+class EdgeTracerTesterTri : public ::testing::Test,
+                            public testing::EdgeTracerTesterBase
+{
+  protected:
+      EdgeTracerTesterTri()
+      : mesh(create_test_mesh(true))
+      , mesh1(create_test_mesh(true))
+    {
+      tracer = std::make_shared<nonconformal4::impl::EdgeTracer>(mesh, create_normal_field(mesh), middle_mesh::impl::EdgeTracerTolerances(1e-13));
+    }
+
+    std::shared_ptr<mesh::Mesh> create_test_mesh(bool createTris=false)
+    {
+      mesh::impl::MeshSpec spec;
+      spec.xmin   = 0;
+      spec.xmax   = 1;
+      spec.ymin   = 0;
+      spec.ymax   = 1;
+      spec.numelX = 3;
+      spec.numelY = 3;
+
+      auto mesh = create_mesh(
+          spec, [](const utils::Point& pt) { return pt; }, MPI_COMM_SELF, createTris);
+
+      return mesh;
+    }
+
+    std::shared_ptr<mesh::Mesh> mesh;
+    std::shared_ptr<mesh::Mesh> mesh1;
+    mesh::MeshEntityPtr interiorVert;
+    mesh::MeshEntityPtr interiorEdge;
+    mesh::MeshEntityPtr interiorEl;
+};
+
 
 template <typename T>
 void expect_equal(std::vector<T> vec1, std::vector<T> vec2)
@@ -160,7 +203,7 @@ mesh::MeshEntityPtr get_closest_element(std::shared_ptr<mesh::Mesh> mesh, const 
 
 } // namespace
 
-TEST_F(EdgeTracerTester, get_entity)
+TEST_F(EdgeTracerTesterQuad, get_entity)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -183,7 +226,7 @@ TEST_F(EdgeTracerTester, get_entity)
   }
 }
 
-TEST_F(EdgeTracerTester, get_elements)
+TEST_F(EdgeTracerTesterQuad, get_elements)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -200,7 +243,7 @@ TEST_F(EdgeTracerTester, get_elements)
   expect_equal(els, elsExpected);
 }
 
-TEST_F(EdgeTracerTester, get_excluded_elements_FirstPoint)
+TEST_F(EdgeTracerTesterQuad, get_excluded_elements_FirstPoint)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -220,7 +263,7 @@ TEST_F(EdgeTracerTester, get_excluded_elements_FirstPoint)
   expect_equal(elements, {});
 }
 
-TEST_F(EdgeTracerTester, get_excluded_elements_SecondPointFromInterior)
+TEST_F(EdgeTracerTesterQuad, get_excluded_elements_SecondPointFromInterior)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -236,7 +279,7 @@ TEST_F(EdgeTracerTester, get_excluded_elements_SecondPointFromInterior)
   expect_equal(elements, {el});
 }
 
-TEST_F(EdgeTracerTester, get_excluded_elements_TwoEdges)
+TEST_F(EdgeTracerTesterQuad, get_excluded_elements_TwoEdges)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -247,7 +290,7 @@ TEST_F(EdgeTracerTester, get_excluded_elements_TwoEdges)
   expect_equal(elements, {interiorEl});
 }
 
-TEST_F(EdgeTracerTester, get_excluded_elements_VertEdge)
+TEST_F(EdgeTracerTesterQuad, get_excluded_elements_VertEdge)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -258,7 +301,7 @@ TEST_F(EdgeTracerTester, get_excluded_elements_VertEdge)
   expect_equal(elements, {interiorEl});
 }
 
-TEST_F(EdgeTracerTester, get_excluded_elements_EdgeVert)
+TEST_F(EdgeTracerTesterQuad, get_excluded_elements_EdgeVert)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -269,7 +312,7 @@ TEST_F(EdgeTracerTester, get_excluded_elements_EdgeVert)
   expect_equal(elements, {interiorEl});
 }
 
-TEST_F(EdgeTracerTester, get_excluded_elements_VertVertDiagonal)
+TEST_F(EdgeTracerTesterQuad, get_excluded_elements_VertVertDiagonal)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -280,7 +323,7 @@ TEST_F(EdgeTracerTester, get_excluded_elements_VertVertDiagonal)
   expect_equal(elements, {interiorEl});
 }
 
-TEST_F(EdgeTracerTester, get_excluded_elements_VertVertSharedEdge)
+TEST_F(EdgeTracerTesterQuad, get_excluded_elements_VertVertSharedEdge)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -292,7 +335,7 @@ TEST_F(EdgeTracerTester, get_excluded_elements_VertVertSharedEdge)
   expect_equal(elements, {edge->get_up(0), edge->get_up(1)});
 }
 
-TEST_F(EdgeTracerTester, get_included_entities)
+TEST_F(EdgeTracerTesterQuad, get_included_entities)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -309,7 +352,7 @@ TEST_F(EdgeTracerTester, get_included_entities)
               includedEntities.end());
 }
 
-TEST_F(EdgeTracerTester, at_end_of_line_Interior)
+TEST_F(EdgeTracerTesterQuad, at_end_of_line_Interior)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -319,7 +362,7 @@ TEST_F(EdgeTracerTester, at_end_of_line_Interior)
       at_end_of_line(includedEls, predicates::impl::PointRecord(PointClassification::Interior, -1, interiorEl)));
 }
 
-TEST_F(EdgeTracerTester, at_end_of_line_EdgeSameElement)
+TEST_F(EdgeTracerTesterQuad, at_end_of_line_EdgeSameElement)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -328,7 +371,7 @@ TEST_F(EdgeTracerTester, at_end_of_line_EdgeSameElement)
   EXPECT_TRUE(at_end_of_line(includedEls, predicates::impl::PointRecord(PointClassification::Edge, 1, interiorEl)));
 }
 
-TEST_F(EdgeTracerTester, at_end_of_line_VertSameElement)
+TEST_F(EdgeTracerTesterQuad, at_end_of_line_VertSameElement)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -337,7 +380,7 @@ TEST_F(EdgeTracerTester, at_end_of_line_VertSameElement)
   EXPECT_TRUE(at_end_of_line(includedEls, predicates::impl::PointRecord(PointClassification::Vert, 1, interiorEl)));
 }
 
-TEST_F(EdgeTracerTester, at_end_of_line_EdgeDifferentElement)
+TEST_F(EdgeTracerTesterQuad, at_end_of_line_EdgeDifferentElement)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -359,7 +402,7 @@ TEST_F(EdgeTracerTester, at_end_of_line_EdgeDifferentElement)
                              predicates::impl::PointRecord(PointClassification::Edge, otherElEdgeLocalId, otherEl)));
 }
 
-TEST_F(EdgeTracerTester, at_end_of_line_VertDifferentElement)
+TEST_F(EdgeTracerTesterQuad, at_end_of_line_VertDifferentElement)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -389,7 +432,7 @@ TEST_F(EdgeTracerTester, at_end_of_line_VertDifferentElement)
                              predicates::impl::PointRecord(PointClassification::Vert, otherElVertLocalId, otherEl)));
 }
 
-TEST_F(EdgeTracerTester, get_edges)
+TEST_F(EdgeTracerTesterQuad, get_edges)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -411,7 +454,7 @@ TEST_F(EdgeTracerTester, get_edges)
   expect_equal(edges, edges2);
 }
 
-TEST_F(EdgeTracerTester, get_excluded_edges)
+TEST_F(EdgeTracerTesterQuad, get_excluded_edges)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -434,7 +477,7 @@ TEST_F(EdgeTracerTester, get_excluded_edges)
   expect_equal(edges, edgesExpected);
 }
 
-TEST_F(EdgeTracerTester, getBestIntersectionWhenMultipleInRange)
+TEST_F(EdgeTracerTesterQuad, getBestIntersectionWhenMultipleInRange)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -460,7 +503,7 @@ TEST_F(EdgeTracerTester, getBestIntersectionWhenMultipleInRange)
   EXPECT_EQ(bestIntersectionIdx, 1);
 }
 
-TEST_F(EdgeTracerTester, create_edge_intersection)
+TEST_F(EdgeTracerTesterQuad, create_edge_intersection)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -488,7 +531,7 @@ TEST_F(EdgeTracerTester, create_edge_intersection)
   EXPECT_EQ(edgeIntersection.beta, -1);
 }
 
-TEST_F(EdgeTracerTester, get_entity_id_Verts)
+TEST_F(EdgeTracerTesterQuad, get_entity_id_Verts)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -501,7 +544,7 @@ TEST_F(EdgeTracerTester, get_entity_id_Verts)
     EXPECT_EQ(predicates::impl::get_entity_id(el, verts[i]), i);
 }
 
-TEST_F(EdgeTracerTester, get_entity_id_Edges)
+TEST_F(EdgeTracerTesterQuad, get_entity_id_Edges)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -514,7 +557,7 @@ TEST_F(EdgeTracerTester, get_entity_id_Edges)
     EXPECT_EQ(predicates::impl::get_entity_id(el, edges[i]), i);
 }
 
-TEST_F(EdgeTracerTester, trace_edgeThroughEdges)
+TEST_F(EdgeTracerTesterQuad, trace_edgeThroughEdges)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -543,7 +586,43 @@ TEST_F(EdgeTracerTester, trace_edgeThroughEdges)
   EXPECT_NEAR(intersections[1].beta, 0.75, 1e-13);
 }
 
-TEST_F(EdgeTracerTester, trace_edgeThroughEdgesStartingFromEdge)
+TEST_F(EdgeTracerTesterTri, trace_edgeThroughEdges)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
+    GTEST_SKIP();
+
+  utils::Point ptStart(0.25, 0.10), ptEnd(0.75, 0.1), normal(0, 0, 1);
+  mesh::MeshEntityPtr el1 = get_closest_element(mesh1, utils::Point(2.0 / 9, 1.0 / 9));
+  mesh::MeshEntityPtr el2 = get_closest_element(mesh1, utils::Point(4.0 / 9, 2.0 / 9));
+  mesh::MeshEntityPtr el3 = get_closest_element(mesh1, utils::Point(5.0 / 9, 1.0 / 9));
+  mesh::MeshEntityPtr el4 = get_closest_element(mesh1, utils::Point(7.0 / 9, 2.0 / 9));
+  predicates::impl::PointRecord recordStart(PointClassification::Interior, -1, el1);
+  predicates::impl::PointRecord recordEnd(PointClassification::Interior, -1, el4);
+  std::vector<nonconformal4::impl::EdgeIntersection> intersections;
+
+  trace_edge(ptStart, normal, recordStart, ptEnd, normal, recordEnd, intersections);
+
+  EXPECT_EQ(intersections.size(), 3u);
+  EXPECT_EQ(intersections[0].record.el, el1);
+  EXPECT_EQ(intersections[0].record.type, PointClassification::Edge);
+  EXPECT_EQ(intersections[0].record.id, 1);
+  EXPECT_NEAR(intersections[0].alpha, 1.0 / 6, 1e-13);
+  EXPECT_NEAR(intersections[0].beta, 0.3, 1e-13);
+
+  EXPECT_EQ(intersections[1].record.el, el2);
+  EXPECT_EQ(intersections[1].record.type, PointClassification::Edge);
+  EXPECT_EQ(intersections[1].record.id, 0);
+  EXPECT_NEAR(intersections[1].alpha, 2*(0.1 + 1.0/3 - 1.0/4), 1e-13);
+  EXPECT_NEAR(intersections[1].beta, 0.3, 1e-13);
+
+  EXPECT_EQ(intersections[2].record.el, el3);
+  EXPECT_EQ(intersections[2].record.type, PointClassification::Edge);
+  EXPECT_EQ(intersections[2].record.id, 1);
+  EXPECT_NEAR(intersections[2].alpha, 5.0/6, 1e-13);
+  EXPECT_NEAR(intersections[2].beta, 0.3, 1e-13);  
+}
+
+TEST_F(EdgeTracerTesterQuad, trace_edgeThroughEdgesStartingFromEdge)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -573,7 +652,7 @@ TEST_F(EdgeTracerTester, trace_edgeThroughEdgesStartingFromEdge)
   EXPECT_NEAR(intersections[1].beta, 0.75, 1e-13);
 }
 
-TEST_F(EdgeTracerTester, trace_edgeThroughDiagonalVertices)
+TEST_F(EdgeTracerTesterQuad, trace_edgeThroughDiagonalVertices)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -602,7 +681,7 @@ TEST_F(EdgeTracerTester, trace_edgeThroughDiagonalVertices)
   EXPECT_NEAR(intersections[1].beta, -1, 1e-13);
 }
 
-TEST_F(EdgeTracerTester, trace_edgeThroughHorizontalVertices)
+TEST_F(EdgeTracerTesterQuad, trace_edgeThroughHorizontalVertices)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -631,7 +710,7 @@ TEST_F(EdgeTracerTester, trace_edgeThroughHorizontalVertices)
   EXPECT_NEAR(intersections[1].beta, -1, 1e-13);
 }
 
-TEST_F(EdgeTracerTester, trace_edgeBetweenHorizontalVertices)
+TEST_F(EdgeTracerTesterQuad, trace_edgeBetweenHorizontalVertices)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -669,7 +748,7 @@ TEST_F(EdgeTracerTester, trace_edgeBetweenHorizontalVertices)
 //   1. If no points within m_eps, do nothing
 //   2. Single point withing range
 //   3. 3 points within range
-TEST_F(EdgeTracerTester, redistribute_points_near_endpointNoChange)
+TEST_F(EdgeTracerTesterQuad, redistribute_points_near_endpointNoChange)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -683,7 +762,7 @@ TEST_F(EdgeTracerTester, redistribute_points_near_endpointNoChange)
   EXPECT_EQ(intersections[0].beta, 0.5);
 }
 
-TEST_F(EdgeTracerTester, redistribute_points_near_endpointSinglePointLeft)
+TEST_F(EdgeTracerTesterQuad, redistribute_points_near_endpointSinglePointLeft)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -698,7 +777,7 @@ TEST_F(EdgeTracerTester, redistribute_points_near_endpointSinglePointLeft)
   EXPECT_EQ(intersections[0].beta, 0.5);
 }
 
-TEST_F(EdgeTracerTester, redistribute_points_near_endpointSinglePointRight)
+TEST_F(EdgeTracerTesterQuad, redistribute_points_near_endpointSinglePointRight)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -713,7 +792,7 @@ TEST_F(EdgeTracerTester, redistribute_points_near_endpointSinglePointRight)
   EXPECT_EQ(intersections[0].beta, 0.5);
 }
 
-TEST_F(EdgeTracerTester, redistribute_points_near_endpointThreePointsLeft)
+TEST_F(EdgeTracerTesterQuad, redistribute_points_near_endpointThreePointsLeft)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
@@ -737,7 +816,7 @@ TEST_F(EdgeTracerTester, redistribute_points_near_endpointThreePointsLeft)
   EXPECT_EQ(intersections[2].beta, 0.5);
 }
 
-TEST_F(EdgeTracerTester, redistribute_points_near_endpointThreePointsRight)
+TEST_F(EdgeTracerTesterQuad, redistribute_points_near_endpointThreePointsRight)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();

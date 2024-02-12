@@ -40,6 +40,8 @@
 #include "stk_unit_test_utils/ioUtils.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/TetFixture.hpp"
+#include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_unit_test_utils/TextMesh.hpp>
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include <algorithm>
 #include <array>
@@ -1040,3 +1042,73 @@ TEST( SkinMesh, SimpleQuad)
   test_quad_2D_skin_with_aura_option(true);
   test_quad_2D_skin_with_aura_option(false);
 }
+
+class TextSkinMesh : public stk::unit_test_util::simple_fields::MeshFixture
+{
+ public:
+  void setup_three_wedges_2p()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+    STK_ThrowRequire(get_bulk().parallel_size() == 2);
+
+    const std::string meshDesc = "0,1,WEDGE_6,1,2,4,6,7,9\n"
+                                 "0,2,WEDGE_6,4,2,5,9,7,10\n"
+                                 "1,3,WEDGE_6,2,3,5,7,8,10";
+
+    std::vector<double> coordinates = {
+      0,0,0, 1,0,0, 2,0,0, 0,1,0, 1,1,0,
+      0,0,1, 1,0,1, 2,0,1, 0,1,1, 1,1,1,
+    };
+
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  }
+
+  void setup_three_wedges_with_sideset_2p()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+    STK_ThrowRequire(get_bulk().parallel_size() == 2);
+
+    const std::string meshDesc = "0,1,WEDGE_6,1,2,4,6,7,9\n"
+                                 "0,2,WEDGE_6,4,2,5,9,7,10\n"
+                                 "1,3,WEDGE_6,2,3,5,7,8,10|sideset:name=surface_1; data=1,5, 2,5, 3,5";
+
+    std::vector<double> coordinates = {
+      0,0,0, 1,0,0, 2,0,0, 0,1,0, 1,1,0,
+      0,0,1, 1,0,1, 2,0,1, 0,1,1, 1,1,1,
+    };
+
+    stk::unit_test_util::simple_fields::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  }
+};
+
+TEST_F(TextSkinMesh, wedgesWithAura)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  setup_three_wedges_2p();
+
+  stk::mesh::skin_mesh(get_bulk());
+
+  std::vector<size_t> globalCounts;
+  stk::mesh::comm_mesh_counts(get_bulk(), globalCounts);
+
+  EXPECT_EQ(globalCounts[get_meta().side_rank()], 11u);
+}
+
+TEST_F(TextSkinMesh, wedgesWithAuraAndSideset)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  setup_three_wedges_with_sideset_2p();
+
+  stk::mesh::skin_mesh(get_bulk());
+
+  std::vector<size_t> globalCounts;
+  stk::mesh::comm_mesh_counts(get_bulk(), globalCounts);
+
+  EXPECT_EQ(globalCounts[get_meta().side_rank()], 11u);
+}
+
+

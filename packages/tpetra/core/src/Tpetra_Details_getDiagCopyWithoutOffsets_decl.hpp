@@ -111,7 +111,7 @@ struct CrsMatrixGetDiagCopyFunctor {
   {
     const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid ();
     const scalar_type ZERO =
-      Kokkos::Details::ArithTraits<scalar_type>::zero ();
+      Kokkos::ArithTraits<scalar_type>::zero ();
 
     // If the row lacks a stored diagonal entry, then its value is zero.
     D_(lclRowInd) = ZERO;

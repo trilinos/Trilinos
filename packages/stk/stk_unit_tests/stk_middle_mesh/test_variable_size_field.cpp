@@ -61,6 +61,33 @@ TEST(VariableSizeField, ValuesOneNode)
   EXPECT_EQ(field(v3, 0, 2), 6);
 }
 
+TEST(VariableSizeField, InsertMoveToFront)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0);
+  auto v3 = mesh->create_vertex(2, 0, 0);
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  fieldPtr->insert(v1, 0, 1);
+  fieldPtr->insert(v2, 0, 2);
+  fieldPtr->insert(v3, 0, 3);
+  fieldPtr->insert(v1, 0, 4);
+  fieldPtr->insert(v2, 0, 5);
+
+  EXPECT_EQ(fieldPtr->get_num_comp(v1, 0), 2);
+  EXPECT_EQ(fieldPtr->get_num_comp(v2, 0), 2);
+  EXPECT_EQ(fieldPtr->get_num_comp(v3, 0), 1);
+
+  auto& field = *fieldPtr;
+  EXPECT_EQ(field(v1, 0, 0), 1);
+  EXPECT_EQ(field(v1, 0, 1), 4);
+  EXPECT_EQ(field(v2, 0, 0), 2);
+  EXPECT_EQ(field(v2, 0, 1), 5);
+  EXPECT_EQ(field(v3, 0, 0), 3);
+}
+
 TEST(VariableSizeField, ValuesTwoNode2)
 {
   auto mesh = make_empty_mesh(MPI_COMM_WORLD);
@@ -344,6 +371,88 @@ TEST(VariableSizeField, ResizeSmaller)
   EXPECT_EQ(field(v2, 0, 2), 6);  
 
 }
+
+
+TEST(VariableSizeField, OneThenTwoStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 4; ++i)
+  {
+    fieldPtr->insert(v1, 0, 0);
+  } 
+
+  for (int i=0; i < 4; ++i)
+  {
+    fieldPtr->insert(v2, 0, 1);
+  }   
+
+  EXPECT_EQ(mesh::compute_storage_efficiency(fieldPtr), 1.0);
+}
+
+TEST(VariableSizeField, TwoThenOneStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v2, 0, 0);
+  } 
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v1, 0, 1);
+  }   
+
+  EXPECT_EQ(mesh::compute_storage_efficiency(fieldPtr), 1.0);
+}
+
+TEST(VariableSizeField, AlternatingPatternStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v1, 0, 0);
+    fieldPtr->insert(v2, 0, 1);
+  } 
+
+  std::cout << "storage usage: " << fieldPtr->get_storage_usage() << std::endl;
+  EXPECT_GE(mesh::compute_storage_efficiency(fieldPtr), 0.5);
+}
+
+TEST(VariableSizeField, ThreeElementCyclicPatternStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto v3 = mesh->create_vertex(2, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v1, 0, 0);
+    fieldPtr->insert(v2, 0, 1);
+    fieldPtr->insert(v3, 0, 2);
+  } 
+
+  std::cout << "storage usage: " << fieldPtr->get_storage_usage() << std::endl;
+  EXPECT_GE(mesh::compute_storage_efficiency(fieldPtr), 0.5);
+}
+
 
 //TODO: test iteration after resize
 

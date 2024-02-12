@@ -60,54 +60,50 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const
-  {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory for null space.");
-    validParamList->set< RCP<const FactoryBase> >("CoarseMap", Teuchos::null, "Generating factory of previous coarse map. (must be set by user!).");
+  validParamList->set<RCP<const FactoryBase>>("Aggregates", Teuchos::null, "Generating factory for aggregates.");
+  validParamList->set<RCP<const FactoryBase>>("Nullspace", Teuchos::null, "Generating factory for null space.");
+  validParamList->set<RCP<const FactoryBase>>("CoarseMap", Teuchos::null, "Generating factory of previous coarse map. (must be set by user!).");
 
-    // do we need this?
-    validParamList->set<std::string>("Striding info", "{}", "Striding information");
-    validParamList->set<LocalOrdinal>("Strided block id", -1, "Strided block id");
+  // do we need this?
+  validParamList->set<std::string>("Striding info", "{}", "Striding information");
+  validParamList->set<LocalOrdinal>("Strided block id", -1, "Strided block id");
 
-    return validParamList;
-  }
+  return validParamList;
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const
-  {
-    this->Input(currentLevel, "Aggregates");
-    this->Input(currentLevel, "Nullspace");
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
+  this->Input(currentLevel, "Aggregates");
+  this->Input(currentLevel, "Nullspace");
 
-    // Get CoarseMap from previously defined block
-    RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
-    TEUCHOS_TEST_FOR_EXCEPTION(prevCoarseMapFact==Teuchos::null, Exceptions::RuntimeError, "MueLu::BlockedCoarseMapFactory::getDomainMapOffset: user did not specify CoarseMap of previous block. Do not forget to set the CoarseMap factory.");
-    currentLevel.DeclareInput("CoarseMap", prevCoarseMapFact.get(), this);
-  }
+  // Get CoarseMap from previously defined block
+  RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
+  TEUCHOS_TEST_FOR_EXCEPTION(prevCoarseMapFact == Teuchos::null, Exceptions::RuntimeError, "MueLu::BlockedCoarseMapFactory::getDomainMapOffset: user did not specify CoarseMap of previous block. Do not forget to set the CoarseMap factory.");
+  currentLevel.DeclareInput("CoarseMap", prevCoarseMapFact.get(), this);
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
-  {
-    FactoryMonitor m(*this, "Build", currentLevel);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
+  FactoryMonitor m(*this, "Build", currentLevel);
 
-    GlobalOrdinal domainGIDOffset = GetDomainGIDOffset(currentLevel);
-    CoarseMapFactory::BuildCoarseMap(currentLevel, domainGIDOffset);
-  }
+  GlobalOrdinal domainGIDOffset = GetDomainGIDOffset(currentLevel);
+  CoarseMapFactory::BuildCoarseMap(currentLevel, domainGIDOffset);
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDomainGIDOffset(
-    Level& currentLevel) const
-  {
-    RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
-    RCP<const Map> subPDomainMap = currentLevel.Get<RCP<const Map>>("CoarseMap", prevCoarseMapFact.get());
-    GlobalOrdinal maxGlobalIndex = subPDomainMap->getMaxAllGlobalIndex();
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+GlobalOrdinal BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDomainGIDOffset(
+    Level &currentLevel) const {
+  RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
+  RCP<const Map> subPDomainMap             = currentLevel.Get<RCP<const Map>>("CoarseMap", prevCoarseMapFact.get());
+  GlobalOrdinal maxGlobalIndex             = subPDomainMap->getMaxAllGlobalIndex();
 
-    return maxGlobalIndex + Teuchos::ScalarTraits<GlobalOrdinal>::one();
-  }
+  return maxGlobalIndex + Teuchos::ScalarTraits<GlobalOrdinal>::one();
+}
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #endif /* MUELU_BLOCKEDCOARSEMAPFACTORY_DEF_HPP_ */

@@ -488,7 +488,12 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
         STK_ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
 
 // subcell_identifier must be less than the subcell count
-        const bool bad_id = subcell_identifier >= celltopology.num_sub_topology(subcell_rank);
+        bool bad_id = subcell_identifier >= celltopology.num_sub_topology(subcell_rank);
+
+        // FIXME SHELL_SIDE_TOPO
+        if (celltopology.is_shell_with_face_sides() && subcell_rank == stk::topology::FACE_RANK) {
+          bad_id = (subcell_identifier >= celltopology.num_sides());
+        }
         STK_ThrowInvalidArgMsgIf( bad_id, "subcell_id is >= subcell_count\n");
     }
 

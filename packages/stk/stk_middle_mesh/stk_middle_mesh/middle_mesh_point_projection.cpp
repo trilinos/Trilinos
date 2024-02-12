@@ -16,9 +16,9 @@ mesh::FieldPtr<utils::Point> MiddleMeshPointProjection::projection_onto_mesh1(st
                       xiCoords->get_xi_coords(mesh::MeshEntityType::Quad).size());
   auto projectedXiCoordsPtr = mesh::create_field<utils::Point>(m_meshIn, mesh::FieldShape(0, 0, npts), 1);
 
-  auto& projectedXiCoords   = *projectedXiCoordsPtr;
+  auto& projectedXiCoords     = *projectedXiCoordsPtr;
   auto& meshInToMesh1Elements = *(m_relationalData->meshInElementsToMesh1Elements);
-  auto& vertsInClassOnMesh1 = *(m_relationalData->vertsInClassOnMesh1);
+  auto& vertsInClassOnMesh1   = *(m_relationalData->vertsInClassOnMesh1);
   for (auto elIn : m_meshIn->get_elements())
     if (elIn)
     {
@@ -73,7 +73,7 @@ mesh::FieldPtr<utils::Point> MiddleMeshPointProjection::projection_onto_mesh2(st
                       xiCoords->get_xi_coords(mesh::MeshEntityType::Quad).size());
   auto projectedXiCoordsPtr = mesh::create_field<utils::Point>(m_meshIn, mesh::FieldShape(0, 0, npts), 1);
 
-  auto& projectedXiCoords   = *projectedXiCoordsPtr;
+  auto& projectedXiCoords     = *projectedXiCoordsPtr;
   auto& meshInToMesh2Elements = *(m_relationalData->meshInElementsToMesh2Elements);
   for (auto elIn : m_meshIn->get_elements())
     if (elIn)

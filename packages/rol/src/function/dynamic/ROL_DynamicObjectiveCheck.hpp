@@ -207,6 +207,27 @@ struct DynamicObjectiveCheck {
                                         "hessVec_z_z"};
     check(obj, validator, uo, un, z, methods);
   }
+
+  static void check( DynamicObjective<Real>& obj,
+                     ValidateFunction<Real>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z,
+                     TimeStamp<Real> &ts ) {
+    std::vector<std::string> methods = {"gradient_uo",
+                                        "gradient_un",
+                                        "gradient_z",
+                                        "hessVec_uo_uo",
+                                        "hessVec_uo_un",
+                                        "hessVec_uo_z",
+                                        "hessVec_un_uo",
+                                        "hessVec_un_un",
+                                        "hessVec_un_z",
+                                        "hessVec_z_uo",
+                                        "hessVec_z_un",
+                                        "hessVec_z_z"};
+    check(obj, validator, uo, un, z, ts, methods);
+  }
 }; // DynamicObjectiveCheck
 
 } // namespace ROL

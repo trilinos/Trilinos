@@ -68,7 +68,7 @@
 //
 // The resulting preconditioners are identical to multigrid preconditioners built without recycling the parts described above.
 // This can be verified by using the --no-recycling option.
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
@@ -79,7 +79,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   bool success = false;
   bool verbose = true;
   try {
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     //
     // Parameters
     //
@@ -87,7 +87,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);
     Xpetra::Parameters xpetraParameters(clp);
 
-    bool optRecycling           = true;  clp.setOption("recycling",             "no-recycling",             &optRecycling,           "Enable recycling of the multigrid preconditioner");
+    bool optRecycling = true;
+    clp.setOption("recycling", "no-recycling", &optRecycling, "Enable recycling of the multigrid preconditioner");
 
     /* DO NOT WORK YET
        bool optRecyclingRAPpattern = true;  clp.setOption("recycling-rap-pattern", "no-recycling-rap-pattern", &optRecyclingRAPpattern, "Enable recycling of Ac=RAP pattern");
@@ -97,10 +98,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     bool optRecyclingAPpattern  = false;
 
     switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
     // option dependencies
@@ -114,11 +115,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     //
 
     RCP<const Map> map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
-    Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    Teuchos::RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
     RCP<Matrix> A1 = Pr->BuildMatrix();
 
-    RCP<Matrix> A2 = Pr->BuildMatrix(); // TODO: generate another problem would be more meaningful (ex: scale A1)
+    RCP<Matrix> A2 = Pr->BuildMatrix();  // TODO: generate another problem would be more meaningful (ex: scale A1)
 
     //
     // First solve
@@ -142,7 +143,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // PTENT:
       RCP<Factory> PtentFact = rcp(new TentativePFactory());
       M.SetFactory("Ptent", PtentFact);
-      H.Keep("P",           PtentFact.get());
+      H.Keep("P", PtentFact.get());
     }
 
     RCP<Factory> AcFact = rcp(new RAPFactory());
@@ -162,8 +163,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<Vector> X = VectorFactory::Build(map);
       RCP<Vector> B = VectorFactory::Build(map);
 
-      X->putScalar((Scalar) 0.0);
-      B->setSeed(846930886); B->randomize();
+      X->putScalar((Scalar)0.0);
+      B->setSeed(846930886);
+      B->randomize();
 
       int nIts = 9;
       H.Iterate(*B, *X, nIts);
@@ -197,8 +199,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<Vector> X = VectorFactory::Build(map);
       RCP<Vector> B = VectorFactory::Build(map);
 
-      X->putScalar((Scalar) 0.0);
-      B->setSeed(846930886); B->randomize();
+      X->putScalar((Scalar)0.0);
+      B->setSeed(846930886);
+      B->randomize();
 
       int nIts = 9;
       H.Iterate(*B, *X, nIts);
@@ -215,8 +218,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Remove kept data from the preconditioner. This will force recomputation on future runs. "Keep" flags are also removed.
 
     if (optRecycling) {
-      //if aggregates explicitly kept: H.Delete("Aggregates", M.GetFactory("Aggregates").get());
-      H.Delete("P",           M.GetFactory("Ptent").get());
+      // if aggregates explicitly kept: H.Delete("Aggregates", M.GetFactory("Aggregates").get());
+      H.Delete("P", M.GetFactory("Ptent").get());
     }
     if (optRecyclingRAPpattern) {
       H.Delete("RAP graph", M.GetFactory("A").get());
@@ -232,16 +235,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-
 
 //- -- --------------------------------------------------------
 #define MUELU_AUTOMATIC_TEST_ETI_NAME main_
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }
-
-

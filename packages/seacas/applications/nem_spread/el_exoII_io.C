@@ -1904,7 +1904,7 @@ void NemSpread<T, INT>::find_elem_block(std::vector<INT> &proc_elem_blk, int ipr
   /* Count the number of element blocks defined on this processor */
   globals.Proc_Num_Elem_Blk[iproc] = 0;
   for (int i = 0; i < globals.Num_Elem_Blk; i++) {
-    if (elem_in_blk[i] != 0) {
+    if (elem_in_blk[i]) {
       globals.Proc_Num_Elem_Blk[iproc]++;
     }
   }
@@ -1918,7 +1918,7 @@ void NemSpread<T, INT>::find_elem_block(std::vector<INT> &proc_elem_blk, int ipr
       (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Elem_Blk, sizeof(INT));
 
   for (int i = 0, icount = 0; i < globals.Num_Elem_Blk; i++) {
-    if (elem_in_blk[i] != 0) {
+    if (elem_in_blk[i]) {
       globals.GElem_Blks[iproc][icount++] = i;
     }
   }

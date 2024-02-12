@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -52,7 +52,7 @@ enum E_Type {
   NULL_EL
 };
 
-extern const char *elem_name_from_enum(const E_Type elem_type);
+extern const char *elem_name_from_enum(E_Type elem_type);
 
 extern E_Type get_elem_type(const char *elem_name, /* ExodusII element name */
                             const int   num_nodes, /* Number of nodes in the element */

@@ -276,7 +276,7 @@ namespace panzer
 	tmp_(cell) = 1.0;
         for (int fm(0); fm < numFieldMults; ++fm)
           tmp_(cell) *= kokkosFieldMults_(fm)(cell, qp);
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
 	    field_(cell, basis) += basis_(cell, basis, qp) * multiplier_ * scalar_(cell, qp) * tmp_(cell);
 	  });
       } // end loop over the quadrature points
@@ -315,7 +315,7 @@ namespace panzer
     }
 
     // Initialize the evaluated field.
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
       tmp_field(basis) = 0.0;
     });
 
@@ -330,7 +330,7 @@ namespace panzer
       {
 	team.team_barrier();
 	tmp(0) = multiplier_ * scalar_(cell, qp);
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
 	  tmp_field(basis) += basis_(cell, basis, qp) * tmp(0);
 	});
       } // end loop over the quadrature points
@@ -344,7 +344,7 @@ namespace panzer
       {
 	team.team_barrier();
         tmp(0) = multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
 	  tmp_field(basis) += basis_(cell, basis, qp) * tmp(0);
 	});
       } // end loop over the quadrature points
@@ -363,7 +363,7 @@ namespace panzer
         for (int fm(0); fm < numFieldMults; ++fm)
           fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
         tmp(0) = multiplier_ * scalar_(cell, qp) * fieldMultsTotal;
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
 	  tmp_field(basis) += basis_(cell, basis, qp) * tmp(0);
 	});
       } // end loop over the quadrature points

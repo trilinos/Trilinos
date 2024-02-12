@@ -78,12 +78,13 @@ void run_spgemm_noreuse(crsMat_t A, crsMat_t B, crsMat_t &C) {
 }
 
 template <typename crsMat_t, typename device>
-int run_spgemm(crsMat_t A, crsMat_t B,
+int run_spgemm(crsMat_t &A, crsMat_t &B,
                KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C,
                bool testReuse) {
   typedef typename crsMat_t::size_type size_type;
   typedef typename crsMat_t::ordinal_type lno_t;
   typedef typename crsMat_t::value_type scalar_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
@@ -113,7 +114,14 @@ int run_spgemm(crsMat_t A, crsMat_t B,
     EXPECT_TRUE(sh->is_numeric_called());
 
     if (testReuse) {
-      // Give A and B completely new random values, and re-run just numeric
+      // Give A and B completely new random values (changing both the pointer
+      // and contents), and re-run just numeric.
+      A.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"),
+          A.nnz());
+      B.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"),
+          B.nnz());
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
       KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
@@ -127,7 +135,7 @@ int run_spgemm(crsMat_t A, crsMat_t B,
 }
 
 template <typename crsMat_t, typename device>
-int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
+int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B,
                              KokkosSparse::SPGEMMAlgorithm spgemm_algorithm,
                              crsMat_t &result, bool testReuse) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -188,7 +196,14 @@ int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
     EXPECT_TRUE(sh->is_numeric_called());
 
     if (testReuse) {
-      // Give A and B completely new random values, and re-run just numeric
+      // Give A and B completely new random values (changing both the pointer
+      // and contents), and re-run just numeric.
+      A.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"),
+          A.nnz());
+      B.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"),
+          B.nnz());
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
       KokkosSparse::Experimental::spgemm_numeric(
@@ -468,6 +483,58 @@ void test_issue402() {
       << "SpGEMM still has issue 402 bug; C=AA' is incorrect!\n";
 }
 
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void test_issue1738() {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11000) && \
+    (CUDA_VERSION < 11040)
+  {
+    std::cerr
+        << "TEST SKIPPED: See "
+           "https://github.com/kokkos/kokkos-kernels/issues/1777 for details."
+        << std::endl;
+    return;
+  }
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+  // Make sure that std::invalid_argument is thrown if you:
+  //  - call numeric where an input matrix's entries have changed.
+  //  - try to reuse an spgemm handle by calling symbolic with new input
+  //  matrices
+  // This check is only enabled in debug builds.
+#ifndef NDEBUG
+  using crsMat_t     = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>;
+  crsMat_t A1 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
+  crsMat_t B1 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
+  crsMat_t A2 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(50);
+  crsMat_t B2 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(50);
+  {
+    KernelHandle kh;
+    kh.create_spgemm_handle();
+    crsMat_t C1;
+    KokkosSparse::spgemm_symbolic(kh, A1, false, B1, false, C1);
+    KokkosSparse::spgemm_numeric(kh, A1, false, B1, false, C1);
+    crsMat_t C2;
+    EXPECT_THROW(KokkosSparse::spgemm_symbolic(kh, A2, false, B2, false, C2),
+                 std::invalid_argument);
+  }
+  {
+    KernelHandle kh;
+    kh.create_spgemm_handle();
+    crsMat_t C1;
+    KokkosSparse::spgemm_symbolic(kh, A1, false, B1, false, C1);
+    // Note: A1 is a 100x100 diagonal matrix, so the first entry in the first
+    // row is 0. Change it to a 1 and make sure spgemm_numeric notices that it
+    // changed.
+    Kokkos::deep_copy(Kokkos::subview(A1.graph.entries, 0), 1);
+    EXPECT_THROW(KokkosSparse::spgemm_numeric(kh, A1, false, B1, false, C1),
+                 std::invalid_argument);
+  }
+#endif
+}
+
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
   TEST_F(TestCategory,                                                         \
          sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
@@ -513,6 +580,7 @@ void test_issue402() {
     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, false);        \
     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, false);       \
     test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
+    test_issue1738<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
   }
 
 // test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);

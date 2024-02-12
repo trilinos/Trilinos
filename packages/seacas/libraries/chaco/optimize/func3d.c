@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,6 +50,17 @@ static double c1pg, c2pg, c3pg; /* phi/gamma second derivatives */
 
 static double cval;     /* value of constraint equation */
 static double cgrad[3]; /* grad of constraint equation */
+
+static double grad0(double *coeffs);
+static double grad1(double *coeffs);
+static double grad2(double *coeffs);
+
+static double hess00(double *coeffs);
+static double hess11(double *coeffs);
+static double hess22(double *coeffs);
+static double hess01(double *coeffs);
+static double hess02(double *coeffs);
+static double hess12(double *coeffs);
 
 double func3d(double coeffs[15],                      /* five different 4-way products */
               double theta, double phi, double gamma2 /* angular parameters */
@@ -116,8 +127,6 @@ double func3d(double coeffs[15],                      /* five different 4-way pr
 
   return (val);
 }
-
-static double grad0(), grad1(), grad2();
 
 void grad3d(double coeffs[15],                      /* five different 4-way products */
             double grad[3],                         /* gradient returned */
@@ -337,8 +346,6 @@ static double grad2(double *coeffs)
          coeffs[14];
   return (val);
 }
-
-static double hess00(), hess11(), hess22(), hess01(), hess02(), hess12();
 
 void hess3d(double coeffs[15], /* five different 4-way products */
             double hess[3][3]  /* Hessian returned */
@@ -1029,7 +1036,9 @@ double constraint(double *coeffs2 /* coefficients for constraint eqn */
   return (val * val);
 }
 
-static double gradcon0(), gradcon1(), gradcon2();
+static double gradcon0(double *coeffs2);
+static double gradcon1(double *coeffs2);
+static double gradcon2(double *coeffs2);
 
 void gradcon(double *coeffs2, /* coefficients for constraint eqn */
              double  grad[3]  /* gradient returned */
@@ -1158,8 +1167,12 @@ static double gradcon2(double *coeffs2)
   return (val);
 }
 
-static double hesscon00(), hesscon11(), hesscon22();
-static double hesscon01(), hesscon02(), hesscon12();
+static double hesscon00(double *coeffs2);
+static double hesscon11(double *coeffs2);
+static double hesscon22(double *coeffs2);
+static double hesscon01(double *coeffs2);
+static double hesscon02(double *coeffs2);
+static double hesscon12(double *coeffs2);
 
 void hesscon(double *coeffs2,   /* coefficients for constraint eqn */
              double  hess[3][3] /* hessian returned */

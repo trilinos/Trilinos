@@ -248,8 +248,8 @@ namespace panzer {
 
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
-    VariableField * field = mesh->getMetaData()->get_field<VariableField>(stk::topology::NODE_RANK, "dog");
-    CoordinateField * cField = mesh->getMetaData()->get_field<CoordinateField>(stk::topology::NODE_RANK, "coordinates");
+    VariableField * field = mesh->getMetaData()->get_field<double>(stk::topology::NODE_RANK, "dog");
+    CoordinateField * cField = mesh->getMetaData()->get_field<double>(stk::topology::NODE_RANK, "coordinates");
     TEUCHOS_ASSERT(field!=0);
     TEUCHOS_ASSERT(cField!=0);
 

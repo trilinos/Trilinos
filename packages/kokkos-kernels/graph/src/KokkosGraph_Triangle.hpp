@@ -232,11 +232,8 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
         // if 2, we do an interleaved sort.
       }
       {
-        if (sh->get_sort_option() != -1) {
-          sort_decreasing_order = sh->get_sort_option();
-        }
-        KokkosKernels::Impl::kk_sort_by_row_size<size_type, nnz_lno_t,
-                                                 ExecutionSpace>(
+        KokkosSparse::Impl::kk_sort_by_row_size<size_type, nnz_lno_t,
+                                                ExecutionSpace>(
             m, row_mapA.data(), new_indices.data(), sort_decreasing_order,
             ExecutionSpace().concurrency());
       }
@@ -264,7 +261,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
       nnz_lno_persistent_work_view_t new_indices =
           sh->get_lower_triangular_permutation();
 
-      KokkosKernels::Impl::kk_get_lower_triangle<
+      KokkosSparse::Impl::kk_get_lower_triangle<
           alno_row_view_t_, alno_nnz_view_t_, alno_nnz_view_t_,
           row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
           alno_nnz_view_t_, nnz_lno_persistent_work_view_t, ExecutionSpace>(
@@ -292,7 +289,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
     nnz_lno_persistent_work_view_t new_indices =
         sh->get_lower_triangular_permutation();
 
-    KokkosKernels::Impl::kk_get_lower_triangle<
+    KokkosSparse::Impl::kk_get_lower_triangle<
         alno_row_view_t_, alno_nnz_view_t_, alno_nnz_view_t_,
         row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
         alno_nnz_view_t_, nnz_lno_persistent_work_view_t, ExecutionSpace>(
@@ -334,7 +331,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
         nnz_lno_persistent_work_view_t new_indices =
             sh->get_lower_triangular_permutation();
 
-        KokkosKernels::Impl::kk_get_lower_triangle<
+        KokkosSparse::Impl::kk_get_lower_triangle<
             alno_row_view_t_, alno_nnz_view_t_, alno_nnz_view_t_,
             row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
             alno_nnz_view_t_, nnz_lno_persistent_work_view_t, ExecutionSpace>(
@@ -342,7 +339,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
             lower_triangular_matrix_entries, null_values, new_indices,
             handle->is_dynamic_scheduling());
       }
-      KokkosKernels::Impl::
+      KokkosSparse::Impl::
           kk_create_incidence_tranpose_matrix_from_lower_triangle<
               row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
               row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
@@ -357,7 +354,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
     case SPGEMM_KK_TRIANGLE_AI: {
       // these are the algorithms that requires the incidence matrix.
 
-      KokkosKernels::Impl::kk_create_incidence_matrix_from_original_matrix<
+      KokkosSparse::Impl::kk_create_incidence_matrix_from_original_matrix<
           alno_row_view_t_, alno_nnz_view_t_, row_lno_persistent_work_view_t,
           nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
           ExecutionSpace>(m, row_mapA, entriesA, incidence_rowmap,

@@ -80,11 +80,11 @@ class DefaultMultiply {};
 template <unsigned> class IntegralRank {};
 
 template <typename T> struct ViewRank {
-  typedef IntegralRank< T::Rank > type;
+  typedef IntegralRank< T::rank > type;
 };
 
 template <typename T> struct ViewRank< std::vector<T> > {
-  typedef IntegralRank< T::Rank > type;
+  typedef IntegralRank< T::rank > type;
 };
 
 template <typename MatrixType,

@@ -106,8 +106,6 @@
 #include <random>
 #include <algorithm>
 
-#define Intrepid2_Experimental
-
 namespace Discretization {
 
 namespace Example {
@@ -154,26 +152,27 @@ enum ElemShape {HEX, TET, QUAD, TRI};
 template<typename ValueType, typename DeviceSpaceType>
 int feProjection(int argc, char *argv[]) {
 
-  typedef typename
-      Kokkos::Impl::HostMirror<DeviceSpaceType>::Space::execution_space HostSpaceType ;
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
+  using HostSpaceType = typename
+      Kokkos::Impl::HostMirror<DeviceSpaceType>::Space::execution_space;
+  using DynRankView = Kokkos::DynRankView<ValueType,DeviceSpaceType>;
+  using DynRankViewHost = Kokkos::DynRankView<ValueType,HostSpaceType>;
 
-  typedef Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal> map_t;
+  using map_t = Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal>;
 
-  typedef typename map_t::local_ordinal_type  local_ordinal_t;
-  typedef typename map_t::global_ordinal_type global_ordinal_t;
-  typedef ValueType scalar_t;
+  using local_ordinal_t = typename map_t::local_ordinal_type;
+  using global_ordinal_t = typename map_t::global_ordinal_type;
+  using scalar_t = ValueType;
 
-  typedef Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType> DynRankViewGId;
+  using DynRankViewGId = Kokkos::DynRankView<global_ordinal_t,DeviceSpaceType>;
 
-  typedef Intrepid2::CellTools<DeviceSpaceType> ct;
-  typedef Intrepid2::OrientationTools<DeviceSpaceType> ots;
-  typedef Intrepid2::Experimental::ProjectionTools<DeviceSpaceType> pts;
-  typedef Intrepid2::RealSpaceTools<DeviceSpaceType> rst;
-  typedef Intrepid2::FunctionSpaceTools<DeviceSpaceType> fst;
+  using ct = Intrepid2::CellTools<DeviceSpaceType>;
+  using ots = Intrepid2::OrientationTools<DeviceSpaceType>;
+  using pts = Intrepid2::ProjectionTools<DeviceSpaceType>;
+  using ProjectionStruct = Intrepid2::ProjectionStruct<DeviceSpaceType,scalar_t>;
+  using rst = Intrepid2::RealSpaceTools<DeviceSpaceType>;
+  using fst = Intrepid2::FunctionSpaceTools<DeviceSpaceType>;
 
-  typedef shards::CellTopology    CellTopology;
+  using CellTopology = shards::CellTopology;
 
   int errorFlag = 0;
 
@@ -520,16 +519,11 @@ int feProjection(int argc, char *argv[]) {
 
     DynRankView basisCoeffsL2Proj("basisCoeffsL2Proj", numOwnedElems, basisCardinality);
     {
-      Intrepid2::Experimental::ProjectionStruct<DeviceSpaceType,scalar_t> projStruct;
+      ProjectionStruct projStruct;
       projStruct.createL2ProjectionStruct(basis.get(), targetCubDegree);
 
-      int numPoints = projStruct.getNumTargetEvalPoints();
-      DynRankView evaluationPoints("evaluationPoints", numOwnedElems, numPoints, dim);
-
-      pts::getL2EvaluationPoints(evaluationPoints,
-          elemOrts,
-          basis.get(),
-          &projStruct);
+      auto evaluationPoints = projStruct.getAllEvalPoints();
+      int numPoints     = evaluationPoints.extent(0);
 
       DynRankView refTargetAtEvalPoints, physTargetAtEvalPoints;
       if(functionSpace == Intrepid2::FUNCTION_SPACE_HCURL || functionSpace == Intrepid2::FUNCTION_SPACE_HDIV) {
@@ -541,35 +535,7 @@ int feProjection(int argc, char *argv[]) {
       }
 
       DynRankView physEvalPoints("physEvalPoints", numOwnedElems, numPoints, dim);
-      {
-        DynRankView linearBasisValuesAtEvalPoint("linearBasisValuesAtEvalPoint", numOwnedElems, numNodesPerElem);
-
-        Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceSpaceType::execution_space>(0,numOwnedElems),
-            KOKKOS_LAMBDA (const int &i) {
-          auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
-          for(int j=0; j<numPoints; ++j){
-            auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
-            switch (eShape) {
-            case HEX:
-              Intrepid2::Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-              break;
-            case TET:
-              Intrepid2::Impl::Basis_HGRAD_TET_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-              break;
-            case QUAD:
-              Intrepid2::Impl::Basis_HGRAD_QUAD_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-              break;
-            case TRI:
-              Intrepid2::Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
-              break;
-            }
-            for(int k=0; k<numNodesPerElem; ++k)
-              for(int d=0; d<dim; ++d)
-                physEvalPoints(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalPoint(k);
-          }
-        });
-        Kokkos::fence();
-      }
+      ct::mapToPhysicalFrame(physEvalPoints,evaluationPoints,physVertexes,basis->getBaseCellTopology());
 
       //transform the target function and its derivative to the reference element (inverse of pullback operator)
       DynRankView jacobian("jacobian", numOwnedElems, numPoints, dim, dim);
@@ -609,7 +575,6 @@ int feProjection(int argc, char *argv[]) {
 
       pts::getL2BasisCoeffs(basisCoeffsL2Proj,
           refTargetAtEvalPoints,
-          evaluationPoints,
           elemOrts,
           basis.get(),
           &projStruct);
@@ -676,12 +641,10 @@ int feProjection(int argc, char *argv[]) {
       DynRankView linearBasisValuesAtRefCoords("linearBasisValuesAtRefCoords", numNodesPerElem, numRefCoords);
       linearBasis->getValues(linearBasisValuesAtRefCoords, refPoints);
       Kokkos::fence();
-      Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceSpaceType::execution_space>(0,numOwnedElems),
-          KOKKOS_LAMBDA (const int &i) {
-        for(int d=0; d<dim; ++d)
-          for(int j=0; j<numRefCoords; ++j)
-            for(int k=0; k<numNodesPerElem; ++k)
-              physRefCoords(i,j,d) += physVertexes(i,k,d)*linearBasisValuesAtRefCoords(k,j);
+      Kokkos::MDRangePolicy<typename DeviceSpaceType::execution_space,Kokkos::Rank<3>> rangePolicy({0,0,0},{numOwnedElems, numRefCoords, dim});
+      Kokkos::parallel_for(rangePolicy, KOKKOS_LAMBDA (const int &i, const int &j, const int &d) {
+          for(int k=0; k<numNodesPerElem; ++k)
+            physRefCoords(i,j,d) += physVertexes(i,k,d)*linearBasisValuesAtRefCoords(k,j);
       });
       Kokkos::fence();
     }
@@ -841,17 +804,11 @@ int feProjection(int argc, char *argv[]) {
       auto sideBasisCardinality = sideBasisPtr->getCardinality();
       DynRankView sideBasisCoeffsL2Proj("sideBasisCoeffsL2Proj", numBoundarySides, sideBasisCardinality);
       {
-        Intrepid2::Experimental::ProjectionStruct<DeviceSpaceType,scalar_t> sideProjStruct;
+        ProjectionStruct sideProjStruct;
         sideProjStruct.createL2ProjectionStruct(sideBasisPtr.get(), targetCubDegree);
 
-        int numSidePoints = sideProjStruct.getNumTargetEvalPoints();
-        DynRankView sideEvaluationPoints("sideEvaluationPoints", numBoundarySides, numSidePoints, sideDim);
-
-        // get (oriented) reference points where to evaluate the boundary term
-        pts::getL2EvaluationPoints(sideEvaluationPoints,
-            sideOrts,
-            sideBasisPtr.get(),
-            &sideProjStruct);
+        auto sideEvaluationPoints = sideProjStruct.getAllEvalPoints();
+        int numSidePoints = sideEvaluationPoints.extent(0);
 
         DynRankView physTargetAtSideEvalPoints,refTargetAtSideEvalPoints;
         if(sideFunctionSpace == Intrepid2::FUNCTION_SPACE_HCURL) {
@@ -865,64 +822,37 @@ int feProjection(int argc, char *argv[]) {
 
         // maps reference points into physical space
         DynRankView physSideEvalPoints("physSideEvalPoints", numBoundarySides, numSidePoints, dim);
-        DynRankView sidePhysVertices("sidePhysVertices", numBoundarySides, numNodesPerElem, dim);
+        DynRankView physVerticesOnSide("physVerticesOnSide", numBoundarySides, numNodesPerElem, dim);
         DynRankView sideEvaluationPoints3d("sideEvaluationPoints3d", numBoundarySides, numSidePoints, dim);
-        Kokkos::DynRankView<int,DeviceSpaceType> sideNodeMap("sideNodeMap", cellTopoPtr->getSideCount(), maxNumNodesPerSide);
-        auto sideNodeMapHost = Kokkos::create_mirror_view(sideNodeMap);
-        for (size_t is=0; is < sideNodeMapHost.extent(0); is++) {
-          for (size_t node=0; node < cellTopoPtr->getNodeCount(sideDim,is); node++)
-            sideNodeMapHost(is, node) = cellTopoPtr->getNodeMap(sideDim, is, node);
-        }
-        Kokkos::deep_copy(sideNodeMap,sideNodeMapHost);
-
-
-        auto sideTopoKey = sideBasisPtr->getBaseCellTopology().getBaseKey();
         {
-          DynRankView linearBasisValuesAtSideEvalPoint("linearBasisValuesAtSideEvalPoint", numBoundarySides, maxNumNodesPerSide);
-          const auto subcellParametrization =
-              Intrepid2::RefSubcellParametrization<DeviceSpaceType>::get(sideDim, cellTopoPtr->getKey());
-          Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceSpaceType::execution_space>(0,numBoundarySides),
-              KOKKOS_LAMBDA (const int &is) {
+          const auto subcellParametrization = Intrepid2::RefSubcellParametrization<DeviceSpaceType>::get(sideDim, cellTopoPtr->getKey());
+          ct::mapToReferenceSubcell(sideEvaluationPoints3d, sideEvaluationPoints, subcellParametrization, sideOrdinals);
+
+          Kokkos::DynRankView<int,DeviceSpaceType> sideNodeMap("sideNodeMap", cellTopoPtr->getSideCount(), maxNumNodesPerSide);
+          auto sideNodeMapHost = Kokkos::create_mirror_view(sideNodeMap);
+          for (size_t is=0; is < sideNodeMapHost.extent(0); is++) {
+            for (size_t node=0; node < cellTopoPtr->getNodeCount(sideDim,is); node++)
+              sideNodeMapHost(is, node) = cellTopoPtr->getNodeMap(sideDim, is, node);
+          }
+          Kokkos::deep_copy(sideNodeMap,sideNodeMapHost);
+
+          DynRankView sidePhysVertices("sidePhysVertices", numBoundarySides, numNodesPerSide, dim);
+          Kokkos::MDRangePolicy<typename DeviceSpaceType::execution_space,Kokkos::Rank<2>> rangePolicy({0,0},{numBoundarySides, dim});
+          Kokkos::parallel_for(rangePolicy, KOKKOS_LAMBDA (const int &is, const int &d) {
             auto elem = sideParentElem(is);
             auto elemSide = sideOrdinals(is);
-            auto basisValuesAtSideEvalPoint = Kokkos::subview(linearBasisValuesAtSideEvalPoint,is,Kokkos::ALL());
-
-            auto cellCoords = Kokkos::subview(sideEvaluationPoints3d,is,Kokkos::ALL(),Kokkos::ALL());
-            auto subCoords = Kokkos::subview(sideEvaluationPoints,is,Kokkos::ALL(),Kokkos::ALL());
-            for(size_t i=0; i<subCoords.extent(0); ++i) {
-              for(int d=0; d<dim; ++d) {
-                cellCoords(i,d) = subcellParametrization(elemSide, d, 0);
-                for(int k=0; k<sideDim; ++k)
-                  cellCoords(i,d) += subcellParametrization(elemSide, d, k+1)*subCoords(i,k);
-              }
-            }
 
             for(int node=0; node < numNodesPerElem; ++node)
-              for(int d=0; d < dim; ++d)
-                sidePhysVertices(is, node, d) = physVertexes(elem, node, d);
+              physVerticesOnSide(is, node, d) = physVertexes(elem, node, d);
 
-            for(int j=0; j<numSidePoints; ++j){
-              auto sideEvalPoint = Kokkos::subview(sideEvaluationPoints,is,j,Kokkos::ALL());
-
-              switch (sideTopoKey) {
-              case shards::Quadrilateral<4>::key:
-              Intrepid2::Impl::Basis_HGRAD_QUAD_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtSideEvalPoint, sideEvalPoint);
-              break;
-              case shards::Triangle<3>::key:
-              Intrepid2::Impl::Basis_HGRAD_TRI_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtSideEvalPoint, sideEvalPoint);
-              break;
-              case shards::Line<2>::key:
-              Intrepid2::Impl::Basis_HGRAD_LINE_C1_FEM::template Serial<Intrepid2::OPERATOR_VALUE>::getValues(basisValuesAtSideEvalPoint, sideEvalPoint);
-              break;
-              }
-              for(int sideNode=0; sideNode < numNodesPerSide; ++sideNode) {
-                int node = sideNodeMap(elemSide, sideNode);
-                for(int d=0; d<dim; ++d)
-                  physSideEvalPoints(is,j,d) += physVertexes(elem,node,d)*basisValuesAtSideEvalPoint(sideNode);
-              }
+            for(int sideNode=0; sideNode < numNodesPerSide; ++sideNode) {
+              int node = sideNodeMap(elemSide, sideNode);
+              sidePhysVertices(is, sideNode, d) = physVertexes(elem, node, d);
             }
           });
           Kokkos::fence();
+
+          ct::mapToPhysicalFrame(physSideEvalPoints,sideEvaluationPoints,sidePhysVertices,sideBasisPtr->getBaseCellTopology());
         }
 
         //evaluate the boundary term in the physical space and map it back to the reference element
@@ -933,7 +863,7 @@ int feProjection(int argc, char *argv[]) {
           DynRankView metricTensor_inv("metricTensor_inv", numBoundarySides, numSidePoints, dim-1, dim-1);
           DynRankView metricTensor_det("metricTensor_det", numBoundarySides, numSidePoints);
 
-          ct::setJacobian(jacobian,sideEvaluationPoints3d,sidePhysVertices, *cellTopoPtr);
+          ct::setJacobian(jacobian, sideEvaluationPoints3d, physVerticesOnSide, *cellTopoPtr);
 
           //compute  metric information
           if ((sideFunctionSpace == Intrepid2::FUNCTION_SPACE_HCURL) || (sideFunctionSpace == Intrepid2::FUNCTION_SPACE_HVOL)) {
@@ -1009,7 +939,6 @@ int feProjection(int argc, char *argv[]) {
           //perform the projections and get the basis coeffiecients
           pts::getL2BasisCoeffs(sideBasisCoeffsL2Proj,
               refTargetAtSideEvalPoints,
-              sideEvaluationPoints,
               sideOrts,
               sideBasisPtr.get(),
               &sideProjStruct);

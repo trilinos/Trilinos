@@ -250,7 +250,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
     Kokkos::deep_copy (y_norms_host, y_norms);
 
     for (size_t j = 0; j < y.getNumVectors (); ++j) {
-      TEST_EQUALITY( y_norms_host(0), Kokkos::Details::ArithTraits<mag_type>::zero () );
+      TEST_EQUALITY( y_norms_host(0), Kokkos::ArithTraits<mag_type>::zero () );
     }
   }
 }

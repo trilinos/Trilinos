@@ -4,7 +4,9 @@
 #include "adjacency_search_closest_points.hpp"
 #include "change_of_basis.hpp"
 #include "geometry_improver.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "surface_patch.hpp"
+#include "utils.hpp"
 #include <queue>
 #include <set>
 
@@ -29,6 +31,18 @@ class GeometryImproverEdgeVertexSurfacePatch : public GeometryImprover
       , m_surfacePatch(surfacePatch)
       , m_numSurfacePatchPoints(numSurfacePatchPoints)
     {
+      if (mesh1)
+      {
+        STK_ThrowRequireMsg(utils::impl::comm_size(mesh1->get_comm()) == 1,
+                            "GeometryImproverEdgeVertexSurfacePatch is not supported in parallel");
+      }
+
+      if (mesh2)
+      {
+        STK_ThrowRequireMsg(utils::impl::comm_size(mesh2->get_comm()) == 1,
+                            "GeometryImproverEdgeVertexSurfacePatch is not supported in parallel");
+      }
+
       setup_vert_status_field();
     }
 

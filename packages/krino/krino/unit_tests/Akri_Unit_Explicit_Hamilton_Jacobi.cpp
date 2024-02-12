@@ -12,7 +12,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/WriteMesh.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
@@ -90,16 +90,16 @@ double initialize_constant_speed(const stk::mesh::BulkData & mesh, const Problem
 
 double compute_tet_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField)
 {
-  std::array<Vector3d, 4> xNode;
-  for (int n=0; n<4; ++n) xNode[n] = Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]));
+  std::array<stk::math::Vector3d, 4> xNode;
+  for (int n=0; n<4; ++n) xNode[n] = stk::math::Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]));
 
   return Dot(xNode[1]-xNode[0],Cross(xNode[2]-xNode[0],xNode[3]-xNode[0]))/6.;
 }
 
 double compute_tri_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField)
 {
-  std::array<Vector3d, 3> xNode;
-  for (int n=0; n<3; ++n) xNode[n] = Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]),2);
+  std::array<stk::math::Vector3d, 3> xNode;
+  for (int n=0; n<3; ++n) xNode[n] = stk::math::Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]),2);
 
   return 0.5*Cross(xNode[1]-xNode[0],xNode[2]-xNode[0]).length();
 }
@@ -112,15 +112,15 @@ double compute_vol(const stk::mesh::Entity * elemNodes, const unsigned numElemNo
     return compute_tet_vol(elemNodes, coordsField);
 }
 
-void compute_tet_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField, std::vector<Vector3d> & gradOP, double & vol)
+void compute_tet_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField, std::vector<stk::math::Vector3d> & gradOP, double & vol)
 {
-  std::array<Vector3d, 4> xNode;
-  for (int n=0; n<4; ++n) xNode[n] = Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]));
+  std::array<stk::math::Vector3d, 4> xNode;
+  for (int n=0; n<4; ++n) xNode[n] = stk::math::Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]));
 
-  std::array<Vector3d, 4> xFace;
+  std::array<stk::math::Vector3d, 4> xFace;
   for (int f=0; f<4; ++f) xFace[f] = (xNode[TetFaceTable[f][0]]+xNode[TetFaceTable[f][1]]+xNode[TetFaceTable[f][2]])/3.;
 
-  std::array<Vector3d, 6> xEdge;
+  std::array<stk::math::Vector3d, 6> xEdge;
   for (int e=0; e<6; ++e) xEdge[e] = 0.5*(xNode[TetEdgeNodeOrder[e][0]]+xNode[TetEdgeNodeOrder[e][1]]);
 
   vol = Dot(xNode[1]-xNode[0],Cross(xNode[2]-xNode[0],xNode[3]-xNode[0]))/6.;
@@ -140,10 +140,10 @@ void compute_tet_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::
                          Cross(xEdge[4]-xEdge[3],xNode[3]-xFace[3]))*norm;
 }
 
-void compute_tri_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField, std::vector<Vector3d> & gradOP, double & vol)
+void compute_tri_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField, std::vector<stk::math::Vector3d> & gradOP, double & vol)
 {
-  std::array<Vector3d, 3> xNode;
-  for (int n=0; n<3; ++n) xNode[n] = Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]),2);
+  std::array<stk::math::Vector3d, 3> xNode;
+  for (int n=0; n<3; ++n) xNode[n] = stk::math::Vector3d(stk::mesh::field_data(coordsField, elemNodes[n]),2);
 
   vol = 0.5*Cross(xNode[1]-xNode[0],xNode[2]-xNode[0]).length();
   const double norm = 0.5/vol;
@@ -153,7 +153,7 @@ void compute_tri_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::
   gradOP[2] = (crossZ(xNode[2]-xNode[1])+crossZ(xNode[0]-xNode[2]))*norm;
 }
 
-void compute_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField, std::vector<Vector3d> & gradOP, double &vol)
+void compute_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & coordsField, std::vector<stk::math::Vector3d> & gradOP, double &vol)
 {
   if (gradOP.size() == 3)
     compute_tri_gradOP_and_vol(elemNodes, coordsField, gradOP, vol);
@@ -161,9 +161,9 @@ void compute_gradOP_and_vol(const stk::mesh::Entity * elemNodes, const stk::mesh
     compute_tet_gradOP_and_vol(elemNodes, coordsField, gradOP, vol);
 }
 
-Vector3d compute_scalar_gradient(const std::vector<Vector3d> & nodalAreaVectors, const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & levelSetField)
+stk::math::Vector3d compute_scalar_gradient(const std::vector<stk::math::Vector3d> & nodalAreaVectors, const stk::mesh::Entity * elemNodes, const stk::mesh::Field<double> & levelSetField)
 {
-  Vector3d grad(Vector3d::ZERO);
+  stk::math::Vector3d grad(stk::math::Vector3d::ZERO);
   for (unsigned i=0; i<nodalAreaVectors.size(); ++i)
   {
     const double ls = *stk::mesh::field_data(levelSetField, elemNodes[i]);
@@ -192,7 +192,7 @@ double mesh_minimum_length_scale_using_minimum_volume(const stk::mesh::BulkData 
 double mesh_minimum_length_scale(const stk::mesh::BulkData & mesh, const stk::mesh::Field<double> & coordsField)
 {
   const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
-  std::vector<Vector3d> gradOP(dim+1);
+  std::vector<stk::math::Vector3d> gradOP(dim+1);
 
   double vol = 0.;
   double maxGradLength = 0.;
@@ -224,7 +224,7 @@ void assemble_residual_for_element_speed(const stk::mesh::BulkData & mesh, const
   // Implementation of Barth-Sethian positive coefficient scheme for element speed fields.
 
   const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
-  std::vector<Vector3d> gradOP(dim+1);
+  std::vector<stk::math::Vector3d> gradOP(dim+1);
 
   stk::mesh::field_fill(0.0, *fields.RHS);
   stk::mesh::field_fill(0.0, *fields.RHSNorm);
@@ -237,7 +237,7 @@ void assemble_residual_for_element_speed(const stk::mesh::BulkData & mesh, const
       const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
       double vol = 0.;
       compute_gradOP_and_vol(elemNodes, *fields.coordsField, gradOP, vol);
-      const Vector3d normalDir = compute_scalar_gradient(gradOP, elemNodes, fields.levelSetField->field_of_state(stk::mesh::StateN)).unit_vector();
+      const stk::math::Vector3d normalDir = compute_scalar_gradient(gradOP, elemNodes, fields.levelSetField->field_of_state(stk::mesh::StateN)).unit_vector();
 
       const double elementSpeed = *stk::mesh::field_data(*fields.speedField, elem);
 
@@ -299,7 +299,7 @@ void assemble_residual_for_nodal_speed(const stk::mesh::BulkData & mesh, const P
   // Not extensively tested.  This is an adaptation of Barth-Sethian positive coefficient scheme for nodal speed fields
 
   const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
-  std::vector<Vector3d> gradOP(dim+1);
+  std::vector<stk::math::Vector3d> gradOP(dim+1);
 
   stk::mesh::field_fill(0.0, *fields.RHS);
   stk::mesh::field_fill(0.0, *fields.RHSNorm);
@@ -312,7 +312,7 @@ void assemble_residual_for_nodal_speed(const stk::mesh::BulkData & mesh, const P
       const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
       double vol = 0.;
       compute_gradOP_and_vol(elemNodes, *fields.coordsField, gradOP, vol);
-      const Vector3d normalDir = compute_scalar_gradient(gradOP, elemNodes, fields.levelSetField->field_of_state(stk::mesh::StateN)).unit_vector();
+      const stk::math::Vector3d normalDir = compute_scalar_gradient(gradOP, elemNodes, fields.levelSetField->field_of_state(stk::mesh::StateN)).unit_vector();
 
       for (unsigned n=0; n<numElemNodes; ++n)
       {
@@ -374,7 +374,7 @@ double assemble_and_update_Eikonal(const stk::mesh::BulkData & mesh, const Probl
   assert(!computeArrivalTime || nullptr != fields.speedField);
 
   const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
-  std::vector<Vector3d> gradOP(dim+1);
+  std::vector<stk::math::Vector3d> gradOP(dim+1);
 
   stk::mesh::field_fill(0.0, *fields.RHS);
   stk::mesh::field_fill(0.0, *fields.RHSNorm);
@@ -387,7 +387,7 @@ double assemble_and_update_Eikonal(const stk::mesh::BulkData & mesh, const Probl
       const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
       double vol = 0.;
       compute_gradOP_and_vol(elemNodes, *fields.coordsField, gradOP, vol);
-      const Vector3d normalDir = compute_scalar_gradient(gradOP, elemNodes, fields.levelSetField->field_of_state(stk::mesh::StateN)).unit_vector();
+      const stk::math::Vector3d normalDir = compute_scalar_gradient(gradOP, elemNodes, fields.levelSetField->field_of_state(stk::mesh::StateN)).unit_vector();
 
       double elementSpeed = 1.0;
       if (computeArrivalTime)
@@ -682,7 +682,7 @@ double compute_unit_radius_error_norm(stk::mesh::BulkData & mesh, const ProblemF
     for (auto & node : *bptr)
     {
       double & LS = *stk::mesh::field_data(fields.levelSetField->field_of_state(stk::mesh::StateNP1), node);
-      const Vector3d x(stk::mesh::field_data(*fields.coordsField, node), mesh.mesh_meta_data().spatial_dimension());
+      const stk::math::Vector3d x(stk::mesh::field_data(*fields.coordsField, node), mesh.mesh_meta_data().spatial_dimension());
 
       const double error = LS - (x.length() - 1.0);
       norm += std::abs(error);

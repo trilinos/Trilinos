@@ -54,33 +54,24 @@ namespace panzer {
     
 template<typename EvalT, typename Traits>
 class ConstantVector
-  :
-  public panzer::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits>
+  : public panzer::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<EvalT, Traits>
 {
-  public:
+public:
 
-    ConstantVector(
-      const Teuchos::ParameterList& p);
-
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
-    evaluateFields(
-      typename Traits::EvalData d);
-
-  private:
-
-    using ScalarT = typename EvalT::ScalarT;
+  ConstantVector(const Teuchos::ParameterList& p);
   
-  ScalarT vals[3]; // 3 dimensional vector
-  
-  PHX::MDField<ScalarT> vector;
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
 
-}; // end of class ConstantVector
+  void evaluateFields(typename Traits::EvalData d);
+  
+private:
+
+  using ScalarT = typename EvalT::ScalarT;
+  Kokkos::View<double*> vals_;
+  PHX::MDField<ScalarT> vec_;
+};
 
 
 }

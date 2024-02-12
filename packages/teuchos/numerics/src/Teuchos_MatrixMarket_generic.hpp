@@ -480,7 +480,6 @@ namespace Teuchos {
       bool anySucceeded = false;
       bool allSucceeded = true;
       std::vector<size_t> badLineNumbers;
-      size_t validDataLines = 0;
       while (getline (in, line)) {
         size_t start, size;
         if (checkCommentLine (line, start, size, lineNumber, tolerant)) {
@@ -499,8 +498,7 @@ namespace Teuchos {
         }
         else {
           // Add the newly read entry to the sparse graph.
-          add (rowIndex, colIndex);
-          ++validDataLines;
+          add(rowIndex, colIndex);
         }
       }
       if (lineNumber == startingLineNumber) {

@@ -60,179 +60,139 @@
 
 namespace Xpetra {
 
-
 // TODO: move that elsewhere
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>& toTpetra(const Export<LocalOrdinal, GlobalOrdinal, Node>&);
 
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>>
 toXpetra(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp);
 
-
-
-template<class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class TpetraExport
-    : public Export<LocalOrdinal, GlobalOrdinal, Node>
-{
+  : public Export<LocalOrdinal, GlobalOrdinal, Node> {
+ public:
+  //! The specialization of Map used by this class.
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
-  public:
-    //! The specialization of Map used by this class.
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  //! @name Constructor/Destructor Methods
+  //@{
 
+  //! Construct a Export object from the source and target Map.
+  TpetraExport(const Teuchos::RCP<const map_type>& source, const Teuchos::RCP<const map_type>& target);
 
-    //! @name Constructor/Destructor Methods
-    //@{
+  //! Constructor (with list of parameters).
+  TpetraExport(const Teuchos::RCP<const map_type>& source,
+               const Teuchos::RCP<const map_type>& target,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
-    //! Construct a Export object from the source and target Map.
-    TpetraExport(const Teuchos::RCP<const map_type>& source, const Teuchos::RCP<const map_type>& target);
+  //! Copy constructor.
+  TpetraExport(const Export<LocalOrdinal, GlobalOrdinal, Node>& rhs);
 
+  //! Destructor.
+  ~TpetraExport();
 
-    //! Constructor (with list of parameters).
-    TpetraExport(const Teuchos::RCP<const map_type>&         source,
-                 const Teuchos::RCP<const map_type>&         target,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist);
+  //@}
 
+  //! @name Export Attribute Methods
+  //@{
 
-    //! Copy constructor.
-    TpetraExport(const Export<LocalOrdinal, GlobalOrdinal, Node>& rhs);
+  //! Number of initial identical IDs.
+  size_t getNumSameIDs() const;
 
+  //! Number of IDs to permute but not to communicate.
+  size_t getNumPermuteIDs() const;
 
-    //! Destructor.
-    ~TpetraExport();
+  //! List of local IDs in the source Map that are permuted.
+  ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
 
+  //! List of local IDs in the target Map that are permuted.
+  ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
-    //@}
+  //! Number of entries not on the calling process.
+  size_t getNumRemoteIDs() const;
 
-    //! @name Export Attribute Methods
-    //@{
+  //! List of entries in the target Map to receive from other processes.
+  ArrayView<const LocalOrdinal> getRemoteLIDs() const;
 
+  //! Number of entries that must be sent by the calling process to other processes.
+  size_t getNumExportIDs() const;
 
-    //! Number of initial identical IDs.
-    size_t getNumSameIDs() const;
+  //! List of entries in the source Map that will be sent to other processes.
+  ArrayView<const LocalOrdinal> getExportLIDs() const;
 
+  //! List of processes to which entries will be sent.
+  ArrayView<const int> getExportPIDs() const;
 
-    //! Number of IDs to permute but not to communicate.
-    size_t getNumPermuteIDs() const;
+  //! The source Map used to construct this Export.
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getSourceMap() const;
 
+  //! The target Map used to construct this Export.
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getTargetMap() const;
 
-    //! List of local IDs in the source Map that are permuted.
-    ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
+  //! Set distributor parameters.
+  void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const;
 
+  //@}
 
-    //! List of local IDs in the target Map that are permuted.
-    ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
+  //! @name I/O Methods
+  //@{
 
+  //! Print the Export's data to the given output stream.
+  void print(std::ostream& os) const;
 
-    //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const;
+  //@}
 
+  //! @name Xpetra specific
+  //@{
 
-    //! List of entries in the target Map to receive from other processes.
-    ArrayView<const LocalOrdinal> getRemoteLIDs() const;
+  //! TpetraExport constructor to wrap a Tpetra::Export object
+  TpetraExport(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp);
 
+  RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>> getTpetra_Export() const;
 
-    //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const;
+  //@}
 
+ private:
+  RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>> export_;
 
-    //! List of entries in the source Map that will be sent to other processes.
-    ArrayView<const LocalOrdinal> getExportLIDs() const;
-
-
-    //! List of processes to which entries will be sent.
-    ArrayView<const int> getExportPIDs() const;
-
-
-    //! The source Map used to construct this Export.
-    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getSourceMap() const;
-
-
-    //! The target Map used to construct this Export.
-    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getTargetMap() const;
-
-    //! Set distributor parameters.
-    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const;
-
-
-    //@}
-
-    //! @name I/O Methods
-    //@{
-
-
-    //! Print the Export's data to the given output stream.
-    void print(std::ostream& os) const;
-
-
-    //@}
-
-    //! @name Xpetra specific
-    //@{
-
-
-    //! TpetraExport constructor to wrap a Tpetra::Export object
-    TpetraExport(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp);
-
-
-    RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>> getTpetra_Export() const;
-
-    //@}
-
-
-  private:
-
-    RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>> export_;
-
-};      // TpetraExport class
-
-
+};  // TpetraExport class
 
 // --------------
 // Free functions
 // --------------
 
-
-
 // TODO: move that elsewhere
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>&
-toTpetra(const Export<LocalOrdinal, GlobalOrdinal, Node>& exp)
-{
-    // TODO: throw exception
-    const TpetraExport<LocalOrdinal, GlobalOrdinal, Node>& tpetraExport =
+toTpetra(const Export<LocalOrdinal, GlobalOrdinal, Node>& exp) {
+  // TODO: throw exception
+  const TpetraExport<LocalOrdinal, GlobalOrdinal, Node>& tpetraExport =
       dynamic_cast<const TpetraExport<LocalOrdinal, GlobalOrdinal, Node>&>(exp);
-    return *tpetraExport.getTpetra_Export();
+  return *tpetraExport.getTpetra_Export();
 }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node > > toTpetra(const RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > &exportObj) {
-    typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TpetraExportClass;
-    if (exportObj != Teuchos::null) {
-      XPETRA_RCP_DYNAMIC_CAST(const TpetraExportClass, rcpFromRef(*exportObj), tpetraExport, "toTpetra");
-      return tpetraExport->getTpetra_Export();
-    }
-    return Teuchos::null;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>> toTpetra(const RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>>& exportObj) {
+  typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TpetraExportClass;
+  if (exportObj != Teuchos::null) {
+    XPETRA_RCP_DYNAMIC_CAST(const TpetraExportClass, rcpFromRef(*exportObj), tpetraExport, "toTpetra");
+    return tpetraExport->getTpetra_Export();
   }
-
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>>
-toXpetra(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp)
-{
-    if(!exp.is_null())
-        return rcp(new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(exp));
-
-    return Teuchos::null;
+  return Teuchos::null;
 }
 
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>>
+toXpetra(const RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>>& exp) {
+  if (!exp.is_null())
+    return rcp(new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(exp));
 
+  return Teuchos::null;
+}
 
-}      // namespace Xpetra
+}  // namespace Xpetra
 
-#endif      // XPETRA_TPETRAEXPORT_DECL_HPP
-
-
+#endif  // XPETRA_TPETRAEXPORT_DECL_HPP

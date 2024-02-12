@@ -43,9 +43,8 @@ namespace Impl {
 template <class AV, class XMV, class BV, class YMV, int scalar_x, int scalar_y,
           class SizeType = typename YMV::size_type>
 struct Axpby_MV_Functor {
-  typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   const size_type numCols;
   XMV m_x;
@@ -74,16 +73,16 @@ struct Axpby_MV_Functor {
                   "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "XMV and YMV must have rank 2.");
-    static_assert(AV::Rank == 1,
+    static_assert(AV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "AV must have rank 1.");
-    static_assert(BV::Rank == 1,
+    static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "BV must have rank 1.");
   }
@@ -286,9 +285,8 @@ template <class XMV, class YMV, int scalar_x, int scalar_y, class SizeType>
 struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
                         typename YMV::non_const_value_type, YMV, scalar_x,
                         scalar_y, SizeType> {
-  typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   const size_type numCols;
   XMV m_x;
@@ -311,10 +309,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
                   "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "XMV and YMV must have rank 2.");
   }
@@ -500,9 +498,8 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
 template <class AV, class XMV, class BV, class YMV, int scalar_x, int scalar_y,
           int UNROLL, class SizeType>
 struct Axpby_MV_Unroll_Functor {
-  typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   XMV m_x;
   YMV m_y;
@@ -529,16 +526,16 @@ struct Axpby_MV_Unroll_Functor {
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "XMV and YMV must have rank 2.");
-    static_assert(AV::Rank == 1,
+    static_assert(AV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "AV must have rank 1.");
-    static_assert(BV::Rank == 1,
+    static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "BV must have rank 1.");
 
@@ -728,9 +725,8 @@ template <class XMV, class YMV, int scalar_x, int scalar_y, int UNROLL,
 struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                                typename YMV::non_const_value_type, YMV,
                                scalar_x, scalar_y, UNROLL, SizeType> {
-  typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   XMV m_x;
   YMV m_y;
@@ -753,10 +749,10 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "XMV and YMV must have rank 2.");
   }
@@ -951,8 +947,10 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
 // coefficients in av and bv vectors, if they are used.
 //
 // Either av and bv are both 1-D Views, or av and bv are both scalars.
-template <class AV, class XMV, class BV, class YMV, int UNROLL, class SizeType>
-void Axpby_MV_Unrolled(const AV& av, const XMV& x, const BV& bv, const YMV& y,
+template <class execution_space, class AV, class XMV, class BV, class YMV,
+          int UNROLL, class SizeType>
+void Axpby_MV_Unrolled(const execution_space& space, const AV& av, const XMV& x,
+                       const BV& bv, const YMV& y,
                        const SizeType startingColumn, int a = 2, int b = 2) {
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::Impl::"
@@ -965,16 +963,15 @@ void Axpby_MV_Unrolled(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                 "KokkosBlas::Impl::Axpby_MV_Unrolled: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YMV::Rank == (int)XMV::Rank,
+  static_assert((int)YMV::rank == (int)XMV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Unrolled: X and Y must have the same rank.");
-  static_assert(YMV::Rank == 2,
+  static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Unrolled: "
                 "XMV and YMV must have rank 2.");
 
-  typedef typename YMV::execution_space execution_space;
   const SizeType numRows = x.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (a == 0 && b == 0) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 0, 0, UNROLL, SizeType> op(
@@ -1106,9 +1103,10 @@ void Axpby_MV_Unrolled(const AV& av, const XMV& x, const BV& bv, const YMV& y,
 // coefficients in av and bv vectors, if they are used.
 //
 // Either av and bv are both 1-D Views, or av and bv are both scalars.
-template <class AV, class XMV, class BV, class YMV, class SizeType>
-void Axpby_MV_Generic(const AV& av, const XMV& x, const BV& bv, const YMV& y,
-                      int a = 2, int b = 2) {
+template <class execution_space, class AV, class XMV, class BV, class YMV,
+          class SizeType>
+void Axpby_MV_Generic(const execution_space& space, const AV& av, const XMV& x,
+                      const BV& bv, const YMV& y, int a = 2, int b = 2) {
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Generic: X is not a Kokkos::View.");
@@ -1120,16 +1118,15 @@ void Axpby_MV_Generic(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                 "KokkosBlas::Impl::Axpby_MV_Generic: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YMV::Rank == (int)XMV::Rank,
+  static_assert((int)YMV::rank == (int)XMV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Generic: X and Y must have the same rank.");
-  static_assert(YMV::Rank == 2,
+  static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Generic: "
                 "XMV and YMV must have rank 2.");
 
-  typedef typename YMV::execution_space execution_space;
   const SizeType numRows = x.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (a == 0 && b == 0) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 0, 0, SizeType> op(x, y, av, bv);
@@ -1245,10 +1242,11 @@ void Axpby_MV_Generic(const AV& av, const XMV& x, const BV& bv, const YMV& y,
 // coefficients in av and bv vectors, if they are used.
 //
 // Either av and bv are both 1-D Views, or av and bv are both scalars.
-template <class AV, class XMV, class BV, class YMV, class SizeType>
+template <class execution_space, class AV, class XMV, class BV, class YMV,
+          class SizeType>
 struct Axpby_MV_Invoke_Left {
-  static void run(const AV& av, const XMV& x, const BV& bv, const YMV& y,
-                  int a = 2, int b = 2) {
+  static void run(const execution_space& space, const AV& av, const XMV& x,
+                  const BV& bv, const YMV& y, int a = 2, int b = 2) {
     static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Left: X is not a Kokkos::View.");
@@ -1260,10 +1258,10 @@ struct Axpby_MV_Invoke_Left {
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Left: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Left: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Left: "
                   "X and Y must have rank 2.");
 
@@ -1280,8 +1278,8 @@ struct Axpby_MV_Invoke_Left {
       // Passing in the starting column index lets the functor take
       // subviews of av and bv, if they are Views.  If they are scalars,
       // the functor doesn't have to do anything to them.
-      Axpby_MV_Unrolled<AV, XMV, BV, YMV, 8, SizeType>(av, X_cur, bv, Y_cur, j,
-                                                       a, b);
+      Axpby_MV_Unrolled<execution_space, AV, XMV, BV, YMV, 8, SizeType>(
+          space, av, X_cur, bv, Y_cur, j, a, b);
     }
     for (; j + 4 <= numCols; j += 4) {
       XMV X_cur = Kokkos::subview(x, Kokkos::ALL(), std::make_pair(j, j + 4));
@@ -1290,8 +1288,8 @@ struct Axpby_MV_Invoke_Left {
       // Passing in the starting column index lets the functor take
       // subviews of av and bv, if they are Views.  If they are scalars,
       // the functor doesn't have to do anything to them.
-      Axpby_MV_Unrolled<AV, XMV, BV, YMV, 4, SizeType>(av, X_cur, bv, Y_cur, j,
-                                                       a, b);
+      Axpby_MV_Unrolled<execution_space, AV, XMV, BV, YMV, 4, SizeType>(
+          space, av, X_cur, bv, Y_cur, j, a, b);
     }
     for (; j < numCols; ++j) {
       auto x_cur = Kokkos::subview(x, Kokkos::ALL(), j);
@@ -1302,7 +1300,8 @@ struct Axpby_MV_Invoke_Left {
       // the functor doesn't have to do anything to them.
       typedef decltype(x_cur) XV;
       typedef decltype(y_cur) YV;
-      Axpby_Generic<AV, XV, BV, YV, SizeType>(av, x_cur, bv, y_cur, j, a, b);
+      Axpby_Generic<execution_space, AV, XV, BV, YV, SizeType>(
+          space, av, x_cur, bv, y_cur, j, a, b);
     }
   }
 };
@@ -1326,10 +1325,11 @@ struct Axpby_MV_Invoke_Left {
 // coefficients in av and bv vectors, if they are used.
 //
 // Either av and bv are both 1-D Views, or av and bv are both scalars.
-template <class AV, class XMV, class BV, class YMV, class SizeType>
+template <class execution_space, class AV, class XMV, class BV, class YMV,
+          class SizeType>
 struct Axpby_MV_Invoke_Right {
-  static void run(const AV& av, const XMV& x, const BV& bv, const YMV& y,
-                  int a = 2, int b = 2) {
+  static void run(const execution_space& space, const AV& av, const XMV& x,
+                  const BV& bv, const YMV& y, int a = 2, int b = 2) {
     static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Right: X is not a Kokkos::View.");
@@ -1341,10 +1341,10 @@ struct Axpby_MV_Invoke_Right {
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Right: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Right: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Right: "
                   "X and Y must have rank 2.");
 
@@ -1354,9 +1354,11 @@ struct Axpby_MV_Invoke_Right {
       auto y_0 = Kokkos::subview(y, Kokkos::ALL(), 0);
       typedef decltype(x_0) XV;
       typedef decltype(y_0) YV;
-      Axpby_Generic<AV, XV, BV, YV, SizeType>(av, x_0, bv, y_0, 0, a, b);
+      Axpby_Generic<execution_space, AV, XV, BV, YV, SizeType>(
+          space, av, x_0, bv, y_0, 0, a, b);
     } else {
-      Axpby_MV_Generic<AV, XMV, BV, YMV, SizeType>(av, x, bv, y, a, b);
+      Axpby_MV_Generic<execution_space, AV, XMV, BV, YMV, SizeType>(
+          space, av, x, bv, y, a, b);
     }
   }
 };

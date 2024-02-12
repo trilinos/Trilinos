@@ -61,6 +61,7 @@ struct PartPairLess {
 
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
+stk::mesh::Part* get_block_part_for_bucket(const stk::mesh::BulkData & bulk, const stk::mesh::Bucket& bucket);
 stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
 
 int get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);

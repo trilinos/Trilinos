@@ -922,7 +922,7 @@ class DistObject :
     virtual public Teuchos::Describable
 {
 public:
-  typedef typename Kokkos::Details::ArithTraits<Packet>::val_type packet_type;
+  typedef typename Kokkos::ArithTraits<Packet>::val_type packet_type;
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef DeviceType execution_space;
@@ -1029,12 +1029,12 @@ class MultiVector :
 {
 public:
   typedef Scalar scalar_type;
-  typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
+  typedef typename Kokkos::ArithTraits<Scalar>::val_type impl_scalar_type;
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Node> node_type;
   typedef typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type dot_type;
-  typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
+  typedef typename Kokkos::ArithTraits<impl_scalar_type>::mag_type mag_type;
   typedef Node execution_space;
   typedef Kokkos::DualView<impl_scalar_type**,
                            Kokkos::LayoutLeft,

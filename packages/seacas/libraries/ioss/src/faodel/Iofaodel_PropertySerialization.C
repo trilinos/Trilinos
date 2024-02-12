@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,7 +32,7 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
-#include <assert.h>
+#include <cassert>
 
 namespace Iofaodel {
 
@@ -108,8 +108,8 @@ namespace Iofaodel {
 
         is_implicit(property.is_implicit()), is_valid(property.is_valid()),
 
-        name{start, property.get_name().size()}, value{name.offset + name.size,
-                                                       Iofaodel::data_size(property)},
+        name{start, property.get_name().size()},
+        value{name.offset + name.size, Iofaodel::data_size(property)},
         data_size(name.size + value.size)
   {
   }

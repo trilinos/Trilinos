@@ -13,7 +13,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperBDF2ModifierBase.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperBDF2.
@@ -21,41 +20,37 @@ namespace Tempus {
  *  The default modifier provides no-op functionality for the modifier.
  *  See StepperBDF2ModifierBase for details on the algorithm.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperBDF2ModifierDefault
-  : virtual public Tempus::StepperBDF2ModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperBDF2ModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperBDF2ModifierDefault(){}
+  StepperBDF2ModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperBDF2ModifierDefault(){}
+  virtual ~StepperBDF2ModifierDefault() {}
 
   /// Modify BDF2 Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperBDF2<Scalar> > /* stepper */,
-    const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperBDF2<Scalar> > /* stepper */,
+      const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperBDF2AppAction<Scalar>::BEGIN_STEP:
       case StepperBDF2AppAction<Scalar>::BEFORE_SOLVE:
       case StepperBDF2AppAction<Scalar>::AFTER_SOLVE:
-      case StepperBDF2AppAction<Scalar>::END_STEP:
-      {
+      case StepperBDF2AppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperBDF2ModifierDefault_hpp
+#endif  // Tempus_StepperBDF2ModifierDefault_hpp

@@ -207,15 +207,6 @@ public:
     checkInputs();
   }
 
-  Real computeStatistic(const std::vector<Real> &xstat) {
-    Real stat(0);
-    int nQuad = static_cast<int>(wts_.size());
-    for (int i = 0; i < nQuad; ++i) {
-      stat += wts_[i] * xstat[i];
-    }
-    return stat;
-  }
-
   void setStorage(const Ptr<ScalarController<Real>> &value_storage,
                   const Ptr<VectorController<Real>> &gradient_storage) {
     RandVarFunctional<Real>::setStorage(value_storage,gradient_storage);
@@ -248,7 +239,7 @@ public:
     mqq_->initialize(x);
   }
 
-  Real computeStatistic(const Ptr<std::vector<Real>> &xstat) const {
+  Real computeStatistic(const Ptr<const std::vector<Real>> &xstat) const override {
     return mqq_->computeStatistic(xstat);
   }
 

@@ -51,9 +51,7 @@
 #include "Xpetra_Operator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete Thyra::LinearOpBase subclass for Xpetra::Operator.
  *
@@ -61,13 +59,11 @@ namespace Thyra {
  *
  * \ingroup Xpetra_Thyra_Op_Vec_adapters_grp
  */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
-  class Node=Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal = LocalOrdinal,
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class XpetraLinearOp
-  : virtual public Thyra::LinearOpDefaultBase<Scalar>
-{
-public:
-
+  : virtual public Thyra::LinearOpDefaultBase<Scalar> {
+ public:
   /** \name Constructors/initializers. */
   //@{
 
@@ -76,24 +72,22 @@ public:
 
   /** \brief Initialize. */
   void initialize(
-    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-    const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+      const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+      const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &xpetraOperator);
 
   /** \brief Initialize. */
   void constInitialize(
-    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-    const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+      const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+      const RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &xpetraOperator);
 
   /** \brief Get embedded non-const Xpetra::Operator. */
-  RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   getXpetraOperator();
 
   /** \brief Get embedded const Xpetra::Operator. */
-  RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   getConstXpetraOperator() const;
 
   //@}
@@ -109,8 +103,7 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** \name Protected Overridden functions from LinearOpBase. */
   //@{
 
@@ -119,35 +112,30 @@ protected:
 
   /** \brief . */
   void applyImpl(
-    const Thyra::EOpTransp M_trans,
-    const Thyra::MultiVectorBase<Scalar> &X_in,
-    const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const Thyra::EOpTransp M_trans,
+      const Thyra::MultiVectorBase<Scalar> &X_in,
+      const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
-private:
+ private:
+  RCP<const VectorSpaceBase<Scalar> >
+      rangeSpace_;
 
   RCP<const VectorSpaceBase<Scalar> >
-  rangeSpace_;
+      domainSpace_;
 
-  RCP<const VectorSpaceBase<Scalar> >
-  domainSpace_;
+  Teuchos::ConstNonconstObjectContainer<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+      xpetraOperator_;
 
-  Teuchos::ConstNonconstObjectContainer<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  xpetraOperator_;
-
-  template<class XpetraOperator_t>
+  template <class XpetraOperator_t>
   void initializeImpl(
-    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-    const RCP<XpetraOperator_t> &xpetraOperator
-  );
-
+      const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+      const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+      const RCP<XpetraOperator_t> &xpetraOperator);
 };
-
 
 /** \brief Nonmmeber constructor for XpetraLinearOp.
  *
@@ -156,17 +144,14 @@ private:
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 xpetraLinearOp(
-  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-  const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+    const RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &xpetraOperator) {
   const RCP<XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
-    Teuchos::rcp(new XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+      Teuchos::rcp(new XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
   op->initialize(rangeSpace, domainSpace, xpetraOperator);
   return op;
 }
-
 
 /** \brief Nonmmeber constructor for XpetraLinearOp.
  *
@@ -175,17 +160,15 @@ xpetraLinearOp(
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 constXpetraLinearOp(
-  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-  const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+    const RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &xpetraOperator) {
   const RCP<XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
-    Teuchos::rcp(new XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+      Teuchos::rcp(new XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
   op->constInitialize(rangeSpace, domainSpace, xpetraOperator);
   return op;
 }
 
 }  // namespace Thyra
 
-#endif // THYRA_XPETRA_LINEAR_OP_DECL_HPP
+#endif  // THYRA_XPETRA_LINEAR_OP_DECL_HPP

@@ -16,6 +16,9 @@ Please make sure to mark:
 * Assignees
 * Labels
 
+If the changes in the PR should be considered for inclusion in the release notes,
+please apply the label "xx.y release note" where xx.y is the version of the
+upcoming release.
 Replace <teamName> below with the appropriate Trilinos package/team name.
 -->
 @trilinos/<teamName>

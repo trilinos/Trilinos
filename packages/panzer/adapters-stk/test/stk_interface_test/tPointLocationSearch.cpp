@@ -64,8 +64,6 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search_util/stk_mesh/CreateBoundingBox.hpp>
 
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>  VectorField;
-
 namespace panzer_stk {
 
 TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
@@ -99,7 +97,7 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
    // Build (domain) bounding boxes for all cells in mesh
    RCP<stk::mesh::MetaData> meta_data = mesh->getMetaData();
    RCP<stk::mesh::BulkData> bulk_data = mesh->getBulkData(); 
-   const stk::mesh::Field<double, stk::mesh::Cartesian>* domain_coord_field = &(mesh->getCoordinatesField());
+   const stk::mesh::Field<double>* domain_coord_field = &(mesh->getCoordinatesField());
    stk::ParallelMachine comm = bulk_data->parallel();
    // NOTE: the create bounding boxes call has specific typedefs on data.  We need to rewrite for general case.
    std::vector<AxisAlignedBoundingBox3D> domain_vector;
@@ -136,7 +134,7 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
 
    stk::search_util::build_axis_aligned_bbox(*bulk_data,
 					     mesh->getElementRank(),
-					     const_cast<stk::mesh::Field<double, stk::mesh::Cartesian>* >(domain_coord_field),
+               const_cast<stk::mesh::Field<double>* >(domain_coord_field),
 					     domain_vector);
    
 

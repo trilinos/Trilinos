@@ -202,7 +202,7 @@ static void share_arrayview_to_threads(ArrayView<int> shared_arrayview,
       ++cycle;
     }
   }
-  catch (DanglingReferenceError) {
+  catch (DanglingReferenceError&) {
     // loop ends - we got the dangling reference
     index_tracker.danglingReference = cycle;
   }

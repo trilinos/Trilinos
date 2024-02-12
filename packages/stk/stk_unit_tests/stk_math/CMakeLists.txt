@@ -32,15 +32,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_math)
-
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_math_unit_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_math_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS ""
@@ -48,4 +45,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     NUM_MPI_PROCS 1
     NOEXEPREFIX
     )
+else()
+  add_executable(stk_math_unit_tests ${SOURCES})
+  target_link_libraries(stk_math_unit_tests stk_math)
+  target_link_libraries(stk_math_unit_tests stk_util_util)
+  target_link_libraries(stk_math_unit_tests Kokkos::kokkos)
+  target_link_libraries(stk_math_unit_tests stk_unit_test_utils)
+  target_link_libraries(stk_math_unit_tests stk_unit_main)
+
+  target_include_directories(stk_math_unit_tests PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  add_test(NAME "stk_math_unit_tests" COMMAND stk_math_unit_tests)
+endif()
 

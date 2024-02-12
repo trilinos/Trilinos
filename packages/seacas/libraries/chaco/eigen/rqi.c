@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -66,10 +66,6 @@ void rqi(struct vtx_data **A,     /* matrix/graph being analyzed */
   int        assigntol  = 0;        /* tolerance on convergence of assignment vector */
   int        first;                 /* is this the first RQI step? */
   int        i;                     /* loop index */
-
-  double dot(double *vec1, int beg, int end, double *vec2), ch_norm(double *vec, int beg, int end);
-  int    symmlq();
-  void   splarax(), scadd(), vecscale(), doubleout(), assign(), x2y(), strout(char *msg);
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering rqi>\n");

@@ -130,7 +130,7 @@ namespace { // (anonymous)
   /// \tparam InputViewType Type of the input Kokkos::View.
   template<class OutputViewType,
            class InputViewType,
-           const int rank = static_cast<int> (OutputViewType::Rank)>
+           const int rank = static_cast<int> (OutputViewType::rank)>
   class CopyConvertFunctor {};
 
   template<class OutputViewType,
@@ -138,8 +138,8 @@ namespace { // (anonymous)
   class CopyConvertFunctor<OutputViewType, InputViewType, 1> {
   private:
     static_assert
-    (static_cast<int> (OutputViewType::Rank) == 1 &&
-     static_cast<int> (InputViewType::Rank) == 1,
+    (static_cast<int> (OutputViewType::rank) == 1 &&
+     static_cast<int> (InputViewType::rank) == 1,
      "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
      "OutputViewType and InputViewType must both have rank 1.");
     OutputViewType dst_;
@@ -168,8 +168,8 @@ namespace { // (anonymous)
 
   private:
     static_assert
-    (static_cast<int> (OutputViewType::Rank) == 2 &&
-     static_cast<int> (InputViewType::Rank) == 2,
+    (static_cast<int> (OutputViewType::rank) == 2 &&
+     static_cast<int> (InputViewType::rank) == 2,
      "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
      "OutputViewType and InputViewType must both have rank 2.");
     OutputViewType dst_;
@@ -369,8 +369,8 @@ copyConvert (const OutputViewType& dst,
   static_assert (std::is_same<typename OutputViewType::value_type,
                    typename OutputViewType::non_const_value_type>::value,
                  "OutputViewType must be a nonconst Kokkos::View.");
-  static_assert (static_cast<int> (OutputViewType::Rank) ==
-                 static_cast<int> (InputViewType::Rank),
+  static_assert (static_cast<int> (OutputViewType::rank) ==
+                 static_cast<int> (InputViewType::rank),
                  "src and dst must have the same rank.");
 
   if (dst.extent (0) != src.extent (0)) {
@@ -381,7 +381,7 @@ copyConvert (const OutputViewType& dst,
        << ".";
     throw std::invalid_argument (os.str ());
   }
-  if (static_cast<int> (OutputViewType::Rank) > 1 &&
+  if (static_cast<int> (OutputViewType::rank) > 1 &&
       dst.extent (1) != src.extent (1)) {
     std::ostringstream os;
     os << "Tpetra::Details::copyConvert: "

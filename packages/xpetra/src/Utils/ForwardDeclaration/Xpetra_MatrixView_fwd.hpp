@@ -47,12 +47,12 @@
 #define XPETRA_MATRIXVIEW_FWD_HPP
 
 namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatrixView;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatrixView;
 }
 
 #ifndef XPETRA_MATRIXVIEW_SHORT
 #define XPETRA_MATRIXVIEW_SHORT
 #endif
 
-#endif // XPETRA_MATRIXVIEW_FWD_HPP
+#endif  // XPETRA_MATRIXVIEW_FWD_HPP

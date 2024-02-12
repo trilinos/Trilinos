@@ -41,6 +41,11 @@
 namespace stk {
 namespace mesh {
 
+bool FieldRestriction::selects(const Part& part) const
+{
+  return m_part!=nullptr ? m_part->contains(part) : m_selector(part);
+}
+
 void FieldRestriction::print(std::ostream & os, const Selector & s) const
 {
   os << "FieldRestriction[ selector: \"" << s << "\", dimension: " << m_dimension

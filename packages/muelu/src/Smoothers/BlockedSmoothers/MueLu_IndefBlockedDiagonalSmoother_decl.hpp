@@ -53,17 +53,16 @@
 #ifndef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_DECL_HPP_
 #define MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_DECL_HPP_
 
-
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ParameterList.hpp>
 
-//Xpetra
+// Xpetra
 #include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-//MueLu
+// MueLu
 #include "MueLu_IndefBlockedDiagonalSmoother_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
@@ -75,114 +74,110 @@
 
 namespace MueLu {
 
-  /*!
-    @class IndefBlockedDiagonalSmoother
-    @brief Cheap Blocked diagonal smoother for indefinite 2x2 block matrices
+/*!
+  @class IndefBlockedDiagonalSmoother
+  @brief Cheap Blocked diagonal smoother for indefinite 2x2 block matrices
 
-    Uses the original upper left block and the Schur Complement block on the diagonal blocks.
-    Instead of solving the block equations exactly, we apply some sweeps with cheap iterative smoothers
-    (e.g. Gauss-Seidel iterations)
+  Uses the original upper left block and the Schur Complement block on the diagonal blocks.
+  Instead of solving the block equations exactly, we apply some sweeps with cheap iterative smoothers
+  (e.g. Gauss-Seidel iterations)
 
-  */
+*/
 
-  template <class Scalar = SmootherPrototype<>::scalar_type,
-            class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class IndefBlockedDiagonalSmoother :
-    public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-  {
-    typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
+template <class Scalar        = SmootherPrototype<>::scalar_type,
+          class LocalOrdinal  = typename SmootherPrototype<Scalar>::local_ordinal_type,
+          class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node          = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class IndefBlockedDiagonalSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
 
 #undef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors / destructors
+  //@{
 
-    //! @name Constructors / destructors
-    //@{
+  /*! @brief Constructor
+   */
+  IndefBlockedDiagonalSmoother();
 
-    /*! @brief Constructor
-    */
-    IndefBlockedDiagonalSmoother();
+  //! Destructor
+  virtual ~IndefBlockedDiagonalSmoother();
+  //@}
 
-    //! Destructor
-    virtual ~IndefBlockedDiagonalSmoother();
-    //@}
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  void DeclareInput(Level &currentLevel) const;
 
-    void DeclareInput(Level &currentLevel) const;
+  //! Add a factory manager for BraessSarazin internal SchurComplement handling
+  void AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos = 0);
 
-    //! Add a factory manager for BraessSarazin internal SchurComplement handling
-    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos = 0);
+  //@}
 
-    //@}
+  //! @name Setup and Apply methods.
+  //@{
 
-    //! @name Setup and Apply methods.
-    //@{
+  /*! @brief Setup routine
+   */
+  void Setup(Level &currentLevel);
 
-    /*! @brief Setup routine
-     */
-    void Setup(Level &currentLevel);
+  /*! @brief Apply the Braess Sarazin smoother.
+  @param X initial guess
+  @param B right-hand side
+  @param InitialGuessIsZero TODO This option has no effect.
+  */
+  void Apply(MultiVector &X, const MultiVector &B, bool InitialGuessIsZero = false) const;
+  //@}
 
-    /*! @brief Apply the Braess Sarazin smoother.
-    @param X initial guess
-    @param B right-hand side
-    @param InitialGuessIsZero TODO This option has no effect.
-    */
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
-    //@}
+  RCP<SmootherPrototype> Copy() const;
 
-    RCP<SmootherPrototype> Copy() const;
+  //! @name Overridden from Teuchos::Describable
+  //@{
 
-    //! @name Overridden from Teuchos::Describable
-    //@{
+  //! Return a simple one-line description of this object.
+  std::string description() const;
 
-    //! Return a simple one-line description of this object.
-    std::string description() const;
+  //! Print the object with some verbosity level to an FancyOStream object.
+  // using MueLu::Describable::describe; // overloading, not hiding
+  void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;
 
-    //! Get a rough estimate of cost per iteration
-    size_t getNodeSmootherComplexity() const;
+  //@}
 
-    //@}
+ private:
+  //! smoother type
+  std::string type_;
 
-  private:
+  RCP<const FactoryBase> AFact_;  //!< A Factory
 
-    //! smoother type
-    std::string type_;
+  //! block operator
+  RCP<Matrix> A_;  // < ! internal blocked operator "A" generated by AFact_
+  RCP<Matrix> F_;  //!< fluid operator
+  RCP<Matrix> Z_;  //!< pressure stabilization term or null block
 
-    RCP<const FactoryBase>                AFact_;           //!< A Factory
+  RCP<const MapExtractorClass> rangeMapExtractor_;   //!< range  map extractor (from A_ generated by AFact)
+  RCP<const MapExtractorClass> domainMapExtractor_;  //!< domain map extractor (from A_ generated by AFact)
 
-    //! block operator
-    RCP<Matrix>                           A_;               // < ! internal blocked operator "A" generated by AFact_
-    RCP<Matrix>                           F_;               //!< fluid operator
-    RCP<Matrix>                           Z_;               //!< pressure stabilization term or null block
+  //! Block smoothers
+  Teuchos::RCP<SmootherBase> velPredictSmoo_;  //!< smoother for velocity prediction
+  Teuchos::RCP<SmootherBase> schurCompSmoo_;   //!< smoother for SchurComplement equation
 
-    RCP<const MapExtractorClass>          rangeMapExtractor_;  //!< range  map extractor (from A_ generated by AFact)
-    RCP<const MapExtractorClass>          domainMapExtractor_; //!< domain map extractor (from A_ generated by AFact)
+  //! vector of factory managers
+  /*!
+   * vector of internal factory managers
+   * FactManager_[0] holds the factory manager for the predicting the primary variable
+   * FactManager_[1] stores the factory manager used for the SchurComplement correction step.
+   */
+  std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
+};
 
-    //! Block smoothers
-    Teuchos::RCP<SmootherBase>            velPredictSmoo_;              //!< smoother for velocity prediction
-    Teuchos::RCP<SmootherBase>            schurCompSmoo_;               //!< smoother for SchurComplement equation
-
-    //! vector of factory managers
-    /*!
-     * vector of internal factory managers
-     * FactManager_[0] holds the factory manager for the predicting the primary variable
-     * FactManager_[1] stores the factory manager used for the SchurComplement correction step.
-     */
-    std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
-  };
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 

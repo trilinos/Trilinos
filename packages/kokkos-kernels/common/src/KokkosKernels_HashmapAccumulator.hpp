@@ -16,6 +16,7 @@
 #ifndef _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
 #define _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
 #include <Kokkos_Atomic.hpp>
+#include "KokkosKernels_Macros.hpp"
 #include <atomic>
 
 namespace KokkosKernels {
@@ -412,9 +413,8 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA because warps do not go in SIMD fashion
+#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+      // this is an issue on VOLTA+ because warps do not go in SIMD fashion
       // anymore. while some thread might insert my_write_index into linked
       // list, another thread in the warp might be reading keys in above loop.
       // before inserting the new value in liked list -- which is done with
@@ -483,9 +483,8 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
+#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+      // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
       // loop. before inserting the new value in liked list -- which is done
@@ -601,9 +600,8 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
+#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+      // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
       // loop. before inserting the new value in liked list -- which is done
@@ -679,9 +677,8 @@ struct HashmapAccumulator {
     } else {
       keys[my_write_index] = key;
 
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
+#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+      // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
       // loop. before inserting the new value in liked list -- which is done
@@ -732,9 +729,8 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
+#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+      // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
       // loop. before inserting the new value in liked list -- which is done
@@ -786,9 +782,8 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
+#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+      // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
       // loop. before inserting the new value in liked list -- which is done
@@ -836,9 +831,8 @@ struct HashmapAccumulator {
     } else {
       keys[my_write_index] = key;
 
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
-    defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
+#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+      // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
       // loop. before inserting the new value in liked list -- which is done

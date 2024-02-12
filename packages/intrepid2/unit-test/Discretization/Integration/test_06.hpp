@@ -58,6 +58,7 @@
 #include "Intrepid2_Utils_ExtData.hpp"
 
 #include "Intrepid2_CubatureDirectTetDefault.hpp"
+#include "Intrepid2_CubatureDirectTetSymmetric.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -118,12 +119,12 @@ namespace Intrepid2 {
         << "===============================================================================\n";
       
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
       typedef CubatureDirectTetDefault<DeviceType,pointValueType,weightValueType> CubatureTetType;
+      typedef CubatureDirectTetSymmetric<DeviceType,pointValueType,weightValueType> CubatureTetSymType;
       
       // tolerence is too tight to test upto order 20
       // tol factor increased by 1000 due to cubature order 20 test failure
@@ -131,29 +132,14 @@ namespace Intrepid2 {
 
       int errorFlag = 0;
 
-      // get names of files with analytic values
-      std::string basedir = "./data";
-      std::stringstream namestream;
-      std::string filename;
-      namestream << basedir << "/TET_integrals" << ".dat";
-      namestream >> filename;
-      *outStream << "filename = " << filename << std::endl;
-      std::ifstream filecompare(filename);
-
       // compute and compare integrals
       try {
         // cannot test maxcubature degree edge (20) as max integration point is limited by 1001.
-        const auto maxDeg   = 10; //Parameters::MaxCubatureDegreeTet;
-        const auto polySize = (maxDeg+1)*(maxDeg+2)*(maxDeg+3)/6;
-
-        // test inegral values
-        DynRankViewHost ConstructWithLabel(testInt, maxDeg+1, polySize);
+        const auto maxDeg   = Parameters::MaxCubatureDegreeTet;
+        //const auto polySize = (maxDeg+1)*(maxDeg+2)*(maxDeg+3)/6;
 
         // analytic integral values
         const auto analyticMaxDeg = 20;
-        const auto analyticPolySize = (analyticMaxDeg+1)*(analyticMaxDeg+2)*(analyticMaxDeg+3)/6;
-
-        DynRankViewHost ConstructWithLabel(analyticInt, analyticPolySize, 1);
 
         // storage for cubatrue points and weights
         DynRankView ConstructWithLabel(cubPoints,
@@ -163,57 +149,79 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(cubWeights,
                                        Parameters::MaxIntegrationPoints);
 
-        // compute integrals
-        for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
-          CubatureTetType tetCub(cubDeg);
-          *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << "  Testing\n";
-          
-          ordinal_type cnt = 0;
-          for (auto xDeg=0;xDeg<=cubDeg;++xDeg) 
-            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg) 
-              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg,++cnt) {
-                testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(tetCub,
-                                                                            cubPoints,
-                                                                            cubWeights,
-                                                                            xDeg,
-                                                                            yDeg,
-                                                                            zDeg);
-              }
-        }
-
-
-        // get analytic values
-        if (filecompare.is_open()) {
-          getAnalytic(analyticInt, filecompare, INTREPID2_UTILS_SCALAR);
-          filecompare.close();
-        }
-
         // perform comparison
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
 
+          *outStream << "Testing Default Cubature of Order " << std::setw(2) << std::left << cubDeg << "\n";
+
+          CubatureTetType tetCub(cubDeg);
+
           const auto y_offs = (analyticMaxDeg - cubDeg);
           const auto x_offs = y_offs*(y_offs + 1)/2;
-
-          ordinal_type offset = 0, cnt = 0;
+          ordinal_type offset = 0;
           const auto oldFlag = errorFlag;
           for (auto xDeg=0;xDeg<=cubDeg;++xDeg,offset += x_offs) 
             for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,offset += y_offs) 
-              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg,++cnt) {
-                const auto loc = cnt + offset;
-                const auto abstol  = ( analyticInt(loc,0) == 0.0 ? tol : std::fabs(tol*analyticInt(loc,0)) );
-                const auto absdiff = std::fabs(analyticInt(loc,0) - testInt(cubDeg,cnt));
+              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg) {
+                const auto analyticIntegral = analyticIntegralOfMonomialOverTet<ValueType>(xDeg,yDeg,zDeg);
+                const auto abstol  = std::fabs(tol*analyticIntegral );
+                const auto computedIntegral = computeIntegralOfMonomial<ValueType>(tetCub,cubPoints,cubWeights,xDeg,yDeg,zDeg);
+                const auto absdiff = std::fabs(analyticIntegral - computedIntegral);
                 if (absdiff > abstol) {
-                  *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
+                  *outStream << "Default Cubature of Order " << std::setw(2) << std::left << cubDeg << " Integrating "
                              << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg
                              << " * z^" << std::setw(2) << zDeg << ":" << "   "
                              << std::scientific << std::setprecision(16)
-                             << testInt(cubDeg,cnt) << "   " << analyticInt(loc,0) << "   "
+                             << computedIntegral << "   " << analyticIntegral << "   "
                              << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
                   errorFlag++;
                   *outStream << std::right << std::setw(118) << "^^^^---FAILURE!\n";
                 }
               }
-          *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg
+          *outStream << "Default Cubature of Order " << std::setw(2) << std::left << cubDeg
+                     << (errorFlag == oldFlag ? "  PASSED" : "  FAILED") << std::endl;                         
+        }
+        *outStream << "\n";
+
+
+        for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+          *outStream << "Testing Symmetric Cubature of Order " << std::setw(2) << std::left << cubDeg << "\n";
+
+          CubatureTetSymType tetCub(cubDeg);
+          tetCub.getCubature(cubPoints, cubWeights);
+          auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
+          ValueType minWeigth = 1.0;
+          for(int i=0; i<tetCub.getNumPoints();++i)
+            minWeigth = std::min(minWeigth,cubWeights_host(i));
+
+          if (minWeigth <= 0.0) {
+            errorFlag++;
+            *outStream << "   Cubature Rule is not positive!\n" << std::right << std::setw(111) << "^^^^---FAILURE!\n";
+          }
+
+          const auto y_offs = (analyticMaxDeg - cubDeg);
+          const auto x_offs = y_offs*(y_offs + 1)/2;
+          ordinal_type offset = 0;
+          const auto oldFlag = errorFlag;
+          for (auto xDeg=0;xDeg<=cubDeg;++xDeg,offset += x_offs) 
+            for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,offset += y_offs) 
+              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg) {
+                const auto analyticIntegral = analyticIntegralOfMonomialOverTet<ValueType>(xDeg,yDeg,zDeg);
+                const auto computedIntegral = computeIntegralOfMonomial<ValueType>(tetCub,cubPoints,cubWeights,xDeg,yDeg,zDeg);
+                const auto abstol  = std::fabs(tol*analyticIntegral );
+                const auto absdiff = std::fabs(analyticIntegral - computedIntegral);
+                if (absdiff > abstol) {
+                  *outStream << "Symmetric Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
+                             << "x^" << std::setw(2) << std::left << xDeg << " * y^" << std::setw(2) << yDeg
+                             << " * z^" << std::setw(2) << zDeg << ":" << "   "
+                             << std::scientific << std::setprecision(16)
+                             << computedIntegral << "   " << analyticIntegral << "   "
+                             << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
+                  errorFlag++;
+                  *outStream << std::right << std::setw(118) << "^^^^---FAILURE!\n";
+                }
+              }
+          *outStream << "Symmetric Cubature of Order " << std::setw(2) << std::left << cubDeg
                      << (errorFlag == oldFlag ? "  PASSED" : "  FAILED") << std::endl;                         
         }
         *outStream << "\n";

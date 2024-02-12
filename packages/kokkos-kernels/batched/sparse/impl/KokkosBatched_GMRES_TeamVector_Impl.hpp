@@ -48,9 +48,9 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(
     const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
     const TMPViewType& _TMPView) {
   typedef int OrdinalType;
-  typedef typename Kokkos::Details::ArithTraits<
+  typedef typename Kokkos::ArithTraits<
       typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
-  typedef Kokkos::Details::ArithTraits<MagnitudeType> ATM;
+  typedef Kokkos::ArithTraits<MagnitudeType> ATM;
 
   using TeamVectorCopy1D = TeamVectorCopy<MemberType, Trans::NoTranspose, 1>;
 

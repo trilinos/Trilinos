@@ -47,15 +47,15 @@
 #define XPETRA_MATRIXFACTORY_FWD_HPP
 
 namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatrixFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatrixFactory;
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatrixFactory2;
-}
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatrixFactory2;
+}  // namespace Xpetra
 
 #ifndef XPETRA_MATRIXFACTORY_SHORT
 #define XPETRA_MATRIXFACTORY_SHORT
 #endif
 
-#endif // XPETRA_MATRIXFACTORY_FWD_HPP
+#endif  // XPETRA_MATRIXFACTORY_FWD_HPP

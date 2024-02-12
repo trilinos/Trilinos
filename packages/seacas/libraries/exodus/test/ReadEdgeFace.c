@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,19 +13,23 @@
 #define EX_TEST_FILENAME "edgeFace.exo"
 
 #define EXCHECK(funcall, errmsg)                                                                   \
-  if ((funcall) < 0) {                                                                             \
-    fprintf(stderr, errmsg);                                                                       \
-    return 1;                                                                                      \
-  }
+  do {                                                                                             \
+    if ((funcall) < 0) {                                                                           \
+      fprintf(stderr, errmsg);                                                                     \
+      return 1;                                                                                    \
+    }                                                                                              \
+  } while (0)
 
 #define EXCHKPI(funcall, errmsg, sucmsg, ival)                                                     \
-  if ((funcall) < 0) {                                                                             \
-    fprintf(stderr, errmsg);                                                                       \
-    return 1;                                                                                      \
-  }                                                                                                \
-  else {                                                                                           \
-    fprintf(stdout, sucmsg, ival);                                                                 \
-  }
+  do {                                                                                             \
+    if ((funcall) < 0) {                                                                           \
+      fprintf(stderr, errmsg);                                                                     \
+      return 1;                                                                                    \
+    }                                                                                              \
+    else {                                                                                         \
+      fprintf(stdout, sucmsg, ival);                                                               \
+    }                                                                                              \
+  } while (0)
 
 ex_entity_type obj_types[] = {EX_EDGE_BLOCK, EX_FACE_BLOCK, EX_ELEM_BLOCK, EX_NODE_SET,
                               EX_EDGE_SET,   EX_FACE_SET,   EX_SIDE_SET,   EX_ELEM_SET,

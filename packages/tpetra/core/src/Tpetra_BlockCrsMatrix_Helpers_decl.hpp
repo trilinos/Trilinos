@@ -99,6 +99,33 @@ namespace Tpetra {
   Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node>>
   convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize);
 
+  /// \brief Fill all point entries in a logical block of a CrsMatrix with zeroes. This should be called
+  /// before convertToBlockCrsMatrix if your Crs is not filled. Performed on host.
+  ///
+  /// This function accepts an already constructed point version of the block matrix.
+  /// Assumptions:
+  ///   - Point rows corresponding to a particular mesh node must be stored consecutively.
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node>>
+  fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize);
+
+  /// \brief Unfill all point entries in a logical block of a CrsMatrix with zeroes. This can be called
+  /// after convertToCrsMatrix if you don't want to keep the filled values. Performed on host.
+  ///
+  /// This function accepts an already constructed point version of the block matrix. It is expected
+  /// that, given a crs A
+  /// Afill = fillLogicalBlocks(A)
+  /// Abcrs = convertToBlockCrsMatrix(Afill)
+  /// Acrs  = convertToCrsMatrix(Abcrs);
+  /// Aorig = unfillFormerBlockCrs(Acrs);
+  /// Expect A and Aorig are identical
+  /// Assumptions:
+  ///   - Point rows corresponding to a particular mesh node must be stored consecutively.
+  ///   - Assumes all zero entries are filled values that should be removed.
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node>>
+  unfillFormerBlockCrs(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix);
+
   /// @brief Helper function to generate a mesh map from a point map.
   /// Important! It's assumed that point GIDs associated with a single mesh GID appear consecutively in pointMap.
   template<class LO, class GO, class Node>

@@ -172,6 +172,5 @@ struct PAR_ILUT_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
       false, true>;
 
 #include <KokkosSparse_par_ilut_symbolic_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_par_ilut_symbolic_eti_spec_decl.hpp>
 
 #endif

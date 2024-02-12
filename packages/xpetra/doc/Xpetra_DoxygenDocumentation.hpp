@@ -102,4 +102,4 @@ Answer your question here.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-#endif //ifndef XPETRA_DOXYGEN_DOCUMENTATION_HPP
+#endif  // ifndef XPETRA_DOXYGEN_DOCUMENTATION_HPP

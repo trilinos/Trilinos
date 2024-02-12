@@ -1256,7 +1256,8 @@ protected:
 #ifndef NDEBUG
     std::ostringstream oss;
     oss << "output." << get_bulk().parallel_rank();
-    std::ofstream ofs = std::ofstream(oss.str(), std::ofstream::out);
+    std::string fileName = oss.str();
+    std::ofstream ofs(fileName, std::ofstream::out);
     STK_ThrowRequireMsg(ofs.fail() == false, "Failed to open debug file: " << oss.str());
     outputStream = &ofs;
 #endif
@@ -1271,6 +1272,9 @@ protected:
         EXPECT_EQ(entry.expectedCoincidence, isParallelCoincident);
       }
     }
+#ifndef NDEBUG
+    unlink(fileName.c_str());
+#endif
   }
 };
 

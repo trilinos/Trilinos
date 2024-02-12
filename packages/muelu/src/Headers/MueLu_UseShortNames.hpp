@@ -81,4 +81,4 @@
 
 //! @file MueLu_UseShortNamesOrdinal.hpp
 
-//TODO / NOTE: This file should not be included at the global scope (to avoid name collision)
+// TODO / NOTE: This file should not be included at the global scope (to avoid name collision)

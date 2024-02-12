@@ -1,0 +1,12 @@
+#Official Tool: clang-format version 14.0.0
+#Kokkos options
+BasedOnStyle: google
+SortIncludes: false
+AlignConsecutiveAssignments: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+#Tempus-specific options
+ColumnLimit: 0
+PackConstructorInitializers: NextLine
+ConstructorInitializerIndentWidth: 2
+BreakBeforeBraces: Stroustrup

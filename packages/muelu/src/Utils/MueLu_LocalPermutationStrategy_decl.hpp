@@ -19,56 +19,52 @@
 
 namespace MueLu {
 
-  //! @brief Local permutation strategy
-  /*!
-     This class permutes columns of a input matrix A. No inter-node permutations are allowed,
-     only permutations of columns that correspond to DOFs of the same node.
-    */
+//! @brief Local permutation strategy
+/*!
+   This class permutes columns of a input matrix A. No inter-node permutations are allowed,
+   only permutations of columns that correspond to DOFs of the same node.
+  */
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class LocalPermutationStrategy : public BaseClass {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class LocalPermutationStrategy : public BaseClass {
 #undef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 #include "MueLu_UseShortNames.hpp"
-  public:
-
+ public:
   /*!
     @class LocalPermutationStrategy class.
     @brief Class which defines local permutations of matrix columns which correspond to DOFs of the same node.
     */
 
-    //! build permutation operators
-    /*!
-     *  The following variables produced
-     *  "A"     :      permuted and scaled A
-     *  "permA" :      permuted A without scaling
-     *  "permP" :      permutation opertor (should be identity)
-     *  "permQT":      transpose permutation operators
-     *  "permScaling": scaling operator
-     *
-     * \param A: input matrix (input)
-     * \param permRowMap: Dof row map permutation shall be restricted on (input)
-     * \param currentLevel: only for output of variables
-     * \param genFactory: const pointer to generating (calling) PermutationFactory // TODO avoid this, not very elegant. Decide which variables have to be generated, give them back per reference to the PermutationFactory.
-     */
-    void BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const;
+  //! build permutation operators
+  /*!
+   *  The following variables produced
+   *  "A"     :      permuted and scaled A
+   *  "permA" :      permuted A without scaling
+   *  "permP" :      permutation opertor (should be identity)
+   *  "permQT":      transpose permutation operators
+   *  "permScaling": scaling operator
+   *
+   * \param A: input matrix (input)
+   * \param permRowMap: Dof row map permutation shall be restricted on (input)
+   * \param currentLevel: only for output of variables
+   * \param genFactory: const pointer to generating (calling) PermutationFactory // TODO avoid this, not very elegant. Decide which variables have to be generated, give them back per reference to the PermutationFactory.
+   */
+  void BuildPermutation(const Teuchos::RCP<Matrix>& A, const Teuchos::RCP<const Map> permRowMap, Level& currentLevel, const FactoryBase* genFactory) const;
 
+ private:
+  void BuildPermutations(size_t nDofsPerNode) const;
 
+  mutable std::vector<std::vector<int> > result_permvecs_;
+  mutable size_t permWidth_;
 
-  private:
+  GlobalOrdinal getGlobalDofId(const Teuchos::RCP<Matrix>& A, LocalOrdinal localNodeId, LocalOrdinal localDof) const;
+  GlobalOrdinal globalDofId2globalNodeId(const Teuchos::RCP<Matrix>& A, GlobalOrdinal grid) const;
+};
 
-    void BuildPermutations(size_t nDofsPerNode) const;
-
-    mutable std::vector<std::vector<int> > result_permvecs_;
-    mutable size_t permWidth_;
-
-    GlobalOrdinal getGlobalDofId(const Teuchos::RCP<Matrix> & A, LocalOrdinal localNodeId, LocalOrdinal localDof) const;
-    GlobalOrdinal globalDofId2globalNodeId( const Teuchos::RCP<Matrix> & A, GlobalOrdinal grid ) const;
-   };
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 

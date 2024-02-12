@@ -158,7 +158,7 @@ private:
   // maps to a source vector. If a value is less then 0
   // then that implies that value is not mapped. That is a strange
   // case but this structure supports it
-  std::vector<int> dstFromSrcMap_;
+  Kokkos::View<int*> dstFromSrcMapView_;
 
   ReorderADValues_Evaluator() {}
   ReorderADValues_Evaluator(const ReorderADValues_Evaluator &) {}

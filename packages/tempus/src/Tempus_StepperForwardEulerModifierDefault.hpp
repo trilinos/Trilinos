@@ -16,7 +16,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperForwardEuler.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperForwardEuler.
@@ -27,40 +26,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperForwardEulerModifierDefault
-  : virtual public Tempus::StepperForwardEulerModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperForwardEulerModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperForwardEulerModifierDefault(){}
+  StepperForwardEulerModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperForwardEulerModifierDefault(){}
+  virtual ~StepperForwardEulerModifierDefault() {}
 
   /// Modify ForwardEuler Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperForwardEuler<Scalar> > /* stepper */,
-    const typename StepperForwardEulerAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperForwardEuler<Scalar> > /* stepper */,
+      const typename StepperForwardEulerAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperForwardEulerAppAction<Scalar>::BEGIN_STEP:
       case StepperForwardEulerAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
-      case StepperForwardEulerAppAction<Scalar>::END_STEP:
-      {
+      case StepperForwardEulerAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperForwardEulerModifierDefault_hpp
+#endif  // Tempus_StepperForwardEulerModifierDefault_hpp

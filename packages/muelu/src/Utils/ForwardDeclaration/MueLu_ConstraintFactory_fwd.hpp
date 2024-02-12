@@ -46,18 +46,13 @@
 #ifndef MUELU_CONSTRAINTFACTORY_FWD_HPP
 #define MUELU_CONSTRAINTFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ConstraintFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ConstraintFactory;
 }
 
 #ifndef MUELU_CONSTRAINTFACTORY_SHORT
 #define MUELU_CONSTRAINTFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_CONSTRAINTFACTORY_FWD_HPP
+#endif  // MUELU_CONSTRAINTFACTORY_FWD_HPP

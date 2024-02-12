@@ -54,6 +54,7 @@
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#include "AnasaziGlobalComm.hpp"
 #else
 #include "Epetra_SerialComm.h"
 #endif
@@ -61,7 +62,7 @@
 #include "Teuchos_Assert.hpp"
 
 namespace RBGen {
-  
+
   EpetraCrsMatrixFileIOHandler::EpetraCrsMatrixFileIOHandler()
     : isInit(false)
   {
@@ -96,7 +97,7 @@ namespace RBGen {
     if (isInit) {
 
 #ifdef EPETRA_MPI
-      Epetra_MpiComm comm( MPI_COMM_WORLD );
+      Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
       Epetra_SerialComm comm;
 #endif
@@ -114,12 +115,12 @@ namespace RBGen {
 
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!"); 
-    }      
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!");
+    }
     // Return.
     return newMTX;
   }
-  
+
   void EpetraCrsMatrixFileIOHandler::Write( const Teuchos::RCP<const Epetra_Operator>& MTX, const std::string& filename )
   {
     if (isInit) {
@@ -129,10 +130,10 @@ namespace RBGen {
 
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!"); 
-    }      
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "File I/O handler is not initialized!");
+    }
   }
-  
+
 } // namespace RBGen
 
 

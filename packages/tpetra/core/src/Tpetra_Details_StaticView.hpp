@@ -108,7 +108,7 @@ public:
 
 #ifdef KOKKOS_ENABLE_HIP
 template<>
-class StaticKokkosAllocation<Kokkos::Experimental::HIPSpace> {
+class StaticKokkosAllocation<Kokkos::HIPSpace> {
 public:
   StaticKokkosAllocation () = delete;
   ~StaticKokkosAllocation () = delete;
@@ -117,11 +117,11 @@ public:
   StaticKokkosAllocation (StaticKokkosAllocation&&) = delete;
   StaticKokkosAllocation& operator= (StaticKokkosAllocation&&) = delete;
 
-  static void* resize (Kokkos::Experimental::HIPSpace space, const size_t size);
+  static void* resize (Kokkos::HIPSpace space, const size_t size);
 };
 
 template<>
-class StaticKokkosAllocation<Kokkos::Experimental::HIPHostPinnedSpace> {
+class StaticKokkosAllocation<Kokkos::HIPHostPinnedSpace> {
 public:
   StaticKokkosAllocation () = delete;
   ~StaticKokkosAllocation () = delete;
@@ -130,7 +130,7 @@ public:
   StaticKokkosAllocation (StaticKokkosAllocation&&) = delete;
   StaticKokkosAllocation& operator= (StaticKokkosAllocation&&) = delete;
 
-  static void* resize (Kokkos::Experimental::HIPHostPinnedSpace space, const size_t size);
+  static void* resize (Kokkos::HIPHostPinnedSpace space, const size_t size);
 };
 #endif // KOKKOS_ENABLE_HIP
 

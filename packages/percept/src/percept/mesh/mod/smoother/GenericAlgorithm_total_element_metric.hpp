@@ -57,13 +57,13 @@ class PerceptMesh;
       void updateState(SmootherMetricImpl<MeshType> *metric, PerceptMesh *eMesh, bool valid_in, size_t *num_invalid_in, Double mtot_in, size_t n_invalid_in)
       {m_metric = metric; m_eMesh = eMesh; valid = valid_in; num_invalid = num_invalid_in; mtot = mtot_in; n_invalid = n_invalid_in;}
 
-      inline
+      KOKKOS_INLINE_FUNCTION
       void operator()(const unsigned& index, Double& mtot_loc) const
       {
         const_cast<This *>(this)->operator()(index, mtot_loc);
       }
 
-      inline
+      KOKKOS_INLINE_FUNCTION
       void operator()(const unsigned& index, Double& mtot_loc);
 
     };

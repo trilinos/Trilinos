@@ -46,18 +46,18 @@
 #ifndef MUELU_MLPARAMETERLISTINTERPRETER_FWD_HPP
 #define MUELU_MLPARAMETERLISTINTERPRETER_FWD_HPP
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_DEPRECATED_CODE)
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MLParameterListInterpreter;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MLParameterListInterpreter;
 }
 
 #ifndef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #define MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #endif
 
+#endif
 
-
-#endif // MUELU_MLPARAMETERLISTINTERPRETER_FWD_HPP
+#endif  // MUELU_MLPARAMETERLISTINTERPRETER_FWD_HPP

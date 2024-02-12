@@ -141,6 +141,5 @@ struct Rotmg<execution_space, DXView, YView, PView, false,
       false, true>;
 
 #include <KokkosBlas1_rotmg_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_rotmg_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_ROTMG_SPEC_HPP_

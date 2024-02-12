@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -28,7 +28,6 @@ int check_graph(struct vtx_data **graph, /* graph data structure */
   int          narcs;          /* number of neighbors of a vertex */
   int          neighbor;       /* neighbor of a vertex */
   int          i, j;           /* loop counters */
-  int          is_an_edge();
 
   flag           = FALSE;
   no_edge_count  = 0;
@@ -125,7 +124,7 @@ int check_graph(struct vtx_data **graph, /* graph data structure */
 
 int is_an_edge(struct vtx_data *vertex, /* data for a vertex */
                int              v2,     /* neighbor to look for */
-               float *          weight2 /* weight of edge if found */
+               float           *weight2 /* weight of edge if found */
 )
 {
   int i; /* loop counter */

@@ -407,7 +407,7 @@ namespace Tpetra {
     /// MultiVector's data, its entries have type \c impl_scalar_type,
     /// not \c scalar_type.
     using impl_scalar_type =
-      typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+      typename Kokkos::ArithTraits<Scalar>::val_type;
 
     //! The type of the Map specialization used by this class.
     using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -1473,6 +1473,12 @@ namespace Tpetra {
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
+
+    /// \brief Return the wrapped dual view holding this MultiVector's local data.
+    ///
+    /// \warning This method is ONLY for use by experts. We highly recommend accessing the local data
+    /// by using the member functions getLocalViewHost and getLocalViewDevice.
+    wrapped_dual_view_type getWrappedDualView() const;
 
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>

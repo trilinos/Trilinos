@@ -53,15 +53,6 @@
 #include <zoltan.h>
 
 #include <Zoltan2_Util.hpp>
-#define MEMORY_CHECK(iPrint, msg) \
-  if (iPrint){ \
-    long kb = Zoltan2::getProcessKilobytes(); \
-    std::cout.width(10); \
-    std::cout.fill('*'); \
-    std::cout << kb << " KB, " << msg << std::endl; \
-    std::cout.width(0); \
-    std::cout.fill(' '); \
-  }
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>

@@ -56,7 +56,7 @@ protected:
   TestHexFixture()
   : m_bulk(stk::mesh::MeshBuilder(MPI_COMM_WORLD).create()),
     m_meta(m_bulk->mesh_meta_data()),
-    m_coord_field(m_meta.declare_field<HexFixture::CoordFieldType>(stk::topology::NODE_RANK, "Coordinates")),
+    m_coord_field(stk::mesh::legacy::declare_field<HexFixture::CoordFieldType>(m_meta, stk::topology::NODE_RANK, "Coordinates")),
     m_hexFixture(nullptr)
   {}
 

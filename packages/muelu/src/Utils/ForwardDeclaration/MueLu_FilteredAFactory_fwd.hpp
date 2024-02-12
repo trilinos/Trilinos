@@ -46,18 +46,13 @@
 #ifndef MUELU_FILTEREDAFACTORY_FWD_HPP
 #define MUELU_FILTEREDAFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class FilteredAFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class FilteredAFactory;
 }
 
 #ifndef MUELU_FILTEREDAFACTORY_SHORT
 #define MUELU_FILTEREDAFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_FILTEREDAFACTORY_FWD_HPP
+#endif  // MUELU_FILTEREDAFACTORY_FWD_HPP

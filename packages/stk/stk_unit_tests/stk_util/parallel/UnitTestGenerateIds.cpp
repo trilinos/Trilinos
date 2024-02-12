@@ -187,7 +187,6 @@ TEST(GeneratedIds, findUniqueIdAcrossProcs)
     }
 
     checkUniqueIds(myIds, idsObtained, mpiInfo);
-    writeIdsToFile("ids_", mpiInfo.getProcId(), myIds, idsObtained);
 
     for (size_t i=0;i<idsObtained.size();i++)
     {
@@ -898,6 +897,7 @@ void generate_ids(const uint64_t maxId, const std::vector<uint64_t> &idsInUse, s
 
     if ( !uniqueIds.empty() )
     {
+        uniqueIdsFound.reserve(numIdsNeeded);
         for (uint64_t i=myIndexStart;i<myIndexEnd;i++)
         {
             if ( !std::binary_search(idsInUseAcrossAllProcsInMyRange.begin(), idsInUseAcrossAllProcsInMyRange.end(), i) )

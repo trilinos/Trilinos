@@ -46,7 +46,6 @@
 #ifndef MUELU_HYBRIDAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_HYBRIDAGGREGATIONFACTORY_DECL_HPP_
 
-
 #include <Xpetra_Map_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -56,7 +55,7 @@
 #include "MueLu_AggregationAlgorithmBase.hpp"
 
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_GraphBase_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
@@ -129,59 +128,60 @@ namespace MueLu {
     | Aggregates   | HybridAggregationFactory   | Container class with aggregation information. See also Aggregates.
 */
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class HybridAggregationFactory : public SingleLevelFactoryBase {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class HybridAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_HYBRIDAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    HybridAggregationFactory();
+  //! Constructor.
+  HybridAggregationFactory();
 
-    //! Destructor.
-    virtual ~HybridAggregationFactory() { }
+  //! Destructor.
+  virtual ~HybridAggregationFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level &currentLevel) const;
+  void DeclareInput(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    /*! @brief Build aggregates. */
-    void Build(Level &currentLevel) const;
+  /*! @brief Build aggregates. */
+  void Build(Level& currentLevel) const;
 
-    /*! @brief Specifically build aggregates along interfaces */
-    void BuildInterfaceAggregates(Level& currentLevel, RCP<Aggregates> aggregates,
-                                  std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes,
-                                  Array<LO> coarseRate) const;
+  /*! @brief Specifically build aggregates along interfaces */
+  void BuildInterfaceAggregates(Level& currentLevel,
+                                RCP<Aggregates> aggregates,
+                                typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat,
+                                LO& numNonAggregatedNodes,
+                                Array<LO> coarseRate) const;
 
-    //@}
+  //@}
 
-  private:
+ private:
+  //! aggregation algorithms
+  // will be filled in Build routine
+  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LO, GO, Node> > > algos_;
 
-    //! aggregation algorithms
-    // will be filled in Build routine
-    mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LO, GO, Node> > > algos_;
+  //! boolean flag: definition phase
+  //! if true, the aggregation algorithms still can be set and changed.
+  //! if false, no change in aggregation algorithms is possible any more
+  mutable bool bDefinitionPhase_;
 
-    //! boolean flag: definition phase
-    //! if true, the aggregation algorithms still can be set and changed.
-    //! if false, no change in aggregation algorithms is possible any more
-    mutable bool bDefinitionPhase_;
+};  // class HybridAggregationFactory
 
-  }; // class HybridAggregationFactory
-
-}
+}  // namespace MueLu
 
 #define MUELU_HYBRIDAGGREGATIONFACTORY_SHORT
 #endif /* MUELU_HYBRIDAGGREGATIONFACTORY_DECL_HPP_ */

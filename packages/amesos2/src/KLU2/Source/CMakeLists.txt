@@ -102,7 +102,7 @@ klu2_memory.hpp
   )
 
 #
-# C) Define the targets for package's example
+# C) Define the targets for package's test
 #
 
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
+TRIBITS_ADD_TEST_DIRECTORIES(tests)

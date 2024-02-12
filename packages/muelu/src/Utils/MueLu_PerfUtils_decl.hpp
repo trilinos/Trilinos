@@ -58,33 +58,33 @@
 
 namespace MueLu {
 // MPI helpers
-#define MueLu_sumAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
-#define MueLu_minAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
-#define MueLu_maxAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
+#define MueLu_sumAll(rcpComm, in, out) \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
+#define MueLu_minAll(rcpComm, in, out) \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
+#define MueLu_maxAll(rcpComm, in, out) \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
-  template <class Scalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class PerfUtils {
+template <class Scalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class PerfUtils {
 #undef MUELU_PERFUTILS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
+ public:
+  static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
-    static std::string PrintImporterInfo(RCP<const Import> importer, const std::string& msgTag);
+  static std::string PrintImporterInfo(RCP<const Import> importer, const std::string& msgTag);
 
-    static std::string CommPattern(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
+  static std::string CommPattern(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
-  private:
-    static bool CheckMatrix(const Matrix& A);
-  };
+ private:
+  static bool CheckMatrix(const Matrix& A);
+};
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_PERFUTILS_SHORT
-#endif // MUELU_PERFUTILS_DECL_HPP
+#endif  // MUELU_PERFUTILS_DECL_HPP

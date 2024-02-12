@@ -155,7 +155,7 @@ The informational arguments to this function are:
   
       <url_base><tool_name>-<tool_version>-base
   
-    This can also accomidate gitolite repos and other directory structures,
+    This can also accommodate gitolite repos and other directory structures,
     for example, with:
   
       git@<host-name>:prerequisites/

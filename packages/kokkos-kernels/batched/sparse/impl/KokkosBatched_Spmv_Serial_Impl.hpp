@@ -138,64 +138,110 @@ struct SerialSpmv<Trans::NoTranspose> {
     static_assert(Kokkos::is_view<betaViewType>::value,
                   "KokkosBatched::spmv: betaViewType is not a Kokkos::View.");
 
-    static_assert(ValuesViewType::Rank == 2,
+    static_assert(ValuesViewType::rank == 2,
                   "KokkosBatched::spmv: ValuesViewType must have rank 2.");
-    static_assert(IntView::Rank == 1,
+    static_assert(IntView::rank == 1,
                   "KokkosBatched::spmv: IntView must have rank 2.");
-    static_assert(xViewType::Rank == 2,
+    static_assert(xViewType::rank == 2,
                   "KokkosBatched::spmv: xViewType must have rank 2.");
-    static_assert(yViewType::Rank == 2,
+    static_assert(yViewType::rank == 2,
                   "KokkosBatched::spmv: yViewType must have rank 2.");
-    static_assert(alphaViewType::Rank == 1,
+    static_assert(alphaViewType::rank == 1,
                   "KokkosBatched::spmv: alphaViewType must have rank 1.");
-    static_assert(betaViewType::Rank == 1,
+    static_assert(betaViewType::rank == 1,
                   "KokkosBatched::spmv: betaViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: Dimensions of X and Y do not match: X: %d x "
           "%d, Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: Dimensions of X and Y do not match: X: %d x "
+          "%d, Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(0) != alpha.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: First dimension of X and alpha do not match: "
           "X: %d x %d, alpha: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: First dimension of X and alpha do not match: "
+          "X: %d x %d, alpha: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
+#endif
       return 1;
     }
     if (X.extent(0) != beta.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: First dimension of X and beta do not match: X: "
           "%d x %d, beta: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)beta.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: First dimension of X and beta do not match: X: "
+          "%d x %d, beta: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)beta.extent(0));
+#endif
       return 1;
     }
     if (X.extent(0) != values.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: First dimension of X and the first dimension "
           "of values do not match: X: %d x %d, values: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)values.extent(0),
           (int)values.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: First dimension of X and the first dimension "
+          "of values do not match: X: %d x %d, values: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)values.extent(0),
+          (int)values.extent(1));
+#endif
       return 1;
     }
     if (colIndices.extent(0) != values.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: Dimension of colIndices and the second "
           "dimension of values do not match: colIndices: %d , values: %d x "
           "%d\n",
           (int)colIndices.extent(0), (int)values.extent(0),
           (int)values.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: Dimension of colIndices and the second "
+          "dimension of values do not match: colIndices: %d , values: %d x "
+          "%d\n",
+          (int)colIndices.extent(0), (int)values.extent(0),
+          (int)values.extent(1));
+#endif
       return 1;
     }
     if (row_ptr.extent(0) - 1 != X.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: Dimension of row_ptr and the second dimension "
           "of X do not match: colIndices (-1): %d , values: %d x %d\n",
           (int)row_ptr.extent(0) - 1, (int)X.extent(0), (int)X.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: Dimension of row_ptr and the second dimension "
+          "of X do not match: colIndices (-1): %d , values: %d x %d\n",
+          (int)row_ptr.extent(0) - 1, (int)X.extent(0), (int)X.extent(1));
+#endif
       return 1;
     }
 #endif
@@ -215,11 +261,11 @@ struct SerialSpmv<Trans::NoTranspose> {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type& alpha,
       const ValuesViewType& values, const IntView& row_ptr,
       const IntView& colIndices, const xViewType& X,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
@@ -232,52 +278,84 @@ struct SerialSpmv<Trans::NoTranspose> {
     static_assert(Kokkos::is_view<yViewType>::value,
                   "KokkosBatched::spmv: yViewType is not a Kokkos::View.");
 
-    static_assert(ValuesViewType::Rank == 2,
+    static_assert(ValuesViewType::rank == 2,
                   "KokkosBatched::spmv: ValuesViewType must have rank 2.");
-    static_assert(IntView::Rank == 1,
+    static_assert(IntView::rank == 1,
                   "KokkosBatched::spmv: IntView must have rank 2.");
-    static_assert(xViewType::Rank == 2,
+    static_assert(xViewType::rank == 2,
                   "KokkosBatched::spmv: xViewType must have rank 2.");
-    static_assert(yViewType::Rank == 2,
+    static_assert(yViewType::rank == 2,
                   "KokkosBatched::spmv: yViewType must have rank 2.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: Dimensions of X and Y do not match: X: %d x "
           "%d, Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: Dimensions of X and Y do not match: X: %d x "
+          "%d, Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(0) != values.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: First dimension of X and the first dimension "
           "of values do not match: X: %d x %d, values: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)values.extent(0),
           (int)values.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: First dimension of X and the first dimension "
+          "of values do not match: X: %d x %d, values: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)values.extent(0),
+          (int)values.extent(1));
+#endif
       return 1;
     }
     if (colIndices.extent(0) != values.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: Dimension of colIndices and the second "
           "dimension of values do not match: colIndices: %d , values: %d x "
           "%d\n",
           (int)colIndices.extent(0), (int)values.extent(0),
           (int)values.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: Dimension of colIndices and the second "
+          "dimension of values do not match: colIndices: %d , values: %d x "
+          "%d\n",
+          (int)colIndices.extent(0), (int)values.extent(0),
+          (int)values.extent(1));
+#endif
       return 1;
     }
     if (row_ptr.extent(0) - 1 != X.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::spmv: Dimension of row_ptr and the second dimension "
           "of X do not match: colIndices (-1): %d , values: %d x %d\n",
           (int)row_ptr.extent(0) - 1, (int)X.extent(0), (int)X.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::spmv: Dimension of row_ptr and the second dimension "
+          "of X do not match: colIndices (-1): %d , values: %d x %d\n",
+          (int)row_ptr.extent(0) - 1, (int)X.extent(0), (int)X.extent(1));
+#endif
       return 1;
     }
 #endif
 
     return SerialSpmvInternal::template invoke<
-        typename Kokkos::Details::ArithTraits<
+        typename Kokkos::ArithTraits<
             typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type,

@@ -7,9 +7,9 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # performance_example is a simple example of using it.
 
 #don't assert that this is defined anymore
-#ASSERT_DEFINED(TPL_ENABLE_yaml-cpp)
+#ASSERT_DEFINED(TPL_ENABLE_yamlcpp)
 
-IF(TPL_ENABLE_yaml-cpp)
+IF(${PACKAGE_NAME}_ENABLE_yamlcpp)
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     performance_validate

@@ -67,96 +67,93 @@
 
 namespace MueLu {
 
-  /*!
-    @class BlockedDirectSolver
-    @brief direct solver for nxn blocked matrices
+/*!
+  @class BlockedDirectSolver
+  @brief direct solver for nxn blocked matrices
 
-    The nxn block matrix A as input is automatically merged and then solved
-    by a direct solver.
-      */
+  The nxn block matrix A as input is automatically merged and then solved
+  by a direct solver.
+    */
 
-  template <class Scalar = SmootherPrototype<>::scalar_type,
-            class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class BlockedDirectSolver : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-  {
-    typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
+template <class Scalar        = SmootherPrototype<>::scalar_type,
+          class LocalOrdinal  = typename SmootherPrototype<Scalar>::local_ordinal_type,
+          class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node          = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class BlockedDirectSolver : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
 
 #undef MUELU_BLOCKEDDIRECTSOLVER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors / destructors
+  //@{
 
-    //! @name Constructors / destructors
-    //@{
+  /*! @brief Constructor
+   */
+  BlockedDirectSolver(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
 
-    /*! @brief Constructor
-    */
-    BlockedDirectSolver(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
+  //! Destructor
+  virtual ~BlockedDirectSolver() {}
+  //@}
 
-    //! Destructor
-    virtual ~BlockedDirectSolver() { }
-    //@}
+  //! Input
+  //@{
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //! Input
-    //@{
-    RCP<const ParameterList> GetValidParameterList() const;
+  void DeclareInput(Level& currentLevel) const;
+  //@}
 
-    void DeclareInput(Level &currentLevel) const;
-    //@}
+  //! @name Setup and Apply methods.
+  //@{
 
-    //! @name Setup and Apply methods.
-    //@{
+  /*! @brief Setup routine
+   * Call the underlaying Setup routine of the nested direct solver once the input block matrix has been merged
+   */
+  void Setup(Level& currentLevel);
 
-    /*! @brief Setup routine
-     * Call the underlaying Setup routine of the nested direct solver once the input block matrix has been merged
-    */
-    void Setup(Level &currentLevel);
+  /*! @brief Apply the direct solver.
+  Solves the linear system <tt>AX=B</tt> using the constructed solver.
+  @param X initial guess
+  @param B right-hand side
+  @param InitialGuessIsZero This option has no effect.
+  */
+  void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
+  //@}
 
-    /*! @brief Apply the direct solver.
-    Solves the linear system <tt>AX=B</tt> using the constructed solver.
-    @param X initial guess
-    @param B right-hand side
-    @param InitialGuessIsZero This option has no effect.
-    */
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
-    //@}
+  RCP<SmootherPrototype> Copy() const;
 
-    RCP<SmootherPrototype> Copy() const;
+  //! @name Overridden from Teuchos::Describable
+  //@{
 
-    //! @name Overridden from Teuchos::Describable
-    //@{
+  //! Return a simple one-line description of this object.
+  std::string description() const;
 
-    //! Return a simple one-line description of this object.
-    std::string description() const;
+  //! Print the object with some verbosity level to an FancyOStream object.
+  // using MueLu::Describable::describe; // overloading, not hiding
+  void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;
 
-    //! Get a rough estimate of cost per iteration
-    size_t getNodeSmootherComplexity() const;
+  //@}
 
-    //@}
+ private:
+  //! smoother type
+  std::string type_;
 
-  private:
+  //! Factory to generate merged block matrix
+  RCP<MergedBlockedMatrixFactory> MergedAFact_;
 
-    //! smoother type
-    std::string type_;
+  //! Direct solver
+  RCP<DirectSolver> s_;  // solver object
 
-    //! Factory to generate merged block matrix
-    RCP<MergedBlockedMatrixFactory> MergedAFact_;
+  //! block operator
+  RCP<Matrix> A_;  // < ! internal blocked operator "A" generated by AFact_
 
-    //! Direct solver
-    RCP<DirectSolver> s_; // solver object
+};  // class BlockedDirectSolver
 
-    //! block operator
-    RCP<Matrix> A_;                  // < ! internal blocked operator "A" generated by AFact_
-
-  }; // class BlockedDirectSolver
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_BLOCKEDDIRECTSOLVER_SHORT
 

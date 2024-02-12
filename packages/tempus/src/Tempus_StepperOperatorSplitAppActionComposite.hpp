@@ -21,12 +21,10 @@ namespace Tempus {
  *  Inidividual AppActions are executed in the order in which they
  *  were added.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperOperatorSplitAppActionComposite
-  : virtual public Tempus::StepperOperatorSplitAppAction<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperOperatorSplitAppAction<Scalar> {
+ public:
   /// Default constructor
   StepperOperatorSplitAppActionComposite();
 
@@ -35,32 +33,34 @@ public:
 
   /// Execute application action for OperatorSplit Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
-    const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
   {
-    for(auto& a : appActions_)
-      a->execute(sh, stepper, actLoc);
+    for (auto& a : appActions_) a->execute(sh, stepper, actLoc);
   }
 
   // Add AppAction to the AppAction vector.
-  void addOperatorSplitAppAction(Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > appAction);
+  void addOperatorSplitAppAction(
+      Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > appAction);
   {
     appActions_.push_back(appAction);
   }
 
   // Clear the AppAction vector.
   void clearOperatorSplitAppActions();
-  { appActions_.clear();}
+  {
+    appActions_.clear();
+  }
 
   // Return the size of the AppAction vector.
   std::size_t getSize() const { return appActions_.size(); }
 
-private:
-
-  std::vector<Teuchos::RCP<StepperOperatorSplitAppAction<Scalar > > > appActions_;
-
+ private:
+  std::vector<Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > >
+      appActions_;
 };
 
-} // namespace Tempus
-#endif // Tempus_StepperOperatorSplitAppActionComposite_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperOperatorSplitAppActionComposite_hpp

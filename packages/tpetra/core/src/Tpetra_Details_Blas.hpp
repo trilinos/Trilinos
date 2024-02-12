@@ -90,7 +90,7 @@ template<class ViewType,
 IndexType
 getStride2DView (const ViewType& A)
 {
-  static_assert (ViewType::Rank == 2, "A must be a rank-2 Kokkos::View.");
+  static_assert (ViewType::rank == 2, "A must be a rank-2 Kokkos::View.");
   static_assert (std::is_same<typename ViewType::array_layout, Kokkos::LayoutLeft>::value ||
                  std::is_same<typename ViewType::array_layout, Kokkos::LayoutRight>::value ||
                  std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value,
@@ -115,7 +115,7 @@ struct GetStride1DView {
 
   static IndexType getStride (const ViewType& x)
   {
-    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+    static_assert (ViewType::rank == 1, "x must be a rank-1 Kokkos::View.");
     static_assert (std::is_same<typename ViewType::array_layout, Kokkos::LayoutLeft>::value ||
                    std::is_same<typename ViewType::array_layout, Kokkos::LayoutRight>::value ||
                    std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value,
@@ -137,7 +137,7 @@ struct GetStride1DView<ViewType, Kokkos::LayoutLeft, IndexType> {
 
   static IndexType getStride (const ViewType&)
   {
-    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+    static_assert (ViewType::rank == 1, "x must be a rank-1 Kokkos::View.");
     static_assert (std::is_same<typename ViewType::array_layout, array_layout>::value,
                    "ViewType::array_layout must be the same as array_layout.");
     static_assert (std::is_integral<IndexType>::value,
@@ -153,7 +153,7 @@ struct GetStride1DView<ViewType, Kokkos::LayoutRight, IndexType> {
 
   static IndexType getStride (const ViewType&)
   {
-    static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
+    static_assert (ViewType::rank == 1, "x must be a rank-1 Kokkos::View.");
     static_assert (std::is_same<typename ViewType::array_layout, array_layout>::value,
                    "ViewType::array_layout must be the same as array_layout.");
     static_assert (std::is_integral<IndexType>::value,

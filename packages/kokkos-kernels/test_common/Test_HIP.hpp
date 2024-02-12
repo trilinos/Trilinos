@@ -32,6 +32,6 @@ class hip : public ::testing::Test {
 };
 
 #define TestCategory hip
-#define TestExecSpace Kokkos::Experimental::HIP
+#define TestDevice Kokkos::HIP
 
 #endif  // TEST_HIP_HPP

@@ -47,12 +47,13 @@
 #define XPETRA_EPETRAVECTOR_FWD_HPP
 
 namespace Xpetra {
-  template<class GO, class NO> class EpetraVectorT;
-  typedef EpetraVectorT<int, EpetraNode> EpetraVector;
-}
+template <class GO, class NO>
+class EpetraVectorT;
+typedef EpetraVectorT<int, EpetraNode> EpetraVector;
+}  // namespace Xpetra
 
 #ifndef XPETRA_EPETRAVECTOR_SHORT
 #define XPETRA_EPETRAVECTOR_SHORT
 #endif
 
-#endif // XPETRA_EPETRAVECTOR_FWD_HPP
+#endif  // XPETRA_EPETRAVECTOR_FWD_HPP

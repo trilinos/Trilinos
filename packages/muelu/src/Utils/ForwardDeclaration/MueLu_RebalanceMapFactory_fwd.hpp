@@ -46,18 +46,13 @@
 #ifndef MUELU_REBALANCEMAPFACTORY_FWD_HPP
 #define MUELU_REBALANCEMAPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class RebalanceMapFactory;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class RebalanceMapFactory;
 }
 
 #ifndef MUELU_REBALANCEMAPFACTORY_SHORT
 #define MUELU_REBALANCEMAPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_REBALANCEMAPFACTORY_FWD_HPP
+#endif  // MUELU_REBALANCEMAPFACTORY_FWD_HPP

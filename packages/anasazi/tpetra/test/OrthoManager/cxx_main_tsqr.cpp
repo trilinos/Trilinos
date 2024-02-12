@@ -717,30 +717,31 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM,
     Array<RCP<const MultiVec> > theX;
     RCP<serial_matrix_type > B = rcp( new serial_matrix_type(sizeS,sizeS) );
     Array<RCP<serial_matrix_type > > C;
-    if ( (t && 3) == 0 ) {
+    if ( (t & 3) == 0 ) {
       // neither <X1,Y1> nor <X2,Y2>
       // C, theX and theY are already empty
     }
-    else if ( (t && 3) == 1 ) {
+    else if ( (t & 3) == 1 ) {
       // X1
       theX = tuple(X1);
       C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
     }
-    else if ( (t && 3) == 2 ) {
+    else if ( (t & 3) == 2 ) {
       // X2
       theX = tuple(X2);
       C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
     }
-    else {
+    else if ( (t & 3) == 3 ) {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
       C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)),
           rcp(new serial_matrix_type(sizeX2,sizeS)) );
     }
+    else {}
 
     try {
       // call routine
-      // if (t && 3) == 3, {
+      // if (t & 3) == 3, {
       //    call with reversed input: X2 X1
       // }
       // test all outputs for correctness
@@ -800,7 +801,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM,
       }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
+      if ( (t & 3) == 3 ) {
         // copies of S,MS
         Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
@@ -898,7 +899,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM,
         }
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         projectAndNormalize() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -1022,7 +1023,7 @@ testNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM,
         sout << "  " << t << "|| S_in - S_out*B || : " << err << endl;
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         normalize() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -1101,30 +1102,31 @@ testProject (RCP< OrthoManager< scalar_type, MultiVec > > OM,
     {
       Array< RCP< const MultiVec > > theX;
       Array< RCP< serial_matrix_type > > C;
-      if ( (t && 3) == 0 ) {
+      if ( (t & 3) == 0 ) {
         // neither X1 nor X2
         // C and theX are already empty
       }
-      else if ( (t && 3) == 1 ) {
+      else if ( (t & 3) == 1 ) {
         // X1
         theX = tuple(X1);
         C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
       }
-      else if ( (t && 3) == 2 ) {
+      else if ( (t & 3) == 2 ) {
         // X2
         theX = tuple(X2);
         C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
       }
-      else {
+      else if ( (t & 3) == 3 ) {
         // X1 and X2, and the reverse.
         theX = tuple(X1,X2);
         C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)),
             rcp(new serial_matrix_type(sizeX2,sizeS)) );
       }
+      else {}
 
       try {
         // call routine
-        // if (t && 3) == 3, {
+        // if (t & 3) == 3, {
         //    call with reversed input: X2 X1
         // }
         // test all outputs for correctness
@@ -1157,7 +1159,7 @@ testProject (RCP< OrthoManager< scalar_type, MultiVec > > OM,
         }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
+      if ( (t & 3) == 3 ) {
         // copies of S,MS
         Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
@@ -1242,7 +1244,7 @@ testProject (RCP< OrthoManager< scalar_type, MultiVec > > OM,
       }
 
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         project() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;

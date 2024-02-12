@@ -33,7 +33,7 @@ invert_classification_field(std::shared_ptr<mesh::Mesh> meshIn, std::shared_ptr<
 std::shared_ptr<mesh::Mesh> Nonconformal4::create()
 {
   {
-    MeshProjectionCalculator meshProjection(m_mesh1, m_mesh2, m_meshIn, m_relationalData, m_classifier,
+    MeshProjectionCalculator meshProjection(m_mesh1, m_mesh2, m_relationalData, m_classifier,
                                             m_edgeTracerTolerances);
     meshProjection.project();
   }

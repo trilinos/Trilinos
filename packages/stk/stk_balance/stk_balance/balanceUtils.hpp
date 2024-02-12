@@ -109,11 +109,6 @@ public:
   virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const;
   virtual int getGraphVertexWeight(stk::topology type) const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-  STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
-#endif
-
   virtual double getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index = 0) const;
   virtual GraphOption getGraphOption() const;
   virtual double getGraphEdgeWeightMultiplier() const;
@@ -147,10 +142,6 @@ public:
   virtual bool isIncrementalRebalance() const;
   virtual bool isMultiCriteriaRebalance() const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-  STK_DEPRECATED_MSG("Use setVertexWeightFieldName() and setVertexWeightMethod(VertexWeightMethod::FIELD) instead")
-    virtual bool areVertexWeightsProvidedViaFields() const;
-#endif
   virtual void setVertexWeightFieldName(std::string field_name, unsigned criteria_index = 0);
   virtual std::string getVertexWeightFieldName(unsigned criteria_index = 0) const;
   virtual const stk::mesh::Field<double> * getVertexWeightField(const stk::mesh::BulkData & stkMeshBulkData, unsigned criteria_index = 0) const;
@@ -186,12 +177,12 @@ public:
 
   virtual bool shouldFixMechanisms() const;
   virtual bool shouldFixSpiders() const;
-  virtual std::string getSpiderBeamConnectivityCountFieldName() const;
+  virtual std::string getSpiderPartName() const;
   virtual std::string getSpiderVolumeConnectivityCountFieldName() const;
   virtual std::string getOutputSubdomainFieldName() const;
   virtual std::string getDiagnosticElementWeightFieldName() const;
   virtual std::string getVertexConnectivityWeightFieldName() const;
-  virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
+  virtual stk::mesh::Part * getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<int> * getOutputSubdomainField(const stk::mesh::BulkData & stkMeshBulkData) const;
   virtual const stk::mesh::Field<double> * getDiagnosticElementWeightField(const stk::mesh::BulkData & stkMeshBulkData) const;
@@ -264,11 +255,6 @@ public:
 
   virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override;
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-  STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const override;
-#endif
-
   virtual int getGraphVertexWeight(stk::topology type) const override;
 
   virtual GraphOption getGraphOption() const override;
@@ -297,7 +283,7 @@ public:
 
   virtual bool shouldFixMechanisms() const override;
   virtual bool shouldFixSpiders() const override;
-  virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
+  virtual stk::mesh::Part * getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const override;
   virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
   virtual const stk::mesh::Field<int> * getOutputSubdomainField(const stk::mesh::BulkData & stkMeshBulkData) const override;
 
@@ -321,7 +307,7 @@ protected:
   bool m_UseConstantToleranceForFaceSearch;
   bool m_shouldFixSpiders;
   bool m_shouldFixMechanisms;
-  mutable const stk::mesh::Field<int> * m_spiderBeamConnectivityCountField;
+  mutable stk::mesh::Part * m_spiderPart;
   mutable const stk::mesh::Field<int> * m_spiderVolumeConnectivityCountField;
   mutable const stk::mesh::Field<int> * m_outputSubdomainField;
   std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;
@@ -393,10 +379,6 @@ public:
   virtual ~FieldVertexWeightSettings() = default;
 
   virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-#ifndef STK_HIDE_DEPRECATED_CODE
-  STK_DEPRECATED_MSG("Use setVertexWeightFieldName() and setVertexWeightMethod(VertexWeightMethod::FIELD) instead")
-    virtual bool areVertexWeightsProvidedViaFields() const { return true; }
-#endif
   virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
   virtual double getImbalanceTolerance() const { return 1.05; }
   virtual void setDecompMethod(const std::string& input_method) { m_method = input_method;}
@@ -444,10 +426,6 @@ public:
 
   virtual double getGraphEdgeWeight(stk::topology element1Topology,
                                     stk::topology element2Topology) const override { return 1.0; }
-#ifndef STK_HIDE_DEPRECATED_CODE
-  STK_DEPRECATED_MSG("Use setVertexWeightFieldName() and setVertexWeightMethod(VertexWeightMethod::FIELD) instead")
-    virtual bool areVertexWeightsProvidedViaFields() const override { return true; }
-#endif
   virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
   virtual bool isMultiCriteriaRebalance() const override { return true;}

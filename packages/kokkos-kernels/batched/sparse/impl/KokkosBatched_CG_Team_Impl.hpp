@@ -41,7 +41,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(
     const VectorViewType& _X, const KrylovHandle& handle,
     const TMPViewType& _TMPView, const TMPNormViewType& _TMPNormView) {
   typedef int OrdinalType;
-  typedef typename Kokkos::Details::ArithTraits<
+  typedef typename Kokkos::ArithTraits<
       typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
 
   size_t maximum_iteration      = handle.get_max_iteration();
@@ -177,7 +177,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(
         typename VectorViewType::array_layout,
         typename VectorViewType::execution_space::scratch_memory_space>;
     using ScratchPadNormViewType = Kokkos::View<
-        typename Kokkos::Details::ArithTraits<
+        typename Kokkos::ArithTraits<
             typename VectorViewType::non_const_value_type>::mag_type**,
         typename VectorViewType::execution_space::scratch_memory_space>;
 
@@ -199,7 +199,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(
     const int last_matrix  = handle.last_index(member.league_rank());
 
     using ScratchPadNormViewType = Kokkos::View<
-        typename Kokkos::Details::ArithTraits<
+        typename Kokkos::ArithTraits<
             typename VectorViewType::non_const_value_type>::mag_type**,
         typename VectorViewType::execution_space::scratch_memory_space>;
 

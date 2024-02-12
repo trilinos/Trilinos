@@ -61,8 +61,8 @@ bool is_positive_permutation(stk::mesh::BulkData & mesh,
 {
   stk::topology faceTopology = mesh.bucket(face).topology();
   stk::mesh::EntityVector face_nodes(mesh.num_nodes(face));
-  for (unsigned face_node_count=0; face_node_count < mesh.num_nodes(face); ++face_node_count) {
-    face_nodes[face_node_count] = mesh.begin_nodes(face)[face_node_count];
+  for (unsigned faceNodeCount=0; faceNodeCount < mesh.num_nodes(face); ++faceNodeCount) {
+    face_nodes[faceNodeCount] = mesh.begin_nodes(face)[faceNodeCount];
   }
   stk::EquivalentPermutation permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
 

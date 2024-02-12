@@ -6,6 +6,7 @@
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/MeshUtils.hpp"
 #include "stk_unit_test_utils/BulkDataTester.hpp"
 
 namespace
@@ -242,4 +243,195 @@ TEST_F(SingleHexMesh, DISABLED_CreateFacesThenCreateAnotherElement_ConnectivityI
     expect_one_face_connected_to_two_elements();
   }
 }
+
+std::string get_many_block_mesh_desc(unsigned numBlocks, unsigned nProcs, bool allBlocksOnProc0 = true)
+{
+  std::ostringstream oss;
+  unsigned proc = 0;
+  for(unsigned i = 0; i < numBlocks; ++i) {
+    unsigned elemId = i + 1;
+    unsigned firstNodeId = i * 4 + 1;
+    oss << proc << "," << elemId << ",HEX_8,";
+    for(unsigned node = firstNodeId; node < firstNodeId + 8; ++node) {
+      oss << node << ",";
+    }
+    unsigned blockId = i + 1;
+    oss << "block_" << blockId;
+
+    if(i < numBlocks - 1) {
+      oss << '\n';
+    }
+
+    if(!allBlocksOnProc0){
+      proc++;
+      proc = proc%nProcs;
+    }
+  }
+
+  return oss.str();
+}
+
+void create_mesh_from_mesh_read(stk::mesh::BulkData& bulk,
+                                const std::string& sidesetSpec,
+                                const std::vector<std::string>& omittedBlocks,
+                                const std::string& fileName)
+{
+  size_t nProc = bulk.parallel_size();
+
+  {
+    stk::mesh::MeshBuilder builder(bulk.parallel());
+    builder.set_spatial_dimension(bulk.mesh_meta_data().spatial_dimension());
+
+    std::string meshDesc = get_many_block_mesh_desc(nProc, nProc, false);
+    meshDesc += sidesetSpec;
+
+    std::shared_ptr<stk::mesh::BulkData> outBulk = builder.create();
+    stk::unit_test_util::setup_text_mesh(*outBulk, meshDesc);
+    stk::io::write_mesh(fileName, *outBulk);
+  }
+
+  stk::io::StkMeshIoBroker broker;
+
+  broker.set_bulk_data(bulk);
+  size_t inputIndex = broker.add_mesh_database(fileName, stk::io::READ_MESH);
+  Ioss::DatabaseIO* dbIo = broker.get_input_database(inputIndex);
+  dbIo->set_block_omissions(omittedBlocks);
+  std::shared_ptr<Ioss::Region> inputRegion = broker.get_input_ioss_region();
+  inputRegion->property_add(Ioss::Property(stk::io::s_processAllInputNodes, true));
+  inputRegion->property_add(Ioss::Property(stk::io::s_ignoreDisconnectedNodes, false));
+  broker.create_input_mesh();
+  broker.populate_bulk_data();
+
+  unlink(dbIo->decoded_filename().c_str());
+}
+
+TEST(CleanupOrphans, deleteOnlyNodes_withBlockOmit)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  size_t nProc = stk::parallel_machine_size(communicator);
+
+  const unsigned spatialDim = 3;
+
+  stk::mesh::MeshBuilder builder(communicator);
+  builder.set_spatial_dimension(spatialDim);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  const std::vector<std::string> omittedBlocks{"block_1"};
+  const std::string fileName = "mesh.g";
+  const std::string sidesetSpec = "";
+  create_mesh_from_mesh_read(*bulk, sidesetSpec, omittedBlocks, fileName);
+
+  std::vector<size_t> counts;
+  stk::mesh::comm_mesh_counts(*bulk, counts);
+
+  size_t baseNumNodes = (nProc+1)*4;
+  size_t validNumberOfNodes = baseNumNodes;
+  size_t validNumberOfEdges = 0u;
+  size_t validNumberOfFaces = 0u;
+  EXPECT_EQ(validNumberOfNodes, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(validNumberOfEdges, counts[stk::topology::EDGE_RANK]);
+  EXPECT_EQ(validNumberOfFaces, counts[stk::topology::FACE_RANK]);
+  EXPECT_EQ(nProc-1, counts[stk::topology::ELEM_RANK]);
+
+  stk::mesh::cleanup_orphan_nodes(*bulk);
+
+  validNumberOfNodes = (nProc == 1) ? 0 : nProc*4;
+  stk::mesh::comm_mesh_counts(*bulk, counts);
+  EXPECT_EQ(validNumberOfNodes, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(validNumberOfEdges, counts[stk::topology::EDGE_RANK]);
+  EXPECT_EQ(validNumberOfFaces, counts[stk::topology::FACE_RANK]);
+}
+
+
+TEST(CleanupOrphans, deleteOnlyFaces_withoutBlockOmit)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  size_t nProc = stk::parallel_machine_size(communicator);
+
+  const unsigned spatialDim = 3;
+
+  stk::mesh::MeshBuilder builder(communicator);
+  builder.set_spatial_dimension(spatialDim);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  const std::vector<std::string> omittedBlocks{};
+  const std::string fileName = "mesh.g";
+  const std::string sidesetSpec = "|sideset:data=1,1, 1,2, 1,3, 1,4";
+  create_mesh_from_mesh_read(*bulk, sidesetSpec, omittedBlocks, fileName);
+
+  // Destroy element 1 leaving the orphaned faces
+  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1u);
+  bulk->modification_begin();
+  if(bulk->is_valid(elem1)) {
+    bulk->destroy_entity(elem1);
+  }
+  bulk->modification_end();
+
+  std::vector<size_t> counts;
+  stk::mesh::comm_mesh_counts(*bulk, counts);
+
+  size_t baseNumNodes = (nProc+1)*4;
+  size_t validNumberOfNodes = baseNumNodes;
+  size_t validNumberOfEdges = 0u;
+  size_t validNumberOfFaces = 4u;
+  EXPECT_EQ(validNumberOfNodes, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(validNumberOfEdges, counts[stk::topology::EDGE_RANK]);
+  EXPECT_EQ(validNumberOfFaces, counts[stk::topology::FACE_RANK]);
+  EXPECT_EQ(nProc-1, counts[stk::topology::ELEM_RANK]);
+
+  stk::mesh::cleanup_orphan_faces(*bulk);
+
+  validNumberOfFaces = 0u;
+  stk::mesh::comm_mesh_counts(*bulk, counts);
+  EXPECT_EQ(validNumberOfNodes, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(validNumberOfEdges, counts[stk::topology::EDGE_RANK]);
+  EXPECT_EQ(validNumberOfFaces, counts[stk::topology::FACE_RANK]);
+}
+
+TEST(CleanupOrphans, deleteAllOrphans_withoutBlockOmit)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  size_t nProc = stk::parallel_machine_size(communicator);
+
+  const unsigned spatialDim = 3;
+
+  stk::mesh::MeshBuilder builder(communicator);
+  builder.set_spatial_dimension(spatialDim);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  const std::vector<std::string> omittedBlocks{};
+  const std::string fileName = "mesh.g";
+  const std::string sidesetSpec = "|sideset:data=1,1, 1,2, 1,3, 1,4";
+  create_mesh_from_mesh_read(*bulk, sidesetSpec, omittedBlocks, fileName);
+
+  // Destroy element 1 leaving the orphaned faces
+  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1u);
+  bulk->modification_begin();
+  if(bulk->is_valid(elem1)) {
+    bulk->destroy_entity(elem1);
+  }
+  bulk->modification_end();
+
+  std::vector<size_t> counts;
+  stk::mesh::comm_mesh_counts(*bulk, counts);
+
+  size_t baseNumNodes = (nProc+1)*4;
+  size_t validNumberOfNodes = baseNumNodes;
+  size_t validNumberOfEdges = 0u;
+  size_t validNumberOfFaces = 4u;
+  EXPECT_EQ(validNumberOfNodes, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(validNumberOfEdges, counts[stk::topology::EDGE_RANK]);
+  EXPECT_EQ(validNumberOfFaces, counts[stk::topology::FACE_RANK]);
+  EXPECT_EQ(nProc-1, counts[stk::topology::ELEM_RANK]);
+
+  stk::mesh::cleanup_all_downward_orphan_entities(*bulk, stk::topology::FACE_RANK);
+
+  validNumberOfNodes = (nProc == 1) ? 0 : nProc*4;
+  validNumberOfFaces = 0u;
+  stk::mesh::comm_mesh_counts(*bulk, counts);
+  EXPECT_EQ(validNumberOfNodes, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(validNumberOfEdges, counts[stk::topology::EDGE_RANK]);
+  EXPECT_EQ(validNumberOfFaces, counts[stk::topology::FACE_RANK]);
+}
+
 }

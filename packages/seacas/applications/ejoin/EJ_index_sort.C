@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -138,14 +138,14 @@ void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, i
   for (size_t i = axis; i < xyz.size(); i += 3) {
     comp[j++] = xyz[i];
   }
-  ex__iqsort(&comp[0], &index[0], index.size());
+  ex__iqsort(comp.data(), index.data(), index.size());
 }
 
 template <typename INT> void index_sort(const std::vector<INT> &ids, std::vector<INT> &index)
 {
   index.resize(ids.size());
   std::iota(index.begin(), index.end(), (INT)0);
-  ex__iqsort(&ids[0], &index[0], index.size());
+  ex__iqsort(ids.data(), index.data(), index.size());
 }
 
 template void index_coord_sort(const std::vector<double> &xyz, std::vector<int> &index, int axis);

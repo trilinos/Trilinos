@@ -82,12 +82,12 @@ void SetPrintLevel(int Level)
 }
 
 // ======================================================================
-void Init()
+void Init(USR_COMM comm)
 {
-  if (ML_Comm_ == 0) ML_Comm_Create(&ML_Comm_);
+  if (ML_Comm_ == 0) ML_Comm_Create2(&ML_Comm_, comm);
   if (Epetra_Comm_ == 0) {
 #ifdef HAVE_MPI
-    Epetra_Comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
+    Epetra_Comm_ = new Epetra_MpiComm(comm);
 #else
     Epetra_Comm_ = new Epetra_SerialComm;
 #endif

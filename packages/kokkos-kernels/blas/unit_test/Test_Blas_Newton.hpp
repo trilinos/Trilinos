@@ -191,8 +191,8 @@ int test_intersection() {
 
 template <class scalar_type>
 int test_newton() {
-  Test::test_logistic<TestExecSpace, scalar_type>();
-  Test::test_intersection<TestExecSpace, scalar_type>();
+  Test::test_logistic<TestDevice, scalar_type>();
+  Test::test_intersection<TestDevice, scalar_type>();
 
   return 1;
 }

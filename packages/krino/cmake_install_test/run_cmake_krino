@@ -40,9 +40,9 @@ cmake \
 -DTPL_ENABLE_MPI:BOOL=ON \
 -DTrilinos_ENABLE_Krino:BOOL=ON \
 -DKrino_ENABLE_TESTS:BOOL=ON \
--DTPL_ENABLE_yaml-cpp=${enable_yaml} \
--Dyaml-cpp_INCLUDE_DIRS=${yaml_install_dir}/include \
--Dyaml-cpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
+-DTPL_ENABLE_yamlcpp=${enable_yaml} \
+-Dyamlcpp_INCLUDE_DIRS=${yaml_install_dir}/include \
+-Dyamlcpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
 -DTPL_ENABLE_Netcdf:BOOL=ON \
 -DTPL_ENABLE_HDF5:BOOL=ON \
 ${trilinos_src_dir}/

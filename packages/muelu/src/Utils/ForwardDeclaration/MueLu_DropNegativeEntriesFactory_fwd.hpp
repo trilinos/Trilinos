@@ -46,18 +46,13 @@
 #ifndef MUELU_DROPNEGATIVEENTRIESFACTORY_FWD_HPP
 #define MUELU_DROPNEGATIVEENTRIESFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class DropNegativeEntriesFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class DropNegativeEntriesFactory;
 }
 
 #ifndef MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
 #define MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_DROPNEGATIVEENTRIESFACTORY_FWD_HPP
+#endif  // MUELU_DROPNEGATIVEENTRIESFACTORY_FWD_HPP

@@ -74,7 +74,7 @@ name_value_type = ( std::is_same<value_type,float>::value ? "::Float" :
 "::ComplexFloat" : std::is_same<value_type,Kokkos::complex<double> >::value ?
 "::ComplexDouble" : "::UnknownValueType" ); std::string name = name_region +
 name_value_type; Kokkos::Profiling::pushRegion( name.c_str() );
-      Kokkos::TeamPolicy<DeviceType> policy(_A.extent(0), Kokkos::AUTO);
+      Kokkos::TeamPolicy<execution_space> policy(_A.extent(0), Kokkos::AUTO);
       Kokkos::parallel_for(name.c_str(), policy, *this);
       Kokkos::Profiling::popRegion();
     }

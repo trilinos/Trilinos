@@ -9,8 +9,8 @@
 #ifndef TEMPUS_TEST_SINCOS_MODEL_DECL_HPP
 #define TEMPUS_TEST_SINCOS_MODEL_DECL_HPP
 
-#include "Thyra_ModelEvaluator.hpp" // Interface
-#include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
+#include "Thyra_ModelEvaluator.hpp"               // Interface
+#include "Thyra_StateFuncModelEvaluatorBase.hpp"  // Implementation
 
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -59,13 +59,19 @@ namespace Tempus_Test {
   *   F_{1} & = & \left(\frac{f}{L}\right)^{2}(a-x_{0})
   * \f}
 
-  * The exact sensitivities, \f$\mathbf{s}=\partial\mathbf{x}/\partial\mathbf{p}\f$,
+  * The exact sensitivities,
+  \f$\mathbf{s}=\partial\mathbf{x}/\partial\mathbf{p}\f$,
   * for the problem are specified as
   * \f[
   *   \mathbf{s}(t)=\left[\begin{array}{cc}
   *   1 & 0\\
-  *   \left(\frac{b}{L}\right)t\,\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\\
-  *   -\frac{b\, f\, t}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)
+  *   \left(\frac{b}{L}\right)t\,\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
+  &
+  \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\,
+  f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\\
+  *   -\frac{b\, f\, t}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right) &
+  -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\,
+  f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)
   *   \end{array}\right]
   * \f]
   * and for the default initial conditions, \f$\phi=0\f$ and \f$b=1\f$
@@ -76,24 +82,32 @@ namespace Tempus_Test {
   *   0 & -\frac{f}{L^{2}}
   *   \end{array}\right]
   * \f]
-  * The time differentiated sensitivities, \f$\dot{\mathbf{s}}=\partial\mathbf{s}/\partial t=\partial/\partial t(\partial\mathbf{x}/\partial\mathbf{p})=\partial/\partial\mathbf{p}(\partial\mathbf{x}/\partial t)\f$
+  * The time differentiated sensitivities,
+  \f$\dot{\mathbf{s}}=\partial\mathbf{s}/\partial t=\partial/\partial
+  t(\partial\mathbf{x}/\partial\mathbf{p})=\partial/\partial\mathbf{p}(\partial\mathbf{x}/\partial
+  t)\f$
   * are
   * \f[
   *   \dot{\mathbf{s}}(t)=\left[\begin{array}{cc}
   *   0 & 0\\
-  *   \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\, f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\, f^{2}\, t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
-  *   -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\, f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{3}\, t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
+  *
+  \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\,
+  f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\,
+  f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\,
+  f^{2}\, t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
+  *   -\frac{b\,
+  f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\,
+  t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\,
+  f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{3}\,
+  t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
   *   \end{array}\right]
   * \f]
   */
 
-template<class Scalar>
-class SinCosModel
-  : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
-    public Teuchos::ParameterListAcceptorDefaultBase
-{
-  public:
-
+template <class Scalar>
+class SinCosModel : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
+                    public Teuchos::ParameterListAcceptorDefaultBase {
+ public:
   // Constructor
   SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
@@ -101,7 +115,8 @@ class SinCosModel
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
 
   // Exact sensitivity solution
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(int j, double t) const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(
+      int j, double t) const;
 
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
@@ -111,7 +126,8 @@ class SinCosModel
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
-  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+  get_W_factory() const;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
@@ -122,38 +138,36 @@ class SinCosModel
 
   /** \name Public functions overridden from ParameterListAcceptor. */
   //@{
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const &paramList);
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
-private:
-
+ private:
   void setupInOutArgs_() const;
 
   /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
-    ) const;
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar) const;
   //@}
 
   void calculateCoeffFromIC_();
 
-protected:
-  int dim_;         ///< Number of state unknowns (2)
-  int Np_;          ///< Number of parameter vectors (1)
-  int np_;          ///< Number of parameters in this vector (2)
-  int Ng_;          ///< Number of observation functions (1)
-  int ng_;          ///< Number of elements in this observation function (1)
-  bool haveIC_;     ///< false => no nominal values are provided (default=true)
-  bool acceptModelParams_; ///< Changes inArgs to require parameters
-  bool useDfDpAsTangent_; ///< Treat DfDp OutArg as tangent (df/dx*dx/dp+df/dp)
+ protected:
+  int dim_;                 ///< Number of state unknowns (2)
+  int Np_;                  ///< Number of parameter vectors (1)
+  int np_;                  ///< Number of parameters in this vector (2)
+  int Ng_;                  ///< Number of observation functions (1)
+  int ng_;                  ///< Number of elements in this observation function (1)
+  bool haveIC_;             ///< false => no nominal values are provided (default=true)
+  bool acceptModelParams_;  ///< Changes inArgs to require parameters
+  bool useDfDpAsTangent_;   ///< Treat DfDp OutArg as tangent (df/dx*dx/dp+df/dp)
   mutable bool isInitialized_;
-  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
-  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
@@ -162,38 +176,37 @@ protected:
 
   // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
   //                            x_1(t) = b*f*cos(f*t+phi)
-  Scalar a_;     ///< Model parameter
-  Scalar f_;     ///< Model parameter
-  Scalar L_;     ///< Model parameter
-  Scalar phi_;   ///< Parameter determined from the IC
-  Scalar b_;     ///< Parameter determined from the IC
-  Scalar t0_ic_; ///< Time value where the initial condition is specified
-  Scalar x0_ic_; ///< Initial condition for x0
-  Scalar x1_ic_; ///< Initial condition for x1
+  Scalar a_;      ///< Model parameter
+  Scalar f_;      ///< Model parameter
+  Scalar L_;      ///< Model parameter
+  Scalar phi_;    ///< Parameter determined from the IC
+  Scalar b_;      ///< Parameter determined from the IC
+  Scalar t0_ic_;  ///< Time value where the initial condition is specified
+  Scalar x0_ic_;  ///< Initial condition for x0
+  Scalar x1_ic_;  ///< Initial condition for x1
 };
 
-
 /// Non-member constructor
-//Teuchos::RCP<SinCosModel> sineCosineModel(
-//  Teuchos::RCP<Teuchos::ParameterList> pList_)
+// Teuchos::RCP<SinCosModel> sineCosineModel(
+//   Teuchos::RCP<Teuchos::ParameterList> pList_)
 //{
-//  Teuchos::RCP<SinCosModel> model = rcp(new SinCosModel(pList_));
-//  return(model);
-//}
+//   Teuchos::RCP<SinCosModel> model = rcp(new SinCosModel(pList_));
+//   return(model);
+// }
 
 //! Adjoint for SinCosModel
 /*!
  * This model evaluator modifies evalModel() to compute the adjoint operator
  * instead of the forward operator.
  */
-template<class Scalar>
-class SinCosModelAdjoint
-  : public SinCosModel<Scalar>
-{
-  public:
-
+template <class Scalar>
+class SinCosModelAdjoint : public SinCosModel<Scalar> {
+ public:
   // Constructor
-  SinCosModelAdjoint(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null) : SinCosModel<Scalar>(pList) {}
+  SinCosModelAdjoint(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null)
+    : SinCosModel<Scalar>(pList)
+  {
+  }
 
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
@@ -204,17 +217,15 @@ class SinCosModelAdjoint
 
   //@}
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
-    ) const;
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar) const;
   //@}
 };
 
-} // namespace Tempus_Test
-#endif // TEMPUS_TEST_SINCOS_MODEL_DECL_HPP
+}  // namespace Tempus_Test
+#endif  // TEMPUS_TEST_SINCOS_MODEL_DECL_HPP

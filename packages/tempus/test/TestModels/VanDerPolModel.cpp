@@ -13,7 +13,7 @@
 #include "VanDerPolModel_impl.hpp"
 
 namespace Tempus_Test {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(VanDerPolModel)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(VanDerPolModel)
 }
 
 #endif

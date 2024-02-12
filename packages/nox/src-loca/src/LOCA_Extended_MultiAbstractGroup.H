@@ -147,6 +147,11 @@ namespace LOCA {
       //! Bring NOX::Abstract::Group::operator=() into scope
       using NOX::Abstract::Group::operator=;
 
+      //! Override from NOX::Abstract::Group base class. Calls getUnderlyingGroup() from this class.
+      virtual Teuchos::RCP<NOX::Abstract::Group> getNestedGroup();
+
+      //! Override from NOX::Abstract::Group base class. Calls getUnderlyingGroup() from this class.
+      virtual Teuchos::RCP<const NOX::Abstract::Group> getNestedGroup() const;
     };
   } // namespace Extended
 } // namespace LOCA

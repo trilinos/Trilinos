@@ -46,18 +46,13 @@
 #ifndef MUELU_NULLSPACEPRESMOOTHFACTORY_FWD_HPP
 #define MUELU_NULLSPACEPRESMOOTHFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class NullspacePresmoothFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class NullspacePresmoothFactory;
 }
 
 #ifndef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 #define MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_NULLSPACEPRESMOOTHFACTORY_FWD_HPP
+#endif  // MUELU_NULLSPACEPRESMOOTHFACTORY_FWD_HPP

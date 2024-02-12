@@ -77,93 +77,90 @@ namespace MueLu {
     correspond to nodes. While not strictly necessary, it might be convenient.
 */
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class LocalLexicographicIndexManager : public IndexManager<LocalOrdinal, GlobalOrdinal, Node> {
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class LocalLexicographicIndexManager : public IndexManager<LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
+ public:
+  LocalLexicographicIndexManager() = default;
 
-    LocalLexicographicIndexManager() = default;
+  LocalLexicographicIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
+                                 const int NumDimensions, const int interpolationOrder,
+                                 const int MyRank, const int NumRanks,
+                                 const Array<GO> GFineNodesPerDir,
+                                 const Array<LO> LFineNodesPerDir,
+                                 const Array<LO> CoarseRate, const Array<GO> MeshData);
 
-    LocalLexicographicIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
-                                   const int NumDimensions, const int interpolationOrder,
-                                   const int MyRank, const int NumRanks,
-                                   const Array<GO> GFineNodesPerDir,
-                                   const Array<LO> LFineNodesPerDir,
-                                   const Array<LO> CoarseRate, const Array<GO> MeshData);
+  virtual ~LocalLexicographicIndexManager() {}
 
-    virtual ~LocalLexicographicIndexManager() {}
+  void computeGlobalCoarseParameters();
 
-    void computeGlobalCoarseParameters();
+  void getGhostedNodesData(const RCP<const Map> fineMap,
+                           Array<LO>& ghostedNodeCoarseLIDs,
+                           Array<int>& ghostedNodeCoarsePIDs,
+                           Array<GO>& ghostedNodeCoarseGIDs) const;
 
-    void getGhostedNodesData(const RCP<const Map> fineMap,
-                             Array<LO>& ghostedNodeCoarseLIDs,
-                             Array<int>& ghostedNodeCoarsePIDs,
-                             Array<GO>& ghostedNodeCoarseGIDs) const;
+  void getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
+                          Array<GO>& coarseNodeCoarseGIDs,
+                          Array<GO>& coarseNodeFineGIDs) const;
 
-    void getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
-                            Array<GO>& coarseNodeCoarseGIDs,
-                            Array<GO>& coarseNodeFineGIDs) const;
+  std::vector<std::vector<GO> > getCoarseMeshData() const;
 
-    std::vector<std::vector<GO> > getCoarseMeshData() const;
+  void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 
-    void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
+  void getFineNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
 
-    void getFineNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
+  void getFineNodeGhostedTuple(const LO myLID, LO& i, LO& j, LO& k) const;
 
-    void getFineNodeGhostedTuple(const LO myLID, LO& i, LO& j, LO& k) const;
+  void getFineNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
 
-    void getFineNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
+  void getFineNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getFineNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getCoarseNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 
-    void getCoarseNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
+  void getCoarseNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
 
-    void getCoarseNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const;
+  void getCoarseNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
 
-    void getCoarseNodeGID(const GO i, const GO j, const GO k, GO& myGID) const;
+  void getCoarseNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getCoarseNodeLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const;
+  void getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const;
 
-    void getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const;
+ private:
+  const int myRank;    ///< Local rank ID.
+  const int numRanks;  ///< Number of ranks used to decompose the problem.
 
-  private:
+  // Iterator delimiting the entries in meshData that correspond to the block that owns the local
+  // part of the mesh.
+  typename std::vector<std::vector<GO> >::iterator myBlockStart, myBlockEnd;
 
-    const int myRank;                   ///< Local rank ID.
-    const int numRanks;                 ///< Number of ranks used to decompose the problem.
+  int pi, pj, pk;  ///< Number of processors in each diretcion.
 
-    // Iterator delimiting the entries in meshData that correspond to the block that owns the local
-    // part of the mesh.
-    typename std::vector<std::vector<GO> >::iterator myBlockStart, myBlockEnd;
+  int numBlocks;  ///< Number of mesh block.
+  int myBlock;    ///< local mesh block ID.
 
-    int pi, pj, pk;              ///< Number of processors in each diretcion.
+  int myRankIndex;                               ///< local process index for record in meshData after sorting.
+  Array<int> rankIndices;                        ///< mapping between rank ID and reordered rank ID.
+  std::vector<std::vector<GO> > meshData;        ///< layout of indices accross all processes.
+  std::vector<std::vector<GO> > coarseMeshData;  ///< layout of indices accross all processes after coarsening.
 
-    int numBlocks;               ///< Number of mesh block.
-    int myBlock;                 ///< local mesh block ID.
+  void sortLocalLexicographicData();
 
-    int myRankIndex;             ///< local process index for record in meshData after sorting.
-    Array<int> rankIndices;      ///< mapping between rank ID and reordered rank ID.
-    std::vector<std::vector<GO> > meshData;          ///< layout of indices accross all processes.
-    std::vector<std::vector<GO> > coarseMeshData;    ///< layout of indices accross all processes after coarsening.
+  void computeCoarseLocalLexicographicData();
 
-    void sortLocalLexicographicData();
+  void getGIDLocalLexicographic(const LO iGhosted, const LO jGhosted, const LO kGhosted,
+                                const Array<LO> coarseNodeFineIndices, GO& myGID, LO& myPID,
+                                LO& myLID) const;
+};
 
-    void computeCoarseLocalLexicographicData();
-
-    void getGIDLocalLexicographic(const LO iGhosted, const LO jGhosted, const LO kGhosted,
-                                  const Array<LO> coarseNodeFineIndices, GO& myGID, LO& myPID,
-                                  LO& myLID) const;
-
-  };
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_SHORT
-#endif // MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_DECL_HPP
+#endif  // MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_DECL_HPP

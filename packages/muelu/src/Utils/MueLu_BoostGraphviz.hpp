@@ -13,26 +13,26 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
-#endif // __GNUC__
+#endif  // __GNUC__
 
 #include <boost/graph/graphviz.hpp>
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
-#endif // __GNUC__
+#endif  // __GNUC__
 
 // define boost graph types
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
-        boost::property<boost::vertex_name_t, std::string,
-        boost::property<boost::vertex_color_t, std::string,
-        boost::property<boost::vertex_index_t, std::string> > >,
-        boost::property<boost::edge_name_t, std::string,
-        boost::property<boost::edge_color_t, std::string> > >               BoostGraph;
-typedef boost::dynamic_properties                                           BoostProperties;
-typedef boost::graph_traits<BoostGraph>::vertex_descriptor                  BoostVertex;
-typedef boost::graph_traits<BoostGraph>::edge_descriptor                    BoostEdge;
+                              boost::property<boost::vertex_name_t, std::string,
+                                              boost::property<boost::vertex_color_t, std::string,
+                                                              boost::property<boost::vertex_index_t, std::string> > >,
+                              boost::property<boost::edge_name_t, std::string,
+                                              boost::property<boost::edge_color_t, std::string> > >
+    BoostGraph;
+typedef boost::dynamic_properties BoostProperties;
+typedef boost::graph_traits<BoostGraph>::vertex_descriptor BoostVertex;
+typedef boost::graph_traits<BoostGraph>::edge_descriptor BoostEdge;
 
+#endif  // HAVE_MUELU_BOOST && HAVE_MUELU_BOOST_FOR_REAL
 
-#endif // HAVE_MUELU_BOOST && HAVE_MUELU_BOOST_FOR_REAL
-
-#endif // MUELU_BOOSTGRAPHVIZ_HPP
+#endif  // MUELU_BOOSTGRAPHVIZ_HPP

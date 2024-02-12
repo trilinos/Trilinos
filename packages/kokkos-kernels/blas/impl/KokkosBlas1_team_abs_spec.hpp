@@ -35,7 +35,7 @@ struct team_abs_tpl_spec_avail {
 template <class TeamType, class RV, class XV,
           bool tpl_spec_avail = team_abs_tpl_spec_avail<RV, XV>::value>
 struct TeamAbs {
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
 
   static KOKKOS_INLINE_FUNCTION void team_abs(const TeamType& team, const RV& R,
                                               const XV& X);
@@ -43,7 +43,7 @@ struct TeamAbs {
 
 template <class TeamType, class RV, class XV>
 struct TeamAbs<TeamType, RV, XV, false> {
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
 
   static KOKKOS_INLINE_FUNCTION void team_abs(const TeamType& team, const RV& R,
                                               const XV& X) {

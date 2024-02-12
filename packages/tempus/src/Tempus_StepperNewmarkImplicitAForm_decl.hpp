@@ -16,7 +16,6 @@
 
 namespace Tempus {
 
-
 /** \brief Newmark time stepper in acceleration form (a-form).
  *
  *  Here, we implement the Newmark scheme in predictor/corrector form;
@@ -66,14 +65,14 @@ namespace Tempus {
  *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
  *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *      \item $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
- *                               + \Delta t^2 (1-2 \beta) \mathbf{a}^{n-1} / 2$
+ *                                     + \Delta t^2 (1-2 \beta) \mathbf{a}^{n-1} / 2$
  *      \item $\mathbf{v}^{\ast} = \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}$
  *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
  *      \item {\bf Solve
- *            $\mathbf{f}(\mathbf{d}^n, \mathbf{v}^n, \mathbf{a}^n, t^n) = 0$
- *            for $\mathbf{a}^n$ where} \\
- *            $\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n$ \\
- *            $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$
+ *                 $\mathbf{f}(\mathbf{d}^n, \mathbf{v}^n, \mathbf{a}^n, t^n) = 0$
+ *                 for $\mathbf{a}^n$ where} \\
+ *                 $\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n$ \\
+ *                 $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$
  *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
  *      \item $\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n$
  *      \item $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$
@@ -88,134 +87,132 @@ namespace Tempus {
  *  useFSAL=true will also work but have no affect (i.e., no-op).
  *
  */
-template<class Scalar>
+template <class Scalar>
 class StepperNewmarkImplicitAForm
- : virtual public Tempus::StepperImplicit<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperImplicit<Scalar> {
+ public:
   /** \brief Default constructor.
    *
    *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
-  */
+   */
   StepperNewmarkImplicitAForm();
 
   /// Constructor
   StepperNewmarkImplicitAForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    std::string schemeName,
-    Scalar beta,
-    Scalar gamma,
-    const Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >& stepperAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+      bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
+      bool zeroInitialGuess, std::string schemeName, Scalar beta, Scalar gamma,
+      const Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >&
+          stepperAppAction);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
+  virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setAppAction(
+  virtual void setAppAction(
       Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > getAppAction() const
-    { return stepperNewmarkImpAppAction_; }
+  virtual Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >
+  getAppAction() const
+  {
+    return stepperNewmarkImpAppAction_;
+  }
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
-      getDefaultStepperState();
-    virtual Scalar getOrder() const {
-      if (gamma_ == 0.5) return 2.0;
-      else return 1.0;
-    }
-    virtual Scalar getOrderMin() const {return 1.0;}
-    virtual Scalar getOrderMax() const {return 2.0;}
+  /// Get a default (initial) StepperState
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  virtual Scalar getOrder() const
+  {
+    if (gamma_ == 0.5)
+      return 2.0;
+    else
+      return 1.0;
+  }
+  virtual Scalar getOrderMin() const { return 1.0; }
+  virtual Scalar getOrderMax() const { return 2.0; }
 
-    virtual bool isExplicit()         const {return false;}
-    virtual bool isImplicit()         const {return true;}
-    virtual bool isExplicitImplicit() const
-      {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod()   const {return true;}
-    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-    virtual void setUseFSAL(bool a) { this->setUseFSALTrueOnly(a); }
-    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
+  virtual bool isExplicit() const { return false; }
+  virtual bool isImplicit() const { return true; }
+  virtual bool isExplicitImplicit() const
+  {
+    return isExplicit() && isImplicit();
+  }
+  virtual bool isOneStepMethod() const { return true; }
+  virtual bool isMultiStepMethod() const { return !isOneStepMethod(); }
+  virtual void setUseFSAL(bool a) { this->setUseFSALTrueOnly(a); }
+  virtual OrderODE getOrderODE() const { return SECOND_ORDER_ODE; }
   //@}
 
   /// Return W_xDotxDot_coeff = d(xDotDot)/d(xDotDot).
-  virtual Scalar getW_xDotDot_coeff (const Scalar) const {return Scalar(1.0);}
+  virtual Scalar getW_xDotDot_coeff(const Scalar) const { return Scalar(1.0); }
   /// Return alpha = d(xDot)/d(xDotDot).
-  virtual Scalar getAlpha(const Scalar dt) const { return gamma_*dt; }
+  virtual Scalar getAlpha(const Scalar dt) const { return gamma_ * dt; }
   /// Return beta  = d(x)/d(xDotDot).
-  virtual Scalar getBeta (const Scalar dt) const { return beta_*dt*dt; }
+  virtual Scalar getBeta(const Scalar dt) const { return beta_ * dt * dt; }
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const;
 
   void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+                       const Thyra::VectorBase<Scalar>& v,
+                       const Thyra::VectorBase<Scalar>& a,
+                       const Scalar dt) const;
+
+  void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
+                           const Thyra::VectorBase<Scalar>& d,
                            const Thyra::VectorBase<Scalar>& v,
                            const Thyra::VectorBase<Scalar>& a,
                            const Scalar dt) const;
 
-  void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                             const Thyra::VectorBase<Scalar>& d,
-                             const Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
-
   void correctVelocity(Thyra::VectorBase<Scalar>& v,
-                           const Thyra::VectorBase<Scalar>& vPred,
-                           const Thyra::VectorBase<Scalar>& a,
-                           const Scalar dt) const;
+                       const Thyra::VectorBase<Scalar>& vPred,
+                       const Thyra::VectorBase<Scalar>& a,
+                       const Scalar dt) const;
 
   void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                             const Thyra::VectorBase<Scalar>& dPred,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
+                           const Thyra::VectorBase<Scalar>& dPred,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
 
   void setSchemeName(std::string schemeName);
   void setBeta(Scalar beta);
   void setGamma(Scalar gamma);
 
-private:
-
+ private:
   std::string schemeName_;
   Scalar beta_;
   Scalar gamma_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
-  Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > stepperNewmarkImpAppAction_;
-
+  Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >
+      stepperNewmarkImpAppAction_;
 };
-
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> >
 createStepperNewmarkImplicitAForm(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl);
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
+}  // namespace Tempus
 
-} // namespace Tempus
-
-#endif // Tempus_StepperNewmarkImplicitAForm_decl_hpp
+#endif  // Tempus_StepperNewmarkImplicitAForm_decl_hpp

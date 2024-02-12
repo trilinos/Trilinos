@@ -52,15 +52,17 @@
 
 namespace MueLu {
 
-  //! An exception safe way to call the method TwoLevelFactoryBase::DisableMultipleCallCheck
-  class DisableMultipleCallCheck {
-  public:
-    DisableMultipleCallCheck(const RCP<const TwoLevelFactoryBase> & fact) : fact_(fact) { fact_->DisableMultipleCallCheck(); }
-    ~DisableMultipleCallCheck() { fact_->EnableMultipleCallCheck(); }
-  private:
-    const RCP<const TwoLevelFactoryBase> fact_;
-  };
+//! An exception safe way to call the method TwoLevelFactoryBase::DisableMultipleCallCheck
+class DisableMultipleCallCheck {
+ public:
+  DisableMultipleCallCheck(const RCP<const TwoLevelFactoryBase>& fact)
+    : fact_(fact) { fact_->DisableMultipleCallCheck(); }
+  ~DisableMultipleCallCheck() { fact_->EnableMultipleCallCheck(); }
 
-} //namespace MueLu
+ private:
+  const RCP<const TwoLevelFactoryBase> fact_;
+};
 
-#endif // MUELU_DISABLEMULTIPLECALLCHECK_HPP
+}  // namespace MueLu
+
+#endif  // MUELU_DISABLEMULTIPLECALLCHECK_HPP

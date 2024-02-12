@@ -218,35 +218,35 @@ void test_ffs() {
 }
 
 TEST_F(TestCategory, common_set_bit_count) {
-  test_set_bit_count<int, TestExecSpace>();
-  test_set_bit_count<unsigned int, TestExecSpace>();
-  test_set_bit_count<const int, TestExecSpace>();
-  test_set_bit_count<const unsigned int, TestExecSpace>();
+  test_set_bit_count<int, TestDevice>();
+  test_set_bit_count<unsigned int, TestDevice>();
+  test_set_bit_count<const int, TestDevice>();
+  test_set_bit_count<const unsigned int, TestDevice>();
 
-  test_set_bit_count<long, TestExecSpace>();
-  test_set_bit_count<unsigned long, TestExecSpace>();
-  test_set_bit_count<const long, TestExecSpace>();
-  test_set_bit_count<const unsigned long, TestExecSpace>();
+  test_set_bit_count<long, TestDevice>();
+  test_set_bit_count<unsigned long, TestDevice>();
+  test_set_bit_count<const long, TestDevice>();
+  test_set_bit_count<const unsigned long, TestDevice>();
 
-  test_set_bit_count<long long, TestExecSpace>();
-  test_set_bit_count<unsigned long long, TestExecSpace>();
-  test_set_bit_count<const long long, TestExecSpace>();
-  test_set_bit_count<const unsigned long long, TestExecSpace>();
+  test_set_bit_count<long long, TestDevice>();
+  test_set_bit_count<unsigned long long, TestDevice>();
+  test_set_bit_count<const long long, TestDevice>();
+  test_set_bit_count<const unsigned long long, TestDevice>();
 }
 
 TEST_F(TestCategory, common_ffs) {
-  test_ffs<int, TestExecSpace>();
-  test_ffs<unsigned int, TestExecSpace>();
-  test_ffs<const int, TestExecSpace>();
-  test_ffs<const unsigned int, TestExecSpace>();
+  test_ffs<int, TestDevice>();
+  test_ffs<unsigned int, TestDevice>();
+  test_ffs<const int, TestDevice>();
+  test_ffs<const unsigned int, TestDevice>();
 
-  test_ffs<long, TestExecSpace>();
-  test_ffs<unsigned long, TestExecSpace>();
-  test_ffs<const long, TestExecSpace>();
-  test_ffs<const unsigned long, TestExecSpace>();
+  test_ffs<long, TestDevice>();
+  test_ffs<unsigned long, TestDevice>();
+  test_ffs<const long, TestDevice>();
+  test_ffs<const unsigned long, TestDevice>();
 
-  test_ffs<long long, TestExecSpace>();
-  test_ffs<unsigned long long, TestExecSpace>();
-  test_ffs<const long long, TestExecSpace>();
-  test_ffs<const unsigned long long, TestExecSpace>();
+  test_ffs<long long, TestDevice>();
+  test_ffs<unsigned long long, TestDevice>();
+  test_ffs<const long long, TestDevice>();
+  test_ffs<const unsigned long long, TestDevice>();
 }

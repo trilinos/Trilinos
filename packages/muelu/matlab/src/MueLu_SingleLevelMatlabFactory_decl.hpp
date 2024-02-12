@@ -65,65 +65,64 @@
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
 
-
 namespace MueLu {
-  /*!
-    @class SingleLevelMatlabFactory
-    @ingroup MueMexClasses
-    @brief Factory for interacting with Matlab
-  */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-  class SingleLevelMatlabFactory : public SingleLevelFactoryBase {
+/*!
+  @class SingleLevelMatlabFactory
+  @ingroup MueMexClasses
+  @brief Factory for interacting with Matlab
+*/
+template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class SingleLevelMatlabFactory : public SingleLevelFactoryBase {
 #undef MUELU_SINGLELEVELMATLABFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    SingleLevelMatlabFactory();
+  SingleLevelMatlabFactory();
 
-    virtual ~SingleLevelMatlabFactory() { }
+  virtual ~SingleLevelMatlabFactory() {}
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! @name Input
+  //@{
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level& currentLevel) const;
+  void DeclareInput(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
-    void Build(Level& currentLevel) const;
-    //@}
+  //! @name Build methods.
+  //@{
+  void Build(Level& currentLevel) const;
+  //@}
 
-    //! @ name Description
-    //@{
-    std::string description() const;
-    //@}
+  //! @ name Description
+  //@{
+  std::string description() const;
+  //@}
 
-  private:
-    //@{
+ private:
+  //@{
 
-    mutable bool hasDeclaredInput_;
+  mutable bool hasDeclaredInput_;
 
-    //@}
+  //@}
 
-    //@{
+  //@{
 
-    //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects.
-    mutable std::vector<std::string> needs_;
+  //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects.
+  mutable std::vector<std::string> needs_;
 
-    //@}
+  //@}
 
-  }; //class SingleLevelMatlabFactory
+};  // class SingleLevelMatlabFactory
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_SINGLELEVELMATLABFACTORY_SHORT
 
-#endif // HAVE_MUELU_MATLAB
-#endif // MUELU SINGLELEVELMATLABFACTORY_DECL_HPP
+#endif  // HAVE_MUELU_MATLAB
+#endif  // MUELU SINGLELEVELMATLABFACTORY_DECL_HPP

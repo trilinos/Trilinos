@@ -15,4 +15,4 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol_Staggered_FSA_Tangent)
   test_vdp_fsa(false, true, out, success);
 }
 
-} // namespace Tempus_Test
+}  // namespace Tempus_Test

@@ -22,9 +22,10 @@ TriBITS refactorings of TriBITS.
 
 .. _TriBITS Core:
 
-**core/**: Core TriBITS package-based architecture for CMake projects. This
-only depends on raw CMake and contains just the minimal support for building,
-testing, installing, and deployment.  Only depends on CMake and nothing else.
+**core/**: Core TriBITS test support and package-based architecture for CMake
+projects. This only depends on raw CMake and contains just the minimal support
+for building, testing, installing, and deployment.  This CMake code depends
+only on CMake and nothing else.
 
 **python_utils/**: Some basic Python utilities that are not specific to
 TriBITS but are used in TriBITS CI and testing support software.  There are
@@ -86,3 +87,49 @@ subdirectory. It supports the argument ``--components`` with values ``core``,
 * ``examples`` => (external tribits installation)
 * ``doc`` => ``core``, ``ci_support``, ``examples``
 * ``devtools_install`` => ``python_utils``
+
+
+TriBITS Core Directory Contents
+...............................
+
+The TriBITS ``core/`` directory is broken down into several subdirectories of
+its own:
+
+**core/utils**: General CMake utilities that are not specific to the TriBITS
+system and can be reused in any CMake project.
+
+**core/common**: As small set of common modules that the different TriBITS
+Core module files in different directories depend on.  These include things
+like common TriBITS constants and TriBITS CMake policies.
+
+**core/test_support**: Modules that help define CTest tests using functions
+like `tribits_add_test()`_ and `tribits_add_advanced_test()`_.  These can be
+used in CMake projects that are not full-blown TriBITS projects.
+
+**core/config_tests**: Some basic configure-time tests used by the TriBITS
+package architecture framework.
+
+**core/std_tpls**: Some ``Find<tplName>.cmake`` files for key external
+dependencies handled as TriBITS TPLs but are more central to the TriBITS
+system.  (Examples include CUDA and MPI support.)
+
+**core/installation**: A collection of ``*.cmake.in`` and related Cmake code
+supporting installations.
+
+**core/package_arch**: Modules for the full-blown TriBITS package architecture
+framework including package dependency management, multi-repository support,
+installations (including the generation of ``<Package>Config.cmake`` files),
+etc.
+
+The dependencies between these different TriBITS `core` subdirectories are:
+
+* ``core/utils`` => (external CMake)
+* ``core/common`` => ``core/utils``
+* ``core/test_support`` =>   ``core/utils``, ``core/common``
+* ``core/config_tests`` => (external CMake)
+* ``core/std_tpls`` => (external CMake)
+* ``core/installation`` <=> ``core/package_arch`` (bidirectional)
+* ``core/package_arch`` => ``core/utils``, ``core/common``,
+  ``core/test_support``, ``core/config_tests``, ``core/std_tpls``,
+  ``core/installation``
+

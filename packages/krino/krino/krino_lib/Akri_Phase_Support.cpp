@@ -190,6 +190,25 @@ Phase_Support::get_negative_levelset_block_selector(const Surface_Identifier lev
   return select_union_from_part_ordinals(meta(), get_negative_levelset_block_ordinals(levelSetIdentifier));
 }
 
+std::vector<unsigned> Phase_Support::get_levelset_decomposed_block_ordinals(const Surface_Identifier levelSetIdentifier) const
+{
+  std::vector<unsigned> levelsetBlockOrdinals;
+  for (auto * partPtr : meta().get_mesh_parts())
+  {
+    if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
+        ((is_nonconformal(partPtr) && level_set_is_used_by_nonconformal_part(levelSetIdentifier, partPtr)) ||
+         (stk::io::is_part_io_part(*partPtr) && level_set_is_used_by_nonconformal_part(levelSetIdentifier, find_nonconformal_part(*partPtr)))))
+        levelsetBlockOrdinals.push_back(partPtr->mesh_meta_data_ordinal());
+  }
+  return levelsetBlockOrdinals;
+}
+
+stk::mesh::Selector
+Phase_Support::get_levelset_decomposed_blocks_selector(const Surface_Identifier levelSetIdentifier) const
+{
+  return select_union_from_part_ordinals(meta(), get_levelset_decomposed_block_ordinals(levelSetIdentifier));
+}
+
 Phase_Support::Phase_Support()
 : myMeta(nullptr),
   myAuxMeta(nullptr),
@@ -326,6 +345,7 @@ Phase_Support::create_nonconformal_parts(const PartSet & decomposedIoParts)
       all_decomposed_blocks_selector |= iopart;
       all_decomposed_blocks_selector |= nonconformal_part;
       part_to_nonconformal_part_map[&iopart] = &nonconformal_part;
+      nonconformal_to_original_part_map[&nonconformal_part] = &iopart;
       part_is_nonconformal_map[&nonconformal_part] = true;
     }
   }
@@ -1029,6 +1049,21 @@ Phase_Support::find_nonconformal_part(const stk::mesh::Part & io_part) const
 {
   PartToPartMap::const_iterator entry = part_to_nonconformal_part_map.find(&io_part);
   if (entry != part_to_nonconformal_part_map.end()) return (entry->second);
+  return &io_part;
+}
+
+//--------------------------------------------------------------------------------
+
+const stk::mesh::Part *
+Phase_Support::find_original_part(const stk::mesh::Part & io_part) const
+{
+  if (is_nonconformal(&io_part))
+    return nonconformal_to_original_part_map.at(&io_part);
+
+  PartToPartMap::const_iterator entry = part_to_nonconformal_part_map.find(&io_part);
+  if (entry != part_to_nonconformal_part_map.end())
+    return nonconformal_to_original_part_map.at(entry->second);
+
   return &io_part;
 }
 

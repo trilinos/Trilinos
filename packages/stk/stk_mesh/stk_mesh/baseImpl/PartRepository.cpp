@@ -39,13 +39,7 @@
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include <vector>                       // for vector, etc
-#include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
 #include "stk_topology/topology.hpp"    // for topology, etc
-
-
-
-
-
 
 namespace stk {
 namespace mesh {
@@ -153,8 +147,8 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
     p = declare_part_impl( arg_name, arg_rank, force_no_induce );
   }
   else {
-    p->m_partImpl.set_primary_entity_rank(arg_rank);
-    p->m_partImpl.set_force_no_induce(force_no_induce);
+    p->set_primary_entity_rank(arg_rank);
+    p->set_force_no_induce(force_no_induce);
   }
 
   return p;
@@ -171,8 +165,8 @@ Part * PartRepository::declare_part_impl( const std::string & name, EntityRank r
 
 void PartRepository::declare_subset_impl( Part & superset_part, Part & subset_part )
 {
-  superset_part.m_partImpl.add_part_to_subset( subset_part );
-  subset_part.m_partImpl.add_part_to_superset( superset_part );
+  superset_part.add_part_to_subset( subset_part );
+  subset_part.add_part_to_superset( superset_part );
 }
 
 void PartRepository::declare_subset( Part & superset, Part & subset )

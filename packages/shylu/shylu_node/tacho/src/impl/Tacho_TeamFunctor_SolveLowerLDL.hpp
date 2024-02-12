@@ -321,7 +321,7 @@ public:
       }
     }
     if (mode == -1) {
-      printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
+      Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
     } else {
       // skip
     }

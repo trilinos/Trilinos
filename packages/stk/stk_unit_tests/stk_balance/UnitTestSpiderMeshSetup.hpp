@@ -2,7 +2,13 @@
 #define UNITTESTSPIDERMESHSETUP_HPP
 
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_unit_test_utils/TextMesh.hpp"
+#include "stk_io/FillMesh.hpp"
+#include "stk_io/IossBridge.hpp"
+#include "stk_io/WriteMesh.hpp"
 
 inline
 void make_mesh_non_spider_no_volume_elements(stk::mesh::BulkData & bulk)
@@ -243,6 +249,71 @@ void make_mesh_two_spiders_particle_body(stk::mesh::BulkData & bulk)
   };
 
   stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+}
+
+inline
+void write_serial_cube_mesh_with_spider(unsigned meshSize, bool addParticleBody, const std::string & fileName)
+{
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    stk::mesh::MeshBuilder builder(MPI_COMM_SELF);
+    builder.set_spatial_dimension(3);
+    builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
+    auto bulk = builder.create();
+    stk::mesh::MetaData & meta = bulk->mesh_meta_data();
+    meta.use_simple_fields();
+
+    stk::mesh::Part & block2Part = meta.declare_part_with_topology("block_2", stk::topology::BEAM_2);
+    stk::mesh::Part & block3Part = meta.declare_part_with_topology("block_3", stk::topology::PARTICLE);
+    stk::io::put_io_part_attribute(block2Part);
+    stk::io::put_io_part_attribute(block3Part);
+
+    unsigned newNodeId = (meshSize+1) * (meshSize+1) * (meshSize+1) + 1;
+    unsigned newElemId = meshSize * meshSize * meshSize + 1;
+    stk::io::fill_mesh("generated:" + std::to_string(meshSize) + "x" + std::to_string(meshSize) +
+                       "x" + std::to_string(meshSize), *bulk);
+
+    double maxCoord = meshSize;
+    const auto & coordinates = *static_cast<const stk::mesh::Field<double>*>(meta.coordinate_field());
+
+    bulk->modification_begin();
+
+    stk::mesh::Entity spiderNode = bulk->declare_node(newNodeId);
+    double * spiderCoords = stk::mesh::field_data(coordinates, spiderNode);
+    spiderCoords[0] = maxCoord + 1.0;
+    spiderCoords[1] = maxCoord / 2.0;
+    spiderCoords[2] = maxCoord / 2.0;
+
+    const stk::mesh::BucketVector ownedBuckets = bulk->get_buckets(stk::topology::NODE_RANK, meta.locally_owned_part());
+    const stk::mesh::ConstPartVector elemParts {&block2Part};
+
+    const auto allNodes = stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK, meta.locally_owned_part());
+    stk::mesh::EntityVector edgeNodes;
+    for (const stk::mesh::Entity & node : allNodes) {
+      const double * coords = stk::mesh::field_data(coordinates, node);
+      if (std::abs(coords[0] - maxCoord) < 0.1) {
+        if (bulk->num_elements(node) <= 2) {
+          edgeNodes.push_back(node);
+        }
+      }
+    }
+
+    for (stk::mesh::Entity node : edgeNodes) {
+      stk::mesh::Entity elem = bulk->declare_element(newElemId++, elemParts);
+      bulk->declare_relation(elem, node, 0);
+      bulk->declare_relation(elem, spiderNode, 1);
+    }
+
+    if (addParticleBody) {
+      const stk::mesh::ConstPartVector bodyParts {&block3Part};
+      stk::mesh::Entity spiderBody = bulk->declare_element(newElemId++, bodyParts);
+      bulk->declare_relation(spiderBody, spiderNode, 0);
+    }
+
+    bulk->modification_end();
+
+    stk::io::write_mesh(fileName, *bulk);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 #endif // UNITTESTSPIDERMESHSETUP_HPP

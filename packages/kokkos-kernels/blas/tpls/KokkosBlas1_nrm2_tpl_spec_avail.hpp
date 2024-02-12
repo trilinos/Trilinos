@@ -20,7 +20,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AV, class XMV, int Xrank = XMV::Rank>
+template <class execution_space, class RV, class XMV, int Xrank = XMV::rank>
 struct nrm2_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -35,6 +35,7 @@ namespace Impl {
 #define KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)         \
   template <class ExecSpace>                                                   \
   struct nrm2_tpl_spec_avail<                                                  \
+      ExecSpace,                                                               \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
@@ -56,31 +57,42 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 
 #endif
 
-// cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-// double
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)       \
-  template <class ExecSpace>                                                   \
+#define KOKKOSBLAS1_NRM2_TPL_SPEC(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)         \
+  template <>                                                                  \
   struct nrm2_tpl_spec_avail<                                                  \
-      Kokkos::View<                                                            \
-          typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
-          LAYOUT, Kokkos::HostSpace,                                           \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                           \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      EXECSPACE,                                                               \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,     \
+                   Kokkos::HostSpace,                                          \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1> {                                                                     \
     enum : bool { value = true };                                              \
   };
 
-KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft,
-                                       Kokkos::CudaSpace)
-KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft,
-                                       Kokkos::CudaSpace)
-KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#define KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(LAYOUT, EXECSPACE, MEMSPACE)    \
+  KOKKOSBLAS1_NRM2_TPL_SPEC(float, LAYOUT, EXECSPACE, MEMSPACE)         \
+  KOKKOSBLAS1_NRM2_TPL_SPEC(double, LAYOUT, EXECSPACE, MEMSPACE)        \
+  KOKKOSBLAS1_NRM2_TPL_SPEC(Kokkos::complex<float>, LAYOUT, EXECSPACE,  \
+                            MEMSPACE)                                   \
+  KOKKOSBLAS1_NRM2_TPL_SPEC(Kokkos::complex<double>, LAYOUT, EXECSPACE, \
+                            MEMSPACE)
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                Kokkos::CudaSpace)
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::HIP,
+                                Kokkos::HIPSpace)
+#endif
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) &&                \
+    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE) && \
+    defined(KOKKOS_ENABLE_SYCL)
+KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
+                                Kokkos::Experimental::SYCLDeviceUSMSpace)
 #endif
 
 }  // namespace Impl

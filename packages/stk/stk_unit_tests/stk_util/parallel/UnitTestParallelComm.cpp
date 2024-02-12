@@ -1450,5 +1450,54 @@ TEST(DenseParallelCommTester, SplitComm)
   }
 }
 
+namespace {
+void send_to_self(stk::DataExchangeKnownPatternNonBlockingCommBuffer& exchanger, int size)
+{
+  using T = int;
+  int myrank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  for (int phase=0; phase < 2; ++phase)
+  {
+    for (int i=0; i < size; ++i)
+    {
+      exchanger.get_send_buf(myrank).pack<T>(i);
+    }
+
+    if (phase == 0)
+      exchanger.allocate_send_buffers();
+  }
+  exchanger.set_recv_buffer_size(myrank, size * sizeof(T));
+  exchanger.allocate_recv_buffers();
+
+  exchanger.start_nonblocking();
+
+  auto unpacker = [&](int rank, stk::CommBuffer& buf)
+  {
+    EXPECT_EQ(rank, myrank);
+    EXPECT_EQ(buf.remaining(), ptrdiff_t(size * sizeof(T)));
+    for (int i=0; i < size; ++i)
+    {
+      T val;
+      buf.unpack(val);
+      EXPECT_EQ(val, i);
+    }
+  };
+
+  exchanger.complete_receives(unpacker);
+  exchanger.complete_sends();
+}
+}
+
+TEST(ManagedCommBufferBase, IncreasingSize)
+{
+  stk::DataExchangeKnownPatternNonBlockingCommBuffer exchanger(MPI_COMM_WORLD);
+  send_to_self(exchanger, 16);
+
+  exchanger.clear_send_bufs();
+  exchanger.clear_recv_bufs();
+
+  send_to_self(exchanger, 32);
+}
+
 #endif
 

@@ -227,10 +227,10 @@ public:
   void getElementGIDs(panzer::LocalOrdinal localElementID, std::vector<panzer::GlobalOrdinal> & gids, const std::string & blockIdHint="") const;
 
   //! builds the global unknowns array
-  void buildGlobalUnknowns();
+  virtual void buildGlobalUnknowns();
 
   //! builds the global unknowns array
-  void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
+  virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
 
   int getFieldNum(const std::string & string) const;
 
@@ -364,6 +364,7 @@ protected:
     * and the owned element blocks.
     */
   class ElementBlockAccess {
+  public:
     bool useOwned_;
     Teuchos::RCP<const ConnManager> connMngr_;
   public:
@@ -383,13 +384,13 @@ protected:
     * This map is used to construct the GIDs, and also to communicate the used
     * GIDs. (this is steps 1 and 2)
     */
-  Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
+  virtual Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
   buildOverlapMapFromElements(const ElementBlockAccess & access) const;
 
   /** Build a tagged multivector (as defined in GUN paper) to use in global unknown numbering algorithm.
     * Note that this is non-const. It does modify the <code>elementBlockGIDCount</code> member variable.
     */
-  Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
+  virtual Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
   buildTaggedMultiVector(const ElementBlockAccess & access);
 
   /** Build global unknowns using the algorithm in the Global Unknowns Numbering paper (GUN). This
@@ -397,12 +398,12 @@ protected:
     * tagged overlapped multi-vector (<code>overlap_mv</code>) is overwritten with the global IDs. Note
     * fields on geometric entities that are not assigned a global ID are given an entry of -1.
     */
-  std::pair<Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >,
+  virtual std::pair<Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >,
             Teuchos::RCP<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> > >
   buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & tagged_overlap_mv,
                           Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & overlap_mv) const;
 
-  void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
+  virtual void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                                 std::vector<std::vector< panzer::GlobalOrdinal > > & elementGIDs,
                                 const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & overlapmap,
                                 const Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> & overlap_mv) const;

@@ -41,7 +41,7 @@
 #include <map>
 #include <memory>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/LegacyCoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -72,7 +72,7 @@ class Tet10Fixture
 {
 public:
   typedef double                   Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
+  typedef Field<Scalar, legacy::Cartesian> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted

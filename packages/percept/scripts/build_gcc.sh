@@ -12,5 +12,5 @@ cmake \
 -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
 -DTrilinos_ENABLE_Intrepid=ON \
 -DTrilinos_ENABLE_Percept=ON \
--DTPL_ENABLE_yaml-cpp=OFF \
+-DTPL_ENABLE_yamlcpp=OFF \
 $TRILINOS_DIR

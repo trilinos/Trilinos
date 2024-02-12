@@ -49,7 +49,6 @@
 #include <stdlib.h>
 #include <iomanip>
 
-
 // #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
@@ -70,117 +69,116 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
-    validParamList->setEntry("replicate: npdes",ParameterEntry(1));
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
+  validParamList->setEntry("replicate: npdes", ParameterEntry(1));
 
-    return validParamList;
-  }
+  return validParamList;
+}
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
-//    Input(fineLevel, "Psubblock");
-  }
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
+  //    Input(fineLevel, "Psubblock");
+}
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel,
-                                Level& coarseLevel) const {
-    return BuildP(fineLevel, coarseLevel);
-  }
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel,
+                                                                         Level& coarseLevel) const {
+  return BuildP(fineLevel, coarseLevel);
+}
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel,
-                                Level& coarseLevel) const {
-    FactoryMonitor m(*this, "Build", coarseLevel);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel,
+                                                                          Level& coarseLevel) const {
+  FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<Matrix>      Psubblock             = coarseLevel.Get< RCP<Matrix> >("Psubblock", NoFactory::get());
-    const ParameterList& pL = GetParameterList();
-    const LO dofPerNode = as<LO>(pL.get<int>   ("replicate: npdes"));
+  RCP<Matrix> Psubblock   = coarseLevel.Get<RCP<Matrix> >("Psubblock", NoFactory::get());
+  const ParameterList& pL = GetParameterList();
+  const LO dofPerNode     = as<LO>(pL.get<int>("replicate: npdes"));
 
-    Teuchos::ArrayRCP<const size_t> amalgRowPtr(Psubblock->getLocalNumRows());
-    Teuchos::ArrayRCP<const LocalOrdinal> amalgCols(Psubblock->getLocalNumEntries());
-    Teuchos::ArrayRCP<const Scalar> amalgVals(Psubblock->getLocalNumEntries());
-    Teuchos::RCP<CrsMatrixWrap> Psubblockwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Psubblock);
-    Teuchos::RCP<CrsMatrix> Psubblockcrs = Psubblockwrap->getCrsMatrix();
-    Psubblockcrs->getAllValues(amalgRowPtr, amalgCols, amalgVals);
+  Teuchos::ArrayRCP<const size_t> amalgRowPtr(Psubblock->getLocalNumRows());
+  Teuchos::ArrayRCP<const LocalOrdinal> amalgCols(Psubblock->getLocalNumEntries());
+  Teuchos::ArrayRCP<const Scalar> amalgVals(Psubblock->getLocalNumEntries());
+  Teuchos::RCP<CrsMatrixWrap> Psubblockwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Psubblock);
+  Teuchos::RCP<CrsMatrix> Psubblockcrs      = Psubblockwrap->getCrsMatrix();
+  Psubblockcrs->getAllValues(amalgRowPtr, amalgCols, amalgVals);
 
-    size_t paddedNrows = Psubblock->getRowMap()->getLocalNumElements() * Teuchos::as<size_t>(dofPerNode);
-    Teuchos::ArrayRCP<size_t> newPRowPtr(paddedNrows+1);
-    Teuchos::ArrayRCP<LocalOrdinal> newPCols(Psubblock->getLocalNumEntries() * dofPerNode);
-    Teuchos::ArrayRCP<Scalar> newPVals(Psubblock->getLocalNumEntries() * dofPerNode);
-    size_t cnt = 0; // local id counter
-    for (decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size() - 1; i++) {
-      size_t rowLength = amalgRowPtr[i+1] - amalgRowPtr[i];
-      for(int j = 0; j < dofPerNode; j++) {
-        newPRowPtr[i*dofPerNode+j] = cnt;
-        for (size_t k = 0; k < rowLength; k++) {
-          newPCols[cnt  ] = amalgCols[k+amalgRowPtr[i]] * dofPerNode + j;
-          newPVals[cnt++] = amalgVals[k+amalgRowPtr[i]];
-        }
+  size_t paddedNrows = Psubblock->getRowMap()->getLocalNumElements() * Teuchos::as<size_t>(dofPerNode);
+  Teuchos::ArrayRCP<size_t> newPRowPtr(paddedNrows + 1);
+  Teuchos::ArrayRCP<LocalOrdinal> newPCols(Psubblock->getLocalNumEntries() * dofPerNode);
+  Teuchos::ArrayRCP<Scalar> newPVals(Psubblock->getLocalNumEntries() * dofPerNode);
+  size_t cnt = 0;  // local id counter
+  for (decltype(amalgRowPtr.size()) i = 0; i < amalgRowPtr.size() - 1; i++) {
+    size_t rowLength = amalgRowPtr[i + 1] - amalgRowPtr[i];
+    for (int j = 0; j < dofPerNode; j++) {
+      newPRowPtr[i * dofPerNode + j] = cnt;
+      for (size_t k = 0; k < rowLength; k++) {
+        newPCols[cnt]   = amalgCols[k + amalgRowPtr[i]] * dofPerNode + j;
+        newPVals[cnt++] = amalgVals[k + amalgRowPtr[i]];
       }
     }
+  }
 
-    newPRowPtr[paddedNrows] = cnt; // close row CSR array
-    std::vector<size_t> stridingInfo(1, dofPerNode);
+  newPRowPtr[paddedNrows] = cnt;  // close row CSR array
+  std::vector<size_t> stridingInfo(1, dofPerNode);
 
-    GlobalOrdinal nCoarseDofs = Psubblock->getDomainMap()->getLocalNumElements() * dofPerNode;
-    GlobalOrdinal indexBase   = Psubblock->getDomainMap()->getIndexBase();
-    RCP<const Map> coarseDomainMap = StridedMapFactory::Build(Psubblock->getDomainMap()->lib(),
-        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-        nCoarseDofs,
-        indexBase,
-        stridingInfo,
-        Psubblock->getDomainMap()->getComm(),
-        -1 /* stridedBlockId */,
-        0  /*domainGidOffset */);
+  GlobalOrdinal nCoarseDofs      = Psubblock->getDomainMap()->getLocalNumElements() * dofPerNode;
+  GlobalOrdinal indexBase        = Psubblock->getDomainMap()->getIndexBase();
+  RCP<const Map> coarseDomainMap = StridedMapFactory::Build(Psubblock->getDomainMap()->lib(),
+                                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                            nCoarseDofs,
+                                                            indexBase,
+                                                            stridingInfo,
+                                                            Psubblock->getDomainMap()->getComm(),
+                                                            -1 /* stridedBlockId */,
+                                                            0 /*domainGidOffset */);
 
-    size_t nColCoarseDofs = Teuchos::as<size_t>(Psubblock->getColMap()->getLocalNumElements() * dofPerNode);
-    Teuchos::Array<GlobalOrdinal> unsmooshColMapGIDs(nColCoarseDofs);
-    for(size_t c = 0; c < Psubblock->getColMap()->getLocalNumElements(); ++c) {
-      GlobalOrdinal gid = (Psubblock->getColMap()->getGlobalElement(c)-indexBase) * dofPerNode + indexBase;
+  size_t nColCoarseDofs = Teuchos::as<size_t>(Psubblock->getColMap()->getLocalNumElements() * dofPerNode);
+  Teuchos::Array<GlobalOrdinal> unsmooshColMapGIDs(nColCoarseDofs);
+  for (size_t c = 0; c < Psubblock->getColMap()->getLocalNumElements(); ++c) {
+    GlobalOrdinal gid = (Psubblock->getColMap()->getGlobalElement(c) - indexBase) * dofPerNode + indexBase;
 
-      for(int i = 0; i < dofPerNode; ++i) {
-        unsmooshColMapGIDs[c * dofPerNode + i] = gid + i;
-      }
+    for (int i = 0; i < dofPerNode; ++i) {
+      unsmooshColMapGIDs[c * dofPerNode + i] = gid + i;
     }
-    Teuchos::RCP<Map> coarseColMap = MapFactory::Build(Psubblock->getDomainMap()->lib(),
-                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                       unsmooshColMapGIDs(), //View,
-                                                       indexBase,
-                                                       Psubblock->getDomainMap()->getComm());
-
-    Teuchos::Array<GlobalOrdinal> unsmooshRowMapGIDs(paddedNrows);
-    for(size_t c = 0; c < Psubblock->getRowMap()->getLocalNumElements(); ++c) {
-      GlobalOrdinal gid = (Psubblock->getRowMap()->getGlobalElement(c)-indexBase) * dofPerNode + indexBase;
-
-      for(int i = 0; i < dofPerNode; ++i) {
-        unsmooshRowMapGIDs[c * dofPerNode + i] = gid + i;
-      }
-    }
-    Teuchos::RCP<Map> fineRowMap = MapFactory::Build(Psubblock->getDomainMap()->lib(),
+  }
+  Teuchos::RCP<Map> coarseColMap = MapFactory::Build(Psubblock->getDomainMap()->lib(),
                                                      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                     unsmooshRowMapGIDs(), //View,
+                                                     unsmooshColMapGIDs(),  // View,
                                                      indexBase,
                                                      Psubblock->getDomainMap()->getComm());
 
-    Teuchos::RCP<CrsMatrix> bigPCrs = CrsMatrixFactory::Build(fineRowMap, coarseColMap,
-                                                                  dofPerNode*Psubblock->getLocalMaxNumRowEntries());
-    for (size_t i = 0; i < paddedNrows; i++) {
-      bigPCrs->insertLocalValues(i,
-                                     newPCols.view(newPRowPtr[i], newPRowPtr[i+1] - newPRowPtr[i]),
-                                     newPVals.view(newPRowPtr[i], newPRowPtr[i+1] - newPRowPtr[i]));
+  Teuchos::Array<GlobalOrdinal> unsmooshRowMapGIDs(paddedNrows);
+  for (size_t c = 0; c < Psubblock->getRowMap()->getLocalNumElements(); ++c) {
+    GlobalOrdinal gid = (Psubblock->getRowMap()->getGlobalElement(c) - indexBase) * dofPerNode + indexBase;
+
+    for (int i = 0; i < dofPerNode; ++i) {
+      unsmooshRowMapGIDs[c * dofPerNode + i] = gid + i;
     }
-    bigPCrs->fillComplete(coarseDomainMap, fineRowMap);
-
-    Teuchos::RCP<Matrix> bigP = Teuchos::rcp(new CrsMatrixWrap(bigPCrs));
-
-    Set(coarseLevel, "P", bigP);
   }
+  Teuchos::RCP<Map> fineRowMap = MapFactory::Build(Psubblock->getDomainMap()->lib(),
+                                                   Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                   unsmooshRowMapGIDs(),  // View,
+                                                   indexBase,
+                                                   Psubblock->getDomainMap()->getComm());
 
+  Teuchos::RCP<CrsMatrix> bigPCrs = CrsMatrixFactory::Build(fineRowMap, coarseColMap,
+                                                            dofPerNode * Psubblock->getLocalMaxNumRowEntries());
+  for (size_t i = 0; i < paddedNrows; i++) {
+    bigPCrs->insertLocalValues(i,
+                               newPCols.view(newPRowPtr[i], newPRowPtr[i + 1] - newPRowPtr[i]),
+                               newPVals.view(newPRowPtr[i], newPRowPtr[i + 1] - newPRowPtr[i]));
+  }
+  bigPCrs->fillComplete(coarseDomainMap, fineRowMap);
 
-} //namespace MueLu
+  Teuchos::RCP<Matrix> bigP = Teuchos::rcp(new CrsMatrixWrap(bigPCrs));
+
+  Set(coarseLevel, "P", bigP);
+}
+
+}  // namespace MueLu
 
 #define MUELU_REPLICATEPFACTORY_SHORT
-#endif // MUELU_REPLICATEPFACTORY_DEF_HPP
+#endif  // MUELU_REPLICATEPFACTORY_DEF_HPP

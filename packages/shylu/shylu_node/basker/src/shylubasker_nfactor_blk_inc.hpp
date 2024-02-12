@@ -189,11 +189,11 @@ namespace BaskerNS
 	  ucnt = 0;
 
           #ifdef BASKER_DEBUG_NFACTOR_BLK
-          ASSERT(top == ws_size);
+          BASKER_ASSERT(top == ws_size);
           //ASSERT entry workspace is clean
-          for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
+          for(i = 0 ; i < ws_size; i++){BASKER_ASSERT(X[i] == 0);}
           //ASSERT int workspace is clean
-	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
+	  for(i = 0; i <  ws_size; i++){BASKER_ASSERT(ws[i] == 0 );}
           #endif
 
 	 
@@ -2236,11 +2236,11 @@ namespace BaskerNS
 	  ucnt = 0;
 
           #ifdef BASKER_DEBUG_NFACTOR_BLK
-          ASSERT(top == ws_size);
+          BASKER_ASSERT(top == ws_size);
           //ASSERT entry workspace is clean
-          for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
+          for(i = 0 ; i < ws_size; i++){BASKER_ASSERT(X[i] == 0);}
           //ASSERT int workspace is clean
-	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
+	  for(i = 0; i <  ws_size; i++){BASKER_ASSERT(ws[i] == 0 );}
           #endif
 
           //for each nnz in column
@@ -2604,7 +2604,7 @@ namespace BaskerNS
       { 
         #ifdef BASKER_DEBUG_LOCAL_REACH
         printf("stack_offset: %d head: %d \n", stack_offset , head);
-        ASSERT(head > -1);
+        BASKER_ASSERT(head > -1);
         #endif
 
 	j = stack[head];

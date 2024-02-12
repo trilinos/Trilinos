@@ -1,4 +1,5 @@
 #include "taylor_patch.hpp"
+#include "matrix.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -14,16 +15,12 @@ const std::vector<TaylorPatch::IntF> TaylorPatch::M_FACTORIALS = {
 void TaylorPatch::construct_patch(const std::vector<Point>& pts, const Point& pt0)
 {
   m_pt0 = pt0;
-  compute_taylor_derivs(pts);
+  compute_taylor_derivs_rank_revealing_qr(pts);
+
 }
 
 Point TaylorPatch::eval_point(const double x, const double y)
 {
-  // TODO: I think using TaylorPatch for mesh quality optimization
-  //       is numerically unstable.  The z coordinate slowly drifts
-  //       away from the value (even for a plane)
-  // return Point(x, y, m_pt0.z);
-
   Point ptUv = compute_uv(Point(x, y));
   double val = 0;
   int jidx   = 0;
@@ -145,7 +142,6 @@ double TaylorPatch::eval_coefficient_dv(const int degree, const int term, const 
 void TaylorPatch::compute_taylor_matrix(const std::vector<Point>& pts, utils::impl::Matrix<double>& a)
 {
   a.resize(pts.size(), m_numTerms);
-  // A.fill(0);
   for (unsigned int i = 0; i < pts.size(); ++i)
   {
     Point ptUv = compute_uv(pts[i]);
@@ -161,7 +157,8 @@ void TaylorPatch::compute_taylor_matrix(const std::vector<Point>& pts, utils::im
   }
 }
 
-void TaylorPatch::compute_taylor_derivs(const std::vector<Point>& pts)
+
+void TaylorPatch::compute_taylor_derivs_rank_revealing_qr(const std::vector<Point>& pts)
 {
   // TODO: make all dynamic memory objects into class members
   auto p     = compute_degree(pts.size());
@@ -169,49 +166,25 @@ void TaylorPatch::compute_taylor_derivs(const std::vector<Point>& pts)
   m_numTerms = p.second;
 
   // get coefficient matrix
-  utils::impl::Matrix<double> a(pts.size(), m_numTerms);
-  utils::impl::Matrix<double> work(a.extent0() + 1, a.extent1() + 1);
+  int m = pts.size();
+  int n = m_numTerms;
+  utils::impl::Matrix<double> a(m, n);
   compute_taylor_matrix(pts, a);
 
   // setup rhs
-  utils::impl::Matrix<double> rhs(std::max(static_cast<int>(pts.size()), m_numTerms), 1);
-  for (unsigned int i = 0; i < pts.size(); ++i)
-    rhs(i, 0) = pts[i].z - m_pt0.z;
-
-  // check for rank deficiency
-  // checks if the diagonal entries of L are zero, replaces the corresponding
-  // row in A with the identity, and zeros the rhs
-  utils::impl::Matrix<double> b(a);
-  std::vector<double> tau(std::max(a.extent0(), a.extent1()));
-  compute_qr_factorization(b, work, tau.data());
-  const double tol = 1e-13;
-  for (int i = 0; i < a.extent0(); ++i)
+  Matrix<double> rhs(std::max(m, n), 1);
+  for (int i = 0; i < m; ++i)
   {
-    if (std::abs(b(i, i)) < tol)
-    {
-      for (int j = 0; j < a.extent1(); ++j)
-        a(i, j) = 0;
-
-      a(i, i)   = 1;
-      rhs(i, 0) = 0;
-    }
+    rhs(i, 0) = pts[i].z - m_pt0.z;
   }
-  /*
-    // check
-    std::cout << "checking" << std::endl;
-    for (int i=0; i < A.extent0(); ++i)
-      for (int j=0; j < A.extent1(); ++j)
-        B(i, j) = A(i, j);
+  
+  std::vector<double> tau(std::max(a.extent0(), a.extent1()));
+  std::vector<int> jpvt(a.extent1(), 0);
+  Matrix<double> work(5*a.extent0(), a.extent1());
+  compute_rank_revealing_qr(a, work, tau.data(), jpvt.data());
 
-    compute_qr_factorization(B, work, tau.data());
-    for (int i=0; i < A.extent0(); ++i)
-      std::cout << "i = " << i << ", pivot = " << B(i, i) << std::endl;
-
-    std::cout << "A = " << A << std::endl;
-  */
-
-  // solve least squares
-  solve_least_squares(a, rhs, work);
+  int numSingularVals = compute_number_singular_values(a, 1e-13);
+  solve_qrp_factorization(a, work, tau.data(), jpvt.data(), rhs.data(), numSingularVals);
 
   // save results
   m_fvals.resize(m_numTerms);
@@ -220,6 +193,42 @@ void TaylorPatch::compute_taylor_derivs(const std::vector<Point>& pts)
     m_fvals[i] = rhs(i, 0);
   }
 }
+
+int TaylorPatch::compute_number_singular_values(const Matrix<double>& a, double tol)
+{
+  // a has a QR factorization written into it (in column-major order).  We
+  // want to look at the lower-right triangle of the R factor and find the
+  // number of rows such that this small matrix has a maximum singular value
+  // less than tol.  In practice, computing the maximum singular value is
+  // hard, so we use the fact that the matrix 2 norm is bounded by the
+  // Frobenious norm, which is easy to compute.  This bound is very
+  // accurate when tol is small.
+  
+  int m = a.extent0();
+  int n = a.extent1();
+  const double* data = a.data();
+  double sum = 0.0;
+  int numSingularValsBelowTol = -1;
+  for (int i=std::min(m, n)-1; i >= 0; --i)
+  {
+    for (int j=i; j < n; ++j)
+    {
+      sum += data[i + j * m] * data[i + j * m];
+    }
+
+    if (std::sqrt(sum) > tol)
+    {
+      numSingularValsBelowTol = std::min(m, n) - 1 - i;
+      break;
+    }
+  }
+
+  if (numSingularValsBelowTol == -1)
+    numSingularValsBelowTol = std::min(m, n);
+
+  return std::min(m, n) - numSingularValsBelowTol;
+}
+
 
 TaylorPatch::IntF TaylorPatch::get_factorial(const unsigned int n)
 {

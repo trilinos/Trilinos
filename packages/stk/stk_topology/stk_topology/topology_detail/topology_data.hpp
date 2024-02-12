@@ -383,6 +383,63 @@ struct topology_data<topology::SHELL_LINE_3>
 };
 
 //***************************************************************************
+// topology::SHELL_SIDE_BEAM -- topology::FACE_RANK
+// only defined on 3d problems
+// 2 or 3 nodes with a single side
+//
+//  o------o------o
+//  0      2      1
+//
+//       Edge 0: (0,1,2)
+//***************************************************************************
+
+template <>
+struct topology_data<topology::SHELL_SIDE_BEAM_2>
+  : public topology_data<topology::BEAM_2>
+{
+  static constexpr topology::topology_t value = topology::SHELL_SIDE_BEAM_2;
+  static constexpr topology::topology_t base = topology::SHELL_SIDE_BEAM_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2};
+
+  static constexpr topology::rank_t rank = topology::FACE_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr uint8_t dimension = 2;
+  static constexpr uint8_t num_edges = 1;
+
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       false,   // 2d
+                                                       true};   // 3d
+
+  static constexpr uint8_t edge_node_ordinals_offsets[] = {0, 2};
+  static constexpr uint8_t edge_node_ordinals_vector[] = {0, 1};
+};
+
+template <>
+struct topology_data<topology::SHELL_SIDE_BEAM_3>
+  : public topology_data<topology::BEAM_3>
+{
+  static constexpr topology::topology_t value = topology::SHELL_SIDE_BEAM_3;
+  static constexpr topology::topology_t base = topology::SHELL_SIDE_BEAM_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3};
+
+  static constexpr topology::rank_t rank = topology::FACE_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr uint8_t dimension = 2;
+  static constexpr uint8_t num_edges = 1;
+
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       false,   // 2d
+                                                       true};   // 3d
+
+  static constexpr uint8_t edge_node_ordinals_offsets[] = {0, 3};
+  static constexpr uint8_t edge_node_ordinals_vector[] = {0, 1, 2};
+};
+
+//***************************************************************************
 // topology::SPRING -- topology::ELEM_RANK
 // 2 or 3 nodes
 //
@@ -708,6 +765,9 @@ struct topology_data<topology::SHELL_TRI_3>
   static constexpr topology::topology_t base = topology::SHELL_TRI_3;
   static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_3,
                                                                   topology::TRI_3};
+  static constexpr topology::topology_t shell_side_topology_vector[] = {topology::SHELL_SIDE_BEAM_2,
+                                                                        topology::SHELL_SIDE_BEAM_2,
+                                                                        topology::SHELL_SIDE_BEAM_2};
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
@@ -729,6 +789,9 @@ struct topology_data<topology::SHELL_TRI_4>
   static constexpr topology::topology_t base = topology::SHELL_TRI_3;
   static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_4,
                                                                   topology::TRI_4};
+  static constexpr topology::topology_t shell_side_topology_vector[] = {topology::SHELL_SIDE_BEAM_2,
+                                                                        topology::SHELL_SIDE_BEAM_2,
+                                                                        topology::SHELL_SIDE_BEAM_2};
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
@@ -750,6 +813,9 @@ struct topology_data<topology::SHELL_TRI_6>
   static constexpr topology::topology_t base = topology::SHELL_TRI_3;
   static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
                                                                   topology::TRI_6};
+  static constexpr topology::topology_t shell_side_topology_vector[] = {topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3};
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
@@ -757,7 +823,6 @@ struct topology_data<topology::SHELL_TRI_6>
   static constexpr bool has_homogeneous_faces = true;
   static constexpr uint8_t dimension = 3;
   static constexpr uint8_t num_faces = 2;
-
 
   static constexpr uint8_t face_node_ordinals_offsets[] = {0, 6, 12};
   static constexpr uint8_t face_node_ordinals_vector[] = {0, 1, 2,  3, 4, 5,
@@ -1020,6 +1085,10 @@ struct topology_data<topology::SHELL_QUAD_4>
   static constexpr topology::topology_t base = topology::SHELL_QUAD_4;
   static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_4,
                                                                   topology::QUAD_4};
+  static constexpr topology::topology_t shell_side_topology_vector[] = {topology::SHELL_SIDE_BEAM_2,
+                                                                        topology::SHELL_SIDE_BEAM_2,
+                                                                        topology::SHELL_SIDE_BEAM_2,
+                                                                        topology::SHELL_SIDE_BEAM_2};
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
@@ -1041,7 +1110,10 @@ struct topology_data<topology::SHELL_QUAD_8>
   static constexpr topology::topology_t base = topology::SHELL_QUAD_4;
   static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_8,
                                                                   topology::QUAD_8};
-
+  static constexpr topology::topology_t shell_side_topology_vector[] = {topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3};
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;
@@ -1062,7 +1134,11 @@ struct topology_data<topology::SHELL_QUAD_9>
   static constexpr topology::topology_t base = topology::SHELL_QUAD_4;
   static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_9,
                                                                   topology::QUAD_9};
-
+  static constexpr topology::topology_t shell_side_topology_vector[] = {topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3,
+                                                                        topology::SHELL_SIDE_BEAM_3};
+      
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
   static constexpr bool is_shell = true;

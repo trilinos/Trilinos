@@ -1,5 +1,6 @@
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+
 IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -13,9 +14,10 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_LOBPCG_ComplexCopyFiles
     SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
-    SOURCE_FILES mhd1280b.cua
+    SOURCE_FILES mhd1280b.cua mhd1280b.mtx
     EXEDEPS Tpetra_LOBPCG_Complex_test
     )
+
 
   # FIXME (mfh 22 Oct 2015) I don't think cxx_main_doublefloat.cpp
   # actually ever compiled, as long as I've been here.

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -17,14 +17,14 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
              int               nedges,        /* number of edges in graph */
              int               using_vwgts,   /* are vertex weights being used? */
              int               using_ewgts,   /* are edge weights being used? */
-             double *          vwsqrt,        /* sqrt of vertex weights (length nvtxs+1) */
+             double           *vwsqrt,        /* sqrt of vertex weights (length nvtxs+1) */
              int               igeom,         /* geometric dimension for inertial method */
-             float **          coords,        /* coordinates for inertial method */
-             int *             assignment,    /* set number of each vtx (length n) */
-             double *          goal,          /* desired set sizes */
+             float           **coords,        /* coordinates for inertial method */
+             int              *assignment,    /* set number of each vtx (length n) */
+             double           *goal,          /* desired set sizes */
              int               architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
              int               ndims_tot,     /* number of cuts to make in total */
-             int *             mesh_dims,     /* shape of mesh */
+             int              *mesh_dims,     /* shape of mesh */
              int               global_method, /* global partitioning algorithm */
              int               local_method,  /* local partitioning algorithm */
              int               rqi_flag,      /* should I use multilevel eigensolver? */
@@ -38,18 +38,18 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
   extern int        DEBUG_TRACE;                    /* trace the execution of the code */
   extern int        MATCH_TYPE;                     /* type of matching to use when coarsening */
   struct vtx_data **subgraph    = NULL;             /* data structure for subgraph */
-  struct set_info * set_info    = NULL;             /* information about each processor subset */
+  struct set_info  *set_info    = NULL;             /* information about each processor subset */
   struct set_info **set_buckets = NULL;             /* buckets for sorting processor sets */
-  struct set_info * set         = NULL;             /* current processor set information */
+  struct set_info  *set         = NULL;             /* current processor set information */
   int               hops_special[MAXSETS][MAXSETS]; /* hop mtx for nonstandard cases */
-  float *           term_wgts;                      /* net pull of terminal propagation */
-  float *           save_term_wgts;                 /* saved location of term_wgts */
-  float *           all_term_wgts[MAXSETS];         /* net pull on all sets */
-  int *             loc2glob;                       /* mapping from subgraph to graph numbering */
-  int *             glob2loc;                       /* mapping from graph to subgraph numbering */
-  int *             setlists;                       /* space for linked lists of vertices in sets */
-  int *             list_ptrs;                      /* headers of each linked list */
-  int *             degree;                         /* degrees of graph vertices from a subgraph */
+  float            *term_wgts;                      /* net pull of terminal propagation */
+  float            *save_term_wgts;                 /* saved location of term_wgts */
+  float            *all_term_wgts[MAXSETS];         /* net pull on all sets */
+  int              *loc2glob;                       /* mapping from subgraph to graph numbering */
+  int              *glob2loc;                       /* mapping from graph to subgraph numbering */
+  int              *setlists;                       /* space for linked lists of vertices in sets */
+  int              *list_ptrs;                      /* headers of each linked list */
+  int              *degree;                         /* degrees of graph vertices from a subgraph */
   int               subsets[MAXSETS];               /* subsets being created at current step */
   int               setsize[MAXSETS];               /* sizes of sets created by division */
   double            merged_goal[MAXSETS];           /* sizes of sets at this partition level */
@@ -62,9 +62,9 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
   int               nsets_tot;                      /* total sets to divide subgraph into */
   int               subnvtxs;                       /* number of vertices in subgraph */
   int               subnedges;                      /* number of edgess in subgraph */
-  double *          subvwsqrt = NULL;               /* vwsqrt array for subgraph */
-  int *             subassign = NULL;               /* set assignments for subgraph */
-  float **          subcoords = NULL;               /* coordinates for subgraph */
+  double           *subvwsqrt = NULL;               /* vwsqrt array for subgraph */
+  int              *subassign = NULL;               /* set assignments for subgraph */
+  float           **subcoords = NULL;               /* coordinates for subgraph */
   int               striping;                       /* partition with parallel cuts? */
   int               pass;                           /* counts passes through loop */
   int               max_proc_size;                  /* size of largest processor set */
@@ -73,12 +73,6 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
   int               nsets;                          /* typical number of sets at each cut */
   int               done_dir[3];                    /* mesh directions already cut */
   int               i;                              /* loop counter */
-
-  int  make_maps(), divide_procs();
-  void merge_goals();
-  void chaco_divide(), make_subgraph(), make_term_props();
-  void make_subvector(), make_subgeom(), remake_graph();
-  void merge_assignments(), make_setlists();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering balance>\n");
@@ -313,10 +307,10 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
     }
 
     /* Perform a single division step. */
-    chaco_divide(subgraph, subnvtxs, subnedges, using_vwgts, using_ewgts, subvwsqrt, igeom, subcoords,
-           subassign, merged_goal, architecture, all_term_wgts, global_method, local_method,
-           rqi_flag, vmax, ndims_real, eigtol, (hops_flag ? hops_special : hops), nsets_real,
-           striping);
+    chaco_divide(subgraph, subnvtxs, subnedges, using_vwgts, using_ewgts, subvwsqrt, igeom,
+                 subcoords, subassign, merged_goal, architecture, all_term_wgts, global_method,
+                 local_method, rqi_flag, vmax, ndims_real, eigtol,
+                 (hops_flag ? hops_special : hops), nsets_real, striping);
 
     /* Undo the subgraph construction. */
     if (pass != 1 && graph != NULL) {

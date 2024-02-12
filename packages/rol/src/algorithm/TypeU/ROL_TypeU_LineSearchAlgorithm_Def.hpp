@@ -170,59 +170,59 @@ void LineSearchAlgorithm<Real>::run( Vector<Real>       &x,
 
 template<typename Real>
 void LineSearchAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if (verbosity_ > 1) {
-    hist << std::string(109,'-') << std::endl;
-    hist << descentName_;
-    hist << " status output definitions" << std::endl << std::endl;
-    hist << "  iter     - Number of iterates (steps taken)" << std::endl;
-    hist << "  value    - Objective function value" << std::endl;
-    hist << "  gnorm    - Norm of the gradient" << std::endl;
-    hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  alpha    - Line search step length" << std::endl;
-    hist << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
-    hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
-    hist << "  ls_#fval - Number of the times the objective function was evaluated during the line search" << std::endl;
-    hist << "  ls_#grad - Number of the times the gradient was evaluated during the line search" << std::endl;
+    os << std::string(109,'-') << std::endl;
+    os << descentName_;
+    os << " status output definitions" << std::endl << std::endl;
+    os << "  iter     - Number of iterates (steps taken)" << std::endl;
+    os << "  value    - Objective function value" << std::endl;
+    os << "  gnorm    - Norm of the gradient" << std::endl;
+    os << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  alpha    - Line search step length" << std::endl;
+    os << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
+    os << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    os << "  ls_#fval - Number of the times the objective function was evaluated during the line search" << std::endl;
+    os << "  ls_#grad - Number of the times the gradient was evaluated during the line search" << std::endl;
     if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
-      hist << "  iterCG   - Number of Krylov iterations used to compute search direction" << std::endl;
-      hist << "  flagCG   - Krylov solver flag" << std::endl;
+      os << "  iterCG   - Number of Krylov iterations used to compute search direction" << std::endl;
+      os << "  flagCG   - Krylov solver flag" << std::endl;
     }
-    hist << std::string(109,'-') << std::endl;
+    os << std::string(109,'-') << std::endl;
   }
 
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "alpha";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "ls_#fval";
-  hist << std::setw(10) << std::left << "ls_#grad";
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "alpha";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "ls_#fval";
+  os << std::setw(10) << std::left << "ls_#grad";
   if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
-    hist << std::setw(10) << std::left << "iterCG";
-    hist << std::setw(10) << std::left << "flagCG";
+    os << std::setw(10) << std::left << "iterCG";
+    os << std::setw(10) << std::left << "flagCG";
   }
-  hist << std::endl;
-  os << hist.str();
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void LineSearchAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << desc_->printName();
-  hist << std::endl;
-  hist << "Line Search: " << lineSearchName_;
-  hist << " satisfying " << ECurvatureConditionUToString(econd_) << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << desc_->printName();
+  os << std::endl;
+  os << "Line Search: " << lineSearchName_;
+  os << " satisfying " << ECurvatureConditionUToString(econd_) << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void LineSearchAlgorithm<Real>::writeOutput( std::ostream& os, bool print_header) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) {
     writeName(os);
   }
@@ -230,40 +230,40 @@ void LineSearchAlgorithm<Real>::writeOutput( std::ostream& os, bool print_header
     writeHeader(os);
   }
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << "---";
+    os << std::setw(10) << std::left << "---";
     if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
-      hist << std::setw(10) << std::left << "---";
-      hist << std::setw(10) << std::left << "---";
+      os << std::setw(10) << std::left << "---";
+      os << std::setw(10) << std::left << "---";
     }
-    hist << std::endl;
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << ls_nfval_;
-    hist << std::setw(10) << std::left << ls_ngrad_;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << ls_nfval_;
+    os << std::setw(10) << std::left << ls_ngrad_;
     if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
-      hist << std::setw(10) << std::left << SPiter_;
-      hist << std::setw(10) << std::left << SPflag_;
+      os << std::setw(10) << std::left << SPiter_;
+      os << std::setw(10) << std::left << SPflag_;
     }
-    hist << std::endl;
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 } // namespace TypeU
 } // namespace ROL

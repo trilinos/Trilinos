@@ -63,309 +63,314 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InverseApproximationFactory, InverseDiagonalConstructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InverseApproximationFactory, InverseDiagonalConstructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
+
   {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
-    out << "version: " << MueLu::Version() << std::endl;
+    const int n            = 20;
+    Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(n, lib);
 
-    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
 
-    {
-      const int n = 20;
-      Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build1DPoisson(n, lib);
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("diagonal")));
 
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
 
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("diagonal")));
+    // generate Schur complement operator
+    invapproxFact->Build(level);
 
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n / comm->getSize()) + int(n / comm->getSize() - 1));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n / comm->getSize()) + int(n / comm->getSize() - 1));
 
-      // generate Schur complement operator
-      invapproxFact->Build(level);
+    const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+    Ainv->getLocalDiagCopy(*AinvDiagonal);
+    Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
+    bool bCheck                              = true;
+    for (int i = 0; i < int(n / comm->getSize()); i++)
+      if (AinvData[i] != Teuchos::as<Scalar>(0.5)) bCheck = false;
+    TEST_EQUALITY(bCheck, true);
+  }
 
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
-
-      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
-      Ainv->getLocalDiagCopy(*AinvDiagonal);
-      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
-      bool bCheck = true;
-      for(int i=0; i<int(n/comm->getSize()); i++) if(AinvData[i] != Teuchos::as<Scalar>(0.5)) bCheck = false;
-      TEST_EQUALITY(bCheck, true);
-    }
-
-    {
-      const int n = 42;
-      Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build2DPoisson(n, n, lib);
-
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("diagonal")));
-
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
-
-      // generate Schur complement operator
-      invapproxFact->Build(level);
-
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
-
-      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
-      Ainv->getLocalDiagCopy(*AinvDiagonal);
-      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
-      bool bCheck = true;
-      for(int i=0; i<int(n*n/comm->getSize()); i++) if(AinvData[i] != Teuchos::as<Scalar>(0.25)) bCheck = false;
-      TEST_EQUALITY(bCheck, true);
-    }
-
-  } //InverseDiagonalConstructor
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InverseApproximationFactory, InverseLumpingConstructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
-    out << "version: " << MueLu::Version() << std::endl;
+    const int n            = 42;
+    Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(n, n, lib);
 
-    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
 
-    {
-      const int n = 20;
-      Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build1DPoisson(n, lib);
-      A->scale(0.5);
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("diagonal")));
 
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
 
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("lumping")));
+    // generate Schur complement operator
+    invapproxFact->Build(level);
 
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()) + int(n * n / comm->getSize() - 1));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()) + int(n * n / comm->getSize() - 1));
 
-      // generate Schur complement operator
-      invapproxFact->Build(level);
+    const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+    Ainv->getLocalDiagCopy(*AinvDiagonal);
+    Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
+    bool bCheck                              = true;
+    for (int i = 0; i < int(n * n / comm->getSize()); i++)
+      if (AinvData[i] != Teuchos::as<Scalar>(0.25)) bCheck = false;
+    TEST_EQUALITY(bCheck, true);
+  }
 
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
+}  // InverseDiagonalConstructor
 
-      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
-      Ainv->getLocalDiagCopy(*AinvDiagonal);
-      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
-      bool bCheck = false;
-      for(int i=0; i<int(n/comm->getSize()); i++)
-        if(std::abs(AinvData[i] - Teuchos::as<Scalar>(0.66666666667)) < std::abs(Teuchos::as<Scalar>(1e-8)) ||
-           std::abs(AinvData[i] - Teuchos::as<Scalar>(0.5)) < std::abs(Teuchos::as<Scalar>(1e-8)))
-          bCheck = true;
-      TEST_EQUALITY(bCheck, true);
-    }
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InverseApproximationFactory, InverseLumpingConstructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+  out << "version: " << MueLu::Version() << std::endl;
 
-    {
-      const int n = 42;
-      Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build2DPoisson(n, n, lib);
+  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
 
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("lumping")));
-
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
-
-      // generate Schur complement operator
-      invapproxFact->Build(level);
-
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
-
-      const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
-      Ainv->getLocalDiagCopy(*AinvDiagonal);
-      Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
-      bool bCheck = false;
-      for(int i=0; i<int(n*n/comm->getSize()); i++)
-        if(std::abs(AinvData[i] - Teuchos::as<Scalar>(0.166667)) < std::abs(Teuchos::as<Scalar>(1e-6)) ||
-           std::abs(AinvData[i] - Teuchos::as<Scalar>(0.142857)) < std::abs(Teuchos::as<Scalar>(1e-6)))
-          bCheck = true;
-      TEST_EQUALITY(bCheck, true);
-    }
-
-  } //InverseLumpingConstructor
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InverseApproximationFactory, InverseSpaiConstructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
-    out << "version: " << MueLu::Version() << std::endl;
+    const int n            = 20;
+    Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(n, lib);
+    A->scale(0.5);
 
-    using TST = Teuchos::ScalarTraits<SC>;
-    using magnitude_type = typename TST::magnitudeType;
-    using TMT = Teuchos::ScalarTraits<magnitude_type>;
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
 
-    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("lumping")));
 
-    {
-      const int n = 20;
-      Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build1DPoisson(n, lib);
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
 
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
+    // generate Schur complement operator
+    invapproxFact->Build(level);
 
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n / comm->getSize()) + int(n / comm->getSize() - 1));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n / comm->getSize()) + int(n / comm->getSize() - 1));
 
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
+    const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+    Ainv->getLocalDiagCopy(*AinvDiagonal);
+    Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
+    bool bCheck                              = false;
+    for (int i = 0; i < int(n / comm->getSize()); i++)
+      if (std::abs(AinvData[i] - Teuchos::as<Scalar>(0.66666666667)) < std::abs(Teuchos::as<Scalar>(1e-8)) ||
+          std::abs(AinvData[i] - Teuchos::as<Scalar>(0.5)) < std::abs(Teuchos::as<Scalar>(1e-8)))
+        bCheck = true;
+    TEST_EQUALITY(bCheck, true);
+  }
 
-      // generate Schur complement operator
-      invapproxFact->Build(level);
+  {
+    const int n            = 42;
+    Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(n, n, lib);
 
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
-      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 3.037251711528645, 1e2*TMT::eps());
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("lumping")));
+
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
+
+    // generate Schur complement operator
+    invapproxFact->Build(level);
+
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()) + int(n * n / comm->getSize() - 1));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()) + int(n * n / comm->getSize() - 1));
+
+    const RCP<Vector> AinvDiagonal = VectorFactory::Build(Ainv->getRangeMap(), true);
+    Ainv->getLocalDiagCopy(*AinvDiagonal);
+    Teuchos::ArrayRCP<const Scalar> AinvData = AinvDiagonal->getData(0);
+    bool bCheck                              = false;
+    for (int i = 0; i < int(n * n / comm->getSize()); i++)
+      if (std::abs(AinvData[i] - Teuchos::as<Scalar>(0.166667)) < std::abs(Teuchos::as<Scalar>(1e-6)) ||
+          std::abs(AinvData[i] - Teuchos::as<Scalar>(0.142857)) < std::abs(Teuchos::as<Scalar>(1e-6)))
+        bCheck = true;
+    TEST_EQUALITY(bCheck, true);
+  }
+
+}  // InverseLumpingConstructor
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InverseApproximationFactory, InverseSpaiConstructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  using TST            = Teuchos::ScalarTraits<SC>;
+  using magnitude_type = typename TST::magnitudeType;
+  using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+
+  RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
+
+  {
+    const int n            = 20;
+    Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(n, lib);
+
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
+
+    // generate Schur complement operator
+    invapproxFact->Build(level);
+
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n / comm->getSize()) + int(n / comm->getSize() - 1));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n / comm->getSize()) + int(n / comm->getSize() - 1));
+    TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 3.037251711528645, 1e2 * TMT::eps());
+  }
+
+  {
+    const int n            = 42;
+    Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(n, n, lib);
+
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
+
+    // generate Schur complement operator
+    invapproxFact->Build(level);
+
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()) + int(n * n / comm->getSize() - 1));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()));
+    TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n * n / comm->getSize()) + int(n * n / comm->getSize() - 1));
+    TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 12.41994595675205, 1e3 * TMT::eps());
+  }
+
+  // test with a highly nonsymmetric matrix
+  {
+    using STS = Teuchos::ScalarTraits<SC>;
+
+    // Don't test for complex - matrix reader won't work
+    if (STS::isComplex) {
+      success = true;
+      return;
     }
+    RCP<Matrix> A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("TestMatrices/nonsym.mm", lib, comm);
 
-    {
-      const int n = 42;
-      Teuchos::RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build2DPoisson(n, n, lib);
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
 
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
 
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
 
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
+    // generate Schur complement operator
+    invapproxFact->Build(level);
 
-      // generate Schur complement operator
-      invapproxFact->Build(level);
-
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getRangeMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getRangeMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
-      TEST_EQUALITY(Ainv->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
-      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 12.41994595675205, 1e3*TMT::eps());
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 0.1235706050986417, 1e2 * TMT::eps());
+    // check values of first row only on root
+    if (comm->getRank() == 0) {
+      ArrayView<const LocalOrdinal> indices;
+      ArrayView<const Scalar> values;
+      Ainv->getLocalRowView(0, indices, values);
+      TEST_FLOATING_EQUALITY(values[0], Teuchos::as<Scalar>(1.0000000000000002e-01), 1e2 * TMT::eps());
+      TEST_FLOATING_EQUALITY(values[1], Teuchos::as<Scalar>(-1.6666666666666673e-02), 1e2 * TMT::eps());
+      TEST_FLOATING_EQUALITY(values[2], Teuchos::as<Scalar>(4.6666666666666688e-03), 1e2 * TMT::eps());
     }
+  }
 
-    // test with a highly nonsymmetric matrix
-    {
-      using STS = Teuchos::ScalarTraits<SC>;
+  // Test pre and post filtering of approximate inverse
+  {
+    using STS = Teuchos::ScalarTraits<SC>;
 
-      // Don't test for complex - matrix reader won't work
-      if (STS::isComplex) {success=true; return;}
-      RCP<Matrix> A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("TestMatrices/nonsym.mm", lib, comm);
-
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
-
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
-
-      // generate Schur complement operator
-      invapproxFact->Build(level);
-
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 0.1235706050986417, 1e2*TMT::eps());
-      // check values of first row only on root
-      if(comm->getRank() == 0) {
-        ArrayView<const LocalOrdinal> indices;
-        ArrayView<const Scalar> values;
-        Ainv->getLocalRowView(0, indices, values);
-        TEST_FLOATING_EQUALITY(values[0], Teuchos::as<Scalar>(1.0000000000000002e-01), 1e2*TMT::eps());
-        TEST_FLOATING_EQUALITY(values[1], Teuchos::as<Scalar>(-1.6666666666666673e-02), 1e2*TMT::eps());
-        TEST_FLOATING_EQUALITY(values[2], Teuchos::as<Scalar>(4.6666666666666688e-03), 1e2*TMT::eps());
-      }
+    // Don't test for complex - matrix reader won't work
+    if (STS::isComplex) {
+      success = true;
+      return;
     }
+    RCP<Matrix> A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("TestMatrices/beam.mm", lib, comm);
 
-    // Test pre and post filtering of approximate inverse
-    {
-      using STS = Teuchos::ScalarTraits<SC>;
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
 
-      // Don't test for complex - matrix reader won't work
-      if (STS::isComplex) {success=true; return;}
-      RCP<Matrix> A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("TestMatrices/beam.mm", lib, comm);
+    RCP<InverseApproximationFactory> invapproxFact = rcp(new InverseApproximationFactory());
+    invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
+    invapproxFact->SetParameter("inverse: drop tolerance", Teuchos::ParameterEntry(Scalar(1e-8)));
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
 
-      Level level;
-      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
+    // request InverseApproximation operator
+    level.Request("Ainv", invapproxFact.get());
 
-      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
-      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
-      invapproxFact->SetParameter("inverse: drop tolerance", Teuchos::ParameterEntry(Scalar(1e-8)));
-      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+    // generate Schur complement operator
+    invapproxFact->Build(level);
 
-      // request InverseApproximation operator
-      level.Request("Ainv", invapproxFact.get());
+    RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+    TEST_EQUALITY(Ainv.is_null(), false);
+    TEST_EQUALITY(Ainv->getGlobalNumEntries(), 115760);
+    // 8.31688788510637e+06
+    TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.31688788510637e+06, 1e5 * TMT::eps());
+  }
 
-      // generate Schur complement operator
-      invapproxFact->Build(level);
+}  // InverseSpaiConstructor
 
-      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
-      TEST_EQUALITY(Ainv.is_null(), false);
-      TEST_EQUALITY(Ainv->getGlobalNumEntries(), 115760);
-      // 8.31688788510637e+06
-      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.31688788510637e+06, 1e5*TMT::eps());
-    }
-
-  } //InverseSpaiConstructor
-
-#  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InverseApproximationFactory, InverseDiagonalConstructor, SC, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InverseApproximationFactory, InverseLumpingConstructor, SC, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InverseApproximationFactory, InverseSpaiConstructor, SC, LO, GO, Node) \
+#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                                         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InverseApproximationFactory, InverseDiagonalConstructor, SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InverseApproximationFactory, InverseLumpingConstructor, SC, LO, GO, Node)  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InverseApproximationFactory, InverseSpaiConstructor, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
-}
+}  // namespace MueLuTests

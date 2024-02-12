@@ -101,6 +101,9 @@ namespace GMLS_LinearAlgebra {
       bool do_print = false;
       if (do_print) {
         Kokkos::single(Kokkos::PerTeam(member), [&] () {
+#if KOKKOS_VERSION >= 40200
+          using Kokkos::printf;
+#endif
           //print a
           printf("a=zeros(%lu,%lu);\n", aa.extent(0), aa.extent(1));
               for (size_t i=0; i<aa.extent(0); ++i) {
@@ -132,6 +135,9 @@ namespace GMLS_LinearAlgebra {
 
       if (do_print) {
         Kokkos::single(Kokkos::PerTeam(member), [&] () {
+#if KOKKOS_VERSION >= 40200
+        using Kokkos::printf;
+#endif
         printf("matrix_rank: %d\n", matrix_rank);
         //print u
         printf("u=zeros(%lu,%lu);\n", uu.extent(0), uu.extent(1));

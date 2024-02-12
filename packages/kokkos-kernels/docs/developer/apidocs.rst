@@ -11,4 +11,5 @@ The source documentation is extracted from the C++ files using Doxygen.
    apidocs/blas3
    apidocs/sparse
    apidocs/batched_dense
+   apidocs/batched_dense_host
    apidocs/batched_sparse

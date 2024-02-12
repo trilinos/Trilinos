@@ -14,10 +14,9 @@
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
-#include "Tempus_StepperStaggeredForwardSensitivity.hpp" // For SensitivityStepMode
+#include "Tempus_StepperStaggeredForwardSensitivity.hpp"  // For SensitivityStepMode
 
 namespace Tempus {
-
 
 /** \brief Time integrator suitable for pseudotransient forward sensitivity
  * analysis */
@@ -54,12 +53,10 @@ namespace Tempus {
  * history, but is stored as a Thyra product vector which requires knowledge
  * of the internal implementation.
  */
-template<class Scalar>
+template <class Scalar>
 class IntegratorPseudoTransientForwardSensitivity
-  : virtual public Tempus::Integrator<Scalar>
-{
-public:
-
+  : virtual public Tempus::Integrator<Scalar> {
+ public:
   /** \brief Constructor with ParameterList and model, and will be fully
    * initialized. */
   /*!
@@ -95,14 +92,15 @@ public:
    * </ul>
    */
   IntegratorPseudoTransientForwardSensitivity(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >&sens_model,
-    const Teuchos::RCP<IntegratorBasic<Scalar> > &fwd_integrator,
-    const Teuchos::RCP<IntegratorBasic<Scalar> > &sens_integrator,
-    const bool reuse_solver, const bool force_W_update);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& model,
+      const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>>& sens_model,
+      const Teuchos::RCP<IntegratorBasic<Scalar>>& fwd_integrator,
+      const Teuchos::RCP<IntegratorBasic<Scalar>>& sens_integrator,
+      const bool reuse_solver, const bool force_W_update);
 
   /// Destructor
-  /** \brief Constructor that requires a subsequent setStepper, and initialize calls. */
+  /** \brief Constructor that requires a subsequent setStepper, and initialize
+   * calls. */
   IntegratorPseudoTransientForwardSensitivity();
 
   /// Destructor
@@ -124,69 +122,78 @@ public:
   /// Set Status
   virtual void setStatus(const Status st) override;
   /// Get the Stepper
-  virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
-  Teuchos::RCP<Stepper<Scalar> > getStateStepper() const;
-  Teuchos::RCP<Stepper<Scalar> > getSensStepper() const;
+  virtual Teuchos::RCP<Stepper<Scalar>> getStepper() const override;
+  Teuchos::RCP<Stepper<Scalar>> getStateStepper() const;
+  Teuchos::RCP<Stepper<Scalar>> getSensStepper() const;
   /// Get the SolutionHistory
-  virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
-  Teuchos::RCP<const SolutionHistory<Scalar> > getStateSolutionHistory() const;
-  Teuchos::RCP<const SolutionHistory<Scalar> > getSensSolutionHistory() const;
+  virtual Teuchos::RCP<const SolutionHistory<Scalar>> getSolutionHistory()
+      const override;
+  Teuchos::RCP<const SolutionHistory<Scalar>> getStateSolutionHistory() const;
+  Teuchos::RCP<const SolutionHistory<Scalar>> getSensSolutionHistory() const;
   /// Get the SolutionHistory
-  virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override;
-   /// Get the TimeStepControl
-  virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
-  virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
-  Teuchos::RCP<TimeStepControl<Scalar> > getStateNonConstTimeStepControl();
-  Teuchos::RCP<TimeStepControl<Scalar> > getSensNonConstTimeStepControl();
+  virtual Teuchos::RCP<SolutionHistory<Scalar>> getNonConstSolutionHistory()
+      override;
+  /// Get the TimeStepControl
+  virtual Teuchos::RCP<const TimeStepControl<Scalar>> getTimeStepControl()
+      const override;
+  virtual Teuchos::RCP<TimeStepControl<Scalar>> getNonConstTimeStepControl()
+      override;
+  Teuchos::RCP<TimeStepControl<Scalar>> getStateNonConstTimeStepControl();
+  Teuchos::RCP<TimeStepControl<Scalar>> getSensNonConstTimeStepControl();
   /// Get the Observer
-  virtual Teuchos::RCP<IntegratorObserver<Scalar> > getObserver();
+  virtual Teuchos::RCP<IntegratorObserver<Scalar>> getObserver();
   /// Set the Observer
   virtual void setObserver(
-    Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<IntegratorObserver<Scalar>> obs = Teuchos::null);
   virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
-  {return state_integrator_->getIntegratorTimer();}
+  {
+    return state_integrator_->getIntegratorTimer();
+  }
   virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
-  {return state_integrator_->getStepperTimer();}
+  {
+    return state_integrator_->getStepperTimer();
+  }
 
   //@}
 
   /// Set the initial state from Thyra::VectorBase(s)
   virtual void initializeSolutionHistory(
-    Scalar t0,
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null,
-    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxDp0 = Teuchos::null,
-    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotDp0 = Teuchos::null,
-    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotdotDp0 = Teuchos::null);
+      Scalar t0, Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0,
+      Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdot0      = Teuchos::null,
+      Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdotdot0   = Teuchos::null,
+      Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> DxDp0 = Teuchos::null,
+      Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> DxdotDp0 =
+          Teuchos::null,
+      Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> DxdotdotDp0 =
+          Teuchos::null);
 
   /// Get current the solution, x
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxDp() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar>> getX() const;
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxDp() const;
   /// Get current the time derivative of the solution, xdot
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDp() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar>> getXDot() const;
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDXDotDp() const;
   /// Get current the second time derivative of the solution, xdotdot
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar>> getXDotDot() const;
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDXDotDotDp()
+      const;
 
   /// Return response function g
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getG() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar>> getG() const;
   /// Return forward sensitivity stored in Jacobian format
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDgDp() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    std::string description() const override;
-    void describe(Teuchos::FancyOStream        & out,
-                  const Teuchos::EVerbosityLevel verbLevel) const override;
+  std::string description() const override;
+  void describe(Teuchos::FancyOStream& out,
+                const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
   //! What mode the current time integration step is in
   SensitivityStepMode getStepMode() const;
 
-protected:
-
+ protected:
   void buildSolutionHistory();
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
@@ -211,13 +218,13 @@ protected:
  *
  * @return
  */
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
+template <class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>>
 createIntegratorPseudoTransientForwardSensitivity(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& sens_solve_model);
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& sens_residual_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& sens_solve_model);
 
 /// Nonmember constructor
 /**
@@ -230,15 +237,15 @@ createIntegratorPseudoTransientForwardSensitivity(
  *
  * @return
  */
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
+template <class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>>
 createIntegratorPseudoTransientForwardSensitivity(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& sens_residual_model)
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& sens_residual_model)
 {
   return createIntegratorPseudoTransientForwardSensitivity(
-    pList, model, sens_residual_model, sens_residual_model);
+      pList, model, sens_residual_model, sens_residual_model);
 }
 
 /// Nonmember constructor
@@ -251,14 +258,14 @@ createIntegratorPseudoTransientForwardSensitivity(
  *
  * @return
  */
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
+template <class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>>
 createIntegratorPseudoTransientForwardSensitivity(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>>& model)
 {
-  return createIntegratorPseudoTransientForwardSensitivity(
-    pList, model, model, model);
+  return createIntegratorPseudoTransientForwardSensitivity(pList, model, model,
+                                                           model);
 }
 
 /// Nonmember constructor
@@ -270,10 +277,10 @@ createIntegratorPseudoTransientForwardSensitivity(
  *
  * @return IntegratorPseudoTransientForwardSensitivity
  */
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
+template <class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>>
 createIntegratorPseudoTransientForwardSensitivity();
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_IntegratorPseudoTransientForwardSensitivity_decl_hpp
+#endif  // Tempus_IntegratorPseudoTransientForwardSensitivity_decl_hpp

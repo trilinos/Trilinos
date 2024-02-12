@@ -81,6 +81,7 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 // FIXME
 
@@ -2446,7 +2447,7 @@
 
       mesh_data->add_mesh_database(in_filename, type, stk::io::READ_MESH);
 
-      checkForPartsToAvoidReading(*mesh_data->get_input_io_region(), s_omit_part);
+      checkForPartsToAvoidReading(*mesh_data->get_input_ioss_region(), s_omit_part);
 
       // Open, read, filter meta data from the input mesh file:
       // The coordinates field will be set to the correct dimension.
@@ -2484,8 +2485,8 @@
 
     int PerceptMesh::get_ioss_aliases(const std::string &my_name, std::vector<std::string> &aliases)
     {
-      auto *ge = m_iossMeshData->get_input_io_region()->get_entity(my_name);
-      return ge != nullptr ? m_iossMeshData->get_input_io_region()->get_aliases(my_name, ge->type(), aliases) : 0;
+      auto *ge = m_iossMeshData->get_input_ioss_region()->get_entity(my_name);
+      return ge != nullptr ? m_iossMeshData->get_input_ioss_region()->get_aliases(my_name, ge->type(), aliases) : 0;
     }
 
     bool PerceptMesh::checkForPartNameWithAliases(stk::mesh::Part& part, const std::string& bname)
@@ -2537,13 +2538,13 @@
 
     int PerceptMesh::get_database_time_step_count()
     {
-      int timestep_count = m_iossMeshData->get_input_io_region()->get_property("state_count").get_int();
+      int timestep_count = m_iossMeshData->get_input_ioss_region()->get_property("state_count").get_int();
       return timestep_count;
     }
 
     double PerceptMesh::get_database_time_at_step(int step)
     {
-      int timestep_count = m_iossMeshData->get_input_io_region()->get_property("state_count").get_int();
+      int timestep_count = m_iossMeshData->get_input_ioss_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
@@ -2552,17 +2553,17 @@
           throw std::runtime_error("step is out of range for PerceptMesh::get_database_time_at_step, step="+toString(step)+" timestep_count= "+toString(timestep_count));
         }
 
-      double state_time = timestep_count > 0 ? m_iossMeshData->get_input_io_region()->get_state_time(step) : 0.0;
+      double state_time = timestep_count > 0 ? m_iossMeshData->get_input_ioss_region()->get_state_time(step) : 0.0;
       return state_time;
     }
 
     int PerceptMesh::get_database_step_at_time(double time)
     {
-      int step_count = m_iossMeshData->get_input_io_region()->get_property("state_count").get_int();
+      int step_count = m_iossMeshData->get_input_ioss_region()->get_property("state_count").get_int();
       double delta_min = 1.0e30;
       int    step_min  = 0;
       for (int istep = 0; istep < step_count; istep++) {
-        double state_time = m_iossMeshData->get_input_io_region()->get_state_time(istep+1);
+        double state_time = m_iossMeshData->get_input_ioss_region()->get_state_time(istep+1);
         double delta = state_time - time;
         if (delta < 0.0) delta = -delta;
         if (delta < delta_min) {
@@ -2597,7 +2598,7 @@
           m_bulkData = mesh_data->bulk_data_ptr();
         }
 
-      int timestep_count = mesh_data->get_input_io_region()->get_property("state_count").get_int();
+      int timestep_count = mesh_data->get_input_ioss_region()->get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
@@ -2715,13 +2716,13 @@
 
       if (m_outputActiveChildrenOnly)
         {
-          if (Teuchos::is_null(mesh_data->deprecated_selector()))
+          if (Teuchos::is_null(m_io_mesh_selector))
             {
               Teuchos::RCP<stk::mesh::Selector> io_mesh_selector =
                 Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
-              mesh_data->deprecated_set_selector(io_mesh_selector);
+              m_io_mesh_selector = io_mesh_selector;
             }
-          stk::mesh::Selector & io_mesh_selector = *(mesh_data->deprecated_selector());
+          stk::mesh::Selector & io_mesh_selector = *(m_io_mesh_selector);
 
           stk::mesh::EntityRank part_ranks[] = {element_rank(), side_rank()};
           unsigned num_part_ranks = 2;
@@ -2786,10 +2787,10 @@
       if (m_remove_io_orig_topo_type)
         {
           std::string orig_topo_str = "original_topology_type";
-          if (!Teuchos::is_null(mesh_data->get_input_io_region()))
+          if ((mesh_data->get_input_ioss_region().get()) != nullptr)
             {
               {
-                const Ioss::AliasMap& aliases = mesh_data->get_input_io_region()->get_alias_map(Ioss::ELEMENTBLOCK);
+                const Ioss::AliasMap& aliases = mesh_data->get_input_ioss_region()->get_alias_map(Ioss::ELEMENTBLOCK);
                 Ioss::AliasMap::const_iterator I  = aliases.begin();
                 Ioss::AliasMap::const_iterator IE = aliases.end();
 
@@ -2802,7 +2803,7 @@
 
                     // Query the 'from' database to get the entity (if any) referred
                     // to by the 'alias'
-                    Ioss::GroupingEntity *ge = mesh_data->get_input_io_region()->get_entity(base);
+                    Ioss::GroupingEntity *ge = mesh_data->get_input_ioss_region()->get_entity(base);
 
                     if (ge != NULL) {
                       // See if there is a 'original_topology_type' property...
@@ -2816,7 +2817,7 @@
                 }
               }
 
-              if (0) std::cout << "tmp srk property_exists(original_topology_type) = " << mesh_data->get_input_io_region()->property_exists(orig_topo_str) << std::endl;
+              if (0) std::cout << "tmp srk property_exists(original_topology_type) = " << mesh_data->get_input_ioss_region()->property_exists(orig_topo_str) << std::endl;
             }
           else
             {
@@ -2826,10 +2827,10 @@
       size_t result_file_index = std::numeric_limits<size_t>::max();
       result_file_index = mesh_data->create_output_mesh(out_filename, stk::io::WRITE_RESULTS);
       m_output_file_index = result_file_index;
-      if (mesh_data->get_input_io_region().get() == NULL) {
-          mesh_data->get_output_io_region(result_file_index)->property_add(Ioss::Property("sort_stk_parts",true));
+      if (mesh_data->get_input_ioss_region().get() == NULL) {
+          mesh_data->get_output_ioss_region(result_file_index)->property_add(Ioss::Property("sort_stk_parts",true));
       }
-      mesh_data->set_subset_selector(result_file_index, mesh_data->deprecated_selector());
+      mesh_data->set_subset_selector(result_file_index, Teuchos::get_shared_ptr(m_io_mesh_selector));
 
       if (0)
         {
@@ -2861,8 +2862,8 @@
       else
         mesh_data->process_output_request(result_file_index, time);
 
-      if (!Teuchos::is_null(mesh_data->get_input_io_region()))
-        mesh_data->get_input_io_region()->get_database()->closeDatabase();
+      if (mesh_data->get_input_ioss_region() != nullptr)
+        mesh_data->get_input_ioss_region()->get_database()->closeDatabase();
 
       if (p_rank == 0) std::cout << " ... done" << std::endl;
     }
@@ -4559,14 +4560,13 @@
 
       const std::vector<GeometryEvaluator*>& geomEvals = mesh_geometry.getGeomEvaluators();
       //if (!get_rank()) std::cout << "tmp srk m_sync_io_regions= " << m_sync_io_regions << std::endl;
-      stk::io::StkMeshIoBroker& mesh_data = *m_iossMeshData;
-      if (Teuchos::is_null(mesh_data.deprecated_selector()))
+      if (Teuchos::is_null(m_io_mesh_selector))
         {
           Teuchos::RCP<stk::mesh::Selector> io_mesh_selector =
             Teuchos::rcp(new stk::mesh::Selector(get_fem_meta_data()->universal_part()));
-          mesh_data.deprecated_set_selector(io_mesh_selector);
+          m_io_mesh_selector = io_mesh_selector;
         }
-      stk::mesh::Selector & io_mesh_selector = *(mesh_data.deprecated_selector());
+      stk::mesh::Selector & io_mesh_selector = *(m_io_mesh_selector);
       for (unsigned i = 0; i < geomEvals.size(); i++)
         {
           //if (!get_rank()) std::cout << " tmp srk adding geomEvals[i]->mPart->name()..." << geomEvals[i]->mPart->name() << std::endl;

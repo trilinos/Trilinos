@@ -71,31 +71,31 @@ using CrsGraphFactory [[maybe_unused]] = Xpetra::CrsGraphFactory<LocalOrdinal, G
 #endif
 
 #ifdef XPETRA_VECTOR_SHORT
-using LocalOrdinalVector [[maybe_unused]] = Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+using LocalOrdinalVector [[maybe_unused]]  = Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
 using GlobalOrdinalVector [[maybe_unused]] = Xpetra::Vector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
-using LOVector [[maybe_unused]] = LocalOrdinalVector ;
-using GOVector [[maybe_unused]] = GlobalOrdinalVector;
+using LOVector [[maybe_unused]]            = LocalOrdinalVector;
+using GOVector [[maybe_unused]]            = GlobalOrdinalVector;
 #endif
 
 #ifdef XPETRA_MULTIVECTOR_SHORT
-using LocalOrdinalMultiVector [[maybe_unused]] = Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+using LocalOrdinalMultiVector [[maybe_unused]]  = Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
 using GlobalOrdinalMultiVector [[maybe_unused]] = Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
-using LOMultiVector [[maybe_unused]] = LocalOrdinalMultiVector ;
-using GOMultiVector [[maybe_unused]] = GlobalOrdinalMultiVector;
+using LOMultiVector [[maybe_unused]]            = LocalOrdinalMultiVector;
+using GOMultiVector [[maybe_unused]]            = GlobalOrdinalMultiVector;
 #endif
 
 #ifdef XPETRA_VECTORFACTORY_SHORT
-using LocalOrdinalVectorFactory [[maybe_unused]] = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+using LocalOrdinalVectorFactory [[maybe_unused]]  = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
 using GlobalOrdinalVectorFactory [[maybe_unused]] = Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
-using LOVectorFactory [[maybe_unused]] = LocalOrdinalVectorFactory ;
-using GOVectorFactory [[maybe_unused]] = GlobalOrdinalVectorFactory;
+using LOVectorFactory [[maybe_unused]]            = LocalOrdinalVectorFactory;
+using GOVectorFactory [[maybe_unused]]            = GlobalOrdinalVectorFactory;
 #endif
 
 #ifdef XPETRA_MULTIVECTORFACTORY_SHORT
-using LocalOrdinalMultiVectorFactory [[maybe_unused]] = Xpetra::MultiVectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+using LocalOrdinalMultiVectorFactory [[maybe_unused]]  = Xpetra::MultiVectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
 using GlobalOrdinalMultiVectorFactory [[maybe_unused]] = Xpetra::MultiVectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
-using LOMultiVectorFactory [[maybe_unused]] = LocalOrdinalMultiVectorFactory ;
-using GOMultiVectorFactory [[maybe_unused]] = GlobalOrdinalMultiVectorFactory;
+using LOMultiVectorFactory [[maybe_unused]]            = LocalOrdinalMultiVectorFactory;
+using GOMultiVectorFactory [[maybe_unused]]            = GlobalOrdinalMultiVectorFactory;
 #endif
 
 #ifdef XPETRA_IMPORT_SHORT
@@ -135,8 +135,8 @@ using StridedMapFactory [[maybe_unused]] = Xpetra::StridedMapFactory<LocalOrdina
 // TODO: add namespace {} for shortcut types
 
 // Define convenient shortcut for data types
-using LO [[maybe_unused]] = LocalOrdinal ;
+using LO [[maybe_unused]] = LocalOrdinal;
 using GO [[maybe_unused]] = GlobalOrdinal;
-using NO [[maybe_unused]] = Node         ;
+using NO [[maybe_unused]] = Node;
 
 // TODO: do the same for Epetra object (problem of namespace)

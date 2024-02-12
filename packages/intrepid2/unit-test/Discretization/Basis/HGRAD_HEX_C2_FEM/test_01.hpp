@@ -55,22 +55,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+
 namespace Intrepid2 {
 
   namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-
 
     template<bool serendipity, typename ValueType, typename DeviceType>
     int HGRAD_HEX_DEG2_FEM_Test01(const bool verbose) {
@@ -113,7 +102,6 @@ namespace Intrepid2 {
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
       int errorFlag = 0;
@@ -123,7 +111,7 @@ namespace Intrepid2 {
       typedef ValueType pointValueType;
       BasisPtr<DeviceType,outputValueType,pointValueType> hexBasis;
       if constexpr (serendipity) 
-        hexBasis = Teuchos::rcp(new Basis_HGRAD_HEX_I2_Serendipity_FEM<DeviceType,outputValueType,pointValueType>());
+        hexBasis = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM<DeviceType,outputValueType,pointValueType>());
       else
         hexBasis = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM<DeviceType,outputValueType,pointValueType>());
 
@@ -310,44 +298,6 @@ namespace Intrepid2 {
       outStream -> precision(20);
 
       try{
-        const int numC2Fields = 27;
-        // VALUE: Each row gives the 27 correct basis set values at an evaluation point
-        const ValueType basisValues[] = {
-          1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, \
-          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.000  };
-
-
         // GRAD, D1, D2, D3 and D4 test values are stored in files due to their large size
         std::string     fileName;
         std::ifstream   dataFile;
@@ -355,7 +305,7 @@ namespace Intrepid2 {
         // GRAD and D1 values are stored in (F,P,D) format in a data file. Read file and do the test
         std::vector<double> basisGrads;           // Flat array for the gradient values.
 
-        fileName = "./testdata/HEX_C2_GradVals.dat";
+        fileName = serendipity ? "./testdata/HEX_I2_GradVals.dat" : "./testdata/HEX_C2_GradVals.dat";
         dataFile.open(fileName.c_str());
         INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open GRAD values data file, test aborted.");
@@ -377,7 +327,7 @@ namespace Intrepid2 {
 
         //D2: flat array with the values of D2 applied to basis functions. Multi-index is (F,P,D2cardinality)
         std::vector<double> basisD2;
-        fileName = "./testdata/HEX_C2_D2Vals.dat";
+        fileName = serendipity ? "./testdata/HEX_I2_D2Vals.dat" : "./testdata/HEX_C2_D2Vals.dat";
         dataFile.open(fileName.c_str());
         INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D2 values data file, test aborted.");
@@ -397,7 +347,7 @@ namespace Intrepid2 {
         //D3: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D3cardinality)
         std::vector<double> basisD3;
 
-        fileName = "./testdata/HEX_C2_D3Vals.dat";
+        fileName = serendipity ? "./testdata/HEX_I2_D3Vals.dat" : "./testdata/HEX_C2_D3Vals.dat";
         dataFile.open(fileName.c_str());
         INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D3 values data file, test aborted.");
@@ -418,24 +368,28 @@ namespace Intrepid2 {
         //D4: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D4cardinality)
         std::vector<double> basisD4;
 
-        fileName = "./testdata/HEX_C2_D4Vals.dat";
-        dataFile.open(fileName.c_str());
-        INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
-                                      ">>> ERROR (HGRAD_HEX_C2/test01): could not open D4 values data file, test aborted.");
+        if constexpr(!serendipity) {
+          fileName = "./testdata/HEX_C2_D4Vals.dat";
+          dataFile.open(fileName.c_str());
+          INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
+                                        ">>> ERROR (HGRAD_HEX_C2/test01): could not open D4 values data file, test aborted.");
 
-        while (!dataFile.eof() ){
-          double temp;
-          std::string line;                            // string for one line of input file
-          std::getline(dataFile, line);           // get next line from file
-          std::stringstream data_line(line);           // convert to stringstream
-          while(data_line >> temp){               // extract value from line
-            basisD4.push_back(temp);              // push into vector
+          while (!dataFile.eof() ){
+            double temp;
+            std::string line;                            // string for one line of input file
+            std::getline(dataFile, line);           // get next line from file
+            std::stringstream data_line(line);           // convert to stringstream
+            while(data_line >> temp){               // extract value from line
+              basisD4.push_back(temp);              // push into vector
+            }
           }
+          dataFile.close();
+          dataFile.clear();
         }
-        dataFile.close();
-        dataFile.clear();
 
-        DynRankViewHost ConstructWithLabel(hexNodesHost, 27, 3);
+        constexpr ordinal_type numPoints = serendipity ? 20 : 27;
+
+        DynRankViewHost ConstructWithLabel(hexNodesHost, numPoints, 3);
 
         // vertices
         hexNodesHost(0, 0) = -1.0;  hexNodesHost(0, 1) = -1.0;  hexNodesHost(0, 2) = -1.0;
@@ -462,23 +416,24 @@ namespace Intrepid2 {
         hexNodesHost(18,0) =  0.0;   hexNodesHost(18,1) =  1.0;  hexNodesHost(18,2) =  1.0;
         hexNodesHost(19,0) = -1.0;   hexNodesHost(19,1) =  0.0;  hexNodesHost(19,2) =  1.0;
 
-        // center
-        hexNodesHost(20,0) =  0.0;  hexNodesHost(20,1) =  0.0;   hexNodesHost(20,2) =  0.0;
+        if constexpr(!serendipity) {
+          // center
+          hexNodesHost(20,0) =  0.0;  hexNodesHost(20,1) =  0.0;   hexNodesHost(20,2) =  0.0;
 
-        // Face nodes
-        hexNodesHost(21,0) =  0.0;   hexNodesHost(21,1) =  0.0;  hexNodesHost(21,2) = -1.0;
-        hexNodesHost(22,0) =  0.0;   hexNodesHost(22,1) =  0.0;  hexNodesHost(22,2) =  1.0;
-        hexNodesHost(23,0) = -1.0;   hexNodesHost(23,1) =  0.0;  hexNodesHost(23,2) =  0.0;
-        hexNodesHost(24,0) =  1.0;   hexNodesHost(24,1) =  0.0;  hexNodesHost(24,2) =  0.0;
-        hexNodesHost(25,0) =  0.0;   hexNodesHost(25,1) = -1.0;  hexNodesHost(25,2) =  0.0;
-        hexNodesHost(26,0) =  0.0;   hexNodesHost(26,1) =  1.0;  hexNodesHost(26,2) =  0.0;
+          // Face nodes
+          hexNodesHost(21,0) =  0.0;   hexNodesHost(21,1) =  0.0;  hexNodesHost(21,2) = -1.0;
+          hexNodesHost(22,0) =  0.0;   hexNodesHost(22,1) =  0.0;  hexNodesHost(22,2) =  1.0;
+          hexNodesHost(23,0) = -1.0;   hexNodesHost(23,1) =  0.0;  hexNodesHost(23,2) =  0.0;
+          hexNodesHost(24,0) =  1.0;   hexNodesHost(24,1) =  0.0;  hexNodesHost(24,2) =  0.0;
+          hexNodesHost(25,0) =  0.0;   hexNodesHost(25,1) = -1.0;  hexNodesHost(25,2) =  0.0;
+          hexNodesHost(26,0) =  0.0;   hexNodesHost(26,1) =  1.0;  hexNodesHost(26,2) =  0.0;
+        }
 
         auto hexNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), hexNodesHost);
         Kokkos::deep_copy(hexNodes, hexNodesHost);
 
         // Dimensions for the output arrays:
         const ordinal_type numFields = hexBasis->getCardinality();
-        const ordinal_type numPoints = hexNodes.extent(0);
         const ordinal_type spaceDim  = hexBasis->getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
         const ordinal_type D3Cardin  = getDkCardinality(OPERATOR_D3, spaceDim);
@@ -493,8 +448,8 @@ namespace Intrepid2 {
           Kokkos::deep_copy(vals_host, vals);
           for (ordinal_type i = 0; i < numFields; ++i) {
             for (ordinal_type j = 0; j < numPoints; ++j) {
-              const ordinal_type l =  i + j * numC2Fields;
-              if (std::abs(vals_host(i,j) - basisValues[l]) > tol ) {
+              ValueType basisVal = (i==j) ? 1.0 : 0.0;  //Kronecher property 
+              if (std::abs(vals_host(i,j) - basisVal) > tol ) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -502,7 +457,7 @@ namespace Intrepid2 {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
                 *outStream << "}  computed value: " << vals_host(i,j)
-                           << " but reference value: " << basisValues[l] << "\n";
+                           << " but reference value: " << basisVal << "\n";
               }
             }
           }
@@ -614,25 +569,27 @@ namespace Intrepid2 {
 
         {
           // Check D4 of basis function
-          DynRankView ConstructWithLabel(vals, numFields, numPoints, D4Cardin);
-          hexBasis->getValues(vals, hexNodes, OPERATOR_D4);
-          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
-          Kokkos::deep_copy(vals_host, vals);
-          for (ordinal_type i = 0; i < numFields; i++) {
-            for (ordinal_type j = 0; j < numPoints; j++) {
-              for (ordinal_type k = 0; k < D4Cardin; k++) {
+          if(!serendipity) { //don't have tabulated values for D4 for serendipity elements
+            DynRankView ConstructWithLabel(vals, numFields, numPoints, D4Cardin);
+            hexBasis->getValues(vals, hexNodes, OPERATOR_D4);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            Kokkos::deep_copy(vals_host, vals);
+            for (ordinal_type i = 0; i < numFields; i++) {
+              for (ordinal_type j = 0; j < numPoints; j++) {
+                for (ordinal_type k = 0; k < D4Cardin; k++) {
 
-                // basisD4 is (F,P,Dk), compute offset:
-                int l = k + j * D4Cardin + i * D4Cardin * numPoints;
-                if (std::abs(vals_host(i,j,k) - basisD4[l]) > tol) {
-                  errorFlag++;
-                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                  // basisD4 is (F,P,Dk), compute offset:
+                  int l = k + j * D4Cardin + i * D4Cardin * numPoints;
+                  if (std::abs(vals_host(i,j,k) - basisD4[l]) > tol) {
+                    errorFlag++;
+                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
-                  // Output the multi-index of the value where the error is:
-                  *outStream << " At multi-index { ";
-                  *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                  *outStream << "}  computed D4 component: " << vals_host(i,j,k)
-                             << " but reference D4 component: " << basisD2[l] << "\n"; //D2 same as D4?
+                    // Output the multi-index of the value where the error is:
+                    *outStream << " At multi-index { ";
+                    *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                    *outStream << "}  computed D4 component: " << vals_host(i,j,k)
+                              << " but reference D4 component: " << basisD4[l] << "\n";
+                  }
                 }
               }
             }

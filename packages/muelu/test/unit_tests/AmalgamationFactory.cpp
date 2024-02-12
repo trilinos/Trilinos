@@ -54,96 +54,89 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "version: " << MueLu::Version() << std::endl;
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<AmalgamationFactory> amalgamationFactory = rcp(new AmalgamationFactory());
+  RCP<AmalgamationFactory> amalgamationFactory = rcp(new AmalgamationFactory());
 
-    TEST_INEQUALITY(amalgamationFactory, Teuchos::null);
-  } // Constructor
+  TEST_INEQUALITY(amalgamationFactory, Teuchos::null);
+}  // Constructor
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, DOFGid2NodeId, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, DOFGid2NodeId, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "version: " << MueLu::Version() << std::endl;
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
 
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+  // Test layout: 1D mesh w/ 3 DOFs per node
+  const GlobalOrdinal numGlobalNodes = 12;
+  const LocalOrdinal numDofsPerNode  = 3;
+  const GlobalOrdinal indexBase      = 3;
+  RCP<const Map> nodeMap             = MapFactory::Build(lib, numGlobalNodes, indexBase, comm);
+  RCP<const Map> dofMap              = MapFactory::Build(lib, numGlobalNodes * numDofsPerNode, indexBase, comm);
 
-    // Test layout: 1D mesh w/ 3 DOFs per node
-    const GlobalOrdinal numGlobalNodes = 12;
-    const LocalOrdinal numDofsPerNode = 3;
-    const GlobalOrdinal indexBase = 3;
-    RCP<const Map> nodeMap = MapFactory::Build(lib, numGlobalNodes, indexBase, comm);
-    RCP<const Map> dofMap = MapFactory::Build(lib, numGlobalNodes*numDofsPerNode, indexBase, comm);
+  // Probe all nodes in the mesh
+  const LocalOrdinal numLocalDofs = dofMap->getLocalNumElements();
+  LocalOrdinal localNodeID        = Teuchos::ScalarTraits<LocalOrdinal>::zero();
+  for (LocalOrdinal localDofID = 0; localDofID < numLocalDofs; ++localDofID) {
+    // Ask AmalgamationFactory for global node ID of this DOF and check w/ expected result
+    GlobalOrdinal nodeID = AmalgamationFactory::DOFGid2NodeId(dofMap->getGlobalElement(localDofID), numDofsPerNode, 0, indexBase);
+    TEST_EQUALITY(nodeID, nodeMap->getGlobalElement(localNodeID));
 
-    // Probe all nodes in the mesh
-    const LocalOrdinal numLocalDofs = dofMap->getLocalNumElements();
-    LocalOrdinal localNodeID = Teuchos::ScalarTraits<LocalOrdinal>::zero();
-    for (LocalOrdinal localDofID = 0; localDofID < numLocalDofs; ++localDofID)
-    {
-      // Ask AmalgamationFactory for global node ID of this DOF and check w/ expected result
-      GlobalOrdinal nodeID = AmalgamationFactory::DOFGid2NodeId(dofMap->getGlobalElement(localDofID), numDofsPerNode, 0, indexBase);
-      TEST_EQUALITY(nodeID, nodeMap->getGlobalElement(localNodeID));
+    // Increment localNodeId, if this is the first DOF of a node
+    if (localDofID % numDofsPerNode == numDofsPerNode - Teuchos::ScalarTraits<LocalOrdinal>::one())
+      ++localNodeID;
+  }
+}  // DOFGid2NodeId
 
-      // Increment localNodeId, if this is the first DOF of a node
-      if (localDofID % numDofsPerNode == numDofsPerNode - Teuchos::ScalarTraits<LocalOrdinal>::one())
-        ++localNodeID;
-    }
-  } // DOFGid2NodeId
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMap, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+  // Test static method AmalgamationFactory::AmalgamateMap().
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "Test static method AmalgamationFactory::AmalgamateMap()." << std::endl;
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMap, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    // Test static method AmalgamationFactory::AmalgamateMap().
-#   include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "Test static method AmalgamationFactory::AmalgamateMap()." << std::endl;
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  const GlobalOrdinal nx = 32;
+  Teuchos::ParameterList matrixList;
+  matrixList.set("nx", nx);
+  matrixList.set("matrixType", "Laplace1D");
+  RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::BuildMatrix(matrixList, TestHelpers::Parameters::getLib());
+  LO blkSize     = 2;
+  Op->SetFixedBlockSize(blkSize);
 
-    const GlobalOrdinal nx = 32;
-    Teuchos::ParameterList matrixList;
-    matrixList.set("nx", nx);
-    matrixList.set("matrixType","Laplace1D");
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::BuildMatrix(matrixList,TestHelpers::Parameters::getLib());
-    LO blkSize=2;
-    Op->SetFixedBlockSize(blkSize);
+  RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
+  RCP<const Map> uniqueMap;
+  AmalgamationFactory::AmalgamateMap(*(Op->getRowMap()), *Op, uniqueMap, *theRowTranslation);
 
-    RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
-    RCP<const Map> uniqueMap;
-    AmalgamationFactory::AmalgamateMap(*(Op->getRowMap()), *Op, uniqueMap, *theRowTranslation);
+  Teuchos::ArrayView<const GO> localEltList = uniqueMap->getLocalElementList();
+  for (size_t j = 0; j < uniqueMap->getLocalNumElements(); j++) {
+    TEST_EQUALITY(uniqueMap->getLocalElement(localEltList[j]), static_cast<LO>(j));
+  }
 
-    Teuchos::ArrayView<const GO> localEltList = uniqueMap->getLocalElementList();
-    for (size_t j=0; j<uniqueMap->getLocalNumElements(); j++) {
-      TEST_EQUALITY(uniqueMap->getLocalElement(localEltList[j]),static_cast<LO>(j));
-    }
+  RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
+  RCP<const Map> nonUniqueMap;
+  AmalgamationFactory::AmalgamateMap(*(Op->getColMap()), *Op, nonUniqueMap, *theColTranslation);
 
-    RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
-    RCP<const Map> nonUniqueMap;
-    AmalgamationFactory::AmalgamateMap(*(Op->getColMap()), *Op, nonUniqueMap, *theColTranslation);
+  localEltList = nonUniqueMap->getLocalElementList();
+  for (size_t j = 0; j < nonUniqueMap->getLocalNumElements(); j++) {
+    TEST_EQUALITY(nonUniqueMap->getLocalElement(localEltList[j]), static_cast<LO>(j));
+  }
 
-    localEltList = nonUniqueMap->getLocalElementList();
-    for (size_t j=0; j<nonUniqueMap->getLocalNumElements(); j++) {
-      TEST_EQUALITY(nonUniqueMap->getLocalElement(localEltList[j]),static_cast<LO>(j));
-    }
+}  // AmalgamateMap
 
-  } // AmalgamateMap
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, Constructor, Scalar, LO, GO, Node)   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGid2NodeId, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMap, Scalar, LO, GO, Node)
 
+#include <MueLu_ETI_4arg.hpp>
 
-  # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, Constructor, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGid2NodeId, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMap, Scalar, LO, GO, Node)
-
-# include <MueLu_ETI_4arg.hpp>
-
-} // namespace MueLuTests
-
+}  // namespace MueLuTests

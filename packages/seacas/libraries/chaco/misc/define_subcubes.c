@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,9 +15,9 @@ int define_subcubes(int              nsets_real, /* actual number of sets being 
                     int              ndims,      /* # dimension in this cut */
                     struct set_info *set,        /* data for set being divided */
                     struct set_info *set_info,   /* data for all sets */
-                    int *            subsets,    /* subsets to be created */
+                    int             *subsets,    /* subsets to be created */
                     int              inert,      /* using inertial method? */
-                    int *            pstriping,  /* cut in single direction? */
+                    int             *pstriping,  /* cut in single direction? */
                     int              hop_mtx_special[MAXSETS][MAXSETS] /* nonstandard hop values */
 )
 {
@@ -27,7 +27,6 @@ int define_subcubes(int              nsets_real, /* actual number of sets being 
   int        setnum;    /* global number of subset */
   int        bits;      /* number of bits in which two sets differ */
   int        i, j, k;   /* loop counters */
-  int        gray();
 
   nsets    = 1 << ndims;
   hop_flag = FALSE;

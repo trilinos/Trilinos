@@ -54,7 +54,9 @@ namespace Example {
 //**********************************************************************
 template <typename EvalT,typename Traits>
 SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
-                                         const panzer::IntegrationRule & ir)
+                                         const panzer::IntegrationRule & ir,
+                                         const bool curvilinear)
+  : curvilinear(curvilinear)
 {
   using Teuchos::RCP;
 
@@ -85,12 +87,18 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
   auto ip_coordinates = workset.int_rules[ir_index]->ip_coordinates.get_static_view();
   auto source_v = source.get_static_view();
 
+  const bool curv = this->curvilinear;
+
   Kokkos::parallel_for ("SimpleSource", workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
       for (int point = 0; point < source_v.extent_int(1); ++point) {
 	const double& x = ip_coordinates(cell,point,0);
 	const double& y = ip_coordinates(cell,point,1);
-	
-	source_v(cell,point) = 8.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2.0*M_PI*y);
+	 
+    if (curv) {
+      source_v(cell,point) = 0.0;
+    } else{
+      source_v(cell,point) = 8.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2.0*M_PI*y);
+    }
       }
     });
   Kokkos::fence();

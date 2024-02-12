@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -58,7 +58,7 @@ namespace NS {
 
 // Declaration of the preconditioner factory
 /** The basic XML parameter list for SIMPLE looks like.
-   
+
    \code
     <ParameterList name="SIMPLEC">
       <Parameter name="Type" type="string" value="NS SIMPLE-Timed"/>
@@ -74,68 +74,65 @@ namespace NS {
   \endcode
   */
 class TimingsSIMPLEPreconditionerFactory : public BlockPreconditionerFactory {
-public:
-   // Constructor
-   TimingsSIMPLEPreconditionerFactory(const Teuchos::RCP<InverseFactory> & inverse,
-                               double alpha);
+ public:
+  // Constructor
+  TimingsSIMPLEPreconditionerFactory(const Teuchos::RCP<InverseFactory>& inverse, double alpha);
 
-   // Constructor
-   TimingsSIMPLEPreconditionerFactory(const Teuchos::RCP<InverseFactory> & invVelFactory,
-                               const Teuchos::RCP<InverseFactory> & invPrsFactory,
-                               double alpha);
+  // Constructor
+  TimingsSIMPLEPreconditionerFactory(const Teuchos::RCP<InverseFactory>& invVelFactory,
+                                     const Teuchos::RCP<InverseFactory>& invPrsFactory,
+                                     double alpha);
 
-   //! Default constructor
-   TimingsSIMPLEPreconditionerFactory();
+  //! Default constructor
+  TimingsSIMPLEPreconditionerFactory();
 
-   //! Destructor that outputs construction timings
-   virtual ~TimingsSIMPLEPreconditionerFactory();
+  //! Destructor that outputs construction timings
+  virtual ~TimingsSIMPLEPreconditionerFactory();
 
-   // Function inherited from BlockPreconditionerFactory
-   LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,
-                                        BlockPreconditionerState & state) const;
+  // Function inherited from BlockPreconditionerFactory
+  LinearOp buildPreconditionerOperator(BlockedLinearOp& blo, BlockPreconditionerState& state) const;
 
-   //! Set the mass matrix for this factory
-   virtual void setMassMatrix(Teko::LinearOp & mass)
-   { massMatrix_ = mass; }
+  //! Set the mass matrix for this factory
+  virtual void setMassMatrix(Teko::LinearOp& mass) { massMatrix_ = mass; }
 
-   //! For assisting in construction of the preconditioner
-   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const;
+  //! For assisting in construction of the preconditioner
+  virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const;
 
-   //! For assisting in construction of the preconditioner
-   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl);
+  //! For assisting in construction of the preconditioner
+  virtual bool updateRequestedParameters(const Teuchos::ParameterList& pl);
 
-   //! Initialize from a parameter list
-   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
-    
-protected:
-   using Teko::BlockPreconditionerFactory::buildPreconditionerOperator;
+  //! Initialize from a parameter list
+  virtual void initializeFromParameterList(const Teuchos::ParameterList& pl);
 
-   // class members
-   Teuchos::RCP<InverseFactory> customHFactory_;
-   Teuchos::RCP<InverseFactory> invVelFactory_;
-   Teuchos::RCP<InverseFactory> invPrsFactory_;
-   double alpha_;
-   DiagonalType fInverseType_;
-   // enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
+ protected:
+  using Teko::BlockPreconditionerFactory::buildPreconditionerOperator;
 
-   bool useMass_;
-   Teko::LinearOp massMatrix_;
-   
-   // Info for the block-diagonal approximation to H if used.
-   mutable Teuchos::ParameterList BlkDiagList_;
+  // class members
+  Teuchos::RCP<InverseFactory> customHFactory_;
+  Teuchos::RCP<InverseFactory> invVelFactory_;
+  Teuchos::RCP<InverseFactory> invPrsFactory_;
+  double alpha_;
+  DiagonalType fInverseType_;
+  // enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
 
-   mutable Teuchos::Time constrTotal_;
-   mutable Teuchos::Time subTotal_;
-   mutable int constrCount_;
+  bool useMass_;
+  Teko::LinearOp massMatrix_;
 
-   mutable Teuchos::RCP<DiagnosticLinearOp> timed_HBt_;
-   mutable Teuchos::RCP<DiagnosticLinearOp> timed_B_;
-   mutable Teuchos::RCP<DiagnosticLinearOp> timed_invF_;
-   mutable Teuchos::RCP<DiagnosticLinearOp> timed_invS_;
-   mutable Teuchos::RCP<DiagnosticLinearOp> timed_iU_t_iL_;
+  // Info for the block-diagonal approximation to H if used.
+  mutable Teuchos::ParameterList BlkDiagList_;
+
+  mutable Teuchos::Time constrTotal_;
+  mutable Teuchos::Time subTotal_;
+  mutable int constrCount_;
+
+  mutable Teuchos::RCP<DiagnosticLinearOp> timed_HBt_;
+  mutable Teuchos::RCP<DiagnosticLinearOp> timed_B_;
+  mutable Teuchos::RCP<DiagnosticLinearOp> timed_invF_;
+  mutable Teuchos::RCP<DiagnosticLinearOp> timed_invS_;
+  mutable Teuchos::RCP<DiagnosticLinearOp> timed_iU_t_iL_;
 };
- 
-} // end namespace NS
-} // end namespace Teko
+
+}  // end namespace NS
+}  // end namespace Teko
 
 #endif

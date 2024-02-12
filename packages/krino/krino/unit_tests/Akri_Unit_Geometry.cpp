@@ -11,7 +11,7 @@
 #include <Akri_Cutting_Surface.hpp>
 
 #include <Akri_LevelSet.hpp>
-#include <Akri_Plane.hpp>
+#include <stk_math/StkPlane.hpp>
 #include <Akri_Plane_Intersections.hpp>
 #include <Akri_Segment.hpp>
 #include <Akri_UnitTestUtils.hpp>
@@ -30,9 +30,9 @@ namespace {
 TEST(Plane_Cutting_Surface, random_edge_cuts)
 {
   const bool debug_output = false;
-  const Vector3d plane_pt0(0., 0., 0.);
-  const Vector3d plane_pt1(1., 0., 0.);
-  const Vector3d plane_pt2(0., 1., 0.);
+  const stk::math::Vector3d plane_pt0(0., 0., 0.);
+  const stk::math::Vector3d plane_pt1(1., 0., 0.);
+  const stk::math::Vector3d plane_pt2(0., 1., 0.);
   Plane_Cutting_Surface surf(plane_pt0, plane_pt1, plane_pt2);
 
 
@@ -44,9 +44,9 @@ TEST(Plane_Cutting_Surface, random_edge_cuts)
   const int num_cases = num_random_cases();
   for (int icase=0; icase<num_cases; ++icase)
   {
-    const Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
-    const Vector3d pt1(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
-    const Segment3d segment(pt0, pt1);
+    const stk::math::Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
+    const stk::math::Vector3d pt1(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
+    const std::array<stk::math::Vector3d,2> segment{pt0, pt1};
 
     if (debug_output) std::cout << "Case: " << icase << std::endl;
     if (debug_output) std::cout << " Pt0 " << pt0 << std::endl;
@@ -71,10 +71,10 @@ TEST(Plane_Cutting_Surface, random_edge_cuts)
 
 TEST(Intersecting_Planes_Cutting_Surface, planar_with_random_edge_cuts)
 {
-  const Vector3d plane_pt0(0., 0., 0.);
-  const Vector3d plane_pt1(1., 0., 0.);
-  const Vector3d plane_pt2(1., 1., 0.);
-  const Vector3d plane_pt3(0., 1., 0.);
+  const stk::math::Vector3d plane_pt0(0., 0., 0.);
+  const stk::math::Vector3d plane_pt1(1., 0., 0.);
+  const stk::math::Vector3d plane_pt2(1., 1., 0.);
+  const stk::math::Vector3d plane_pt3(0., 1., 0.);
   Intersecting_Planes_Cutting_Surface surf(plane_pt0, plane_pt1, plane_pt2, plane_pt3);
 
 
@@ -86,9 +86,9 @@ TEST(Intersecting_Planes_Cutting_Surface, planar_with_random_edge_cuts)
   const int num_cases = num_random_cases();
   for (int icase=0; icase<num_cases; ++icase)
   {
-    const Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
-    const Vector3d pt1(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
-    const Segment3d segment(pt0, pt1);
+    const stk::math::Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
+    const stk::math::Vector3d pt1(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
+    const std::array<stk::math::Vector3d,2> segment{pt0, pt1};
 
     const double sign0 = surf.sign_at_position(pt0);
     const double sign1 = surf.sign_at_position(pt1);
@@ -108,10 +108,10 @@ TEST(Intersecting_Planes_Cutting_Surface, planar_with_random_edge_cuts)
 TEST(Intersecting_Planes_Cutting_Surface, positive_dihedral_with_random_edge_cuts)
 {
   const bool debug_output = false;
-  const Vector3d plane_pt0(0., 0., 0.);
-  const Vector3d plane_pt1(0., 1., 1.);
-  const Vector3d plane_pt2(1., 0., 0.);
-  const Vector3d plane_pt3(0., 1., 0.);
+  const stk::math::Vector3d plane_pt0(0., 0., 0.);
+  const stk::math::Vector3d plane_pt1(0., 1., 1.);
+  const stk::math::Vector3d plane_pt2(1., 0., 0.);
+  const stk::math::Vector3d plane_pt3(0., 1., 0.);
   Intersecting_Planes_Cutting_Surface surf(plane_pt0, plane_pt1, plane_pt2, plane_pt3);
 
 
@@ -123,9 +123,9 @@ TEST(Intersecting_Planes_Cutting_Surface, positive_dihedral_with_random_edge_cut
   const int num_cases = num_random_cases();
   for (int icase=0; icase<num_cases; ++icase)
   {
-    const Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
-    const Vector3d pt1(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
-    const Segment3d segment(pt0, pt1);
+    const stk::math::Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
+    const stk::math::Vector3d pt1(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
+    const std::array<stk::math::Vector3d,2> segment{pt0, pt1};
 
     if (debug_output) std::cout << "Case: " << icase << std::endl;
     if (debug_output) std::cout << " Pt0 " << pt0 << std::endl;
@@ -162,10 +162,10 @@ TEST(Intersecting_Planes_Cutting_Surface, positive_dihedral_with_random_edge_cut
 TEST(Intersecting_Planes_Cutting_Surface, negative_dihedral_with_random_edge_cuts)
 {
   const bool debug_output = false;
-  const Vector3d plane_pt0(0., 0., 0.);
-  const Vector3d plane_pt1(0., 1., 0.);
-  const Vector3d plane_pt2(1., 0., 0.);
-  const Vector3d plane_pt3(0., 1., 1.);
+  const stk::math::Vector3d plane_pt0(0., 0., 0.);
+  const stk::math::Vector3d plane_pt1(0., 1., 0.);
+  const stk::math::Vector3d plane_pt2(1., 0., 0.);
+  const stk::math::Vector3d plane_pt3(0., 1., 1.);
   Intersecting_Planes_Cutting_Surface surf(plane_pt0, plane_pt1, plane_pt2, plane_pt3);
 
 
@@ -177,9 +177,9 @@ TEST(Intersecting_Planes_Cutting_Surface, negative_dihedral_with_random_edge_cut
   const int num_cases = num_random_cases();
   for (int icase=0; icase<num_cases; ++icase)
   {
-    const Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
-    const Vector3d pt1(clip(coord(mt)), clip(coord(mt)), coord(mt));
-    const Segment3d segment(pt0, pt1);
+    const stk::math::Vector3d pt0(clip(coord(mt)), clip(coord(mt)), clip(coord(mt)));
+    const stk::math::Vector3d pt1(clip(coord(mt)), clip(coord(mt)), coord(mt));
+    const std::array<stk::math::Vector3d,2> edgeNodeCoords{pt0, pt1};
 
     if (debug_output) std::cout << "Case: " << icase << std::endl;
     if (debug_output) std::cout << " Pt0 " << pt0 << std::endl;
@@ -194,7 +194,7 @@ TEST(Intersecting_Planes_Cutting_Surface, negative_dihedral_with_random_edge_cut
     {
       EXPECT_FALSE((pt0[1] <= 0.) && (pt1[1] <= 0.));
       EXPECT_FALSE((pt0[2] <= 0.) && (pt1[2] <= 0.));
-      const double position = surf.interface_crossing_position(segment);
+      const double position = surf.interface_crossing_position(edgeNodeCoords);
       const double pos0 = (pt0[2]-pt0[1]) / ((pt0[2]-pt0[1]) - (pt1[2]-pt1[1]));
       const double pos1 = pt0[2] / (pt0[2] - pt1[2]);
       // Only checking cases where both points are on same side of dividing plane
@@ -207,7 +207,7 @@ TEST(Intersecting_Planes_Cutting_Surface, negative_dihedral_with_random_edge_cut
     }
     else
     {
-      EXPECT_ANY_THROW(surf.interface_crossing_position(segment));
+      EXPECT_ANY_THROW(surf.interface_crossing_position(edgeNodeCoords));
     }
   }
 }
@@ -216,78 +216,79 @@ TEST(Intersecting_Planes_Cutting_Surface, infinitesimal_triangle_that_requires_r
 {
   const double goldPosition = 0.5181038869168293;
   const double otherCrossing = 0.4818961330726974;
-  const Vector3d plane_pt0(otherCrossing, 0., 1.-otherCrossing);
-  const Vector3d plane_pt1(0., 0., goldPosition);
-  const Vector3d plane_pt2(0., (1.-1.e-10), 0.);
-  const Vector3d plane_pt3(1.e-10, (1.-1.e-10), 0.);
+  const stk::math::Vector3d plane_pt0(otherCrossing, 0., 1.-otherCrossing);
+  const stk::math::Vector3d plane_pt1(0., 0., goldPosition);
+  const stk::math::Vector3d plane_pt2(0., (1.-1.e-10), 0.);
+  const stk::math::Vector3d plane_pt3(1.e-10, (1.-1.e-10), 0.);
   Intersecting_Planes_Cutting_Surface surf(plane_pt0, plane_pt1, plane_pt2, plane_pt3);
 
-  const Vector3d node0(0., 0., 0.);
-  const Vector3d node3(0., 0., 1.);
-  const double position = surf.interface_crossing_position(Segment3d(node0,node3));
+  const stk::math::Vector3d node0(0., 0., 0.);
+  const stk::math::Vector3d node3(0., 0., 1.);
+  const std::array<stk::math::Vector3d,2> segment{node0,node3};
+  const double position = surf.interface_crossing_position(segment);
   EXPECT_DOUBLE_EQ(position, goldPosition);
 }
 
-void expect_intersection(const Plane3d & plane0, const Plane3d & plane1, const Plane3d & plane2, const Vector3d & goldIntersection)
+void expect_intersection(const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1, const stk::math::Plane3d & plane2, const stk::math::Vector3d & goldIntersection)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_TRUE(find_intersection_of_three_planes(plane0, plane1, plane2, intersectionPoint));
   expect_eq(goldIntersection, intersectionPoint);
 }
 
-void expect_intersection_with_side_of_tet(const int side, const Plane3d & plane0, const Plane3d & plane1, const Vector3d & goldIntersection)
+void expect_intersection_with_side_of_tet(const int side, const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1, const stk::math::Vector3d & goldIntersection)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_TRUE(find_intersection_of_two_planes_and_side_of_tet(side, plane0, plane1, intersectionPoint));
   expect_eq(goldIntersection, intersectionPoint);
 }
 
-void expect_no_intersection(const Plane3d & plane0, const Plane3d & plane1, const Plane3d & plane2)
+void expect_no_intersection(const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1, const stk::math::Plane3d & plane2)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_FALSE(find_intersection_of_three_planes(plane0, plane1, plane2, intersectionPoint));
 }
 
-void expect_no_intersection_within_tet(const Plane3d & plane0, const Plane3d & plane1, const Plane3d & plane2)
+void expect_no_intersection_within_tet(const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1, const stk::math::Plane3d & plane2)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_FALSE(find_intersection_of_three_planes_within_tet(plane0, plane1, plane2, intersectionPoint));
 }
 
-void expect_no_intersection_with_side_of_tet(const int side, const Plane3d & plane0, const Plane3d & plane1)
+void expect_no_intersection_with_side_of_tet(const int side, const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_FALSE(find_intersection_of_two_planes_and_side_of_tet(side, plane0, plane1, intersectionPoint));
 }
 
 struct IntersectPlanes : public ::testing::Test
 {
-  const Vector3d pt0{0., 0., 0.};
-  const Vector3d pt1{1., 0., 0.};
-  const Vector3d pt2{0., 1., 0.};
-  const Vector3d pt3{0., 0., 1.};
-  const Plane3d plane0{pt0, pt1, pt3};
-  const Plane3d plane1{pt1, pt2, pt3};
-  const Plane3d plane2{pt2, pt0, pt3};
-  const Plane3d plane3{pt0, pt2, pt1};
+  const stk::math::Vector3d pt0{0., 0., 0.};
+  const stk::math::Vector3d pt1{1., 0., 0.};
+  const stk::math::Vector3d pt2{0., 1., 0.};
+  const stk::math::Vector3d pt3{0., 0., 1.};
+  const stk::math::Plane3d plane0{pt0, pt1, pt3};
+  const stk::math::Plane3d plane1{pt1, pt2, pt3};
+  const stk::math::Plane3d plane2{pt2, pt0, pt3};
+  const stk::math::Plane3d plane3{pt0, pt2, pt1};
 
-  const Vector3d offsetPt0{-0.1, -0.1, -0.1};
-  const Vector3d offsetPt1{1.1, -0.1, -0.1};
-  const Vector3d offsetPt2{-0.1, 1.1, -0.1};
-  const Vector3d offsetPt3{-0.1, -0.1, 1.1};
-  const Plane3d offsetPlane0{offsetPt0, offsetPt1, offsetPt3};
-  const Plane3d offsetPlane1{offsetPt1, offsetPt2, offsetPt3};
-  const Plane3d offsetPlane2{offsetPt2, offsetPt0, offsetPt3};
-  const Plane3d offsetPlane3{offsetPt0, offsetPt2, offsetPt1};
+  const stk::math::Vector3d offsetPt0{-0.1, -0.1, -0.1};
+  const stk::math::Vector3d offsetPt1{1.1, -0.1, -0.1};
+  const stk::math::Vector3d offsetPt2{-0.1, 1.1, -0.1};
+  const stk::math::Vector3d offsetPt3{-0.1, -0.1, 1.1};
+  const stk::math::Plane3d offsetPlane0{offsetPt0, offsetPt1, offsetPt3};
+  const stk::math::Plane3d offsetPlane1{offsetPt1, offsetPt2, offsetPt3};
+  const stk::math::Plane3d offsetPlane2{offsetPt2, offsetPt0, offsetPt3};
+  const stk::math::Plane3d offsetPlane3{offsetPt0, offsetPt2, offsetPt1};
 
 };
 
 TEST_F(IntersectPlanes, given3Planes_FindCorrectIntersection)
 {
-  expect_intersection(plane0, plane1, plane2, Vector3d{0., 0., 1.});
-  expect_intersection(plane0, plane1, plane3, Vector3d{1., 0., 0.});
-  expect_intersection(plane1, plane2, plane3, Vector3d{0., 1., 0.});
-  expect_intersection(plane0, plane2, plane3, Vector3d{0., 0., 0.});
+  expect_intersection(plane0, plane1, plane2, stk::math::Vector3d{0., 0., 1.});
+  expect_intersection(plane0, plane1, plane3, stk::math::Vector3d{1., 0., 0.});
+  expect_intersection(plane1, plane2, plane3, stk::math::Vector3d{0., 1., 0.});
+  expect_intersection(plane0, plane2, plane3, stk::math::Vector3d{0., 0., 0.});
 
   expect_no_intersection(plane0, plane0, plane1);
 }
@@ -302,21 +303,21 @@ TEST_F(IntersectPlanes, given3PlanesThatDoNotIntersectWithinTetBounds_FindNoInte
 
 TEST_F(IntersectPlanes, given2PlanesThatIntersectSideOfTet_FindCorrectIntersection)
 {
-  expect_intersection_with_side_of_tet(0, plane1, plane2, Vector3d{0., 0., 1.});
-  expect_intersection_with_side_of_tet(0, plane1, plane3, Vector3d{1., 0., 0.});
-  expect_intersection_with_side_of_tet(0, plane2, plane3, Vector3d{0., 0., 0.});
+  expect_intersection_with_side_of_tet(0, plane1, plane2, stk::math::Vector3d{0., 0., 1.});
+  expect_intersection_with_side_of_tet(0, plane1, plane3, stk::math::Vector3d{1., 0., 0.});
+  expect_intersection_with_side_of_tet(0, plane2, plane3, stk::math::Vector3d{0., 0., 0.});
 
-  expect_intersection_with_side_of_tet(1, plane2, plane3, Vector3d{0., 1., 0.});
-  expect_intersection_with_side_of_tet(1, plane0, plane2, Vector3d{0., 0., 1.});
-  expect_intersection_with_side_of_tet(1, plane0, plane3, Vector3d{1., 0., 0.});
+  expect_intersection_with_side_of_tet(1, plane2, plane3, stk::math::Vector3d{0., 1., 0.});
+  expect_intersection_with_side_of_tet(1, plane0, plane2, stk::math::Vector3d{0., 0., 1.});
+  expect_intersection_with_side_of_tet(1, plane0, plane3, stk::math::Vector3d{1., 0., 0.});
 
-  expect_intersection_with_side_of_tet(2, plane0, plane1, Vector3d{0., 0., 1.});
-  expect_intersection_with_side_of_tet(2, plane0, plane3, Vector3d{0., 0., 0.});
-  expect_intersection_with_side_of_tet(2, plane1, plane3, Vector3d{0., 1., 0.});
+  expect_intersection_with_side_of_tet(2, plane0, plane1, stk::math::Vector3d{0., 0., 1.});
+  expect_intersection_with_side_of_tet(2, plane0, plane3, stk::math::Vector3d{0., 0., 0.});
+  expect_intersection_with_side_of_tet(2, plane1, plane3, stk::math::Vector3d{0., 1., 0.});
 
-  expect_intersection_with_side_of_tet(3, plane0, plane1, Vector3d{1., 0., 0.});
-  expect_intersection_with_side_of_tet(3, plane0, plane2, Vector3d{0., 0., 0.});
-  expect_intersection_with_side_of_tet(3, plane1, plane2, Vector3d{0., 1., 0.});
+  expect_intersection_with_side_of_tet(3, plane0, plane1, stk::math::Vector3d{1., 0., 0.});
+  expect_intersection_with_side_of_tet(3, plane0, plane2, stk::math::Vector3d{0., 0., 0.});
+  expect_intersection_with_side_of_tet(3, plane1, plane2, stk::math::Vector3d{0., 1., 0.});
 }
 
 TEST_F(IntersectPlanes, given2PlanesThatDoNotIntersectSideOfTetAtAll_FindNoIntersection)
@@ -346,14 +347,14 @@ TEST_F(IntersectPlanes, given2PlanesThatDoNotIntersectSideOfTetWithinTetBounds_F
   expect_no_intersection_with_side_of_tet(3, offsetPlane1, offsetPlane2);
 }
 
-static Vector3d compute_2d_plane_direction(const Vector3d & pt0, const Vector3d & pt1)
+static stk::math::Vector3d compute_2d_plane_direction(const stk::math::Vector3d & pt0, const stk::math::Vector3d & pt1)
 {
-  return Vector3d(pt1[1]-pt0[1],pt0[0]-pt1[0],0.);
+  return stk::math::Vector3d(pt1[1]-pt0[1],pt0[0]-pt1[0],0.);
 }
 
-static Plane3d build_2d_plane(const Vector3d & pt0, const Vector3d & pt1)
+static stk::math::Plane3d build_2d_plane(const stk::math::Vector3d & pt0, const stk::math::Vector3d & pt1)
 {
-  return Plane3d(compute_2d_plane_direction(pt0,pt1),pt0);
+  return stk::math::Plane3d(compute_2d_plane_direction(pt0,pt1),pt0);
 }
 
 struct Intersect2DPlanes : public ::testing::Test
@@ -368,47 +369,47 @@ struct Intersect2DPlanes : public ::testing::Test
   {
   }
 
-  const Vector3d pt0{0., 0., 0.};
-  const Vector3d pt1{1., 0., 0.};
-  const Vector3d pt2{0., 1., 0.};
+  const stk::math::Vector3d pt0{0., 0., 0.};
+  const stk::math::Vector3d pt1{1., 0., 0.};
+  const stk::math::Vector3d pt2{0., 1., 0.};
 
-  const Vector3d offsetPt0{-0.1, -0.1, 0.};
-  const Vector3d offsetPt1{1.1, -0.1, 0.};
-  const Vector3d offsetPt2{-0.1, 1.1, 0.};
+  const stk::math::Vector3d offsetPt0{-0.1, -0.1, 0.};
+  const stk::math::Vector3d offsetPt1{1.1, -0.1, 0.};
+  const stk::math::Vector3d offsetPt2{-0.1, 1.1, 0.};
 
-  Plane3d plane0;
-  Plane3d plane1;
-  Plane3d plane2;
+  stk::math::Plane3d plane0;
+  stk::math::Plane3d plane1;
+  stk::math::Plane3d plane2;
 
-  Plane3d offsetPlane0;
-  Plane3d offsetPlane1;
-  Plane3d offsetPlane2;
+  stk::math::Plane3d offsetPlane0;
+  stk::math::Plane3d offsetPlane1;
+  stk::math::Plane3d offsetPlane2;
 };
 
-void expect_2d_intersection(const Plane3d & plane0, const Plane3d & plane1, const Vector3d & goldIntersection)
+void expect_2d_intersection(const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1, const stk::math::Vector3d & goldIntersection)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_TRUE(find_intersection_of_two_2D_planes(plane0, plane1, intersectionPoint));
   expect_eq(goldIntersection, intersectionPoint);
 }
 
-void expect_no_2d_intersection_within_tri(const Plane3d & plane0, const Plane3d & plane1)
+void expect_no_2d_intersection_within_tri(const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_FALSE(find_intersection_of_two_2D_planes_within_tri(plane0, plane1, intersectionPoint));
 }
 
-void expect_no_2d_intersection(const Plane3d & plane0, const Plane3d & plane1)
+void expect_no_2d_intersection(const stk::math::Plane3d & plane0, const stk::math::Plane3d & plane1)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   EXPECT_FALSE(find_intersection_of_two_2D_planes(plane0, plane1, intersectionPoint));
 }
 
 TEST_F(Intersect2DPlanes, given2Plane2Ds_FindCorrectIntersection)
 {
-  expect_2d_intersection(plane0, plane1, Vector3d{1., 0., 0.});
-  expect_2d_intersection(plane1, plane2, Vector3d{0., 1., 0.});
-  expect_2d_intersection(plane0, plane2, Vector3d{0., 0., 0.});
+  expect_2d_intersection(plane0, plane1, stk::math::Vector3d{1., 0., 0.});
+  expect_2d_intersection(plane1, plane2, stk::math::Vector3d{0., 1., 0.});
+  expect_2d_intersection(plane0, plane2, stk::math::Vector3d{0., 0., 0.});
 
   expect_no_2d_intersection(plane0, plane0);
 }
@@ -422,23 +423,23 @@ TEST_F(Intersect2DPlanes, given2Plane2DsThatDoNotIntersectWithinTriBounds_FindNo
 
 TEST(ProjectionOf3DPointsIntoTriangle, givenTriangleCheckProjectionOfPointOnAndOffPlane)
 {
-  const Vector3d pt0{0., 0., 0.};
-  const Vector3d pt1{1., 0., 0.};
-  const Vector3d pt2{0., 1., 1.};
-  const std::array<Vector3d,3> triCoords{{ pt0, pt1, pt2 }};
+  const stk::math::Vector3d pt0{0., 0., 0.};
+  const stk::math::Vector3d pt1{1., 0., 0.};
+  const stk::math::Vector3d pt2{0., 1., 1.};
+  const std::array<stk::math::Vector3d,3> triCoords{{ pt0, pt1, pt2 }};
 
-  expect_eq(Vector3d{0.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt0));
-  expect_eq(Vector3d{1.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt1));
-  expect_eq(Vector3d{0.,1.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt2));
+  expect_eq(stk::math::Vector3d{0.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt0));
+  expect_eq(stk::math::Vector3d{1.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt1));
+  expect_eq(stk::math::Vector3d{0.,1.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt2));
 
-  const Vector3d normal = Cross(pt1-pt0, pt2-pt0).unit_vector();
-  expect_eq(Vector3d{0.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt0+normal));
-  expect_eq(Vector3d{1.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt1+normal));
-  expect_eq(Vector3d{0.,1.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt2+normal));
+  const stk::math::Vector3d normal = Cross(pt1-pt0, pt2-pt0).unit_vector();
+  expect_eq(stk::math::Vector3d{0.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt0+normal));
+  expect_eq(stk::math::Vector3d{1.,0.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt1+normal));
+  expect_eq(stk::math::Vector3d{0.,1.,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, pt2+normal));
 
   const double oneThird = 1./3.;
-  const Vector3d midPt = oneThird*(pt0+pt1+pt2);
-  expect_eq(Vector3d{oneThird,oneThird,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, midPt+normal));
+  const stk::math::Vector3d midPt = oneThird*(pt0+pt1+pt2);
+  expect_eq(stk::math::Vector3d{oneThird,oneThird,0.}, triangle_parametric_coordinates_of_projected_point(triCoords, midPt+normal));
 }
 
 } // namespace krino

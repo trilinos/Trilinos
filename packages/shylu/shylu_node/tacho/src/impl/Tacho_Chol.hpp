@@ -39,6 +39,13 @@ struct CholAlgorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
+struct CholAlgorithm_Team {
+#if defined(KOKKOS_ENABLE_OPENMP)
+  using type = ActiveHostAlgorithm<runsWithOMP()>::type;
+#else
+  using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
+#endif
+};
 } // namespace Tacho
 
 #endif

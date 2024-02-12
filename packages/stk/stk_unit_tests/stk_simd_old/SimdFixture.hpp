@@ -99,7 +99,7 @@ class TestSimdMathFunction : public ::testing::Test
 #ifdef TIME_SIMD_OPERATIONS
     Kokkos::Timer scalarTimer;
 #endif
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 #pragma novector
 #endif
     for (int i=0; i < sz; ++i)

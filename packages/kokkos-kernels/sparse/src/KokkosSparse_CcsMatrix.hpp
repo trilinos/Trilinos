@@ -194,7 +194,6 @@ class CcsMatrix {
   /// The matrix will store and use the column map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param label [in] The sparse matrix's label.
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.

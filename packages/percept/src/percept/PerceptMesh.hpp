@@ -1085,6 +1085,7 @@ private:
       std::shared_ptr<stk::mesh::BulkData>                 m_bulkData;
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshData;
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshDataOut;
+      Teuchos::RCP<stk::mesh::Selector>            m_io_mesh_selector;
 
       size_t                                m_output_file_index;
       bool                                  m_iossMeshDataDidPopulate;

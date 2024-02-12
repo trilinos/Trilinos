@@ -13,7 +13,7 @@
 #include "DahlquistTestModel_impl.hpp"
 
 namespace Tempus_Test {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(DahlquistTestModel)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(DahlquistTestModel)
 }
 
 #endif

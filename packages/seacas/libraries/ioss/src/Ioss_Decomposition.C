@@ -58,10 +58,7 @@ namespace {
   bool check_valid_decomp_method(const std::string &method)
   {
     const auto &valid_methods = Ioss::valid_decomp_methods();
-    if (std::find(valid_methods.begin(), valid_methods.end(), method) != valid_methods.end()) {
-      return true;
-    }
-    return false;
+    return std::find(valid_methods.begin(), valid_methods.end(), method) != valid_methods.end();
   }
 
   std::string get_decomposition_method(const Ioss::PropertyManager &properties)
@@ -161,6 +158,108 @@ namespace Ioss {
     return valid_methods;
   }
 
+  size_t get_all_block_ioss_element_size(const std::vector<BlockDecompositionData> &blocks)
+  {
+    size_t count = 0;
+
+    for (const Ioss::BlockDecompositionData &block : blocks) {
+      // Determine total number of ioss decomp elements
+      count += (block.importMap.size() + block.localMap.size());
+    }
+
+    return count;
+  }
+
+  size_t get_all_block_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks,
+                                        const std::vector<int> &block_field_component_count)
+  {
+    size_t count = 0;
+
+    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+      const Ioss::BlockDecompositionData &block = blocks[blk_seq];
+      // Determine total number of ioss decomp entries based on field component count per block.
+      count +=
+          block_field_component_count[blk_seq] * (block.importMap.size() + block.localMap.size());
+    }
+
+    return count;
+  }
+
+  std::vector<size_t> get_all_block_ioss_offset(const std::vector<BlockDecompositionData> &blocks,
+                                                const std::vector<int> &block_component_count)
+  {
+    std::vector<size_t> ioss_offset(blocks.size() + 1, 0);
+
+    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+      const Ioss::BlockDecompositionData &block = blocks[blk_seq];
+
+      // Determine number of ioss decomp entries based on field component count per block.
+      ioss_offset[blk_seq + 1] =
+          block_component_count[blk_seq] * (block.importMap.size() + block.localMap.size());
+    }
+
+    // Compute offsets
+    for (size_t i = 1; i <= blocks.size(); ++i) {
+      ioss_offset[i] += ioss_offset[i - 1];
+    }
+
+    return ioss_offset;
+  }
+
+  std::vector<size_t> get_all_block_import_offset(const std::vector<BlockDecompositionData> &blocks,
+                                                  const std::vector<int> &block_component_count)
+  {
+    std::vector<size_t> ioss_offset(blocks.size() + 1, 0);
+
+    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+      const Ioss::BlockDecompositionData &block = blocks[blk_seq];
+
+      // Determine number of imported ioss decomp entries based on field component count per block.
+      ioss_offset[blk_seq + 1] = block_component_count[blk_seq] * block.importMap.size();
+    }
+
+    // Compute offsets
+    for (size_t i = 1; i <= blocks.size(); ++i) {
+      ioss_offset[i] += ioss_offset[i - 1];
+    }
+
+    return ioss_offset;
+  }
+
+  std::vector<int>
+  get_all_block_connectivity_ioss_component_count(const std::vector<BlockDecompositionData> &blocks)
+  {
+    std::vector<int> block_connectivity_component_count(blocks.size());
+
+    for (size_t blk_seq = 0; blk_seq < blocks.size(); blk_seq++) {
+      const Ioss::BlockDecompositionData &block   = blocks[blk_seq];
+      block_connectivity_component_count[blk_seq] = block.nodesPerEntity;
+    }
+
+    return block_connectivity_component_count;
+  }
+
+  size_t
+  get_all_block_connectivity_ioss_offset_size(const std::vector<BlockDecompositionData> &blocks)
+  {
+    return get_all_block_ioss_offset_size(blocks,
+                                          get_all_block_connectivity_ioss_component_count(blocks));
+  }
+
+  std::vector<size_t>
+  get_all_block_connectivity_ioss_offset(const std::vector<BlockDecompositionData> &blocks)
+  {
+    return get_all_block_ioss_offset(blocks,
+                                     get_all_block_connectivity_ioss_component_count(blocks));
+  }
+
+  std::vector<size_t>
+  get_all_block_connectivity_import_offset(const std::vector<BlockDecompositionData> &blocks)
+  {
+    return get_all_block_import_offset(blocks,
+                                       get_all_block_connectivity_ioss_component_count(blocks));
+  }
+
   template IOSS_EXPORT Decomposition<int>::Decomposition(const Ioss::PropertyManager &props,
                                                          Ioss_MPI_Comm                comm);
   template IOSS_EXPORT Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props,
@@ -190,19 +289,19 @@ namespace Ioss {
   }
 
   template IOSS_EXPORT void
-  Decomposition<int>::generate_entity_distributions(size_t globalNodeCount,
-                                                    size_t globalElementCount);
+  Decomposition<int>::generate_entity_distributions(size_t global_node_count,
+                                                    size_t global_element_count);
   template IOSS_EXPORT void
-  Decomposition<int64_t>::generate_entity_distributions(size_t globalNodeCount,
-                                                        size_t globalElementCount);
+  Decomposition<int64_t>::generate_entity_distributions(size_t global_node_count,
+                                                        size_t global_element_count);
 
   template <typename INT>
-  void Decomposition<INT>::generate_entity_distributions(size_t globalNodeCount,
-                                                         size_t globalElementCount)
+  void Decomposition<INT>::generate_entity_distributions(size_t global_node_count,
+                                                         size_t global_element_count)
   {
     show_progress(__func__);
-    m_globalNodeCount    = globalNodeCount;
-    m_globalElementCount = globalElementCount;
+    m_globalNodeCount    = global_node_count;
+    m_globalElementCount = global_element_count;
 
     m_elementDist = get_entity_dist<INT>(m_processorCount, m_processor, m_globalElementCount,
                                          &m_elementOffset, &m_elementCount);
@@ -1051,7 +1150,7 @@ namespace Ioss {
       std::vector<std::pair<int, int>> export_map;
       export_map.reserve(num_export);
       for (int i = 0; i < num_export; i++) {
-        export_map.emplace_back(std::make_pair(export_procs[i], export_global_ids[i]));
+        export_map.emplace_back(export_procs[i], export_global_ids[i]);
       }
 
       Ioss::sort(export_map.begin(), export_map.end());

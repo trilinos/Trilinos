@@ -46,18 +46,13 @@
 #ifndef MUELU_USERAGGREGATIONFACTORY_FWD_HPP
 #define MUELU_USERAGGREGATIONFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class UserAggregationFactory;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class UserAggregationFactory;
 }
 
 #ifndef MUELU_USERAGGREGATIONFACTORY_SHORT
 #define MUELU_USERAGGREGATIONFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_USERAGGREGATIONFACTORY_FWD_HPP
+#endif  // MUELU_USERAGGREGATIONFACTORY_FWD_HPP

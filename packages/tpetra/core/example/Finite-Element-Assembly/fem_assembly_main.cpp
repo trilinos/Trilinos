@@ -49,7 +49,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
-#include "Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp"
+#include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
 #include "fem_assembly_commandLineOpts.hpp"
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"

@@ -46,18 +46,13 @@
 #ifndef MUELU_PERFMODELS_FWD_HPP
 #define MUELU_PERFMODELS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class PerfModels;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class PerfModels;
 }
 
 #ifndef MUELU_PERFMODELS_SHORT
 #define MUELU_PERFMODELS_SHORT
 #endif
 
-
-
-#endif // MUELU_PERFMODELS_FWD_HPP
+#endif  // MUELU_PERFMODELS_FWD_HPP

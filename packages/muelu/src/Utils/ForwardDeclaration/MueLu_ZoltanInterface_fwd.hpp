@@ -50,8 +50,8 @@
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ZoltanInterface;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ZoltanInterface;
 }
 
 #ifndef MUELU_ZOLTANINTERFACE_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_ZOLTANINTERFACE_FWD_HPP
+#endif  // MUELU_ZOLTANINTERFACE_FWD_HPP

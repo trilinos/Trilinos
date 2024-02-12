@@ -9,6 +9,7 @@ sierra_proj=${SIERRA_PROJ:-${PWD}}
 output_dir=${OUTPUT_DIR:-${PWD}/../stk-cmake-testing}
 trilinos_dir=${output_dir}/Trilinos
 cuda_on_or_off=${CUDA:-OFF}
+clear_cache=${CLEAR_CACHE:-ON}
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
@@ -29,8 +30,10 @@ trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_gcc
 exe rm -rf $trilinos_install_dir
 
 stk_build_dir=${output_dir}/stk_build_no_stk_io_${build_type}_gcc
-exe rm -rf $stk_build_dir
-exe mkdir -p $stk_build_dir
+if [ "${clear_cache}" == "ON" ] ; then
+  exe rm -rf $stk_build_dir
+  exe mkdir -p $stk_build_dir
+fi
 
 stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
 
@@ -63,6 +66,7 @@ exe "TRILINOS_DIR=${trilinos_dir} \
      TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
      CMAKE_BUILD_TYPE=${build_type} \
      CUDA=${cuda_on_or_off} \
+     CLEAR_CACHE=${clear_cache} \
      ./run_cmake_stk_no_stk_io >& ${stk_config_log}"
 if [ $? -ne 0 ] ; then
   echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";

@@ -31,18 +31,17 @@ namespace Tempus {
 template <typename Scalar>
 class WrapperModelEvaluatorPairPartIMEX_StaggeredFSA
   : public SensitivityModelEvaluatorBase<Scalar>,
-    public WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>
-{
-public:
-
+    public WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> {
+ public:
   /// Constructor
   WrapperModelEvaluatorPairPartIMEX_StaggeredFSA(
-    const Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >& forwardModel,
-    const bool is_pseudotransient,
-    const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
+      const Teuchos::RCP<
+          const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >& forwardModel,
+      const bool is_pseudotransient,
+      const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
 
   /// Destructor
-  virtual ~WrapperModelEvaluatorPairPartIMEX_StaggeredFSA(){}
+  virtual ~WrapperModelEvaluatorPairPartIMEX_StaggeredFSA() {}
 
   /// Initialize after setting member data.
   virtual void initialize();
@@ -50,52 +49,48 @@ public:
   /// \name Methods that apply to both explicit and implicit terms.
   //@{
 
-    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-    get_p_space(int i) const;
+  virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(
+      int i) const;
 
   //@}
 
   //@{ \name Accessors
 
-    /// Extract IMEX vector from a full solution vector
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> >
-    getIMEXVector(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract IMEX vector from a full solution vector
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getIMEXVector(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& full) const;
 
-    /// Extract IMEX vector for reading
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-    getIMEXVector(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract IMEX vector for reading
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getIMEXVector(
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& full) const;
 
-    /// Extract explicit-only vector from a full solution vector
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> >
-    getExplicitOnlyVector(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract explicit-only vector from a full solution vector
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getExplicitOnlyVector(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& full) const;
 
-    /// Extract explicit-only vector for reading
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-    getExplicitOnlyVector(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract explicit-only vector for reading
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getExplicitOnlyVector(
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& full) const;
 
   //@}
 
   /// \name Overridden from Tempus::SensitivityModelEvaluatorBase
   //@{
 
-    /// Get the underlying forward model
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-    getForwardModel() const;
+  /// Get the underlying forward model
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getForwardModel()
+      const;
 
-    /// Set solution history from forward state evaluation (for interpolation)
-    virtual void setForwardSolutionHistory(
+  /// Set solution history from forward state evaluation (for interpolation)
+  virtual void setForwardSolutionHistory(
       const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);
 
-    /// Set solution state from forward state evaluation (for frozen state)
-    virtual void setForwardSolutionState(
+  /// Set solution state from forward state evaluation (for frozen state)
+  virtual void setForwardSolutionState(
       const Teuchos::RCP<const Tempus::SolutionState<Scalar> >& s);
 
-    /// Set the solver of the underlying model if you want to reuse it
-    virtual void setSolver(
+  /// Set the solver of the underlying model if you want to reuse it
+  virtual void setSolver(
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
       const bool force_W_update);
 
@@ -104,20 +99,17 @@ public:
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
   //@{
 
-   virtual Thyra::ModelEvaluatorBase::InArgs<Scalar>
-   createInArgs() const;
+  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
-    virtual void
-    evalModelImpl(
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar>  & inArgs,
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & outArgs) const;
+  virtual void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
 
   //@}
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-protected:
-
+ protected:
   /// Build implicit x and end explicit y states from forward_state_
   void buildIMEXStates() const;
 
@@ -127,7 +119,8 @@ protected:
   typedef Thyra::ProductMultiVectorBase<Scalar> PMVB;
   typedef StaggeredForwardSensitivityModelEvaluator<Scalar> FSAME;
 
-  Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> > forwardModel_;
+  Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
+      forwardModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appExplicitModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appImplicitModel_;
   Teuchos::RCP<FSAME> fsaExplicitModel_;
@@ -148,9 +141,8 @@ protected:
 
   mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dfdp_mv_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdp_op_;
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_ModelEvaluatorPairPartIMEX_Basic_decl_hpp
+#endif  // Tempus_ModelEvaluatorPairPartIMEX_Basic_decl_hpp

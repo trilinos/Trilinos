@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -44,8 +44,8 @@ namespace {
     properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Ioex::DatabaseIO *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
-                                                   Ioss::ParallelUtils::comm_world(), properties);
+    auto *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
+                                       Ioss::ParallelUtils::comm_world(), properties);
     return db_io;
   }
 
@@ -59,8 +59,8 @@ namespace {
     properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Ioex::DatabaseIO *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
-                                                   Ioss::ParallelUtils::comm_world(), properties);
+    auto *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
+                                       Ioss::ParallelUtils::comm_world(), properties);
     return db_io;
   }
 
@@ -272,12 +272,10 @@ namespace {
     int64_t num_nodes   = nb->entity_count();
     int     spatial_dim = nb->get_property("component_degree").get_int();
 
-    Ioss::NodeBlock *output_node_block =
-        new Ioss::NodeBlock(db_out, NodeBlockName, num_nodes, spatial_dim);
+    auto *output_node_block = new Ioss::NodeBlock(db_out, NodeBlockName, num_nodes, spatial_dim);
     output_region.add(output_node_block);
 
-    const std::vector<Ioss::ElementBlock *> &input_element_blocks =
-        input_region.get_element_blocks();
+    const auto &input_element_blocks = input_region.get_element_blocks();
     for (size_t blk = 0; blk < input_element_blocks.size(); ++blk) {
       const Ioss::ElementTopology *topology = input_element_blocks[blk]->topology();
       int block_id = input_element_blocks[blk]->get_property("id").get_int();
@@ -286,8 +284,7 @@ namespace {
       std::string exotype      = topology->name();
       int64_t     num_elements = input_element_blocks[blk]->entity_count();
 
-      Ioss::ElementBlock *output_element_block =
-          new Ioss::ElementBlock(db_out, name, exotype, num_elements);
+      auto *output_element_block = new Ioss::ElementBlock(db_out, name, exotype, num_elements);
       output_element_block->property_add(Ioss::Property("original_topology_type", exotype));
       output_element_block->property_add(Ioss::Property("id", block_id));
       output_region.add(output_element_block);
@@ -299,32 +296,31 @@ namespace {
       }
     }
 
-    const std::vector<Ioss::NodeSet *> nodesets_input = input_region.get_nodesets();
+    const auto &nodesets_input = input_region.get_nodesets();
     for (size_t i = 0; i < nodesets_input.size(); ++i) {
       std::string nodeset_name            = nodesets_input[i]->name();
       int64_t     number_nodes_in_nodeset = nodesets_input[i]->entity_count();
 
-      Ioss::NodeSet *const nodeset =
-          new Ioss::NodeSet(db_out, nodeset_name, number_nodes_in_nodeset);
+      auto *const nodeset = new Ioss::NodeSet(db_out, nodeset_name, number_nodes_in_nodeset);
       output_region.add(nodeset);
       int num_local_owned_nodes = number_nodes_in_nodeset;
       nodeset->property_add(Ioss::Property("locally_owned_count", num_local_owned_nodes));
     }
 
-    const std::vector<Ioss::SideSet *> sidesets_input = input_region.get_sidesets();
+    const auto &sidesets_input = input_region.get_sidesets();
     for (size_t i = 0; i < sidesets_input.size(); ++i) {
       std::string sideset_name = sidesets_input[i]->name();
 
-      Ioss::SideSet *const sideset_output = new Ioss::SideSet(db_out, sideset_name);
+      auto *const sideset_output = new Ioss::SideSet(db_out, sideset_name);
       output_region.add(sideset_output);
 
-      const std::vector<Ioss::SideBlock *> &side_blocks = sidesets_input[i]->get_side_blocks();
+      const auto &side_blocks = sidesets_input[i]->get_side_blocks();
       for (size_t k = 0; k < side_blocks.size(); ++k) {
         const std::string &topo_name        = side_blocks[k]->topology()->name();
         int64_t            side_count       = side_blocks[k]->entity_count();
         const std::string &parent_topo_name = side_blocks[k]->parent_element_topology()->name();
         const std::string &side_block_name  = side_blocks[k]->name();
-        Ioss::SideBlock   *side_block =
+        auto              *side_block =
             new Ioss::SideBlock(db_out, side_block_name, topo_name, parent_topo_name, side_count);
 
         sideset_output->add(side_block);
@@ -343,7 +339,7 @@ namespace {
     output_region.begin_mode(Ioss::STATE_MODEL);
 
     {
-      Ioss::NodeBlock *input_node_block = input_region.get_node_blocks()[0];
+      auto *input_node_block = input_region.get_node_blocks()[0];
 
       std::vector<double> coordinates;
       input_node_block->get_field_data("mesh_model_coordinates", coordinates);
@@ -354,7 +350,7 @@ namespace {
       output_node_block->put_field_data("ids", node_ids);
     }
 
-    std::vector<Ioss::ElementBlock *> output_element_blocks = output_region.get_element_blocks();
+    auto output_element_blocks = output_region.get_element_blocks();
     for (size_t blk = 0; blk < output_element_blocks.size(); blk++) {
       std::vector<int64_t> elem_ids;
       input_element_blocks[blk]->get_field_data("ids", elem_ids);
@@ -371,7 +367,7 @@ namespace {
       }
     }
 
-    const std::vector<Ioss::NodeSet *> nodesets_output = output_region.get_nodesets();
+    const auto &nodesets_output = output_region.get_nodesets();
     for (size_t i = 0; i < nodesets_output.size(); ++i) {
       std::vector<int64_t> node_ids;
       nodesets_input[i]->get_field_data("ids", node_ids);
@@ -382,12 +378,10 @@ namespace {
       nodesets_output[i]->put_field_data("distribution_factors", dist_factors);
     }
 
-    const std::vector<Ioss::SideSet *> sidesets_output = output_region.get_sidesets();
+    const auto &sidesets_output = output_region.get_sidesets();
     for (size_t i = 0; i < sidesets_output.size(); ++i) {
-      const std::vector<Ioss::SideBlock *> &side_blocks_input =
-          sidesets_input[i]->get_side_blocks();
-      const std::vector<Ioss::SideBlock *> &side_blocks_output =
-          sidesets_output[i]->get_side_blocks();
+      const auto &side_blocks_input  = sidesets_input[i]->get_side_blocks();
+      const auto &side_blocks_output = sidesets_output[i]->get_side_blocks();
       for (size_t k = 0; k < side_blocks_output.size(); ++k) {
         std::vector<int64_t> elem_side_ids;
         side_blocks_input[k]->get_field_data("element_side", elem_side_ids);

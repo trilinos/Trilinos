@@ -15,7 +15,7 @@
 
 namespace Tempus {
 
- /** \brief Base modifier for OperatorSplit.
+/** \brief Base modifier for OperatorSplit.
  *
  *  This class provides a means to modify values (e.g., solution variables
  *  through SolutionHistory, and stepper member data through the Stepper),
@@ -32,37 +32,36 @@ namespace Tempus {
  *  (StepperOperatorSplitAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperOperatorSplit.
  */
-  template<class Scalar>
+template <class Scalar>
 class StepperOperatorSplitModifierBase
-    : virtual public Tempus::StepperOperatorSplitAppAction<Scalar>
-  {
-  private:
-    /* \brief Adaptor execute function
-     *
-     *  This is an adaptor function to bridge between the AppAction
-     *  interface and the Modifier interface.  It is meant to be private
-     *  and non-virtual as deriving from this class should only need to
-     *  implement the modify function.
-     *
-     *  For the Modifier interface, this adaptor is a "simple pass through".
-     */
-    void execute(
+  : virtual public Tempus::StepperOperatorSplitAppAction<Scalar> {
+ private:
+  /* \brief Adaptor execute function
+   *
+   *  This is an adaptor function to bridge between the AppAction
+   *  interface and the Modifier interface.  It is meant to be private
+   *  and non-virtual as deriving from this class should only need to
+   *  implement the modify function.
+   *
+   *  For the Modifier interface, this adaptor is a "simple pass through".
+   */
+  void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
       Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
-      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc)
-    { this->modify(sh, stepper, actLoc); }
-  public:
-    /// Modify OperatorSplit Stepper.
-    virtual void modify(
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
+  {
+    this->modify(sh, stepper, actLoc);
+  }
+
+ public:
+  /// Modify OperatorSplit Stepper.
+  virtual void modify(
       Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
       Teuchos::RCP<StepperOperatorSplit<Scalar> > /* stepper */,
-      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
+};
 
-  };
-
-} // namespace Tempus
-#endif // Tempus_StepperOperatorModifierBase_hpp
-
-
-
-
+}  // namespace Tempus
+#endif  // Tempus_StepperOperatorModifierBase_hpp

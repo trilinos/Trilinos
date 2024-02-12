@@ -7,7 +7,12 @@ ADD_SUBDIRECTORY(diag)
 ADD_SUBDIRECTORY(command_line)
 ADD_SUBDIRECTORY(ngp)
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+SET(HEADERS
+  stk_config.h
+  stk_kokkos_macros.h
+  Version.hpp
+)
 
-INSTALL(FILES stk_config.h stk_kokkos_macros.h DESTINATION
+INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/)
+

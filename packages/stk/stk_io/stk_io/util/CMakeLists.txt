@@ -33,45 +33,31 @@
 # 
 
 
-#
-# A) Package-specific configuration options
-#
-
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../../seacas/libraries/ioss/src)
-
-#
-# Core headers
-#
-
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_io_util
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS stk_io
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_io_util
+    NOINSTALLHEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS stk_io
   )
+else()
+  add_library(stk_io_util ${SOURCES})
+  target_link_libraries(stk_io_util PUBLIC stk_io)
+endif()
+
+target_include_directories(stk_io_util PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_io>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/util/)
+
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_io_util DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

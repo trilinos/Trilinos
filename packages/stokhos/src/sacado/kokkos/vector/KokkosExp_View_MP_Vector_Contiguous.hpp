@@ -463,7 +463,7 @@ namespace Impl {
 
 template <unsigned N, typename... Args>
 KOKKOS_FUNCTION std::enable_if_t<
-    N == View<Args...>::Rank &&
+    N == View<Args...>::rank &&
     std::is_same<typename ViewTraits<Args...>::specialize,
                  Kokkos::Experimental::Impl::ViewMPVectorContiguous>::value,
     View<Args...>>
@@ -475,7 +475,7 @@ as_view_of_rank_n(View<Args...> v) {
 // never be called
 template <unsigned N, typename T, typename... Args>
 std::enable_if_t<
-    N != View<T, Args...>::Rank &&
+    N != View<T, Args...>::rank &&
         std::is_same<typename ViewTraits<T, Args...>::specialize,
                      Kokkos::Experimental::Impl::ViewMPVectorContiguous>::value,
     View<typename RankDataType<typename View<T, Args...>::value_type, N>::type,
@@ -719,16 +719,11 @@ struct MPVectorAllocation<ValueType, false> {
       m_space(space), m_p(p), m_sp(sp), m_span(span), m_vector_size(vector_size) {}
 
     inline void execute() {
-      if ( ! m_space.in_parallel() ) {
-        typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
-        const Kokkos::Impl::ParallelFor< VectorConstruct , PolicyType >
-          closure( *this , PolicyType( 0 , m_span ) );
-        closure.execute();
-        m_space.fence();
-      }
-      else {
-        for ( size_t i = 0 ; i < m_span ; ++i ) operator()(i);
-      }
+      typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
+      const Kokkos::Impl::ParallelFor< VectorConstruct , PolicyType >
+        closure( *this , PolicyType( 0 , m_span ) );
+      closure.execute();
+      m_space.fence();
     }
 
     KOKKOS_INLINE_FUNCTION

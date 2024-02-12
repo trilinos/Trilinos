@@ -38,6 +38,8 @@
 
 #cmakedefine STK_DISABLE_MPI_NEIGHBOR_COMM
 
+#cmakedefine STK_USE_SIMPLE_FIELDS
+
 #cmakedefine STK_HAVE_BOOST
 
 #cmakedefine STK_HAVE_KOKKOS
@@ -48,7 +50,7 @@
 
 #cmakedefine STK_HAVE_STKNGP_TEST
 
-#cmakedefine HAVE_MPI
+#cmakedefine STK_HAS_MPI
 
 #cmakedefine STK_VOLATILE_SIMD
 

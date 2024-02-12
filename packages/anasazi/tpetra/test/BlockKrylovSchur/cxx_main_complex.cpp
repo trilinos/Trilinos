@@ -63,6 +63,8 @@
 
 // I/O for Harwell-Boeing files
 #include <Trilinos_Util_iohb.h>
+//I/O for Matrix Market files
+#include <MatrixMarket_Tpetra.hpp>
 
 using Tpetra::CrsMatrix;
 using Tpetra::Map;
@@ -94,7 +96,6 @@ int main(int argc, char *argv[])
 
   const ST ONE = SCT::one ();
 
-  int info = 0;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
@@ -124,15 +125,7 @@ int main(int argc, char *argv[])
     return -1;
   }
   if (debug) verbose = true;
-  if (filename == "") {
-    // get default based on herm
-    if (herm) {
-      filename = "mhd1280b.cua";
-    }
-    else {
-      filename = "mhd1280a.cua";
-    }
-  }
+  if (filename == "") filename = "mhd1280b.cua";
 
   if (MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
@@ -144,55 +137,74 @@ int main(int argc, char *argv[])
   double *dvals;
   int *colptr,*rowind;
   nnz = -1;
-  if (MyPID == 0) {
-    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-    // find maximum NNZ over all rows
-    vector<int> rnnz(dim,0);
-    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-      ++rnnz[*ri-1];
+
+  RCP<CrsMatrix<ST>> K;
+  RCP<const Tpetra::Map<> > map;
+  std::string mtx = ".mtx", mm = ".mm", cua = ".cua";
+
+  if(std::equal(mtx.rbegin(), mtx.rend(), filename.rbegin()) || std::equal(mm.rbegin(), mm.rend(), filename.rbegin())) {
+    K = Tpetra::MatrixMarket::Reader<CrsMatrix<ST> >::readSparseFile(filename,comm);
+    map = K->getDomainMap();
+  } else if(std::equal(cua.rbegin(), cua.rend(), filename.rbegin())) {
+
+    int info = 0;
+    if (MyPID == 0) {
+
+      info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+      // find maximum NNZ over all rows
+      vector<int> rnnz(dim,0);
+      for (int *ri=rowind; ri<rowind+nnz; ++ri) {
+        ++rnnz[*ri-1];
+      }
+      rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
     }
-    rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
-  }
-  else {
-    // address uninitialized data warnings
-    dvals = NULL;
-    colptr = NULL;
-    rowind = NULL;
-  }
-  Teuchos::broadcast(*comm,0,&info);
-  Teuchos::broadcast(*comm,0,&nnz);
-  Teuchos::broadcast(*comm,0,&dim);
-  Teuchos::broadcast(*comm,0,&rnnzmax);
-  if (info == 0 || nnz < 0) {
+    else {
+      // address uninitialized data warnings
+      dvals = NULL;
+      colptr = NULL;
+      rowind = NULL;
+    }
+    Teuchos::broadcast(*comm,0,&info);
+    Teuchos::broadcast(*comm,0,&nnz);
+    Teuchos::broadcast(*comm,0,&dim);
+    Teuchos::broadcast(*comm,0,&rnnzmax);
+    if (info == 0 || nnz < 0) {
+      if (MyPID == 0) {
+        cout << "Error reading '" << filename << "'" << endl
+          << "End Result: TEST FAILED" << endl;
+      }
+      return -1;
+    }
+    // create map
+    map = rcp (new Map<> (dim, 0, comm));
+    K = rcp (new CrsMatrix<ST> (map, rnnzmax));
+    if (MyPID == 0) {
+      // Convert interleaved doubles to complex values
+      // HB format is compressed column. CrsMatrix is compressed row.
+      const double *dptr = dvals;
+      const int *rptr = rowind;
+      for (int c=0; c<dim; ++c) {
+        for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
+          K->insertGlobalValues (static_cast<GO> (*rptr++ - 1), tuple<GO> (c), tuple (ST (dptr[0], dptr[1])));
+          dptr += 2;
+        }
+      }
+    }
+    if (MyPID == 0) {
+      // Clean up.
+      free( dvals );
+      free( colptr );
+      free( rowind );
+    }
+    K->fillComplete();
+    // cout << *K << endl;
+  } else {
     if (MyPID == 0) {
       cout << "Error reading '" << filename << "'" << endl
-           << "End Result: TEST FAILED" << endl;
+        << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
-  // create map
-  RCP<const Map<> > map = rcp (new Map<> (dim, 0, comm));
-  RCP<CrsMatrix<ST> > K = rcp (new CrsMatrix<ST> (map, rnnzmax));
-  if (MyPID == 0) {
-    // Convert interleaved doubles to complex values
-    // HB format is compressed column. CrsMatrix is compressed row.
-    const double *dptr = dvals;
-    const int *rptr = rowind;
-    for (int c=0; c<dim; ++c) {
-      for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        K->insertGlobalValues (static_cast<GO> (*rptr++ - 1), tuple<GO> (c), tuple (ST (dptr[0], dptr[1])));
-        dptr += 2;
-      }
-    }
-  }
-  if (MyPID == 0) {
-    // Clean up.
-    free( dvals );
-    free( colptr );
-    free( rowind );
-  }
-  K->fillComplete();
-  // cout << *K << endl;
 
   // Create initial vectors
   RCP<MV> ivec = rcp( new MV(map,blockSize) );
@@ -203,7 +215,7 @@ int main(int argc, char *argv[])
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
-  problem->setHermitian(herm);
+  problem->setHermitian(true);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );
@@ -213,11 +225,10 @@ int main(int argc, char *argv[])
   if (boolret != true) {
     if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;
+        << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
-
 
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary + Anasazi::TimingDetails;
@@ -227,8 +238,6 @@ int main(int argc, char *argv[])
   if (debug) {
     verbosity += Anasazi::Debug;
   }
-
-
 
   // Eigensolver parameters
   int numBlocks = 8;

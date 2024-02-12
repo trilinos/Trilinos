@@ -75,7 +75,7 @@ struct CrsMatrixGetDiagCopyWithOffsetsFunctor {
   /// \param lclRow [in] The current (local) row of the sparse matrix.
   KOKKOS_INLINE_FUNCTION void operator()(const LO& lclRow) const {
     const offset_type INV = KokkosSparse::OrdinalTraits<offset_type>::invalid();
-    const scalar_type ZERO = Kokkos::Details::ArithTraits<scalar_type>::zero();
+    const scalar_type ZERO = Kokkos::ArithTraits<scalar_type>::zero();
 
     // If the row lacks a stored diagonal entry, then its value is zero.
     D_(lclRow)               = ZERO;

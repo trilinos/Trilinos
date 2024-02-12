@@ -75,7 +75,7 @@ namespace BaskerNS
     void convert2D(BASKER_MATRIX &M, 
                    BASKER_BOOL alloc, 
                    Int kid,
-                   bool remove_zeros = false);
+                   bool keep_zeros = false);
 
     
     //just set shape, do not init

@@ -83,7 +83,9 @@ using namespace std;
  *    <td>
  *      @code
  *        // Initial Conditions
+ *        int n = 0;
  *        double time = 0.0;
+ *        bool passed = true;   // ICs are considered passed.
  *        double epsilon = 1.0e-1;
  *        x_n   [0] = 2.0;
  *        x_n   [1] = 0.0;
@@ -105,15 +107,13 @@ using namespace std;
  *    <tr VALIGN=TOP>
  *    <td>
  *      <b>Time-Integration Loop.</b>  The time-integration loop simply
- *      advances the solution until the solution is not "passing", the
+ *      advances the solution until the solution is not "passed", the
  *      time has reached the final time, or the number timesteps is reached.
  *    <td>
  *      @code
  *        // Advance the solution to the next timestep.
- *        int n = 0;
- *        bool passing = true;
  *        cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
- *        while (passing && time < finalTime && n < nTimeSteps) {
+ *        while (passed && time < finalTime && n < nTimeSteps) {
  *
  *          ...
  *
@@ -170,19 +170,19 @@ using namespace std;
  *    <tr VALIGN=TOP>
  *    <td>
  *      <b>Test If Solution is Passing.</b>  Here we have a simple
- *      test if the solution is passing, i.e., the solution does not
+ *      test if the solution has passed, i.e., the solution does not
  *      have a NAN.  Otherwise "promote" the solution to the next
  *      timestep and increment the timestep index.
  *    <td>
  *      @code
- *        // Test if solution is passing.
+ *        // Test if solution has passed.
  *        if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
- *          passing = false;
+ *          passed = false;
  *        } else {
  *          // Promote to next step (n -> n+1).
- *          n++;
  *          x_n[0] = x_np1[0];
  *          x_n[1] = x_np1[1];
+ *          n++;
  *        }
  *      @endcode
  *    <tr VALIGN=TOP>
@@ -223,8 +223,10 @@ int main(int argc, char *argv[])
     double xDot_n[2];   // at time index n
 
     // Initial Conditions
+    int n = 0;
     double time = 0.0;
     double epsilon = 1.0e-1;
+    bool passed = true;   // ICs are considered passed.
     x_n   [0] = 2.0;
     x_n   [1] = 0.0;
     xDot_n[0] = 0.0;
@@ -236,10 +238,8 @@ int main(int argc, char *argv[])
     const double constDT = finalTime/(nTimeSteps-1);
 
     // Advance the solution to the next timestep.
-    int n = 0;
-    bool passing = true;
     cout << n << "  " << time << "  " << x_n[0] << "  " << x_n[1] << endl;
-    while (passing && time < finalTime && n < nTimeSteps) {
+    while (passed && time < finalTime && n < nTimeSteps) {
 
       // Initialize next time step
       double x_np1[2];    // at time index n+1
@@ -258,14 +258,14 @@ int main(int argc, char *argv[])
       x_np1[0] = x_n[0] + dt*xDot_n[0];
       x_np1[1] = x_n[1] + dt*xDot_n[1];
 
-      // Test if solution is passing.
+      // Test if solution is passed.
       if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
-        passing = false;
+        passed = false;
       } else {
         // Promote to next step (n <- n+1).
-        n++;
         x_n[0] = x_np1[0];
         x_n[1] = x_np1[1];
+        n++;
       }
 
       // Output
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
     cout << "Relative L2 Norm of the error (regression) = "
          << x_L2norm_error/x_L2norm_regress << endl;
     if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
-      passing = false;
+      passed = false;
       cout << "FAILED regression constraint!" << endl;
     }
 
@@ -307,10 +307,10 @@ int main(int argc, char *argv[])
     cout << "Relative L2 Norm of the error (best)       = "
          << x_L2norm_error/x_L2norm_best << endl;
     if ( x_L2norm_error > 0.02*x_L2norm_best) {
-      passing = false;
+      passed = false;
       cout << "FAILED best constraint!" << endl;
     }
-    if (passing) success = true;
+    if (passed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

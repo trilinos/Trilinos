@@ -170,14 +170,14 @@ void all_reduce_impl( ParallelMachine comm ,
 
   }
   else if ( sizeof(size_t) == sizeof(unsigned long) ) {
-    MPI_Allreduce( tmp , global , count , MPI_UNSIGNED_LONG , op , comm );
+    MPI_Allreduce( tmp , global , count , sierra::MPI::Datatype<unsigned long>::type() , op , comm );
   }
   else {
     unsigned long * const in  = new unsigned long[ count ];
     unsigned long * const out = new unsigned long[ count ];
 
     for ( unsigned i = 0 ; i < count ; ++i ) { in[i] = local[i] ; }
-    MPI_Allreduce( in , out , count , MPI_UNSIGNED_LONG , op , comm );
+    MPI_Allreduce( in , out , count , sierra::MPI::Datatype<unsigned long>::type() , op , comm );
     for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = out[i] ; }
 
     delete[] in ;

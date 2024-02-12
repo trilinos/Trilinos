@@ -37,12 +37,6 @@ ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(examples)
 
 #
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-#
 # D) Do standard postprocessing
 #
 

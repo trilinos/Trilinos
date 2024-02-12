@@ -118,7 +118,7 @@ int read_chaco_file(int Proc,
     file_error = (fp == NULL);
   }
 
-  MPI_Bcast(&file_error, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&file_error, 1, MPI_INT, 0, zoltan_get_global_comm());
 
   if (file_error) {
     sprintf(cmesg, "fatal:  Could not open Chaco graph file %s",
@@ -236,14 +236,14 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
 
   /* Distribute graph */
 
-  if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
+  if (!chaco_dist_graph(zoltan_get_global_comm(), pio_info, 0, &gnvtxs, &nvtxs, 
              &start, &adj, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts, 
              &ndim, &x, &y, &z, &assignments)) {
     Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
     return 0;
   }
 
-  MPI_Bcast(&base, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&base, 1, MPI_INT, 0, zoltan_get_global_comm());
 
   if (!chaco_setup_mesh_struct(Proc, Num_Proc, prob, mesh, pio_info, gnvtxs, nvtxs,
                      start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
@@ -341,7 +341,7 @@ int i;
    * Each element has one set of coordinates (i.e., node) if a coords file
    * was provided; zero otherwise. 
    */
-  MPI_Bcast( &no_geom, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &no_geom, 1, MPI_INT, 0, zoltan_get_global_comm());
   if (no_geom)
     mesh->eb_nnodes[0] = 0;
   else
@@ -551,7 +551,7 @@ void chaco_init_local_ids(
 int i;
 int Proc;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
+  MPI_Comm_rank(zoltan_get_global_comm(), &Proc);
 
   *num_vtx = ch_dist_max_num_vtx(assignments);
   *vtx_list = (int *) malloc(((int)*num_vtx) * sizeof(int));

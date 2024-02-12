@@ -13,7 +13,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperBDF2AppAction.hpp"
 
-
 namespace Tempus {
 
 /** \brief Base observer for StepperBDF2.
@@ -31,12 +30,10 @@ namespace Tempus {
  *  (StepperBDF2AppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperBDF2.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperBDF2ObserverBase
-  : virtual public Tempus::StepperBDF2AppAction<Scalar>
-{
-private:
-
+  : virtual public Tempus::StepperBDF2AppAction<Scalar> {
+ private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -48,21 +45,21 @@ private:
    *  to the arguments.
    */
   void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperBDF2<Scalar> > stepper,
-    const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc)
-  { this->observe(sh, stepper, actLoc); }
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperBDF2<Scalar> > stepper,
+      const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc)
+  {
+    this->observe(sh, stepper, actLoc);
+  }
 
-public:
-
+ public:
   /// Observe BDF2 Stepper.
   virtual void observe(
-    Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<const StepperBDF2<Scalar> > /* stepper */,
-    const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
-
+      Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<const StepperBDF2<Scalar> > /* stepper */,
+      const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperBDF2ObserverBase_hpp
+#endif  // Tempus_StepperBDF2ObserverBase_hpp

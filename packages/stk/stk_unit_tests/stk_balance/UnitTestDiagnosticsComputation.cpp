@@ -130,7 +130,7 @@ protected:
   {
     stk::mesh::BulkData & bulk = ioBroker.bulk_data();
 
-    stk::balance::internal::register_internal_fields(bulk, balanceSettings);
+    stk::balance::internal::register_internal_fields_and_parts(bulk, balanceSettings);
     stk::balance::set_up_diagnostics(balanceSettings);
 
     stk::balance::rebalance(ioBroker, balanceSettings);

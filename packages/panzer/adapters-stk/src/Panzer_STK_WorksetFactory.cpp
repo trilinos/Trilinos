@@ -87,7 +87,7 @@ Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
 getWorksets(const panzer::WorksetDescriptor & worksetDesc,
             const panzer::WorksetNeeds & needs) const
 {
-
+  PANZER_FUNC_TIME_MONITOR("panzer_stk::WorksetFactory::getWorksets");
   if(worksetDesc.requiresPartitioning()){
 
     // Generate the local mesh info if it doesn't already exist
@@ -142,7 +142,7 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
       }
       panzer::WorksetNeeds tmpNeeds(needs);
       tmpNeeds.cellData = panzer::CellData(worksetSize,needs.cellData.getCellTopology());
-      return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
+      return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), tmpNeeds);
     }
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {

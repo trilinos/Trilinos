@@ -58,10 +58,10 @@
 #include "MueLu_Level_fwd.hpp"
 
 namespace MueLuTests {
-  // Forward declaration of friend tester class used to UnitTest BlackBoxPFactory
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class BlackBoxPFactoryTester;
-}
+// Forward declaration of friend tester class used to UnitTest BlackBoxPFactory
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlackBoxPFactoryTester;
+}  // namespace MueLuTests
 
 namespace MueLu {
 
@@ -113,110 +113,108 @@ namespace MueLu {
   |                   |                          | coordinates so that on coarser levels coordinates are available in case another factory needs them.              |
 
 */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class BlackBoxPFactory : public PFactory {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class BlackBoxPFactory : public PFactory {
 #undef MUELU_BLACKBOXPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  friend class MueLuTests::BlackBoxPFactoryTester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-    friend class MueLuTests::BlackBoxPFactoryTester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! Constructor
+  BlackBoxPFactory() {}
 
-    //! Constructor
-    BlackBoxPFactory() { }
+  //! Destructor.
+  virtual ~BlackBoxPFactory() {}
+  //@}
 
-    //! Destructor.
-    virtual ~BlackBoxPFactory() { }
-    //@}
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-    void Build (Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+ private:
+  struct NodesIDs {
+    // This small struct just carries basic data associated with coarse nodes that is needed
+    // to compute colMapP and to fillComplete P,
 
-  private:
+    Array<GO> GIDs, coarseGIDs;
+    Array<int> PIDs;
+    Array<LO> LIDs;
+    std::vector<GO> colInds;
+  };
 
-    struct NodesIDs {
-      // This small struct just carries basic data associated with coarse nodes that is needed
-      // to compute colMapP and to fillComplete P,
+  struct NodeID {
+    // This small struct is similar to the one above but only for one node.
+    // It is used to create a vector of NodeID that can easily be sorted
 
-      Array<GO>  GIDs, coarseGIDs;
-      Array<int> PIDs;
-      Array<LO>  LIDs;
-      std::vector<GO> colInds;
-    };
+    GO GID;
+    int PID;
+    LO LID, lexiInd;
+  };
 
-    struct NodeID {
-      // This small struct is similar to the one above but only for one node.
-      // It is used to create a vector of NodeID that can easily be sorted
+  void GetGeometricData(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> >& coordinates,
+                        const Array<LO> coarseRate, const Array<GO> gFineNodesPerDir,
+                        const Array<LO> lFineNodesPerDir, const LO BlkSize, Array<GO>& gIndices,
+                        Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
+                        Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir,
+                        Array<LO>& glCoarseNodesPerDir, Array<GO>& ghostGIDs,
+                        Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes,
+                        LO& lNumCoarseNodes, ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes,
+                        Array<int>& boundaryFlags, RCP<NodesIDs> ghostedCoarseNodes) const;
 
-      GO  GID;
-      int PID;
-      LO  LID, lexiInd;
-    };
+  void ComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
+                           const Array<LO> endRate, const LO BlkSize, const Array<LO> elemInds,
+                           const Array<LO> lCoarseElementsPerDir,
+                           const LO numDimensions, const Array<LO> lFineNodesPerDir,
+                           const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
+                           const Array<LO> lCoarseNodesPerDir, const Array<bool> ghostInterface,
+                           const Array<int> elementFlags, const std::string stencilType,
+                           const std::string blockStrategy, const Array<LO> elementNodesPerDir,
+                           const LO numNodesInElement, const Array<GO> colGIDs,
+                           Teuchos::SerialDenseMatrix<LO, SC>& Pi,
+                           Teuchos::SerialDenseMatrix<LO, SC>& Pf,
+                           Teuchos::SerialDenseMatrix<LO, SC>& Pe,
+                           Array<LO>& dofType, Array<LO>& lDofInd) const;
 
-    void GetGeometricData(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& coordinates,
-                          const Array<LO> coarseRate, const Array<GO> gFineNodesPerDir,
-                          const Array<LO> lFineNodesPerDir, const LO BlkSize, Array<GO>& gIndices,
-                          Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
-                          Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir,
-                          Array<LO>& glCoarseNodesPerDir, Array<GO>& ghostGIDs,
-                          Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes,
-                          LO& lNumCoarseNodes, ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes,
-                          Array<int>& boundaryFlags, RCP<NodesIDs> ghostedCoarseNodes) const;
+  void CollapseStencil(const int type, const int orientation, const int collapseFlags[3],
+                       Array<SC>& stencil) const;
 
-    void ComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
-                             const Array<LO> endRate, const LO BlkSize, const Array<LO> elemInds,
-                             const Array<LO> lCoarseElementsPerDir,
-                             const LO numDimensions, const Array<LO> lFineNodesPerDir,
-                             const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
-                             const Array<LO> lCoarseNodesPerDir, const Array<bool> ghostInterface,
-                             const Array<int> elementFlags, const std::string stencilType,
-                             const std::string blockStrategy, const Array<LO> elementNodesPerDir,
-                             const LO numNodesInElement, const Array<GO> colGIDs,
-                             Teuchos::SerialDenseMatrix<LO,SC>& Pi,
-                             Teuchos::SerialDenseMatrix<LO,SC>& Pf,
-                             Teuchos::SerialDenseMatrix<LO,SC>& Pe,
-                             Array<LO>& dofType, Array<LO>& lDofInd) const;
+  void FormatStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
+                     const LO je, const LO ke, const ArrayView<const SC> rowValues,
+                     const Array<LO> elementNodesPerDir, const int collapseFlags[3],
+                     const std::string stencilType, Array<SC>& stencil) const;
 
-    void CollapseStencil(const int type, const int orientation, const int collapseFlags[3],
-                         Array<SC>& stencil) const ;
+  void GetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
+                   int* type, LO& ind, int* orientation) const;
 
-    void FormatStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
-                       const LO je, const LO ke, const ArrayView<const SC> rowValues,
-                       const Array<LO> elementNodesPerDir, const int collapseFlags[3],
-                       const std::string stencilType, Array<SC>& stencil) const;
+  void sh_sort_permute(
+      const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
+      const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
+      const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
+      const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const;
 
-    void GetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
-                     int* type, LO& ind, int* orientation) const;
+};  // class BlackBoxPFactory
 
-    void sh_sort_permute(
-                const typename Teuchos::Array<LocalOrdinal>::iterator& first1,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& last1,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& first2,
-                const typename Teuchos::Array<LocalOrdinal>::iterator& last2) const;
-
-  }; //class BlackBoxPFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_BLACKBOXPFACTORY_SHORT
-#endif // MUELU_BLACKBOXPFACTORY_DECL_HPP
+#endif  // MUELU_BLACKBOXPFACTORY_DECL_HPP

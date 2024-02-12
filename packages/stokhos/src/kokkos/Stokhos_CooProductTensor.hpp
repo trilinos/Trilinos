@@ -42,14 +42,14 @@
 #ifndef STOKHOS_COO_PRODUCT_TENSOR_HPP
 #define STOKHOS_COO_PRODUCT_TENSOR_HPP
 
+#include <type_traits>
+
 #include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Teuchos_ParameterList.hpp"
-
-#include "Kokkos_Core.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

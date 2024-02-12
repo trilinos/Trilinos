@@ -13,7 +13,7 @@
 #include "Tempus_StepperDIRK_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperDIRK)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperDIRK)
 }
 
 #endif

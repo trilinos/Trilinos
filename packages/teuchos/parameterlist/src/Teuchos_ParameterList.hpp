@@ -47,6 +47,7 @@
     \brief Templated Parameter List class
 */  
 
+#include "TeuchosParameterList_config.h"
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_ParameterListModifier.hpp"
 #include "Teuchos_ParameterEntry.hpp"

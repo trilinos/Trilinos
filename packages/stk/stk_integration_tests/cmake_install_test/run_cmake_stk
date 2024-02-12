@@ -82,9 +82,9 @@ cmake \
 -DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
--DTrilinos_ENABLE_STKMiddle_mesh:BOOL=OFF \
+-DTrilinos_ENABLE_STKMiddle_mesh:BOOL=ON \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \
--DTPL_ENABLE_CDT:BOOL=OFF \
+-DTPL_ENABLE_CDT:BOOL=ON \
 -DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
 -DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_SEACASExodus:BOOL=ON \

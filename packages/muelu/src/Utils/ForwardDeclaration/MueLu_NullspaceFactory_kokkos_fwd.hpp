@@ -46,18 +46,13 @@
 #ifndef MUELU_NULLSPACEFACTORY_KOKKOS_FWD_HPP
 #define MUELU_NULLSPACEFACTORY_KOKKOS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class NullspaceFactory_kokkos;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class NullspaceFactory_kokkos;
 }
 
 #ifndef MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
 #define MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
 #endif
 
-
-
-#endif // MUELU_NULLSPACEFACTORY_KOKKOS_FWD_HPP
+#endif  // MUELU_NULLSPACEFACTORY_KOKKOS_FWD_HPP

@@ -74,7 +74,7 @@ public:
     // Fill JBlock with random numbers for a better test.
     JBlock->resumeFill();
 
-    using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
+    using IST = typename Kokkos::ArithTraits<zscalar_t>::val_type;
     using pool_type =
           Kokkos::Random_XorShift64_Pool<execution_space_t>;
     pool_type rand_pool(static_cast<uint64_t>(me));
@@ -189,7 +189,7 @@ public:
       Kokkos::RangePolicy<execution_space_t>(0, num_local_nz),
       KOKKOS_LAMBDA(const size_t nz, int &errorcnt) {
         if (J_local_matrix.values(nz) != Jp_local_matrix.values(nz)) {
-          printf("Error in nonzero comparison %zu:  %g != %g",
+          Kokkos::printf("Error in nonzero comparison %zu:  %g != %g",
                   nz, J_local_matrix.values(nz), Jp_local_matrix.values(nz));
           errorcnt++;
         }

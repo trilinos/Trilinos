@@ -17,7 +17,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperState.hpp"
 
-
 namespace Tempus {
 
 /** \brief StepControlStrategy class for TimeStepControl
@@ -100,12 +99,10 @@ namespace Tempus {
  *  U Wisconsin-Madison, 2014.
  *
  */
-template<class Scalar>
+template <class Scalar>
 class TimeStepControlStrategyBasicVS
-  : virtual public TimeStepControlStrategy<Scalar>
-{
-public:
-
+  : virtual public TimeStepControlStrategy<Scalar> {
+ public:
   /// Default Constructor
   TimeStepControlStrategyBasicVS()
     : rho_(1.75), sigma_(0.5), minEta_(0.0), maxEta_(1.0e+16)
@@ -118,7 +115,7 @@ public:
 
   /// Full Constructor
   TimeStepControlStrategyBasicVS(Scalar rho, Scalar sigma, Scalar minEta,
-    Scalar maxEta, std::string name = "Basic VS")
+                                 Scalar maxEta, std::string name = "Basic VS")
     : rho_(rho), sigma_(sigma), minEta_(minEta), maxEta_(maxEta)
   {
     this->setStrategyType("Basic VS");
@@ -128,23 +125,24 @@ public:
   }
 
   /// Destructor
-  virtual ~TimeStepControlStrategyBasicVS(){}
+  virtual ~TimeStepControlStrategyBasicVS() {}
 
   /** \brief Set the time step size.*/
   virtual void setNextTimeStep(
-    const TimeStepControl<Scalar> & tsc,
-    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
-    Status & /* integratorStatus */) override
+      const TimeStepControl<Scalar> &tsc,
+      Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
+      Status & /* integratorStatus */) override
   {
     using Teuchos::RCP;
 
     this->checkInitialized();
 
-    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar> > workingState =
+        solutionHistory->getWorkingState();
     const Scalar errorAbs = workingState->getErrorAbs();
     const Scalar errorRel = workingState->getErrorRel();
-    const int iStep = workingState->getIndex();
-    Scalar dt       = workingState->getTimeStep();
+    const int iStep       = workingState->getIndex();
+    Scalar dt             = workingState->getTimeStep();
 
     Scalar rho   = getAmplFactor();
     Scalar sigma = getReductFactor();
@@ -153,49 +151,49 @@ public:
 
     // General rule: only increase/decrease dt once for any given reason.
     if (workingState->getSolutionStatus() == Status::FAILED) {
-      tsc.printDtChanges(iStep, dt, dt*sigma,
-                          "Stepper failure - Decreasing dt.");
+      tsc.printDtChanges(iStep, dt, dt * sigma,
+                         "Stepper failure - Decreasing dt.");
       dt *= sigma;
     }
-    else { //Stepper passed
-      if (eta < getMinEta()) { // increase dt
-        tsc.printDtChanges(iStep, dt, dt*rho,
-          "Change too small ("
-          + std::to_string(eta) + " < " + std::to_string(getMinEta())
-          + ").  Increasing dt.");
+    else {                      // Stepper passed
+      if (eta < getMinEta()) {  // increase dt
+        tsc.printDtChanges(iStep, dt, dt * rho,
+                           "Change too small (" + std::to_string(eta) + " < " +
+                               std::to_string(getMinEta()) +
+                               ").  Increasing dt.");
         dt *= rho;
       }
-      else if (eta > getMaxEta()) { // reduce dt
-        tsc.printDtChanges(iStep, dt, dt*sigma,
-          "Change too large ("
-          + std::to_string(eta) + " > " + std::to_string(getMaxEta())
-          + ").  Decreasing dt.");
+      else if (eta > getMaxEta()) {  // reduce dt
+        tsc.printDtChanges(iStep, dt, dt * sigma,
+                           "Change too large (" + std::to_string(eta) + " > " +
+                               std::to_string(getMaxEta()) +
+                               ").  Decreasing dt.");
         dt *= sigma;
       }
-      else if (errorAbs > tsc.getMaxAbsError()) { // reduce dt
-        tsc.printDtChanges(iStep, dt, dt*sigma,
-          "Absolute error is too large ("
-          + std::to_string(errorAbs)+" > "+std::to_string(tsc.getMaxAbsError())
-          + ").  Decreasing dt.");
+      else if (errorAbs > tsc.getMaxAbsError()) {  // reduce dt
+        tsc.printDtChanges(
+            iStep, dt, dt * sigma,
+            "Absolute error is too large (" + std::to_string(errorAbs) + " > " +
+                std::to_string(tsc.getMaxAbsError()) + ").  Decreasing dt.");
         dt *= sigma;
       }
-      else if (errorRel > tsc.getMaxRelError()) { // reduce dt
-        tsc.printDtChanges(iStep, dt, dt*sigma,
-          "Relative error is too large ("
-          + std::to_string(errorRel)+" > "+std::to_string(tsc.getMaxRelError())
-          + ").  Decreasing dt.");
+      else if (errorRel > tsc.getMaxRelError()) {  // reduce dt
+        tsc.printDtChanges(
+            iStep, dt, dt * sigma,
+            "Relative error is too large (" + std::to_string(errorRel) + " > " +
+                std::to_string(tsc.getMaxRelError()) + ").  Decreasing dt.");
         dt *= sigma;
       }
     }
 
-    if (dt < tsc.getMinTimeStep()) { // decreased below minimum dt
+    if (dt < tsc.getMinTimeStep()) {  // decreased below minimum dt
       tsc.printDtChanges(iStep, dt, tsc.getMinTimeStep(),
-        "dt is too small.  Resetting to minimum dt.");
+                         "dt is too small.  Resetting to minimum dt.");
       dt = tsc.getMinTimeStep();
     }
-    if (dt > tsc.getMaxTimeStep()) { // increased above maximum dt
+    if (dt > tsc.getMaxTimeStep()) {  // increased above maximum dt
       tsc.printDtChanges(iStep, dt, tsc.getMaxTimeStep(),
-        "dt is too large.  Resetting to maximum dt.");
+                         "dt is too large.  Resetting to maximum dt.");
       dt = tsc.getMaxTimeStep();
     }
 
@@ -206,103 +204,130 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    std::string description() const override
-    { return "Tempus::TimeStepControlStrategyBasicVS"; }
+  std::string description() const override
+  {
+    return "Tempus::TimeStepControlStrategyBasicVS";
+  }
 
-    void describe(Teuchos::FancyOStream          &out,
-                  const Teuchos::EVerbosityLevel verbLevel) const override
-    {
-      auto l_out = Teuchos::fancyOStream( out.getOStream() );
-      Teuchos::OSTab ostab(*l_out, 2, this->description());
-      l_out->setOutputToRootOnly(0);
+  void describe(Teuchos::FancyOStream &out,
+                const Teuchos::EVerbosityLevel verbLevel) const override
+  {
+    auto l_out = Teuchos::fancyOStream(out.getOStream());
+    Teuchos::OSTab ostab(*l_out, 2, this->description());
+    l_out->setOutputToRootOnly(0);
 
-      *l_out << "\n--- " << this->description() << " ---" << std::endl;
+    *l_out << "\n--- " << this->description() << " ---" << std::endl;
 
-      if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
-        *l_out << "  StrategyType                      = " << this->getStrategyType()<< std::endl
-               << "  Step Type                         = " << this->getStepType() << std::endl
-               << "  Amplification Factor              = " << getAmplFactor()   << std::endl
-               << "  Reduction Factor                  = " << getReductFactor() << std::endl
-               << "  Minimum Value Monitoring Function = " << getMinEta()       << std::endl
-               << "  Maximum Value Monitoring Function = " << getMaxEta()       << std::endl;
-        *l_out << std::string(this->description().length()+8, '-') <<std::endl;
-      }
+    if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+      *l_out << "  StrategyType                      = "
+             << this->getStrategyType() << std::endl
+             << "  Step Type                         = " << this->getStepType()
+             << std::endl
+             << "  Amplification Factor              = " << getAmplFactor()
+             << std::endl
+             << "  Reduction Factor                  = " << getReductFactor()
+             << std::endl
+             << "  Minimum Value Monitoring Function = " << getMinEta()
+             << std::endl
+             << "  Maximum Value Monitoring Function = " << getMaxEta()
+             << std::endl;
+      *l_out << std::string(this->description().length() + 8, '-') << std::endl;
     }
+  }
   //@}
 
   /// Return ParameterList with current values.
-  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
+      const override
   {
-     Teuchos::RCP<Teuchos::ParameterList> pl =
-       Teuchos::parameterList("Time Step Control Strategy");
+    Teuchos::RCP<Teuchos::ParameterList> pl =
+        Teuchos::parameterList("Time Step Control Strategy");
 
-     pl->set<std::string>("Strategy Type", this->getStrategyType(), "Basic VS");
-     pl->set<double>("Amplification Factor", getAmplFactor(), "Amplification factor");
-     pl->set<double>("Reduction Factor"    , getReductFactor() , "Reduction factor");
-     pl->set<double>("Minimum Value Monitoring Function", getMinEta(), "Min value eta");
-     pl->set<double>("Maximum Value Monitoring Function", getMaxEta(), "Max value eta");
-     return pl;
+    pl->set<std::string>("Strategy Type", this->getStrategyType(), "Basic VS");
+    pl->set<double>("Amplification Factor", getAmplFactor(),
+                    "Amplification factor");
+    pl->set<double>("Reduction Factor", getReductFactor(), "Reduction factor");
+    pl->set<double>("Minimum Value Monitoring Function", getMinEta(),
+                    "Min value eta");
+    pl->set<double>("Maximum Value Monitoring Function", getMaxEta(),
+                    "Max value eta");
+    return pl;
   }
-
 
   virtual void initialize() const override
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(getAmplFactor() <= 1.0, std::out_of_range,
-      "Error - Invalid value of Amplification Factor = " << getAmplFactor()
-      << "!  \n" << "Amplification Factor must be > 1.0.\n");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        getAmplFactor() <= 1.0, std::out_of_range,
+        "Error - Invalid value of Amplification Factor = "
+            << getAmplFactor() << "!  \n"
+            << "Amplification Factor must be > 1.0.\n");
 
     TEUCHOS_TEST_FOR_EXCEPTION(getReductFactor() >= 1.0, std::out_of_range,
-      "Error - Invalid value of Reduction Factor = " << getReductFactor()
-      << "!  \n" << "Reduction Factor must be < 1.0.\n");
+                               "Error - Invalid value of Reduction Factor = "
+                                   << getReductFactor() << "!  \n"
+                                   << "Reduction Factor must be < 1.0.\n");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(getMinEta() > getMaxEta(), std::out_of_range,
-      "Error - Invalid values of 'Minimum Value Monitoring Function' = "
-      << getMinEta() << "\n and 'Maximum Value Monitoring Function' = "
-      << getMaxEta() <<"! \n Mininum Value cannot be > Maximum Value! \n");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        getMinEta() > getMaxEta(), std::out_of_range,
+        "Error - Invalid values of 'Minimum Value Monitoring Function' = "
+            << getMinEta()
+            << "\n and 'Maximum Value Monitoring Function' = " << getMaxEta()
+            << "! \n Mininum Value cannot be > Maximum Value! \n");
 
-    this->isInitialized_ = true;   // Only place where this is set to true!
+    this->isInitialized_ = true;  // Only place where this is set to true!
   }
 
-
   virtual Scalar getAmplFactor() const { return rho_; }
-  virtual Scalar getReductFactor() const { return sigma_;}
+  virtual Scalar getReductFactor() const { return sigma_; }
   virtual Scalar getMinEta() const { return minEta_; }
   virtual Scalar getMaxEta() const { return maxEta_; }
 
-  virtual void setAmplFactor(Scalar rho) { rho_ = rho; this->isInitialized_ = false; }
-  virtual void setReductFactor(Scalar sigma) { sigma_ = sigma; this->isInitialized_ = false; }
-  virtual void setMinEta(Scalar minEta) { minEta_ = minEta; this->isInitialized_ = false; }
-  virtual void setMaxEta(Scalar maxEta) { maxEta_ = maxEta; this->isInitialized_ = false; }
+  virtual void setAmplFactor(Scalar rho)
+  {
+    rho_                 = rho;
+    this->isInitialized_ = false;
+  }
+  virtual void setReductFactor(Scalar sigma)
+  {
+    sigma_               = sigma;
+    this->isInitialized_ = false;
+  }
+  virtual void setMinEta(Scalar minEta)
+  {
+    minEta_              = minEta;
+    this->isInitialized_ = false;
+  }
+  virtual void setMaxEta(Scalar maxEta)
+  {
+    maxEta_              = maxEta;
+    this->isInitialized_ = false;
+  }
 
-
-private:
-
-  Scalar rho_;      ///< Amplification Factor
-  Scalar sigma_;    ///< Reduction Factor
-  Scalar minEta_;   ///< Minimum Value Monitoring Function
-  Scalar maxEta_;   ///< Maximum Value Monitoring Function
-
+ private:
+  Scalar rho_;     ///< Amplification Factor
+  Scalar sigma_;   ///< Reduction Factor
+  Scalar minEta_;  ///< Minimum Value Monitoring Function
+  Scalar maxEta_;  ///< Maximum Value Monitoring Function
 };
-
 
 /// Nonmember constructor.
 template <class Scalar>
 Teuchos::RCP<TimeStepControlStrategyBasicVS<Scalar> >
 createTimeStepControlStrategyBasicVS(
-  const Teuchos::RCP<Teuchos::ParameterList> & pList,
-  std::string name = "Basic VS")
+    const Teuchos::RCP<Teuchos::ParameterList> &pList,
+    std::string name = "Basic VS")
 {
   auto tscs = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>());
   if (pList == Teuchos::null || pList->numParams() == 0) return tscs;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    pList->get<std::string>("Strategy Type") != "Basic VS", std::logic_error,
-    "Error - Strategy Type != 'Basic VS'.  (='"
-    +pList->get<std::string>("Strategy Type")+"')\n");
+      pList->get<std::string>("Strategy Type") != "Basic VS", std::logic_error,
+      "Error - Strategy Type != 'Basic VS'.  (='" +
+          pList->get<std::string>("Strategy Type") + "')\n");
 
   pList->validateParametersAndSetDefaults(*tscs->getValidParameters());
 
-  tscs->setAmplFactor(  pList->get<double>("Amplification Factor"));
+  tscs->setAmplFactor(pList->get<double>("Amplification Factor"));
   tscs->setReductFactor(pList->get<double>("Reduction Factor"));
   tscs->setMinEta(pList->get<double>("Minimum Value Monitoring Function"));
   tscs->setMaxEta(pList->get<double>("Maximum Value Monitoring Function"));
@@ -313,15 +338,14 @@ createTimeStepControlStrategyBasicVS(
   return tscs;
 }
 
-
 /// Nonmember function to return ParameterList with default values.
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList> getTimeStepControlStrategyBasicVS_PL()
 {
   auto t = rcp(new Tempus::TimeStepControlStrategyBasicVS<Scalar>());
-  return Teuchos::rcp_const_cast<Teuchos::ParameterList> (t->getValidParameters());
+  return Teuchos::rcp_const_cast<Teuchos::ParameterList>(
+      t->getValidParameters());
 }
 
-
-} // namespace Tempus
-#endif // Tempus_TimeStepControlStrategy_BasicVS_hpp
+}  // namespace Tempus
+#endif  // Tempus_TimeStepControlStrategy_BasicVS_hpp

@@ -457,6 +457,9 @@ private:
   //! Contains the number of successful call to compute().
   int NumCompute_;
 
+  //! Whether apply should register and use a timer
+  bool TimerForApply_;
+
   //! Contains the number of successful call to apply().
   mutable int NumApply_;
 

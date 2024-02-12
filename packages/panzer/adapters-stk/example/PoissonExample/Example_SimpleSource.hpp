@@ -71,7 +71,8 @@ class SimpleSource : public panzer::EvaluatorWithBaseImpl<Traits>,
 
 public:
     SimpleSource(const std::string & name,
-                       const panzer::IntegrationRule & ir);
+                 const panzer::IntegrationRule & ir,
+                 const bool curvilinear);
                                                                         
     void postRegistrationSetup(typename Traits::SetupData d,           
                                PHX::FieldManager<Traits>& fm);        
@@ -85,6 +86,8 @@ private:
   // Simulation source
   PHX::MDField<ScalarT,Cell,Point> source;
   int ir_degree, ir_index;
+
+  const bool curvilinear;
 };
 
 }

@@ -1,0 +1,18 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name ascicgpu049 and rank 0!
+Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name ascicgpu049 and rank 1!
+p=0 | it 0 norm(r) 33.8231 norm(dx) 0
+Passed.......OR Combination -> 
+  OK...........Number of Iterations = 16 < 300
+  Converged....(2-Norm Res Vec) / (2-Norm Prec Res0)
+               residual [ 0 ] = 6.7676e-13 < 1e-11
+
+p=0 | it 1 norm(r) 2.28953e-11 norm(dx) 54.8016
+This is the Basis Order
+Basis Order = 2
+This is the L2 Error
+L2 Error = 0.00137521
+This is the H1 Error
+H1 Error = 0.0544002
+This is the error in area
+Area Error = 3.25795e-05
+p=0 | ALL PASSED

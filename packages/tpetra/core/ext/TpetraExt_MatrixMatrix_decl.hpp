@@ -133,18 +133,16 @@ void Multiply(
   Teuchos::RCP<BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& C,
   const std::string& label = std::string());
 
-    /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
-     * Currently not functional.
+    /** Given CrsMatrix objects A and B, compute B := scalarB*B + scalarA*Op(A).
+     *  Op(A) can either be A or A^T (see transposeA below).
 
     @param A Input, must already have had 'FillComplete()' called.
-    @param transposeA Input, whether to use transpose of matrix A.
+    @param transposeA Whether Op(A) should be A (false) or A^T (true).
     @param scalarA Input, scalar multiplier for matrix A.
-    @param B Result. On entry to this method, it doesn't matter whether
-             FillComplete() has already been called on B or not. If it has,
-       then B's graph must already contain all nonzero locations that
-       will be produced when forming the sum.
+    @param B Result. On entry to this function, fillComplete() must
+      never have been called previously on B. B will remain fillActive
+      when this function returns.
     @param scalarB Input, scalar multiplier for matrix B.
-
      */
 template <class Scalar,
           class LocalOrdinal,
@@ -256,10 +254,18 @@ add (const Scalar& alpha,
 
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
+/// \warning This function works by sequentially inserting/summing entries
+///   into C on host. For better performance, it is recommended to use
+///   Tpetra::MatrixMatrix::add (lowercase) instead which can execute
+///   efficiently on device.
 ///
 /// \pre Both input matrices A and B must be fill complete.  That is,
 ///   their fillComplete() method must have been called at least once,
 ///   without an intervening call to resumeFill().
+/// \pre If C is null on input, then A.haveGlobalConstants() and B.haveGlobalConstants() must
+///   be true. This is so that C can be allocated with a sufficient number of entries.
+/// \pre Op(A) and Op(B) must have the same domain and range maps.
+///   However, they may have different row and column maps.
 ///
 /// \param A [in] The first input matrix.
 /// \param transposeA [in] If true, use the transpose of A.
@@ -270,19 +276,16 @@ add (const Scalar& alpha,
 /// \param scalarB [in] Scalar multiplier for B in the sum.
 ///
 /// \param C [in/out] On entry, C may be either null or a valid
-///   matrix.  If C is null on input, this function will allocate a
-///   new CrsMatrix to contain the sum.  If C is not null and is fill
-///   complete, then this function assumes that the sparsity pattern
-///   of the sum is fixed and compatible with the sparsity pattern of
-///   A + B.  If C is not null and is not fill complete, then this
-///   function returns without calling fillComplete on C.
-///
-/// \warning The case where C == null on input does not actually work.
-///   In order for it to work, we would need to change the interface
-///   of this function (for example, to pass in C as a (pointer or
-///   nonconst reference) to a Teuchos::RCP).  Please use add() (which
-///   see) if you want matrix-matrix add to return a new instance of
-///   CrsMatrix.
+///   matrix.
+///     - If C is null on input, this function will allocate a
+///       new CrsMatrix to contain the sum. Its row map will be A's row map (if
+///       !transposeA) or A's domain map (if transposeA).
+///     - If C is not null and is fill complete, then this function assumes
+///       that the sparsity pattern of C is \b locally compatible with the sparsity pattern of
+///       A + B.
+///     - If C is not null and is not fill complete, then this function returns without calling
+///       fillComplete on C.
+///     - If C is not null, then existing values are zeroed out.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -294,8 +297,49 @@ void Add(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   Scalar scalarB,
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C);
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& C);
 
+/// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
+///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
+/// \warning This function works by sequentially inserting/summing entries
+///   into C on host. For better performance, it is recommended to use
+///   Tpetra::MatrixMatrix::add (lowercase) instead which can execute
+///   efficiently on device.
+///
+/// \pre Both input matrices A and B must be fill complete.  That is,
+///   their fillComplete() method must have been called at least once,
+///   without an intervening call to resumeFill().
+/// \pre Op(A) and Op(B) must have the same domain and range maps.
+///   However, they may have different row and column maps.
+///
+/// \param A [in] The first input matrix.
+/// \param transposeA [in] If true, use the transpose of A.
+/// \param scalarA [in] Scalar multiplier for A in the sum.
+///
+/// \param B [in] The second input matrix.
+/// \param transposeB [in] If true, use the transpose of B.
+/// \param scalarB [in] Scalar multiplier for B in the sum.
+///
+/// \param C [in/out] On entry, C must be a valid
+///   matrix.
+///     - If C is fill complete, then this function assumes
+///       that the sparsity pattern of C is \b locally compatible with the sparsity pattern of
+///       A + B.
+///     - If C is not fill complete, then this function returns without calling
+///       fillComplete on C.
+///     - C's existing values are zeroed out.
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void Add(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+  bool transposeA,
+  Scalar scalarA,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+  bool transposeB,
+  Scalar scalarB,
+  const Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& C);
 
   /** Given CrsMatrix objects A, B and C, and Vector Dinv, form the product C = (I-omega * Dinv A)*B
       In a parallel setting, A and B need not have matching distributions,
@@ -636,6 +680,7 @@ struct AddKernels
   /// \param Browptrs Row pointers array for B
   /// \param Bcolinds Column indices array for B
   /// \param scalarB Scaling factor for B
+  /// \param numGlobalCols The global size of the column map
   /// \param[Out] Cvals Values array for C (allocated inside function)
   /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
   /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
@@ -648,6 +693,9 @@ struct AddKernels
     const row_ptrs_array_const& Browptrs,
     const col_inds_array& Bcolinds,
     const impl_scalar_type scalarB,
+#if KOKKOSKERNELS_VERSION >= 40299
+    GlobalOrdinal numGlobalCols,
+#endif
     values_array& Cvals,
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);
@@ -684,7 +732,7 @@ struct AddKernels
   /// \param Browptrs Row pointers array for B
   /// \param Bcolinds Column indices array for B
   /// \param scalarB Scaling factor for B
-  /// \param globalNumCols The global size of the column map
+  /// \param numGlobalCols The global size of the column map
   /// \param[Out] Cvals Values array for C (allocated inside function)
   /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
   /// \param[Out] Ccolinds Column indices array for C (allocated inside function)

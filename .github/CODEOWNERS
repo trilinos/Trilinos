@@ -8,19 +8,11 @@
 
 /packages/belos/             @trilinos/belos
 
-/packages/claps/             @trilinos/claps
-
-/packages/domi/              @trilinos/domi
-
 /packages/epetra/            @trilinos/epetra
 
 /packages/epetraext/         @trilinos/epetraext
 
-/packages/fei/               @trilinos/fei
-
-#/packages/galeri/            @trilinos/
-
-/packages/globipack/         @trilinos/globipack
+/packages/framework/         @trilinos/framework
 
 /packages/ifpack/            @trilinos/ifpack
 
@@ -36,15 +28,7 @@
 
 /packages/kokkos-kernels/    @trilinos/kokkos-kernels
 
-/packages/komplex/           @trilinos/komplex
-
-#/packages/meshinggenie/      @trilinos/
-
-#/packages/minitensor/        @trilinos/
-
 /packages/ml/                @trilinos/ml
-
-/packages/moertel/           @trilinos/moertel
 
 /packages/muelu/             @trilinos/muelu
 
@@ -52,15 +36,11 @@
 
 /packages/nox/               @trilinos/nox
 
-/packages/optipack/          @trilinos/optipack
-
 /packages/pamgen/            @trilinos/pamgen
 
 /packages/panzer/            @trilinos/panzer
 
 /packages/phalanx/           @trilinos/phalanx
-
-#/packages/pike/              @trilinos/
 
 /packages/piro/              @trilinos/piro
 
@@ -71,8 +51,6 @@
 /packages/rol/               @trilinos/rol
 
 /packages/rtop/              @trilinos/rtop
-
-/packages/rythmos/           @trilinos/rythmos
 
 /packages/sacado/            @trilinos/sacado
 
@@ -94,17 +72,11 @@
 
 /packages/teuchos/           @trilinos/teuchos
 
-#/packages/ThreadPool/        @trilinos/
-
 /packages/thyra/             @trilinos/thyra
 
 /packages/tpetra/            @trilinos/tpetra
 
-/packages/TriKota/           @trilinos/trikota
-
-#/packages/trilinoscouplings/ @trilinos/
-
-#/packages/trios/             @trilinos/
+/packages/trilinoscouplings/ @trilinos/trilinoscouplings
 
 /packages/triutils/          @trilinos/triutils
 

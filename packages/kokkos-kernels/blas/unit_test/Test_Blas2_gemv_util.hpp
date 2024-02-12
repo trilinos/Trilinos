@@ -23,8 +23,9 @@
 
 namespace Test {
 
-template <typename ValueType, int length = KokkosBatched::DefaultVectorLength<
-                                  ValueType, TestExecSpace>::value>
+template <typename ValueType,
+          int length =
+              KokkosBatched::DefaultVectorLength<ValueType, TestDevice>::value>
 using simd_vector =
     KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, length>;
 
@@ -239,7 +240,8 @@ struct GEMVTest {
   template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY>
   static void run_views(const char trans, ViewTypeA A, ViewTypeX x,
                         ViewTypeY y) {
-    Kokkos::TeamPolicy<Device> teams(1, 1);  // just run on device
+    Kokkos::TeamPolicy<typename Device::execution_space> teams(
+        1, 1);  // just run on device
     fill_inputs(A, x, y);
     ScalarType alpha = 3;  // TODO: test also with zero alpha/beta ?
     ScalarType beta  = 5;
@@ -279,7 +281,8 @@ struct GEMVTest {
                                                  ViewTypeY, Device, ScalarType>;
 
     op_type gemv_op(trans, alpha, A, x, beta, y);
-    Kokkos::parallel_for(Kokkos::TeamPolicy<Device>(1, 1), gemv_op);
+    Kokkos::parallel_for(
+        Kokkos::TeamPolicy<typename Device::execution_space>(1, 1), gemv_op);
 
     const double eps = epsilon(ScalarY{});
     EXPECT_NEAR_KK_REL_1DVIEW(y, y_ref, eps);
@@ -318,7 +321,7 @@ struct GEMVTest {
                    SCALAR_COEF)                                         \
   using PREFIX##_##NAME##_gemv_test =                                   \
       ::Test::GEMVTest<::Test::FACTORY, SCALAR_A, SCALAR_X, SCALAR_Y,   \
-                       TestExecSpace, SCALAR_COEF>;                     \
+                       TestDevice, SCALAR_COEF>;                        \
   TEST_F(TestCategory, PREFIX##_gemv_nt_##NAME) {                       \
     PREFIX##_##NAME##_gemv_test::run("N");                              \
   }                                                                     \

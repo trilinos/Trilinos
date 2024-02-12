@@ -27,15 +27,22 @@
 
 namespace KokkosBlas {
 
-/// \brief Solve triangular linear system with multiple RHSs:
+/// \brief Triangular matrix multiply:
+///
 ///        B = alpha * op(A) * B if side == "L" or "l"
 ///        B = alpha * B * op(A) if side == "R" or "r"
 ///
+/// This function is currently blocking when running the native implementation
+/// which only has a serial implementation.
+///
+/// \tparam execution_space a Kokkos execution space to run the kernels on.
 /// \tparam AViewType Input matrix, as a 2-D Kokkos::View
 /// \tparam BViewType Input(RHS)/Output(solution) M-by-N matrix, as a 2-D
 /// Kokkos::View
 ///
-/// \param side  [in] "L" or "l" indicates matrix A is on the left of B
+/// \param space [in] an execution space instance that may contain a stream
+/// or a queue to execute the kernel on, this only works with TPLs at the
+/// moment. \param side  [in] "L" or "l" indicates matrix A is on the left of B
 ///                   "R" or "r" indicates matrix A is on the right of B
 /// \param uplo  [in] "U" or "u" indicates matrix A is an upper triangular
 /// matrix
@@ -56,10 +63,11 @@ namespace KokkosBlas {
 /// \param B [in,out] Input/Output matrix, as a 2-D Kokkos::View
 ///                   On entry, M-by-N matrix
 ///                   On exit, overwritten with the solution
-template <class AViewType, class BViewType>
-void trmm(const char side[], const char uplo[], const char trans[],
-          const char diag[], typename BViewType::const_value_type& alpha,
-          const AViewType& A, const BViewType& B) {
+template <class execution_space, class AViewType, class BViewType>
+void trmm(const execution_space& space, const char side[], const char uplo[],
+          const char trans[], const char diag[],
+          typename BViewType::const_value_type& alpha, const AViewType& A,
+          const BViewType& B) {
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<BViewType>::value,
@@ -143,8 +151,46 @@ void trmm(const char side[], const char uplo[], const char trans[],
                    typename BViewType::device_type,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  KokkosBlas::Impl::TRMM<AViewInternalType, BViewInternalType>::trmm(
-      side, uplo, trans, diag, alpha, A, B);
+  KokkosBlas::Impl::TRMM<execution_space, AViewInternalType,
+                         BViewInternalType>::trmm(space, side, uplo, trans,
+                                                  diag, alpha, A, B);
+}
+
+/// \brief Solve triangular linear system with multiple RHSs:
+///        B = alpha * op(A) * B if side == "L" or "l"
+///        B = alpha * B * op(A) if side == "R" or "r"
+///
+/// \tparam AViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam BViewType Input(RHS)/Output(solution) M-by-N matrix, as a 2-D
+/// Kokkos::View
+///
+/// \param side  [in] "L" or "l" indicates matrix A is on the left of B
+///                   "R" or "r" indicates matrix A is on the right of B
+/// \param uplo  [in] "U" or "u" indicates matrix A is an upper triangular
+/// matrix
+///                   "L" or "l" indicates matrix A is a lower triangular matrix
+/// \param trans [in] Specifies what op does to A:
+//                    "N" or "n" for non-transpose,
+//                    "T" or "t" for transpose,
+//                    "C" or "c" for conjugate transpose.
+/// \param diag  [in] "U" or "u" indicates the diagonal of A is assumed to be
+/// unit
+//                    "N" or "n" indicates the diagonal of A is assumed to be
+//                    non-unit
+/// \param alpha [in] Input coefficient used for
+//                    multiplication with either A or B
+/// \param A [in]     Input matrix, as a 2-D Kokkos::View
+///                   If side == "L" or "l", matrix A is a M-by-M triangular
+///                   matrix; otherwise, matrix A is a N-by-N triangular matrix
+/// \param B [in,out] Input/Output matrix, as a 2-D Kokkos::View
+///                   On entry, M-by-N matrix
+///                   On exit, overwritten with the solution
+template <class AViewType, class BViewType>
+void trmm(const char side[], const char uplo[], const char trans[],
+          const char diag[], typename BViewType::const_value_type& alpha,
+          const AViewType& A, const BViewType& B) {
+  trmm(typename AViewType::execution_space{}, side, uplo, trans, diag, alpha, A,
+       B);
 }
 
 }  // namespace KokkosBlas

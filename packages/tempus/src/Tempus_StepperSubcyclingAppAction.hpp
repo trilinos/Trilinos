@@ -12,11 +12,11 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration
-template<class Scalar> class StepperSubcycling;
+template <class Scalar>
+class StepperSubcycling;
 
 /** \brief Application Action for StepperSubcycling.
  *
@@ -30,30 +30,29 @@ template<class Scalar> class StepperSubcycling;
  *  (StepperSubcyclingAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperSubcycling.
  */
-template<class Scalar>
-class StepperSubcyclingAppAction
-{
-public:
-
+template <class Scalar>
+class StepperSubcyclingAppAction {
+ public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.
-    END_STEP        ///< At the end of the step.
+    BEGIN_STEP,  ///< At the beginning of the step.
+    END_STEP     ///< At the end of the step.
   };
 
   /// Constructor
-  StepperSubcyclingAppAction(){}
+  StepperSubcyclingAppAction() {}
 
   /// Destructor
-  virtual ~StepperSubcyclingAppAction(){}
+  virtual ~StepperSubcyclingAppAction() {}
 
   /// Execute application action for Subcycling Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperSubcycling<Scalar> > stepper,
-    const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperSubcycling<Scalar> > stepper,
+      const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperSubcyclingAppAction_hpp
+#endif  // Tempus_StepperSubcyclingAppAction_hpp

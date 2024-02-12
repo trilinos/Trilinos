@@ -82,7 +82,13 @@ Group(const NOX::Thyra::Vector& initial_guess,
   updatePreconditioner_(true),
   last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
   last_linear_solve_num_iters_(0),
-  last_linear_solve_achieved_tol_(0.0)
+  last_linear_solve_achieved_tol_(0.0),
+  use_pseudo_transient_terms_(false),
+  x_dot_(Teuchos::null),
+  alpha_(0.0),
+  beta_(1.0),
+  t_(-1.0),
+  use_base_point_(false)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
@@ -128,13 +134,9 @@ Group(const NOX::Thyra::Vector& initial_guess,
   // create preconditioner
   prec_factory_ = lows_factory_->getPreconditionerFactory();
 
-  // Create in/out args
-  in_args_ = model_->createInArgs();
-  out_args_ = model_->createOutArgs();
-
   if (Teuchos::nonnull(prec_factory_)) {
     prec_ = prec_factory_->createPrec();
-  } else if (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
+  } else if (model->createOutArgs().supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
     prec_ = model->create_W_prec();
   }
 
@@ -163,7 +165,13 @@ Group(const NOX::Thyra::Vector& initial_guess,
   updatePreconditioner_(updatePreconditioner),
   last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
   last_linear_solve_num_iters_(0),
-  last_linear_solve_achieved_tol_(0.0)
+  last_linear_solve_achieved_tol_(0.0),
+  use_pseudo_transient_terms_(false),
+  x_dot_(Teuchos::null),
+  alpha_(0.0),
+  beta_(1.0),
+  t_(-1.0),
+  use_base_point_(false)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(jacobianIsEvaluated && Teuchos::is_null(linear_op),std::runtime_error,
                              "ERROR - NOX::Thyra::Group(...) - linear_op is null but JacobianIsEvaluated is true. Impossible combination!");
@@ -206,10 +214,6 @@ Group(const NOX::Thyra::Vector& initial_guess,
   if ( nonnull(prec_factory_) && is_null(prec_) )
     prec_ = prec_factory_->createPrec();
 
-  // Create in/out args
-  in_args_ = model_->createInArgs();
-  out_args_ = model_->createOutArgs();
-
   resetIsValidFlags();
 
   if (jacobianIsEvaluated) {
@@ -232,7 +236,14 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   updatePreconditioner_(source.updatePreconditioner_),
   last_linear_solve_status_(source.last_linear_solve_status_),
   last_linear_solve_num_iters_(source.last_linear_solve_num_iters_),
-  last_linear_solve_achieved_tol_(source.last_linear_solve_achieved_tol_)
+  last_linear_solve_achieved_tol_(source.last_linear_solve_achieved_tol_),
+  use_pseudo_transient_terms_(source.use_pseudo_transient_terms_),
+  x_dot_(source.x_dot_),
+  alpha_(source.alpha_),
+  beta_(source.beta_),
+  t_(source.t_),
+  use_base_point_(false),
+  base_point_(source.base_point_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -246,9 +257,6 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
 
   if (nonnull(source.right_weight_vec_))
     scaled_x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.scaled_x_vec_, type));
-
-  in_args_ = model_->createInArgs();
-  out_args_ = model_->createOutArgs();
 
   if (type == NOX::DeepCopy) {
     is_valid_f_ = source.is_valid_f_;
@@ -345,6 +353,15 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   last_linear_solve_status_ = source.last_linear_solve_status_;
   last_linear_solve_num_iters_ = source.last_linear_solve_num_iters_;
   last_linear_solve_achieved_tol_ = source.last_linear_solve_achieved_tol_;
+
+  use_pseudo_transient_terms_ = source.use_pseudo_transient_terms_;
+  x_dot_ = source.x_dot_;
+  alpha_ = source.alpha_;
+  beta_ = source.beta_;
+  t_ = source.t_;
+
+  use_base_point_ = source.use_base_point_;
+  base_point_ = source.base_point_;
 
   return *this;
 }
@@ -486,16 +503,28 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeF()
   if (this->isF())
     return NOX::Abstract::Group::Ok;
 
-  in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-  out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+  auto in_args = model_->createInArgs();
+  auto out_args = model_->createOutArgs();
+
+  if (use_base_point_)
+    in_args = base_point_;
+
+  if (use_pseudo_transient_terms_) {
+    in_args.set_x_dot(x_dot_);
+    in_args.set_alpha(alpha_);
+    in_args.set_beta(beta_);
+    in_args.set_t(t_);
+  }
+
+  in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  out_args.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+
   //model_->setVerbLevel(Teuchos::VERB_EXTREME);
-  model_->evalModel(in_args_, out_args_);
-  in_args_.set_x(Teuchos::null);
-  out_args_.set_f(Teuchos::null);
+  model_->evalModel(in_args, out_args);
 
   is_valid_f_ = true;
 
-  if (out_args_.isFailed())
+  if (out_args.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;
@@ -511,15 +540,27 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeJacobian()
 
   shared_jacobian_->getObject(this);
 
-  in_args_.set_x(x_vec_->getThyraRCPVector());
-  out_args_.set_W_op(lop_);
-  model_->evalModel(in_args_, out_args_);
-  in_args_.set_x(Teuchos::null);
-  out_args_.set_W_op(Teuchos::null);
+  auto in_args = model_->createInArgs();
+  auto out_args = model_->createOutArgs();
+
+  if (use_base_point_)
+    in_args = base_point_;
+
+  if (use_pseudo_transient_terms_ == true) {
+    in_args.set_x_dot(x_dot_);
+    in_args.set_alpha(alpha_);
+    in_args.set_beta(beta_);
+    in_args.set_t(t_);
+  }
+
+  in_args.set_x(x_vec_->getThyraRCPVector());
+  out_args.set_W_op(lop_);
+
+  model_->evalModel(in_args, out_args);
 
   is_valid_jacobian_ = true;
 
-  if (out_args_.isFailed())
+  if (out_args.isFailed())
     return NOX::Abstract::Group::Failed;
 
   return NOX::Abstract::Group::Ok;
@@ -878,12 +919,24 @@ NOX::Thyra::Group::applyRightPreconditioning(bool /* useTranspose */,
     this->scaleResidualAndJacobian();
     prec_factory_->initializePrec(losb_, prec_.get());
   }
-  else if (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
-    in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-    out_args_.set_W_prec(prec_);
-    model_->evalModel(in_args_, out_args_);
-    in_args_.set_x(Teuchos::null);
-    out_args_.set_W_prec(Teuchos::null);
+  else if (model_->createOutArgs().supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
+    auto in_args = model_->createInArgs();
+    auto out_args = model_->createOutArgs();
+
+    if (use_base_point_)
+      in_args = base_point_;
+
+    if (use_pseudo_transient_terms_ == true) {
+      in_args.set_x_dot(x_dot_);
+      in_args.set_alpha(alpha_);
+      in_args.set_beta(beta_);
+      in_args.set_t(t_);
+    }
+
+    in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+    out_args.set_W_prec(prec_);
+
+    model_->evalModel(in_args, out_args);
   }
 
   const NOX::Thyra::Vector & inputThyraVector = dynamic_cast<const NOX::Thyra::Vector&>(input);
@@ -956,13 +1009,25 @@ void NOX::Thyra::Group::updateLOWS() const
                           prec_,
                           shared_jacobian_->getObject(this).ptr());
     }
-    else if ( nonnull(prec_) && (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
+    else if ( nonnull(prec_) && (model_->createOutArgs().supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
       // Automatically update using the ModelEvaluator
-      in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
-      out_args_.set_W_prec(prec_);
-      model_->evalModel(in_args_, out_args_);
-      in_args_.set_x(Teuchos::null);
-      out_args_.set_W_prec(Teuchos::null);
+      auto in_args = model_->createInArgs();
+      auto out_args = model_->createOutArgs();
+
+      if (use_base_point_)
+        in_args = base_point_;
+
+      if (use_pseudo_transient_terms_ == true) {
+        in_args.set_x_dot(x_dot_);
+        in_args.set_alpha(alpha_);
+        in_args.set_beta(beta_);
+        in_args.set_t(t_);
+      }
+
+      in_args.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+      out_args.set_W_prec(prec_);
+
+      model_->evalModel(in_args, out_args);
 
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
                           lop_,
@@ -1041,14 +1106,40 @@ NOX::Thyra::Group::getModel() const
   return model_;
 }
 
-::Thyra::ModelEvaluatorBase::InArgs<double>&
-NOX::Thyra::Group::getNonconstInArgs()
+void NOX::Thyra::Group::enablePseudoTransientTerms(const Teuchos::RCP<const ::Thyra::VectorBase<double>>& x_dot,
+                                                   const double alpha, const double beta, const double t)
 {
-  return in_args_;
+  use_pseudo_transient_terms_ = true;
+  x_dot_ = x_dot;
+  alpha_ = alpha;
+  beta_ = beta;
+  t_ = t;
 }
 
-const ::Thyra::ModelEvaluatorBase::InArgs<double>&
-NOX::Thyra::Group::getInArgs() const
+void NOX::Thyra::Group::disablePseudoTransientTerms()
 {
-  return in_args_;
+  use_pseudo_transient_terms_ = false;
+  x_dot_ = Teuchos::null;
+  alpha_ = 0.0;
+  beta_ = 1.0;
+  t_ = -1.0;
 }
+
+bool NOX::Thyra::Group::usingPseudoTransientTerms() const
+{ return use_pseudo_transient_terms_; }
+
+void NOX::Thyra::Group::setBasePoint(const ::Thyra::ModelEvaluatorBase::InArgs<double>& base_point_params)
+{
+  use_base_point_ = true;
+  base_point_ = base_point_params;
+}
+
+void NOX::Thyra::Group::unsetBasePoint()
+{
+  use_base_point_ = false;
+  // Set to default to reset RCPs to free memory
+  base_point_ = model_->createInArgs();
+}
+
+bool NOX::Thyra::Group::usingBasePoint() const
+{ return use_base_point_; }

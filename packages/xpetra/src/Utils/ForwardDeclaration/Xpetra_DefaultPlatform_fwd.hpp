@@ -47,11 +47,11 @@
 #define XPETRA_DEFAULTPLATFORM_FWD_HPP
 
 namespace Xpetra {
-  class DefaultPlatform;
+class DefaultPlatform;
 }
 
 #ifndef XPETRA_DEFAULTPLATFORM_SHORT
 #define XPETRA_DEFAULTPLATFORM_SHORT
 #endif
 
-#endif // XPETRA_DEFAULTPLATFORM_FWD_HPP
+#endif  // XPETRA_DEFAULTPLATFORM_FWD_HPP

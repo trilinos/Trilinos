@@ -20,8 +20,8 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AV, class XMV, class YMV, int Xrank = XMV::Rank,
-          int Yrank = YMV::Rank>
+template <class execution_space, class AV, class XMV, class YMV,
+          int Xrank = XMV::rank, int Yrank = YMV::rank>
 struct dot_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -37,6 +37,7 @@ namespace Impl {
 #define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)          \
   template <class ExecSpace>                                                   \
   struct dot_tpl_spec_avail<                                                   \
+      ExecSpace,                                                               \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace,                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
@@ -61,27 +62,31 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 // double
-#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)        \
-  template <class ExecSpace>                                                   \
+#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE,       \
+                                              MEMSPACE)                        \
+  template <>                                                                  \
   struct dot_tpl_spec_avail<                                                   \
+      EXECSPACE,                                                               \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace,                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1, 1> {                                                                  \
     enum : bool { value = true };                                              \
   };
 
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft,
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
                                       Kokkos::CudaSpace)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft,
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
                                       Kokkos::CudaSpace)
 KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                      Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                      Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
 KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                      Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                      Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
 
 #endif
 

@@ -84,14 +84,14 @@
 typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
-typedef Xpetra::EpetraNode Node; // Epetra needs SerialNode
+typedef Xpetra::EpetraNode Node;  // Epetra needs SerialNode
 #endif
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 #if defined(HAVE_MUELU_EPETRA)
 #include <MueLu_UseShortNames.hpp>
 
-  using Teuchos::RCP; // reference count pointers
+  using Teuchos::RCP;  // reference count pointers
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
 
@@ -102,20 +102,20 @@ int main(int argc, char *argv[]) {
 
   bool success = false;
   try {
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    int MyPID   = comm->getRank();
-    int NumProc = comm->getSize();
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    int MyPID                           = comm->getRank();
+    int NumProc                         = comm->getSize();
 
     const Teuchos::RCP<Epetra_Comm> epComm = Teuchos::rcp_const_cast<Epetra_Comm>(Xpetra::toEpetra(comm));
 
     // =========================================================================
     // Convenient definitions
     // =========================================================================
-    //SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+    // SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
     // Instead of checking each time for rank, create a rank 0 stream
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Teuchos::FancyOStream& fancyout = *fancy;
+    Teuchos::FancyOStream& fancyout  = *fancy;
     fancyout.setOutputToRootOnly(0);
 
     // =========================================================================
@@ -124,20 +124,23 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor clp(false);
     GO nx = 100, ny = 100;
     GO maxCoarseSize = 10;
-    LO maxLevels = 4;
-    clp.setOption("nx",                   &nx,              "mesh size in x direction");
-    clp.setOption("ny",                   &ny,              "mesh size in y direction");
-    clp.setOption("maxCoarseSize",        &maxCoarseSize,   "maximum coarse size");
-    clp.setOption("maxLevels",            &maxLevels,       "maximum number of multigrid levels");
-    int mgridSweeps = 1; clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
-    std::string printTimings = "no";   clp.setOption("timings", &printTimings,     "print timings to screen [yes/no]");
-    double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");
+    LO maxLevels     = 4;
+    clp.setOption("nx", &nx, "mesh size in x direction");
+    clp.setOption("ny", &ny, "mesh size in y direction");
+    clp.setOption("maxCoarseSize", &maxCoarseSize, "maximum coarse size");
+    clp.setOption("maxLevels", &maxLevels, "maximum number of multigrid levels");
+    int mgridSweeps = 1;
+    clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
+    std::string printTimings = "no";
+    clp.setOption("timings", &printTimings, "print timings to screen [yes/no]");
+    double tol = 1e-12;
+    clp.setOption("tol", &tol, "solver convergence tolerance");
 
-    switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
     // =========================================================================
@@ -153,8 +156,8 @@ int main(int argc, char *argv[]) {
     GaleriList.set("ny", ny);
     GaleriList.set("mx", epComm->NumProc());
     GaleriList.set("my", 1);
-    GaleriList.set("lx", 1.0); // length of x-axis
-    GaleriList.set("ly", 1.0); // length of y-axis
+    GaleriList.set("lx", 1.0);  // length of x-axis
+    GaleriList.set("ly", 1.0);  // length of y-axis
     GaleriList.set("diff", 1e-5);
     GaleriList.set("conv", 1.0);
 
@@ -168,11 +171,11 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Recirc2D", epMap.get(), GaleriList));
 
     // Epetra -> Xpetra
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,Node>(epA));
+    Teuchos::RCP<CrsMatrix> exA         = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int, Node>(epA));
     Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
 
     RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);
-    int numPDEs = 1;
+    int numPDEs   = 1;
     A->SetFixedBlockSize(numPDEs);
 
     // set rhs and solution vector
@@ -182,21 +185,21 @@ int main(int argc, char *argv[]) {
     X->PutScalar(0.0);
 
     // Epetra -> Xpetra
-    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(B));
-    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(X));
+    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<int, Node>(B));
+    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<int, Node>(X));
 
     xX->setSeed(100);
     xX->randomize();
 
     // build null space vector
-    RCP<const Map> map = A->getRowMap();
+    RCP<const Map> map         = A->getRowMap();
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, numPDEs);
 
-    for (int i=0; i<numPDEs; ++i) {
+    for (int i = 0; i < numPDEs; ++i) {
       Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-      int numBlocks = nsValues.size() / numPDEs;
-      for (int j=0; j< numBlocks; ++j) {
-        nsValues[j*numPDEs + i] = 1.0;
+      int numBlocks                      = nsValues.size() / numPDEs;
+      for (int j = 0; j < numBlocks; ++j) {
+        nsValues[j * numPDEs + i] = 1.0;
       }
     }
 
@@ -211,19 +214,19 @@ int main(int argc, char *argv[]) {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
 
-    RCP<Hierarchy> H = rcp ( new Hierarchy() );
+    RCP<Hierarchy> H = rcp(new Hierarchy());
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     H->SetMaxCoarseSize(maxCoarseSize);
 
     // build finest Level
     RCP<MueLu::Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    Finest->Set("A",A);
-    Finest->Set("Nullspace",nullspace);
+    Finest->Set("A", A);
+    Finest->Set("Nullspace", nullspace);
 
     // create factories for transfer operators
     RCP<TentativePFactory> PFact = Teuchos::rcp(new TentativePFactory());
-    RCP<TransPFactory>     RFact = Teuchos::rcp(new TransPFactory());
+    RCP<TransPFactory> RFact     = Teuchos::rcp(new TransPFactory());
     RFact->SetFactory("P", PFact);
 
     // build level smoothers
@@ -231,15 +234,15 @@ int main(int argc, char *argv[]) {
     RCP<SmootherPrototype> smooProto;
     std::string ifpackType;
     Teuchos::ParameterList ifpackList;
-    ifpackList.set("relaxation: sweeps", (LO) 1);
-    ifpackList.set("relaxation: damping factor", (SC) 1.0);
+    ifpackList.set("relaxation: sweeps", (LO)1);
+    ifpackList.set("relaxation: damping factor", (SC)1.0);
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
 
-    smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+    smooProto = Teuchos::rcp(new TrilinosSmoother(ifpackType, ifpackList));
     RCP<SmootherFactory> SmooFact;
     if (maxLevels > 1)
-      SmooFact = rcp( new SmootherFactory(smooProto) );
+      SmooFact = rcp(new SmootherFactory(smooProto));
 
     // design multigrid hierarchy
     FactoryManager M;
@@ -266,7 +269,7 @@ int main(int argc, char *argv[]) {
       fancyout << "========================================================\nCalculate exact solution." << std::endl;
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - direct solve")));
       exactLsgVec->PutScalar(0.0);
-      exactLsgVec->Update(1.0,*X,1.0);
+      exactLsgVec->Update(1.0, *X, 1.0);
       Epetra_LinearProblem epetraProblem(epA.get(), exactLsgVec.get(), B.get());
 
       Amesos amesosFactory;
@@ -289,7 +292,7 @@ int main(int argc, char *argv[]) {
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - AMG as preconditioner")));
 
       precLsgVec->PutScalar(0.0);
-      precLsgVec->Update(1.0,*X,1.0);
+      precLsgVec->Update(1.0, *X, 1.0);
       Epetra_LinearProblem epetraProblem(epA.get(), precLsgVec.get(), B.get());
 
       AztecOO aztecSolver(epetraProblem);
@@ -299,7 +302,7 @@ int main(int argc, char *argv[]) {
       aztecSolver.SetPrecOperator(&aztecPrec);
 
       int maxIts = 100;
-      //double tol2 = 1e-8;
+      // double tol2 = 1e-8;
 
       aztecSolver.Iterate(maxIts, tol);
 
@@ -314,8 +317,8 @@ int main(int argc, char *argv[]) {
     mgridLsgVec->putScalar(0.0);
     {
       fancyout << "========================================================\nUse multigrid hierarchy as solver." << std::endl;
-      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
-      mgridLsgVec->update(1.0,*xX,1.0);
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
+      mgridLsgVec->update(1.0, *xX, 1.0);
       H->IsPreconditioner(false);
       H->Iterate(*xB, *mgridLsgVec, mgridSweeps);
       comm->barrier();
@@ -326,83 +329,82 @@ int main(int argc, char *argv[]) {
 
     fancyout << "========================================================\nExport results.\n========================================================" << std::endl;
     std::ofstream myfile;
-    std::stringstream ss; ss << "example" << MyPID << ".txt";
-    myfile.open (ss.str().c_str());
+    std::stringstream ss;
+    ss << "example" << MyPID << ".txt";
+    myfile.open(ss.str().c_str());
 
     //////////////////
 
     // loop over all procs
-    for (int iproc=0; iproc < NumProc; iproc++) {
-      if (MyPID==iproc) {
-        int NumVectors1 = 2;
-        int NumMyElements1 = epCoord->Map(). NumMyElements();
-        int MaxElementSize1 = epCoord->Map().MaxElementSize();
-        int * FirstPointInElementList1 = NULL;
-        if (MaxElementSize1!=1) FirstPointInElementList1 = epCoord->Map().FirstPointInElementList();
-        double ** A_Pointers = epCoord->Pointers();
+    for (int iproc = 0; iproc < NumProc; iproc++) {
+      if (MyPID == iproc) {
+        int NumVectors1               = 2;
+        int NumMyElements1            = epCoord->Map().NumMyElements();
+        int MaxElementSize1           = epCoord->Map().MaxElementSize();
+        int* FirstPointInElementList1 = NULL;
+        if (MaxElementSize1 != 1) FirstPointInElementList1 = epCoord->Map().FirstPointInElementList();
+        double** A_Pointers = epCoord->Pointers();
 
-        if (MyPID==0) {
+        if (MyPID == 0) {
           myfile.width(8);
-          myfile <<  "#     MyPID"; myfile << "    ";
+          myfile << "#     MyPID";
+          myfile << "    ";
           myfile.width(12);
-          if (MaxElementSize1==1)
-            myfile <<  "GID  ";
+          if (MaxElementSize1 == 1)
+            myfile << "GID  ";
           else
-            myfile <<  "     GID/Point";
-          for (int j = 0; j < NumVectors1 ; j++)
-          {
+            myfile << "     GID/Point";
+          for (int j = 0; j < NumVectors1; j++) {
             myfile.width(20);
-            myfile <<  "Value  ";
+            myfile << "Value  ";
           }
           myfile << std::endl;
         }
-        for (int i=0; i < NumMyElements1; i++) {
-          for (int ii=0; ii< epCoord->Map().ElementSize(i); ii++) {
+        for (int i = 0; i < NumMyElements1; i++) {
+          for (int ii = 0; ii < epCoord->Map().ElementSize(i); ii++) {
             int iii;
             myfile.width(10);
-            myfile <<  MyPID; myfile << "    ";
+            myfile << MyPID;
+            myfile << "    ";
             myfile.width(10);
-            if (MaxElementSize1==1) {
-              if(epCoord->Map().GlobalIndicesInt())
-              {
-                int * MyGlobalElements1 = epCoord->Map().MyGlobalElements();
+            if (MaxElementSize1 == 1) {
+              if (epCoord->Map().GlobalIndicesInt()) {
+                int* MyGlobalElements1 = epCoord->Map().MyGlobalElements();
                 myfile << MyGlobalElements1[i] << "    ";
               }
 
               iii = i;
-            }
-            else {
-              if(epCoord->Map().GlobalIndicesInt())
-              {
-
-                int * MyGlobalElements1 = epCoord->Map().MyGlobalElements();
-                myfile <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+            } else {
+              if (epCoord->Map().GlobalIndicesInt()) {
+                int* MyGlobalElements1 = epCoord->Map().MyGlobalElements();
+                myfile << MyGlobalElements1[i] << "/" << ii << "    ";
               }
 
-              iii = FirstPointInElementList1[i]+ii;
+              iii = FirstPointInElementList1[i] + ii;
             }
-            for (int j = 0; j < NumVectors1 ; j++)
-            {
+            for (int j = 0; j < NumVectors1; j++) {
               myfile.width(20);
-              myfile <<  A_Pointers[j][iii];
+              myfile << A_Pointers[j][iii];
             }
 
-            myfile.precision(18); // set high precision for output
+            myfile.precision(18);  // set high precision for output
 
             // add solution vector entry
-            myfile.width(25); myfile << (*exactLsgVec)[iii];
+            myfile.width(25);
+            myfile << (*exactLsgVec)[iii];
 
             // add preconditioned solution vector entry
-            myfile.width(25); myfile << (*precLsgVec)[iii];
+            myfile.width(25);
+            myfile << (*precLsgVec)[iii];
 
             Teuchos::ArrayRCP<SC> mgridLsgVecData = mgridLsgVec->getDataNonConst(0);
-            myfile.width(25); myfile << mgridLsgVecData[iii];
+            myfile.width(25);
+            myfile << mgridLsgVecData[iii];
 
-
-            myfile.precision(6); // set default precision
+            myfile.precision(6);  // set default precision
             myfile << std::endl;
           }
-        } // end loop over all lines on current proc
+        }  // end loop over all lines on current proc
         myfile << std::flush;
 
         // syncronize procs
@@ -410,14 +412,14 @@ int main(int argc, char *argv[]) {
         comm->barrier();
         comm->barrier();
 
-      } // end myProc
+      }  // end myProc
     }
 
     ////////////
     myfile.close();
 
     comm->barrier();
-    tm = Teuchos::null;
+    tm                = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
 
     if (printTimings == "yes") {
@@ -428,9 +430,8 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 #else
   return EXIT_SUCCESS;
-#endif // #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
-} //main
-
+#endif  // #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+}  // main

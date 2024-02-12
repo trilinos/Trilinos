@@ -115,14 +115,14 @@ template<class CrsMatrix, class Vector>
 result_struct cg_solve(
   Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x,
   int max_iter = 200,
-  typename Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::mag_type tolerance =
-    Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
+  typename Kokkos::ArithTraits<typename CrsMatrix::scalar_type>::mag_type tolerance =
+    Kokkos::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
   int print = 0)
 {
   Kokkos::Timer total_timer;
 
   typedef typename CrsMatrix::scalar_type ScalarType;
-  typedef Kokkos::Details::ArithTraits<ScalarType> KAT;
+  typedef Kokkos::ArithTraits<ScalarType> KAT;
   typedef typename KAT::mag_type MagnitudeType;
   typedef typename CrsMatrix::local_ordinal_type LocalOrdinalType;
   Teuchos::RCP<Vector> r,p,Ap;

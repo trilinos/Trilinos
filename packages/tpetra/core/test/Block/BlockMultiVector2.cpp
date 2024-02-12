@@ -77,7 +77,7 @@ namespace {
     using host_layout_type = typename Kokkos::View<IST**, device_type>::array_layout;
     using map_type = Tpetra::Map<LO, GO, Node>;
     using GST = Tpetra::global_size_t;
-    using KAT = Kokkos::Details::ArithTraits<IST>;
+    using KAT = Kokkos::ArithTraits<IST>;
     using MT = typename KAT::mag_type;
     // Set debug = true if you want immediate debug output to stderr.
     const bool debug = false;
@@ -394,7 +394,7 @@ namespace {
     using host_layout_type = typename Kokkos::View<IST**, device_type>::array_layout;
     using map_type = Tpetra::Map<LO, GO, Node>;
     using GST = Tpetra::global_size_t;
-    using KAT = Kokkos::Details::ArithTraits<IST>;
+    using KAT = Kokkos::ArithTraits<IST>;
     using MT = typename KAT::mag_type;
     // Set debug = true if you want immediate debug output to stderr.
     const bool debug = false;

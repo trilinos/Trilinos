@@ -14,14 +14,13 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperBackwardEuler)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperBackwardEuler)
 
-  // Nonmember constructor
-  template Teuchos::RCP<StepperBackwardEuler<double> >
-  createStepperBackwardEuler(
+// Nonmember constructor
+template Teuchos::RCP<StepperBackwardEuler<double> > createStepperBackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl);
 
-}
+}  // namespace Tempus
 
 #endif

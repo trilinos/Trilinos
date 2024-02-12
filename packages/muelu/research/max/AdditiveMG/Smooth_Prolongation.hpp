@@ -17,81 +17,72 @@
 
 #include <Ifpack2_AdditiveSchwarz_decl.hpp>
 
-namespace MueLu
-{
+namespace MueLu {
 
 // Define default types
-typedef double                                      scalar_type;
-typedef int                                         local_ordinal_type;
-typedef int                                         global_ordinal_type;
+typedef double scalar_type;
+typedef int local_ordinal_type;
+typedef int global_ordinal_type;
 typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
-typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>    operator_type;
+typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> operator_type;
 
-typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>   crs_matrix_type;
-typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>   row_matrix_type;
-typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> multivector_type;
-typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>                     driver_map_type;
+typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
+typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
+typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> multivector_type;
+typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> driver_map_type;
 
 typedef MueLu::TpetraOperator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> muelu_tpetra_operator_type;
-typedef MueLu::Utilities<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MueLuUtilities;
+typedef MueLu::Utilities<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MueLuUtilities;
 
-typedef Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> xpetra_matrix;
+typedef Xpetra::Matrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> xpetra_matrix;
 
 typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> precond_type;
 
+struct DomainPartitioning {
+  global_ordinal_type nx = 0;
+  global_ordinal_type ny = 0;
+  global_ordinal_type nz = 0;
 
-struct DomainPartitioning{
-
-	global_ordinal_type nx = 0;
-	global_ordinal_type ny = 0;
-	global_ordinal_type nz = 0;
-
-	global_ordinal_type bricksize_x = 0;
-	global_ordinal_type bricksize_y = 0;
-	global_ordinal_type bricksize_z = 0;
-	
+  global_ordinal_type bricksize_x = 0;
+  global_ordinal_type bricksize_y = 0;
+  global_ordinal_type bricksize_z = 0;
 };
 
+class AdditiveVariant : public operator_type {
+ public:
+  AdditiveVariant(RCP<crs_matrix_type>, RCP<multivector_type>, DomainPartitioning);
 
-class AdditiveVariant: public operator_type{
+  void apply(const multivector_type &, multivector_type &, Teuchos::ETransp, scalar_type, scalar_type) const;
 
-	public:
+  bool hasTransposeApply() const { return false; }
 
-		AdditiveVariant( RCP<crs_matrix_type>, RCP<multivector_type>, DomainPartitioning );
+  RCP<const driver_map_type> getDomainMap() const { return DomainMap_; };
 
-		void apply( const multivector_type &, multivector_type &, Teuchos::ETransp, scalar_type, scalar_type ) const;
+  RCP<const driver_map_type> getRangeMap() const { return RangeMap_; };
 
-		bool hasTransposeApply()const{return false;}
-	
-		RCP< const driver_map_type > getDomainMap() const{return DomainMap_;};
+ private:
+  DomainPartitioning domain_;
 
-		RCP< const driver_map_type > getRangeMap() const{return RangeMap_;};
+  RCP<const Teuchos::Comm<int> > GlobalComm_;
 
-	private:		
+  RCP<multivector_type> coords_;
 
-		DomainPartitioning domain_;
+  RCP<const driver_map_type> DomainMap_;
 
-		RCP< const Teuchos::Comm<int> > GlobalComm_;
+  RCP<const driver_map_type> RangeMap_;
 
-		RCP< multivector_type > coords_;
+  // MueLu Preconditioner to store the smoother at the fine level
+  RCP<muelu_tpetra_operator_type> B_fine_ = Teuchos::null;
 
-		RCP< const driver_map_type > DomainMap_;
+  // RCP<Ifpack2::AdditiveSchwarz< row_matrix_type, precond_type > > B_DD_;
 
-		RCP< const driver_map_type > RangeMap_;
+  // MueLu Preconditioner to store
+  RCP<muelu_tpetra_operator_type> B_coarse_ = Teuchos::null;
 
-		//MueLu Preconditioner to store the smoother at the fine level
-		RCP<muelu_tpetra_operator_type>	B_fine_ = Teuchos::null;
+  void AdditiveFineSmoother(RCP<crs_matrix_type>);
 
-	  //RCP<Ifpack2::AdditiveSchwarz< row_matrix_type, precond_type > > B_DD_;
-
-		//MueLu Preconditioner to store
-		RCP<muelu_tpetra_operator_type>	B_coarse_ = Teuchos::null;
-
-		void AdditiveFineSmoother( RCP<crs_matrix_type> );
-
-	  void AdditiveCoarseSolver( RCP<crs_matrix_type> );
-
+  void AdditiveCoarseSolver(RCP<crs_matrix_type>);
 };
 
-}
+}  // namespace MueLu

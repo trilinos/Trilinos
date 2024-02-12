@@ -13,6 +13,9 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <Akri_VolumePreservingSnappingLimiter.hpp>
 #include <Akri_MeshSpecs.hpp>
+#include <Akri_Intersection_Points.hpp>
+#include <Akri_QualityMetric.hpp>
+#include <Akri_Unit_InterfaceGeometry.hpp>
 
 namespace krino {
 
@@ -300,7 +303,7 @@ class VolumePreservingSnappingLimiterFixture : public StkMeshFixture<MESHSPEC::T
 protected:
   using StkMeshFixture<MESHSPEC::TOPOLOGY>::mMesh;
 
-  Vector3d compute_snap_location(const std::vector<unsigned> & snapNodeIndices, const std::vector<double> & snapNodeWeights)
+  stk::math::Vector3d compute_snap_location(const std::vector<unsigned> & snapNodeIndices, const std::vector<double> & snapNodeWeights)
   {
     stk::math::Vector3d snapLocation = stk::math::Vector3d::ZERO;
     for (size_t i=0; i<snapNodeIndices.size(); ++i)
@@ -418,4 +421,140 @@ TEST_F(VolumePreservingSnappingLimiterTwoRightTrisFixture, meshWithTwoBlockWithC
   }
 }
 
+class SnapTrisFixture : public StkMeshTriFixture
+{
+public:
+  SnapTrisFixture() {}
+protected:
+  double estimate_cut_quality_for_node(const std::vector<IntersectionPoint> & intersectionPoints, const mapFromEntityToIntPtIndexAndSnapAllowed & nodeToIntPtIndicesAndWhichSnapsAllowed, const stk::mesh::EntityId nodeId)
+  {
+    FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
+    const double minIntPtWeightForEstimatingCutQuality = 1.e-6;
+    const bool globalIDsAreParallelConsistent = true;
+    const auto domainsToNodesToQuality = determine_quality_per_node_per_domain(mMesh, mMesh.mesh_meta_data().universal_part(), coordsField, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, minIntPtWeightForEstimatingCutQuality, globalIDsAreParallelConsistent);
+
+    STK_ThrowRequire(1u == domainsToNodesToQuality.size());
+    return domainsToNodesToQuality.begin()->second.at(nodeId);
+  }
+
+  std::vector<IntersectionPoint> get_edge_intersection_points(const std::vector<double> & nodeLSValues)
+  {
+    IntersectionPointFromNodalLevelsetInterfaceGeometry geometry;
+    geometry.set_nodal_levelset(mMesh, get_assigned_node_global_ids(), nodeLSValues);
+    NodeToCapturedDomainsMap nodesToCapturedDomains;
+    return build_all_intersection_points(mMesh, geometry, nodesToCapturedDomains);
+  }
+
+  std::vector<size_t> get_allowed_snap_indices(const std::vector<IntersectionPoint> & intersectionPoints, const stk::mesh::Entity snapNode)
+  {
+    const SharpFeatureInfo * sharpFeatureInfo = nullptr;
+    const auto nodeToIntPtIndicesAndWhichSnapsAllowed = get_node_to_intersection_point_indices_and_which_snaps_allowed(mMesh, sharpFeatureInfo, maxSnapForEdges, intersectionPoints);
+
+    const FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
+    const double minQualityThatIsForSureNotInverted = 0.;
+    const double cutQualityEstimate = estimate_cut_quality_for_node(intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, mMesh.identifier(snapNode));
+    const NodeToCapturedDomainsMap nodesToCapturedDomains;
+    const stk::mesh::Selector elementSelector = mMesh.mesh_meta_data().universal_part();
+
+    const auto nodeIntersectionPointIndicesAndWhichSnapsAllowed = nodeToIntPtIndicesAndWhichSnapsAllowed.at(snapNode);
+
+    std::vector<size_t> allowedSnapIndices;
+    for (auto && intPtIndexAndIsSnapAllowed : nodeIntersectionPointIndicesAndWhichSnapsAllowed)
+    {
+      const size_t intPtIndex = intPtIndexAndIsSnapAllowed.first;
+      const bool isSnapAllowed = intPtIndexAndIsSnapAllowed.second;
+      const IntersectionPoint & intersectionPoint = intersectionPoints[intPtIndex];
+
+      if (isSnapAllowed && domains_already_snapped_to_node_are_also_at_intersection_point(nodesToCapturedDomains, snapNode, intersectionPoint.get_sorted_domains()))
+      {
+        const stk::math::Vector3d snapLocation = compute_intersection_point_location(mMesh.mesh_meta_data().spatial_dimension(), coordsField, intersectionPoint);
+        const double minAcceptableQuality = std::max(minQualityThatIsForSureNotInverted, cutQualityEstimate);
+
+        const double postSnapQuality = compute_quality_if_node_is_snapped_terminating_early_if_below_threshold(mMesh, elementSelector, coordsField, snapNode, snapLocation, qualityMetric, minAcceptableQuality);
+        if (qualityMetric.is_first_quality_metric_better_than_second(postSnapQuality, minAcceptableQuality))
+        {
+          allowedSnapIndices.push_back(intPtIndex);
+          std::cout << "Allowing snap of " << mMesh.identifier(snapNode) << " to " << snapLocation << " at " << debug_output(mMesh, intersectionPoint) << " with snap quality at or below " << postSnapQuality << " and estimated cut quality " << cutQualityEstimate << std::endl;
+        }
+        else
+        {
+          std::cout << "Skipping snap of " << mMesh.identifier(snapNode) << " to " << snapLocation << " at " << debug_output(mMesh, intersectionPoint) << " with snap quality at or below " << postSnapQuality << " and estimated cut quality " << cutQualityEstimate << std::endl;
+        }
+      }
+    }
+
+    return allowedSnapIndices;
+  }
+
+  bool has_matching_gold_snap(const IntersectionPoint & intPt, const unsigned snapNodeIndex, const std::vector<unsigned> & goldValidSnapEdgeNodeIndices)
+  {
+    const auto & intPtNodes = intPt.get_nodes();
+    STK_ThrowRequire(2u == intPtNodes.size());
+    const stk::mesh::Entity snapNode = get_assigned_node_for_index(snapNodeIndex);
+    for (unsigned goldValidSnapEdgeNodeIndex : goldValidSnapEdgeNodeIndices)
+      if ((intPtNodes[0] == snapNode && intPtNodes[1] == get_assigned_node_for_index(goldValidSnapEdgeNodeIndex)) ||
+          (intPtNodes[1] == snapNode && intPtNodes[0] == get_assigned_node_for_index(goldValidSnapEdgeNodeIndex)))
+        return true;
+    return false;
+  }
+
+  void build_mesh_and_test_valid_edge_snaps_for_given_level_set(const unsigned snapNodeIndex, const std::vector<unsigned> & goldValidSnapEdgeNodeIndices, const std::vector<double> & nodeLSValues)
+  {
+    if(stk::parallel_machine_size(mComm) == 1)
+    {
+      PatchOfRegularTrisAroundNode meshSpec;
+      build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+
+      const auto intersectionPoints = get_edge_intersection_points(nodeLSValues);
+      const std::vector<size_t> allowedSnapIndices = get_allowed_snap_indices(intersectionPoints, get_assigned_node_for_index(snapNodeIndex));
+
+      EXPECT_EQ(goldValidSnapEdgeNodeIndices.size(), allowedSnapIndices.size());
+
+      for (size_t intPtIndex : allowedSnapIndices)
+      {
+        EXPECT_TRUE(has_matching_gold_snap(intersectionPoints[intPtIndex], snapNodeIndex, goldValidSnapEdgeNodeIndices));
+      }
+    }
+  }
+
+  double maxSnapForEdges{1.0};
+  const ScaledJacobianQualityMetric qualityMetric;
+};
+
+
+TEST_F(SnapTrisFixture, noSnapsAllowed)
+{
+  const std::vector<double> nodeLSValues = {1.1, -1., -1., -1., 1., 1., -1.};
+  const std::vector<unsigned> goldValidSnapEdgeNodeIndices{};
+  build_mesh_and_test_valid_edge_snaps_for_given_level_set(0, goldValidSnapEdgeNodeIndices, nodeLSValues);
+}
+
+TEST_F(SnapTrisFixture, allInternalEdgeSnapsAllowed)
+{
+  const std::vector<double> nodeLSValues = {0.9, -1., -1., -1., 1., 1., -1.};
+  const std::vector<unsigned> goldValidSnapEdgeNodeIndices{ 1, 2, 3, 6 };
+  build_mesh_and_test_valid_edge_snaps_for_given_level_set(0, goldValidSnapEdgeNodeIndices, nodeLSValues);
+}
+
+TEST_F(SnapTrisFixture, noSnapsAllowed_evenWithTerminatingIntersectionPointNearNode)
+{
+  const std::vector<double> nodeLSValues = {1.1, -1., -1., -1., 1., 1., -1.e-1};
+  const std::vector<unsigned> goldValidSnapEdgeNodeIndices{};
+  build_mesh_and_test_valid_edge_snaps_for_given_level_set(0, goldValidSnapEdgeNodeIndices, nodeLSValues);
+}
+
+TEST_F(SnapTrisFixture, noSnapsAllowed_interfaceJustInsideSupport)
+{
+  const std::vector<double> nodeLSValues = {1., 1., -2.e-2, -1.e-2, 1., 2., 2.};
+  const std::vector<unsigned> goldValidSnapEdgeNodeIndices{};
+  build_mesh_and_test_valid_edge_snaps_for_given_level_set(0, goldValidSnapEdgeNodeIndices, nodeLSValues);
+}
+
+TEST_F(SnapTrisFixture, becauseOfSnapLimit_onlySnapAllowedIsNearbyOne)
+{
+  maxSnapForEdges = 0.5;
+  const std::vector<double> nodeLSValues = {1.0, -1.e-1, -1.e2, -1.e-1, 1., 1., -1.e-1};
+  const std::vector<unsigned> goldValidSnapEdgeNodeIndices{2};
+  build_mesh_and_test_valid_edge_snaps_for_given_level_set(0, goldValidSnapEdgeNodeIndices, nodeLSValues);
+}
 }

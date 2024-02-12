@@ -72,18 +72,18 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
                         RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                         RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& colImport,
                         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats,
-                        Teuchos::ArrayRCP<LocalOrdinal>&  regionMatVecLIDs,
+                        Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                         Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include <MueLu_UseShortNames.hpp>
 
   std::string matrixType = galeriList.get<std::string>("matrixType");
-  int numDimensions = 0;
+  int numDimensions      = 0;
   if (matrixType == "Laplace1D") {
     numDimensions = 1;
-  } else if(matrixType == "Laplace2D" || matrixType == "Elasticity2D" ||
-     matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
+  } else if (matrixType == "Laplace2D" || matrixType == "Elasticity2D" ||
+             matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
     numDimensions = 2;
-  } else if(matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+  } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
     numDimensions = 3;
   }
 
@@ -97,9 +97,9 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   lNodesPerDir[0] = galeriList.get<LO>("lnx");
   lNodesPerDir[1] = (1 < numDimensions) ? galeriList.get<LO>("lny") : 1;
   lNodesPerDir[2] = (2 < numDimensions) ? galeriList.get<LO>("lnz") : 1;
-  procsPerDim[0] = galeriList.get<GO>("mx");
-  procsPerDim[1] = galeriList.get<GO>("my");
-  procsPerDim[2] = galeriList.get<GO>("mz");
+  procsPerDim[0]  = galeriList.get<GO>("mx");
+  procsPerDim[1]  = galeriList.get<GO>("my");
+  procsPerDim[2]  = galeriList.get<GO>("mz");
 
   // std::cout << "p=" << nodeMap->getComm()->getRank() << " | numDimensions=" << numDimensions
   //           << ", useStructured=" << false << ", numDofsPerNode=" << numDofsPerNode
@@ -107,17 +107,17 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   //           << ", procsPerDim=" << procsPerDim << std::endl;
 
   Array<int> boundaryConditions;
-  int maxRegPerGID = 0;
-  int numInterfaces = 0;
+  int maxRegPerGID       = 0;
+  int numInterfaces      = 0;
   LO numLocalRegionNodes = 0;
-  Array<GO>  sendGIDs;
+  Array<GO> sendGIDs;
   Array<int> sendPIDs;
-  Array<LO>  rNodesPerDim(3);
-  Array<LO>  compositeToRegionLIDs(nodeMap->getLocalNumElements()*numDofsPerNode);
-  Array<GO>  quasiRegionGIDs;
-  Array<GO>  quasiRegionCoordGIDs;
-  Array<GO>  interfaceCompositeGIDs, interfaceRegionGIDs;
-  Array<LO>  interfaceRegionLIDs;
+  Array<LO> rNodesPerDim(3);
+  Array<LO> compositeToRegionLIDs(nodeMap->getLocalNumElements() * numDofsPerNode);
+  Array<GO> quasiRegionGIDs;
+  Array<GO> quasiRegionCoordGIDs;
+  Array<GO> interfaceCompositeGIDs, interfaceRegionGIDs;
+  Array<LO> interfaceRegionLIDs;
   createRegionData(numDimensions, false, numDofsPerNode,
                    gNodesPerDir(), lNodesPerDir(), procsPerDim(),
                    nodeMap, dofMap,
@@ -136,18 +136,18 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   // std::cout << "p=" << myRank << " | interfaceCompositeGIDs" << interfaceCompositeGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceRegionLIDs" << interfaceRegionLIDs() << std::endl;
 
-  rowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
-      Teuchos::OrdinalTraits<GO>::invalid(),
-      quasiRegionGIDs(),
-      A->getRowMap()->getIndexBase(),
-      A->getRowMap()->getComm());
+  rowMap = Xpetra::MapFactory<LO, GO, Node>::Build(A->getRowMap()->lib(),
+                                                   Teuchos::OrdinalTraits<GO>::invalid(),
+                                                   quasiRegionGIDs(),
+                                                   A->getRowMap()->getIndexBase(),
+                                                   A->getRowMap()->getComm());
   colMap = rowMap;
 
-  revisedRowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
-      Teuchos::OrdinalTraits<GO>::invalid(),
-      quasiRegionGIDs.size(),
-      A->getRowMap()->getIndexBase(),
-      A->getRowMap()->getComm());
+  revisedRowMap = Xpetra::MapFactory<LO, GO, Node>::Build(A->getRowMap()->lib(),
+                                                          Teuchos::OrdinalTraits<GO>::invalid(),
+                                                          quasiRegionGIDs.size(),
+                                                          A->getRowMap()->getIndexBase(),
+                                                          A->getRowMap()->getComm());
   revisedColMap = revisedRowMap;
 
   ExtractListOfInterfaceRegionGIDs(revisedRowMap, interfaceRegionLIDs, interfaceRegionGIDs);
@@ -174,7 +174,7 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
                      revisedRowMap, revisedColMap,
                      rowImport, quasiRegionGrpMats, regionMats);
 
-} // createRegionMatrix
+}  // createRegionMatrix
 
 // Helper function that creates almost all the data needed to generate a unit-test
 // numDofsPerNode [in]: number of degrees of freedom per grid point
@@ -197,41 +197,41 @@ void createProblem(const LocalOrdinal numDofsPerNode,
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
 
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  std::string matrixType = galeriParameters.GetMatrixType();
+  std::string matrixType            = galeriParameters.GetMatrixType();
   std::string mapType, coordinatesType;
-  if((matrixType == "Laplace2D") || (matrixType == "Elasticity2D")) {
-    mapType = "Cartesian2D";
+  if ((matrixType == "Laplace2D") || (matrixType == "Elasticity2D")) {
+    mapType         = "Cartesian2D";
     coordinatesType = "2D";
-  } else if((matrixType == "Laplace3D") || (matrixType == "Elasticity3D")) {
-    mapType = "Cartesian3D";
+  } else if ((matrixType == "Laplace3D") || (matrixType == "Elasticity3D")) {
+    mapType         = "Cartesian3D";
     coordinatesType = "3D";
   }
 
   // Build maps for the problem
   RCP<Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
                                                              mapType, comm, galeriList);
-  RCP<Map> dofMap  = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+  RCP<Map> dofMap  = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, numDofsPerNode);
 
   // Build the Xpetra problem
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
 
   // Generate the operator
   A = Pr->BuildMatrix();
   A->SetFixedBlockSize(numDofsPerNode);
 
   // Create auxiliary data for MG
-  RCP<MultiVector> nullspace = Pr->BuildNullspace();
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>(coordinatesType, nodeMap, galeriList);
+  RCP<MultiVector> nullspace             = Pr->BuildNullspace();
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>(coordinatesType, nodeMap, galeriList);
 
   // create the region maps, importer and operator from composite counter parts
-  RCP<const Map> rowMap = Teuchos::null;
-  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> rowMap        = Teuchos::null;
+  RCP<const Map> colMap        = Teuchos::null;
   RCP<const Map> revisedColMap = Teuchos::null;
-  RCP<Import> colImport = Teuchos::null;
+  RCP<Import> colImport        = Teuchos::null;
   createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
                      rowMap, colMap, revisedRowMap, revisedColMap,
                      rowImport, colImport, regionMats,
@@ -244,8 +244,7 @@ void createProblem(const LocalOrdinal numDofsPerNode,
   // std::cout << "p=" << comm->getRank() << " | target map element list: "
   //           << regionInterfaceImporter->getTargetMap()->getLocalElementList() << std::endl;
 
-
-} // createProblem
+}  // createProblem
 
 // test_matrix() is checking that performing a MatVec with composite A and region A
 // yields the same vector. It also verifies that regionalToComposite(regA) returns
@@ -260,9 +259,9 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
                  Teuchos::FancyOStream& out,
                  bool& success) {
 #include <MueLu_UseShortNames.hpp>
-  using TST            = Teuchos::ScalarTraits<SC>;
-  using magnitude_type = typename TST::magnitudeType;
-  using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+  using TST                           = Teuchos::ScalarTraits<SC>;
+  using magnitude_type                = typename TST::magnitudeType;
+  using TMT                           = Teuchos::ScalarTraits<magnitude_type>;
   RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
 
   /************************************/
@@ -284,8 +283,8 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   // Now build the region X vector
   RCP<Vector> quasiRegX = Teuchos::null;
   RCP<Vector> quasiRegB = Teuchos::null;
-  RCP<Vector> regX = Teuchos::null;
-  RCP<Vector> regB = Teuchos::null;
+  RCP<Vector> regX      = Teuchos::null;
+  RCP<Vector> regB      = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
@@ -302,12 +301,11 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataB     = B->getData(0);
   ArrayRCP<const SC> dataCompB = compB->getData(0);
-  for(size_t idx = 0; idx < B->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < B->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataB[idx]),
                            TST::magnitude(dataCompB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
-
 
   /************************************/
   /*                                  */
@@ -328,18 +326,18 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type orignalA   = A->getLocalMatrixDevice(); // Local matrix
-  entries_type      refEntries = orignalA.graph.entries;    // view of local column indices
-  values_type       refValues  = orignalA.values;           // view of local values
+  local_matrix_type orignalA = A->getLocalMatrixDevice();  // Local matrix
+  entries_type refEntries    = orignalA.graph.entries;     // view of local column indices
+  values_type refValues      = orignalA.values;            // view of local values
 
   typename entries_type::HostMirror refEntries_h = Kokkos::create_mirror_view(refEntries);
   Kokkos::deep_copy(refEntries_h, refEntries);
   typename values_type::HostMirror refValues_h = Kokkos::create_mirror_view(refValues);
   Kokkos::deep_copy(refValues_h, refValues);
 
-  local_matrix_type compositeA       = compositeMatrix->getLocalMatrixDevice(); // Local matrix
-  entries_type      compositeEntries = compositeA.graph.entries;                // view of local column indices
-  values_type       compositeValues  = compositeA.values;                       // view of local values
+  local_matrix_type compositeA  = compositeMatrix->getLocalMatrixDevice();  // Local matrix
+  entries_type compositeEntries = compositeA.graph.entries;                 // view of local column indices
+  values_type compositeValues   = compositeA.values;                        // view of local values
 
   typename entries_type::HostMirror compositeEntries_h = Kokkos::create_mirror_view(compositeEntries);
   Kokkos::deep_copy(compositeEntries_h, compositeEntries);
@@ -347,54 +345,53 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Kokkos::deep_copy(compositeValues_h, compositeValues);
 
   TEST_EQUALITY(compositeEntries_h.extent(0), refEntries_h.extent(0));
-  TEST_EQUALITY(compositeValues_h.extent(0),  refValues_h.extent(0));
-  for(LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
+  TEST_EQUALITY(compositeValues_h.extent(0), refValues_h.extent(0));
+  for (LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
     TEST_EQUALITY(compositeEntries_h(idx), refEntries_h(idx));
     TEST_FLOATING_EQUALITY(TST::magnitude(compositeValues_h(idx)),
                            TST::magnitude(refValues_h(idx)),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
-} // test_matrix
+}  // test_matrix
 
 // This test only checks the compositeToRegion() operation
 // for matrices. More specifically we compute a region A
 // based on a composite A and check the values in region A
 // against know correct values.
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
 
   // Get MPI parameter
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  LO numRanks = comm->getSize();
-  LO myRank = comm->getRank();
+  LO numRanks                         = comm->getSize();
+  LO myRank                           = comm->getRank();
 
   GO nx = 5, ny = 5, nz = 1;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  std::string   matrixType = galeriParameters.GetMatrixType();
+  std::string matrixType            = galeriParameters.GetMatrixType();
 
   // Build maps for the problem
   const LO numDofsPerNode = 1;
-  RCP<Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
+  RCP<Map> nodeMap        = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
                                                              "Cartesian2D", comm, galeriList);
-  RCP<Map> dofMap  = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+  RCP<Map> dofMap         = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, numDofsPerNode);
 
   // Build the Xpetra problem
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
 
   // Generate the operator
   RCP<Matrix> A = Pr->BuildMatrix();
@@ -405,17 +402,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   RCP<Vector> B = VectorFactory::Build(dofMap);
 
   // Create auxiliary data for MG
-  RCP<MultiVector> nullspace = Pr->BuildNullspace();
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
+  RCP<MultiVector> nullspace             = Pr->BuildNullspace();
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   // Create the region version of A called regionMats
-  RCP<const Map> rowMap = Teuchos::null;
-  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> rowMap        = Teuchos::null;
+  RCP<const Map> colMap        = Teuchos::null;
   RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<const Map> revisedColMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
-  RCP<Import> colImport = Teuchos::null;
-  RCP<Matrix> regionMats = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
+  RCP<Import> colImport        = Teuchos::null;
+  RCP<Matrix> regionMats       = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
@@ -429,9 +426,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMats->getLocalMatrixDevice(); // Local matrix
-  entries_type      myEntries = myLocalA.graph.entries;             // view of local column indices
-  values_type       myValues  = myLocalA.values;                    // view of local values
+  local_matrix_type myLocalA = regionMats->getLocalMatrixDevice();  // Local matrix
+  entries_type myEntries     = myLocalA.graph.entries;              // view of local column indices
+  values_type myValues       = myLocalA.values;                     // view of local values
 
   typename entries_type::HostMirror myEntries_h = Kokkos::create_mirror_view(myEntries);
   Kokkos::deep_copy(myEntries_h, myEntries);
@@ -439,118 +436,117 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   Kokkos::deep_copy(myValues_h, myValues);
 
   // Now do a bunch of checks regarding the values stored in region A
-  if(numRanks == 1) {
-    TEST_EQUALITY(regionMats->getGlobalNumRows(),     25);
-    TEST_EQUALITY(regionMats->getGlobalNumCols(),     25);
-    TEST_EQUALITY(regionMats->getLocalNumRows(),       25);
+  if (numRanks == 1) {
+    TEST_EQUALITY(regionMats->getGlobalNumRows(), 25);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(), 25);
+    TEST_EQUALITY(regionMats->getLocalNumRows(), 25);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 105);
-    TEST_EQUALITY(regionMats->getLocalNumEntries(),   105);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(), 105);
 
     // In the serial case we can just compare to the values in A
-    entries_type refEntries = A->getLocalMatrixDevice().graph.entries;
-    values_type  refValues  = A->getLocalMatrixDevice().values;
+    entries_type refEntries                        = A->getLocalMatrixDevice().graph.entries;
+    values_type refValues                          = A->getLocalMatrixDevice().values;
     typename entries_type::HostMirror refEntries_h = Kokkos::create_mirror_view(refEntries);
     Kokkos::deep_copy(refEntries_h, refEntries);
     typename values_type::HostMirror refValues_h = Kokkos::create_mirror_view(refValues);
     Kokkos::deep_copy(refValues_h, refValues);
 
-    for(int idx = 0; idx < 105; ++idx) {
+    for (int idx = 0; idx < 105; ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries_h(idx));
       TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                              TST::magnitude(refValues_h(idx)),
-                             100*TMT::eps());
+                             100 * TMT::eps());
     }
-  } else if(numRanks == 4) {
+  } else if (numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMats->getGlobalNumRows(),     36);
-    TEST_EQUALITY(regionMats->getGlobalNumCols(),     36);
-    TEST_EQUALITY(regionMats->getLocalNumRows(),        9);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(), 36);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(), 36);
+    TEST_EQUALITY(regionMats->getLocalNumRows(), 9);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 132);
-    TEST_EQUALITY(regionMats->getLocalNumEntries(),    33);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(), 33);
 
     ArrayRCP<LO> refEntries;
     ArrayRCP<SC> refValues;
     refEntries.deepCopy(ArrayView<const LO>({0, 1, 3,
-            0, 1, 2, 4,
-            1, 2, 5,
-            0, 3, 4, 6,
-            1, 3, 4, 5, 7,
-            2, 4, 5, 8,
-            3, 6, 7,
-            4, 6, 7, 8,
-            5, 7, 8}));
-    if(myRank == 0) {
+                                             0, 1, 2, 4,
+                                             1, 2, 5,
+                                             0, 3, 4, 6,
+                                             1, 3, 4, 5, 7,
+                                             2, 4, 5, 8,
+                                             3, 6, 7,
+                                             4, 6, 7, 8,
+                                             5, 7, 8}));
+    if (myRank == 0) {
       refValues.deepCopy(ArrayView<const SC>({4.0, -1.0, -1.0,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, 2.0, -0.5,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -0.5, -1.0, 2.0, -0.5,
-              -1.0, 2.0, -0.5,
-              -1.0, -0.5, 2.0, -0.5,
-              -0.5, -0.5, 1.0}));
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, 2.0, -0.5,
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -0.5, -1.0, 2.0, -0.5,
+                                              -1.0, 2.0, -0.5,
+                                              -1.0, -0.5, 2.0, -0.5,
+                                              -0.5, -0.5, 1.0}));
 
-    } else if(myRank == 1) {
+    } else if (myRank == 1) {
       refValues.deepCopy(ArrayView<const SC>({2.0, -1.0, -0.5,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, 4.0, -1.0,
-              -0.5, 2.0, -1.0, -0.5,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -0.5, 1.0, -0.5,
-              -1.0, -0.5, 2.0, -0.5,
-              -1.0, -0.5, 2.0}));
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, 4.0, -1.0,
+                                              -0.5, 2.0, -1.0, -0.5,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -0.5, 1.0, -0.5,
+                                              -1.0, -0.5, 2.0, -0.5,
+                                              -1.0, -0.5, 2.0}));
 
-    } else if(myRank == 2) {
+    } else if (myRank == 2) {
       refValues.deepCopy(ArrayView<const SC>({2.0, -0.5, -1.0,
-              -0.5, 2.0, -0.5, -1.0,
-              -0.5, 1.0, -0.5,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -0.5, -1.0, 2.0, -0.5,
-              -1.0, 4.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -0.5, -1.0, 2.0}));
+                                              -0.5, 2.0, -0.5, -1.0,
+                                              -0.5, 1.0, -0.5,
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -0.5, -1.0, 2.0, -0.5,
+                                              -1.0, 4.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -0.5, -1.0, 2.0}));
 
-    } else if(myRank == 3) {
+    } else if (myRank == 3) {
       refValues.deepCopy(ArrayView<const SC>({1.0, -0.5, -0.5,
-              -0.5, 2.0, -0.5, -1.0,
-              -0.5, 2.0, -1.0,
-              -0.5, 2.0, -1.0, -0.5,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -0.5, 2.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -1.0, -1.0, 4.0}));
+                                              -0.5, 2.0, -0.5, -1.0,
+                                              -0.5, 2.0, -1.0,
+                                              -0.5, 2.0, -1.0, -0.5,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -0.5, 2.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -1.0, -1.0, 4.0}));
     }
 
     // Loop over region matrix data and compare it to ref data
-    for(int idx = 0; idx < 33; ++idx) {
+    for (int idx = 0; idx < 33; ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries[idx]);
       TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                              TST::magnitude(refValues[idx]),
-                             100*TMT::eps());
+                             100 * TMT::eps());
     }
   }
 
-} // CompositeToRegionMatrix
+}  // CompositeToRegionMatrix
 
 // Here the reverse operation: regionToComposite is tested.
 // For that check the idea is to build a composite problem
 // Then compute the equivalent region problem and finally
 // use the region problem to go back to composite which should
 // lead to a matrix identical to the original composite matrix
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -559,20 +555,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
   GO nx = 5, ny = 5, nz = 1;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  std::string   matrixType = galeriParameters.GetMatrixType();
+  std::string matrixType            = galeriParameters.GetMatrixType();
 
   // Build maps for the problem
   const LO numDofsPerNode = 1;
-  RCP<Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
+  RCP<Map> nodeMap        = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
                                                              "Cartesian2D", comm, galeriList);
-  RCP<Map> dofMap  = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+  RCP<Map> dofMap         = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, numDofsPerNode);
 
   // Build the Xpetra problem
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
 
   // Generate the operator
   RCP<Matrix> A = Pr->BuildMatrix();
@@ -583,18 +579,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   RCP<Vector> B = VectorFactory::Build(dofMap);
 
   // Create auxiliary data for MG
-  RCP<MultiVector> nullspace = Pr->BuildNullspace();
+  RCP<MultiVector> nullspace             = Pr->BuildNullspace();
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::
-    CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
+      CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   // From the original composite matrix A, build the region equivalent: regionMats
-  RCP<const Map> rowMap = Teuchos::null;
-  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> rowMap        = Teuchos::null;
+  RCP<const Map> colMap        = Teuchos::null;
   RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<const Map> revisedColMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
-  RCP<Import> colImport = Teuchos::null;
-  RCP<Matrix> regionMats = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
+  RCP<Import> colImport        = Teuchos::null;
+  RCP<Matrix> regionMats       = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
@@ -619,18 +615,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type orignalA   = A->getLocalMatrixDevice(); // Local matrix
-  entries_type      refEntries = orignalA.graph.entries;    // view of local column indices
-  values_type       refValues  = orignalA.values;           // view of local values
+  local_matrix_type orignalA = A->getLocalMatrixDevice();  // Local matrix
+  entries_type refEntries    = orignalA.graph.entries;     // view of local column indices
+  values_type refValues      = orignalA.values;            // view of local values
 
   typename entries_type::HostMirror refEntries_h = Kokkos::create_mirror_view(refEntries);
   Kokkos::deep_copy(refEntries_h, refEntries);
   typename values_type::HostMirror refValues_h = Kokkos::create_mirror_view(refValues);
   Kokkos::deep_copy(refValues_h, refValues);
 
-  local_matrix_type compositeA       = compositeMatrix->getLocalMatrixDevice(); // Local matrix
-  entries_type      compositeEntries = compositeA.graph.entries;                // view of local column indices
-  values_type       compositeValues  = compositeA.values;                       // view of local values
+  local_matrix_type compositeA  = compositeMatrix->getLocalMatrixDevice();  // Local matrix
+  entries_type compositeEntries = compositeA.graph.entries;                 // view of local column indices
+  values_type compositeValues   = compositeA.values;                        // view of local values
 
   typename entries_type::HostMirror compositeEntries_h = Kokkos::create_mirror_view(compositeEntries);
   Kokkos::deep_copy(compositeEntries_h, compositeEntries);
@@ -638,33 +634,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   Kokkos::deep_copy(compositeValues_h, compositeValues);
 
   TEST_EQUALITY(compositeEntries_h.extent(0), refEntries_h.extent(0));
-  TEST_EQUALITY(compositeValues_h.extent(0),  refValues_h.extent(0));
-  for(LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
+  TEST_EQUALITY(compositeValues_h.extent(0), refValues_h.extent(0));
+  for (LO idx = 0; idx < compositeEntries_h.extent_int(0); ++idx) {
     TEST_EQUALITY(compositeEntries_h(idx), refEntries_h(idx));
     TEST_FLOATING_EQUALITY(TST::magnitude(compositeValues_h(idx)),
                            TST::magnitude(refValues_h(idx)),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
-} // RegionToCompositeMatrix
-
+}  // RegionToCompositeMatrix
 
 // This test aims at checking that apply regionA to a region vector has the same effect as
 // applying A to a composite vector. Of course the region vector needs to be brought back
 // to composite formate before verifying the equivalence.
 //
 // Do this for 1 DOF per node
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -673,37 +667,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
   GO nx = 7, ny = 7, nz = 1;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  std::string   matrixType = galeriParameters.GetMatrixType();
+  std::string matrixType            = galeriParameters.GetMatrixType();
 
   // Build maps for the problem
   const LO numDofsPerNode = 1;
-  RCP<Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
+  RCP<Map> nodeMap        = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
                                                              "Cartesian2D", comm, galeriList);
-  RCP<Map> dofMap  = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+  RCP<Map> dofMap         = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, numDofsPerNode);
 
   // Build the Xpetra problem
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
 
   // Generate the operator
   RCP<Matrix> A = Pr->BuildMatrix();
   A->SetFixedBlockSize(numDofsPerNode);
 
   // Create auxiliary data for MG
-  RCP<MultiVector> nullspace = Pr->BuildNullspace();
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
+  RCP<MultiVector> nullspace             = Pr->BuildNullspace();
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   // create the region maps, importer and operator from composite counter parts
-  RCP<const Map> rowMap = Teuchos::null;
-  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> rowMap        = Teuchos::null;
+  RCP<const Map> colMap        = Teuchos::null;
   RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<const Map> revisedColMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
-  RCP<Import> colImport = Teuchos::null;
-  RCP<Matrix> regionMats = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
+  RCP<Import> colImport        = Teuchos::null;
+  RCP<Matrix> regionMats       = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
@@ -726,8 +720,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   // Create the region vectors and apply region A
   RCP<Vector> quasiRegX = Teuchos::null;
   RCP<Vector> quasiRegB = Teuchos::null;
-  RCP<Vector> regX = Teuchos::null;
-  RCP<Vector> regB = Teuchos::null;
+  RCP<Vector> regX      = Teuchos::null;
+  RCP<Vector> regB      = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
   regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
@@ -741,10 +735,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataRegB    = regB->getData(0);
   ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
   // Finally we perform the "fastMatVec" that does not require
@@ -754,34 +748,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
-  regC = VectorFactory::Build(revisedRowMap, true);
+  regC             = VectorFactory::Build(revisedRowMap, true);
   regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
-} // FastMatVec
+}  // FastMatVec
 
 // This test aims at checking that apply regionA to a region vector has the same effect as
 // applying A to a composite vector. Of course the region vector needs to be brought back
 // to composite formate before verifying the equivalence.
 //
 // Do this for 1 DOF per node
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -790,17 +783,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
   GO nx = 5, ny = 5, nz = 3;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D");
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  std::string   matrixType = galeriParameters.GetMatrixType();
-  const LO numDofsPerNode = 1;
+  std::string matrixType            = galeriParameters.GetMatrixType();
+  const LO numDofsPerNode           = 1;
 
   // create the region maps, importer and operator from composite counter parts
   RCP<Matrix> regionMats = Teuchos::null;
   RCP<Matrix> A;
   RCP<const Map> revisedRowMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
@@ -823,8 +816,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   // Create the region vectors and apply region A
   RCP<Vector> quasiRegX = Teuchos::null;
   RCP<Vector> quasiRegB = Teuchos::null;
-  RCP<Vector> regX = Teuchos::null;
-  RCP<Vector> regB = Teuchos::null;
+  RCP<Vector> regX      = Teuchos::null;
+  RCP<Vector> regB      = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
@@ -839,10 +832,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataRegB    = regB->getData(0);
   ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
   // Finally we perform the "fastMatVec" that does not require
@@ -852,34 +845,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
-  regC = VectorFactory::Build(revisedRowMap, true);
+  regC             = VectorFactory::Build(revisedRowMap, true);
   regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
-} // FastMatVec3D
+}  // FastMatVec3D
 
 // This test aims at checking that apply regionA to a region vector has the same effect as
 // applying A to a composite vector. Of course the region vector needs to be brought back
 // to composite formate before verifying the equivalence.
 //
 // Do this for 2 DOFs per node (two-dimensional elasticity)
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -889,12 +881,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
 
   const LO numDofsPerNode = 2;
   GO nx = 7, ny = 7, nz = 1;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Elasticity2D");
   RCP<Matrix> regionMats = Teuchos::null;
   RCP<Matrix> A;
   RCP<const Map> revisedRowMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
@@ -917,8 +909,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   // Create the region vectors and apply region A
   RCP<Vector> quasiRegX = Teuchos::null;
   RCP<Vector> quasiRegB = Teuchos::null;
-  RCP<Vector> regX = Teuchos::null;
-  RCP<Vector> regB = Teuchos::null;
+  RCP<Vector> regX      = Teuchos::null;
+  RCP<Vector> regB      = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
   regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
@@ -932,10 +924,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataRegB    = regB->getData(0);
   ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
   // Finally we perform the "fastMatVec" that does not require
@@ -945,34 +937,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
-  regC = VectorFactory::Build(revisedRowMap, true);
+  regC             = VectorFactory::Build(revisedRowMap, true);
   regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
-} // FastMatVec2D_Elasticity
+}  // FastMatVec2D_Elasticity
 
 // This test aims at checking that apply regionA to a region vector has the same effect as
 // applying A to a composite vector. Of course the region vector needs to be brought back
 // to composite formate before verifying the equivalence.
 //
 // Do this for 3 DOFs per node (three-dimensional elasticity)
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -982,12 +973,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
 
   const LO numDofsPerNode = 3;
   GO nx = 5, ny = 5, nz = 3;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Elasticity3D");
-  RCP<Matrix> regionMats = Teuchos::null;
-  RCP<Matrix> A = Teuchos::null;
+  RCP<Matrix> regionMats       = Teuchos::null;
+  RCP<Matrix> A                = Teuchos::null;
   RCP<const Map> revisedRowMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
@@ -1010,8 +1001,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   // Create the region vectors and apply region A
   RCP<Vector> quasiRegX = Teuchos::null;
   RCP<Vector> quasiRegB = Teuchos::null;
-  RCP<Vector> regX = Teuchos::null;
-  RCP<Vector> regB = Teuchos::null;
+  RCP<Vector> regX      = Teuchos::null;
+  RCP<Vector> regB      = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
   regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
@@ -1025,10 +1016,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataRegB    = regB->getData(0);
   ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           100*TMT::eps());
+                           100 * TMT::eps());
   }
 
   // Finally we perform the "fastMatVec" that does not require
@@ -1038,33 +1029,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
-  regC = VectorFactory::Build(revisedRowMap, true);
+  regC             = VectorFactory::Build(revisedRowMap, true);
   regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
-  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
+  for (size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
-                           200*TMT::eps());
+                           200 * TMT::eps());
   }
 
-} // FastMatVec3D_Elasticity
+}  // FastMatVec3D_Elasticity
 
 // Here a Laplace 2D problem is tested for all the above checks mentioned:
 //   1) the region operator is compared against know values
 //   2) the action of the region MatVec is compared with the composite MatVec
 //   3) compute the composite operator from the region operator leads to the original matrix
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -1073,36 +1063,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
   GO nx = 6, ny = 5, nz = 1;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  std::string   matrixType = galeriParameters.GetMatrixType();
+  std::string matrixType            = galeriParameters.GetMatrixType();
 
   // Build maps for the problem
   const LO numDofsPerNode = 1;
-  RCP<Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
+  RCP<Map> nodeMap        = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
                                                              "Cartesian2D", comm, galeriList);
-  RCP<Map> dofMap  = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+  RCP<Map> dofMap         = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, numDofsPerNode);
 
   // Build the Xpetra problem
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
 
   // Generate the operator
   RCP<Matrix> A = Pr->BuildMatrix();
   A->SetFixedBlockSize(numDofsPerNode);
 
   // Create auxiliary data for MG
-  RCP<MultiVector> nullspace = Pr->BuildNullspace();
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
+  RCP<MultiVector> nullspace             = Pr->BuildNullspace();
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
 
-  RCP<const Map> rowMap = Teuchos::null;
-  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> rowMap        = Teuchos::null;
+  RCP<const Map> colMap        = Teuchos::null;
   RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<const Map> revisedColMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
-  RCP<Import> colImport = Teuchos::null;
-  RCP<Matrix> regionMats = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
+  RCP<Import> colImport        = Teuchos::null;
+  RCP<Matrix> regionMats       = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
@@ -1120,9 +1110,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMats->getLocalMatrixDevice(); // Local matrix
-  entries_type      myEntries = myLocalA.graph.entries;             // view of local column indices
-  values_type       myValues  = myLocalA.values;                    // view of local values
+  local_matrix_type myLocalA = regionMats->getLocalMatrixDevice();  // Local matrix
+  entries_type myEntries     = myLocalA.graph.entries;              // view of local column indices
+  values_type myValues       = myLocalA.values;                     // view of local values
 
   typename entries_type::HostMirror myEntries_h = Kokkos::create_mirror_view(myEntries);
   Kokkos::deep_copy(myEntries_h, myEntries);
@@ -1131,118 +1121,116 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
 
   const int numRanks = comm->getSize();
   const int myRank   = comm->getRank();
-  if(numRanks == 1) {
-    TEST_EQUALITY(regionMats->getGlobalNumRows(),    30);
-    TEST_EQUALITY(regionMats->getGlobalNumCols(),    30);
-    TEST_EQUALITY(regionMats->getLocalNumRows(),      30);
+  if (numRanks == 1) {
+    TEST_EQUALITY(regionMats->getGlobalNumRows(), 30);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(), 30);
+    TEST_EQUALITY(regionMats->getLocalNumRows(), 30);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 128);
-    TEST_EQUALITY(regionMats->getLocalNumEntries(),   128);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(), 128);
 
     // In the serial case we can just compare to the values in A
-    entries_type refEntries = A->getLocalMatrixDevice().graph.entries;
-    values_type  refValues  = A->getLocalMatrixDevice().values;
+    entries_type refEntries                        = A->getLocalMatrixDevice().graph.entries;
+    values_type refValues                          = A->getLocalMatrixDevice().values;
     typename entries_type::HostMirror refEntries_h = Kokkos::create_mirror_view(refEntries);
     Kokkos::deep_copy(refEntries_h, refEntries);
     typename values_type::HostMirror refValues_h = Kokkos::create_mirror_view(refValues);
     Kokkos::deep_copy(refValues_h, refValues);
 
-    for(int idx = 0; idx < 128; ++idx) {
+    for (int idx = 0; idx < 128; ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries_h(idx));
       TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                              TST::magnitude(refValues_h(idx)),
-                             100*TMT::eps());
+                             100 * TMT::eps());
     }
-  } else if(numRanks == 4) {
+  } else if (numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMats->getGlobalNumRows(),    42);
-    TEST_EQUALITY(regionMats->getGlobalNumCols(),    42);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(), 42);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(), 42);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 158);
 
     ArrayRCP<SC> refValues;
-    if(myRank == 0) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),      9);
-      TEST_EQUALITY(regionMats->getLocalNumEntries(),   33);
+    if (myRank == 0) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 9);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 33);
       refValues.deepCopy(ArrayView<const SC>({4.0, -1.0, -1.0,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, 2.0, -0.5,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -0.5, -1.0, 2.0, -0.5,
-              -1.0, 2.0, -0.5,
-              -1.0, -0.5, 2.0, -0.5,
-              -0.5, -0.5, 1.0}));
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, 2.0, -0.5,
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -0.5, -1.0, 2.0, -0.5,
+                                              -1.0, 2.0, -0.5,
+                                              -1.0, -0.5, 2.0, -0.5,
+                                              -0.5, -0.5, 1.0}));
 
-    } else if(myRank == 1) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),      12);
-      TEST_EQUALITY(regionMats->getLocalNumEntries(),   46);
+    } else if (myRank == 1) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 12);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 46);
       refValues.deepCopy(ArrayView<const SC>({2.0, -1.0, -0.5,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, 4.0, -1.0,
-              -0.5, 2.0, -1.0, -0.5,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -0.5, 1.0, -0.5,
-              -1.0, -0.5, 2.0, -0.5,
-              -1.0, -0.5, 2.0, -0.5,
-              -1.0, -0.5, 2.0}));
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, 4.0, -1.0,
+                                              -0.5, 2.0, -1.0, -0.5,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -0.5, 1.0, -0.5,
+                                              -1.0, -0.5, 2.0, -0.5,
+                                              -1.0, -0.5, 2.0, -0.5,
+                                              -1.0, -0.5, 2.0}));
 
-    } else if(myRank == 2) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),      9);
-      TEST_EQUALITY(regionMats->getLocalNumEntries(),   33);
+    } else if (myRank == 2) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 9);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 33);
       refValues.deepCopy(ArrayView<const SC>({2.0, -0.5, -1.0,
-              -0.5, 2.0, -0.5, -1.0,
-              -0.5, 1.0, -0.5,
-              -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -0.5, -1.0, 2.0, -0.5,
-              -1.0, 4.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -0.5, -1.0, 2.0}));
+                                              -0.5, 2.0, -0.5, -1.0,
+                                              -0.5, 1.0, -0.5,
+                                              -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -0.5, -1.0, 2.0, -0.5,
+                                              -1.0, 4.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -0.5, -1.0, 2.0}));
 
-    } else if(myRank == 3) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),      12);
-      TEST_EQUALITY(regionMats->getLocalNumEntries(),   46);
+    } else if (myRank == 3) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 12);
+      TEST_EQUALITY(regionMats->getLocalNumEntries(), 46);
       refValues.deepCopy(ArrayView<const SC>({1.0, -0.5, -0.5,
-              -0.5, 2.0, -0.5, -1.0,
-              -0.5, 2.0, -0.5, -1.0,
-              -0.5, 2.0, -1.0,
-              -0.5, 2.0, -1.0, -0.5,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -0.5, 2.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -1.0, -1.0, 4.0, -1.0,
-              -1.0, -1.0, 4.0}));
+                                              -0.5, 2.0, -0.5, -1.0,
+                                              -0.5, 2.0, -0.5, -1.0,
+                                              -0.5, 2.0, -1.0,
+                                              -0.5, 2.0, -1.0, -0.5,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -0.5, 2.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -1.0, -1.0, 4.0, -1.0,
+                                              -1.0, -1.0, 4.0}));
     }
 
     // Loop over region matrix data and compare it to ref data
-    for(int idx = 0; idx < 33; ++idx) {
+    for (int idx = 0; idx < 33; ++idx) {
       TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                              TST::magnitude(refValues[idx]),
-                             100*TMT::eps());
+                             100 * TMT::eps());
     }
   }
-} // Laplace2D
-
+}  // Laplace2D
 
 // Here a Laplace 3D problem is tested for all the above checks mentioned:
 //   1) the region operator is compared against know values
 //   2) the action of the region MatVec is compared with the composite MatVec
 //   3) compute the composite operator from the region operator leads to the original matrix
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include "MueLu_UseShortNames.hpp"
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
   using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
   using real_type             = typename TST::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
   using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -1251,36 +1239,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
   GO nx = 6, ny = 5, nz = 4;
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D");
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
-  std::string matrixType = galeriParameters.GetMatrixType();
+  std::string matrixType            = galeriParameters.GetMatrixType();
 
   // Build maps for the problem
   const LO numDofsPerNode = 1;
-  RCP<Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
+  RCP<Map> nodeMap        = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(),
                                                              "Cartesian3D", comm, galeriList);
-  RCP<Map> dofMap  = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+  RCP<Map> dofMap         = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, numDofsPerNode);
 
   // Build the Xpetra problem
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
 
   // Generate the operator
   RCP<Matrix> A = Pr->BuildMatrix();
   A->SetFixedBlockSize(numDofsPerNode);
 
   // Create auxiliary data for MG
-  RCP<MultiVector> nullspace = Pr->BuildNullspace();
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
+  RCP<MultiVector> nullspace             = Pr->BuildNullspace();
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("3D", nodeMap, galeriList);
 
-  RCP<const Map> rowMap = Teuchos::null;
-  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> rowMap        = Teuchos::null;
+  RCP<const Map> colMap        = Teuchos::null;
   RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<const Map> revisedColMap = Teuchos::null;
-  RCP<Import> rowImport = Teuchos::null;
-  RCP<Import> colImport = Teuchos::null;
-  RCP<Matrix> regionMats = Teuchos::null;
+  RCP<Import> rowImport        = Teuchos::null;
+  RCP<Import> colImport        = Teuchos::null;
+  RCP<Matrix> regionMats       = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
   createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
@@ -1298,9 +1286,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMats->getLocalMatrixDevice();   // Local matrix
-  entries_type      myEntries = myLocalA.graph.entries;               // view of local column indices
-  values_type       myValues  = myLocalA.values;                      // view of local values
+  local_matrix_type myLocalA = regionMats->getLocalMatrixDevice();  // Local matrix
+  entries_type myEntries     = myLocalA.graph.entries;              // view of local column indices
+  values_type myValues       = myLocalA.values;                     // view of local values
 
   typename entries_type::HostMirror myEntries_h = Kokkos::create_mirror_view(myEntries);
   Kokkos::deep_copy(myEntries_h, myEntries);
@@ -1309,260 +1297,259 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
 
   const int numRanks = comm->getSize();
   const int myRank   = comm->getRank();
-  if((numRanks == 1) && (myRank == 0)) {
-    TEST_EQUALITY(regionMats->getGlobalNumRows(),    120);
-    TEST_EQUALITY(regionMats->getGlobalNumCols(),    120);
-    TEST_EQUALITY(regionMats->getLocalNumRows(),      120);
+  if ((numRanks == 1) && (myRank == 0)) {
+    TEST_EQUALITY(regionMats->getGlobalNumRows(), 120);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(), 120);
+    TEST_EQUALITY(regionMats->getLocalNumRows(), 120);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 692);
-    TEST_EQUALITY(regionMats->getLocalNumEntries(),   692);
+    TEST_EQUALITY(regionMats->getLocalNumEntries(), 692);
 
     // In the serial case we can just compare to the values in A
-    entries_type refEntries = A->getLocalMatrixDevice().graph.entries;
-    values_type  refValues  = A->getLocalMatrixDevice().values;
+    entries_type refEntries                        = A->getLocalMatrixDevice().graph.entries;
+    values_type refValues                          = A->getLocalMatrixDevice().values;
     typename entries_type::HostMirror refEntries_h = Kokkos::create_mirror_view(refEntries);
     Kokkos::deep_copy(refEntries_h, refEntries);
     typename values_type::HostMirror refValues_h = Kokkos::create_mirror_view(refValues);
     Kokkos::deep_copy(refValues_h, refValues);
 
-    for(int idx = 0; idx < refEntries_h.extent_int(0); ++idx) {
+    for (int idx = 0; idx < refEntries_h.extent_int(0); ++idx) {
       TEST_EQUALITY(myEntries_h(idx), refEntries_h(idx));
       TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                              TST::magnitude(refValues_h(idx)),
-                             100*TMT::eps());
+                             100 * TMT::eps());
     }
-  } else if(numRanks == 4) {
+  } else if (numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMats->getGlobalNumRows(),    168);
-    TEST_EQUALITY(regionMats->getGlobalNumCols(),    168);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(), 168);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(), 168);
     TEST_EQUALITY(regionMats->getGlobalNumEntries(), 884);
 
     ArrayRCP<SC> refValues;
-    if(myRank == 0) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),     36);
+    if (myRank == 0) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 36);
       TEST_EQUALITY(regionMats->getLocalNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({6.0, -1.0, -1.0, -1.0,
-              -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, 3.0, -0.5, -0.5,
-              -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -1.0, 3.0, -0.5, -0.5,
-              -1.0, 3.0, -0.5, -0.5,
-              -1.0, -0.5, 3.0, -0.5, -0.5,
-              -0.5, -0.5, 1.5, -0.25,
-              -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -1.0, 3.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
-              -0.5, -1.0, 3.0, -0.5, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
-              -0.25, -0.5, -0.5, 1.5, -0.25,
-              -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -1.0, 3.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
-              -0.5, -1.0, 3.0, -0.5, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
-              -0.25, -0.5, -0.5, 1.5, -0.25,
-              -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -1.0, 3.0, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5,
-              -0.5, -1.0, 3.0, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5,
-              -0.25, -0.5, -0.5, 1.5}));
+                                              -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -0.5, -0.5, 1.5, -0.25,
+                                              -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -0.25, -0.5, -0.5, 1.5, -0.25,
+                                              -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -0.25, -0.5, -0.5, 1.5, -0.25,
+                                              -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -1.0, 3.0, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5,
+                                              -0.5, -1.0, 3.0, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5,
+                                              -0.25, -0.5, -0.5, 1.5}));
 
       // Loop over region matrix data and compare it to ref data
-      for(int idx = 0; idx < 186; ++idx) {
+      for (int idx = 0; idx < 186; ++idx) {
         TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                                TST::magnitude(refValues[idx]),
-                               100*TMT::eps());
+                               100 * TMT::eps());
       }
 
-    } else if(myRank == 1) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),     48);
+    } else if (myRank == 1) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 48);
       TEST_EQUALITY(regionMats->getLocalNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({3.0, -1.0, -0.5, -0.5,
-              -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, 6.0, -1.0, -1.0,
-              -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, 1.5, -0.5, -0.25,
-              -1.0, -0.5, 3.0, -0.5, -0.5,
-              -1.0, -0.5, 3.0, -0.5, -0.5,
-              -1.0, -0.5, 3.0, -0.5,
-              -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.25, -0.5, 1.5, -0.5, -0.25,
-              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5,
-              -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.25, -0.5, 1.5, -0.5, -0.25,
-              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5,
-              -0.5, 3.0, -1.0, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0,
-              -0.5, -0.5, 3.0, -1.0, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0,
-              -0.25, -0.5, 1.5, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5,
-              -0.5, -1.0, -0.5, 3.0, -0.5,
-              -0.5, -1.0, -0.5, 3.0}));
+                                              -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, 1.5, -0.5, -0.25,
+                                              -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -1.0, -0.5, 3.0, -0.5,
+                                              -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.25, -0.5, 1.5, -0.5, -0.25,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5,
+                                              -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.25, -0.5, 1.5, -0.5, -0.25,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5,
+                                              -0.5, 3.0, -1.0, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0,
+                                              -0.25, -0.5, 1.5, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0, -0.5,
+                                              -0.5, -1.0, -0.5, 3.0}));
 
       // Loop over region matrix data and compare it to ref data
-      for(int idx = 0; idx < 256; ++idx) {
+      for (int idx = 0; idx < 256; ++idx) {
         TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                                TST::magnitude(refValues[idx]),
-                               100*TMT::eps());
+                               100 * TMT::eps());
       }
 
-    } else if(myRank == 2) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),     36);
+    } else if (myRank == 2) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 36);
       TEST_EQUALITY(regionMats->getLocalNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({3.0, -0.5, -1.0, -0.5,
-              -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, 1.5, -0.5, -0.25,
-              -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -1.0, 3.0, -0.5, -0.5,
-              -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -1.0, 3.0, -0.5,
-              -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.25, -0.5, 1.5, -0.5, -0.25,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5,
-              -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.25, -0.5, 1.5, -0.5, -0.25,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5,
-              -0.5, 3.0, -0.5, -1.0,
-              -0.5, -0.5, 3.0, -0.5, -1.0,
-              -0.25, -0.5, 1.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0, -0.5,
-              -1.0, -1.0, 6.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0,
-              -0.5, -0.5, -1.0, 3.0}));
+                                              -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, 1.5, -0.5, -0.25,
+                                              -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -1.0, 3.0, -0.5,
+                                              -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.25, -0.5, 1.5, -0.5, -0.25,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5,
+                                              -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.25, -0.5, 1.5, -0.5, -0.25,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5,
+                                              -0.5, 3.0, -0.5, -1.0,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0,
+                                              -0.25, -0.5, 1.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0,
+                                              -0.5, -0.5, -1.0, 3.0}));
 
       // Loop over region matrix data and compare it to ref data
-      for(int idx = 0; idx < 186; ++idx) {
+      for (int idx = 0; idx < 186; ++idx) {
         TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                                TST::magnitude(refValues[idx]),
-                               100*TMT::eps());
+                               100 * TMT::eps());
       }
 
-    } else if(myRank == 3) {
-      TEST_EQUALITY(regionMats->getLocalNumRows(),     48);
+    } else if (myRank == 3) {
+      TEST_EQUALITY(regionMats->getLocalNumRows(), 48);
       TEST_EQUALITY(regionMats->getLocalNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({1.5, -0.5, -0.5, -0.25,
-              -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, 3.0, -1.0, -0.5,
-              -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, 3.0, -1.0, -0.5,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, 6.0, -1.0,
-              -0.25, 1.5, -0.5, -0.5, -0.25,
-              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, 3.0, -1.0, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0,
-              -0.25, 1.5, -0.5, -0.5, -0.25,
-              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -1.0, -0.5,
-              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -0.5, -0.5, 3.0, -1.0, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0,
-              -0.25, 1.5, -0.5, -0.5,
-              -0.5, -0.5, 3.0, -0.5, -1.0,
-              -0.5, -0.5, 3.0, -0.5, -1.0,
-              -0.5, -0.5, 3.0, -1.0,
-              -0.5, -0.5, 3.0, -1.0, -0.5,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0,
-              -0.5, -0.5, 3.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0, -1.0,
-              -1.0, -1.0, -1.0, 6.0}));
+                                              -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, 3.0, -1.0, -0.5,
+                                              -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, 3.0, -1.0, -0.5,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, 6.0, -1.0,
+                                              -0.25, 1.5, -0.5, -0.5, -0.25,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0,
+                                              -0.25, 1.5, -0.5, -0.5, -0.25,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0,
+                                              -0.25, 1.5, -0.5, -0.5,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0,
+                                              -0.5, -0.5, 3.0, -0.5, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0, -0.5,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0,
+                                              -0.5, -0.5, 3.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0, -1.0,
+                                              -1.0, -1.0, -1.0, 6.0}));
 
       // Loop over region matrix data and compare it to ref data
-      for(int idx = 0; idx < 256; ++idx) {
+      for (int idx = 0; idx < 256; ++idx) {
         TEST_FLOATING_EQUALITY(TST::magnitude(myValues_h(idx)),
                                TST::magnitude(refValues[idx]),
-                               100*TMT::eps());
+                               100 * TMT::eps());
       }
     }
   }
-} // Laplace3D
+}  // Laplace3D
 
-#  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,CompositeToRegionMatrix,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,RegionToCompositeMatrix,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec,Scalar,LO,GO,Node)              \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec3D,Scalar,LO,GO,Node)            \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec2D_Elasticity,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,FastMatVec3D_Elasticity,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,Laplace2D,Scalar,LO,GO,Node)               \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix,Laplace3D,Scalar,LO,GO,Node)
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, CompositeToRegionMatrix, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, RegionToCompositeMatrix, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, FastMatVec, Scalar, LO, GO, Node)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, FastMatVec3D, Scalar, LO, GO, Node)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, FastMatVec2D_Elasticity, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, FastMatVec3D_Elasticity, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, Laplace2D, Scalar, LO, GO, Node)               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RegionMatrix, Laplace3D, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
-
-} // namespace MueLuTests
+}  // namespace MueLuTests

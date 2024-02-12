@@ -47,12 +47,12 @@
 #define XPETRA_MAPUTILS_FWD_HPP
 
 namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MapUtils;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class MapUtils;
 }
 
 #ifndef XPETRA_MAPUTILS_SHORT
 #define XPETRA_MAPUTILS_SHORT
 #endif
 
-#endif // XPETRA_MAPUTILS_FWD_HPP
+#endif  // XPETRA_MAPUTILS_FWD_HPP

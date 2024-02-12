@@ -36,11 +36,10 @@ namespace Impl {
 /// \tparam SizeType Index type.  Use int (32 bits) if possible.
 template <class RV, class XV, class SizeType = typename XV::size_type>
 struct V_Sum_Functor {
-  typedef typename XV::execution_space execution_space;
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type> AT;
+  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
   typedef typename RV::non_const_value_type value_type;
 
   typename XV::const_type m_x;
@@ -104,11 +103,10 @@ struct Sum_MV_Functor {
 
 /// \brief Compute the 2-norm (or its square) of the single vector (1-D
 ///   View) X, and store the result in the 0-D View r.
-template <class RV, class XV, class SizeType>
-void V_Sum_Invoke(const RV& r, const XV& X) {
-  typedef typename XV::execution_space execution_space;
+template <class execution_space, class RV, class XV, class SizeType>
+void V_Sum_Invoke(const execution_space& space, const RV& r, const XV& X) {
   const SizeType numRows = static_cast<SizeType>(X.extent(0));
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   typedef V_Sum_Functor<RV, XV, SizeType> functor_type;
   functor_type op(X);
@@ -119,13 +117,12 @@ void V_Sum_Invoke(const RV& r, const XV& X) {
 ///   multivector (2-D View) X, and store result(s) in the 1-D View r.
 // Main version: the result view is accessible from execution space, so it can
 // be computed in-place
-template <class RV, class XV, class size_type>
+template <class execution_space, class RV, class XV, class size_type>
 void MV_Sum_Invoke(
-    const RV& r, const XV& x,
+    const execution_space& space, const RV& r, const XV& x,
     typename std::enable_if<Kokkos::SpaceAccessibility<
-        typename XV::execution_space,
-        typename RV::memory_space>::accessible>::type* = nullptr) {
-  using execution_space = typename XV::execution_space;
+        execution_space, typename RV::memory_space>::accessible>::type* =
+        nullptr) {
   if (r.extent(0) != x.extent(1)) {
     std::ostringstream oss;
     oss << "KokkosBlas::Sum (rank-2): result vector has wrong length ("
@@ -134,14 +131,13 @@ void MV_Sum_Invoke(
   }
   // Zero out the result vector
   Kokkos::deep_copy(
-      execution_space(), r,
-      Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+      space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
       x.extent(0), x.extent(1), teamsPerVec);
   size_type numTeams = x.extent(1) * teamsPerVec;
-  Kokkos::TeamPolicy<execution_space> pol(numTeams, Kokkos::AUTO);
+  Kokkos::TeamPolicy<execution_space> pol(space, numTeams, Kokkos::AUTO);
   Kokkos::parallel_for(
       "KokkosBlas1::Sum::S1", pol,
       Sum_MV_Functor<execution_space, RV, XV, size_type>(r, x, teamsPerVec));
@@ -149,18 +145,20 @@ void MV_Sum_Invoke(
 
 // Version for when a temporary result view is needed (implemented in terms of
 // the other version)
-template <class RV, class XV, class size_type>
+template <class execution_space, class RV, class XV, class size_type>
 void MV_Sum_Invoke(
-    const RV& r, const XV& x,
+    const execution_space& space, const RV& r, const XV& x,
     typename std::enable_if<!Kokkos::SpaceAccessibility<
-        typename XV::execution_space,
-        typename RV::memory_space>::accessible>::type* = nullptr) {
+        execution_space, typename RV::memory_space>::accessible>::type* =
+        nullptr) {
   Kokkos::View<typename RV::non_const_value_type*, typename XV::memory_space>
       tempResult(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "Sum temp result"),
           r.extent(0));
-  MV_Sum_Invoke<decltype(tempResult), XV, size_type>(tempResult, x);
-  Kokkos::deep_copy(typename XV::execution_space(), r, tempResult);
+  MV_Sum_Invoke<execution_space, decltype(tempResult), XV, size_type>(
+      space, tempResult, x);
+  Kokkos::deep_copy(space, r, tempResult);
+  space.fence();
 }
 
 }  // namespace Impl

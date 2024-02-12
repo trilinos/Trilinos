@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -26,24 +26,23 @@ static void free2d(double *vals[4][MAXSETS], int *indices[4][MAXSETS])
 }
 
 void map2d(struct vtx_data **graph,   /* data structure with vertex weights */
-           double **         xvecs,   /* vectors to partition */
+           double          **xvecs,   /* vectors to partition */
            int               nvtxs,   /* number of vertices */
-           int *             sets,    /* set each vertex gets assigned to */
-           double *          goal,    /* desired set sizes */
+           int              *sets,    /* set each vertex gets assigned to */
+           double           *goal,    /* desired set sizes */
            int               vwgt_max /* largest vertex weight */
 )
 {
   extern int DEBUG_BPMATCH;        /* turn on debugging for bipartite matching */
   extern int N_VTX_MOVES;          /* total number of vertex moves */
   extern int N_VTX_CHECKS;         /* total number of moves contemplated */
-  double *   vals[4][MAXSETS];     /* values in sorted lists */
+  double    *vals[4][MAXSETS];     /* values in sorted lists */
   double     dist[4];              /* trial separation point */
   double     size[4];              /* sizes of each set being modified */
-  int *      indices[4][MAXSETS];  /* indices sorting lists */
+  int       *indices[4][MAXSETS];  /* indices sorting lists */
   int        startvtx[4][MAXSETS]; /* indices defining separation */
   int        nsection = 2;         /* number of xvectors */
   int        nsets    = 4;         /* number of sets being divided into */
-  void       genvals2d(), sorts2d(), inits2d(), checkbp(), movevtxs();
 
   N_VTX_CHECKS = N_VTX_MOVES = 0;
 

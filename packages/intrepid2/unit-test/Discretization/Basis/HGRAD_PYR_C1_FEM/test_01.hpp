@@ -53,66 +53,29 @@
 
 #include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_RCP.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
   namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
+
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
     template<typename ValueType, typename DeviceType>
     int HGRAD_PYR_C1_FEM_Test01(const bool verbose) {
 
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
-
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs,       false);
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "Basis_HGRAD_PYR_C1_FEM", {
+          "1) Conversion of Dof tags into Dof ordinals and back",
+          "2) Basis values for VALUE, GRAD, CURL, and Dk operators"
+      });
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      using DeviceSpaceType = typename DeviceType::execution_space;
-      typedef typename
-        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
-
-      *outStream
-        << "===============================================================================\n"
-        << "|                                                                             |\n"
-        << "|                 Unit Test (Basis_HGRAD_PYR_C1_FEM)                          |\n"
-        << "|                                                                             |\n"
-        << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
-        << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n"
-        << "|                                                                             |\n"
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-        << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n"
-        << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
-        << "|                                                                             |\n"
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-        << "|                                                                             |\n"
-        << "===============================================================================\n";
-
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
       int errorFlag = 0;
@@ -458,42 +421,6 @@ namespace Intrepid2 {
                }
              }
            }
-         }
-       }
-
-       // Check all higher derivatives - must be zero.
-       {
-         const EOperator ops[] = { OPERATOR_D3,
-                                   OPERATOR_D4,
-                                   OPERATOR_D5,
-                                   OPERATOR_D6,
-                                   OPERATOR_D7,
-                                   OPERATOR_D8,
-                                   OPERATOR_D9,
-                                   OPERATOR_D10,
-                                   OPERATOR_MAX };
-         for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
-           const auto op = ops[h];
-           const ordinal_type DkCardin  = getDkCardinality(op, spaceDim);
-           DynRankView vals("vals", numFields, numPoints, DkCardin);
-
-           pyrBasis.getValues(vals, pyrNodes, op);
-           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
-           Kokkos::deep_copy(vals_host, vals);
-           for (ordinal_type i1=0;i1<numFields; i1++)
-             for (ordinal_type i2=0;i2<numPoints; i2++)
-               for (ordinal_type i3=0;i3<DkCardin; i3++) {
-                 if (std::abs(vals_host(i1,i2,i3)) > tol) {
-                   errorFlag++;
-                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-
-                   // Get the multi-index of the value where the error is and the operator order
-                   const ordinal_type ord = Intrepid2::getOperatorOrder(op);
-                   *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
-                   *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
-                              << " but reference D" << ord << " component:  0 \n";
-                 }
-               }
          }
        }
      } catch (std::logic_error &err) {

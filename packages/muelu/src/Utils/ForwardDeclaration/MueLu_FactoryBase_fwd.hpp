@@ -46,17 +46,12 @@
 #ifndef MUELU_FACTORYBASE_FWD_HPP
 #define MUELU_FACTORYBASE_FWD_HPP
 
-
-
-
 namespace MueLu {
-  class FactoryBase;
+class FactoryBase;
 }
 
 #ifndef MUELU_FACTORYBASE_SHORT
 #define MUELU_FACTORYBASE_SHORT
 #endif
 
-
-
-#endif // MUELU_FACTORYBASE_FWD_HPP
+#endif  // MUELU_FACTORYBASE_FWD_HPP

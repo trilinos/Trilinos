@@ -159,6 +159,7 @@ APPEND_SET(PE_SOURCES
 
 APPEND_SET(PE_HEADERS
   ../extra_functions/pamgen_extras.h
+  ../extra_functions/pamgen_global_comm.h
   )
 
 

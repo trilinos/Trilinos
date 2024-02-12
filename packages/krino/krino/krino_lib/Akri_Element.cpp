@@ -20,6 +20,7 @@
 #include <Akri_Phase_Support.hpp>
 #include <Akri_ProlongationData.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <stk_math/StkVector.hpp>
 #include <math.h>
 
 namespace krino{
@@ -45,7 +46,7 @@ ElementObj::~ElementObj() {}
 
 void
 ElementObj::integration_locations(
-    std::vector<Vector3d> & intg_pt_locations,
+    std::vector<stk::math::Vector3d> & intg_pt_locations,
     const MasterElement & me)
 {
   const unsigned num_intg_pts = me.num_intg_pts();
@@ -53,7 +54,7 @@ ElementObj::integration_locations(
   const unsigned dim = me.topology_dimension();
 
   intg_pt_locations.resize(num_intg_pts);
-  for(unsigned i=0; i<num_intg_pts; ++i) intg_pt_locations[i] = Vector3d(intg_pt_loc_ptr+i*dim, dim);
+  for(unsigned i=0; i<num_intg_pts; ++i) intg_pt_locations[i] = stk::math::Vector3d(intg_pt_loc_ptr+i*dim, dim);
 }
 
 void
@@ -205,7 +206,7 @@ ElementObj::update_phase(const std::vector<Surface_Identifier> & surfaceIDs, con
   return phase;
 }
 
-void ElementObj::fill_node_owner_coords(const Mesh_Element * owner, std::vector<Vector3d> & nodeOwnerCoords) const
+void ElementObj::fill_node_owner_coords(const Mesh_Element * owner, std::vector<stk::math::Vector3d> & nodeOwnerCoords) const
 {
   nodeOwnerCoords.clear();
   nodeOwnerCoords.reserve(my_nodes.size());
@@ -214,10 +215,10 @@ void ElementObj::fill_node_owner_coords(const Mesh_Element * owner, std::vector<
     nodeOwnerCoords.push_back(node->owner_coords(owner));
 }
 
-Vector3d
-ElementObj::compute_local_coords_from_owner_coordinates(const Mesh_Element * owner, const Vector3d & ptOwnerCoords) const
+stk::math::Vector3d
+ElementObj::compute_local_coords_from_owner_coordinates(const Mesh_Element * owner, const stk::math::Vector3d & ptOwnerCoords) const
 {
-  std::vector<Vector3d> nodeOwnerCoords;
+  std::vector<stk::math::Vector3d> nodeOwnerCoords;
   fill_node_owner_coords(owner, nodeOwnerCoords);
 
   STK_ThrowAssert((spatial_dim() == 2 && (nodeOwnerCoords.size() == 3 || nodeOwnerCoords.size() == 6)) ||
@@ -291,12 +292,12 @@ ElementObj::have_refined_edges() const
   return false;
 }
 
-void ElementObj::cut_interior_intersection_point(CDMesh & mesh, const Vector3d & pCoords, const std::vector<int> & sortedDomains)
+void ElementObj::cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
 {
   throw std::runtime_error("Incorrect usage of ElementObj.  The type of element cannot cut_interior_intersection_point.");
 }
 
-void ElementObj::cut_face_intersection_point(const int iFace, const Vector3d & pCoords, const std::vector<int> & sortedDomains)
+void ElementObj::cut_face_intersection_point(const int iFace, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
 {
   throw std::runtime_error("Incorrect usage of ElementObj.  The type of element cannot cut_face_intersection_point.");
 }
@@ -361,7 +362,7 @@ ElementObj::get_evaluation_master_element(const FieldRef field) const
 }
 
 void
-ElementObj::evaluate_prolongation_field(const CDMesh & mesh, const FieldRef field, const unsigned field_length, const Vector3d & p_coords, double * result) const
+ElementObj::evaluate_prolongation_field(const CDMesh & mesh, const FieldRef field, const unsigned field_length, const stk::math::Vector3d & p_coords, double * result) const
 { /* %TRACE% */  /* %TRACE% */
 
   // Figuring out the field master element here is actually quite hard since the entity may not exist any more.
@@ -450,7 +451,9 @@ Mesh_Element::is_single_coincident() const
 
   const SubElement * subelem = conformal_subelems[0];
   if(subelem->topology() != coord_topology()) return false;
-  if (get_nodes() != subelem->get_nodes()) return false;
+  for (auto && node : get_nodes())
+    if (std::find(subelem->get_nodes().begin(), subelem->get_nodes().end(), node) == subelem->get_nodes().end())
+      return false;
   return true;
 }
 
@@ -510,12 +513,12 @@ Mesh_Element::determine_subelement_topology(stk::topology elem_topology)
   }
 }
 
-Vector3d
+stk::math::Vector3d
 Mesh_Element::get_node_parametric_coords( const int lnn ) const
 {
   const double * nodal_parametric_coordinates = my_master_elem.nodal_parametric_coordinates();
   const int dim = spatial_dim();
-  return Vector3d(&nodal_parametric_coordinates[lnn*dim],dim);
+  return stk::math::Vector3d(&nodal_parametric_coordinates[lnn*dim],dim);
 }
 
 static int get_local_node_number( const NodeVec & nodes, const SubElementNode * node )
@@ -527,14 +530,14 @@ static int get_local_node_number( const NodeVec & nodes, const SubElementNode * 
   return -1;
 }
 
-Vector3d
+stk::math::Vector3d
 Mesh_Element::get_node_parametric_coords( const SubElementNode * node ) const
 {
   STK_ThrowAssertMsg(!get_nodes().empty(), "Attempt to use get_node_parametric_coords before NodeVec filled.");
   return get_node_parametric_coords(get_local_node_number(get_nodes(), node));
 }
 
-void Mesh_Element::find_child_coordinates_at_owner_coordinates(const Vector3d & ownerCoordinates, const ElementObj *& child, Vector3d & childPCoords) const
+void Mesh_Element::find_child_coordinates_at_owner_coordinates(const stk::math::Vector3d & ownerCoordinates, const ElementObj *& child, stk::math::Vector3d & childPCoords) const
 {
   if (!have_subelements())
   {
@@ -549,7 +552,7 @@ void Mesh_Element::find_child_coordinates_at_owner_coordinates(const Vector3d & 
   double minSqrDist = std::numeric_limits<double>::max();
   for ( auto&& subelement : conformal_subelems )
   {
-    const Vector3d currentChildPCoords = subelement->compute_local_coords_from_owner_coordinates(this, ownerCoordinates);
+    const stk::math::Vector3d currentChildPCoords = subelement->compute_local_coords_from_owner_coordinates(this, ownerCoordinates);
     const double currentChildSqrDist = compute_parametric_square_distance(currentChildPCoords);
     if (currentChildSqrDist < minSqrDist)
     {
@@ -560,15 +563,15 @@ void Mesh_Element::find_child_coordinates_at_owner_coordinates(const Vector3d & 
   }
 }
 
-Vector3d
-Mesh_Element::coordinates( const Vector3d & p_coords ) const
+stk::math::Vector3d
+Mesh_Element::coordinates( const stk::math::Vector3d & p_coords ) const
 { /* %TRACE% */  /* %TRACE% */
 
   const int npeCoords = my_nodes.size();
   std::vector<double> shapeFcn(npeCoords);
   my_master_elem.shape_fcn(1, p_coords.data(), shapeFcn.data());
 
-  Vector3d coords(Vector3d::ZERO);
+  stk::math::Vector3d coords(stk::math::Vector3d::ZERO);
   for ( int n = 0; n < npeCoords; n++ )
     coords += shapeFcn[n] * my_nodes[n]->coordinates();
 
@@ -583,10 +586,12 @@ std::string Mesh_Element::visualize(const CDMesh & mesh) const
 }
 
 double
-Mesh_Element::interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const
+Mesh_Element::interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
   STK_ThrowRequire(get_cutter());
-  return get_cutter()->interface_crossing_position(interface, edge);
+  const auto [crossingSign, position] = get_cutter()->interface_edge_crossing_sign_and_position(interface, edgeNodeCoords);
+  STK_ThrowRequireMsg(crossingSign!=0, "Request for interface_crossing_position on edge without crossing.");
+  return position;
 }
 
 static ElementIntersectionPointFilter build_element_intersection_filter(const NodeVec & nodes)
@@ -606,24 +611,17 @@ void
 Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, std::vector<ElementIntersection> & faceIntersectionPoints) const
 {
   STK_ThrowRequire(get_cutter() && faceNodes.size() == 3);
-  const std::array<Vector3d,3> faceNodeOwnerCoords = {{faceNodes[0]->owner_coords(this), faceNodes[1]->owner_coords(this), faceNodes[2]->owner_coords(this)}};
+  const std::array<stk::math::Vector3d,3> faceNodeOwnerCoords = {{faceNodes[0]->owner_coords(this), faceNodes[1]->owner_coords(this), faceNodes[2]->owner_coords(this)}};
   const ElementIntersectionPointFilter intersectionPointFilter = build_element_intersection_filter(faceNodes);
   get_cutter()->fill_tetrahedron_face_interior_intersections(faceNodeOwnerCoords, interface1, interface2, intersectionPointFilter, faceIntersectionPoints);
 }
 
-int
-Mesh_Element::interface_node_sign(const InterfaceID interface, const SubElementNode * node) const
+std::pair<int, double>
+Mesh_Element::interface_edge_crossing_sign_and_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const
 {
   STK_ThrowRequire(get_cutter());
-  return get_cutter()->sign_at_position(interface, node->owner_coords(this));
-}
-
-double
-Mesh_Element::interface_crossing_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const
-{
-  STK_ThrowRequire(get_cutter());
-  Segment3d edge(node1->owner_coords(this), node2->owner_coords(this));
-  return get_cutter()->interface_crossing_position(interface, edge);
+  std::array<stk::math::Vector3d,2> edgeNodeCoords{node1->owner_coords(this), node2->owner_coords(this)};
+  return get_cutter()->interface_edge_crossing_sign_and_position(interface, edgeNodeCoords);
 }
 
 bool
@@ -642,6 +640,12 @@ int Mesh_Element::get_interface_index(const InterfaceID interface) const
   const auto iter = std::lower_bound(myCuttingInterfaces.begin(), myCuttingInterfaces.end(), interface);
   return std::distance(myCuttingInterfaces.begin(), iter);
 }
+
+int Mesh_Element::get_interface_sign_for_uncrossed_subelement(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodeCoords) const
+{
+   return get_cutter()->interface_sign_for_uncrossed_element(interface, elemNodeCoords);
+}
+
 
 bool
 Mesh_Element::triangulate(const CDMesh & mesh, const InterfaceGeometry & interfaceGeometry)
@@ -689,9 +693,9 @@ keep_all_intersecion_points_filter()
   return filter;
 }
 
-Vector3d Mesh_Element::get_intersection_point_parametric_coordinates(const IntersectionPoint & intersectionPoint) const
+stk::math::Vector3d Mesh_Element::get_intersection_point_parametric_coordinates(const IntersectionPoint & intersectionPoint) const
 {
-  Vector3d pCoords(Vector3d::ZERO);
+  stk::math::Vector3d pCoords(stk::math::Vector3d::ZERO);
   const auto & intersectionPointNodes = intersectionPoint.get_nodes();
   const auto & intersectionPointWeights = intersectionPoint.get_weights();
   const size_t numIntersectionPointNodes = intersectionPointNodes.size();
@@ -707,7 +711,7 @@ Vector3d Mesh_Element::get_intersection_point_parametric_coordinates(const Inter
 std::vector<int>
 Mesh_Element::get_interface_signs_based_on_crossings(const NodeVec & nodes) const
 {
-  std::vector<Vector3d> nodeCoords;
+  std::vector<stk::math::Vector3d> nodeCoords;
   std::vector<const std::vector<int>*> nodeDomains;
 
   nodeCoords.clear();
@@ -736,10 +740,10 @@ Mesh_Element::cut_interior_intersection_points(CDMesh & mesh)
 
   for (auto && intersectionPoint : intersectionPoints)
   {
-    const Vector3d pCoords = get_intersection_point_parametric_coordinates(intersectionPoint);
+    const stk::math::Vector3d pCoords = get_intersection_point_parametric_coordinates(intersectionPoint);
 
     const ElementObj * containingElem = nullptr;
-    Vector3d containingElemPCoords;
+    stk::math::Vector3d containingElemPCoords;
     find_child_coordinates_at_owner_coordinates(pCoords, containingElem, containingElemPCoords);
     STK_ThrowAssert(containingElem);
 
@@ -886,7 +890,7 @@ ElementObj::evaluate_quad(const SubElementNode * n0, const SubElementNode * n1, 
 }
 
 int
-ElementObj::evaluate_quad(const Vector3d & x0, const Vector3d & x1, const Vector3d & x2, const Vector3d & x3)
+ElementObj::evaluate_quad(const stk::math::Vector3d & x0, const stk::math::Vector3d & x1, const stk::math::Vector3d & x2, const stk::math::Vector3d & x3)
 { /* %TRACE% */  /* %TRACE% */
   // given 4 angles
   // angle0 - angle subtended by (x3-x0) and (x1-x0)
@@ -897,10 +901,10 @@ ElementObj::evaluate_quad(const Vector3d & x0, const Vector3d & x1, const Vector
   // returns +1 if the opposite is true
   // returns 0 if neither is true (the max angles are basically the same) OR one of the sides is degenerate
 
-  const Vector3d side0 = x1 - x0;
-  const Vector3d side1 = x2 - x1;
-  const Vector3d side2 = x3 - x2;
-  const Vector3d side3 = x0 - x3;
+  const stk::math::Vector3d side0 = x1 - x0;
+  const stk::math::Vector3d side1 = x2 - x1;
+  const stk::math::Vector3d side2 = x3 - x2;
+  const stk::math::Vector3d side3 = x0 - x3;
 
   const double side_len0 = side0.length();
   const double side_len1 = side1.length();

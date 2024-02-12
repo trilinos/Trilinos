@@ -50,6 +50,26 @@ void atomic_add(T *dest, const T src)
 #endif
 }
 
+template <typename T> KOKKOS_FUNCTION
+void atomic_sub(T *dest, const T src)
+{
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_OPENMP) || defined(KOKKOS_ENABLE_HIP)
+  Kokkos::atomic_sub(dest, src);
+#else
+  *dest -= src;
+#endif
+}
+
+template <typename T> KOKKOS_FUNCTION
+void atomic_mul(T *dest, const T src)
+{
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_OPENMP) || defined(KOKKOS_ENABLE_HIP)
+  Kokkos::atomic_mul(dest, src);
+#else
+  *dest *= src;
+#endif
+}
+
 }
 }
 

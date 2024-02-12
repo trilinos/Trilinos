@@ -55,242 +55,254 @@
 
 #include <string>
 
-
 namespace Teko {
 namespace TpetraHelpers {
-  using Teuchos::RCP;
+using Teuchos::RCP;
 
-  class TpetraOperatorWrapper;
+class TpetraOperatorWrapper;
 
-  /// Abstract Mapping strategy for an TpetraOperatorWrapper
-  class MappingStrategy {
-  public:
-     virtual ~MappingStrategy() {}
+/// Abstract Mapping strategy for an TpetraOperatorWrapper
+class MappingStrategy {
+ public:
+  virtual ~MappingStrategy() {}
 
-     /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
-       *
-       * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
-       * method for copying is specified by the concrete implementations.
-       *
-       * \param[in]     epetraX Vector to be copied into the Thyra object
-       * \param[in,out] thyraX  Destination Thyra object
-       */
-     virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST,LO,GO,NT>& tpetraX,
-                                      const Teuchos::Ptr<Thyra::MultiVectorBase<ST> > & thyraX) const = 0;
-                                      // const TpetraOperatorWrapper & eow) const = 0;
-
-     /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
-       *
-       * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
-       * method for copying is specified by the concrete implementations.
-       *
-       * \param[in]     thyraX  Source Thyra object
-       * \param[in,out] epetraX Destination Epetra object
-       */
-     virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> > & thyraX,
-                                      Tpetra::MultiVector<ST,LO,GO,NT>& tpetraX) const = 0;
-                                      // const TpetraOperatorWrapper & eow) const = 0;
-
-     /** \brief Domain map for this strategy */
-     virtual const RCP<const Tpetra::Map<LO,GO,NT> > domainMap() const = 0;
-
-     /** \brief Range map for this strategy */
-     virtual const RCP<const Tpetra::Map<LO,GO,NT> > rangeMap() const = 0;
-
-     /** \brief Identifier string */
-     virtual std::string toString() const = 0;
-  };
-
-  /// Flip a mapping strategy object around to give the "inverse" mapping strategy.
-  class InverseMappingStrategy : public MappingStrategy {
-  public:
-     /** \brief Constructor to build a inverse MappingStrategy from
-       * a forward map.
-       */
-     InverseMappingStrategy(const RCP<const MappingStrategy> & forward)
-        : forwardStrategy_(forward)
-     { }
-
-     virtual ~InverseMappingStrategy() {}
-
-     virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST,LO,GO,NT>& tpetraX,
-                                      const Teuchos::Ptr<Thyra::MultiVectorBase<ST> > & thyraX) const
-                                      // const TpetraOperatorWrapper & eow) const
-     { forwardStrategy_->copyTpetraIntoThyra(tpetraX,thyraX); }
-
-     virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> > & thyraX,
-                                      Tpetra::MultiVector<ST,LO,GO,NT>& tpetraX) const
-                                      // const TpetraOperatorWrapper & eow) const
-     { forwardStrategy_->copyThyraIntoTpetra(thyraX,tpetraX); }
-
-     /** \brief Domain map for this strategy */
-     virtual const RCP<const Tpetra::Map<LO,GO,NT> > domainMap() const
-     { return forwardStrategy_->rangeMap(); }
-
-     /** \brief Range map for this strategy */
-     virtual const RCP<const Tpetra::Map<LO,GO,NT> > rangeMap() const
-     { return forwardStrategy_->domainMap(); }
-
-     /** \brief Identifier string */
-     virtual std::string toString() const
-     { return std::string("InverseMapping(")+forwardStrategy_->toString()+std::string(")"); }
-  protected:
-     /** \brief Forward mapping strategy object */
-     const RCP<const MappingStrategy> forwardStrategy_;
-
-  private:
-     InverseMappingStrategy();
-     InverseMappingStrategy(const InverseMappingStrategy &);
-  };
-
-  /// default mapping strategy for the basic TpetraOperatorWrapper
-  class DefaultMappingStrategy : public MappingStrategy {
-  public:
-     /** */
-     DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<ST> > & thyraOp,const Teuchos::Comm<Thyra::Ordinal> & comm);
-
-     virtual ~DefaultMappingStrategy() {}
-
-     /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
-       *
-       * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
-       * method for copying is specified by the concrete implementations.
-       *
-       * \param[in]     epetraX Vector to be copied into the Thyra object
-       * \param[in,out] thyraX  Destination Thyra object
-       */
-     virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST,LO,GO,NT>& tpetraX,
-                                      const Teuchos::Ptr<Thyra::MultiVectorBase<ST> > & thyraX) const;
-                                      // const TpetraOperatorWrapper & eow) const;
-
-     /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
-       *
-       * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
-       * method for copying is specified by the concrete implementations.
-       *
-       * \param[in]     thyraX  Source Thyra object
-       * \param[in,out] epetraX Destination Epetra object
-       */
-     virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> > & thyraX,
-                                      Tpetra::MultiVector<ST,LO,GO,NT>& tpetraX) const;
-                                      // const TpetraOperatorWrapper & eow) const;
-
-     /** \brief Domain map for this strategy */
-     virtual const RCP<const Tpetra::Map<LO,GO,NT> > domainMap() const { return domainMap_; }
-
-     /** \brief Range map for this strategy */
-     virtual const RCP<const Tpetra::Map<LO,GO,NT> > rangeMap() const { return rangeMap_; }
-
-     /** \brief Identifier string */
-     virtual std::string toString() const
-     { return std::string("DefaultMappingStrategy"); }
-
-  protected:
-     RCP<const Thyra::VectorSpaceBase<ST> > domainSpace_; ///< Domain space object
-     RCP<const Thyra::VectorSpaceBase<ST> > rangeSpace_; ///< Range space object
-
-     RCP<const Tpetra::Map<LO,GO,NT> > domainMap_; ///< Pointer to the constructed domain map
-     RCP<const Tpetra::Map<LO,GO,NT> > rangeMap_; ///< Pointer to the constructed range map
-  };
-
-  /** \brief
-   * Implements the Epetra_Operator interface with a Thyra LinearOperator. This
-   * enables the use of absrtact Thyra operators in AztecOO as preconditioners and
-   * operators, without being rendered into concrete Epetra matrices. This is my own
-   * modified version that was originally in Thyra.
+  /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
+   *
+   * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
+   * method for copying is specified by the concrete implementations.
+   *
+   * \param[in]     epetraX Vector to be copied into the Thyra object
+   * \param[in,out] thyraX  Destination Thyra object
    */
-  class TpetraOperatorWrapper : public Tpetra::Operator<ST,LO,GO,NT>
+  virtual void copyTpetraIntoThyra(
+      const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
+      const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyraX) const = 0;
+  // const TpetraOperatorWrapper & eow) const = 0;
+
+  /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
+   *
+   * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
+   * method for copying is specified by the concrete implementations.
+   *
+   * \param[in]     thyraX  Source Thyra object
+   * \param[in,out] epetraX Destination Epetra object
+   */
+  virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
+                                   Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) const = 0;
+  // const TpetraOperatorWrapper & eow) const = 0;
+
+  /** \brief Domain map for this strategy */
+  virtual const RCP<const Tpetra::Map<LO, GO, NT> > domainMap() const = 0;
+
+  /** \brief Range map for this strategy */
+  virtual const RCP<const Tpetra::Map<LO, GO, NT> > rangeMap() const = 0;
+
+  /** \brief Identifier string */
+  virtual std::string toString() const = 0;
+};
+
+/// Flip a mapping strategy object around to give the "inverse" mapping strategy.
+class InverseMappingStrategy : public MappingStrategy {
+ public:
+  /** \brief Constructor to build a inverse MappingStrategy from
+   * a forward map.
+   */
+  InverseMappingStrategy(const RCP<const MappingStrategy>& forward) : forwardStrategy_(forward) {}
+
+  virtual ~InverseMappingStrategy() {}
+
+  virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
+                                   const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyraX) const
+  // const TpetraOperatorWrapper & eow) const
   {
-  public:
-    /** */
-    TpetraOperatorWrapper(const RCP<const Thyra::LinearOpBase<ST> > & thyraOp);
-    TpetraOperatorWrapper(const RCP<const Thyra::LinearOpBase<ST> > & thyraOp,
-                          const RCP<const MappingStrategy> & mapStrategy);
-    TpetraOperatorWrapper(const RCP<const MappingStrategy> & mapStrategy);
+    forwardStrategy_->copyTpetraIntoThyra(tpetraX, thyraX);
+  }
 
-    /** */
-    virtual ~TpetraOperatorWrapper() {;}
+  virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
+                                   Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) const
+  // const TpetraOperatorWrapper & eow) const
+  {
+    forwardStrategy_->copyThyraIntoTpetra(thyraX, tpetraX);
+  }
 
-    /** */
-    int SetUseTranspose(bool useTranspose) {
-      useTranspose_ = useTranspose;
-      return 0;
-    }
+  /** \brief Domain map for this strategy */
+  virtual const RCP<const Tpetra::Map<LO, GO, NT> > domainMap() const {
+    return forwardStrategy_->rangeMap();
+  }
 
-    /** */
-    void apply(const Tpetra::MultiVector<ST,LO,GO,NT>& X, Tpetra::MultiVector<ST,LO,GO,NT>& Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, ST alpha=Teuchos::ScalarTraits< ST >::one(), ST beta=Teuchos::ScalarTraits< ST >::zero()) const ;
+  /** \brief Range map for this strategy */
+  virtual const RCP<const Tpetra::Map<LO, GO, NT> > rangeMap() const {
+    return forwardStrategy_->domainMap();
+  }
 
-    /** */
-    void applyInverse(const Tpetra::MultiVector<ST,LO,GO,NT>& X, Tpetra::MultiVector<ST,LO,GO,NT>& Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, ST alpha=Teuchos::ScalarTraits< ST >::one(), ST beta=Teuchos::ScalarTraits< ST >::zero()) const ;
+  /** \brief Identifier string */
+  virtual std::string toString() const {
+    return std::string("InverseMapping(") + forwardStrategy_->toString() + std::string(")");
+  }
 
-    /** */
-    double NormInf() const ;
+ protected:
+  /** \brief Forward mapping strategy object */
+  const RCP<const MappingStrategy> forwardStrategy_;
 
-    /** */
-    const char* Label() const {return label_.c_str();}
+ private:
+  InverseMappingStrategy();
+  InverseMappingStrategy(const InverseMappingStrategy&);
+};
 
-    /** */
-    bool UseTranspose() const {return useTranspose_;}
+/// default mapping strategy for the basic TpetraOperatorWrapper
+class DefaultMappingStrategy : public MappingStrategy {
+ public:
+  /** */
+  DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<ST> >& thyraOp,
+                         const Teuchos::Comm<Thyra::Ordinal>& comm);
 
-    /** */
-    bool HasNormInf() const {return false;}
+  virtual ~DefaultMappingStrategy() {}
 
-    /** */
-    const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > & Comm() const {return comm_;}
+  /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
+   *
+   * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
+   * method for copying is specified by the concrete implementations.
+   *
+   * \param[in]     epetraX Vector to be copied into the Thyra object
+   * \param[in,out] thyraX  Destination Thyra object
+   */
+  virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
+                                   const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyraX) const;
+  // const TpetraOperatorWrapper & eow) const;
 
-    /** */
-    Teuchos::RCP<const Tpetra::Map<LO,GO,NT> > getDomainMap() const {return mapStrategy_->domainMap();}
+  /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
+   *
+   * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
+   * method for copying is specified by the concrete implementations.
+   *
+   * \param[in]     thyraX  Source Thyra object
+   * \param[in,out] epetraX Destination Epetra object
+   */
+  virtual void copyThyraIntoTpetra(const RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
+                                   Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) const;
+  // const TpetraOperatorWrapper & eow) const;
 
-    /** */
-    Teuchos::RCP<const Tpetra::Map<LO,GO,NT> > getRangeMap() const {return mapStrategy_->rangeMap();}
+  /** \brief Domain map for this strategy */
+  virtual const RCP<const Tpetra::Map<LO, GO, NT> > domainMap() const { return domainMap_; }
 
-    //! Return the thyra operator associated with this wrapper
-    const RCP<const Thyra::LinearOpBase<ST> > getThyraOp() const
-    { return thyraOp_; }
+  /** \brief Range map for this strategy */
+  virtual const RCP<const Tpetra::Map<LO, GO, NT> > rangeMap() const { return rangeMap_; }
 
-    //! Get the mapping strategy for this wrapper (translate between Thyra and Epetra)
-    const RCP<const MappingStrategy> getMapStrategy() const
-    { return mapStrategy_; }
+  /** \brief Identifier string */
+  virtual std::string toString() const { return std::string("DefaultMappingStrategy"); }
 
-    //! Get the number of block rows in this operator
-    virtual int GetBlockRowCount();
+ protected:
+  RCP<const Thyra::VectorSpaceBase<ST> > domainSpace_;  ///< Domain space object
+  RCP<const Thyra::VectorSpaceBase<ST> > rangeSpace_;   ///< Range space object
 
-    //! Get the number of block columns in this operator
-    virtual int GetBlockColCount();
+  RCP<const Tpetra::Map<LO, GO, NT> > domainMap_;  ///< Pointer to the constructed domain map
+  RCP<const Tpetra::Map<LO, GO, NT> > rangeMap_;   ///< Pointer to the constructed range map
+};
 
-    //! Grab the i,j block
-    Teuchos::RCP<const Tpetra::Operator<ST,LO,GO,NT> > GetBlock(int i,int j) const;
+/** \brief
+ * Implements the Epetra_Operator interface with a Thyra LinearOperator. This
+ * enables the use of absrtact Thyra operators in AztecOO as preconditioners and
+ * operators, without being rendered into concrete Epetra matrices. This is my own
+ * modified version that was originally in Thyra.
+ */
+class TpetraOperatorWrapper : public Tpetra::Operator<ST, LO, GO, NT> {
+ public:
+  /** */
+  TpetraOperatorWrapper(const RCP<const Thyra::LinearOpBase<ST> >& thyraOp);
+  TpetraOperatorWrapper(const RCP<const Thyra::LinearOpBase<ST> >& thyraOp,
+                        const RCP<const MappingStrategy>& mapStrategy);
+  TpetraOperatorWrapper(const RCP<const MappingStrategy>& mapStrategy);
 
-  protected:
-    /** */
-    TpetraOperatorWrapper();
+  /** */
+  virtual ~TpetraOperatorWrapper() { ; }
 
-    /** */
-    RCP<const Teuchos::Comm<Thyra::Ordinal> > getThyraComm(const Thyra::LinearOpBase<ST> & inOp) const;
+  /** */
+  int SetUseTranspose(bool useTranspose) {
+    useTranspose_ = useTranspose;
+    return 0;
+  }
 
-    /** */
-    void SetOperator(const RCP<const Thyra::LinearOpBase<ST> > & thyraOp,bool buildMap=true);
+  /** */
+  void apply(const Tpetra::MultiVector<ST, LO, GO, NT>& X, Tpetra::MultiVector<ST, LO, GO, NT>& Y,
+             Teuchos::ETransp mode = Teuchos::NO_TRANS, ST alpha = Teuchos::ScalarTraits<ST>::one(),
+             ST beta = Teuchos::ScalarTraits<ST>::zero()) const;
 
-    /** */
-    void SetMapStrategy(const RCP<const MappingStrategy> & mapStrategy)
-    { mapStrategy_ = mapStrategy; }
+  /** */
+  void applyInverse(const Tpetra::MultiVector<ST, LO, GO, NT>& X,
+                    Tpetra::MultiVector<ST, LO, GO, NT>& Y,
+                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                    ST alpha              = Teuchos::ScalarTraits<ST>::one(),
+                    ST beta               = Teuchos::ScalarTraits<ST>::zero()) const;
 
-    /** */
-    RCP<const MappingStrategy> mapStrategy_;
+  /** */
+  double NormInf() const;
 
-    /** */
-    RCP<const Thyra::LinearOpBase<ST> > thyraOp_;
+  /** */
+  const char* Label() const { return label_.c_str(); }
 
-    /** */
-    bool useTranspose_;
+  /** */
+  bool UseTranspose() const { return useTranspose_; }
 
-    /** */
-    RCP<const Teuchos::Comm<Thyra::Ordinal> > comm_;
+  /** */
+  bool HasNormInf() const { return false; }
 
-    /** */
-    std::string label_;
-  };
-} // end namespace Tpetra
-} // end namespace Teko
+  /** */
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >& Comm() const { return comm_; }
+
+  /** */
+  Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > getDomainMap() const {
+    return mapStrategy_->domainMap();
+  }
+
+  /** */
+  Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > getRangeMap() const {
+    return mapStrategy_->rangeMap();
+  }
+
+  //! Return the thyra operator associated with this wrapper
+  const RCP<const Thyra::LinearOpBase<ST> > getThyraOp() const { return thyraOp_; }
+
+  //! Get the mapping strategy for this wrapper (translate between Thyra and Epetra)
+  const RCP<const MappingStrategy> getMapStrategy() const { return mapStrategy_; }
+
+  //! Get the number of block rows in this operator
+  virtual int GetBlockRowCount();
+
+  //! Get the number of block columns in this operator
+  virtual int GetBlockColCount();
+
+  //! Grab the i,j block
+  Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> > GetBlock(int i, int j) const;
+
+ protected:
+  /** */
+  TpetraOperatorWrapper();
+
+  /** */
+  RCP<const Teuchos::Comm<Thyra::Ordinal> > getThyraComm(const Thyra::LinearOpBase<ST>& inOp) const;
+
+  /** */
+  void SetOperator(const RCP<const Thyra::LinearOpBase<ST> >& thyraOp, bool buildMap = true);
+
+  /** */
+  void SetMapStrategy(const RCP<const MappingStrategy>& mapStrategy) { mapStrategy_ = mapStrategy; }
+
+  /** */
+  RCP<const MappingStrategy> mapStrategy_;
+
+  /** */
+  RCP<const Thyra::LinearOpBase<ST> > thyraOp_;
+
+  /** */
+  bool useTranspose_;
+
+  /** */
+  RCP<const Teuchos::Comm<Thyra::Ordinal> > comm_;
+
+  /** */
+  std::string label_;
+};
+}  // namespace TpetraHelpers
+}  // end namespace Teko
 
 #endif

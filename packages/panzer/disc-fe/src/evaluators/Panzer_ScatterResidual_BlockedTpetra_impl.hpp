@@ -219,7 +219,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
 
     auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
-    const auto& kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    const auto& kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Class data fields for lambda capture
     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
@@ -456,7 +456,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     typename Tpetra::Vector<double,LO,GO,PHX::Device>::dual_view_type::t_dev kokkosResidual;
     if (haveResidual) {
       auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
-      kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+      kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::ReadWrite);
     }
 
     // Class data fields for lambda capture

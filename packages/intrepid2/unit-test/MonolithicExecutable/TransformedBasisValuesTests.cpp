@@ -74,6 +74,164 @@ namespace
 {
   using namespace Intrepid2;
 
+  //! vectorTransform [in]: whether the basis values being transformed are vector valued.
+  //! identityTransform [in]: whether the tested transformation should be the identity transform, indicated by an empty (invalid) Data object.
+  //! matrixTransform [in]: if true, indicates that the transform has shape (C,P,D,D); otherwise, it has shape (C,P)
+  void testMultiplyByPointwiseWeights(bool vectorValues, bool identityTransform, bool matrixTransform, Teuchos::FancyOStream &out, bool &success)
+  {
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    const int spaceDim     = 3;
+    const int numCells     = 3;
+    const int numFields_1D = 1; // since transform is independent of the fields, does not matter for the test
+    const int numPoints_1D = 10;
+    int numPoints = 1;
+    for (int d=0; d<spaceDim; d++)
+    {
+      numPoints *= numPoints_1D;
+    }
+    
+    // Allocate 1D values container; the actual values will not matter for the test, just the shape of the containers.
+    ScalarView<Scalar,DeviceType> values1D("dummy 1D values", numFields_1D, numPoints_1D );
+
+    BasisValues<Scalar, DeviceType> basisValues;
+    if (vectorValues)
+    {
+      Kokkos::Array<TensorData<Scalar,DeviceType>, spaceDim> vectorComponents;
+      
+      for (int d=0; d<spaceDim; d++)
+      {
+        Kokkos::Array<Data<Scalar,DeviceType>, spaceDim> gradComponent_d;
+        for (int d2=0; d2<spaceDim; d2++)
+        {
+          gradComponent_d[d2] = Data<Scalar,DeviceType>(values1D);
+        }
+        vectorComponents[d] = TensorData<Scalar,DeviceType>(gradComponent_d);
+      }
+      VectorData<Scalar,DeviceType> gradientVectorData(vectorComponents, false); // false: not axis-aligned
+      basisValues = BasisValues<Scalar, DeviceType>(gradientVectorData);
+    }
+    else
+    {
+      Kokkos::Array<Data<Scalar,DeviceType>, spaceDim> tensorComponents;
+      for (int d2=0; d2<spaceDim; d2++)
+      {
+        tensorComponents[d2] = Data<Scalar,DeviceType>(values1D);
+      }
+      TensorData<Scalar,DeviceType> tensorData(tensorComponents);
+      basisValues = BasisValues<Scalar, DeviceType>(tensorData);
+    }
+    TransformedBasisValues<Scalar, DeviceType> transformedValues;
+    Data<Scalar,DeviceType> transform;
+    Kokkos::View<Scalar**, DeviceType> weightsView("weights", numCells, numPoints);
+    
+    ViewType<Scalar,DeviceType> expectedResultsView;
+    {
+      auto transformMatrixView = getFixedRankView<Scalar>("transform matrix", numCells, numPoints, spaceDim, spaceDim);
+      auto transformMatrixViewHost = getHostCopy(transformMatrixView);
+      
+      auto transformView = getFixedRankView<Scalar>("(C,P) transform", numCells, numPoints);
+      auto transformViewHost = getHostCopy(transformView);
+      
+      auto weightsViewHost = getHostCopy(weightsView);
+      
+      // we compute the expected results for both the matrix case and the other (pointwise weight) case, and assign the appropriate one to expectedResultsView at bottom of this block.
+      ViewType<Scalar,DeviceType> matrixResultsView("matrix results",numCells,numPoints,spaceDim,spaceDim);
+      auto matrixResultsViewHost = getHostCopy(matrixResultsView);
+      
+      ViewType<Scalar,DeviceType> pointResultsView("results",numCells,numPoints);
+      auto pointResultsViewHost = getHostCopy(pointResultsView);
+      
+      for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+      {
+        for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
+        {
+          const Scalar cpWeight = (0.5 + cellOrdinal) * (pointOrdinal + 0.1);
+          weightsViewHost(cellOrdinal,pointOrdinal) = cpWeight;
+          
+          Scalar transformValue = identityTransform ? 1.0 : cellOrdinal * (pointOrdinal + 1);
+          transformViewHost(cellOrdinal, pointOrdinal) = transformValue;
+          
+          pointResultsViewHost(cellOrdinal, pointOrdinal) = transformValue * cpWeight;
+          
+          for (int d1=0; d1<spaceDim; d1++)
+          {
+            for (int d2=0; d2<spaceDim; d2++)
+            {
+              Scalar transformMatrixValue;
+              if (identityTransform)
+              {
+                transformMatrixValue = (d1 == d2) ? 1.0 : 0.0;
+              }
+              else
+              {
+                transformMatrixValue = (0.8 * cellOrdinal) + d1 * .1 + d2 * .3 - 0.4 * pointOrdinal;
+              }
+              transformMatrixViewHost(cellOrdinal,pointOrdinal,d1,d2) = transformMatrixValue;
+              matrixResultsViewHost(cellOrdinal,pointOrdinal,d1,d2) = transformMatrixValue * cpWeight;
+            }
+          }
+        }
+      }
+      // copy all our host views to device:
+      Kokkos::deep_copy(transformMatrixView, transformMatrixViewHost);
+      Kokkos::deep_copy(transformView,       transformViewHost);
+      Kokkos::deep_copy(weightsView,         weightsViewHost);
+      Kokkos::deep_copy(matrixResultsView,   matrixResultsViewHost);
+      Kokkos::deep_copy(pointResultsView,    pointResultsViewHost);
+      
+      if (matrixTransform && !identityTransform)
+      {
+        expectedResultsView = matrixResultsView;
+        transform = Data<Scalar, DeviceType>(transformMatrixView);
+      }
+      else
+      {
+        // identity matrix transform results in a pointwise transform
+        expectedResultsView = pointResultsView;
+        transform = Data<Scalar, DeviceType>(transformView);
+      }
+    }
+    
+    if (identityTransform)
+    {
+      transformedValues = TransformedBasisValues<Scalar, DeviceType>(numCells, basisValues);
+    }
+    else
+    {
+      transformedValues = TransformedBasisValues<Scalar, DeviceType>(transform, basisValues);
+    }
+    
+    transformedValues.multiplyByPointwiseWeights(weightsView);
+    
+    auto actualResults = transformedValues.transform();
+    
+    TEST_EQUALITY(actualResults.rank(), expectedResultsView.rank());
+    
+    const double relTol = 1e-15;
+    const double absTol = 1e-13;
+    if (actualResults.rank() == expectedResultsView.rank())
+    {
+      if (actualResults.rank() == 4)
+      {
+        testFloatingEquality4(actualResults, expectedResultsView, relTol, absTol, out, success);
+      }
+      else if (actualResults.rank() == 2)
+      {
+        testFloatingEquality2(actualResults, expectedResultsView, relTol, absTol, out, success);
+      }
+      else
+      {
+        success = false;
+        out << "ERROR: unexpected rank for actualResults.\n";
+      }
+    }
+    else
+    {
+      out << "TEST FAILURE: rank of actual transform does not match expected.\n";
+    }
+  }
+
   template<int spaceDim>
   void testVectorTransformation(const int &polyOrder, const int &meshWidth, Teuchos::FancyOStream &out, bool &success)
   {
@@ -206,7 +364,7 @@ namespace
     
     using CellTools = Intrepid2::CellTools<DeviceType>;
     using ExecutionSpace = typename DeviceType::execution_space;
-    using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecutionSpace>; // TODO: once FunctionSpaceTools supports DeviceType, change the template argument here.
+    using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<DeviceType>;
     
     CellTools::setJacobian(expandedJacobian, cubaturePoints, expandedCellNodes, cellTopo);
     CellTools::setJacobianInv(expandedJacobianInverse, expandedJacobian);
@@ -214,6 +372,70 @@ namespace
     FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, expandedJacobianInverse, basisGradValues);
     
     testFloatingEquality4(transformedGradValues, transformedGradientData, relTol, absTol, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Vector_Identity_Matrix )
+  {
+    const bool vectorValues      = true;
+    const bool identityTransform = true;
+    const bool matrixTransform   = true;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Vector_Identity_Pointwise )
+  {
+    const bool vectorValues      = true;
+    const bool identityTransform = true;
+    const bool matrixTransform   = false;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Vector_NonIdentity_Matrix )
+  {
+    const bool vectorValues      = true;
+    const bool identityTransform = false;
+    const bool matrixTransform   = true;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Vector_NonIdentity_Pointwise )
+  {
+    const bool vectorValues      = true;
+    const bool identityTransform = false;
+    const bool matrixTransform   = false;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Scalar_Identity_Matrix )
+  {
+    const bool vectorValues      = false;
+    const bool identityTransform = true;
+    const bool matrixTransform   = true;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Scalar_Identity_Pointwise )
+  {
+    const bool vectorValues      = false;
+    const bool identityTransform = true;
+    const bool matrixTransform   = false;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Scalar_NonIdentity_Matrix )
+  {
+    const bool vectorValues      = false;
+    const bool identityTransform = false;
+    const bool matrixTransform   = true;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
+  }
+  
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, MultiplyByPointWeights_Scalar_NonIdentity_Pointwise )
+  {
+    const bool vectorValues      = false;
+    const bool identityTransform = false;
+    const bool matrixTransform   = false;
+    testMultiplyByPointwiseWeights(vectorValues, identityTransform, matrixTransform, out, success);
   }
 
   TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedVector_1D_p1 )

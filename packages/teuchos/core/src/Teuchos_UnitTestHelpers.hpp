@@ -92,7 +92,7 @@ see Teuchos_LocalTestingHelpers.hpp and Teuchos_TestingHelpers.hpp.
     virtual long int unitTestFileLineNumber() const override { return __LINE__; } \
   }; \
   \
-  TEST_GROUP##_##TEST_NAME##_UnitTest \
+  [[maybe_unused]] TEST_GROUP##_##TEST_NAME##_UnitTest \
     instance_##TEST_GROUP##_##TEST_NAME##_UnitTest; \
   \
         void TEST_GROUP##_##TEST_NAME##_UnitTest::runUnitTestImpl( \

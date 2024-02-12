@@ -60,7 +60,7 @@ ConstantFlux(
 
   this->addEvaluatedField(flux);
   
-  std::string n = "Constant: " + flux.fieldTag().name();
+  std::string n = "ConstantFlux: " + flux.fieldTag().name();
   this->setName(n);
 }
 

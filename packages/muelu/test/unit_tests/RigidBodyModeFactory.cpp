@@ -51,57 +51,54 @@
 
 #include <MueLu_RigidBodyModeFactory.hpp>
 
-
 namespace MueLuTests {
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RigidBodyModeFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RigidBodyModeFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-{
-#   include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "version: " << MueLu::Version() << std::endl;
+  auto A         = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(100);
+  const auto map = A->getRangeMap();
 
-    auto A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(100);
-    const auto map = A->getRangeMap();
+  using RigidBodyModeFactory = MueLu::RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-    using RigidBodyModeFactory = MueLu::RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  {
+    RigidBodyModeFactory rigidBodyModeFactory("TestName");
+    rigidBodyModeFactory.setNumPDEs(2);
 
-    {
-        RigidBodyModeFactory rigidBodyModeFactory("TestName");
-        rigidBodyModeFactory.setNumPDEs(2);
+    MueLu::Level level;
+    level.SetLevelID(0);
+    auto nullSpace = MultiVectorFactory::Build(map, 100);
+    level.Set("TestName", nullSpace);
+    level.Keep("Nullspace", &rigidBodyModeFactory);
+    rigidBodyModeFactory.DeclareInput(level);
 
-        MueLu::Level level;
-        level.SetLevelID(0);
-        auto nullSpace = MultiVectorFactory::Build(map, 100);
-        level.Set("TestName", nullSpace);
-        level.Keep("Nullspace", &rigidBodyModeFactory);
-        rigidBodyModeFactory.DeclareInput(level);
+    TEST_EQUALITY(false, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
+    rigidBodyModeFactory.Build(level);
+    TEST_EQUALITY(true, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
+  }
 
-        TEST_EQUALITY(false, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
-        rigidBodyModeFactory.Build(level);
-        TEST_EQUALITY(true, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
-    }
+  {
+    RigidBodyModeFactory rigidBodyModeFactory(1);
 
-    {
-        RigidBodyModeFactory rigidBodyModeFactory(1);
+    MueLu::Level level;
+    level.SetLevelID(0);
+    level.Set("A", A);
+    level.Keep("Nullspace", &rigidBodyModeFactory);
+    auto coords = MultiVectorFactory::Build(map, 100);
+    level.Set("Coordinates", coords);
 
-        MueLu::Level level;
-        level.SetLevelID(0);
-        level.Set("A", A);
-        level.Keep("Nullspace", &rigidBodyModeFactory);
-        auto coords = MultiVectorFactory::Build(map, 100);
-        level.Set("Coordinates", coords);
-
-        TEST_EQUALITY(false, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
-        rigidBodyModeFactory.Build(level);
-        TEST_EQUALITY(true, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
-    }
+    TEST_EQUALITY(false, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
+    rigidBodyModeFactory.Build(level);
+    TEST_EQUALITY(true, level.IsAvailable("Nullspace", &rigidBodyModeFactory));
+  }
 }
 
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RigidBodyModeFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RigidBodyModeFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
-}//namespace MueLuTests
+}  // namespace MueLuTests

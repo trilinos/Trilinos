@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    // typedef Kokkos::Details::ArithTraits<value_type> ats;
+    // typedef Kokkos::ArithTraits<value_type> ats;
     Kokkos::Timer timer;
 
     ///
@@ -220,8 +220,7 @@ int main(int argc, char *argv[]) {
       using Layout     = typename AMatrixValueViewLL::array_layout;
       using EXSP       = typename AMatrixValueViewLL::execution_space;
 
-      using MagnitudeType =
-          typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
+      using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
 
       using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
       using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;

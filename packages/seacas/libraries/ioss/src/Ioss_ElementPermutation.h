@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -28,7 +28,7 @@ namespace Ioss {
   static constexpr Ordinal     InvalidOrdinal     = std::numeric_limits<Ordinal>::max();
   static constexpr Permutation InvalidPermutation = std::numeric_limits<Permutation>::max();
 
-  using ElementPermutationMap = std::map<std::string, ElementPermutation *, std::less<std::string>>;
+  using ElementPermutationMap = std::map<std::string, ElementPermutation *, std::less<>>;
   using EPM_VP                = ElementPermutationMap::value_type;
 
   class IOSS_EXPORT EPRegistry

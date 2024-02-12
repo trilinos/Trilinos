@@ -143,6 +143,7 @@ public:
   void initialize(const Vector<Real> &x, const Vector<Real> &g,
                   Objective<Real> &obj, std::ostream &outStream = std::cout);
 
+  using TypeU::Algorithm<Real>::run;
   void run( Vector<Real>       &x,
             const Vector<Real> &g, 
             Objective<Real>    &obj,

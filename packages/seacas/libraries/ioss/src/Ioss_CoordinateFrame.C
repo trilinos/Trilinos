@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -21,7 +21,7 @@ namespace Ioss {
   int64_t CoordinateFrame::id() const { return id_; }
   char    CoordinateFrame::tag() const { return tag_; }
 
-  const double *CoordinateFrame::coordinates() const { return &pointList_[0]; }
+  const double *CoordinateFrame::coordinates() const { return pointList_.data(); }
   const double *CoordinateFrame::origin() const { return &pointList_[0]; }
   const double *CoordinateFrame::axis_3_point() const { return &pointList_[3]; }
   const double *CoordinateFrame::plane_1_3_point() const { return &pointList_[6]; }
@@ -39,11 +39,11 @@ namespace Ioss {
     if (this->pointList_ != rhs.pointList_) {
       if (!quiet) {
         fmt::print(Ioss::OUTPUT(), "CoordinateFrame : Point list mismatch ([ ");
-        for (auto &point : this->pointList_) {
+        for (const auto &point : this->pointList_) {
           fmt::print(Ioss::OUTPUT(), "{} ", point);
         }
         fmt::print(Ioss::OUTPUT(), "] vs [");
-        for (auto &point : rhs.pointList_) {
+        for (const auto &point : rhs.pointList_) {
           fmt::print(Ioss::OUTPUT(), "{} ", point);
         }
         fmt::print(Ioss::OUTPUT(), "])\n");

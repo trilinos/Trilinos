@@ -37,7 +37,7 @@
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/LegacyCoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -81,8 +81,8 @@ struct GearParams {
 
 class GearsFixture {
 public:
-  typedef Field<double, Cylindrical>  CylindricalField ;
-  typedef Field<double, Cartesian>    CartesianField ;
+  typedef Field<double, legacy::Cylindrical>  CylindricalField ;
+  typedef Field<double, legacy::Cartesian>    CartesianField ;
 
   enum { SpatialDimension = 3 };
 

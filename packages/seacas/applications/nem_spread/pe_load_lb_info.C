@@ -149,8 +149,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
   } /* End "for (int iproc=0; iproc <Proc_Info[2]; iproc++)" */
 
   /* Set up each processor for the communication map parameters */
-  read_cmap_params(lb_exoid, Node_Comm_Num.data(), Elem_Comm_Num.data(), globals.Num_N_Comm_Maps,
-                   globals.Num_E_Comm_Maps, globals.E_Comm_Map, globals.N_Comm_Map, &cmap_max_size);
+  read_cmap_params(lb_exoid,globals.E_Comm_Map, globals.N_Comm_Map, &cmap_max_size);
 
   /*
    * loop through the processors, one at a time, to read
@@ -583,17 +582,13 @@ in mesh file",
 /*****************************************************************************/
 
 template <typename T, typename INT>
-void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *Elem_Comm_Num,
-                                         std::vector<INT> & /*Num_N_Comm_Maps*/,
-                                         std::vector<INT> & /*Num_E_Comm_Maps*/,
-                                         std::vector<ELEM_COMM_MAP<INT>> &E_Comm_Map,
+void NemSpread<T, INT>::read_cmap_params(int lb_exoid, 
+					 std::vector<ELEM_COMM_MAP<INT>> &E_Comm_Map,
                                          std::vector<NODE_COMM_MAP<INT>> &N_Comm_Map,
                                          INT                             *cmap_max_size)
 {
   for (int iproc = 0; iproc < Proc_Info[0]; iproc++) {
 
-    assert(Node_Comm_Num[iproc] <= 1);
-    assert(Elem_Comm_Num[iproc] <= 1);
     std::array<INT, 1> node_cm_ids{0};
     std::array<INT, 1> node_cm_cnts{0};
     std::array<INT, 1> elem_cm_ids{0};

@@ -60,27 +60,25 @@
 #include <BelosMueLuAdapter.hpp>
 
 template <typename GlobalOrdinal>
-void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> &lagr2Dof)
-{
+void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> &lagr2Dof) {
   std::fstream lagr2DofFile;
   lagr2DofFile.open(filemane);
   TEUCHOS_ASSERT(lagr2DofFile.is_open())
 
   GlobalOrdinal key;
   GlobalOrdinal value;
-  while (lagr2DofFile >> key >> value)
-  {
+  while (lagr2DofFile >> key >> value) {
     lagr2Dof[key] = value;
   }
   lagr2DofFile.close();
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
-  #include <MueLu_UseShortNames.hpp>
-  using SparseMatrixType = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+  using SparseMatrixType    = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_mvector_type = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using tpetra_map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using tpetra_map_type     = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -91,15 +89,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   oblackholestream blackhole;
 
   RCP<const Comm<int>> comm = DefaultComm<int>::getComm();
-  RCP<FancyOStream> out = fancyOStream(rcpFromRef(std::cout));
+  RCP<FancyOStream> out     = fancyOStream(rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
 
-  const GO globalPrimalNumDofs = 1599;
-  const GO globalDualNumDofs = 100;
-  const GO globalNumDofs = globalPrimalNumDofs + globalDualNumDofs; // used for the maps
+  const GO globalPrimalNumDofs    = 1599;
+  const GO globalDualNumDofs      = 100;
+  const GO globalNumDofs          = globalPrimalNumDofs + globalDualNumDofs;  // used for the maps
   const size_t nPrimalDofsPerNode = 3;
-  const GO globalPrimalNumNodes = globalPrimalNumDofs / nPrimalDofsPerNode;
-  const size_t nDualDofsPerNode = 1;
+  const GO globalPrimalNumNodes   = globalPrimalNumDofs / nPrimalDofsPerNode;
+  const size_t nDualDofsPerNode   = 1;
 
   std::map<GO, GO> lagr2Dof;
   std::map<LO, LO> myLagr2Dof;
@@ -107,11 +105,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Construct the blocked map in Thyra mode
   RCP<const tpetra_map_type> primalNodeMap = Tpetra::createUniformContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(globalPrimalNumNodes, comm);
-  const GO indexBase = primalNodeMap->getIndexBase();
-  ArrayView<const GO> myPrimalNodes = primalNodeMap->getLocalElementList();
+  const GO indexBase                       = primalNodeMap->getIndexBase();
+  ArrayView<const GO> myPrimalNodes        = primalNodeMap->getLocalElementList();
 
   const size_t numMyPrimalNodes = primalNodeMap->getLocalNumElements();
-  const size_t numMyPrimalDofs = numMyPrimalNodes * nPrimalDofsPerNode;
+  const size_t numMyPrimalDofs  = numMyPrimalNodes * nPrimalDofsPerNode;
 
   Array<GO> myPrimalDofs(numMyPrimalDofs);
 
@@ -140,14 +138,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   current_i = 0;
   for (auto i = lagr2Dof.begin(); i != lagr2Dof.end(); ++i)
-    if (primalMap->isNodeGlobalElement(nPrimalDofsPerNode * (i->second)))
-    {
-      for (size_t j = 0; j < nDualDofsPerNode; ++j)
-      {
-        myDualDofs[nDualDofsPerNode * current_i + j] = (i->first) * nDualDofsPerNode + j;
+    if (primalMap->isNodeGlobalElement(nPrimalDofsPerNode * (i->second))) {
+      for (size_t j = 0; j < nDualDofsPerNode; ++j) {
+        myDualDofs[nDualDofsPerNode * current_i + j]               = (i->first) * nDualDofsPerNode + j;
         myDofs[numMyPrimalDofs + nDualDofsPerNode * current_i + j] = globalPrimalNumDofs + (i->first) * nDualDofsPerNode + j;
       }
-      GO primalDof = nPrimalDofsPerNode * (i->second);
+      GO primalDof          = nPrimalDofsPerNode * (i->second);
       myLagr2Dof[current_i] = primalMap->getLocalElement(primalDof) / nPrimalDofsPerNode;
       ++current_i;
     }
@@ -155,25 +151,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<const tpetra_map_type> dualMap = rcp(new tpetra_map_type(globalDualNumDofs, myDualDofs, indexBase, comm));
   RCP<const tpetra_map_type> fullMap = rcp(new tpetra_map_type(globalNumDofs, myDofs, indexBase, comm));
 
-  RCP<const Map> fullXMap = rcp(new TpetraMap(fullMap));
+  RCP<const Map> fullXMap   = rcp(new TpetraMap(fullMap));
   RCP<const Map> primalXMap = rcp(new TpetraMap(primalMap));
-  RCP<const Map> dualXMap = rcp(new TpetraMap(dualMap));
+  RCP<const Map> dualXMap   = rcp(new TpetraMap(dualMap));
 
   std::vector<RCP<const Map>> xsubmaps = {primalXMap, dualXMap};
-  RCP<BlockedMap> blockedMap = rcp(new BlockedMap(fullXMap, xsubmaps, true));
+  RCP<BlockedMap> blockedMap           = rcp(new BlockedMap(fullXMap, xsubmaps, true));
 
   // Read input matrices
   typedef Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
 
-  RCP<Matrix> xQ = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("Q_mm.txt", primalXMap, null, primalXMap, primalXMap);
-  RCP<Matrix> xG = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("G_mm.txt", primalXMap, null, dualXMap, primalXMap);
+  RCP<Matrix> xQ  = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("Q_mm.txt", primalXMap, null, primalXMap, primalXMap);
+  RCP<Matrix> xG  = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("G_mm.txt", primalXMap, null, dualXMap, primalXMap);
   RCP<Matrix> xGT = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("GT_mm.txt", dualXMap, null, primalXMap, dualXMap);
-  RCP<Matrix> xC = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("C_mm.txt", dualXMap, null, dualXMap, dualXMap);
+  RCP<Matrix> xC  = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("C_mm.txt", dualXMap, null, dualXMap, dualXMap);
 
-  RCP<CrsMatrixWrap> xwQ = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xQ);
-  RCP<CrsMatrixWrap> xwG = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xG);
+  RCP<CrsMatrixWrap> xwQ  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xQ);
+  RCP<CrsMatrixWrap> xwG  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xG);
   RCP<CrsMatrixWrap> xwGT = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xGT);
-  RCP<CrsMatrixWrap> xwC = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xC);
+  RCP<CrsMatrixWrap> xwC  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xC);
 
   // Construct the blocked saddle-point matrix
   RCP<BlockedCrsMatrix> blockedMatrix = rcp(new BlockedCrsMatrix(blockedMap, blockedMap, 8));
@@ -187,8 +183,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Create the preconditioner
   std::string xmlFile = "simple_1dof.xml";
 
-  RCP<ParameterList> params = Teuchos::getParametersFromXmlFile(xmlFile);
-  ParameterList& userDataParams = params->sublist("user data");
+  RCP<ParameterList> params     = Teuchos::getParametersFromXmlFile(xmlFile);
+  ParameterList &userDataParams = params->sublist("user data");
   userDataParams.set<RCP<std::map<LO, LO>>>("DualNodeID2PrimalNodeID", rcpFromRef(myLagr2Dof));
 
   RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(Teuchos::rcp_dynamic_cast<Matrix>(blockedMatrix, true), *params);
@@ -201,11 +197,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   typedef Belos::StatusTestGenResSubNorm<belos_scalar, MultiVector, OP> blockStatusTestClass;
   typedef Belos::StatusTestCombo<belos_scalar, MultiVector, OP> StatusTestComboClass;
 
-  typename ST::magnitudeType tol = 1e-4;
+  typename ST::magnitudeType tol  = 1e-4;
   typename ST::magnitudeType bTol = 1e-5;
 
   RCP<blockStatusTestClass> primalBlockStatusTest = rcp(new blockStatusTestClass(bTol, 0));
-  RCP<blockStatusTestClass> dualBlockStatusTest = rcp(new blockStatusTestClass(bTol, 1));
+  RCP<blockStatusTestClass> dualBlockStatusTest   = rcp(new blockStatusTestClass(bTol, 1));
 
   RCP<StatusTestComboClass> statusTestCombo = rcp(new StatusTestComboClass(StatusTestComboClass::SEQ));
   statusTestCombo->addStatusTest(primalBlockStatusTest);
@@ -221,13 +217,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   belosParams->set("Output Frequency", 1);
 
   typedef Belos::LinearProblem<belos_scalar, MultiVector, OP> BLinProb;
-  RCP<OP> belosOp = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blockedMatrix));
+  RCP<OP> belosOp   = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blockedMatrix));
   RCP<OP> belosPrec = rcp(new Belos::MueLuOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(H));
 
-  RCP<tpetra_mvector_type> rhsMultiVector = reader_type::readDenseFile("f_mm.txt", comm, fullMap);
+  RCP<tpetra_mvector_type> rhsMultiVector      = reader_type::readDenseFile("f_mm.txt", comm, fullMap);
   RCP<tpetra_mvector_type> solutionMultiVector = rcp(new tpetra_mvector_type(fullMap, 1));
 
-  RCP<MultiVector> rhsXMultiVector = rcp(new TpetraMultiVector(rhsMultiVector));
+  RCP<MultiVector> rhsXMultiVector      = rcp(new TpetraMultiVector(rhsMultiVector));
   RCP<MultiVector> solutionXMultiVector = rcp(new TpetraMultiVector(solutionMultiVector));
 
   RCP<BLinProb> blinproblem = rcp(new BLinProb(belosOp, solutionXMultiVector, rhsXMultiVector));
@@ -252,5 +248,5 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }

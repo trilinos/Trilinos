@@ -46,18 +46,13 @@
 #ifndef MUELU_MATRIXANALYSISFACTORY_FWD_HPP
 #define MUELU_MATRIXANALYSISFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatrixAnalysisFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatrixAnalysisFactory;
 }
 
 #ifndef MUELU_MATRIXANALYSISFACTORY_SHORT
 #define MUELU_MATRIXANALYSISFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_MATRIXANALYSISFACTORY_FWD_HPP
+#endif  // MUELU_MATRIXANALYSISFACTORY_FWD_HPP

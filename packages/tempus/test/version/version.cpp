@@ -11,9 +11,6 @@
 
 namespace Tempus_Test {
 
-  TEUCHOS_UNIT_TEST(version, default)
-  {
-    Tempus::version();
-  }
+TEUCHOS_UNIT_TEST(version, default) { Tempus::version(); }
 
-}
+}  // namespace Tempus_Test

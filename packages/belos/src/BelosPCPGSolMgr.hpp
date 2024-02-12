@@ -66,7 +66,6 @@
 #if defined(HAVE_TEUCHOSCORE_CXX11)
 #  include <type_traits>
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
-#include "Teuchos_TypeTraits.hpp"
 
 namespace Belos {
 

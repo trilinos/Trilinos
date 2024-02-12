@@ -46,6 +46,7 @@
 namespace panzer_stk {
 namespace workset_utils {
 
+/////////// TO BE DEPRECATED....
 template<typename ArrayT>
 void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 			 std::string blockId,
@@ -65,7 +66,27 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
   // get vertices (this is slightly faster then the local id version)
   mesh.getElementVertices(elements,blockId,vertices);
 }
+///////// END TO BE DEPRECATED
 
+template<typename ArrayT>
+void getIdsAndNodes(const panzer_stk::STK_Interface& mesh,
+			 std::string blockId,
+			 std::vector<std::size_t>& localIds,
+			 ArrayT & nodes) {
+  
+  std::vector<stk::mesh::Entity> elements;
+  mesh.getMyElements(blockId,elements);
+  
+  // loop over elements of this block
+  for(std::size_t elm=0;elm<elements.size();++elm) {
+    stk::mesh::Entity element = elements[elm];
+    
+    localIds.push_back(mesh.elementLocalId(element));
+  }
+
+  // get nodes (this is slightly faster then the local id version)
+  mesh.getElementNodes(elements,blockId,nodes);
+}
 }
 }
 

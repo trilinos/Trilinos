@@ -1,5 +1,10 @@
 tribits_get_package_enable_status(Kokkos  KokkosEnable "")
 
+IF (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  MESSAGE("-- " "Adding '-fp-model=precise' to C++ compiler flags because Trilinos needs it when using the Intel OneAPI C++ compiler.")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fp-model=precise")
+ENDIF()
+
 IF (KokkosEnable)
   MESSAGE("-- " "Skip adding flags for OpenMP because Kokkos flags does that ...")
   SET(OpenMP_CXX_FLAGS_OVERRIDE " ")

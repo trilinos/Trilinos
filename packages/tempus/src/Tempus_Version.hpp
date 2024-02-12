@@ -14,7 +14,7 @@
 
 namespace Tempus {
 
-  std::string version();
+std::string version();
 
 }
 #endif

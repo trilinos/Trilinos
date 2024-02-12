@@ -58,53 +58,53 @@
 
 namespace MueLu {
 
-  /*!
-    @class TransPFactory class.
-    @brief Factory for building restriction operators.
+/*!
+  @class TransPFactory class.
+  @brief Factory for building restriction operators.
 
-    This factory currently depends on an underlying matrix-matrix multiply with the identity
-    matrix to do the transpose.  This should probably be fixed at some point.
-  */
+  This factory currently depends on an underlying matrix-matrix multiply with the identity
+  matrix to do the transpose.  This should probably be fixed at some point.
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class TransPFactory : public TwoLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class TransPFactory : public TwoLevelFactoryBase {
 #undef MUELU_TRANSPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    TransPFactory() { }
+  //! Constructor.
+  TransPFactory() {}
 
-    //! Destructor.
-    virtual ~TransPFactory() { }
+  //! Destructor.
+  virtual ~TransPFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+  void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    void Build(Level & fineLevel, Level & coarseLevel) const;
+  void Build(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-  }; //class TransPFactory
+};  // class TransPFactory
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_TRANSPFACTORY_SHORT
-#endif // MUELU_TRANSPFACTORY_DECL_HPP
+#endif  // MUELU_TRANSPFACTORY_DECL_HPP

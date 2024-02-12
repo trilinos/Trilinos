@@ -1,8 +1,10 @@
 Clearing old data (if any)
+
 Level 0
 Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: ratio eigenvalue = 2
+
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -14,11 +16,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -35,6 +37,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: ratio eigenvalue = 5   [unused]
+
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -46,11 +49,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -67,6 +70,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: ratio eigenvalue = 4   [unused]
+
 Level 3
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -78,11 +82,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -99,6 +103,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99461   [unused]
+
 Level 4
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -110,11 +115,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -131,6 +136,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99194   [unused]
+
 Level 5
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -142,11 +148,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -170,7 +176,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 6
 Operator complexity = 1.50
-Smoother complexity = 0.00
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,15 +14,29 @@
 
 /* Refine a vertex separator by finding a maximum bipartite matching. */
 
-static int    bpm_improve1();
-static double sep_cost();
+static int    bpm_improve1(struct vtx_data **graph,      /* list of graph info for each vertex */
+                           int              *sets,       /* local partitioning of vtxs */
+                           int             **pbndy_list, /* list of vertices on boundary (0 ends) */
+                           double           *weights,    /* vertex weights in each set */
+                           int               set_match,  /* side of graph I'm matching against */
+                           int               set_other, /* side of graph I'm not matching against */
+                           double           *goal,      /* desired set sizes */
+                           int               max_dev,   /* largest deviation from balance allowed */
+                           double           *pimbalance,  /* imbalance of current partition */
+                           int              *sep_size,    /* separator size */
+                           int              *sep_weight,  /* weight of separator */
+                           int               using_vwgts, /* use weighted model? */
+                           double           *pcost        /* cost of current separator */
+   );
+static double sep_cost(double size_sep /* maximum allowed imbalance */
+);
 
 void bpm_improve(struct vtx_data **graph,      /* list of graph info for each vertex */
-                 int *             sets,       /* local partitioning of vtxs */
-                 double *          goal,       /* desired set sizes */
+                 int              *sets,       /* local partitioning of vtxs */
+                 double           *goal,       /* desired set sizes */
                  int               max_dev,    /* largest deviation from balance allowed */
-                 int **            bndy_list,  /* list of vertices on boundary (0 ends) */
-                 double *          weights,    /* vertex weights in each set */
+                 int             **bndy_list,  /* list of vertices on boundary (0 ends) */
+                 double           *weights,    /* vertex weights in each set */
                  int               using_vwgts /* invoke weighted cover routines? */
 )
 {
@@ -63,7 +77,7 @@ void bpm_improve(struct vtx_data **graph,      /* list of graph info for each ve
   deltaplus  = fabs(weights[0] - goal[0] * ratio);
   deltaminus = fabs(weights[1] - goal[1] * ratio);
   imbalance  = deltaplus + deltaminus;
-  old_cost   = sep_cost(weights[0], weights[1], (double)sep_weight, (double)max_dev);
+  old_cost   = sep_cost(weights[0]);
 
   change = TRUE;
   while (change) {
@@ -108,39 +122,38 @@ void bpm_improve(struct vtx_data **graph,      /* list of graph info for each ve
 }
 
 static int bpm_improve1(struct vtx_data **graph,       /* list of graph info for each vertex */
-                        int *             sets,        /* local partitioning of vtxs */
-                        int **            pbndy_list,  /* list of vertices on boundary (0 ends) */
-                        double *          weights,     /* vertex weights in each set */
+                        int              *sets,        /* local partitioning of vtxs */
+                        int             **pbndy_list,  /* list of vertices on boundary (0 ends) */
+                        double           *weights,     /* vertex weights in each set */
                         int               set_match,   /* side of graph I'm matching against */
                         int               set_other,   /* side of graph I'm not matching against */
-                        double *          goal,        /* desired set sizes */
+                        double           *goal,        /* desired set sizes */
                         int               max_dev,     /* largest deviation from balance allowed */
-                        double *          pimbalance,  /* imbalance of current partition */
-                        int *             sep_size,    /* separator size */
-                        int *             sep_weight,  /* weight of separator */
+                        double           *pimbalance,  /* imbalance of current partition */
+                        int              *sep_size,    /* separator size */
+                        int              *sep_weight,  /* weight of separator */
                         int               using_vwgts, /* use weighted model? */
-                        double *          pcost        /* cost of current separator */
+                        double           *pcost        /* cost of current separator */
 )
 {
-  extern int DEBUG_COVER;    /* debug flag for min vertex cover */
-  double     new_weights[2]; /* weights associated with new separator */
-  double     ratio;          /* fraction of non-separator vertices */
-  double     deltaplus;      /* amount set is too big */
-  double     deltaminus;     /* amount set is too small */
-  double     new_imbalance;  /* imbalance of new partition */
-  double     new_cost;       /* cost of new separator */
-  int *      pointers;       /* start/stop indices into adjacencies */
-  int *      indices;        /* adjacencies for each bipartite vertex */
-  int *      vweight;        /* vertex weights if needed */
-  int *      loc2glob;       /* mapping from bp graph to original */
-  int *      new_bndy_list;  /* new list of boundary vertices */
-  int        old_sep_size;   /* previous separator size */
-  int        old_sep_weight; /* previous separator weight */
-  int        vtx;            /* vertex in graph */
-  int        change;         /* does this routine alter separator? */
-  int        nleft, nright;  /* # vtxs in two sides on bp graph */
-  int        i, j;           /* loop counter */
-  void       make_bpgraph(), bpcover(), wbpcover();
+  extern int DEBUG_COVER;           /* debug flag for min vertex cover */
+  double     new_weights[2];        /* weights associated with new separator */
+  double     ratio;                 /* fraction of non-separator vertices */
+  double     deltaplus;             /* amount set is too big */
+  double     deltaminus;            /* amount set is too small */
+  double     new_imbalance;         /* imbalance of new partition */
+  double     new_cost;              /* cost of new separator */
+  int       *pointers = NULL;       /* start/stop indices into adjacencies */
+  int       *indices  = NULL;       /* adjacencies for each bipartite vertex */
+  int       *vweight  = NULL;       /* vertex weights if needed */
+  int       *loc2glob = NULL;       /* mapping from bp graph to original */
+  int       *new_bndy_list;         /* new list of boundary vertices */
+  int        old_sep_size;          /* previous separator size */
+  int        old_sep_weight;        /* previous separator weight */
+  int        vtx;                   /* vertex in graph */
+  int        change;                /* does this routine alter separator? */
+  int        nleft = 0, nright = 0; /* # vtxs in two sides on bp graph */
+  int        i, j;                  /* loop counter */
 
   make_bpgraph(graph, sets, *pbndy_list, *sep_size, set_match, &pointers, &indices, &vweight,
                &loc2glob, &nleft, &nright, using_vwgts);
@@ -200,7 +213,7 @@ static int bpm_improve1(struct vtx_data **graph,       /* list of graph info for
   deltaminus    = fabs(new_weights[1] - goal[1] * ratio);
   new_imbalance = deltaplus + deltaminus;
 
-  new_cost = sep_cost(weights[0], weights[1], (double)*sep_weight, (double)max_dev);
+  new_cost = sep_cost(weights[0]);
 
   if (DEBUG_COVER > 1) {
     printf("Sides %.0f, %.0f: sep %d total %.0f %.0f\n", new_weights[0], new_weights[1], *sep_size,

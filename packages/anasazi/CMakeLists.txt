@@ -127,8 +127,6 @@ ENDIF()
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 TRIBITS_EXCLUDE_FILES(
   doc/TOMS
   doc/OrthoStudy

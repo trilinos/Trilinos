@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionToolsDefL2.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionTools
+    \brief  Header file for the Intrepid2::ProjectionTools
             containing definitions for L2 projections.
     \author Created by Mauro Perego
  */
@@ -55,22 +55,22 @@
 
 
 namespace Intrepid2 {
-namespace Experimental {
 
+namespace FunctorsProjectionTools {
 
 template<typename ViewType1, typename ViewType2, typename ViewType3,
-typename ViewType4, typename ViewType5>
+typename ViewType4>
 struct ComputeBasisCoeffsOnVertices_L2 {
   ViewType1 basisCoeffs_;
   const ViewType2 tagToOrdinal_;
   const ViewType3 targetEPointsRange_;
   const ViewType4 targetAtTargetEPoints_;
-  const ViewType5 basisAtTargetEPoints_;
+  const ViewType1 basisAtTargetEPoints_;
   ordinal_type numVertices_;
 
 
   ComputeBasisCoeffsOnVertices_L2(ViewType1 basisCoeffs, ViewType2 tagToOrdinal, ViewType3 targetEPointsRange,
-      ViewType4  targetAtTargetEPoints, ViewType5 basisAtTargetEPoints, ordinal_type numVertices) :
+      ViewType4  targetAtTargetEPoints, ViewType1 basisAtTargetEPoints, ordinal_type numVertices) :
         basisCoeffs_(basisCoeffs), tagToOrdinal_(tagToOrdinal), targetEPointsRange_(targetEPointsRange),
         targetAtTargetEPoints_(targetAtTargetEPoints), basisAtTargetEPoints_(basisAtTargetEPoints), numVertices_(numVertices) {}
 
@@ -81,29 +81,29 @@ struct ComputeBasisCoeffsOnVertices_L2 {
       ordinal_type idof = tagToOrdinal_(0, iv, 0);
       ordinal_type pt = targetEPointsRange_(0,iv).first;
       //the value of the basis at the vertex might be different than 1; HGrad basis, so the function is scalar
-      basisCoeffs_(ic,idof) = targetAtTargetEPoints_(ic,pt)/basisAtTargetEPoints_(ic,idof,pt,0);
+      basisCoeffs_(ic,idof) = targetAtTargetEPoints_(ic,pt)/basisAtTargetEPoints_(idof,pt,0);
     }
   }
 };
 
 
 template<typename ViewType1, typename ViewType2, typename ViewType3,
-typename ViewType4, typename ViewType5, typename ViewType6>
+typename ViewType4, typename ViewType5>
 struct ComputeBasisCoeffsOnEdges_L2 {
   const ViewType1 basisCoeffs_;
-  const ViewType2 negPartialProj_;
-  const ViewType2 basisDofDofAtBasisEPoints_;
-  const ViewType2 basisAtBasisEPoints_;
-  const ViewType3 basisEWeights_;
-  const ViewType2 wBasisDofAtBasisEPoints_;
-  const ViewType3 targetEWeights_;
-  const ViewType2 basisAtTargetEPoints_;
-  const ViewType2 wBasisDofAtTargetEPoints_;
-  const ViewType4 computedDofs_;
-  const ViewType5 tagToOrdinal_;
-  const ViewType6 targetAtTargetEPoints_;
-  const ViewType2 targetTanAtTargetEPoints_;
-  const ViewType2 refEdgesVec_;
+  const ViewType1 negPartialProj_;
+  const ViewType1 basisDofDofAtBasisEPoints_;
+  const ViewType1 basisAtBasisEPoints_;
+  const ViewType2 basisEWeights_;
+  const ViewType1 wBasisDofAtBasisEPoints_;
+  const ViewType2 targetEWeights_;
+  const ViewType1 basisAtTargetEPoints_;
+  const ViewType1 wBasisDofAtTargetEPoints_;
+  const ViewType3 computedDofs_;
+  const ViewType4 tagToOrdinal_;
+  const ViewType5 targetAtTargetEPoints_;
+  const ViewType1 targetTanAtTargetEPoints_;
+  const ViewType1 refEdgesVec_;
   ordinal_type fieldDim_;
   ordinal_type edgeCardinality_;
   ordinal_type offsetBasis_;
@@ -112,10 +112,10 @@ struct ComputeBasisCoeffsOnEdges_L2 {
   ordinal_type edgeDim_;
   ordinal_type iedge_;
 
-  ComputeBasisCoeffsOnEdges_L2(const ViewType1 basisCoeffs, ViewType2 negPartialProj,  const ViewType2 basisDofDofAtBasisEPoints,
-      const ViewType2 basisAtBasisEPoints, const ViewType3 basisEWeights,  const ViewType2 wBasisDofAtBasisEPoints,   const ViewType3 targetEWeights,
-      const ViewType2 basisAtTargetEPoints, const ViewType2 wBasisDofAtTargetEPoints, const ViewType4 computedDofs, const ViewType5 tagToOrdinal,
-      const ViewType6 targetAtTargetEPoints, const ViewType2 targetTanAtTargetEPoints, const ViewType2 refEdgesVec,
+  ComputeBasisCoeffsOnEdges_L2(const ViewType1 basisCoeffs, ViewType1 negPartialProj,  const ViewType1 basisDofDofAtBasisEPoints,
+      const ViewType1 basisAtBasisEPoints, const ViewType2 basisEWeights,  const ViewType1 wBasisDofAtBasisEPoints,   const ViewType2 targetEWeights,
+      const ViewType1 basisAtTargetEPoints, const ViewType1 wBasisDofAtTargetEPoints, const ViewType3 computedDofs, const ViewType4 tagToOrdinal,
+      const ViewType5 targetAtTargetEPoints, const ViewType1 targetTanAtTargetEPoints, const ViewType1 refEdgesVec,
       ordinal_type fieldDim, ordinal_type edgeCardinality, ordinal_type offsetBasis,
       ordinal_type offsetTarget, ordinal_type numVertexDofs, ordinal_type edgeDim, ordinal_type iedge) :
         basisCoeffs_(basisCoeffs), negPartialProj_(negPartialProj), basisDofDofAtBasisEPoints_(basisDofDofAtBasisEPoints),
@@ -133,13 +133,15 @@ struct ComputeBasisCoeffsOnEdges_L2 {
     for(ordinal_type j=0; j <edgeCardinality_; ++j) {
       ordinal_type jdof =tagToOrdinal_(edgeDim_, iedge_, j);
       for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
+        typename ViewType1::value_type tmp =0;
         for(ordinal_type d=0; d <fieldDim_; ++d)
-          basisDofDofAtBasisEPoints_(ic,j,iq) += basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d)*refEdgesVec_(iedge_,d);
-        wBasisDofAtBasisEPoints_(ic,j,iq) = basisDofDofAtBasisEPoints_(ic,j,iq)*basisEWeights_(iq);
+          tmp += basisAtBasisEPoints_(jdof,offsetBasis_+iq,d)*refEdgesVec_(iedge_,d);
+        basisDofDofAtBasisEPoints_(0,j,iq) = tmp;
+        wBasisDofAtBasisEPoints_(ic,j,iq) = tmp*basisEWeights_(iq);
       }
       for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
         for(ordinal_type d=0; d <fieldDim_; ++d)
-          wBasisDofAtTargetEPoints_(ic,j,iq) += basisAtTargetEPoints_(ic,jdof,offsetTarget_+iq,d)*refEdgesVec_(iedge_,d)*targetEWeights_(iq);
+          wBasisDofAtTargetEPoints_(ic,j,iq) += basisAtTargetEPoints_(jdof,offsetTarget_+iq,d)*refEdgesVec_(iedge_,d)*targetEWeights_(iq);
       }
     }
 
@@ -151,29 +153,28 @@ struct ComputeBasisCoeffsOnEdges_L2 {
       ordinal_type jdof = computedDofs_(j);
       for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq)
         for(ordinal_type d=0; d <fieldDim_; ++d)
-          negPartialProj_(ic,iq) -=  basisCoeffs_(ic,jdof)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d)*refEdgesVec_(iedge_,d);
+          negPartialProj_(ic,iq) -=  basisCoeffs_(ic,jdof)*basisAtBasisEPoints_(jdof,offsetBasis_+iq,d)*refEdgesVec_(iedge_,d);
     }
   }
 };
 
 template<typename ViewType1, typename ViewType2, typename ViewType3,
-typename ViewType4, typename ViewType5, typename ViewType6, typename ViewType7, typename ViewType8>
+typename ViewType4, typename ViewType5>
 struct ComputeBasisCoeffsOnFaces_L2 {
   const ViewType1 basisCoeffs_;
-  const ViewType2 negPartialProj_;
-  const ViewType2 faceBasisDofAtBasisEPoints_;
-  const ViewType2 basisAtBasisEPoints_;
-  const ViewType3 basisEWeights_;
-  const ViewType2 wBasisDofAtBasisEPoints_;
-  const ViewType3 targetEWeights_;
-  const ViewType2 basisAtTargetEPoints_;
-  const ViewType2 wBasisDofAtTargetEPoints_;
-  const ViewType4 computedDofs_;
-  const ViewType5 tagToOrdinal_;
-  const ViewType6 orts_;
-  const ViewType7 targetAtTargetEPoints_;
-  const ViewType2 targetDofAtTargetEPoints_;
-  const ViewType8 faceParametrization_;
+  const ViewType1 negPartialProj_;
+  const ViewType1 faceBasisDofAtBasisEPoints_;
+  const ViewType1 basisAtBasisEPoints_;
+  const ViewType2 basisEWeights_;
+  const ViewType1 wBasisDofAtBasisEPoints_;
+  const ViewType2 targetEWeights_;
+  const ViewType1 basisAtTargetEPoints_;
+  const ViewType1 wBasisDofAtTargetEPoints_;
+  const ViewType3 computedDofs_;
+  const ViewType4 tagToOrdinal_;
+  const ViewType5 targetAtTargetEPoints_;
+  const ViewType1 targetDofAtTargetEPoints_;
+  const ViewType1 refSideNormal_;
   ordinal_type fieldDim_;
   ordinal_type faceCardinality_;
   ordinal_type offsetBasis_;
@@ -183,24 +184,23 @@ struct ComputeBasisCoeffsOnFaces_L2 {
   ordinal_type faceDim_;
   ordinal_type dim_;
   ordinal_type iface_;
-  unsigned topoKey_;
   bool isHCurlBasis_, isHDivBasis_;
 
-  ComputeBasisCoeffsOnFaces_L2(const ViewType1 basisCoeffs, ViewType2 negPartialProj,  const ViewType2 faceBasisDofAtBasisEPoints,
-      const ViewType2 basisAtBasisEPoints, const ViewType3 basisEWeights,  const ViewType2 wBasisDofAtBasisEPoints,   const ViewType3 targetEWeights,
-      const ViewType2 basisAtTargetEPoints, const ViewType2 wBasisDofAtTargetEPoints, const ViewType4 computedDofs, const ViewType5 tagToOrdinal,
-      const ViewType6 orts, const ViewType7 targetAtTargetEPoints, const ViewType2 targetDofAtTargetEPoints,
-      const ViewType8 faceParametrization, ordinal_type fieldDim, ordinal_type faceCardinality, ordinal_type offsetBasis,
+  ComputeBasisCoeffsOnFaces_L2(const ViewType1 basisCoeffs, ViewType1 negPartialProj,  const ViewType1 faceBasisDofAtBasisEPoints,
+      const ViewType1 basisAtBasisEPoints, const ViewType2 basisEWeights,  const ViewType1 wBasisDofAtBasisEPoints,   const ViewType2 targetEWeights,
+      const ViewType1 basisAtTargetEPoints, const ViewType1 wBasisDofAtTargetEPoints, const ViewType3 computedDofs, const ViewType4 tagToOrdinal,
+      const ViewType5 targetAtTargetEPoints, const ViewType1 targetDofAtTargetEPoints,
+      const ViewType1 refSideNormal, ordinal_type fieldDim, ordinal_type faceCardinality, ordinal_type offsetBasis,
       ordinal_type offsetTarget, ordinal_type numVertexEdgeDofs, ordinal_type numFaces, ordinal_type faceDim,
-      ordinal_type dim, ordinal_type iface, unsigned topoKey, bool isHCurlBasis, bool isHDivBasis) :
+      ordinal_type dim, ordinal_type iface, bool isHCurlBasis, bool isHDivBasis) :
         basisCoeffs_(basisCoeffs), negPartialProj_(negPartialProj), faceBasisDofAtBasisEPoints_(faceBasisDofAtBasisEPoints),
         basisAtBasisEPoints_(basisAtBasisEPoints), basisEWeights_(basisEWeights), wBasisDofAtBasisEPoints_(wBasisDofAtBasisEPoints), targetEWeights_(targetEWeights),
         basisAtTargetEPoints_(basisAtTargetEPoints), wBasisDofAtTargetEPoints_(wBasisDofAtTargetEPoints),
-        computedDofs_(computedDofs), tagToOrdinal_(tagToOrdinal), orts_(orts), targetAtTargetEPoints_(targetAtTargetEPoints),
-        targetDofAtTargetEPoints_(targetDofAtTargetEPoints), faceParametrization_(faceParametrization),
+        computedDofs_(computedDofs), tagToOrdinal_(tagToOrdinal), targetAtTargetEPoints_(targetAtTargetEPoints),
+        targetDofAtTargetEPoints_(targetDofAtTargetEPoints), refSideNormal_(refSideNormal),
         fieldDim_(fieldDim), faceCardinality_(faceCardinality), offsetBasis_(offsetBasis),
         offsetTarget_(offsetTarget), numVertexEdgeDofs_(numVertexEdgeDofs), numFaces_(numFaces),
-        faceDim_(faceDim), dim_(dim), iface_(iface), topoKey_(topoKey),
+        faceDim_(faceDim), dim_(dim), iface_(iface),
         isHCurlBasis_(isHCurlBasis), isHDivBasis_(isHDivBasis)
   {}
 
@@ -208,90 +208,68 @@ struct ComputeBasisCoeffsOnFaces_L2 {
   KOKKOS_INLINE_FUNCTION
   operator()(const ordinal_type ic) const {
 
-    ordinal_type fOrt[6];
-    orts_(ic).getFaceOrientation(fOrt, numFaces_);
-    ordinal_type ort = fOrt[iface_];
-
     if(isHCurlBasis_) {
-      typename ViewType3::value_type data[2*3];
-      auto tangents = ViewType3(data, 2, dim_);
-      Impl::OrientationTools::getRefSubcellTangents(tangents,faceParametrization_,topoKey_,iface_,ort);
-      typename ViewType3::value_type tmp[2] = {};
+      //normal
+      typename ViewType1::value_type n[3] = {refSideNormal_(0), refSideNormal_(1), refSideNormal_(2)};
+
       for(ordinal_type j=0; j <faceCardinality_; ++j) {
         ordinal_type jdof = tagToOrdinal_(faceDim_, iface_, j);
-        for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
-          tmp[0] = tmp[1] = 0;
-          for(ordinal_type d=0; d <fieldDim_; ++d) {
-            tmp[0] += tangents(0,d)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
-            tmp[1] += tangents(1,d)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
+        for(ordinal_type d=0; d <fieldDim_; ++d) {
+          ordinal_type dp1 = (d+1) % dim_;
+          ordinal_type dp2 = (d+2) % dim_;
+          for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
+
+            faceBasisDofAtBasisEPoints_(0,j,iq,d) = basisAtBasisEPoints_(jdof,offsetBasis_+iq,dp1)*n[dp2] - basisAtBasisEPoints_(jdof,offsetBasis_+iq,dp2)*n[dp1];
+            // basis \times n
+            wBasisDofAtBasisEPoints_(ic,j,iq,d) = faceBasisDofAtBasisEPoints_(0,j,iq,d) * basisEWeights_(iq);
           }
-          // u \times n = t_0 (u \dot t_1) - t1 (u \dot t_0)
-          for(ordinal_type d=0; d <fieldDim_; ++d) {
-            faceBasisDofAtBasisEPoints_(ic,j,iq,d) = tangents(0,d)*tmp[1]-tangents(1,d)*tmp[0];
-            wBasisDofAtBasisEPoints_(ic,j,iq,d) = faceBasisDofAtBasisEPoints_(ic,j,iq,d) * basisEWeights_(iq);
+          for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
+            // basis \times n
+            wBasisDofAtTargetEPoints_(ic,j,iq,d) = (basisAtTargetEPoints_(jdof,offsetTarget_+iq,dp1)*n[dp2] - basisAtTargetEPoints_(jdof,offsetTarget_+iq,dp2)*n[dp1]) * targetEWeights_(iq);
           }
-        }
-        for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
-          tmp[0] = tmp[1] = 0;
-          for(ordinal_type d=0; d <fieldDim_; ++d) {
-            tmp[0] += tangents(0,d)*basisAtTargetEPoints_(ic,jdof,offsetTarget_+iq,d);
-            tmp[1] += tangents(1,d)*basisAtTargetEPoints_(ic,jdof,offsetTarget_+iq,d);
-          }
-          // u \times n = t_0 (u \dot t_1) - t1 (u \dot t_0)
-          for(ordinal_type d=0; d <fieldDim_; ++d)
-            wBasisDofAtTargetEPoints_(ic,j,iq,d) = (tangents(0,d)*tmp[1]-tangents(1,d)*tmp[0]) * targetEWeights_(iq);
         }
       }
 
-      for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
-        tmp[0] = tmp[1] = 0;
-        for(ordinal_type d=0; d <fieldDim_; ++d) {
-          tmp[0] += tangents(0,d)*targetAtTargetEPoints_(ic,offsetTarget_+iq,d);
-          tmp[1] += tangents(1,d)*targetAtTargetEPoints_(ic,offsetTarget_+iq,d);
+      for(ordinal_type d=0; d <fieldDim_; ++d) {
+        ordinal_type dp1 = (d+1) % dim_;
+        ordinal_type dp2 = (d+2) % dim_;
+        for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {     
+          // target \times n
+          targetDofAtTargetEPoints_(ic,iq,d) = targetAtTargetEPoints_(ic,offsetTarget_+iq,dp1)*n[dp2] - targetAtTargetEPoints_(ic,offsetTarget_+iq,dp2)*n[dp1];
         }
-        // u \times n = t_0 (u \dot t_1) - t1 (u \dot t_0)
-        for(ordinal_type d=0; d <fieldDim_; ++d)
-          targetDofAtTargetEPoints_(ic,iq,d) = (tangents(0,d)*tmp[1]-tangents(1,d)*tmp[0]);
       }
 
       for(ordinal_type j=0; j <numVertexEdgeDofs_; ++j) {
         ordinal_type jdof = computedDofs_(j);
-        for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
-          tmp[0] = tmp[1] = 0;
-          for(ordinal_type d=0; d <fieldDim_; ++d) {
-            tmp[0] += tangents(0,d)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
-            tmp[1] += tangents(1,d)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
-          }
-
-          // u \times n = t_0 (u \dot t_1) - t1 (u \dot t_0)
-          for(ordinal_type d=0; d <fieldDim_; ++d)
-            negPartialProj_(ic,iq,d) -= (tangents(0,d)*tmp[1]-tangents(1,d)*tmp[0])*basisCoeffs_(ic,jdof);
+        for(ordinal_type d=0; d <fieldDim_; ++d) {
+          ordinal_type dp1 = (d+1) % dim_;
+          ordinal_type dp2 = (d+2) % dim_;
+          for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
+            // basis \times n
+            negPartialProj_(ic,iq,d) -= (basisAtBasisEPoints_(jdof,offsetBasis_+iq,dp1)*n[dp2] - basisAtBasisEPoints_(jdof,offsetBasis_+iq,dp2)*n[dp1])*basisCoeffs_(ic,jdof);
+          } 
         }
       }
-    } else {
-      typename ViewType3::value_type coeff[3];
+    } else { // isHDivBasis_ || isHGradBasis_
+      typename ViewType1::value_type coeff[3] = {1,0,0}; //only need first component for HGrad basis
       if (isHDivBasis_) {
-        typename ViewType3::value_type data[3*3];
-        auto tangentsAndNormal = ViewType3(data, dim_, dim_);
-        Impl::OrientationTools::getRefSideTangentsAndNormal(tangentsAndNormal, faceParametrization_,topoKey_, iface_, ort);
-        for(ordinal_type d=0; d <dim_; ++d)
-          coeff[d] = tangentsAndNormal(dim_-1,d);
+        for (ordinal_type d=0; d<3; d++)
+          coeff[d] =  refSideNormal_(d);
       }
-      else //isHGradBasis
-        coeff[0] = 1;
 
       for(ordinal_type j=0; j <faceCardinality_; ++j) {
         ordinal_type jdof = tagToOrdinal_(faceDim_, iface_, j);
         for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
-          faceBasisDofAtBasisEPoints_(ic,j,iq,0) = 0;
+          typename ViewType1::value_type tmp =0;
           for(ordinal_type d=0; d <fieldDim_; ++d)
-            faceBasisDofAtBasisEPoints_(ic,j,iq,0) += coeff[d]*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
-          wBasisDofAtBasisEPoints_(ic,j,iq,0) = faceBasisDofAtBasisEPoints_(ic,j,iq,0) * basisEWeights_(iq);
+            tmp += coeff[d]*basisAtBasisEPoints_(jdof,offsetBasis_+iq,d);
+          faceBasisDofAtBasisEPoints_(0,j,iq,0) = tmp;
+          wBasisDofAtBasisEPoints_(ic,j,iq,0) = tmp * basisEWeights_(iq);
         }
         for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
           typename ViewType2::value_type sum=0;
           for(ordinal_type d=0; d <fieldDim_; ++d)
-            sum += coeff[d]*basisAtTargetEPoints_(ic,jdof,offsetTarget_+iq,d);
+            sum += coeff[d]*basisAtTargetEPoints_(jdof,offsetTarget_+iq,d);
           wBasisDofAtTargetEPoints_(ic,j,iq,0) = sum * targetEWeights_(iq);
         }
       }
@@ -304,36 +282,35 @@ struct ComputeBasisCoeffsOnFaces_L2 {
         ordinal_type jdof = computedDofs_(j);
         for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq)
           for(ordinal_type d=0; d <fieldDim_; ++d)
-            negPartialProj_(ic,iq,0) -=  basisCoeffs_(ic,jdof)*coeff[d]*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
+            negPartialProj_(ic,iq,0) -=  basisCoeffs_(ic,jdof)*coeff[d]*basisAtBasisEPoints_(jdof,offsetBasis_+iq,d);
       }
     }
   }
 };
 
 
-template<typename ViewType1, typename ViewType2, typename ViewType3,
-typename ViewType4, typename ViewType5>
+template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
 struct ComputeBasisCoeffsOnCells_L2 {
   const ViewType1 basisCoeffs_;
-  const ViewType2 negPartialProj_;
-  const ViewType2 internalBasisAtBasisEPoints_;
-  const ViewType2 basisAtBasisEPoints_;
-  const ViewType3 basisEWeights_;
-  const ViewType2 wBasisAtBasisEPoints_;
-  const ViewType3 targetEWeights_;
-  const ViewType2 basisAtTargetEPoints_;
-  const ViewType2 wBasisDofAtTargetEPoints_;
-  const ViewType4 computedDofs_;
-  const ViewType5 elemDof_;
+  const ViewType1 negPartialProj_;
+  const ViewType1 internalBasisAtBasisEPoints_;
+  const ViewType1 basisAtBasisEPoints_;
+  const ViewType2 basisEWeights_;
+  const ViewType1 wBasisAtBasisEPoints_;
+  const ViewType2 targetEWeights_;
+  const ViewType1 basisAtTargetEPoints_;
+  const ViewType1 wBasisDofAtTargetEPoints_;
+  const ViewType3 computedDofs_;
+  const ViewType4 elemDof_;
   ordinal_type fieldDim_;
   ordinal_type numElemDofs_;
   ordinal_type offsetBasis_;
   ordinal_type offsetTarget_;
   ordinal_type numVertexEdgeFaceDofs_;
 
-  ComputeBasisCoeffsOnCells_L2(const ViewType1 basisCoeffs, ViewType2 negPartialProj,  const ViewType2 internalBasisAtBasisEPoints,
-      const ViewType2 basisAtBasisEPoints, const ViewType3 basisEWeights,  const ViewType2 wBasisAtBasisEPoints,   const ViewType3 targetEWeights,
-      const ViewType2 basisAtTargetEPoints, const ViewType2 wBasisDofAtTargetEPoints, const ViewType4 computedDofs, const ViewType5 elemDof,
+  ComputeBasisCoeffsOnCells_L2(const ViewType1 basisCoeffs, ViewType1 negPartialProj,  const ViewType1 internalBasisAtBasisEPoints,
+      const ViewType1 basisAtBasisEPoints, const ViewType2 basisEWeights,  const ViewType1 wBasisAtBasisEPoints,   const ViewType2 targetEWeights,
+      const ViewType1 basisAtTargetEPoints, const ViewType1 wBasisDofAtTargetEPoints, const ViewType3 computedDofs, const ViewType4 elemDof,
       ordinal_type fieldDim, ordinal_type numElemDofs, ordinal_type offsetBasis, ordinal_type offsetTarget, ordinal_type numVertexEdgeFaceDofs) :
         basisCoeffs_(basisCoeffs), negPartialProj_(negPartialProj), internalBasisAtBasisEPoints_(internalBasisAtBasisEPoints),
         basisAtBasisEPoints_(basisAtBasisEPoints), basisEWeights_(basisEWeights), wBasisAtBasisEPoints_(wBasisAtBasisEPoints), targetEWeights_(targetEWeights),
@@ -349,11 +326,11 @@ struct ComputeBasisCoeffsOnCells_L2 {
       ordinal_type idof = elemDof_(j);
       for(ordinal_type d=0; d <fieldDim_; ++d) {
         for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
-          internalBasisAtBasisEPoints_(ic,j,iq,d) = basisAtBasisEPoints_(ic,idof,offsetBasis_+iq,d);
-          wBasisAtBasisEPoints_(ic,j,iq,d) = internalBasisAtBasisEPoints_(ic,j,iq,d) * basisEWeights_(iq);
+          internalBasisAtBasisEPoints_(0,j,iq,d) = basisAtBasisEPoints_(idof,offsetBasis_+iq,d);
+          wBasisAtBasisEPoints_(ic,j,iq,d) = internalBasisAtBasisEPoints_(0,j,iq,d) * basisEWeights_(iq);
         }
         for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
-          wBasisDofAtTargetEPoints_(ic,j,iq,d) = basisAtTargetEPoints_(ic,idof,offsetTarget_+iq,d)* targetEWeights_(iq);
+          wBasisDofAtTargetEPoints_(ic,j,iq,d) = basisAtTargetEPoints_(idof,offsetTarget_+iq,d)* targetEWeights_(iq);
         }
       }
     }
@@ -361,116 +338,49 @@ struct ComputeBasisCoeffsOnCells_L2 {
       ordinal_type jdof = computedDofs_(j);
       for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq)
         for(ordinal_type d=0; d <fieldDim_; ++d) {
-          negPartialProj_(ic,iq,d) -=  basisCoeffs_(ic,jdof)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
+          negPartialProj_(ic,iq,d) -=  basisCoeffs_(ic,jdof)*basisAtBasisEPoints_(jdof,offsetBasis_+iq,d);
         }
     }
   }
 };
 
+template<typename ViewType1, typename ViewType2>
+struct MultiplyBasisByWeights {
+  const ViewType1 basisAtBasisEPoints_;
+  const ViewType2 basisEWeights_;
+  const ViewType1 wBasisAtBasisEPoints_;
+  const ViewType2 targetEWeights_;
+  const ViewType1 basisAtTargetEPoints_;
+  const ViewType1 wBasisDofAtTargetEPoints_;
+  ordinal_type fieldDim_;
+  ordinal_type numElemDofs_;
 
-template<typename DeviceType>
-template<typename BasisType,
-typename ortValueType,       class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getL2EvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType ePointType) {
-  typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,ortProperties...> ScalarViewType;
-  const auto cellTopo = cellBasis->getBaseCellTopology();
-  //const auto cellTopoKey = cellBasis->getBaseCellTopology().getKey();
-  ordinal_type dim = cellTopo.getDimension();
-  ordinal_type numCells = ePoints.extent(0);
-  const ordinal_type edgeDim = 1;
-  const ordinal_type faceDim = 2;
+  MultiplyBasisByWeights(const ViewType1 basisAtBasisEPoints, const ViewType2 basisEWeights,  const ViewType1 wBasisAtBasisEPoints,   const ViewType2 targetEWeights,
+      const ViewType1 basisAtTargetEPoints, const ViewType1 wBasisDofAtTargetEPoints,
+      ordinal_type fieldDim, ordinal_type numElemDofs) :
+        basisAtBasisEPoints_(basisAtBasisEPoints), basisEWeights_(basisEWeights), wBasisAtBasisEPoints_(wBasisAtBasisEPoints), targetEWeights_(targetEWeights),
+        basisAtTargetEPoints_(basisAtTargetEPoints), wBasisDofAtTargetEPoints_(wBasisDofAtTargetEPoints),
+        fieldDim_(fieldDim), numElemDofs_(numElemDofs) {}
 
-  ordinal_type numVertices = (cellBasis->getDofCount(0, 0) > 0) ? cellTopo.getVertexCount() : 0;
-  ordinal_type numEdges = (cellBasis->getDofCount(edgeDim, 0) > 0) ? cellTopo.getEdgeCount() : 0;
-  ordinal_type numFaces = (cellBasis->getDofCount(faceDim, 0) > 0) ? cellTopo.getFaceCount() : 0;
-  ordinal_type numVols = (cellBasis->getDofCount(dim, 0) > 0);
+  void
+  KOKKOS_INLINE_FUNCTION
+  operator()(const ordinal_type ic) const {
 
-  auto ePointsRange = projStruct->getPointsRange(ePointType);
-
-  typename RefSubcellParametrization<DeviceType>::ConstViewType subcellParamEdge,  subcellParamFace;
-  if(numEdges>0)
-    subcellParamEdge = RefSubcellParametrization<DeviceType>::get(edgeDim, cellTopo.getKey());
-  if(numFaces>0)
-    subcellParamFace = RefSubcellParametrization<DeviceType>::get(faceDim, cellTopo.getKey());
-
-  auto refTopologyKey = projStruct->getTopologyKey();
-
-  ScalarViewType workView("workView", numCells, projStruct->getMaxNumEvalPoints(ePointType), dim-1);
-
-  if(numVertices>0) {
-    for(ordinal_type iv=0; iv<numVertices; ++iv) {
-      auto vertexEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(0,iv,ePointType));
-      RealSpaceTools<DeviceType>::clone(Kokkos::subview(ePoints, Kokkos::ALL(),
-          ePointsRange(0, iv), Kokkos::ALL()), vertexEPoints);
+    for(ordinal_type j=0; j <numElemDofs_; ++j) {
+      for(ordinal_type d=0; d <fieldDim_; ++d) {
+        for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
+          wBasisAtBasisEPoints_(ic,j,iq,d) = basisAtBasisEPoints_(j,iq,d) * basisEWeights_(iq);
+        }
+        for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
+          wBasisDofAtTargetEPoints_(ic,j,iq,d) = basisAtTargetEPoints_(j,iq,d)* targetEWeights_(iq);
+        }
+      }
     }
   }
+};
 
-  for(ordinal_type ie=0; ie<numEdges; ++ie) {
-    auto edgePointsRange = ePointsRange(edgeDim, ie);
-    auto edgeEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(edgeDim,ie,ePointType));
+} // FunctorsProjectionTools namespace
 
-    const auto topoKey = refTopologyKey(edgeDim,ie);
-    Kokkos::parallel_for
-    ("Evaluate Points",
-        Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
-        KOKKOS_LAMBDA (const size_t ic) {
-
-      ordinal_type eOrt[12];
-      orts(ic).getEdgeOrientation(eOrt, numEdges);
-      ordinal_type ort = eOrt[ie];
-
-      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(ePoints,ic,edgePointsRange,Kokkos::ALL()),
-          edgeEPoints, subcellParamEdge, topoKey, ie, ort);
-    });
-  }
-
-  for(ordinal_type iface=0; iface<numFaces; ++iface) {
-    auto facePointsRange = ePointsRange(faceDim, iface);
-    auto faceEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(faceDim,iface,ePointType));
-
-    const auto topoKey = refTopologyKey(faceDim,iface);
-    Kokkos::parallel_for
-    ("Evaluate Points",
-        Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
-        KOKKOS_LAMBDA (const size_t ic) {
-      ordinal_type fOrt[6];
-      orts(ic).getFaceOrientation(fOrt, numFaces);
-      ordinal_type ort = fOrt[iface];
-
-      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(ePoints,  ic, facePointsRange, Kokkos::ALL()),
-          faceEPoints, subcellParamFace, topoKey, iface, ort);
-    });
-  }
-
-
-  if(numVols > 0) {
-    auto pointsRange = ePointsRange(dim, 0);
-    auto cellEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(dim,0,ePointType));
-    if(dim == 3)
-      RealSpaceTools<DeviceType>::clone(Kokkos::subview(ePoints, Kokkos::ALL(), pointsRange, Kokkos::ALL()), cellEPoints);
-    else { //if the cell is a side also internal points need orientation
-      const auto topoKey = refTopologyKey(dim,0);
-      RealSpaceTools<DeviceType>::clone(Kokkos::subview(ePoints, Kokkos::ALL(), pointsRange, Kokkos::ALL()), cellEPoints);
-        Kokkos::parallel_for
-      ("Evaluate Points",
-          Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
-          KOKKOS_LAMBDA (const size_t ic) {
-          ordinal_type ort = 0;
-          if(dim == 1)
-            orts(ic).getEdgeOrientation(&ort,1);
-          else if (dim == 2)
-            orts(ic).getFaceOrientation(&ort,1);
-          Impl::OrientationTools::mapToModifiedReference(Kokkos::subview(ePoints,  ic, pointsRange, Kokkos::ALL()), cellEPoints,topoKey,ort);
-      });
-    }
-  }
-}
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -480,7 +390,6 @@ typename ortValueType,class ...ortProperties>
 void
 ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
     const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
-    const typename BasisType::ScalarViewType targetEPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
@@ -490,7 +399,6 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   const auto cellTopo = cellBasis->getBaseCellTopology();
   ordinal_type dim = cellTopo.getDimension();
-  ordinal_type numTotalTargetEPoints(targetAtTargetEPoints.extent(1));
   ordinal_type basisCardinality = cellBasis->getCardinality();
   ordinal_type numCells = targetAtTargetEPoints.extent(0);
   const ordinal_type edgeDim = 1;
@@ -519,38 +427,24 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
 
   auto basisEPointsRange = projStruct->getBasisPointsRange();
 
-  auto refTopologyKey = projStruct->getTopologyKey();
-
   ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints();
-  ScalarViewType basisEPoints("basisEPoints",numCells,numTotalBasisEPoints, dim);
-  getL2EvaluationPoints(basisEPoints, orts, cellBasis, projStruct, EvalPointsType::BASIS);
+  auto basisEPoints = projStruct->getAllEvalPoints(EvalPointsType::BASIS);
+
+  ordinal_type numTotalTargetEPoints = projStruct->getNumTargetEvalPoints();
+  auto targetEPoints = projStruct->getAllEvalPoints(EvalPointsType::TARGET);
 
   auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), cellBasis->getAllDofOrdinal());
 
-  ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints, fieldDim);
-  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints, fieldDim);
+  ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints",basisCardinality, numTotalBasisEPoints, fieldDim);
+  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",basisCardinality, numTotalTargetEPoints, fieldDim);
   {
     if(fieldDim == 1) {
-      ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints);
-      ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints);
-      for(ordinal_type ic=0; ic<numCells; ++ic) {
-        cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
-        cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(basisEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
-      }
-      OrientationTools<DeviceType>::modifyBasisByOrientation(Kokkos::subview(basisAtBasisEPoints, Kokkos::ALL(), Kokkos::ALL(),
-          Kokkos::ALL(),0), nonOrientedBasisAtBasisEPoints, orts, cellBasis);
-      OrientationTools<DeviceType>::modifyBasisByOrientation(Kokkos::subview(basisAtTargetEPoints, Kokkos::ALL(),
-          Kokkos::ALL(), Kokkos::ALL(),0), nonOrientedBasisAtTargetEPoints, orts, cellBasis);
+      cellBasis->getValues(Kokkos::subview(basisAtTargetEPoints, Kokkos::ALL(), Kokkos::ALL(), 0), targetEPoints);
+      cellBasis->getValues(Kokkos::subview(basisAtBasisEPoints, Kokkos::ALL(), Kokkos::ALL(), 0), basisEPoints);
     }
     else {
-      ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints,fieldDim);
-      ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints,fieldDim);
-      for(ordinal_type ic=0; ic<numCells; ++ic) {
-        cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
-        cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(basisEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
-      }
-      OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtBasisEPoints, nonOrientedBasisAtBasisEPoints, orts, cellBasis);
-      OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
+      cellBasis->getValues(basisAtTargetEPoints, targetEPoints);
+      cellBasis->getValues(basisAtBasisEPoints, basisEPoints);
     }
   }
 
@@ -582,13 +476,14 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
 
 
   const Kokkos::RangePolicy<ExecSpaceType> policy(0, numCells);
+  ScalarViewType refBasisCoeffs("refBasisCoeffs", basisCoeffs.extent(0), basisCoeffs.extent(1));
 
   if(isHGradBasis) {
 
     auto targetEPointsRange = Kokkos::create_mirror_view_and_copy(MemSpaceType(), projStruct->getTargetPointsRange());
-    typedef ComputeBasisCoeffsOnVertices_L2<decltype(basisCoeffs), decltype(tagToOrdinal), decltype(targetEPointsRange),
-        decltype(targetAtTargetEPoints), decltype(basisAtTargetEPoints)> functorType;
-    Kokkos::parallel_for(policy, functorType(basisCoeffs, tagToOrdinal, targetEPointsRange,
+    using functorType = FunctorsProjectionTools::ComputeBasisCoeffsOnVertices_L2<ScalarViewType, decltype(tagToOrdinal), decltype(targetEPointsRange),
+        decltype(targetAtTargetEPoints)>;
+    Kokkos::parallel_for(policy, functorType(refBasisCoeffs, tagToOrdinal, targetEPointsRange,
         targetAtTargetEPoints, basisAtTargetEPoints, numVertices));
   }
 
@@ -609,7 +504,7 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
     ordinal_type numBasisEPoints = range_size(basisEPointsRange(edgeDim, ie));
     ordinal_type numTargetEPoints = range_size(targetEPointsRange(edgeDim, ie));
 
-    ScalarViewType basisDofAtBasisEPoints("BasisDofAtBasisEPoints",numCells,edgeCardinality, numBasisEPoints);
+    ScalarViewType basisDofAtBasisEPoints("BasisDofAtBasisEPoints",1,edgeCardinality, numBasisEPoints);
     ScalarViewType tragetDofAtTargetEPoints("TargetDofAtTargetEPoints",numCells, numTargetEPoints);
     ScalarViewType weightedBasisAtBasisEPoints("weightedTanBasisAtBasisEPoints",numCells,edgeCardinality, numBasisEPoints);
     ScalarViewType weightedBasisAtTargetEPoints("weightedTanBasisAtTargetEPoints",numCells,edgeCardinality, numTargetEPoints);
@@ -623,20 +518,20 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
     ordinal_type offsetTarget = targetEPointsRange(edgeDim, ie).first;
 
 
-    typedef ComputeBasisCoeffsOnEdges_L2<decltype(basisCoeffs), ScalarViewType,  decltype(basisEWeights),
-        decltype(computedDofs), decltype(tagToOrdinal), decltype(targetAtTargetEPoints)> functorTypeEdge;
+    using functorTypeEdge = FunctorsProjectionTools::ComputeBasisCoeffsOnEdges_L2<ScalarViewType,  decltype(basisEWeights),
+        decltype(computedDofs), decltype(tagToOrdinal), decltype(targetAtTargetEPoints)>;
 
-    Kokkos::parallel_for(policy, functorTypeEdge(basisCoeffs, negPartialProj, basisDofAtBasisEPoints,
+    Kokkos::parallel_for(policy, functorTypeEdge(refBasisCoeffs, negPartialProj, basisDofAtBasisEPoints,
         basisAtBasisEPoints, basisEWeights, weightedBasisAtBasisEPoints, targetEWeights,
         basisAtTargetEPoints, weightedBasisAtTargetEPoints, computedDofs, tagToOrdinal,
         targetAtTargetEPoints,tragetDofAtTargetEPoints, refEdgesVec, fieldDim,
         edgeCardinality, offsetBasis, offsetTarget, numVertexDofs, edgeDim, ie));
 
 
-    ScalarViewType edgeMassMat_("edgeMassMat_", numCells, edgeCardinality, edgeCardinality),
+    ScalarViewType edgeMassMat_("edgeMassMat_", 1, edgeCardinality, edgeCardinality),
         edgeRhsMat_("rhsMat_", numCells, edgeCardinality);
 
-    FunctionSpaceTools<DeviceType >::integrate(edgeMassMat_, basisDofAtBasisEPoints, weightedBasisAtBasisEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(edgeMassMat_, basisDofAtBasisEPoints, Kokkos::subview(weightedBasisAtBasisEPoints, std::make_pair(0,1), Kokkos::ALL(),Kokkos::ALL()) );
     FunctionSpaceTools<DeviceType >::integrate(edgeRhsMat_, tragetDofAtTargetEPoints, weightedBasisAtTargetEPoints);
     FunctionSpaceTools<DeviceType >::integrate(edgeRhsMat_, negPartialProj, weightedBasisAtBasisEPoints,true);
 
@@ -647,22 +542,17 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
 
     auto edgeDof = Kokkos::subview(tagToOrdinal, edgeDim, ie, Kokkos::ALL());
 
-    ElemSystem edgeSystem("edgeSystem", false);
-    edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDof, edgeCardinality);
+    ElemSystem edgeSystem("edgeSystem", true);
+    edgeSystem.solve(refBasisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDof, edgeCardinality);
   }
 
-  typename RefSubcellParametrization<DeviceType>::ConstViewType  subcellParamFace;
-  if(numFaces>0)
-    subcellParamFace = RefSubcellParametrization<DeviceType>::get(faceDim, cellBasis->getBaseCellTopology().getKey());
-
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
-    const auto topoKey = refTopologyKey(faceDim,iface);
     ordinal_type faceCardinality = cellBasis->getDofCount(faceDim,iface);
 
     ordinal_type numTargetEPoints = range_size(targetEPointsRange(faceDim, iface));
     ordinal_type numBasisEPoints = range_size(basisEPointsRange(faceDim, iface));
 
-    ScalarViewType faceBasisDofAtBasisEPoints("faceBasisDofAtBasisEPoints",numCells,faceCardinality, numBasisEPoints,faceDofDim);
+    ScalarViewType faceBasisDofAtBasisEPoints("faceBasisDofAtBasisEPoints",1,faceCardinality, numBasisEPoints,faceDofDim);
     ScalarViewType wBasisDofAtBasisEPoints("weightedBasisDofAtBasisEPoints",numCells,faceCardinality, numBasisEPoints,faceDofDim);
 
     ScalarViewType faceBasisAtTargetEPoints("faceBasisDofAtTargetEPoints",numCells,faceCardinality, numTargetEPoints,faceDofDim);
@@ -676,23 +566,25 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
     auto targetEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetEvalWeights(faceDim,iface));
     auto basisEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisEvalWeights(faceDim,iface));
 
+    ScalarViewType refSideNormal("refSideNormal", dim);
+    CellTools<DeviceType>::getReferenceSideNormal(refSideNormal, iface, cellTopo);
 
-    typedef ComputeBasisCoeffsOnFaces_L2<decltype(basisCoeffs), ScalarViewType,  decltype(basisEWeights),
-        decltype(computedDofs), decltype(tagToOrdinal), decltype(orts), decltype(targetAtTargetEPoints), decltype(subcellParamFace)> functorTypeFace;
+    using functorTypeFace = FunctorsProjectionTools::ComputeBasisCoeffsOnFaces_L2<ScalarViewType,  decltype(basisEWeights),
+        decltype(computedDofs), decltype(tagToOrdinal), decltype(targetAtTargetEPoints)>;
 
-    Kokkos::parallel_for(policy, functorTypeFace(basisCoeffs, negPartialProj,faceBasisDofAtBasisEPoints,
+    Kokkos::parallel_for(policy, functorTypeFace(refBasisCoeffs, negPartialProj,faceBasisDofAtBasisEPoints,
         basisAtBasisEPoints, basisEWeights, wBasisDofAtBasisEPoints, targetEWeights,
         basisAtTargetEPoints, wBasisDofAtTargetEPoints, computedDofs, tagToOrdinal,
-        orts, targetAtTargetEPoints,targetDofAtTargetEPoints,
-        subcellParamFace, fieldDim, faceCardinality, offsetBasis,
+        targetAtTargetEPoints,targetDofAtTargetEPoints,
+        refSideNormal, fieldDim, faceCardinality, offsetBasis,
         offsetTarget, numVertexDofs+numEdgeDofs, numFaces, faceDim,
-        dim, iface, topoKey, isHCurlBasis, isHDivBasis));
+        dim, iface, isHCurlBasis, isHDivBasis));
 
     typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, DeviceType> WorkArrayViewType;
-    ScalarViewType faceMassMat_("faceMassMat_", numCells, faceCardinality, faceCardinality),
+    ScalarViewType faceMassMat_("faceMassMat_", 1, faceCardinality, faceCardinality),
         faceRhsMat_("rhsMat_", numCells, faceCardinality);
 
-    FunctionSpaceTools<DeviceType >::integrate(faceMassMat_, faceBasisDofAtBasisEPoints, wBasisDofAtBasisEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(faceMassMat_, faceBasisDofAtBasisEPoints, Kokkos::subview(wBasisDofAtBasisEPoints, std::make_pair(0,1), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) );
     FunctionSpaceTools<DeviceType >::integrate(faceRhsMat_, targetDofAtTargetEPoints, wBasisDofAtTargetEPoints);
     FunctionSpaceTools<DeviceType >::integrate(faceRhsMat_, negPartialProj, wBasisDofAtBasisEPoints,true);
 
@@ -701,8 +593,8 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
 
     auto faceDof = Kokkos::subview(tagToOrdinal, faceDim, iface, Kokkos::ALL());
 
-    ElemSystem faceSystem("faceSystem", false);
-    faceSystem.solve(basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDof, faceCardinality);
+    ElemSystem faceSystem("faceSystem", true);
+    faceSystem.solve(refBasisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDof, faceCardinality);
   }
 
   ordinal_type numElemDofs = cellBasis->getDofCount(dim,0);
@@ -717,7 +609,7 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
     ordinal_type numTargetEPoints = range_size(targetEPointsRange(dim,0));
     ordinal_type numBasisEPoints = range_size(basisEPointsRange(dim,0));
 
-    ScalarViewType internalBasisAtBasisEPoints("internalBasisAtBasisEPoints",numCells,numElemDofs, numBasisEPoints, fieldDim);
+    ScalarViewType internalBasisAtBasisEPoints("internalBasisAtBasisEPoints",1,numElemDofs, numBasisEPoints, fieldDim);
     ScalarViewType negPartialProj("negPartialProj", numCells, numBasisEPoints, fieldDim);
 
     auto targetEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetEvalWeights(dim,0));
@@ -725,20 +617,19 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
     ordinal_type offsetBasis = basisEPointsRange(dim, 0).first;
     ordinal_type offsetTarget = targetEPointsRange(dim, 0).first;
 
-
     ScalarViewType wBasisAtBasisEPoints("weightedBasisAtBasisEPoints",numCells,numElemDofs, numBasisEPoints,fieldDim);
     ScalarViewType wBasisDofAtTargetEPoints("weightedBasisAtTargetEPoints",numCells,numElemDofs, numTargetEPoints,fieldDim);
 
-    typedef ComputeBasisCoeffsOnCells_L2<decltype(basisCoeffs), ScalarViewType,  decltype(basisEWeights), decltype(computedDofs), decltype(cellDofs)> functorType;
-    Kokkos::parallel_for(policy, functorType( basisCoeffs, negPartialProj,  internalBasisAtBasisEPoints,
+    using functorType = FunctorsProjectionTools::ComputeBasisCoeffsOnCells_L2<ScalarViewType,  decltype(basisEWeights), decltype(computedDofs), decltype(cellDofs)>;
+    Kokkos::parallel_for(policy, functorType( refBasisCoeffs, negPartialProj,  internalBasisAtBasisEPoints,
         basisAtBasisEPoints, basisEWeights,  wBasisAtBasisEPoints, targetEWeights, basisAtTargetEPoints, wBasisDofAtTargetEPoints,
         computedDofs, cellDofs, fieldDim, numElemDofs, offsetBasis, offsetTarget, numVertexDofs+numEdgeDofs+numFaceDofs));
 
     typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, DeviceType> WorkArrayViewType;
-    ScalarViewType cellMassMat_("cellMassMat_", numCells, numElemDofs, numElemDofs),
+    ScalarViewType cellMassMat_("cellMassMat_", 1, numElemDofs, numElemDofs),
         cellRhsMat_("rhsMat_", numCells, numElemDofs);
 
-    FunctionSpaceTools<DeviceType >::integrate(cellMassMat_, internalBasisAtBasisEPoints, wBasisAtBasisEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(cellMassMat_, internalBasisAtBasisEPoints, Kokkos::subview(wBasisAtBasisEPoints, std::make_pair(0,1), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) );
     if(fieldDim==1)
       FunctionSpaceTools<DeviceType >::integrate(cellRhsMat_, Kokkos::subview(targetAtTargetEPoints,Kokkos::ALL(),cellPointsRange,Kokkos::ALL()),
           Kokkos::subview(wBasisDofAtTargetEPoints,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),0));
@@ -748,58 +639,13 @@ ProjectionTools<DeviceType>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsVal
 
     ScalarViewType t_("t",numCells, numElemDofs);
     WorkArrayViewType w_("w",numCells,numElemDofs);
-    ElemSystem cellSystem("cellSystem", false);
-    cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
+    ElemSystem cellSystem("cellSystem", true);
+    cellSystem.solve(refBasisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
+
+  OrientationTools<DeviceType>::modifyBasisByOrientationInverse(basisCoeffs, refBasisCoeffs, orts, cellBasis, true);
 }
 
-template<typename ViewType1, typename ViewType2>
-struct MultiplyBasisByWeights {
-  const ViewType1 basisAtBasisEPoints_;
-  const ViewType2 basisEWeights_;
-  const ViewType1 wBasisAtBasisEPoints_;
-  const ViewType2 targetEWeights_;
-  const ViewType1 basisAtTargetEPoints_;
-  const ViewType1 wBasisDofAtTargetEPoints_;
-  ordinal_type fieldDim_;
-  ordinal_type numElemDofs_;
-
-  MultiplyBasisByWeights(const ViewType1 basisAtBasisEPoints, const ViewType2 basisEWeights,  const ViewType1 wBasisAtBasisEPoints,   const ViewType2 targetEWeights,
-      const ViewType1 basisAtTargetEPoints, const ViewType1 wBasisDofAtTargetEPoints,
-      ordinal_type fieldDim, ordinal_type numElemDofs) :
-        basisAtBasisEPoints_(basisAtBasisEPoints), basisEWeights_(basisEWeights), wBasisAtBasisEPoints_(wBasisAtBasisEPoints), targetEWeights_(targetEWeights),
-        basisAtTargetEPoints_(basisAtTargetEPoints), wBasisDofAtTargetEPoints_(wBasisDofAtTargetEPoints),
-        fieldDim_(fieldDim), numElemDofs_(numElemDofs) {}
-
-  void
-  KOKKOS_INLINE_FUNCTION
-  operator()(const ordinal_type ic) const {
-
-    for(ordinal_type j=0; j <numElemDofs_; ++j) {
-      for(ordinal_type d=0; d <fieldDim_; ++d) {
-        for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
-          wBasisAtBasisEPoints_(ic,j,iq,d) = basisAtBasisEPoints_(ic,j,iq,d) * basisEWeights_(iq);
-        }
-        for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
-          wBasisDofAtTargetEPoints_(ic,j,iq,d) = basisAtTargetEPoints_(ic,j,iq,d)* targetEWeights_(iq);
-        }
-      }
-    }
-  }
-};
-
-template<typename DeviceType>
-template<typename BasisType>
-void
-ProjectionTools<DeviceType>::getL2DGEvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType ePointType) {
-
-  ordinal_type dim = cellBasis->getBaseCellTopology().getDimension();
-  auto cellEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(dim,0,ePointType));
-  RealSpaceTools<DeviceType>::clone(ePoints, cellEPoints);
-}
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -812,87 +658,13 @@ ProjectionTools<DeviceType>::getL2DGBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
     ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
+  
+  Kokkos::DynRankView<typename BasisType::scalarType,DeviceType>  refBasisCoeffs("refBasisCoeffs", basisCoeffs.extent(0), basisCoeffs.extent(1));
+  getL2DGBasisCoeffs(refBasisCoeffs, targetAtTargetEPoints, cellBasis, projStruct);
 
-  typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,DeviceType> ScalarViewType;
-  const auto cellTopo = cellBasis->getBaseCellTopology();
-
-  ordinal_type dim = cellTopo.getDimension();
-
-  auto basisEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),
-      projStruct->getEvalPoints(dim,0,EvalPointsType::BASIS));
-  auto targetEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),
-      projStruct->getEvalPoints(dim,0,EvalPointsType::TARGET));
-
-
-  ordinal_type numTotalTargetEPoints(targetAtTargetEPoints.extent(1));
-  ordinal_type basisCardinality = cellBasis->getCardinality();
-  ordinal_type numCells = targetAtTargetEPoints.extent(0);
-  const ordinal_type fieldDim = (targetAtTargetEPoints.rank()==2) ? 1 : targetAtTargetEPoints.extent(2);
-
-  ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints();
-  ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints, fieldDim);
-  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints, fieldDim);
-  {
-    if(fieldDim == 1) {
-      ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints);
-      ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints);
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL()), targetEPoints);
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL()), basisEPoints);
-
-      RealSpaceTools<DeviceType>::clone(nonOrientedBasisAtTargetEPoints, Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL()));
-      RealSpaceTools<DeviceType>::clone(nonOrientedBasisAtBasisEPoints, Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL()));
-      OrientationTools<DeviceType>::modifyBasisByOrientation(Kokkos::subview(basisAtBasisEPoints, Kokkos::ALL(), Kokkos::ALL(),
-          Kokkos::ALL(),0), nonOrientedBasisAtBasisEPoints, orts, cellBasis);
-      OrientationTools<DeviceType>::modifyBasisByOrientation(Kokkos::subview(basisAtTargetEPoints, Kokkos::ALL(),
-          Kokkos::ALL(), Kokkos::ALL(),0), nonOrientedBasisAtTargetEPoints, orts, cellBasis);
-    }
-    else {
-      ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints,fieldDim);
-      ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints,fieldDim);
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), targetEPoints);
-      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), basisEPoints);
-
-      RealSpaceTools<DeviceType>::clone(nonOrientedBasisAtTargetEPoints, Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
-      RealSpaceTools<DeviceType>::clone(nonOrientedBasisAtBasisEPoints, Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
-      OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtBasisEPoints, nonOrientedBasisAtBasisEPoints, orts, cellBasis);
-      OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
-    }
-  }
-
-  const Kokkos::RangePolicy<ExecSpaceType> policy(0, numCells);
-  ordinal_type numElemDofs = cellBasis->getCardinality();
-
-  auto targetEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetEvalWeights(dim,0));
-  auto basisEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisEvalWeights(dim,0));
-
-  ScalarViewType wBasisAtBasisEPoints("weightedBasisAtBasisEPoints",numCells,numElemDofs, numTotalBasisEPoints,fieldDim);
-  ScalarViewType wBasisDofAtTargetEPoints("weightedBasisAtTargetEPoints",numCells,numElemDofs, numTotalTargetEPoints,fieldDim);
-
-  typedef MultiplyBasisByWeights<decltype(basisAtBasisEPoints), decltype(basisEWeights)> functorType;
-  Kokkos::parallel_for( "Multiply basis by weights", policy, functorType(basisAtBasisEPoints, basisEWeights,
-      wBasisAtBasisEPoints, targetEWeights,  basisAtTargetEPoints, wBasisDofAtTargetEPoints, fieldDim, numElemDofs));// )){
-
-  typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, DeviceType> WorkArrayViewType;
-  ScalarViewType cellMassMat_("cellMassMat_", numCells, numElemDofs, numElemDofs),
-      cellRhsMat_("rhsMat_", numCells, numElemDofs);
-
-  FunctionSpaceTools<DeviceType >::integrate(cellMassMat_, basisAtBasisEPoints, wBasisAtBasisEPoints);
-  if(fieldDim==1)
-    FunctionSpaceTools<DeviceType >::integrate(cellRhsMat_, targetAtTargetEPoints,
-        Kokkos::subview(wBasisDofAtTargetEPoints,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),0));
-  else
-    FunctionSpaceTools<DeviceType >::integrate(cellRhsMat_, targetAtTargetEPoints, wBasisDofAtTargetEPoints);
-
-  Kokkos::DynRankView<ordinal_type,Kokkos::HostSpace> hCellDofs("cellDoFs", numElemDofs);
-  for(ordinal_type i=0; i<numElemDofs; ++i) hCellDofs(i) = i;
-  auto cellDofs = Kokkos::create_mirror_view_and_copy(MemSpaceType(),hCellDofs);
-
-  ScalarViewType t_("t",numCells, numElemDofs);
-  WorkArrayViewType w_("w",numCells,numElemDofs);
-  ElemSystem cellSystem("cellSystem", false);
-  cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
+  OrientationTools<DeviceType>::modifyBasisByOrientationInverse(basisCoeffs, refBasisCoeffs, orts, cellBasis, true);
 }
+
 
 template<typename DeviceType>
 template<typename basisViewType, typename targetViewType, typename BasisType>
@@ -920,19 +692,15 @@ ProjectionTools<DeviceType>::getL2DGBasisCoeffs(basisViewType basisCoeffs,
 
   ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints();
   ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints",1,basisCardinality, numTotalBasisEPoints, fieldDim);
-  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints, fieldDim);
+  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",basisCardinality, numTotalTargetEPoints, fieldDim);
   {
     if(fieldDim == 1) {
-      cellBasis->getValues(Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),0), targetEPoints);
+      cellBasis->getValues(Kokkos::subview(basisAtTargetEPoints,Kokkos::ALL(),Kokkos::ALL(),0), targetEPoints);
       cellBasis->getValues(Kokkos::subview(basisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),0), basisEPoints);
-
-      RealSpaceTools<DeviceType>::clone(basisAtTargetEPoints, Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
     }
     else {
-      cellBasis->getValues(Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), targetEPoints);
+      cellBasis->getValues(basisAtTargetEPoints, targetEPoints);
       cellBasis->getValues(Kokkos::subview(basisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), basisEPoints);
-
-      RealSpaceTools<DeviceType>::clone(basisAtTargetEPoints, Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
     }
   }
 
@@ -952,7 +720,7 @@ ProjectionTools<DeviceType>::getL2DGBasisCoeffs(basisViewType basisCoeffs,
       for(ordinal_type iq=0; iq < numTotalBasisEPoints; ++iq)
         wBasisAtBasisEPoints(0,j,iq,d) = basisAtBasisEPoints(0,j,iq,d) * basisEWeights(iq);
       for(ordinal_type iq=0; iq <numTotalTargetEPoints; ++iq) {
-        wBasisDofAtTargetEPoints(0,j,iq,d) = basisAtTargetEPoints(0,j,iq,d)* targetEWeights(iq);
+        wBasisDofAtTargetEPoints(0,j,iq,d) = basisAtTargetEPoints(j,iq,d)* targetEWeights(iq);
       }
     }
     cellDofs(j) = j;
@@ -976,8 +744,7 @@ ProjectionTools<DeviceType>::getL2DGBasisCoeffs(basisViewType basisCoeffs,
   cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
 }
 
-}
-}
+} //Intrepid2 namespace
 
 #endif
 

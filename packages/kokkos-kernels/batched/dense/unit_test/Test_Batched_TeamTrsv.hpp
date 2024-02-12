@@ -41,6 +41,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedTeamTrsv {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b;
 
   ScalarType _alpha;
@@ -72,8 +73,8 @@ struct Functor_TestBatchedTeamTrsv {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _b.extent(0);
-    Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(league_size,
-                                                        Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size,
+                                                             Kokkos::AUTO);
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -83,7 +84,7 @@ template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_trsv(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ScalarType alpha(1.5);

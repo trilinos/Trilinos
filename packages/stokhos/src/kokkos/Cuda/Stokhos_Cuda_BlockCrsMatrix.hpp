@@ -113,13 +113,19 @@ public:
                      const block_vector_type & x ,
                      const block_vector_type & y )
   {
+    const int warp_size = Kokkos::Impl::CudaTraits::WarpSize;
+    auto const maxWarpCount = std::min<unsigned>(
+        execution_space().cuda_device_prop().maxThreadsPerBlock / warp_size,
+        warp_size);
+
     const size_type thread_max =
-      Kokkos::Impl::cuda_internal_maximum_warp_count() * Kokkos::Impl::CudaTraits::WarpSize ;
+      maxWarpCount * warp_size ;
 
     const size_type row_count = A.graph.row_map.extent(0) - 1 ;
 
+    const size_type maxGridSizeX = execution_space().cuda_device_prop().maxGridSize[0];
     const dim3 grid(
-      std::min( row_count , Kokkos::Impl::cuda_internal_maximum_grid_count()[0] ) , 1 , 1 );
+      std::min( row_count , maxGridSizeX ) , 1 , 1 );
     const dim3 block = BlockMultiply<BlockSpec>::thread_block( A.block );
 
     const size_type shmem =

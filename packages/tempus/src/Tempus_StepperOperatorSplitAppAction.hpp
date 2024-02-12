@@ -12,16 +12,16 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration
-template<class Scalar> class StepperOperatorSplit;
+template <class Scalar>
+class StepperOperatorSplit;
 
 /** \brief StepperOperatorSplitAppAction class for StepperOperatorSplit.
  *
- *  This class provides a means to apply various actions with the OperatorSplit time step.
- *  The data available to this class is solution variables (through
+ *  This class provides a means to apply various actions with the OperatorSplit
+ * time step. The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
  *  the application to just observe this data, i.e., use but not change
  *  any of it (USER BEWARE!).
@@ -35,33 +35,28 @@ template<class Scalar> class StepperOperatorSplit;
  *     solution state!  Developers need to be careful not to break the
  *     restart (checkpoint) capability.
  */
-template<class Scalar>
-class StepperOperatorSplitAppAction
-{
-public:
-
+template <class Scalar>
+class StepperOperatorSplitAppAction {
+ public:
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.
-    BEFORE_STEPPER, ///< Before a stepper evaluation.
-    AFTER_STEPPER,  ///< After a stepper evaluation.
-    END_STEP        ///< At the end of the step.
+    BEGIN_STEP,      ///< At the beginning of the step.
+    BEFORE_STEPPER,  ///< Before a stepper evaluation.
+    AFTER_STEPPER,   ///< After a stepper evaluation.
+    END_STEP         ///< At the end of the step.
   };
 
   /// Constructor
-  StepperOperatorSplitAppAction(){}
+  StepperOperatorSplitAppAction() {}
 
   /// Destructor
-  virtual ~StepperOperatorSplitAppAction(){}
+  virtual ~StepperOperatorSplitAppAction() {}
 
   /// Execute application action for OperatorSplit Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
-    const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
 };
-} // namespace Tempus
-#endif // Tempus_StepperOperatorSplitAppAction_hpp
-
-
-
-
+}  // namespace Tempus
+#endif  // Tempus_StepperOperatorSplitAppAction_hpp

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -47,7 +47,7 @@ namespace {
 #endif
 
 #if defined(USE_MURMUR)
-  uint64_t MurmurHash64A(const size_t key);
+  uint64_t MurmurHash64A(size_t key);
 #endif
 
   void create_face(Ioss::FaceUnorderedSet &faces, size_t id, std::array<size_t, 4> &conn,
@@ -378,7 +378,7 @@ namespace Ioss {
 #endif
 
     const auto &ebs = region_.get_element_blocks();
-    for (auto &eb : ebs) {
+    for (const auto &eb : ebs) {
       const std::string &name    = eb->name();
       size_t             numel   = eb->entity_count();
       size_t             reserve = 3.2 * numel;
@@ -389,12 +389,12 @@ namespace Ioss {
 #if DO_TIMING
     auto endf = std::chrono::steady_clock::now();
 #endif
-    for (auto &eb : ebs) {
+    for (const auto &eb : ebs) {
       resolve_parallel_faces(region_, faces_[eb->name()], hashIds_, (INT)0);
     }
 #if DO_TIMING
     size_t face_count = 0;
-    for (auto &eb : ebs) {
+    for (const auto &eb : ebs) {
       face_count += faces_[eb->name()].size();
     }
     auto endp  = std::chrono::steady_clock::now();
@@ -449,7 +449,7 @@ namespace Ioss {
     size_t reserve = 3.2 * numel;
     my_faces.reserve(reserve);
     const auto &ebs = region_.get_element_blocks();
-    for (auto &eb : ebs) {
+    for (const auto &eb : ebs) {
       internal_generate_faces(eb, my_faces, ids, hashIds_, local_ids, (INT)0);
     }
 

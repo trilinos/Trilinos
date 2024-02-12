@@ -117,14 +117,14 @@ void Bounds<Real>::projectInterior( Vector<Real> &x ) {
     public:
       LowerFeasible(const Real eps, const Real diff)
         : eps_(eps), diff_(diff) {}
-      Real apply( const Real &x, const Real &y ) const {
+      Real apply( const Real &xc, const Real &yc ) const {
         const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
         const Real one(1);
-        Real val = ((y <-tol) ? y*(one-eps_)
-                 : ((y > tol) ? y*(one+eps_)
-                 : y+eps_));
-        val = std::min(y+eps_*diff_, val);
-        return x < val ? val : x;
+        Real val = ((yc <-tol) ? yc*(one-eps_)
+                 : ((yc > tol) ? yc*(one+eps_)
+                 : yc+eps_));
+        val = std::min(yc+eps_*diff_, val);
+        return xc < val ? val : xc;
       }
     };
     x.applyBinary(LowerFeasible(feasTol_,min_diff_), *lower_);
@@ -138,14 +138,14 @@ void Bounds<Real>::projectInterior( Vector<Real> &x ) {
     public:
       UpperFeasible(const Real eps, const Real diff)
         : eps_(eps), diff_(diff) {}
-      Real apply( const Real &x, const Real &y ) const {
+      Real apply( const Real &xc, const Real &yc ) const {
         const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
         const Real one(1);
-        Real val = ((y <-tol) ? y*(one+eps_)
-                 : ((y > tol) ? y*(one-eps_)
-                 : y-eps_));
-        val = std::max(y-eps_*diff_, val);
-        return x > val ? val : x;
+        Real val = ((yc <-tol) ? yc*(one+eps_)
+                 : ((yc > tol) ? yc*(one-eps_)
+                 : yc-eps_));
+        val = std::max(yc-eps_*diff_, val);
+        return xc > val ? val : xc;
       }
     };
     x.applyBinary(UpperFeasible(feasTol_,min_diff_), *upper_);
@@ -210,20 +210,17 @@ void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, con
 
 template<typename Real>
 bool Bounds<Real>::isFeasible( const Vector<Real> &v ) {
-  const Real one(1);
+  const Real half(0.5);
   bool flagU = false, flagL = false;
   if (BoundConstraint<Real>::isUpperActivated()) {
-    mask_->set(*upper_);
-    mask_->axpy(-one,v);
-    Real uminusv = mask_->reduce(minimum_);
-    flagU = ((uminusv<0) ? true : false);
+    mask_->set(v);
+    mask_->applyBinary(isGreater_,*upper_);
+    flagU = mask_->reduce(maximum_) > half ? true : false;
   }
   if (BoundConstraint<Real>::isLowerActivated()) {
-    mask_->set(v);
-    mask_->axpy(-one,*lower_);
-    Real vminusl = mask_->reduce(minimum_);
-
-    flagL = ((vminusl<0) ? true : false);
+    mask_->set(*lower_);
+    mask_->applyBinary(isGreater_,v);
+    flagL = mask_->reduce(maximum_) > half ? true : false;
   }
   return ((flagU || flagL) ? false : true);
 }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -80,7 +80,7 @@ Ioss::Property Ioss::EntityBlock::get_implicit_property(const std::string &my_na
   return Ioss::GroupingEntity::get_implicit_property(my_name);
 }
 
-bool Ioss::EntityBlock::equal_(const Ioss::EntityBlock &rhs, const bool quiet) const
+bool Ioss::EntityBlock::equal_(const Ioss::EntityBlock &rhs, bool quiet) const
 {
   bool same = true;
   /* COMPARE element topologies */

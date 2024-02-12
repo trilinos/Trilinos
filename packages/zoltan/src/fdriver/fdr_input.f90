@@ -410,23 +410,23 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: ierr, i
 !**************************** BEGIN EXECUTION *****************************
 
-  call MPI_Bcast(Test_Multi_Callbacks, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(Test_Local_Partitions, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(Test_Drops, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(Test_Gen_Files, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(Driver_Action, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(pio_info%dsk_list_cnt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(pio_info%rdisk, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(pio_info%num_dsk_ctrlrs, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(pio_info%pdsk_add_fact, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(pio_info%zeros, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-  call MPI_Bcast(pio_info%file_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+  call MPI_Bcast(Test_Multi_Callbacks, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(Test_Local_Partitions, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(Test_Drops, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(Test_Gen_Files, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(Driver_Action, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(pio_info%dsk_list_cnt, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(pio_info%rdisk, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(pio_info%num_dsk_ctrlrs, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(pio_info%pdsk_add_fact, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(pio_info%zeros, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
+  call MPI_Bcast(pio_info%file_type, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
   call MPI_Bcast(pio_info%pdsk_root, len(pio_info%pdsk_root), MPI_CHARACTER, &
-            0, MPI_COMM_WORLD, ierr)
+            0, zoltan_get_global_comm(), ierr)
   call MPI_Bcast(pio_info%pdsk_subdir, len(pio_info%pdsk_root), MPI_CHARACTER, &
-            0, MPI_COMM_WORLD, ierr)
+            0, zoltan_get_global_comm(), ierr)
   call MPI_Bcast(pio_info%pexo_fname, len(pio_info%pdsk_root), MPI_CHARACTER, &
-            0, MPI_COMM_WORLD, ierr)
+            0, zoltan_get_global_comm(), ierr)
 
   if(pio_info%dsk_list_cnt > 0) then
     if(Proc /= 0) then
@@ -434,16 +434,16 @@ type(PARIO_INFO) :: pio_info
     endif
 
     call MPI_Bcast(pio_info%dsk_list, pio_info%dsk_list_cnt, MPI_INTEGER, &
-                   0, MPI_COMM_WORLD, ierr)
+                   0, zoltan_get_global_comm(), ierr)
   endif
 
 !   broadcast the param file name 
   call MPI_Bcast(prob%ztnPrm_file, len(prob%ztnPrm_file), MPI_CHARACTER, &
-       0, MPI_COMM_WORLD, ierr)
+       0, zoltan_get_global_comm(), ierr)
 
 !   and broadcast the problem specifications 
-  call MPI_Bcast(prob%method, len(prob%method), MPI_CHARACTER, 0,MPI_COMM_WORLD,ierr)
-  call MPI_Bcast(prob%num_params, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+  call MPI_Bcast(prob%method, len(prob%method), MPI_CHARACTER, 0,zoltan_get_global_comm(),ierr)
+  call MPI_Bcast(prob%num_params, 1, MPI_INTEGER, 0, zoltan_get_global_comm(), ierr)
   if (prob%num_params > 0) then
     size = len(prob%params(0)%str(0))
     if (Proc /= 0) then
@@ -451,9 +451,9 @@ type(PARIO_INFO) :: pio_info
     endif
     do i=0,prob%num_params-1
       call MPI_Bcast(prob%params(i)%str(0), size, MPI_CHARACTER, 0, &
-                     MPI_COMM_WORLD, ierr)
+                     zoltan_get_global_comm(), ierr)
       call MPI_Bcast(prob%params(i)%str(1), size, MPI_CHARACTER, 0, &
-                     MPI_COMM_WORLD, ierr)
+                     zoltan_get_global_comm(), ierr)
     end do
   endif
 

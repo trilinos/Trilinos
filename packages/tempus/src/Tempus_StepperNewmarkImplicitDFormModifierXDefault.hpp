@@ -12,7 +12,6 @@
 #include "Tempus_config.hpp"
 #include "Tempus_StepperNewmarkImplicitDFormModifierXBase.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default ModifierX for StepperNewmarkImplicitDForm.
@@ -23,41 +22,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperNewmarkImplicitDFormModifierXDefault
-  : virtual public Tempus::StepperNewmarkImplicitDFormModifierXBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperNewmarkImplicitDFormModifierXBase<Scalar> {
+ public:
   /// Constructor
-  StepperNewmarkImplicitDFormModifierXDefault(){}
+  StepperNewmarkImplicitDFormModifierXDefault() {}
 
   /// Destructor
-  virtual ~StepperNewmarkImplicitDFormModifierXDefault(){}
+  virtual ~StepperNewmarkImplicitDFormModifierXDefault() {}
 
   /// Modify solution based on the MODIFIER_TYPE.
-  virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
-    const Scalar /* time */, const Scalar /* dt */,
-    const typename StepperNewmarkImplicitDFormModifierXBase<Scalar>::MODIFIER_TYPE modType)
+  virtual void modify(Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
+                      const Scalar /* time */, const Scalar /* dt */,
+                      const typename StepperNewmarkImplicitDFormModifierXBase<
+                          Scalar>::MODIFIER_TYPE modType)
   {
-    switch(modType) {
+    switch (modType) {
       case StepperNewmarkImplicitDFormModifierXBase<Scalar>::X_BEGIN_STEP:
       case StepperNewmarkImplicitDFormModifierXBase<Scalar>::X_BEFORE_SOLVE:
       case StepperNewmarkImplicitDFormModifierXBase<Scalar>::X_AFTER_SOLVE:
-      case StepperNewmarkImplicitDFormModifierXBase<Scalar>::X_END_STEP:
-      {
+      case StepperNewmarkImplicitDFormModifierXBase<Scalar>::X_END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown modifier type.\n");
+                                   "Error - unknown modifier type.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperNewmarkImplicitDFormModifierX_hpp
+#endif  // Tempus_StepperNewmarkImplicitDFormModifierX_hpp

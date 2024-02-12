@@ -16,7 +16,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperSubcycling.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperSubcycling.
@@ -27,39 +26,35 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperSubcyclingModifierDefault
-  : virtual public Tempus::StepperSubcyclingModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperSubcyclingModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperSubcyclingModifierDefault(){}
+  StepperSubcyclingModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperSubcyclingModifierDefault(){}
+  virtual ~StepperSubcyclingModifierDefault() {}
 
   /// Modify Subcycling Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperSubcycling<Scalar> > /* stepper */,
-    const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperSubcycling<Scalar> > /* stepper */,
+      const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperSubcyclingAppAction<Scalar>::BEGIN_STEP:
-      case StepperSubcyclingAppAction<Scalar>::END_STEP:
-      {
+      case StepperSubcyclingAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperSubcyclingModifierDefault_hpp
+#endif  // Tempus_StepperSubcyclingModifierDefault_hpp

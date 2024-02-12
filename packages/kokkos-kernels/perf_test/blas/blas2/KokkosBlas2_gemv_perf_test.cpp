@@ -211,11 +211,9 @@ int main(int argc, char** argv) {
   if (useHIP) {
 #if defined(KOKKOS_ENABLE_HIP)
     if (params.layoutLeft)
-      run<Kokkos::Experimental::HIP, Kokkos::LayoutLeft>(params.m, params.n,
-                                                         params.repeat);
+      run<Kokkos::HIP, Kokkos::LayoutLeft>(params.m, params.n, params.repeat);
     else
-      run<Kokkos::Experimental::HIP, Kokkos::LayoutRight>(params.m, params.n,
-                                                          params.repeat);
+      run<Kokkos::HIP, Kokkos::LayoutRight>(params.m, params.n, params.repeat);
 #else
     std::cout << "ERROR: HIP requested, but not available.\n";
     return 1;

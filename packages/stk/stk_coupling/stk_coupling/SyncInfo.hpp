@@ -25,6 +25,8 @@ namespace coupling
 class SyncInfo
 {
 public:
+  using ColorToSyncInfoMap = std::map<int, SyncInfo>;
+
   SyncInfo(const std::string& name = "")
     : m_name(name)
   { }
@@ -54,9 +56,8 @@ public:
     return m_vals.has_value<ValueType>(parameterName);
   }
 
-  using ColorToSyncInfoMap = std::map<int, SyncInfo>;
-
   SyncInfo exchange(const SplitComms & splitComms, int otherColor) const;
+
   ColorToSyncInfoMap exchange(const SplitComms & splitComms) const;
 
   const std::string& get_name() const { return m_name; }

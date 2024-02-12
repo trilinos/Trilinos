@@ -90,6 +90,14 @@ namespace stk {
     static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(sierra::dout().rdbuf());
   }
 
+  void EnvData::initialize(MPI_Comm worldComm)
+  {
+    m_worldComm = worldComm;
+    m_parallelComm = worldComm;
+    m_parallelSize = stk::parallel_machine_size(m_parallelComm);
+    m_parallelRank = stk::parallel_machine_rank(m_parallelComm);
+  }
+
   EnvData::~EnvData()
   {
     static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(std::cout.rdbuf());

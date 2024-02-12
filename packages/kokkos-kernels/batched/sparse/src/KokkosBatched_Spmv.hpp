@@ -75,11 +75,11 @@ struct SerialSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr,
       const IntView &colIndices, const xViewType &X,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &Y);
 };
@@ -139,11 +139,11 @@ struct TeamSpmv {
             typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr,
       const IntView &colIndices, const xViewType &x,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y);
 };
@@ -205,11 +205,11 @@ struct TeamVectorSpmv {
             typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr,
       const IntView &colIndices, const xViewType &x,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y);
 };
@@ -276,11 +276,11 @@ struct Spmv {
             typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &alpha,
       const ValuesViewType &values, const IntView &row_ptr,
       const IntView &colIndices, const xViewType &x,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y) {
     int r_val = 0;

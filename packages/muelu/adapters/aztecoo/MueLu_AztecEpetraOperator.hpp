@@ -16,107 +16,104 @@ namespace MueLu {
 
     Currently only used for RefMaxwell.
 */
-  class AztecEpetraOperator : public Epetra_Operator {
-    typedef double              SC;
-    typedef int                 LO;
-    typedef int                 GO;
-    typedef Xpetra::EpetraNode  NO;
+class AztecEpetraOperator : public Epetra_Operator {
+  typedef double SC;
+  typedef int LO;
+  typedef int GO;
+  typedef Xpetra::EpetraNode NO;
 
-    typedef Xpetra::Map<LO,GO,NO>                        Map;
-    typedef Xpetra::EpetraMapT<GO,NO>                    EpetraMap;
-    typedef Xpetra::Operator<SC,LO,GO,NO>                Operator;
+  typedef Xpetra::Map<LO, GO, NO> Map;
+  typedef Xpetra::EpetraMapT<GO, NO> EpetraMap;
+  typedef Xpetra::Operator<SC, LO, GO, NO> Operator;
 
-  public:
+ public:
+  //! @name Constructor/Destructor
+  //@{
 
-    //! @name Constructor/Destructor
-    //@{
+  //! Constructor
+  AztecEpetraOperator(const Teuchos::RCP<Operator>& Op)
+    : xOp_(Op) {}
 
-    //! Constructor
-    AztecEpetraOperator(const Teuchos::RCP<Operator>& Op) : xOp_(Op) { }
+  //! Destructor.
+  virtual ~AztecEpetraOperator() {}
 
-    //! Destructor.
-    virtual ~AztecEpetraOperator() { }
+  //@}
 
-    //@}
+  int SetUseTranspose(bool /* UseTransposeBool */) { return -1; }
 
-    int SetUseTranspose(bool /* UseTransposeBool */) { return -1; }
+  //! @name Mathematical functions
+  //@{
 
-    //! @name Mathematical functions
-    //@{
+  //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
+  /*!
+    \param In
+    X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Out
+    Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
-    //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
-    /*!
-      \param In
-      X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-      \param Out
-      Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \return Integer error code, set to 0 if successful.
+  */
+  int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const { return -1; }
 
-      \return Integer error code, set to 0 if successful.
-    */
-    int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const { return -1; }
+  //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
+  /*!
+    \param In
+    X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Out
+    Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
-    //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
-    /*!
-      \param In
-      X - A Epetra_MultiVector of dimension NumVectors to solve for.
-      \param Out
-      Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \return Integer error code, set to 0 if successful.
 
-      \return Integer error code, set to 0 if successful.
+    \warning In order to work with AztecOO, any implementation of this method must
+    support the case where X and Y are the same object.
+  */
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-      \warning In order to work with AztecOO, any implementation of this method must
-      support the case where X and Y are the same object.
-    */
-    int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  //! Returns the infinity norm of the global matrix.
+  /* Returns the quantity \f$ \| A \|_\infty\f$ such that
+     \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
 
-    //! Returns the infinity norm of the global matrix.
-    /* Returns the quantity \f$ \| A \|_\infty\f$ such that
-       \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
+     \warning This method must not be called unless HasNormInf() returns true.
+  */
+  double NormInf() const { return 0; }
+  //@}
 
-       \warning This method must not be called unless HasNormInf() returns true.
-    */
-    double NormInf() const { return 0; }
-    //@}
+  //! @name Attribute access functions
+  //@{
 
-    //! @name Attribute access functions
-    //@{
+  //! Returns a character string describing the operator
+  const char* Label() const { return "MueLu::AztecEpetraOperator"; }
 
-    //! Returns a character string describing the operator
-    const char * Label() const { return "MueLu::AztecEpetraOperator"; }
+  //! Returns the current UseTranspose setting.
+  bool UseTranspose() const { return false; }
 
-    //! Returns the current UseTranspose setting.
-    bool UseTranspose() const { return false; }
+  //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
+  bool HasNormInf() const { return 0; }
 
-    //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
-    bool HasNormInf() const { return 0; }
+  //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
+  const Epetra_Comm& Comm() const;
 
-    //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
-    const Epetra_Comm & Comm() const;
+  //! Returns the Epetra_Map object associated with the domain of this operator.
+  const Epetra_Map& OperatorDomainMap() const;
 
-    //! Returns the Epetra_Map object associated with the domain of this operator.
-    const Epetra_Map & OperatorDomainMap() const;
+  //! Returns the Epetra_Map object associated with the range of this operator.
+  const Epetra_Map& OperatorRangeMap() const;
 
-    //! Returns the Epetra_Map object associated with the range of this operator.
-    const Epetra_Map & OperatorRangeMap() const;
+  //@}
 
-    //@}
+  //! @name MueLu specific
+  //@{
 
-    //! @name MueLu specific
-    //@{
+  //! Direct access to the underlying Xpetra::Operator.
+  Teuchos::RCP<Operator> GetOperator() const { return xOp_; }
 
-    //! Direct access to the underlying Xpetra::Operator.
-    Teuchos::RCP<Operator> GetOperator() const { return xOp_; }
+  //@}
 
-    //@}
+ private:
+  Teuchos::RCP<Operator> xOp_;
+};
 
-
-  private:
-
-    Teuchos::RCP<Operator> xOp_;
-
-  };
-
-} // namespace
+}  // namespace MueLu
 
 #endif
 

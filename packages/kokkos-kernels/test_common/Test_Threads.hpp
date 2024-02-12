@@ -32,6 +32,6 @@ class threads : public ::testing::Test {
 };
 
 #define TestCategory threads
-#define TestExecSpace Kokkos::Threads
+#define TestDevice Kokkos::Threads
 
 #endif  // TEST_THREADS_HPP

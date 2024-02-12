@@ -413,7 +413,7 @@ void Parser::set_use_nested_decomp(BalanceSettings& settings) const
   settings.set_use_nested_decomp(useNestedDecomp);
 
   if (useNestedDecomp) {
-    const int inputNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int inputNumProcs = stk::parallel_machine_size(m_comm);
     const int outputNumProcs = settings.get_num_output_processors();
     const bool isValidProcCount = (outputNumProcs % inputNumProcs) == 0;
     STK_ThrowRequireMsg(isValidProcCount, "Output number of processors (" << outputNumProcs << ") must be an integer "

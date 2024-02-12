@@ -65,9 +65,6 @@
 #include "Ioss_SideBlock.h"                    // for SideBlock
 #include "Ioss_SideSet.h"                      // for SideSet
 #include "StkIoUtils.hpp"                      // for part_primary_entity_rank
-#include "Teuchos_Ptr.hpp"                     // for Ptr::Ptr<T>
-#include "Teuchos_RCP.hpp"                     // for RCP::operator->, is_null
-#include "Teuchos_RCPDecl.hpp"              // for RCP
 #include "stk_io/DatabasePurpose.hpp"          // for READ_RESTART, Database...
 #include "stk_mesh/base/BulkData.hpp"          // for BulkData
 #include "stk_mesh/base/FieldState.hpp"        // for FieldState
@@ -148,44 +145,6 @@ namespace io {
                         << "' of type '" << mesh_type << "'");
     }
   }
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-  STK_DEPRECATED_MSG("This constructor has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") InputFile::InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region)
-    : m_database(ioss_input_region->get_database(),[](auto ptrWeWontDelete){}), m_region(Teuchos::get_shared_ptr(ioss_input_region)),
-	    m_startupTime(0.0),
-	    m_periodLength(0.0),
-	    m_scaleTime(1.0),
-	    m_offsetTime(0.0),
-	    m_startTime(-std::numeric_limits<double>::max()),
-	    m_stopTime(std::numeric_limits<double>::max()),
-	    m_periodType(CYCLIC),
-	    m_fieldsInitialized(false),
-        m_haveCachedEntityList(false),
-      m_multiStateSuffixes(nullptr)
-  {
-    STK_ThrowErrorMsgIf(m_database.get() == nullptr || !m_database->ok(true), 
-		                "ERROR: Invalid Ioss region detected in add_mesh_database");
-
-    Ioss::DatabaseUsage db_usage = m_database->usage();
-    if (db_usage == Ioss::READ_RESTART) {
-	    m_db_purpose = stk::io::READ_RESTART;
-    }
-    else if (db_usage == Ioss::READ_MODEL) {
-	    m_db_purpose = stk::io::READ_MESH;
-    }
-    else {
-      std::ostringstream msg;
-      msg << "ERROR: Unrecognized database usage for Ioss region named "
-	        << ioss_input_region->name()
-	        << ". Must be READ_RESTART or READ_MODEL";
-      throw std::runtime_error( msg.str() );
-    }
-
-    STK_ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
-		                "Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
-		                                                                    "Only 'Unstructured' mesh is currently supported.");
-  }
-#endif
 
   InputFile::InputFile(std::shared_ptr<Ioss::Region> ioss_input_region)
     : m_database(ioss_input_region->get_database(), [](auto pointerWeWontDelete){}), m_region(ioss_input_region),
@@ -377,6 +336,9 @@ namespace io {
     {
       STK_ThrowErrorMsgIf (m_region == nullptr,
                        "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
+
+      mf.m_fieldRestored = false;
+      mf.m_timeRestored = std::numeric_limits<double>::max();
 
       Ioss::Region *region = m_region.get();
       double time = mf.m_timeToRead;
@@ -786,17 +748,17 @@ namespace io {
     {
       double db_time = time;
       if (time > m_startupTime && m_periodLength > 0.0) {
-	if (m_periodType == CYCLIC) {
-	  db_time = m_startupTime + fmod(time-m_startupTime, m_periodLength);
-	} else if (m_periodType == REVERSING) {
-	  double pmod = fmod((time-m_startupTime), 2.0*m_periodLength);
-	  if (pmod <= m_periodLength) {
-	    db_time = m_startupTime + pmod;
-	  }
-	  else {
-	    db_time = m_startupTime + 2.0 * m_periodLength - pmod;
-	  }
-	}
+        if (m_periodType == CYCLIC) {
+          db_time = m_startupTime + fmod(time-m_startupTime, m_periodLength);
+        } else if (m_periodType == REVERSING) {
+          double pmod = fmod((time-m_startupTime), 2.0*m_periodLength);
+          if (pmod <= m_periodLength) {
+            db_time = m_startupTime + pmod;
+          }
+          else {
+            db_time = m_startupTime + 2.0 * m_periodLength - pmod;
+          }
+        }
       }
       db_time *= m_scaleTime;
       db_time += m_offsetTime;
@@ -813,19 +775,19 @@ namespace io {
       bool ignore_missing_fields = (missingFields != nullptr);
 
       if (!m_fieldsInitialized) {
-	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-	while (I != m_fields.end()) {
-	  (*I).set_inactive(); ++I;
-	}
+        std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+        while (I != m_fields.end()) {
+          (*I).set_inactive(); ++I;
+        }
 
-	build_field_part_associations(bulk, missingFields);
-	build_field_part_associations_from_grouping_entity(bulk, missingFields);
+        build_field_part_associations(bulk, missingFields);
+        build_field_part_associations_from_grouping_entity(bulk, missingFields);
 
-	m_fieldsInitialized = true;
+        m_fieldsInitialized = true;
       }
 
       if (time < m_startTime || time > m_stopTime)
-	return 0.0;
+        return 0.0;
 
       // Map analysis time to database time using offset, periodic, ...
       // See details in header file.
@@ -846,24 +808,24 @@ namespace io {
       std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
       double time_read = -1.0;
       while (I != m_fields.end()) {
-	// NOTE: If the fields being restored have different settings, the time
-	// value can be different for each field and this will return the value
-	// of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
-	// and one is TIME_INTERPOLATION, then the time value to return is
-	// ambiguous.  Also an issue if some of the fields are inactive.
-	double time_t = (*I).restore_field_data(bulk, sti, ignore_missing_fields, m_multiStateSuffixes);
-	if ((*I).is_active()) {
-	  time_read = time_t > time_read ? time_t : time_read;
-	}
-	++I;
+        // NOTE: If the fields being restored have different settings, the time
+        // value can be different for each field and this will return the value
+        // of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
+        // and one is TIME_INTERPOLATION, then the time value to return is
+        // ambiguous.  Also an issue if some of the fields are inactive.
+        double time_t = (*I).restore_field_data(bulk, sti, ignore_missing_fields, m_multiStateSuffixes);
+        if ((*I).is_active()) {
+          time_read = time_t > time_read ? time_t : time_read;
+        }
+        ++I;
       }
 
       size_t step = sti.get_closest_step();
       int current_step = region->get_current_state();
       if (current_step != -1 && current_step != static_cast<int>(step))
-	region->end_state(current_step);
+        region->end_state(current_step);
       if (current_step != static_cast<int>(step))
-	region->begin_state(step);
+        region->begin_state(step);
 
       return time_read;
     }

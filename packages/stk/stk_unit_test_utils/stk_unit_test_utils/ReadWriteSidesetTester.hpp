@@ -50,8 +50,6 @@
 #include "Ioss_Region.h"                             // for Region
 #include "Ioss_SideBlock.h"                          // for SideBlock
 #include "Ioss_SideSet.h"                            // for SideSet
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "Teuchos_RCPDecl.hpp"                       // for RCP
 #include "mpi.h"
 #include "stk_io/IossBridge.hpp"                     // for include_entity
 #include "stk_mesh/base/Entity.hpp"                  // for Entity

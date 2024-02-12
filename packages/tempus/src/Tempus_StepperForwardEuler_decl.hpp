@@ -40,21 +40,18 @@ namespace Tempus {
  *    {\bf Algorithm} Forward Euler \\
  *    \rule{5in}{0.4pt} \vspace{-15pt}
  *    \begin{enumerate}
- *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
- *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *      \item {\bf if (Not ``Use FSAL'' or (previous step failed)) then}
- *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \item \quad  $\dot{x}_{n-1} \leftarrow \bar{f}(x_{n-1},t_{n-1})$
- *      \item {\bf endif}
- *      \item $x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}$
- *            \hfill {\it * Forward Euler update.}
- *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *      \item {\bf if (``Use FSAL'') then}
- *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \item \quad  $\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})$
- *      \item {\bf endif}
- *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *    \end{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt}
+ * \setlength{\parsep}{0pt} \item {\it appAction.execute(solutionHistory,
+ * stepper, BEGIN\_STEP)} \item {\bf if (Not ``Use FSAL'' or (previous step
+ * failed)) then} \item \quad  {\it appAction.execute(solutionHistory, stepper,
+ * BEFORE\_EXPLICIT\_EVAL)} \item \quad  $\dot{x}_{n-1} \leftarrow
+ * \bar{f}(x_{n-1},t_{n-1})$ \item {\bf endif} \item $x_{n} \leftarrow x_{n-1} +
+ * \Delta t\, \dot{x}_{n-1}$ \hfill {\it * Forward Euler update.} \item {\it
+ * appAction.execute(solutionHistory, stepper, END\_STEP)} \item {\bf if (``Use
+ * FSAL'') then} \item \quad  {\it appAction.execute(solutionHistory, stepper,
+ * BEFORE\_EXPLICIT\_EVAL)} \item \quad  $\dot{x}_n \leftarrow
+ * \bar{f}(x_{n},t_{n})$ \item {\bf endif} \item {\it
+ * appAction.execute(solutionHistory, stepper, END\_STEP)} \end{enumerate}
  *    \vspace{-10pt} \rule{5in}{0.4pt}
  *    }
  *  \f}
@@ -75,73 +72,72 @@ namespace Tempus {
  *  setICConsistency("Consistent"), and checked with
  *  setICConsistencyCheck(true).
  */
-template<class Scalar>
-class StepperForwardEuler : virtual public Tempus::StepperExplicit<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperForwardEuler : virtual public Tempus::StepperExplicit<Scalar> {
+ public:
   /** \brief Default constructor.
    *
    *  - Requires subsequent setModel() and initialize() calls before calling
    *    takeStep().
-  */
+   */
   StepperForwardEuler();
 
   /// Constructor
   StepperForwardEuler(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperForwardEulerAppAction<Scalar> >& stepperFEAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
+      const Teuchos::RCP<StepperForwardEulerAppAction<Scalar> >&
+          stepperFEAppAction);
 
-    virtual void setAppAction(
+  virtual void setAppAction(
       Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > getAppAction() const
-    { return stepperFEAppAction_; }
+  virtual Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > getAppAction()
+      const
+  {
+    return stepperFEAppAction_;
+  }
 
-    /// Set the initial conditions, make them consistent, and set needed memory.
-    virtual void setInitialConditions (
+  /// Set the initial conditions, make them consistent, and set needed memory.
+  virtual void setInitialConditions(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getOrder() const {return 1.0;}
-    virtual Scalar getOrderMin() const {return 1.0;}
-    virtual Scalar getOrderMax() const {return 1.0;}
-    virtual void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
-    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+  /// Get a default (initial) StepperState
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  virtual Scalar getOrder() const { return 1.0; }
+  virtual Scalar getOrderMin() const { return 1.0; }
+  virtual Scalar getOrderMax() const { return 1.0; }
+  virtual void setUseFSAL(bool a)
+  {
+    this->useFSAL_       = a;
+    this->isInitialized_ = false;
+  }
+  virtual OrderODE getOrderODE() const { return FIRST_ORDER_ODE; }
   //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const;
 
-protected:
-
+ protected:
   Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > stepperFEAppAction_;
-
 };
-
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
-template<class Scalar>
-Teuchos::RCP<StepperForwardEuler<Scalar> >
-createStepperForwardEuler(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl);
+template <class Scalar>
+Teuchos::RCP<StepperForwardEuler<Scalar> > createStepperForwardEuler(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
+}  // namespace Tempus
 
-} // namespace Tempus
-
-#endif // Tempus_StepperForwardEuler_decl_hpp
+#endif  // Tempus_StepperForwardEuler_decl_hpp

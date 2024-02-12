@@ -1,0 +1,25 @@
+# use "intervals = my_intervals" in command line
+#
+# {approx_size = .6 / intervals }
+
+create surface circle radius 1 zplane
+create surface circle radius .5 zplane
+
+subtract body 2 from body 1
+
+surface 3 scheme hole Rad_intervals {intervals}
+surface 3 size {approx_size}
+mesh surface 3
+
+## LABEL BOUNDARIES, BLOCKS, ETC.
+sideset 1 add curve 1
+sideset 1 name "outer"
+sideset 2 add curve 3
+sideset 2 name "inner"
+
+block 1 add surface 3
+block 1 name "eblock-0_0"
+block 1 element type quad9 ## use quad for a Q1 mesh, quad9 for Q2 mesh
+
+set large exodus file off 
+export mesh "annulus_rad_intervals_{intervals}.exo" dimension 2 overwrite

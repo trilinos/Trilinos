@@ -1424,7 +1424,7 @@ int main(int narg, char *arg[])
       Kokkos::Cuda, Kokkos::CudaSpace>;
 #elif defined(KOKKOS_ENABLE_HIP)
     using uvm_off_node_t = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
-      Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
+      Kokkos::HIP, Kokkos::HIPSpace>;
 #endif
 
     try{

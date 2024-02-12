@@ -1,0 +1,3 @@
+set(Tpl1_DIR "@Tpl1_DIR@")
+find_package(Tpl1 CONFIG REQUIRED)
+include("${CMAKE_CURRENT_LIST_DIR}/Package1ConfigTargets.cmake")

@@ -46,18 +46,13 @@
 #ifndef MUELU_SMOOVECCOALESCEDROPFACTORY_FWD_HPP
 #define MUELU_SMOOVECCOALESCEDROPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class SmooVecCoalesceDropFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class SmooVecCoalesceDropFactory;
 }
 
 #ifndef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
 #define MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_SMOOVECCOALESCEDROPFACTORY_FWD_HPP
+#endif  // MUELU_SMOOVECCOALESCEDROPFACTORY_FWD_HPP

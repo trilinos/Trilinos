@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "stk_middle_mesh/edge_sharing_from_verts.hpp"
+#include "stk_middle_mesh/create_sharing_from_verts.hpp"
 #include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/utils.hpp"
 
@@ -36,7 +36,7 @@ TEST(EdgeSharingFromVerts, 2Procs)
     v5->add_remote_shared_entity({0, 5});
   }
 
-  mesh::impl::EdgeSharingCreatorFromVerts sharingCreator(mesh);
+  mesh::impl::CreateSharingFromVert sharingCreator(mesh);
   sharingCreator.create_sharing_from_verts();
 
   if (utils::impl::comm_rank(MPI_COMM_WORLD) == 0)
@@ -120,7 +120,7 @@ TEST(EdgeSharingFromVerts, 4Procs)
     v3->add_remote_shared_entity({2, 3});
   }
 
-  mesh::impl::EdgeSharingCreatorFromVerts sharingCreator(mesh);
+  mesh::impl::CreateSharingFromVert sharingCreator(mesh);
   sharingCreator.create_sharing_from_verts();
 
   if (myrank == 0)
@@ -164,4 +164,44 @@ TEST(EdgeSharingFromVerts, 4Procs)
     EXPECT_EQ(edge2->count_remote_shared_entities(), 1);
     EXPECT_EQ(edge2->get_remote_shared_entity(0), mesh::RemoteSharedEntity(2, 1));      
   }
+}
+
+TEST(ComputingSharingFromVerts, Elements)
+{
+  int myrank   = utils::impl::comm_rank(MPI_COMM_WORLD);
+  int commsize = utils::impl::comm_size(MPI_COMM_WORLD);
+  auto mesh    = mesh::make_empty_mesh();
+
+  auto v1 = mesh->create_vertex(0, 0);
+  auto v2 = mesh->create_vertex(1, 0);
+  auto v3 = mesh->create_vertex(1, 1);
+  auto v4 = mesh->create_vertex(0, 0);
+  std::array<mesh::MeshEntityPtr, 4> verts = {v1, v2, v3, v4};
+
+  auto el1 = mesh->create_quad_from_verts(v1, v2, v3, v4);
+
+  for (int rank=0; rank < commsize; ++rank)
+  {
+    if (rank != myrank)
+    {
+      for (int i=0; i < 4; ++i)
+      {
+        verts[i]->add_remote_shared_entity({rank, i});
+      }
+    }
+  }
+
+  mesh::impl::CreateSharingFromVert sharingCreator(mesh, 2);
+  sharingCreator.create_sharing_from_verts();
+
+  EXPECT_EQ(el1->count_remote_shared_entities(), commsize - 1);
+  for (int rank=0; rank < commsize; ++rank)
+  {
+    if (rank != myrank)
+    {
+      mesh::RemoteSharedEntity remote = mesh::get_remote_shared_entity(el1, rank);
+      EXPECT_EQ(remote, mesh::RemoteSharedEntity(rank, 0));
+    }
+  }
+
 }

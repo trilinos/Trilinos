@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,14 +10,14 @@
 #include "structs.h" // for vtx_data
 
 void inits3d(struct vtx_data **graph,                /* graph data structure for vertex weights */
-             double **         xvecs,                /* values to partition with */
-             double *          vals[8][MAXSETS],     /* values in sorted lists */
-             int *             indices[8][MAXSETS],  /* indices sorting lists */
+             double          **xvecs,                /* values to partition with */
+             double           *vals[8][MAXSETS],     /* values in sorted lists */
+             int              *indices[8][MAXSETS],  /* indices sorting lists */
              int               nvtxs,                /* number of vertices */
-             double *          dist,                 /* trial separation point */
+             double           *dist,                 /* trial separation point */
              int               startvtx[8][MAXSETS], /* indices defining separation */
-             double *          size,                 /* size of each set being modified */
-             int *             sets                  /* set each vertex gets assigned to */
+             double           *size,                 /* size of each set being modified */
+             int              *sets                  /* set each vertex gets assigned to */
 )
 {
   double xmid, ymid, zmid;    /* median x, y and z values */
@@ -26,7 +26,6 @@ void inits3d(struct vtx_data **graph,                /* graph data structure for
   int    signx, signy, signz; /* sign values for different target points */
   int    nsets = 8;           /* number of different sets */
   int    i, j;                /* loop counters */
-  int    findindex();
 
   /*
       xmid = .25 * (vals[0][1][indices[0][1][nvtxs / 2]] +

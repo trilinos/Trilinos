@@ -15,9 +15,9 @@ for i in Non-Templated LO-GO-NO SC-LO-GO-NO
     condition=$(cat $classList | grep "^$className -" | cut -d "-" -f2-)
 
     if [ -n "$condition" ]; then
-        conditionOpen1=$(echo "#include \\\"MueLu_ConfigDefs.hpp\\\"")
-        conditionOpen2=$(echo $condition | sed 's/^[ ]*//' | sed 's/\&/\\\&/g')
-        conditionClose="#endif"
+        conditionOpen1=$(echo "#include \\\"MueLu_ConfigDefs.hpp\\\"\n")
+        conditionOpen2=$(echo $condition | sed 's/^[ ]*//' | sed 's/\&/\\\&/g')"\n\n"
+        conditionClose="#endif\n\n"
     else
         conditionOpen1=""
         conditionOpen2=""

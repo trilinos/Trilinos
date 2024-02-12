@@ -23,23 +23,22 @@ determined by running the `io_info --config` program.
 
 Type             | Input/Output  | Description
 -----------------|---------------|--------------------------
-catalyst_cgns    | Output        | Visualization pipeline, cgns-based
-catalyst_exodus  | Output        | Visualization pipeline, exodus-based
-cgns             | Input/Output  | CFD General Notation System (https://cgns.github.io/)
 exodus           | Input/Output  | Sandia-developed database system for unstructured mesh input/output (https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodus-library)
-exodusII         | Input/Output  | alias for exodus
-exodusii         | Input/Output  | alias for exodus
-genesis          | Input/Output  | alias for exodus
-gen_struc        | Input         | Generate a structured mesh using a token string (IxJxK)
-generated        | Input         | Generate an unstructured hex/shell mesh using a token string
-heartbeat        | Output        | A text based output for global values
-exonull          | Output        | No data written to disk, but uses all of the exodus io database infrastructure/calculations
-null             | Output        | No data written to disk, no calculations done by ioss
-pamgen           | Input         | (https://trilinos.github.io/pamgen.html)
-par_cgns         | Input/Output  | alias for parallel CGNS 
+cgns             | Input/Output  | CFD General Notation System (https://cgns.github.io/)
+generated        | Input         | Generate an unstructured hex/shell mesh using a token string (Iogn::GeneratedMesh::GeneratedMesh)
 textmesh         | Input         | Generate an unstructured mesh using a token string
+heartbeat        | Output        | A text based output for global values
+pamgen           | Input         | (https://trilinos.github.io/pamgen.html)
+gen_struc        | Input         | Generate a structured mesh using a token string (IxJxK)
+catalyst_exodus  | Output        | Visualization pipeline, exodus-based
+catalyst_cgns    | Output        | Visualization pipeline, cgns-based
+null             | Output        | No data written to disk, no calculations done by ioss
+exonull          | Output        | No data written to disk, but uses all of the exodus io database infrastructure/calculations
 adios            | Input/Output  | Adaptable Input/Output system, (https://adios2.readthedocs.io/en/latest/)
 faodel           | Input/Output  | (https://github.com/faodel/faodel)
+exodusii         | Input/Output  | alias for exodus
+genesis          | Input/Output  | alias for exodus
+par_cgns         | Input/Output  | alias for parallel CGNS 
 
 \section properties Properties
 

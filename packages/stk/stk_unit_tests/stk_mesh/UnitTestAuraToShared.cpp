@@ -43,6 +43,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Comm.hpp"
+#include "stk_mesh/base/DestroyElements.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_io/FillMesh.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
@@ -52,6 +53,103 @@
 namespace
 {
 using stk::unit_test_util::build_mesh;
+
+void verify_local_num_aura_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank rank, unsigned expectedNumAuraEntities)
+{
+  stk::mesh::EntityVector auraEntities;
+  stk::mesh::get_entities(mesh, rank, mesh.mesh_meta_data().aura_part(), auraEntities);
+  EXPECT_EQ(expectedNumAuraEntities, auraEntities.size());
+}
+
+class TestAura2D : public TestTextMeshAura2d
+{
+public:
+  TestAura2D() {}
+
+  void delete_elem5_on_p1()
+  {
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_rank() == 1) {
+      stk::mesh::Entity elem5 = get_bulk().get_entity(stk::topology::ELEM_RANK,5);
+      ASSERT_TRUE(get_bulk().is_valid(elem5));
+      EXPECT_TRUE(get_bulk().destroy_entity(elem5));
+    }
+
+    get_bulk().modification_end();
+  }
+
+  void destroy_elems(const std::vector<std::pair<int,stk::mesh::EntityId>>& procElemIds)
+  {
+    stk::mesh::EntityVector elemsToDestroy;
+    for(const std::pair<int,stk::mesh::EntityId>& procElemId : procElemIds) {
+      if (procElemId.first == get_bulk().parallel_rank()) {
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, procElemId.second);
+        ASSERT_TRUE(get_bulk().is_valid(elem));
+        elemsToDestroy.push_back(elem);
+      }
+    }
+
+    get_bulk().modification_begin();
+    stk::mesh::destroy_elements_no_mod_cycle(get_bulk(), elemsToDestroy, get_meta().universal_part());
+    get_bulk().modification_end();
+  }
+};
+
+TEST_F(TestAura2D, quadKeyhole)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1, QUAD_4_2D, 1,2,6,5\n"
+                         "0, 2, QUAD_4_2D, 2,3,7,6\n"
+                         "0, 3, QUAD_4_2D, 3,4,8,7\n"
+                         "1, 4, QUAD_4_2D, 5,6,10,9\n"
+                         "1, 5, QUAD_4_2D, 6,7,11,10\n"
+                         "1, 6, QUAD_4_2D, 7,8,12,11\n"
+                         "1, 7, QUAD_4_2D, 9,10,14,13\n"
+                         "1, 8, QUAD_4_2D, 10,11,15,14\n"
+                         "1, 9, QUAD_4_2D, 11,12,16,15\n";
+
+  setup_text_mesh(meshDesc);
+
+  delete_elem5_on_p1();
+
+  if (get_bulk().parallel_rank() == 0) {
+    verify_local_num_aura_entities(get_bulk(), stk::topology::ELEM_RANK, 2);
+    verify_local_num_aura_entities(get_bulk(), stk::topology::NODE_RANK, 4);
+  }
+  else {
+    verify_local_num_aura_entities(get_bulk(), stk::topology::ELEM_RANK, 3);
+    verify_local_num_aura_entities(get_bulk(), stk::topology::NODE_RANK, 4);
+  }
+}
+
+TEST_F(TestAura2D, triSharingGhosting)
+{
+  if (get_parallel_size() != 4) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1, TRI_3_2D, 1,2,3\n"
+                         "0, 2, TRI_3_2D, 3,2,4\n"
+                         "0, 8, TRI_3_2D, 3,1,10\n"
+                         "1, 3, TRI_3_2D, 2,5,4\n"
+                         "1, 4, TRI_3_2D, 2,6,5\n"
+                         "1, 9, TRI_3_2D, 4,5,11\n"
+                         "2, 5, TRI_3_2D, 2,7,6\n"
+                         "2, 6, TRI_3_2D, 1,7,2\n"
+                         "3, 7, TRI_3_2D, 6,8,5|sideset:data=3,1,4,1,5,1\n";
+
+  //This test provides coverage for some dark corners of BulkData::modification_end.
+  //Specifically, it sets up a combination of sharing and aura-ghosting such that
+  //proc 3 has an aura-ghost of node 2, and doesn't know that procs 1 and 2 share
+  //that node. Correspondingly, procs 1 and 2 know about each other, but don't know
+  //that proc 3 has a recv-ghost of node 2.
+  //The handling of this type of situation will get easier if/when we make ghosting
+  //info symmetric in BulkData.
+ 
+  setup_text_mesh(meshDesc);
+
+  destroy_elems({ {0,8}, {1,9} });
+}
 
 class AuraToSharedToAura : public TestTextMeshAura2d
 {
@@ -114,6 +212,56 @@ TEST_F(AuraToSharedToAura, makeAuraNodeSharedThenDelete)
                          "1, 2, TRI_3_2D, 2,3,4\n";
   setup_text_mesh(meshDesc);
   create_elem3_p1_and_delete_elem1_p0();
+}
+
+class Aura2DTri : public TestTextMeshAura2d
+{
+public:
+  Aura2DTri() {}
+
+  void disconnect_node3_on_p1()
+  {
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_rank() == 1) {
+      stk::mesh::Entity node3 = get_bulk().get_entity(stk::topology::NODE_RANK, 3);
+      ASSERT_TRUE(get_bulk().is_valid(node3));
+
+      stk::mesh::Entity node6 = get_bulk().declare_node(6);
+      stk::mesh::ConnectivityOrdinal ord = 0;
+
+      stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+      ASSERT_TRUE(get_bulk().is_valid(elem2));
+
+      EXPECT_TRUE(get_bulk().destroy_relation(elem2, node3, ord));
+      get_bulk().declare_relation(elem2, node6, ord);
+    }
+{ 
+stk::parallel_machine_barrier(get_bulk().parallel());
+std::ostringstream os;
+os<<"P"<<get_bulk().parallel_rank()<<" test about to call modification_end"<<std::endl;
+std::cerr<<os.str();
+stk::parallel_machine_barrier(get_bulk().parallel());
+}
+    get_bulk().modification_end();
+  }
+};
+
+TEST_F(Aura2DTri, destroyRelation_correctAura)
+{
+  if (get_parallel_size() != 2) { GTEST_SKIP(); }
+
+  std::string meshDesc = "0, 1, TRI_3_2D, 1,2,3\n"
+                         "1, 2, TRI_3_2D, 3,4,5\n";
+  setup_text_mesh(meshDesc);
+
+  verify_local_num_aura_entities(get_bulk(), stk::topology::ELEM_RANK, 1);
+  verify_local_num_aura_entities(get_bulk(), stk::topology::NODE_RANK, 2);
+
+  disconnect_node3_on_p1();
+
+  verify_local_num_aura_entities(get_bulk(), stk::topology::ELEM_RANK, 0);
+  verify_local_num_aura_entities(get_bulk(), stk::topology::NODE_RANK, 0);
 }
 
 class Aura2DTri4Procs : public TestTextMeshAura2d

@@ -293,10 +293,10 @@ namespace Impl {
                            Kokkos::Device<EXECSPACE, MEMSPACE>,             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,        \
               true, ETI_SPEC_AVAIL> {                                       \
-    using XVector = Kokkos::View<Kokkos::complex<float>, LAYOUT,            \
+    using XVector = Kokkos::View<Kokkos::complex<float>*, LAYOUT,           \
                                  Kokkos::Device<EXECSPACE, MEMSPACE>,       \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    using YVector = Kokkos::View<Kokkos::complex<float>, LAYOUT,            \
+    using YVector = Kokkos::View<Kokkos::complex<float>*, LAYOUT,           \
                                  Kokkos::Device<EXECSPACE, MEMSPACE>,       \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
     static void swap(EXECSPACE const& space, XVector const& X,              \

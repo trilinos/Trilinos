@@ -58,14 +58,16 @@ class FieldRestriction {
   typedef int size_type ;
 
   FieldRestriction()
-    : m_selector(),
+    : m_part(nullptr),
+      m_selector(),
       m_num_scalars_per_entity(0),
       m_dimension(0)
   {
   }
 
   FieldRestriction( const FieldRestriction & rhs )
-    : m_selector( rhs.m_selector ),
+    : m_part(rhs.m_part),
+      m_selector( rhs.m_selector ),
       m_num_scalars_per_entity( rhs.m_num_scalars_per_entity ),
       m_dimension(rhs.m_dimension)
   {
@@ -73,6 +75,7 @@ class FieldRestriction {
 
   FieldRestriction & operator = ( const FieldRestriction & rhs )
   {
+    m_part = rhs.m_part;
     m_selector = rhs.m_selector;
     m_num_scalars_per_entity = rhs.m_num_scalars_per_entity;
     m_dimension = rhs.m_dimension;
@@ -81,17 +84,32 @@ class FieldRestriction {
 
   void add_union(const Selector& otherSelector)
   {
+    if (m_part != nullptr) {
+      m_selector = *m_part;
+      m_part = nullptr;
+    }
     m_selector |= otherSelector;
   }
 
+  explicit FieldRestriction( const Part& input_part)
+   : m_part(&input_part),
+     m_selector(input_part),
+     m_num_scalars_per_entity(0),
+     m_dimension(0)
+  {
+  }
+
   explicit FieldRestriction( const Selector& input_selector)
-   : m_selector(input_selector),
+   : m_part(nullptr),
+     m_selector(input_selector),
      m_num_scalars_per_entity(0),
      m_dimension(0)
   {
   }
 
   const Selector& selector() const { return m_selector; }
+
+  bool selects(const Part& part) const;
 
   void set_num_scalars_per_entity(size_type value) { m_num_scalars_per_entity = value; }
   size_type num_scalars_per_entity() const { return m_num_scalars_per_entity; }
@@ -101,11 +119,11 @@ class FieldRestriction {
 
   bool operator < ( const FieldRestriction & rhs ) const
   {
-    return m_selector < rhs.m_selector;
+    return m_part!=nullptr&&rhs.m_part!=nullptr ? m_part->mesh_meta_data_ordinal() < rhs.m_part->mesh_meta_data_ordinal() : m_selector < rhs.m_selector;
   }
   bool operator == ( const FieldRestriction & rhs ) const
   {
-    return this->m_selector == rhs.m_selector;
+    return m_part!=nullptr&&rhs.m_part!=nullptr ? m_part->mesh_meta_data_ordinal() == rhs.m_part->mesh_meta_data_ordinal() : this->m_selector == rhs.m_selector;
   }
   bool operator != ( const FieldRestriction & rhs ) const
   {
@@ -115,6 +133,7 @@ class FieldRestriction {
   void print(std::ostream & os, const Selector & selector) const;
 
   private:
+  const Part* m_part;
   Selector m_selector;
   size_type m_num_scalars_per_entity;
   size_type m_dimension;

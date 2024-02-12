@@ -127,7 +127,7 @@ struct InverseDiagonalsModeAndAlgo<Kokkos::Cuda>
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct InverseDiagonalsModeAndAlgo<Kokkos::Experimental::HIP>
+struct InverseDiagonalsModeAndAlgo<Kokkos::HIP>
     : InverseDiagonalsModeAndAlgoDeviceImpl {};
 #endif
 
@@ -166,8 +166,7 @@ struct SolveModeAndAlgo<Kokkos::Cuda> : SolveModeAndAlgoDeviceImpl {};
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct SolveModeAndAlgo<Kokkos::Experimental::HIP>
-    : SolveModeAndAlgoDeviceImpl {};
+struct SolveModeAndAlgo<Kokkos::HIP> : SolveModeAndAlgoDeviceImpl {};
 #endif
 
 int main(int argc, char *argv[]) {
@@ -178,7 +177,7 @@ int main(int argc, char *argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    // typedef Kokkos::Details::ArithTraits<value_type> ats;
+    // typedef Kokkos::ArithTraits<value_type> ats;
     Kokkos::Timer timer;
 
     ///

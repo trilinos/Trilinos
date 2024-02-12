@@ -19,6 +19,8 @@
 #include <KokkosBlas3_gemm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#include <chrono>
+
 namespace Test {
 
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
@@ -33,7 +35,7 @@ struct gemm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -79,7 +81,7 @@ void build_matrices(const int M, const int N, const int K,
                     const typename ViewTypeA::value_type alpha, ViewTypeA& A,
                     ViewTypeB& B, const typename ViewTypeA::value_type beta,
                     ViewTypeC& C, ViewTypeC& Cref) {
-  using execution_space = TestExecSpace;
+  using execution_space = typename TestDevice::execution_space;
   using ScalarA         = typename ViewTypeA::non_const_value_type;
   using ScalarB         = typename ViewTypeB::non_const_value_type;
   using ScalarC         = typename ViewTypeC::non_const_value_type;
@@ -91,7 +93,8 @@ void build_matrices(const int M, const int N, const int K,
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
   // Trilinos issue #6418
-  const uint64_t seed = Kokkos::Impl::clock_tic();
+  const uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   Kokkos::fill_random(A, rand_pool,
                       Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
@@ -139,7 +142,7 @@ struct DiffGEMM {
   ViewTypeC C, C2;
 
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   KOKKOS_INLINE_FUNCTION
@@ -174,7 +177,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   double machine_eps = APT::epsilon();
@@ -184,7 +187,8 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   ViewTypeC C("C", M, N);
   ViewTypeC C2("C", M, N);
 
-  const uint64_t seed = Kokkos::Impl::clock_tic();
+  const uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
@@ -253,15 +257,15 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   }
 }
 
-template <typename Scalar, typename Layout>
-void impl_test_stream_gemm(const int M, const int N, const int K,
-                           const Scalar alpha, const Scalar beta) {
-  using execution_space = TestExecSpace;
-  using ViewTypeA       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ViewTypeB       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ViewTypeC       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
+template <typename Scalar, typename Layout, typename Device>
+void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
+                                 const Scalar alpha, const Scalar beta) {
+  using execution_space = typename Device::execution_space;
+  using ViewTypeA       = Kokkos::View<Scalar**, Layout, Device>;
+  using ViewTypeB       = Kokkos::View<Scalar**, Layout, Device>;
+  using ViewTypeC       = Kokkos::View<Scalar**, Layout, Device>;
   using ScalarC         = typename ViewTypeC::value_type;
-  using APT             = Kokkos::Details::ArithTraits<ScalarC>;
+  using APT             = Kokkos::ArithTraits<ScalarC>;
   using mag_type        = typename APT::mag_type;
 
   const char tA[]          = {"N"};
@@ -333,9 +337,10 @@ void impl_test_stream_gemm(const int M, const int N, const int K,
 
 template <typename Scalar, typename Layout>
 void test_gemm() {
-  typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_a;
-  typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_b;
-  typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_c;
+  typedef typename TestDevice::execution_space execution_space;
+  typedef Kokkos::View<Scalar**, Layout, TestDevice> view_type_a;
+  typedef Kokkos::View<Scalar**, Layout, TestDevice> view_type_b;
+  typedef Kokkos::View<Scalar**, Layout, TestDevice> view_type_c;
   std::vector<const char*> modes = {"N", "T"};
   if (std::is_same<Scalar, Kokkos::complex<float>>::value ||
       std::is_same<Scalar, Kokkos::complex<double>>::value)
@@ -345,35 +350,35 @@ void test_gemm() {
   for (Scalar beta : betas) {
     for (auto amode : modes) {
       for (auto bmode : modes) {
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c,
-                             TestExecSpace>(amode, bmode, 0, 0, 0, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
+            amode, bmode, 0, 0, 0, alpha, beta);
         // BMK: N = 1 exercises the special GEMV code path in GEMM (currently,
         // only for modes N/N)
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c,
-                             TestExecSpace>(amode, bmode, 50, 1, 40, alpha,
-                                            beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
+            amode, bmode, 50, 1, 40, alpha, beta);
         // LBV: K = 0 exercise the quick return code path in GEMM
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c,
-                             TestExecSpace>(amode, bmode, 20, 14, 0, alpha,
-                                            beta);
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c,
-                             TestExecSpace>(amode, bmode, 13, 15, 17, alpha,
-                                            beta);
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c,
-                             TestExecSpace>(amode, bmode, 179, 15, 211, alpha,
-                                            beta);
-        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c,
-                             TestExecSpace>(amode, bmode, 12, 3071, 517, alpha,
-                                            beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
+            amode, bmode, 20, 14, 0, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
+            amode, bmode, 13, 15, 17, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
+            amode, bmode, 179, 15, 211, alpha, beta);
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(
+            amode, bmode, 12, 3071, 517, alpha, beta);
       }
     }
   }
-  Test::impl_test_stream_gemm<Scalar, Layout>(53, 42, 17, 4.5,
-                                              3.0);  // General code path
-  Test::impl_test_stream_gemm<Scalar, Layout>(
-      13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
-  Test::impl_test_stream_gemm<Scalar, Layout>(7, 13, 17, 4.5,
-                                              3.0);  // dot based gemm code path
+  auto pool_size = execution_space().concurrency();
+  if (pool_size >= 2) {
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(
+        53, 42, 17, 4.5,
+        3.0);  // General code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(
+        13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestDevice>(
+        7, 13, 17, 4.5,
+        3.0);  // dot based gemm code path
+  }
 }
 
 template <typename Scalar>
@@ -392,8 +397,8 @@ void test_gemm_enabled_layouts() {
 
 template <class scalar1, class scalar2>
 void test_gemm_mixed_scalars() {
-  using Matrix1 = Kokkos::View<scalar1**, TestExecSpace>;
-  using Matrix2 = Kokkos::View<scalar2**, TestExecSpace>;
+  using Matrix1 = Kokkos::View<scalar1**, TestDevice>;
+  using Matrix2 = Kokkos::View<scalar2**, TestDevice>;
 
   const int dim1 = 400, dim2 = 1000;
 
@@ -406,8 +411,8 @@ void test_gemm_mixed_scalars() {
   Kokkos::deep_copy(B, Kokkos::ArithTraits<scalar1>::one());
   Kokkos::deep_copy(C, Kokkos::ArithTraits<scalar1>::one());
 
-  KokkosBlas::gemm(TestExecSpace(), "N", "N", 1.0, D, A, 0.0, C);
-  KokkosBlas::gemm(TestExecSpace(), "N", "T", 1.0, C, D, 0.0, B);
+  KokkosBlas::gemm(TestDevice(), "N", "N", 1.0, D, A, 0.0, C);
+  KokkosBlas::gemm(TestDevice(), "N", "T", 1.0, C, D, 0.0, B);
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \

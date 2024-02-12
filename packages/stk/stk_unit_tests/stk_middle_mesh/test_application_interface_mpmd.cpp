@@ -32,7 +32,8 @@ class XiCoordinatesForTest : public stk::middle_mesh::XiCoordinates
 class ApplicationInterfaceMPMDTester : public ::testing::Test
 {
   protected:
-    void runtest(int nprocs1, int nprocs2,
+    void runtest(stk::middle_mesh::ApplicationInterfaceType type, int nprocs1, int nprocs2,
+                 bool createTriangles,
                  const stk::middle_mesh::ParallelSearchOpts& parallelSearchOpts,
                  const stk::middle_mesh::VolumeSnapOpts& volumeSnapOpts,
                  const stk::middle_mesh::BoundarySnapAndQualityImprovementOpts& boundarySnapOpts,
@@ -48,13 +49,13 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
       middleGrid = nullptr;
 
       int color = create_mesh_comm(nprocs1, nprocs2);
-      create_input_meshes(color);
+      create_input_meshes(color, createTriangles);
       bool amIMesh1 = color == 0;
       std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh1 = amIMesh1 ? inputMesh : nullptr;
       std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh2 = amIMesh1 ? nullptr   : inputMesh;
 
       auto xiPts = std::make_shared<XiCoordinatesForTest>();
-      auto interface = application_interface_factory(stk::middle_mesh::ApplicationInterfaceType::FakeParallel, inputMesh1,
+      auto interface = application_interface_factory(type, inputMesh1,
                                                      inputMesh2,
                                                      m_unionComm, xiPts, parallelSearchOpts, volumeSnapOpts,
                                                      boundarySnapOpts, middleGridOpts);
@@ -97,7 +98,7 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
       return color;
     }
 
-    void create_input_meshes(int color)
+    void create_input_meshes(int color, bool createTriangles)
     {
       stk::middle_mesh::mesh::impl::MeshSpec spec1, spec2;
       spec1.xmin   = 0;
@@ -115,9 +116,9 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
 
       auto f = [](const stk::middle_mesh::utils::Point& pt) { return pt; };
       if (color == 0)
-        inputMesh = stk::middle_mesh::mesh::impl::create_mesh(spec1, f, meshComm);
+        inputMesh = stk::middle_mesh::mesh::impl::create_mesh(spec1, f, meshComm, createTriangles);
       else if (color == 1)
-        inputMesh = stk::middle_mesh::mesh::impl::create_mesh(spec2, f, meshComm);
+        inputMesh = stk::middle_mesh::mesh::impl::create_mesh(spec2, f, meshComm, createTriangles);
     }
 
     void test_remote_info(stk::middle_mesh::mesh::FieldPtr<stk::middle_mesh::mesh::RemoteSharedEntity> remoteInfo, bool amISender)
@@ -200,6 +201,8 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
     std::shared_ptr<stk::middle_mesh::mesh::Mesh> middleGrid;
 };
 
+const std::vector<stk::middle_mesh::ApplicationInterfaceType> InterfaceTypes = {/*stk::middle_mesh::ApplicationInterfaceType::FakeParallel,*/ stk::middle_mesh::ApplicationInterfaceType::Parallel};
+
 } // namespace
 
 TEST_F(ApplicationInterfaceMPMDTester, Defaults)
@@ -213,10 +216,17 @@ TEST_F(ApplicationInterfaceMPMDTester, Defaults)
   stk::middle_mesh::BoundarySnapAndQualityImprovementOpts boundarySnapOpts;
   stk::middle_mesh::MiddleGridOpts middleGridOpts;
 
-  for (int nprocs1 = 1; nprocs1 < commsize; ++nprocs1)
+  for (bool createTriangles : {false, true})
   {
-    int nprocs2 = commsize - nprocs1;
-    runtest(nprocs1, nprocs2, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+    {
+      for (int nprocs1 = 1; nprocs1 < commsize; ++nprocs1)
+      {
+        int nprocs2 = commsize - nprocs1;
+        runtest(type, nprocs1, nprocs2, createTriangles, parallelSearchOpts, volumeSnapOpts,
+                boundarySnapOpts, middleGridOpts);
+      }
+    }
   }
 }
 
@@ -235,7 +245,8 @@ TEST_F(ApplicationInterfaceMPMDTester, EnableVolumeSnap)
   for (int nprocs1 = 1; nprocs1 < commsize; ++nprocs1)
   {
     int nprocs2 = commsize - nprocs1;
-    runtest(nprocs1, nprocs2, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    runtest(stk::middle_mesh::ApplicationInterfaceType::FakeParallel,
+            nprocs1, nprocs2, false, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
   }
 }
 
@@ -251,9 +262,16 @@ TEST_F(ApplicationInterfaceMPMDTester, BoundarySnapThenQuality)
   boundarySnapOpts.type = stk::middle_mesh::BoundarySnapAndQualityImprovementType::SnapThenQuality;
   stk::middle_mesh::MiddleGridOpts middleGridOpts;
 
-  for (int nprocs1 = 1; nprocs1 < commsize; ++nprocs1)
+  for (bool createTriangles : {false, true})
   {
-    int nprocs2 = commsize - nprocs1;
-    runtest(nprocs1, nprocs2, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+    {
+      for (int nprocs1 = 1; nprocs1 < commsize; ++nprocs1)
+      {
+        int nprocs2 = commsize - nprocs1;
+        runtest(type,nprocs1, nprocs2, createTriangles, parallelSearchOpts, volumeSnapOpts,
+                boundarySnapOpts, middleGridOpts);
+      }
+    }
   }
 }

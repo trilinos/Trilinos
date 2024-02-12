@@ -377,6 +377,5 @@ struct BSPGEMM_NUMERIC<
       false, true>;
 
 //#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_bspgemm_numeric_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

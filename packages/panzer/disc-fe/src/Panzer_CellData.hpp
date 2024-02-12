@@ -110,6 +110,7 @@ namespace panzer {
     {return m_cell_topo->getDimension();}
     
     //! Get CellTopology for the base cell.
+    // TODO BWR this terminology is a bit confusing... this is not the base cell topology
     Teuchos::RCP<const shards::CellTopology> getCellTopology() const
     { return m_cell_topo; }
 

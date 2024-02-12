@@ -13,7 +13,7 @@
 #include "Tempus_StepperStaggeredForwardSensitivity_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperStaggeredForwardSensitivity)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperStaggeredForwardSensitivity)
 }
 
 #endif

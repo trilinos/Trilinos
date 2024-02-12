@@ -119,7 +119,7 @@ TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
   }
 
 
-  for (int procFromWhichDataIsReceived=0;procFromWhichDataIsReceived<numProcs;procFromWhichDataIsReceived++)
+  for (int procFromWhichDataIsReceived=0; procFromWhichDataIsReceived < numProcs; procFromWhichDataIsReceived++)
   {
     if ( procFromWhichDataIsReceived != myProcId )
     {

@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
-    if(std::is_same<default_exec, Kokkos::Experimental::HIP>::value)
+    if(std::is_same<default_exec, Kokkos::HIP>::value)
     {
       std::cout << "No node specified in command-line args, so using default (HIP)\n";
       useHIP = true;

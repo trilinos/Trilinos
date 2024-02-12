@@ -58,15 +58,14 @@ template<typename Real>
 struct DynamicConstraintCheck {
 
    static void check( DynamicConstraint<Real>& con,
-                     ValidateFunction<Real>& validator,
-                     const Vector<Real>& uo,
-                     const Vector<Real>& un,
-                     const Vector<Real>& z,
-                     const std::vector<std::string>& methods ) {
+                      ValidateFunction<Real>& validator,
+                      const Vector<Real>& uo,
+                      const Vector<Real>& un,
+                      const Vector<Real>& z,
+                      const std::vector<std::string>& methods ) {
 
     auto con_check = make_check( con );
     check( con_check, validator, uo, un, z, methods );
-
   }
 
   static void check( DynamicConstraint<Real>& con,
@@ -247,7 +246,7 @@ struct DynamicConstraintCheck {
                      ValidateFunction<Real>& validator,
                      const Vector<Real>& uo,
                      const Vector<Real>& un,
-                     const Vector<Real>& z ) {
+                     const Vector<Real>& z) {
     std::vector<std::string> methods = {"applyJacobian_uo",
                                         "applyJacobian_un",
                                         "applyJacobian_z",
@@ -267,6 +266,33 @@ struct DynamicConstraintCheck {
                                         "applyAdjointHessian_z_un",
                                         "applyAdjointHessian_z_z"};
     check(con, validator, uo, un, z, methods);
+  }
+
+  static void check( DynamicConstraint<Real>& con,
+                     ValidateFunction<Real>& validator,
+                     const Vector<Real>& uo,
+                     const Vector<Real>& un,
+                     const Vector<Real>& z,
+                     TimeStamp<Real> &ts) {
+    std::vector<std::string> methods = {"applyJacobian_uo",
+                                        "applyJacobian_un",
+                                        "applyJacobian_z",
+                                        "applyAdjointJacobian_uo",
+                                        "applyAdjointJacobian_un",
+                                        "applyAdjointJacobian_z",
+                                        "solve",
+                                        "applyInverseJacobian_un",
+                                        "applyInverseAdjointJacobian_un",
+                                        "applyAdjointHessian_uo_uo",
+                                        "applyAdjointHessian_uo_un",
+                                        "applyAdjointHessian_uo_z",
+                                        "applyAdjointHessian_un_uo",
+                                        "applyAdjointHessian_un_un",
+                                        "applyAdjointHessian_un_z",
+                                        "applyAdjointHessian_z_uo",
+                                        "applyAdjointHessian_z_un",
+                                        "applyAdjointHessian_z_z"};
+    check(con, validator, uo, un, z, ts, methods);
   }
 
   

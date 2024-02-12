@@ -177,6 +177,8 @@ namespace Ifpack2 {
     typedef Tpetra::BlockCrsMatrix
     <scalar_type,local_ordinal_type,global_ordinal_type,node_type> block_crs_matrix_type;
 
+    const Teuchos::Array<Teuchos::Array<local_ordinal_type> > partitions_;
+
     /// \brief The (base class) type of the input matrix.
     ///
     /// The input matrix to the constructor must be a Tpetra::BlockCrsMatrix.
@@ -228,6 +230,7 @@ namespace Ifpack2 {
     ///   purposes only.
     BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                          const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                         const int n_subparts_per_part = 1,
                          bool overlapCommAndComp = false, bool useSequentialMethod = false);
 
     //! Destructor (declared virtual for memory safety of derived classes).
@@ -389,10 +392,10 @@ namespace Ifpack2 {
 
     // hide details of impl using ImplObj; finally I understand why AMB did that way.
     Teuchos::RCP<BlockTriDiContainerDetails::ImplObject<MatrixType> > impl_;
+    int n_subparts_per_part_;
     
     // initialize distributed and local objects
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
-                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const Teuchos::RCP<const import_type> &importer,
                        const bool overlapCommAndComp,
                        const bool useSeqMethod);

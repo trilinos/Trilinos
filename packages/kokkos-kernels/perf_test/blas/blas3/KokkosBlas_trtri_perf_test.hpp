@@ -21,11 +21,13 @@
 
 #include <Kokkos_Random.hpp>
 
-#include <KokkosBlas_trtri.hpp>
+#include <KokkosLapack_trtri.hpp>
 
 #include "KokkosBatched_Trtri_Decl.hpp"
 #include "KokkosBatched_Trtri_Serial_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
+
+#include <chrono>
 
 //#define TRTRI_PERF_TEST_DEBUG
 
@@ -183,7 +185,7 @@ void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
     for (int i = 0; i < options.start.a.k; ++i) {
       auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-      KokkosBlas::trtri(&trtri_args.uplo, &trtri_args.diag, A);
+      KokkosLapack::trtri(&trtri_args.uplo, &trtri_args.diag, A);
     }
     // Fence after each batch operation
     Kokkos::fence();
@@ -194,7 +196,7 @@ void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
     for (int i = 0; i < options.start.a.k; ++i) {
       auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-      KokkosBlas::trtri(&trtri_args.uplo, &trtri_args.diag, A);
+      KokkosLapack::trtri(&trtri_args.uplo, &trtri_args.diag, A);
     }
     // Fence after each batch operation
     Kokkos::fence();
@@ -298,7 +300,7 @@ struct parallel_blas_trtri {
   void operator()(const int& i) const {
     auto svA = Kokkos::subview(trtri_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBlas::trtri(&trtri_args_.uplo, &trtri_args_.diag, svA);
+    KokkosLapack::trtri(&trtri_args_.uplo, &trtri_args_.diag, svA);
   }
 };
 #endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP &&
@@ -436,7 +438,8 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
   using execution_space = typename device_type::execution_space;
 
   trtri_args_t trtri_args;
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
   typename vta::HostMirror host_A;

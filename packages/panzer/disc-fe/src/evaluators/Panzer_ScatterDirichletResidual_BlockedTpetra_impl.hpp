@@ -566,7 +566,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     typename Tpetra::Vector<double,LO,GO,PHX::Device>::dual_view_type::t_dev kokkosResidual;
     if (haveResidual) {
       auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
-      kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+      kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::ReadWrite);
     }
 
     // Get dirichlet counter block

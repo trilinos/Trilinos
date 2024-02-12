@@ -46,18 +46,13 @@
 #ifndef MUELU_SCALEDNULLSPACEFACTORY_FWD_HPP
 #define MUELU_SCALEDNULLSPACEFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ScaledNullspaceFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ScaledNullspaceFactory;
 }
 
 #ifndef MUELU_SCALEDNULLSPACEFACTORY_SHORT
 #define MUELU_SCALEDNULLSPACEFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_SCALEDNULLSPACEFACTORY_FWD_HPP
+#endif  // MUELU_SCALEDNULLSPACEFACTORY_FWD_HPP

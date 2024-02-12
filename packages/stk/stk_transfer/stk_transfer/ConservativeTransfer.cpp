@@ -1,6 +1,5 @@
 #include "ConservativeTransfer.hpp"
 
-
 namespace stk {
 namespace transfer {
 
@@ -10,7 +9,8 @@ ConservativeTransfer::ConservativeTransfer(MPI_Comm unionComm,
                                            std::shared_ptr<mesh::Mesh> inputMesh1,
                                            std::shared_ptr<mesh::Mesh> inputMesh2,
                                            std::shared_ptr<ConservativeTransferUser> transferCallback1,
-                                           std::shared_ptr<ConservativeTransferUser> transferCallback2) :
+                                           std::shared_ptr<ConservativeTransferUser> transferCallback2,
+                                           stk::middle_mesh::ApplicationInterfaceType interfaceType) :
   m_unionComm(unionComm)
 {
   if (unionComm == MPI_COMM_NULL)
@@ -22,24 +22,44 @@ ConservativeTransfer::ConservativeTransfer(MPI_Comm unionComm,
   if ((inputMesh2 && !transferCallback2) || (transferCallback2 && !inputMesh2))
     throw std::runtime_error("must provide both inputMesh2 and transferCallback2, or neither");    
 
-  setup_for_transfer(inputMesh1, inputMesh2, transferCallback1, transferCallback2);
-}
-
-void ConservativeTransfer::setup_for_transfer(std::shared_ptr<mesh::Mesh> inputMesh1,
-                                              std::shared_ptr<mesh::Mesh> inputMesh2,
-                                              std::shared_ptr<ConservativeTransferUser> transferCallback1,
-                                              std::shared_ptr<ConservativeTransferUser> transferCallback2)
-{
   std::shared_ptr<XiCoordinates> xiCoords;
   if (transferCallback1)
     xiCoords = transferCallback1->create_xi_coords();
   else if (transferCallback2)
     xiCoords = transferCallback2->create_xi_coords();
 
-  check_xi_coords_same_on_all_procs_debug_only(xiCoords);
-
   std::shared_ptr<ApplicationInterface> interface = application_interface_factory(
-    ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, m_unionComm, xiCoords);
+    interfaceType, inputMesh1, inputMesh2, m_unionComm, xiCoords);  
+
+  setup_for_transfer(inputMesh1, inputMesh2, interface, transferCallback1, transferCallback2);
+}
+
+ConservativeTransfer::ConservativeTransfer(MPI_Comm unionComm, std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh1,
+                      std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh2,
+                      std::shared_ptr<stk::middle_mesh::ApplicationInterface> interface,
+                      std::shared_ptr<ConservativeTransferUser> transferCallback1,
+                      std::shared_ptr<ConservativeTransferUser> transferCallback2) :
+  m_unionComm(unionComm)
+{
+  if (unionComm == MPI_COMM_NULL)
+    throw std::runtime_error("unionComm cannot be null");
+
+  if ((inputMesh1 && !transferCallback1) || (transferCallback1 && !inputMesh1))
+    throw std::runtime_error("must provide both inputMesh1 and transferCallback1, or neither");
+
+  if ((inputMesh2 && !transferCallback2) || (transferCallback2 && !inputMesh2))
+    throw std::runtime_error("must provide both inputMesh2 and transferCallback2, or neither");
+
+  setup_for_transfer(inputMesh1, inputMesh2, interface, transferCallback1, transferCallback2);  
+}                      
+
+void ConservativeTransfer::setup_for_transfer(std::shared_ptr<mesh::Mesh> inputMesh1,
+                                              std::shared_ptr<mesh::Mesh> inputMesh2,
+                                              std::shared_ptr<stk::middle_mesh::ApplicationInterface> interface,
+                                              std::shared_ptr<ConservativeTransferUser> transferCallback1,
+                                              std::shared_ptr<ConservativeTransferUser> transferCallback2)
+{
+  check_xi_coords_same_on_all_procs_debug_only(transferCallback1, transferCallback2);
 
   interface->create_middle_grid();
   if (inputMesh1)
@@ -137,8 +157,16 @@ ConservativeTransfer::MeshData ConservativeTransfer::get_mesh_data(mesh::FieldPt
 }
 
 
-void ConservativeTransfer::check_xi_coords_same_on_all_procs_debug_only(std::shared_ptr<stk::middle_mesh::XiCoordinates> xiCoords)
+void ConservativeTransfer::check_xi_coords_same_on_all_procs_debug_only(
+                            std::shared_ptr<ConservativeTransferUser> transferCallback1,
+                            std::shared_ptr<ConservativeTransferUser> transferCallback2)
 {
+  std::shared_ptr<XiCoordinates> xiCoords;
+  if (transferCallback1)
+    xiCoords = transferCallback1->create_xi_coords();
+  else if (transferCallback2)
+    xiCoords = transferCallback2->create_xi_coords();
+
   std::array<mesh::MeshEntityType, 2> types = {mesh::MeshEntityType::Triangle, mesh::MeshEntityType::Quad};
   for (mesh::MeshEntityType type : types)
   {
@@ -154,7 +182,7 @@ int ConservativeTransfer::check_number_of_points(std::shared_ptr<stk::middle_mes
   const int commRank = utils::impl::comm_rank(m_unionComm);
   const int commSize = utils::impl::comm_size(m_unionComm);
 
-  int npts = xiCoords ? xiCoords->get_xi_coords(type).size() : -1;
+  int npts = xiCoords ? static_cast<int>(xiCoords->get_xi_coords(type).size()) : -1;
   std::vector<int> nptsGathered;
   if (commRank == rootRank)
   {

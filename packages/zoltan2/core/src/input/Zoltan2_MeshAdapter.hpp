@@ -138,10 +138,6 @@ public:
 
   enum BaseAdapterType adapterType() const override {return MeshAdapterType;}
 
-  /*! \brief Destructor
-   */
-  virtual ~MeshAdapter() {};
-
   // Default MeshEntityType is MESH_REGION with MESH_FACE-based adjacencies and
   // second adjacencies and coordinates
   MeshAdapter() : primaryEntityType(MESH_REGION),

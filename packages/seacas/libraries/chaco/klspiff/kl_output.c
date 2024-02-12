@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,14 +12,13 @@
 /*static void p1bucket();*/
 
 void pbuckets(struct bilist ****buckets,   /* pointers to bucket lists */
-              struct bilist **  listspace, /* elements within buckets */
+              struct bilist   **listspace, /* elements within buckets */
               int               maxdeg,    /* maximum degree of a vertex */
               int               nsets      /* number of sets being divided into */
 )
 {
   struct bilist *lptr; /* points to correct listspace */
   int            i, j; /* loop counter */
-  void           p1bucket();
 
   printf("\n");
   for (i = 0; i < nsets; i++) {
@@ -41,7 +40,7 @@ void pbuckets(struct bilist ****buckets,   /* pointers to bucket lists */
 }
 
 /*static*/ void p1bucket(struct bilist **bucket, /* buckets holding bucket list */
-                         struct bilist * lptr,   /* elements within bucket */
+                         struct bilist  *lptr,   /* elements within bucket */
                          int             maxdeg  /* maximum degree of a vertex */
 )
 {

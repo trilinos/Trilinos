@@ -72,7 +72,7 @@ namespace panzer {
 
     // Currently panzer support only one type of elements for whole mesh (use the first cell topology)
     const auto cellTopo = elementBlockTopologies.at(0);
-    const int numVertexPerCell = cellTopo.getVertexCount();
+    const int numVerticesPerCell = cellTopo.getVertexCount();
 
     const auto fp = NodalFieldPattern(cellTopo);
     connMgr.buildConnectivity(fp);
@@ -95,8 +95,9 @@ namespace panzer {
       for (int c=0;c<numElementsPerBlock;++c) {
         const int localCellId = elementBlock.at(c);
         Kokkos::View<const panzer::GlobalOrdinal*,Kokkos::HostSpace>
-          nodes(connMgr.getConnectivity(localCellId), numVertexPerCell);
-        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
+          vertices(connMgr.getConnectivity(localCellId), numVerticesPerCell);
+          // This function call expects a view for the vertices, not the nodes
+        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, vertices));
       }
     }
   }

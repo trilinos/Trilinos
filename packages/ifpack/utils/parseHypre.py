@@ -47,64 +47,64 @@ with open(outputFile, 'w') as out:
     m = functionInt.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, int_func> FunctionParameter::hypreMapIntFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, int_func> FunctionParameter::hypreMapIntFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionDouble.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, double_func> FunctionParameter::hypreMapDoubleFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, double_func> FunctionParameter::hypreMapDoubleFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionDoubleInt.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, double_int_func> FunctionParameter::hypreMapDoubleIntFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, double_int_func> FunctionParameter::hypreMapDoubleIntFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionIntDouble.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, int_double_func> FunctionParameter::hypreMapIntDoubleFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, int_double_func> FunctionParameter::hypreMapIntDoubleFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionIntInt.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, int_int_func> FunctionParameter::hypreMapIntIntFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, int_int_func> FunctionParameter::hypreMapIntIntFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionIntStar.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, int_star_func> FunctionParameter::hypreMapIntStarFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, int_star_func> FunctionParameter::hypreMapIntStarFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionDoubleStar.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, double_star_func> FunctionParameter::hypreMapDoubleStarFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, double_star_func> FunctionParameter::hypreMapDoubleStarFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionIntIntDoubleDouble.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, int_int_double_double_func> FunctionParameter::hypreMapIntIntDoubleDoubleFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, int_int_double_double_func> FunctionParameter::hypreMapIntIntDoubleDoubleFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionIntIntIntDoubleIntInt.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, int_int_int_double_int_int_func> FunctionParameter::hypreMapIntIntIntDoubleIntIntFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, int_int_int_double_int_int_func> FunctionParameter::hypreMapIntIntIntDoubleIntIntFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionIntStarStar.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, int_star_star_func> FunctionParameter::hypreMapIntStarStarFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, int_star_star_func> FunctionParameter::hypreMapIntStarStarFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))
 
     out.write('\n\n')
     m = functionCharStar.findall(s)
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
-    out.write("const std::map<std::string, char_star_func> FunctionParameter::hypreMapCharStarFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+    out.write("const std::map<std::string, char_star_func> FunctionParameter::hypreMapCharStarFunc_ = {{\n{}\n}};".format(',\n'.join(fs)))

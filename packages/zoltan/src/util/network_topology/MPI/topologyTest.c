@@ -55,7 +55,7 @@
 #define NLEVELS 4
 
 MPI_Comm comm[NLEVELS] = {
-MPI_COMM_WORLD,
+zoltan_get_global_comm(),
 MPI_COMM_NODE,
 MPI_COMM_SOCKET,
 MPI_COMM_CACHE
@@ -110,9 +110,9 @@ comm_group level_info[NLEVELS];
       fprintf(stderr,"(%d) MPI_Comm_size %s : %s\n",me[0],commName[i],errorstr); 
     }
 #ifdef DEBUG_ME
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
     printf("(%d) %s communicator, size %d, my rank %d\n",me[0],commName[i],nprocs[i],me[i]);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
 #endif
   }
 
@@ -137,7 +137,7 @@ comm_group level_info[NLEVELS];
   }
 
 #ifdef DEBUG_ME
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
   for (i=0; i < nprocs[0]; i++){
     if (i == me[0]){
       printf("(%d) ranges: %s (%d %d iam %d) %s (%d %d iam %d) %s (%d %d iam %d) %s (%d %d iam %d) \n", 
@@ -147,9 +147,9 @@ comm_group level_info[NLEVELS];
         commName[2], level_part_range[2][0],  level_part_range[2][1], level_part_range[2][0] + me[2],
         commName[3], level_part_range[3][0],  level_part_range[3][1], level_part_range[3][0] + me[3]);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
+    MPI_Barrier(zoltan_get_global_comm());
+    MPI_Barrier(zoltan_get_global_comm());
   }
 #endif
 
@@ -167,7 +167,7 @@ comm_group level_info[NLEVELS];
       lval=0;   /* meaningful level in hierarchy */
     }
 
-    MPI_Allreduce(&lval, &gval, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&lval, &gval, 1, MPI_INT, MPI_SUM, zoltan_get_global_comm());
 
     if (gval < nprocs[0]){
       /* next level in hierarchy is significant for at least some processes */
@@ -176,10 +176,10 @@ comm_group level_info[NLEVELS];
   }
 
 #ifdef DEBUG_ME
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
   printf("(%d) %d significant levels %d %d %d %d\n",me[0], num_significant_levels,
   level_number[0], level_number[1], level_number[2], level_number[3]);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
 #endif
 
   /* Save global info about topology */
@@ -188,13 +188,13 @@ comm_group level_info[NLEVELS];
 
   my_part_number = level_part_range[level][0] + me[level];
 
-  MPI_Allgather(&my_part_number, 1, MPI_INT, procToPart, 1, MPI_INT, MPI_COMM_WORLD);
+  MPI_Allgather(&my_part_number, 1, MPI_INT, procToPart, 1, MPI_INT, zoltan_get_global_comm());
 
   for (i=0; i < nprocs[0]; i++){
     partToProc[procToPart[i]] = i;
   }
 
-  level_info[0].comm = MPI_COMM_WORLD;
+  level_info[0].comm = zoltan_get_global_comm();
   level_info[0].name = commName[0];
   level_info[0].nGroups = 1;
   level_info[0].myGroup = 0;
@@ -210,7 +210,7 @@ comm_group level_info[NLEVELS];
     memset((void *)&level_info[i], 0, sizeof(comm_group));
     mine = 0;
 
-    MPI_Allgather(&(level_part_range[level][0]), 1, MPI_INT, buf, 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&(level_part_range[level][0]), 1, MPI_INT, buf, 1, MPI_INT, zoltan_get_global_comm());
     memset(classes, 0, sizeof(int) * nprocs[0]);
     for (j=0; j < nprocs[0]; j++){
       classes[buf[j]]++;
@@ -267,7 +267,7 @@ comm_group level_info[NLEVELS];
                 level_info[i].name, 0, level_info[i].offsets[1]-1);
     }
 
-    ping_pong_test(MPI_COMM_WORLD, me[0], sender, receiver, 100);
+    ping_pong_test(zoltan_get_global_comm(), me[0], sender, receiver, 100);
 
     /* ping pong across an entity */
 
@@ -279,7 +279,7 @@ comm_group level_info[NLEVELS];
     sender = partToProc[0];
     receiver = partToProc[level_info[i].offsets[1]];
 
-    ping_pong_test(MPI_COMM_WORLD, me[0], sender, receiver, 100);
+    ping_pong_test(zoltan_get_global_comm(), me[0], sender, receiver, 100);
   }
 
   MPI_Finalize();
@@ -489,7 +489,7 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
 
         if (myproc == senderRank) {
 
-           MPI_Recv(NULL, 0, MPI_CHAR, receiverRank, 99, MPI_COMM_WORLD, &status);   /* ok to start */
+           MPI_Recv(NULL, 0, MPI_CHAR, receiverRank, 99, zoltan_get_global_comm(), &status);   /* ok to start */
            MPI_Irecv(b, size/8, MPI_DOUBLE, other_proc, j, comm, &request);
   
            t0 = MPI_Wtime();
@@ -501,7 +501,7 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
 
            MPI_Irecv(b, size/8, MPI_DOUBLE, other_proc, j, comm, &request);
 
-           MPI_Send(NULL, 0, MPI_CHAR, senderRank, 99, MPI_COMM_WORLD);    /* ok to start */
+           MPI_Send(NULL, 0, MPI_CHAR, senderRank, 99, zoltan_get_global_comm());    /* ok to start */
   
            MPI_Wait(&request, &status);
 

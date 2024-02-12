@@ -11,8 +11,30 @@
 #include "structs.h"
 #include <math.h>
 
-static void   avg_dists_cube(), avg_dists_mesh();
-static double avg_dist_mesh(), avg_dist_interval();
+static void   avg_dists_cube(int              ndims_tot, /* total number of hypercube dimensions */
+                             int              ndims,    /* number of dimensions created this step */
+                             struct set_info *set_info, /* data about all the sets */
+                             int              nsets,    /* number of subsets being created */
+                             int              set_max,  /* largest set created so far */
+                             int             *subsets,  /* subsets being created */
+                             float *dists[MAXSETS] /* distances from my subsets to other sets */
+  );
+static void   avg_dists_mesh(int              architecture, /* dimensions of mesh */
+                             struct set_info *set_info,     /* data about all the sets */
+                             int              nsets,        /* number of subsets being created */
+                             int              set_max,      /* largest set created so far */
+                             int             *subsets,      /* subsets being created */
+                             float *dists[MAXSETS] /* distances from my subsets to other sets */
+  );
+static double avg_dist_mesh(struct set_info *set1,        /* data about all first set */
+                            struct set_info *set2,        /* data about all second set */
+                            int              architecture /* dimension of mesh */
+);
+static double avg_dist_interval(int set1_low,  /* lowest point for first interval */
+                                int set1_span, /* highest point for first interval */
+                                int set2_low,  /* lowest point for second interval */
+                                int set2_span  /* highest point for second interval */
+);
 
 /* Compute the terminal constraints for next partition. */
 void make_term_props(struct vtx_data **graph,        /* data structure for graph */
@@ -187,8 +209,6 @@ static double avg_dist_mesh(struct set_info *set1,        /* data about all firs
                             int              architecture /* dimension of mesh */
 )
 {
-  double avg_dist_interval();
-
   double val = 0;
   for (int i = 0; i < architecture; i++) {
     val += avg_dist_interval(set1->low[i], set1->span[i], set2->low[i], set2->span[i]);

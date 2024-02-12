@@ -413,7 +413,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   const T alive      = interFace.alive_value();
   size_t  part_count = interFace.inputFiles_.size();
 
-  auto mytitle = new char[MAX_LINE_LENGTH + 1];
+  auto *mytitle = new char[MAX_LINE_LENGTH + 1];
   memset(mytitle, '\0', MAX_LINE_LENGTH + 1);
 
   Excn::Mesh<INT> global;
@@ -1976,7 +1976,7 @@ namespace {
       // element blocks...
       std::string var_name;
       int         var_count = 0;
-      for (auto &elem : variable_list) {
+      for (const auto &elem : variable_list) {
         if (var_name == elem.first) {
           continue;
         }

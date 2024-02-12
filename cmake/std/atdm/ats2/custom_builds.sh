@@ -7,18 +7,18 @@
 
 # Custom compiler selection logic
 if atdm_match_any_buildname_keyword \
-  cuda-10.1.243-gnu-7.3.1-spmpi-rolling \
-  cuda-10.1.243_gnu-7.3.1_spmpi-rolling \
-  cuda-10.1.243-gnu-7.3.1 \
-  cuda-10.1.243_gnu-7.3.1 \
-  cuda-10.1.243-gnu-7 \
-  cuda-10.1.243_gnu-7 \
-  cuda-10.1.243 \
-  cuda-10 \
+  cuda-11.2.152-gcc-8.3.1-spmpi-rolling \
+  cuda-11.2.152_gcc-8.3.1_spmpi-rolling \
+  cuda-11.2.152-gcc-8.3.1 \
+  cuda-11.2.152_gcc-8.3.1 \
+  cuda-11.2.152-gcc-8 \
+  cuda-11.2.152_gcc-8 \
+  cuda-11.2.152 \
+  cuda-11 \
   cuda-gnu \
   cuda \
   ; then
-  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_GNU-7.3.1_SPMPI-ROLLING
+  export ATDM_CONFIG_COMPILER=CUDA-11.2.152_GCC-8.3.1_SPMPI-ROLLING
   # NOTE: Default 'cuda' must be last cuda listed!
 
 elif atdm_match_any_buildname_keyword \
@@ -40,7 +40,7 @@ else
   echo "*** Supported compilers include:"
   echo "***"
   echo "****  gnu-7.3.1_spmpi-rolling                      (default, default gnu)"
-  echo "****  cuda-10.1.243_gnu-7.3.1_spmpi-rolling        (default cuda)"
+  echo "****  cuda-11.2.152_gcc-8.3.1_spmpi-rolling        (default cuda)"
   echo "***"
   return
 

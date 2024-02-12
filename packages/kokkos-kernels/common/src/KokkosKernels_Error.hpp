@@ -18,6 +18,7 @@
 #define KOKKOSKERNELS_ERROR_HPP
 
 #include <stdexcept>
+#include <sstream>
 
 namespace KokkosKernels {
 namespace Impl {
@@ -62,6 +63,8 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
  *
  * For _MSG checks, the msg argument can contain '<<' if not a kernel check.
  *
+ * KK_USER_REQUIRE* are for checking user inputs
+ *
  * This code is adapted from EKAT/src/ekat/ekat_assert.hpp
  */
 
@@ -77,6 +80,7 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
   } while (0)
 
 // SYCL cannot printf like the other backends quite yet
+#if KOKKOS_VERSION < 40199
 #define IMPL_KERNEL_THROW(condition, msg)                                   \
   do {                                                                      \
     if (!(condition)) {                                                     \
@@ -85,6 +89,15 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
       Kokkos::abort("");                                                    \
     }                                                                       \
   } while (0)
+#else
+#define IMPL_KERNEL_THROW(condition, msg)                                      \
+  do {                                                                         \
+    if (!(condition)) {                                                        \
+      Kokkos::printf("KERNEL CHECK FAILED:\n   %s\n   %s\n", #condition, msg); \
+      Kokkos::abort("");                                                       \
+    }                                                                          \
+  } while (0)
+#endif
 
 #ifndef NDEBUG
 #define KK_ASSERT(condition) IMPL_THROW(condition, "", std::logic_error)
@@ -102,6 +115,10 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
 #define KK_REQUIRE(condition) IMPL_THROW(condition, "", std::logic_error)
 #define KK_REQUIRE_MSG(condition, msg) \
   IMPL_THROW(condition, msg, std::logic_error)
+
+#define KK_USER_REQUIRE(condition) IMPL_THROW(condition, "", std::runtime_error)
+#define KK_USER_REQUIRE_MSG(condition, msg) \
+  IMPL_THROW(condition, msg, std::runtime_error)
 
 #define KK_KERNEL_REQUIRE(condition) IMPL_KERNEL_THROW(condition, "")
 #define KK_KERNEL_REQUIRE_MSG(condition, msg) IMPL_KERNEL_THROW(condition, msg)

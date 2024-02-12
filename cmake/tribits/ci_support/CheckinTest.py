@@ -2456,7 +2456,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
         abortGracefullyDueToNoChangesToPush = True
         runBuildCases = False
       elif pullPassed:
-        print("\nThe pull passsed, running the build/test cases ...\n")
+        print("\nThe pull passed, running the build/test cases ...\n")
         runBuildCases = True
       else:
         print("\nNot running any build/test cases because the pull failed!\n")

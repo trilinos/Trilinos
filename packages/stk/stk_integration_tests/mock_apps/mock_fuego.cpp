@@ -4,12 +4,11 @@
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
-#include <stk_coupling/Version.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include <stk_util/Version.hpp>
 #include <stk_util/parallel/CouplingVersions.hpp>
 #include <stk_util/parallel/CouplingVersions_impl.hpp>
+#include <stk_util/Version.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
 #include "MockMeshUtils.hpp"
@@ -63,7 +62,7 @@ public:
 
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
     m_splitComms.set_free_comms_in_destructor(true);
-    stk::util::impl::set_coupling_version(coupling_version_override);
+    stk::util::impl::set_coupling_version(commWorld, coupling_version_override);
     MPI_Comm splitComm = m_splitComms.get_split_comm();
     const std::vector<int>& otherColors = m_splitComms.get_other_colors();
     if (otherColors.size() != 1) {

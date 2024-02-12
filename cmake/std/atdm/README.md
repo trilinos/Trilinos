@@ -897,23 +897,24 @@ The MPI test tests in Trilinos are actually run by a wrapper script
 arguments to accommodate the MPI test suite in Trilinos (see the
 implementation of the script `trilinos_jsrun` for details on what it does).
 By default, the script `trilinos_jsrun` will set `export
-TPETRA_ASSUME_CUDA_AWARE_MPI=0` if `TPETRA_ASSUME_CUDA_AWARE_MPI` is unset in
-the environment.  Therefore, by default, the tests are run without CUDA-aware
-MPI on this system.
+TPETRA_ASSUME_GPU_AWARE_MPI=0` if `TPETRA_ASSUME_GPU_AWARE_MPI` is unset in
+the environment **even if Tpetra_ENABLE_GPU_AWARE_MPI was enabled
+at configure-time, either manually or automatically**.
+Therefore, by default, the tests are run without GPU-aware MPI on this system.
 
-To explicitly **disable CUDA-aware MPI** when running the test suite from the
+To explicitly **disable GPU-aware MPI** when running the test suite from the
 launch node, set the environment variable and run as:
 
 ```bash
-$ export TPETRA_ASSUME_CUDA_AWARE_MPI=0
+$ export TPETRA_ASSUME_GPU_AWARE_MPI=0
 $ lrun -n 1 ctest -j4
 ```
 
-To explicitly **enable CUDA-aware MPI** when running the test suite from the
+To explicitly **enable GPU-aware MPI** when running the test suite from the
 launch node, set the environment variable and run as:
 
 ```bash
-$ export TPETRA_ASSUME_CUDA_AWARE_MPI=1
+$ export TPETRA_ASSUME_GPU_AWARE_MPI=1
 $ lrun -n 1 ctest -j4
 ```
 

@@ -38,9 +38,9 @@
 # @HEADER
 
 
-include(TribitsAddExecutableTestHelpers)
+include("${CMAKE_CURRENT_LIST_DIR}/../test_support/TribitsAddExecutableTestHelpers.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../test_support/TribitsAddTestHelpers.cmake")
 include(TribitsCommonArgsHelpers)
-include(TribitsAddTestHelpers)
 include(TribitsGeneralMacros)
 include(TribitsLibIsTestOnly)
 include(TribitsReportInvalidTribitsUsage)

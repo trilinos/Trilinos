@@ -143,7 +143,7 @@ public:
   void operator () (const LO& lclRowInd, LO& errCount) const {
     using KokkosSparse::findRelOffset;
 
-    D_lcl_1d_(lclRowInd) = Kokkos::Details::ArithTraits<IST>::zero ();
+    D_lcl_1d_(lclRowInd) = Kokkos::ArithTraits<IST>::zero ();
     const GO gblInd = lclRowMap_.getGlobalElement (lclRowInd);
     const LO lclColInd = lclColMap_.getLocalElement (gblInd);
 

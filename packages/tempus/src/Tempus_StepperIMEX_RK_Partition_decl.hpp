@@ -14,7 +14,6 @@
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
 
-
 namespace Tempus {
 
 /** \brief Partitioned Implicit-Explicit Runge-Kutta (IMEX-RK) time stepper.
@@ -219,43 +218,34 @@ namespace Tempus {
  *    {\bf Algorithm} Partitioned IMEX-RK \\
  *    \rule{5in}{0.4pt} \vspace{-15pt}
  *    \begin{enumerate}
- *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
- *      \item $Z \leftarrow z_{n-1}$
- *            \hfill {\it * Recall $Z_i = \{Y_i,X_i\}^T$}
- *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *      \item {\bf for ($i = 0 \ldots s-1$)}
- *      \item \quad  $Y_i = y_{n-1} -\Delta t \sum_{j=1}^{i-1} \hat{a}_{ij}\;f^y_j$
- *      \item \quad  $\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left[
- *                                       \hat{a}_{ij}\, f^x_j + a_{ij}\, g^x_j \right]$
- *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
- *      \item \quad  \hfill {\bf Implicit Tableau}
- *      \item \quad  {\bf if ($a_{ii} = 0$) then}
- *      \item \qquad    $X_i   \leftarrow \tilde{X}$
- *      \item \qquad    {\bf if ($a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$) then}
- *      \item \qquad \quad  $g^x_i \leftarrow 0$
- *                          \hfill {\it * Not needed for later calculations.}
- *      \item \qquad    {\bf else}
- *      \item \qquad \quad  $g^x_i \leftarrow g^x(X_i,Y_i,t_i)$
- *      \item \qquad    {\bf endif}
- *      \item \quad  {\bf else}
- *      \item \qquad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *      \item \qquad  {\bf if (``Zero initial guess.'') then}
- *      \item \qquad \quad   $X \leftarrow 0$
- *                           \hfill {\it * Else use previous stage value as initial guess.}
- *      \item \qquad  {\bf endif}
- *      \item \qquad  {\bf Solve $\mathcal{G}^x\left(\tilde{\dot{X}}
- *                          = \frac{X-\tilde{X}}{a_{ii} \Delta t},X,Y,t_i\right) = 0$
- *                            for $X$ where $Y$ is known.}
- *      \item \qquad   {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *      \item \qquad   $\tilde{\dot{X}} \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
- *      \item \qquad   $g_i \leftarrow - \tilde{\dot{X}}$
- *      \item \quad  {\bf endif}
- *      \item \quad  \hfill {\bf Explicit Tableau}
- *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \item \quad  $f_i \leftarrow M(X,\hat{t}_i)^{-1}\, F(X,\hat{t}_i)$
- *      \item \quad  $\dot{Z} \leftarrow - g(Z_i,t_i) - f(Z_i,t_i)$ [Optionally]
- *      \item \quad  {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
- *      \item {\bf end for}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt}
+ * \setlength{\parsep}{0pt} \item $Z \leftarrow z_{n-1}$ \hfill {\it * Recall
+ * $Z_i = \{Y_i,X_i\}^T$} \item {\it appAction.execute(solutionHistory, stepper,
+ * BEGIN\_STEP)} \item {\bf for ($i = 0 \ldots s-1$)} \item \quad  $Y_i =
+ * y_{n-1} -\Delta t \sum_{j=1}^{i-1} \hat{a}_{ij}\;f^y_j$ \item \quad
+ * $\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left[
+ *                                       \hat{a}_{ij}\, f^x_j + a_{ij}\, g^x_j
+ * \right]$ \item \quad  {\it appAction.execute(solutionHistory, stepper,
+ * BEGIN\_STAGE)} \item \quad  \hfill {\bf Implicit Tableau} \item \quad  {\bf
+ * if ($a_{ii} = 0$) then} \item \qquad    $X_i   \leftarrow \tilde{X}$ \item
+ * \qquad    {\bf if ($a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$,
+ * $b^\ast(i) = 0$) then} \item \qquad \quad  $g^x_i \leftarrow 0$ \hfill {\it *
+ * Not needed for later calculations.} \item \qquad    {\bf else} \item \qquad
+ * \quad  $g^x_i \leftarrow g^x(X_i,Y_i,t_i)$ \item \qquad    {\bf endif} \item
+ * \quad  {\bf else} \item \qquad  {\it appAction.execute(solutionHistory,
+ * stepper, BEFORE\_SOLVE)} \item \qquad  {\bf if (``Zero initial guess.'')
+ * then} \item \qquad \quad   $X \leftarrow 0$ \hfill {\it * Else use previous
+ * stage value as initial guess.} \item \qquad  {\bf endif} \item \qquad  {\bf
+ * Solve $\mathcal{G}^x\left(\tilde{\dot{X}} = \frac{X-\tilde{X}}{a_{ii} \Delta
+ * t},X,Y,t_i\right) = 0$ for $X$ where $Y$ is known.} \item \qquad   {\it
+ * appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)} \item \qquad
+ * $\tilde{\dot{X}} \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$ \item
+ * \qquad   $g_i \leftarrow - \tilde{\dot{X}}$ \item \quad  {\bf endif} \item
+ * \quad  \hfill {\bf Explicit Tableau} \item \quad  {\it
+ * appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)} \item
+ * \quad  $f_i \leftarrow M(X,\hat{t}_i)^{-1}\, F(X,\hat{t}_i)$ \item \quad
+ * $\dot{Z} \leftarrow - g(Z_i,t_i) - f(Z_i,t_i)$ [Optionally] \item \quad  {\it
+ * appAction.execute(solutionHistory, stepper, END\_STAGE)} \item {\bf end for}
  *      \item $z_n = z_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\, f_i$
  *      \item $x_n \mathrel{+{=}} - \Delta t\,\sum_{i=1}^{s} b_i\, g^x_i$
  *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
@@ -290,8 +280,8 @@ namespace Tempus {
  *             1 & 1   & 0 \\ \hline
  *               & 1/2 & 1/2
  *           \end{array} \f]
- *  <tr><td> Partitioned IMEX RK ARS 233\n \f$\gamma = (3+\sqrt{3})/6\f$ <td> 3rd
- *      <td> \f[ \begin{array}{c|ccc}
+ *  <tr><td> Partitioned IMEX RK ARS 233\n \f$\gamma = (3+\sqrt{3})/6\f$ <td>
+ * 3rd <td> \f[ \begin{array}{c|ccc}
  *             0        & 0      & 0         & 0      \\
  *             \gamma   & 0      & \gamma    & 0      \\
  *             1-\gamma & 0      & 1-2\gamma & \gamma \\ \hline
@@ -316,153 +306,167 @@ namespace Tempus {
  *     Multiphysics Shock-hydro", SAND2016-11353, 2016, pp. 21-28.
  *  -# Cyr, "IMEX Lagrangian Methods", SAND2015-3745C.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperIMEX_RK_Partition : virtual public Tempus::StepperImplicit<Scalar>,
-                                 virtual public Tempus::StepperRKBase<Scalar>
-{
-public:
-
+                                 virtual public Tempus::StepperRKBase<Scalar> {
+ public:
   /** \brief Default constructor.
    *
    *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
-  */
-  StepperIMEX_RK_Partition(std::string stepperType = "Partitioned IMEX RK SSP2");
+   */
+  StepperIMEX_RK_Partition(
+      std::string stepperType = "Partitioned IMEX RK SSP2");
 
   /// Constructor to for all member data.
   StepperIMEX_RK_Partition(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
-    std::string stepperType,
-    Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
-    Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
-    Scalar order);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+      bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
+      bool zeroInitialGuess,
+      const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction,
+      std::string stepperType,
+      Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
+      Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
+      Scalar order);
 
   /// \name Basic stepper methods
   //@{
-    /// Returns the explicit tableau!
-    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau() const
-    { return getExplicitTableau(); }
+  /// Returns the explicit tableau!
+  virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau() const
+  {
+    return getExplicitTableau();
+  }
 
-    /// Set both the explicit and implicit tableau from ParameterList
-    virtual void setTableaus(std::string stepperType = "",
-      Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau = Teuchos::null,
-      Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau = Teuchos::null);
+  /// Set both the explicit and implicit tableau from ParameterList
+  virtual void setTableaus(
+      std::string stepperType = "",
+      Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau =
+          Teuchos::null,
+      Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau =
+          Teuchos::null);
 
-    virtual void setTableausPartition(
-      Teuchos::RCP<Teuchos::ParameterList> pl,
-      std::string stepperType);
+  virtual void setTableausPartition(Teuchos::RCP<Teuchos::ParameterList> pl,
+                                    std::string stepperType);
 
-    /// Return explicit tableau.
-    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getExplicitTableau() const
-    { return explicitTableau_; }
+  /// Return explicit tableau.
+  virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getExplicitTableau()
+      const
+  {
+    return explicitTableau_;
+  }
 
-    /// Set the explicit tableau from tableau
-    virtual void setExplicitTableau(
+  /// Set the explicit tableau from tableau
+  virtual void setExplicitTableau(
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau);
 
-    /// Return implicit tableau.
-    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getImplicitTableau() const
-    { return implicitTableau_; }
+  /// Return implicit tableau.
+  virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getImplicitTableau()
+      const
+  {
+    return implicitTableau_;
+  }
 
-    /// Set the implicit tableau from tableau
-    virtual void setImplicitTableau(
+  /// Set the implicit tableau from tableau
+  virtual void setImplicitTableau(
       Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau);
 
-    virtual void setModel(
+  virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
-     { return this->wrapperModel_; }
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
+  {
+    return this->wrapperModel_;
+  }
 
-    virtual void setModelPair(
-      const Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> > &
-        modelPair);
+  virtual void setModelPair(
+      const Teuchos::RCP<WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >&
+          modelPair);
 
-    virtual void setModelPair(
+  virtual void setModelPair(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+  /// Initialize during construction and after changing input parameters.
+  virtual void initialize();
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder()const { return order_; }
-    virtual Scalar getOrderMin()const { return order_; }
-    virtual Scalar getOrderMax()const { return order_; }
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  virtual Scalar getOrder() const { return order_; }
+  virtual Scalar getOrderMin() const { return order_; }
+  virtual Scalar getOrderMax() const { return order_; }
 
-    virtual bool isExplicit()         const {return true;}
-    virtual bool isImplicit()         const {return true;}
-    virtual bool isExplicitImplicit() const
-      {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod()   const {return true;}
-    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+  virtual bool isExplicit() const { return true; }
+  virtual bool isImplicit() const { return true; }
+  virtual bool isExplicitImplicit() const
+  {
+    return isExplicit() && isImplicit();
+  }
+  virtual bool isOneStepMethod() const { return true; }
+  virtual bool isMultiStepMethod() const { return !isOneStepMethod(); }
+  virtual OrderODE getOrderODE() const { return FIRST_ORDER_ODE; }
   //@}
 
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageF() {return stageF_;}
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageGx() {return stageGx_;}
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;}
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageF()
+  {
+    return stageF_;
+  }
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageGx()
+  {
+    return stageGx_;
+  }
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() { return xTilde_; }
 
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const
   {
-    const Teuchos::SerialDenseMatrix<int,Scalar> & A = implicitTableau_->A();
-    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+    const Teuchos::SerialDenseMatrix<int, Scalar>& A = implicitTableau_->A();
+    return Scalar(1.0) / (dt * A(0, 0));  // Getting the first diagonal coeff!
   }
   /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+  virtual Scalar getBeta(const Scalar) const { return Scalar(1.0); }
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const;
 
   void evalImplicitModelExplicitly(
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & Y,
-    Scalar time, Scalar stepSize, Scalar stageNumber,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & G) const;
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& X,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& Y, Scalar time,
+      Scalar stepSize, Scalar stageNumber,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& G) const;
 
   void evalExplicitModel(
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
-    Scalar time, Scalar stepSize, Scalar stageNumber,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& X, Scalar time,
+      Scalar stepSize, Scalar stageNumber,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& F) const;
 
   void setOrder(Scalar order) { order_ = order; }
 
-protected:
-
-  Teuchos::RCP<const RKButcherTableau<Scalar> >          explicitTableau_;
-  Teuchos::RCP<const RKButcherTableau<Scalar> >          implicitTableau_;
+ protected:
+  Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau_;
+  Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau_;
 
   Scalar order_;
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageF_;
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageGx_;
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
-
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xTilde_;
 };
-
 
 /** \brief Time-derivative interface for Partitioned IMEX RK.
  *
@@ -478,23 +482,23 @@ protected:
  */
 template <typename Scalar>
 class StepperIMEX_RKPartTimeDerivative
-  : virtual public Tempus::TimeDerivative<Scalar>
-{
-public:
-
+  : virtual public Tempus::TimeDerivative<Scalar> {
+ public:
   /// Constructor
   StepperIMEX_RKPartTimeDerivative(
-    Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde)
-  { initialize(s, xTilde); }
+      Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde)
+  {
+    initialize(s, xTilde);
+  }
 
   /// Destructor
   virtual ~StepperIMEX_RKPartTimeDerivative() {}
 
   /// Compute the time derivative.
   virtual void compute(
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
-    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
-    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot = Teuchos::null)
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot = Teuchos::null)
   {
     xDotDot = Teuchos::null;
 
@@ -503,29 +507,27 @@ public:
     // xOld = solution at beginning of time step
     // xTilde = xOld + dt*(Sum_{j=1}^{i-1} a_ij x_dot_j)
     // xDotTilde = - (s*x_i - s*xTilde)
-    Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xTilde_);
+    Thyra::V_StVpStV(xDot.ptr(), s_, *x, -s_, *xTilde_);
   }
 
   virtual void initialize(Scalar s,
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde)
-  { s_ = s; xTilde_ = xTilde; }
+                          Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde)
+  {
+    s_      = s;
+    xTilde_ = xTilde;
+  }
 
-private:
-
+ private:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde_;
-  Scalar                                         s_;      // = 1/(dt*a_ii)
+  Scalar s_;  // = 1/(dt*a_ii)
 };
-
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
-template<class Scalar>
-Teuchos::RCP<StepperIMEX_RK_Partition<Scalar> >
-createStepperIMEX_RK_Partition(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  std::string stepperType,
-  Teuchos::RCP<Teuchos::ParameterList> pl);
+template <class Scalar>
+Teuchos::RCP<StepperIMEX_RK_Partition<Scalar> > createStepperIMEX_RK_Partition(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pl);
 
-
-} // namespace Tempus
-#endif // Tempus_StepperIMEX_RK_Partition_decl_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperIMEX_RK_Partition_decl_hpp

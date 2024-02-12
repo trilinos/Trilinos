@@ -98,6 +98,9 @@
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_Utils.hpp"
 
+// Kokkos includes
+#include "Kokkos_Core.hpp"
+
 // Epetra includes
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
@@ -403,7 +406,19 @@ int evalCurlCurlu(double & curlcurlu0,
 /**********************************************************************************/
 /******************************** MAIN ********************************************/
 /**********************************************************************************/
+int body(int argc, char *argv[]);
+
 int main(int argc, char *argv[]) {
+#ifdef HAVE_MPI
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+#endif
+  Kokkos::initialize(argc,argv);
+  body(argc,argv);
+  if (!Kokkos::is_finalized())
+    Kokkos::finalize();
+}
+
+int body(int argc, char *argv[]) {
   // using namespace TrilinosCouplings;
   // using IntrepidPoissonExample::parseCommandLineArguments;
   // using IntrepidPoissonExample::setCommandLineArgumentDefaults;
@@ -413,10 +428,9 @@ int main(int argc, char *argv[]) {
 
   int error = 0;
 #ifdef HAVE_MPI
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  int rank=mpiSession.getRank();
-  int numProcs=mpiSession.getNProc();
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);  // CHECK: ALLOW MPI_COMM_WORLD
+  int rank=Comm.MyPID();
+  int numProcs=Comm.NumProc();
   int MyPID = Comm.MyPID();
 #else
   int rank=0;

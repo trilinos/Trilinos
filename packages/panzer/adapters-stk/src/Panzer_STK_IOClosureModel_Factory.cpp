@@ -143,6 +143,7 @@ buildClosureModels(const std::string& model_id,
         pl.set("Workset Size",worksetsize);
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Fields");
+        pl.set("Variable Scale Factors Map", varScaleFactors);
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
             = Teuchos::rcp(new panzer_stk::ScatterCellQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
@@ -159,10 +160,21 @@ buildClosureModels(const std::string& model_id,
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(nodalItr->second));
 
         Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));
-   
+
+        // setup scaling factors as accepted by ScatterFields, if present
+        std::vector<double> scale_factors_(fieldNames->size(),1.0);
+        if (!varScaleFactors.is_null()) {
+          for(size_t f=0; f < fieldNames->size(); ++f) {
+            std::map<std::string,double>::const_iterator f2s_itr = varScaleFactors->find((*fieldNames)[f]);
+            if(f2s_itr != varScaleFactors->end()) {
+              scale_factors_[f] = f2s_itr->second;
+            }
+          }
+        }
+
         // setup scatter nodal fields
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames));
+          = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames,scale_factors_));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    

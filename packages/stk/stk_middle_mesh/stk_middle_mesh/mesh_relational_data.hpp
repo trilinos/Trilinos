@@ -3,6 +3,7 @@
 
 #include "field.hpp"
 #include "mesh.hpp"
+#include "mesh_entity.hpp"
 #include "predicates/intersection_common.hpp"
 #include "projection.hpp"
 #include "variable_size_field.hpp"
@@ -41,6 +42,7 @@ struct EdgeSplitRecord
 {
     FakeVert vert;
     double xi;
+    mesh::MeshEntityPtr otherMeshEntity;
 };
 
 struct VertOnEdge
@@ -55,17 +57,20 @@ struct MeshRelationalData
 {
     MeshRelationalData(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2,
                        std::shared_ptr<mesh::Mesh> meshIn)
-      : vertsInClassOnMesh1(mesh::create_field<predicates::impl::PointRecord>(meshIn, FieldShape(1, 0, 0), 1))
+      : vertsInClassOnMesh1(meshIn ? mesh::create_field<predicates::impl::PointRecord>(meshIn, FieldShape(1, 0, 0), 1) : nullptr)
       , verts2ClassOnMesh1(mesh::create_field<predicates::impl::PointRecord>(mesh2, FieldShape(1, 0, 0), 1))
       , verts1ToFakeVerts(mesh::create_field<FakeVert>(mesh1, FieldShape(1, 0, 0), 1))
       , verts2ToFakeVerts(mesh::create_field<FakeVert>(mesh2, FieldShape(1, 0, 0), 1))
       , edges2ToFakeVertsIn(mesh::create_variable_size_field<VertOnEdge>(mesh2, FieldShape(0, 1, 0)))
       , mesh1EdgesToSplit(mesh::create_variable_size_field<EdgeSplitRecord>(mesh1, FieldShape(0, 1, 0)))
-      , mesh1ElsToVertsIn(mesh::create_variable_size_field<mesh::MeshEntityPtr>(mesh1, FieldShape(0, 0, 1)))
-      , meshInElementsToMesh1Elements(mesh::create_field<mesh::MeshEntityPtr>(meshIn, FieldShape(0, 0, 1), 1, nullptr))
-      , meshInElementsToMesh2Elements(mesh::create_field<mesh::MeshEntityPtr>(meshIn, FieldShape(0, 0, 1), 1, nullptr))
-      , mesh1ElementsToMesh2Elements(mesh::create_variable_size_field<mesh::MeshEntityPtr>(mesh1, FieldShape(0, 0, 1)))
-    // edges1_to_in(mesh::create_variable_size_field<MeshEntityPtr>(mesh1, FieldShape(0, 1, 0)))
+      , mesh1ElsToVertsIn(meshIn ? mesh::create_variable_size_field<mesh::MeshEntityPtr>(mesh1, FieldShape(0, 0, 1)): nullptr)
+      , meshInElementsToMesh1Elements(meshIn ? mesh::create_field<mesh::MeshEntityPtr>(meshIn, FieldShape(0, 0, 1), 1, nullptr) : nullptr)
+      , meshInElementsToMesh2Elements(meshIn ? mesh::create_field<mesh::MeshEntityPtr>(meshIn, FieldShape(0, 0, 1), 1, nullptr) : nullptr)
+    {}
+
+    // this constructor only allocates the fields needed *before* the MeshRelationalDataScatter
+    MeshRelationalData(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mesh> mesh2) :
+      MeshRelationalData(mesh1, mesh2, nullptr)
     {}
 
     mesh::FieldPtr<predicates::impl::PointRecord> vertsInClassOnMesh1; // classification of mesh_in vertices on mesh1
@@ -79,7 +84,6 @@ struct MeshRelationalData
     mesh::VariableSizeFieldPtr<EdgeSplitRecord>
         mesh1EdgesToSplit; // edges on mesh1 that are split by mesh2 edges or vertices
 
-    // VariableSizeFieldPtr<MeshEntityPtr> edges1_to_in;  // edges on mesh_in that are on mesh1 edges
     mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr>
         mesh1ElsToVertsIn;                               // maps the elements of mesh1 to the vertices
                                                          // on mesh_in that are inside them (or on their
@@ -92,12 +96,6 @@ struct MeshRelationalData
                                                          // are created
     mesh::FieldPtr<mesh::MeshEntityPtr> meshInElementsToMesh1Elements; // maps mesh_in elements to mesh1 elements
     mesh::FieldPtr<mesh::MeshEntityPtr> meshInElementsToMesh2Elements; // maps mesh_in elements to mesh2 elements
-    mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr>
-        mesh1ElementsToMesh2Elements; // stores the candidate set of mesh2 elements
-                                      // that *may* overlap a given mesh1 element.
-                                      // This set of elements is required to cover
-                                      // the mesh1 elements, but may contain additional
-                                      // elements that are nearby
 };
 
 } // namespace impl

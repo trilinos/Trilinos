@@ -343,6 +343,8 @@ namespace Intrepid2 {
         
         constexpr int R = numTensorComponents - 1;
         
+        const int composedTransformRank = composedTransform_.rank();
+        
         for (int a_component=0; a_component < leftComponentSpan_; a_component++)
         {
           const int a = a_offset_ + a_component;
@@ -401,16 +403,35 @@ namespace Intrepid2 {
             
             if (composedTransform_.underlyingMatchesLogical())
             {
-              const auto & composedTransformView = composedTransform_.getUnderlyingView4();
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
-                pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-              });
+              if (composedTransformRank == 4) // (C,P,D,D)
+              {
+                const auto & composedTransformView = composedTransform_.getUnderlyingView4();
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
+              else // rank 2, then: (C,P)
+              {
+                const auto & composedTransformView = composedTransform_.getUnderlyingView2();
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransformView(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
             }
             else
             {
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-              });
+              if  (composedTransformRank == 4) // (C,P,D,D)
+              {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
+              else  // rank 2, then: (C,P)
+              {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                  pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+                });
+              }
             }
             
             // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
@@ -614,6 +635,8 @@ namespace Intrepid2 {
 //        int flopsPerCellMeasuresAccess = cellMeasures_.numTensorComponents() - 1;
         
         constexpr int R = numTensorComponents - 1;
+
+        const int composedTransformRank = composedTransform_.rank();
         
         for (int a_component=0; a_component < leftComponentSpan_; a_component++)
         {
@@ -658,9 +681,18 @@ namespace Intrepid2 {
               }
             });
             
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-            });
+            if (composedTransformRank == 4)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
+            else
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
             // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
             
             // synchronize threads
@@ -1250,6 +1282,8 @@ namespace Intrepid2 {
 
         // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
 
+        const int composedTransformRank = composedTransform_.rank();
+        
         // synchronize threads
         teamMember.team_barrier();
 
@@ -1324,10 +1358,19 @@ namespace Intrepid2 {
                 }
               }
             });
-                        
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-              pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-            });
+            
+            if (composedTransformRank == 4) // (C,P,D,D)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
+            else // (C,P)
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
+                pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
+              });
+            }
 
             // synchronize threads
             teamMember.team_barrier();
@@ -1785,6 +1828,51 @@ namespace Intrepid2 {
         return shmem_size;
       }
     };
+  
+    template<class Scalar, class DeviceType>
+    class F_RefSpaceIntegral
+    {
+      ScalarView<Scalar,DeviceType> integral_;
+      Data<Scalar,DeviceType>  left_;
+      Data<Scalar,DeviceType>  right_;
+      Data<Scalar,DeviceType>  weights_;
+      ordinal_type dimSpan_;
+      ordinal_type leftRank_;
+      ordinal_type rightRank_;
+      ordinal_type numPoints_;
+    public:
+      F_RefSpaceIntegral(ScalarView<Scalar,DeviceType> integralView,
+                         Data<Scalar,DeviceType> left, Data<Scalar,DeviceType> right, Data<Scalar,DeviceType> weights,
+                         ordinal_type dimSpan)
+      :
+      integral_(integralView),
+      left_(left),
+      right_(right),
+      weights_(weights),
+      dimSpan_(dimSpan)
+      {
+        leftRank_  = left.rank();
+        rightRank_ = right.rank();
+        numPoints_ = weights.extent_int(0);
+      }
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()( const ordinal_type & i, const ordinal_type & j ) const
+      {
+        Scalar refSpaceIntegral = 0.0;
+        for (int ptOrdinal=0; ptOrdinal<numPoints_; ptOrdinal++)
+        {
+          const Scalar & weight = weights_(ptOrdinal);
+          for (int a=0; a<dimSpan_; a++)
+          {
+            const Scalar &  leftValue = ( leftRank_ == 2) ?  left_(i,ptOrdinal) :  left_(i,ptOrdinal,a);
+            const Scalar & rightValue = (rightRank_ == 2) ? right_(j,ptOrdinal) : right_(j,ptOrdinal,a);
+            refSpaceIntegral += leftValue * rightValue * weight;
+          }
+        }
+        integral_(i,j) = refSpaceIntegral;
+      }
+    };
   }
 
 template<typename DeviceType>
@@ -1810,8 +1898,15 @@ Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const
   const auto leftTransform = vectorDataLeft.transform();
   
   DimensionInfo combinedCellDimInfo = cellMeasureData.getDimensionInfo(CELL_DIM);
-  combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo,  vectorDataLeft.transform().getDimensionInfo(CELL_DIM));
-  combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataRight.transform().getDimensionInfo(CELL_DIM));
+  // transforms may be invalid, indicating an identity transform.  If so, it will not constrain the output at all.
+  if (vectorDataLeft.transform().isValid())
+  {
+    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataLeft.transform().getDimensionInfo(CELL_DIM));
+  }
+  if (vectorDataRight.transform().isValid())
+  {
+    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataRight.transform().getDimensionInfo(CELL_DIM));
+  }
 
   DataVariationType cellVariationType = combinedCellDimInfo.variationType;
   int cellDataExtent                  = combinedCellDimInfo.dataExtent;
@@ -2055,10 +2150,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               Data<Scalar,DeviceType>  leftTensorComponent =  leftComponent.getTensorComponent(r);
               Data<Scalar,DeviceType> rightTensorComponent = rightComponent.getTensorComponent(r);
               
-              const int  leftTensorComponentRank    =  leftTensorComponent.rank();
               const int  leftTensorComponentDimSpan =  leftTensorComponent.extent_int(2);
               const int  leftTensorComponentFields  =  leftTensorComponent.extent_int(0);
-              const int rightTensorComponentRank    = rightTensorComponent.rank();
               const int rightTensorComponentDimSpan = rightTensorComponent.extent_int(2);
               const int rightTensorComponentFields  = rightTensorComponent.extent_int(0);
               
@@ -2066,35 +2159,26 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
             
               for (int d=d_start; d<d_end; d++)
               {
+                ScalarView<Scalar,DeviceType> componentIntegralView;
+                
                 const bool allocateFadStorage = !std::is_pod<Scalar>::value;
                 if (allocateFadStorage)
                 {
                   auto fad_size_output = dimension_scalar(integrals.getUnderlyingView());
-                  componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields, fad_size_output);
+                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields, fad_size_output);
                 }
                 else
                 {
-                  componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields);
+                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields);
                 }
             
-                auto componentIntegralView = componentIntegrals[r][d];
-                
                 auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{leftTensorComponentFields,rightTensorComponentFields});
                 
-                for (int a=0; a<leftTensorComponentDimSpan; a++)
-                {
-                  Kokkos::parallel_for("compute componentIntegrals", policy,
-                  KOKKOS_LAMBDA (const int &i, const int &j) {
-                    Scalar refSpaceIntegral = 0.0;
-                    for (int ptOrdinal=0; ptOrdinal<numPoints; ptOrdinal++)
-                    {
-                      const Scalar &  leftValue = ( leftTensorComponentRank == 2) ?  leftTensorComponent(i,ptOrdinal) :  leftTensorComponent(i,ptOrdinal,a);
-                      const Scalar & rightValue = (rightTensorComponentRank == 2) ? rightTensorComponent(j,ptOrdinal) : rightTensorComponent(j,ptOrdinal,a);
-                      refSpaceIntegral += leftValue * rightValue * quadratureWeights(ptOrdinal);
-                    }
-                    componentIntegralView(i,j) = refSpaceIntegral;
-                  });
-                }
+                Impl::F_RefSpaceIntegral<Scalar, DeviceType> refSpaceIntegralFunctor(componentIntegralView, leftTensorComponent, rightTensorComponent, quadratureWeights,
+                                                                                     leftTensorComponentDimSpan);
+                Kokkos::parallel_for("compute componentIntegrals", policy, refSpaceIntegralFunctor);
+                
+                componentIntegrals[r][d] = componentIntegralView;
                 
                 if (approximateFlops != NULL)
                 {

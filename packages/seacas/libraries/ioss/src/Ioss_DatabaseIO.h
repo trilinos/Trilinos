@@ -133,35 +133,33 @@ namespace Ioss {
     virtual void finalize_database() const {}
 
     // Let's save the name on disk after Filename gets modified, e.g: decoded_filename
-    void set_pfsname(const std::string &name) const { pfsName = name; }
+    void set_pfs_name(const std::string &name) const { pfsName = name; }
 
-    std::string get_pfsname() const { return pfsName; }
+    std::string get_pfs_name() const { return pfsName; }
 
     /** \brief this will be the name in BB namespace
      */
-    void set_dwname(const std::string &name) const { bbName = name; }
+    void set_dw_name(const std::string &name) const { bbName = name; }
 
-    std::string get_dwname() const
+    std::string get_dw_name() const
     {
       if (!bbName.empty() && !is_input() && using_dw()) {
         return bbName;
       }
-      else {
-        return get_filename();
-      }
+      return get_filename();
     }
 
     /** \brief We call this ONLY after we assure that using_dw() is TRUE
      *  \ returns mount point of Datawarp namespace, e.g: `/opt/cray/....<jobid>`
      */
-    std::string get_dwPath() const { return dwPath; }
+    std::string get_dw_path() const { return dwPath; }
 
     /** Determine whether Cray Datawarp module is loaded and we have BB capacity allocated for this
      * job ( i.e: DW_JOB_STRIPED is set) && IOSS property to use DATAWARP is set to Y/YES (i.e
      * environmental variable ENABLE_DATAWARP) . If we are using DW then set some pathnames for
      * writing directly to BB instead of PFS(i.e Lustre)
      */
-    void check_setDW() const;
+    void check_set_dw() const;
 
     /** Set if  Cray Datawarp exists and allocated space is found , i.e PATH to DW name space
      */
@@ -186,7 +184,7 @@ namespace Ioss {
     const std::string &decoded_filename() const;
 
     /** Return a string specifying underlying format of database (exodus, cgns, ...) */
-    virtual const std::string get_format() const = 0;
+    virtual std::string get_format() const = 0;
 
     /** \brief Determine whether the database is an input database.
      *
@@ -219,11 +217,11 @@ namespace Ioss {
      * for all related subsequent functions(e.g: get_filename, get_file_ptr etc) once burst buffer
      * is found and set to be used.
      */
-    void openDW(const std::string &filename) const;
+    void open_dw(const std::string &filename) const;
 
     /** \brief  Function which invokes stageout  from BB to Disk, prior to completion of final close
      */
-    void closeDW() const;
+    void close_dw() const;
 
     void openDatabase() const
     {
@@ -371,6 +369,8 @@ namespace Ioss {
 
     bool get_logging() const { return doLogging && !singleProcOnly; }
     void set_logging(bool on_off) { doLogging = on_off; }
+    bool get_nan_detection() const { return doNanDetection; }
+    void set_nan_detection(bool on_off) { doNanDetection = on_off; }
 
     // The get_field and put_field functions are just a wrapper around the
     // pure virtual get_field_internal and put_field_internal functions,
@@ -384,6 +384,9 @@ namespace Ioss {
       IOSS_FUNC_ENTER(m_);
       verify_and_log(reg, field, 1);
       int64_t retval = get_field_internal(reg, field, data, data_size);
+      if (get_nan_detection()) {
+        verify_field_data(reg, field, Ioss::Field::InOut::INPUT, data);
+      }
       verify_and_log(nullptr, field, 1);
       return retval;
     }
@@ -393,8 +396,24 @@ namespace Ioss {
     {
       IOSS_FUNC_ENTER(m_);
       verify_and_log(reg, field, 0);
+      if (get_nan_detection()) {
+        verify_field_data(reg, field, Ioss::Field::InOut::OUTPUT, data);
+      }
       int64_t retval = put_field_internal(reg, field, data, data_size);
       verify_and_log(nullptr, field, 0);
+      return retval;
+    }
+
+    template <typename T>
+    int64_t get_zc_field(const T *reg, const Field &field, void **data, size_t *data_size) const
+    {
+      IOSS_FUNC_ENTER(m_);
+      verify_and_log(reg, field, 1);
+      int64_t retval = get_zc_field_internal(reg, field, data, data_size);
+      if (get_nan_detection()) {
+        verify_field_data(reg, field, Ioss::Field::InOut::INPUT, data);
+      }
+      verify_and_log(nullptr, field, 1);
       return retval;
     }
 
@@ -548,6 +567,9 @@ namespace Ioss {
         util().progress(output);
       }
     }
+
+    virtual std::vector<size_t> get_all_block_field_data(const std::string &field_name, void *data,
+                                                         size_t data_size) const;
 
   protected:
     DatabaseIO(Region *region, std::string filename, Ioss::DatabaseUsage db_usage,
@@ -754,69 +776,102 @@ namespace Ioss {
 
     void compute_block_adjacencies() const;
 
+    bool verify_field_data(const GroupingEntity *ge, const Field &field, Ioss::Field::InOut in_out,
+                           void *data) const;
     void verify_and_log(const GroupingEntity *ge, const Field &field, int in_out) const;
 
     virtual int64_t get_field_internal(const Region *reg, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const NodeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const EdgeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const FaceBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const ElementBlock *eb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const SideBlock *fb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const NodeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const EdgeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const FaceSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const ElementSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const SideSet *fs, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t get_field_internal(const CommSet *cs, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
-    virtual int64_t get_field_internal(const Assembly * /*as*/, const Field & /*field*/,
-                                       void * /*data*/, size_t /*data_size*/) const = 0;
-    virtual int64_t get_field_internal(const Blob * /*bl*/, const Field & /*field*/,
-                                       void * /*data*/, size_t /*data_size*/) const = 0;
-    virtual int64_t get_field_internal(const StructuredBlock * /*sb*/, const Field & /*field*/,
-                                       void * /*data*/, size_t /*data_size*/) const = 0;
+                                       size_t data_size) const = 0;
+    virtual int64_t get_field_internal(const Assembly *as, const Field &field, void *data,
+                                       size_t data_size) const = 0;
+    virtual int64_t get_field_internal(const Blob *bl, const Field &field, void *data,
+                                       size_t data_size) const = 0;
+    virtual int64_t get_field_internal(const StructuredBlock *sb, const Field &field, void *data,
+                                       size_t data_size) const = 0;
 
     virtual int64_t put_field_internal(const Region *reg, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const NodeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const EdgeBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const FaceBlock *nb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const ElementBlock *eb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const SideBlock *fb, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const NodeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const EdgeSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const FaceSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const ElementSet *ns, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const SideSet *fs, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
+                                       size_t data_size) const = 0;
     virtual int64_t put_field_internal(const CommSet *cs, const Field &field, void *data,
-                                       size_t data_size) const                      = 0;
-    virtual int64_t put_field_internal(const Assembly * /*as*/, const Field & /*field*/,
-                                       void * /*data*/, size_t /*data_size*/) const = 0;
-    virtual int64_t put_field_internal(const Blob * /*bl*/, const Field & /*field*/,
-                                       void * /*data*/, size_t /*data_size*/) const = 0;
-    virtual int64_t put_field_internal(const StructuredBlock * /*sb*/, const Field & /*field*/,
-                                       void * /*data*/, size_t /*data_size*/) const = 0;
+                                       size_t data_size) const = 0;
+    virtual int64_t put_field_internal(const Assembly *as, const Field &field, void *data,
+                                       size_t data_size) const = 0;
+    virtual int64_t put_field_internal(const Blob *bl, const Field &field, void *data,
+                                       size_t data_size) const = 0;
+    virtual int64_t put_field_internal(const StructuredBlock *sb, const Field &field, void *data,
+                                       size_t data_size) const = 0;
+
+    virtual int64_t get_zc_field_internal(const Region *reg, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const NodeBlock *nb, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const EdgeBlock *nb, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const FaceBlock *nb, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const ElementBlock *eb, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const SideBlock *fb, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const NodeSet *ns, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const EdgeSet *ns, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const FaceSet *ns, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const ElementSet *ns, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const SideSet *fs, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const CommSet *cs, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const Assembly *as, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const Blob *bl, const Field &field, void **data,
+                                          size_t *data_size) const;
+    virtual int64_t get_zc_field_internal(const StructuredBlock *sb, const Field &field,
+                                          void **data, size_t *data_size) const;
 
     mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 
@@ -843,6 +898,7 @@ namespace Ioss {
 
     bool singleProcOnly{false}; // True if history or heartbeat which is only written from proc 0...
     bool doLogging{false};      // True if logging field input/output
+    bool doNanDetection{false}; // True if checking all floating point field data for NaNs
     bool useGenericCanonicalName{
         false}; // True if "block_id" is used as canonical name instead of the name
     // given on the mesh file e.g. "fireset".  Both names are still aliases.

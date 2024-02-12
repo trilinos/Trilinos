@@ -116,6 +116,7 @@ private:
   Real force_;
   int updateIter_;
   Real forceFactor_;
+  Real gtol_;
 
   mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
@@ -158,11 +159,14 @@ private:
                     const Vector<Real> &xold,
                     Objective<Real> &obj);
 
-  Real computeGradient(const Vector<Real> &x,
+  void computeGradient(const Vector<Real> &x,
                        Vector<Real> &g,
                        Vector<Real> &pwa,
                        Real del,
                        Objective<Real> &obj,
+                       bool accept,
+                       Real &gtol,
+                       Real &gnorm,
                        std::ostream &outStream = std::cout) const;
 
   // Compute the projected step s = P(x + alpha*w) - x

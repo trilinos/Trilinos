@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -63,6 +63,16 @@ void IOShell::Interface::enroll_options()
                   "unknown");
   options_.enroll("compare", Ioss::GetLongOption::NoValue,
                   "Compare the contents of the INPUT and OUTPUT files.", nullptr);
+  options_.enroll(
+      "relative", Ioss::GetLongOption::MandatoryValue,
+      "Relative tolerance to use if comparing real field data. (diff > abs && diff > rel).",
+      nullptr);
+  options_.enroll(
+      "absolute", Ioss::GetLongOption::MandatoryValue,
+      "Absolute tolerance to use if comparing real field data. (diff > abs && diff > rel)",
+      nullptr);
+  options_.enroll("floor", Ioss::GetLongOption::MandatoryValue,
+                  "Only compare values if `|a| > floor && |b| > floor`", nullptr);
   options_.enroll("ignore_qa_info", Ioss::GetLongOption::NoValue,
                   "If comparing databases, do not compare the qa and info records.", nullptr,
                   nullptr, true);
@@ -295,6 +305,8 @@ void IOShell::Interface::enroll_options()
 #endif
 
   options_.enroll("debug", Ioss::GetLongOption::NoValue, "turn on debugging output", nullptr);
+  options_.enroll("detect_nans", Ioss::GetLongOption::NoValue, "check all real field data for NaNs",
+                  nullptr);
 
   options_.enroll("quiet", Ioss::GetLongOption::NoValue, "minimize output", nullptr);
 
@@ -345,7 +357,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     if (my_processor == 0) {
       options_.usage(std::cerr);
       fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n");
-      fmt::print(stderr, "\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-shell\n\n");
+      fmt::print(stderr,
+                 "\tDocumentation: "
+                 "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-shell\n\n");
       fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
                  options_.program_name());
     }
@@ -386,6 +400,25 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
   compare        = (options_.retrieve("compare") != nullptr);
   ignore_qa_info = (options_.retrieve("ignore_qa_info") != nullptr);
+
+  {
+    const char *temp = options_.retrieve("absolute");
+    if (temp != nullptr) {
+      abs_tolerance = std::strtod(temp, nullptr);
+    }
+  }
+  {
+    const char *temp = options_.retrieve("relative");
+    if (temp != nullptr) {
+      rel_tolerance = std::strtod(temp, nullptr);
+    }
+  }
+  {
+    const char *temp = options_.retrieve("floor");
+    if (temp != nullptr) {
+      tol_floor = std::strtod(temp, nullptr);
+    }
+  }
 
   {
     const char *temp = options_.retrieve("compress");
@@ -497,6 +530,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 
   minimize_open_files       = (options_.retrieve("minimize_open_files") != nullptr);
   debug                     = (options_.retrieve("debug") != nullptr);
+  detect_nans               = (options_.retrieve("detect_nans") != nullptr);
   file_per_state            = (options_.retrieve("file_per_state") != nullptr);
   reverse                   = (options_.retrieve("reverse") != nullptr);
   quiet                     = (options_.retrieve("quiet") != nullptr);

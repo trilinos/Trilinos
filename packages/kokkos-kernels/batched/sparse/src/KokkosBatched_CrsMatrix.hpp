@@ -29,9 +29,8 @@ namespace KokkosBatched {
 template <class ValuesViewType, class IntViewType>
 class CrsMatrix {
  public:
-  using ScalarType = typename ValuesViewType::non_const_value_type;
-  using MagnitudeType =
-      typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
+  using ScalarType    = typename ValuesViewType::non_const_value_type;
+  using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
 
  private:
   ValuesViewType values;
@@ -82,10 +81,9 @@ class CrsMatrix {
             typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION void apply(
       const MemberType &member, const XViewType &X, const YViewType &Y,
-      MagnitudeType alpha = Kokkos::Details::ArithTraits<MagnitudeType>::one(),
-      MagnitudeType beta =
-          Kokkos::Details::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero()) {
+      MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
+      MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
+    if (beta == Kokkos::ArithTraits<MagnitudeType>::zero()) {
       if (member.team_size() == 1 && n_operators == 8)
         KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<
             ValuesViewType, IntViewType, XViewType, YViewType, 0>(
@@ -109,10 +107,9 @@ class CrsMatrix {
   template <typename ArgTrans, typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION void apply(
       const XViewType &X, const YViewType &Y,
-      MagnitudeType alpha = Kokkos::Details::ArithTraits<MagnitudeType>::one(),
-      MagnitudeType beta =
-          Kokkos::Details::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero())
+      MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
+      MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
+    if (beta == Kokkos::ArithTraits<MagnitudeType>::zero())
       KokkosBatched::SerialSpmv<ArgTrans>::template invoke<
           ValuesViewType, IntViewType, XViewType, YViewType, 0>(
           alpha, values, row_ptr, colIndices, X, beta, Y);

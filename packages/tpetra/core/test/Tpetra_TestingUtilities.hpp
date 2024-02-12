@@ -136,8 +136,6 @@ namespace Tpetra {
       return v_out;
     }
 
-
-
   } // namespace TestingUtilities
 } // namespace Tpetra
 

@@ -77,9 +77,9 @@ public:
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
                                              const value_type_matrix &ABR) const {
-    using LU_AlgoType = typename LU_Algorithm::type;
-    using TrsmAlgoType = typename TrsmAlgorithm::type;
-    using GemmAlgoType = typename GemmAlgorithm::type;
+    using LU_AlgoType = typename LU_Algorithm_Team::type;
+    using GemmAlgoType = typename GemmAlgorithm_Team::type;
+    using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
 
     int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -111,6 +111,7 @@ public:
       }
     }
   }
+
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var1(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
                                              const value_type_matrix &T, const value_type_matrix &ABR) const {
@@ -196,7 +197,6 @@ public:
       member.team_barrier();
 
       if (n_m > 0) {
-        UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
         UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
         UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
@@ -276,52 +276,97 @@ public:
 
     // loop over target
     // const size_type s2tsize = srcsize*sizeof(ordinal_type)*member.team_size();
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(member, sbeg, send),
-        [&, buf,
-         srcsize](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-          ordinal_type *s2t = ((ordinal_type *)(buf)) + member.team_rank() * srcsize;
-          const auto &s = info.supernodes(info.sid_block_colidx(i).first);
-          {
-            const ordinal_type tgtbeg = info.sid_block_colidx(s.sid_col_begin).second,
-                               tgtend = info.sid_block_colidx(s.sid_col_end - 1).second, tgtsize = tgtend - tgtbeg;
+    if constexpr(runOnHost) {
+      ordinal_type *s2t = (ordinal_type *)buf;
+      //const size_type s2tsize = srcsize * sizeof(ordinal_type);
+      //TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");
 
-            const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-            Kokkos::parallel_for(
-                Kokkos::ThreadVectorRange(member, srcsize),
-                [&, t_colidx, s_colidx, tgtsize](
-                    const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-                  s2t[k] = -1;
-                  auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize - 1], s_colidx[k],
-                                           [](ordinal_type left, ordinal_type right) { return left < right; });
-                  if (s_colidx[k] == *found) {
-                    s2t[k] = found - t_colidx;
-                  }
-                });
-          }
-          {
-            UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
-            UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
-            const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
+      for (ordinal_type i = sbeg; i < send; ++i) {
+        const ordinal_type tgtsid = info.sid_block_colidx(i).first;
+        const auto &s = info.supernodes(tgtsid);
+        {
+          const ordinal_type tgtbeg = info.sid_block_colidx(s.sid_col_begin).second,
+                             tgtend = info.sid_block_colidx(s.sid_col_end - 1).second, tgtsize = tgtend - tgtbeg;
 
-            ordinal_type ijbeg = 0;
-            for (; s2t[ijbeg] == -1; ++ijbeg)
-              ;
-
-            if constexpr(runOnHost) {
-              for (ordinal_type ii = ijbeg; ii < srcsize; ++ii) {
-                const ordinal_type row = s2t[ii];
-                if (row < s.m) {
-                  for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
-                    const ordinal_type col = s2t[jj];
-                    Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
-                    if (col >= s.m) {
-                      Kokkos::atomic_add(&L(col - s.m, row), ABR(jj, ii));
-                    }
-                  }
-                }
+          const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+          for (ordinal_type k = 0, l = 0; k < srcsize; ++k) {
+            s2t[k] = -1;
+            for (; l < tgtsize && t_colidx[l] <= s_colidx[k]; ++l)
+              if (s_colidx[k] == t_colidx[l]) {
+                s2t[k] = l;
+                break;
               }
-            } else {
+          }
+        }
+
+        {
+          UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
+          UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+          const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
+
+          ordinal_type ijbeg = 0;
+          for (; s2t[ijbeg] == -1; ++ijbeg)
+            ;
+
+          // lock
+          while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1))
+            TACHO_IMPL_PAUSE;
+          Kokkos::store_fence();
+
+          for (ordinal_type jj = ijbeg; jj < srcsize; ++jj) {
+            const ordinal_type col = s2t[jj];
+            for (ordinal_type ii = ijbeg; ii < srcsize; ++ii) {
+              const ordinal_type row = s2t[ii];
+              if (row < s.m) {
+                U(row, col) += ABR(ii, jj);
+                //Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
+                if (col >= s.m) {
+                  L(col - s.m, row) += ABR(jj, ii);
+                  //Kokkos::atomic_add(&L(col - s.m, row), ABR(jj, ii));
+                }
+              } else
+                break;
+            }
+          }
+
+          // unlock
+          s.lock = 0;
+          Kokkos::load_fence();
+        }
+      }
+    } else {
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, sbeg, send),
+          [&, buf,
+           srcsize](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+            ordinal_type *s2t = ((ordinal_type *)(buf)) + member.team_rank() * srcsize;
+            const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+            {
+              const ordinal_type tgtbeg = info.sid_block_colidx(s.sid_col_begin).second,
+                                 tgtend = info.sid_block_colidx(s.sid_col_end - 1).second, tgtsize = tgtend - tgtbeg;
+
+              const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+              Kokkos::parallel_for(
+                  Kokkos::ThreadVectorRange(member, srcsize),
+                  [&, t_colidx, s_colidx, tgtsize](
+                      const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+                    s2t[k] = -1;
+                    auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize - 1], s_colidx[k],
+                                             [](ordinal_type left, ordinal_type right) { return left < right; });
+                    if (s_colidx[k] == *found) {
+                      s2t[k] = found - t_colidx;
+                    }
+                  });
+            }
+            {
+              UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
+              UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+              const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
+
+              ordinal_type ijbeg = 0;
+              for (; s2t[ijbeg] == -1; ++ijbeg)
+                ;
+
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, ijbeg, srcsize), [&](const ordinal_type &ii) {
                 const ordinal_type row = s2t[ii];
                 if (row < s.m) {
@@ -335,8 +380,8 @@ public:
                 }
               });
             }
-          }
-        });
+          });
+    }
     return;
   }
 
@@ -390,7 +435,7 @@ public:
         factorize_var2(member, s, P, T, ABR);
       }
     } else if (mode == -1) {
-      printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
+      Kokkos::printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
     } else {
       // skip
     }

@@ -46,12 +46,12 @@ namespace Tempus {
  * evaluations.
  */
 template <typename Scalar>
-class StaggeredForwardSensitivityModelEvaluator :
-  public Thyra::StateFuncModelEvaluatorBase<Scalar>,
-  public SensitivityModelEvaluatorBase<Scalar> {
-public:
-  typedef Thyra::VectorBase<Scalar>  Vector;
-  typedef Thyra::MultiVectorBase<Scalar>  MultiVector;
+class StaggeredForwardSensitivityModelEvaluator
+  : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
+    public SensitivityModelEvaluatorBase<Scalar> {
+ public:
+  typedef Thyra::VectorBase<Scalar> Vector;
+  typedef Thyra::MultiVectorBase<Scalar> MultiVector;
 
   //! Constructor
   /*!
@@ -81,36 +81,41 @@ public:
    * </ul>
    */
   StaggeredForwardSensitivityModelEvaluator(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_residual_model,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_solve_model,
-    const bool is_pseudotransient,
-    const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
-    const Teuchos::RCP<MultiVector>& dxdp_init = Teuchos::null,
-    const Teuchos::RCP<MultiVector>& dx_dotdp_init = Teuchos::null,
-    const Teuchos::RCP<MultiVector>& dx_dotdot_dp_init = Teuchos::null);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >&
+          sens_residual_model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >&
+          sens_solve_model,
+      const bool is_pseudotransient,
+      const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
+      const Teuchos::RCP<MultiVector>& dxdp_init              = Teuchos::null,
+      const Teuchos::RCP<MultiVector>& dx_dotdp_init          = Teuchos::null,
+      const Teuchos::RCP<MultiVector>& dx_dotdot_dp_init      = Teuchos::null);
 
   /** \name Public functions overridden from SensitivityModelEvaulator. */
   //@{
 
   //! Get the underlying model 'f'
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getForwardModel() const
-  { return model_; }
+  {
+    return model_;
+  }
 
   //! Set solution history from forward state evaluation (for interpolation)
   void setForwardSolutionHistory(
-    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);
+      const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);
 
   //! Set solution state from forward state evaluation (for frozen state)
   virtual void setForwardSolutionState(
-    const Teuchos::RCP<const Tempus::SolutionState<Scalar> >& s);
+      const Teuchos::RCP<const Tempus::SolutionState<Scalar> >& s);
 
   //! Set the solver of the underlying model if you want to reuse it
   virtual void setSolver(
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    const bool force_W_update) {
+      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+      const bool force_W_update)
+  {
     auto nox_solver =
-      Teuchos::rcp_dynamic_cast<Thyra::NOXNonlinearSolver>(solver,true);
+        Teuchos::rcp_dynamic_cast<Thyra::NOXNonlinearSolver>(solver, true);
     lo_ = nox_solver->get_nonconst_W_op(force_W_update);
     po_ = nox_solver->get_nonconst_prec_op();
   }
@@ -151,16 +156,14 @@ public:
 
   static Teuchos::RCP<const Teuchos::ParameterList> getValidParameters();
 
-private:
-
+ private:
   typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
 
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
-
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
@@ -206,6 +209,6 @@ private:
   mutable Scalar t_interp_;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
 #endif

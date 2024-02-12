@@ -2,8 +2,12 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_balance/balanceUtils.hpp>
+#include <stk_balance/internal/Balancer.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include "UnitTestSpiderMeshSetup.hpp"
+#include "stk_balance/setup/DefaultSettings.hpp"
+#include "stk_balance/io/BalanceIO.hpp"
+#include "stk_unit_test_utils/getOption.h"
 
 namespace {
 
@@ -15,21 +19,31 @@ protected:
     m_balanceSettings.setShouldFixSpiders(true);
 
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::balance::internal::register_internal_fields(get_bulk(), m_balanceSettings);
+    stk::balance::internal::register_internal_fields_and_parts(get_bulk(), m_balanceSettings);
   }
 
   void fill_decomp_list_from_current_ownership(stk::mesh::EntityProcVec & decomp) {
-    stk::mesh::EntityVector localElems;
-    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), localElems);
+    stk::mesh::Part & spiderPart = *m_balanceSettings.getSpiderPart(get_bulk());
+    stk::mesh::EntityVector localElems = stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK,
+                                                                 get_meta().locally_owned_part() & !spiderPart);
+
+    // Fill list as if this is what came back from the partitioner, with local offsets
+    // placing the results at the start of the (now oversized) array.
+    unsigned listOffset = 0;
     for (const stk::mesh::Entity & elem : localElems) {
-      decomp.push_back(std::make_pair(elem, get_bulk().parallel_owner_rank(elem)));
+      decomp[listOffset++] = std::make_pair(elem, get_bulk().parallel_owner_rank(elem));
     }
   }
 
   void fix_spider_elements()
   {
-    stk::balance::internal::fill_spider_connectivity_count_fields(get_bulk(), m_balanceSettings);
+    stk::balance::internal::fill_spider_connectivity_count_fields_and_parts(get_bulk(), m_balanceSettings);
+
+    const size_t numLocallyOwned = stk::mesh::count_entities(get_bulk(), stk::topology::ELEM_RANK,
+                                                             get_meta().locally_owned_part());
     stk::mesh::EntityProcVec decomp;
+    decomp.resize(numLocallyOwned, std::make_pair(stk::mesh::Entity(), get_bulk().parallel_rank()));
+
     fill_decomp_list_from_current_ownership(decomp);
     stk::balance::internal::fill_output_subdomain_field(get_bulk(), m_balanceSettings, decomp);
     m_changeList = std::make_unique<stk::balance::DecompositionChangeList>(get_bulk(), decomp);
@@ -47,7 +61,7 @@ protected:
     check_entity_key_ownership(spiderLegs);
   }
 
-private:
+protected:
   void check_entity_key_ownership(const stk::mesh::EntityKeyProcVec & entityKeyProcs)
   {
     for (const stk::mesh::EntityKeyProc & entityKeyProc : entityKeyProcs) {
@@ -97,6 +111,10 @@ TEST_F(SpiderElement, notASpider_EnoughLegsNoVolumeElements_NoMovement)
 
   fix_spider_elements();
 
+  // Since these elements don't count as a spider, the normal balance code path
+  // will change the decomposition.  The spider-fixing code will not touch it
+  // afterward.  Since we are only testing the spider-fixing code, there should
+  // be no change.
   check_spider_body({{stk::mesh::EntityKey(stk::topology::NODE_RANK, 7), 2}});
 
   check_spider_legs({{stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1), 2},
@@ -543,6 +561,76 @@ TEST_F(SpiderElement, twoSpiders_ParticleBody)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 19), 2},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 20), 3},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 21), 3}});
+}
+
+void set_sd_flag_options(const std::string & fileName, int numProcessors, stk::balance::BalanceSettings & settings) {
+  settings.setVertexWeightMethod(stk::balance::DefaultSettings::sdVertexWeightMethod);
+  settings.setGraphEdgeWeightMultiplier(stk::balance::DefaultSettings::sdGraphEdgeWeightMultiplier);
+  settings.setVertexWeightMultiplierForVertexInSearch(stk::balance::DefaultSettings::sdFaceSearchVertexMultiplier);
+  settings.setEdgeWeightForSearch(stk::balance::DefaultSettings::sdFaceSearchEdgeWeight);
+  settings.setShouldFixSpiders(stk::balance::DefaultSettings::sdFixSpiders);
+  settings.set_input_filename(fileName);
+  settings.set_output_filename(fileName);
+  settings.set_num_input_processors(numProcessors);
+  settings.set_num_output_processors(numProcessors);
+  settings.set_is_rebalancing(false);
+}
+
+void compare_identical_volume_decompositions(stk::balance::BalanceMesh & meshNode,
+                                             stk::balance::BalanceMesh & meshParticle)
+{
+  stk::mesh::BulkData & bulkNode = meshNode.get_bulk();
+  stk::mesh::MetaData & metaNode = bulkNode.mesh_meta_data();
+  stk::mesh::BulkData & bulkParticle = meshParticle.get_bulk();
+  stk::mesh::MetaData & metaParticle = bulkParticle.mesh_meta_data();
+
+  const bool sortElems = true;
+  stk::mesh::EntityVector hexesNode = stk::mesh::get_entities(bulkNode, stk::topology::ELEM_RANK,
+                                                              metaNode.locally_owned_part() &
+                                                              metaNode.get_topology_root_part(stk::topology::HEX_8),
+                                                              sortElems);
+  stk::mesh::EntityVector hexesParticle = stk::mesh::get_entities(bulkParticle, stk::topology::ELEM_RANK,
+                                                                  metaParticle.locally_owned_part() &
+                                                                  metaParticle.get_topology_root_part(stk::topology::HEX_8),
+                                                                  sortElems);
+
+  ASSERT_EQ(hexesNode.size(), hexesParticle.size());
+
+  for (unsigned i = 0; i < hexesNode.size(); ++i) {
+    EXPECT_EQ(bulkNode.identifier(hexesNode[i]), bulkParticle.identifier(hexesParticle[i]));
+  }
+}
+
+TEST_F(SpiderElement, cubeMeshWithSpider_ParticleBodyInsensitivity)
+{
+  const unsigned meshSize = stk::unit_test_util::simple_fields::get_command_line_option<unsigned>("--size", 2);
+
+  bool addParticleBody = false;
+  const std::string fileNameNode = "cube_spider_node.g";
+  write_serial_cube_mesh_with_spider(meshSize, addParticleBody, fileNameNode);
+
+  stk::balance::StkBalanceSettings balanceSettingsNode;
+  set_sd_flag_options(fileNameNode, stk::parallel_machine_size(get_comm()), balanceSettingsNode);
+  stk::balance::BalanceIO ioNode(get_comm(), balanceSettingsNode);
+  const stk::balance::Balancer balancerNode(balanceSettingsNode);
+
+  stk::balance::BalanceMesh& meshNode = ioNode.initial_decomp();
+  balancerNode.balance(meshNode);
+
+
+  addParticleBody = true;
+  const std::string fileNameParticle = "cube_spider_particle.g";
+  write_serial_cube_mesh_with_spider(meshSize, addParticleBody, fileNameParticle);
+
+  stk::balance::StkBalanceSettings balanceSettingsParticle;
+  set_sd_flag_options(fileNameParticle, stk::parallel_machine_size(get_comm()), balanceSettingsParticle);
+  stk::balance::BalanceIO ioParticle(get_comm(), balanceSettingsParticle);
+  const stk::balance::Balancer balancerParticle(balanceSettingsParticle);
+
+  stk::balance::BalanceMesh& meshParticle = ioParticle.initial_decomp();
+  balancerParticle.balance(meshParticle);
+
+  compare_identical_volume_decompositions(meshNode, meshParticle);
 }
 
 }

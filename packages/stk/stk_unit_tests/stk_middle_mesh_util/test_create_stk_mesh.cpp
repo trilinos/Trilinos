@@ -26,7 +26,7 @@ void read_stk_mesh(const std::string& fname, stk::mesh::BulkData& bulkData)
 
 void verify_correct_sharing(const stk::mesh::BulkData& stkMesh,
                             const mesh::Mesh& surfaceMesh,
-                            const stk_interface::impl::MeshPart::MeshFieldPtr& stkElsFieldPtr)
+                            const stk_interface::MeshPart::MeshFieldPtr& stkElsFieldPtr)
 {
   std::vector<int> sharingProcs;
   constexpr unsigned maxNumEdgeNodes = 3;
@@ -89,13 +89,13 @@ TEST(StkMeshCreator, create_mesh_from_sideset_part)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
 
-  stk_interface::impl::StkMeshCreator stkMeshCreator("generated:1x2x2|sideset:x", MPI_COMM_WORLD);
+  stk_interface::StkMeshCreator stkMeshCreator("generated:1x2x2|sideset:x", "NONE", MPI_COMM_WORLD);
   const std::string surfacePartName = "surface_1";
   stk::mesh::Part* surfacePart = stkMeshCreator.get_meta_data().get_part(surfacePartName);
   EXPECT_TRUE((surfacePart != nullptr));
   stk::mesh::Selector ownedSurface = stkMeshCreator.get_meta_data().locally_owned_part() & *surfacePart;
   const unsigned stkNumFaces = stk::mesh::count_entities(stkMeshCreator.get_bulk_data(), stk::topology::FACE_RANK, ownedSurface);
-  stk_interface::impl::MeshPart meshAndField = stkMeshCreator.create_mesh_from_part(surfacePartName);
+  stk_interface::MeshPart meshAndField = stkMeshCreator.create_mesh_from_part(surfacePartName);
   std::shared_ptr<mesh::Mesh> surfaceMesh = meshAndField.mesh;
   EXPECT_EQ(stkNumFaces, surfaceMesh->get_elements().size());
 
@@ -110,13 +110,13 @@ TEST(StkMeshCreator, create_mesh_from_shell_part)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
 
-  stk_interface::impl::StkMeshCreator stkMeshCreator("generated:1x2x2|shell:x", MPI_COMM_WORLD);
+  stk_interface::StkMeshCreator stkMeshCreator("generated:1x2x2|shell:x", "NONE", MPI_COMM_WORLD);
   const std::string surfacePartName = "block_2";
   stk::mesh::Part* surfacePart = stkMeshCreator.get_meta_data().get_part(surfacePartName);
   EXPECT_TRUE((surfacePart != nullptr));
   stk::mesh::Selector ownedSurface = stkMeshCreator.get_meta_data().locally_owned_part() & *surfacePart;
   const unsigned stkNumFaces = stk::mesh::count_entities(stkMeshCreator.get_bulk_data(), stk::topology::ELEM_RANK, ownedSurface);
-  stk_interface::impl::MeshPart meshAndField = stkMeshCreator.create_mesh_from_part(surfacePartName);
+  stk_interface::MeshPart meshAndField = stkMeshCreator.create_mesh_from_part(surfacePartName);
   std::shared_ptr<mesh::Mesh> surfaceMesh = meshAndField.mesh;
   EXPECT_EQ(stkNumFaces, surfaceMesh->get_elements().size());
 
@@ -134,14 +134,14 @@ TEST(StkMeshCreator, create_mesh_from_bulk_data)
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
   read_stk_mesh("generated:1x2x2|sideset:x", *bulkDataPtr);
 
-  stk_interface::impl::StkMeshCreator stkMeshCreator(bulkDataPtr);
+  stk_interface::StkMeshCreator stkMeshCreator(bulkDataPtr);
 
   const std::string surfacePartName = "surface_1";
   stk::mesh::Part* surfacePart = stkMeshCreator.get_meta_data().get_part(surfacePartName);
   EXPECT_TRUE((surfacePart != nullptr));
   stk::mesh::Selector ownedSurface = stkMeshCreator.get_meta_data().locally_owned_part() & *surfacePart;
   const unsigned stkNumFaces = stk::mesh::count_entities(stkMeshCreator.get_bulk_data(), stk::topology::FACE_RANK, ownedSurface);
-  stk_interface::impl::MeshPart meshAndField = stkMeshCreator.create_mesh_from_part(surfacePartName);
+  stk_interface::MeshPart meshAndField = stkMeshCreator.create_mesh_from_part(surfacePartName);
   std::shared_ptr<mesh::Mesh> surfaceMesh = meshAndField.mesh;
   EXPECT_EQ(stkNumFaces, surfaceMesh->get_elements().size());
 

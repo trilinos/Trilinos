@@ -37,12 +37,18 @@
 
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_util/util/StridedArray.hpp>
 #include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace mesh {
 
 class BulkData;
+
+using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
+using ConnectedEntities = util::StridedArray<const stk::mesh::Entity>;
+using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
+using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
 
 namespace impl {
 
@@ -148,6 +154,13 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   }
 
   // Entity iterator
+
+  const ConnectedEntities get_connected_entities(unsigned bucket_ordinal) const
+  { impl::check_bucket_ordinal(bucket_ordinal, this);
+    return ConnectedEntities(&m_targets[bucket_ordinal * m_num_connectivity], m_num_connectivity); }
+  ConnectedEntities get_connected_entities(unsigned bucket_ordinal)
+  { impl::check_bucket_ordinal(bucket_ordinal, this);
+    return ConnectedEntities(&m_targets[bucket_ordinal * m_num_connectivity], m_num_connectivity); }
 
   Entity const* begin(unsigned bucket_ordinal) const
   { impl::check_bucket_ordinal(bucket_ordinal, this);
@@ -488,7 +501,16 @@ public:
   {
   }
 
-  // Entity iterator
+  const ConnectedEntities get_connected_entities(unsigned bucket_ordinal) const
+  {
+    return ConnectedEntities(&m_targets[m_active ? m_indices[bucket_ordinal] : 0],
+                             m_active ? m_num_connectivities[bucket_ordinal] : 0);
+  }
+  ConnectedEntities get_connected_entities(unsigned bucket_ordinal)
+  {
+    return ConnectedEntities(&m_targets[m_active ? m_indices[bucket_ordinal] : 0],
+                             m_active ? m_num_connectivities[bucket_ordinal] : 0);
+  }
 
   Entity const* begin(unsigned bucket_ordinal) const
   { impl::check_bucket_ordinal(bucket_ordinal, this);

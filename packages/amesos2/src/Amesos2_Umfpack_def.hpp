@@ -156,20 +156,10 @@ Umfpack<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    if ( is_contiguous_ == true ) {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                               umfpack_type>::do_get(B, bValues(),
-                                                     as<size_t>(ld_rhs),
-                                                     ROOTED, 
-                                                     this->rowIndexBase_);
-    } 
-    else {
-      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-                               umfpack_type>::do_get(B, bValues(),
-                                                     as<size_t>(ld_rhs),
-                                                     CONTIGUOUS_AND_ROOTED, 
-                                                     this->rowIndexBase_);
-    }
+    Util::get_1d_copy_helper<MultiVecAdapter<Vector>, umfpack_type>::do_get(B, bValues(),
+      as<size_t>(ld_rhs),
+      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED, 
+      this->rowIndexBase_);
   }
 
   int UmfpackRequest = this->control_.useTranspose_ ? UMFPACK_At : UMFPACK_A;
@@ -216,20 +206,10 @@ Umfpack<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,umfpack_type>::do_put(X, xValues(),
-                                                      as<size_t>(ld_rhs),
-                                                      ROOTED, 
-                                                      this->rowIndexBase_);
-    }
-    else {
-      Util::put_1d_data_helper<
-        MultiVecAdapter<Vector>,umfpack_type>::do_put(X, xValues(),
-                                                      as<size_t>(ld_rhs),
-                                                      CONTIGUOUS_AND_ROOTED, 
-                                                      this->rowIndexBase_);
-    }
+    Util::put_1d_data_helper<MultiVecAdapter<Vector>,umfpack_type>::do_put(X, xValues(),
+      as<size_t>(ld_rhs),
+      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED, 
+      this->rowIndexBase_);
   }
 
   return(ierr);
@@ -309,23 +289,12 @@ Umfpack<Matrix,Vector>::loadA_impl(EPhase current_phase)
     TEUCHOS_TEST_FOR_EXCEPTION( this->rowIndexBase_ != this->columnIndexBase_,
                         std::runtime_error,
                         "Row and column maps have different indexbase ");
-    if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
-        host_value_type_array,host_ordinal_type_array, host_size_type_array>::do_get(this->matrixA_.ptr(),
-                                                          nzvals_view_, rowind_view_,
-                                                          colptr_view_, nnz_ret, 
-                                                          ROOTED,
-                                                          ARBITRARY,
-                                                          this->rowIndexBase_);
-    } else {
-      Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
-        host_value_type_array,host_ordinal_type_array, host_size_type_array>::do_get(this->matrixA_.ptr(),
-                                                          nzvals_view_, rowind_view_,
-                                                          colptr_view_, nnz_ret, 
-                                                          CONTIGUOUS_AND_ROOTED,
-                                                          ARBITRARY,
-                                                          this->rowIndexBase_);
-    }
+    Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>, host_value_type_array,host_ordinal_type_array,
+      host_size_type_array>::do_get(this->matrixA_.ptr(),
+        nzvals_view_, rowind_view_, colptr_view_, nnz_ret, 
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        ARBITRARY,
+        this->rowIndexBase_);
   }
 
   return true;

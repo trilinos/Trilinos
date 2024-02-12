@@ -290,7 +290,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(
 
   for (size_t i = 0; i < n; ++i) {
     int row_index, col_index;
-    reducer_value_type value;
+    reducer_value_type value{};
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
@@ -376,30 +376,47 @@ struct SerialGesv<Gesv::StaticPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
 
     if (A.extent(0) != tmp.extent(0) || A.extent(1) + 4 != tmp.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: dimensions of A and tmp do not match: A: "
           "%d x %d, tmp (note: its second dimension should be the second "
           "dimension of A + 4): %d x %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)tmp.extent(0),
           (int)tmp.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: dimensions of A and tmp do not match: A: "
+          "%d x %d, tmp (note: its second dimension should be the second "
+          "dimension of A + 4): %d x %d\n",
+          (int)A.extent(0), (int)A.extent(1), (int)tmp.extent(0),
+          (int)tmp.extent(1));
+#endif
       return 1;
     }
 
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
           (int)Y.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
+          "%d x %d, X: %d, Y: %d\n",
+          (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
+          (int)Y.extent(0));
+#endif
       return 1;
     }
 #endif
@@ -414,9 +431,15 @@ struct SerialGesv<Gesv::StaticPivoting> {
 
     if (SerialStaticPivoting::invoke(A, PDAD, Y, PDY, D2, tmp_v_1, tmp_v_2) ==
         1) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: the currently implemented static pivoting "
           "failed.\n");
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: the currently implemented static pivoting "
+          "failed.\n");
+#endif
       return 1;
     }
 
@@ -449,20 +472,28 @@ struct SerialGesv<Gesv::NoPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
 
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
           (int)Y.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
+          "%d x %d, X: %d, Y: %d\n",
+          (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
+          (int)Y.extent(0));
+#endif
       return 1;
     }
 #endif
@@ -501,19 +532,27 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
           (int)Y.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
+          "%d x %d, X: %d, Y: %d\n",
+          (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
+          (int)Y.extent(0));
+#endif
       return 1;
     }
 #endif
@@ -532,9 +571,15 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
 
     if (TeamStaticPivoting<MemberType>::invoke(member, A, PDAD, Y, PDY, D2,
                                                tmp_v_1, tmp_v_2) == 1) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: the currently implemented static pivoting "
           "failed.\n");
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: the currently implemented static pivoting "
+          "failed.\n");
+#endif
       return 1;
     }
     member.team_barrier();
@@ -579,19 +624,27 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
           (int)Y.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
+          "%d x %d, X: %d, Y: %d\n",
+          (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
+          (int)Y.extent(0));
+#endif
       return 1;
     }
 #endif
@@ -637,19 +690,27 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
           (int)Y.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
+          "%d x %d, X: %d, Y: %d\n",
+          (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
+          (int)Y.extent(0));
+#endif
       return 1;
     }
 #endif
@@ -668,9 +729,15 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
 
     if (TeamVectorStaticPivoting<MemberType>::invoke(
             member, A, PDAD, Y, PDY, D2, tmp_v_1, tmp_v_2) == 1) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: the currently implemented static pivoting "
           "failed.\n");
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: the currently implemented static pivoting "
+          "failed.\n");
+#endif
       return 1;
     }
 
@@ -716,19 +783,27 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
           (int)Y.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
+          "%d x %d, X: %d, Y: %d\n",
+          (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
+          (int)Y.extent(0));
+#endif
       return 1;
     }
 #endif

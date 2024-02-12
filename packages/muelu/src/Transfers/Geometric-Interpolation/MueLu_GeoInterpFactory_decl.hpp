@@ -80,78 +80,78 @@
 
 namespace MueLu {
 
-  /*!
-    @class GeoInterpFactory class.
-    @brief Factory for GMG Q2-Q1-Q2 interpolation
-    @ingroup MueLuTransferClasses
-  */
+/*!
+  @class GeoInterpFactory class.
+  @brief Factory for GMG Q2-Q1-Q2 interpolation
+  @ingroup MueLuTransferClasses
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class GeoInterpFactory : public PFactory {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class GeoInterpFactory : public PFactory {
 #undef MUELU_GEOINTERPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    GeoInterpFactory();
+  //! Constructor.
+  GeoInterpFactory();
 
-    //! Destructor.
-    virtual ~GeoInterpFactory();
+  //! Destructor.
+  virtual ~GeoInterpFactory();
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the
-        generating factory is not specified in DeclareInput, then this
-        class will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+      If the Build method of this class requires some data, but the
+      generating factory is not specified in DeclareInput, then this
+      class will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+  //! Build an object with this factory.
+  void Build(Level &fineLevel, Level &coarseLevel) const;
 
-    void BuildP(Level &fineLevel, Level &coarseLevel) const;
+  void BuildP(Level &fineLevel, Level &coarseLevel) const;
 
-    //void BuildCoarseGrid(Level &fineLevel, Level &coarseLevel) const;
+  // void BuildCoarseGrid(Level &fineLevel, Level &coarseLevel) const;
 
-    /* For our geometric multigrid needs, we will explicitly build the
-       coarse grid here and store it as level data. There are two
-       things we care about here: coordinates of the dofs and
-       element-dof lists.
+  /* For our geometric multigrid needs, we will explicitly build the
+     coarse grid here and store it as level data. There are two
+     things we care about here: coordinates of the dofs and
+     element-dof lists.
 
-       We will assume only that the elements are numbered
-       lexicographically, left-to-right, bottom-to-top. The order of
-       the degrees of freedom will only be assumed on coarse grids. It
-       can be anything on the finest grid (fineLevel.GetLevelID()==1).
+     We will assume only that the elements are numbered
+     lexicographically, left-to-right, bottom-to-top. The order of
+     the degrees of freedom will only be assumed on coarse grids. It
+     can be anything on the finest grid (fineLevel.GetLevelID()==1).
 
-       We further assume that the x- and y-components of velocity are
-       zippered together: UX1 UY1 UX2 UY2 ETC...
-    */
+     We further assume that the x- and y-components of velocity are
+     zippered together: UX1 UY1 UX2 UY2 ETC...
+  */
 
-    //@}
+  //@}
 
-  private:
-    // No parameters need to be stored... To save "P", use
-    //    coarseLevel.Set("P", finalP, this);
+ private:
+  // No parameters need to be stored... To save "P", use
+  //    coarseLevel.Set("P", finalP, this);
 
-  }; // class GeoInterpFactory
+};  // class GeoInterpFactory
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_GEOINTERPFACTORY_SHORT
-#endif // MUELU_GEOINTERPFACTORY_DECL_HPP
+#endif  // MUELU_GEOINTERPFACTORY_DECL_HPP

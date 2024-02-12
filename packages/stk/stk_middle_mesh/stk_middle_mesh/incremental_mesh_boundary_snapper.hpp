@@ -31,17 +31,21 @@ class IncrementalMeshBoundarySnapper
 {
   public:
     IncrementalMeshBoundarySnapper(MeshPtr mesh1, std::shared_ptr<MeshQualityImprover> improver1, MeshPtr mesh2,
-                                   std::shared_ptr<MeshQualityImprover> improver2, int nsteps)
+                                   std::shared_ptr<MeshQualityImprover> improver2, int nsteps, MPI_Comm unionComm)
       : m_mesh1(mesh1)
       , m_mesh2(mesh2)
-      , m_mesh1Data(create_field<impl::SnapData>(mesh1, FieldShape(1, 0, 0), 1))
-      , m_mesh2Data(create_field<impl::SnapData>(mesh2, FieldShape(1, 0, 0), 1))
+      , m_mesh1Data(mesh1 ? create_field<impl::SnapData>(mesh1, FieldShape(1, 0, 0), 1) : nullptr)
+      , m_mesh2Data(mesh2 ? create_field<impl::SnapData>(mesh2, FieldShape(1, 0, 0), 1) : nullptr)
       , m_improver1(improver1)
       , m_improver2(improver2)
       , m_nsteps(nsteps)
+      , m_unionComm(unionComm)
     {
-      record_initial_position(mesh1, m_mesh1Data);
-      record_initial_position(mesh2, m_mesh2Data);
+      if (m_mesh1)
+        record_initial_position(mesh1, m_mesh1Data);
+
+      if (m_mesh2)        
+        record_initial_position(mesh2, m_mesh2Data);
     }
 
     void snap();
@@ -68,10 +72,12 @@ class IncrementalMeshBoundarySnapper
     std::shared_ptr<MeshQualityImprover> m_improver1;
     std::shared_ptr<MeshQualityImprover> m_improver2;
     int m_nsteps;
+    MPI_Comm m_unionComm;
 };
 
 std::shared_ptr<IncrementalMeshBoundarySnapper>
 make_incremental_boundary_snapper(MeshPtr mesh1, MeshPtr mesh2,
+                                  MPI_Comm unionComm,
                                   const IncrementalBoundarySnapperOpts& opts = IncrementalBoundarySnapperOpts());
 
 } // namespace impl

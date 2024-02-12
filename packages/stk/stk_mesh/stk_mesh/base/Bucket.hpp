@@ -38,13 +38,12 @@
 #include <stddef.h>                     // for size_t, NULL
 #include <algorithm>                    // for lower_bound
 #include <iosfwd>                       // for ostream
-#include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
-#include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
+#include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert, etc
-#include <stk_util/util/StridedArray.hpp>
 #include <string>                       // for string
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
@@ -318,14 +317,12 @@ public:
   void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
 
   /* NGP Bucket methods */
-  using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
-  using ConnectedEntities = util::StridedArray<const stk::mesh::Entity>;
-  using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
-  using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
 
-  ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
-    return ConnectedEntities(begin(offsetIntoBucket, connectedRank),
-                             num_connectivity(offsetIntoBucket, connectedRank));
+  ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const
+  {
+    ConnectivityType connType = connectivity_type(connectedRank);
+    return connType == FIXED_CONNECTIVITY ? get_fixed_connectivity(offsetIntoBucket, connectedRank)
+                                          : get_dynamic_connectivity(offsetIntoBucket, connectedRank);
   }
 
   ConnectedOrdinals get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
@@ -427,6 +424,7 @@ private:
   }
 
   void initialize_ngp_field_bucket_ids();
+  void grow_ngp_field_bucket_ids();
 
   Bucket();
 
@@ -509,6 +507,28 @@ private:
   ConnectivityType m_edge_kind;
   ConnectivityType m_face_kind;
   ConnectivityType m_element_kind;
+
+  ConnectedEntities get_fixed_connectivity(unsigned bucket_ordinal, EntityRank rank) const
+  {
+    switch(rank) {
+    case stk::topology::NODE_RANK: return m_fixed_node_connectivity.get_connected_entities(bucket_ordinal);
+    case stk::topology::EDGE_RANK: return m_fixed_edge_connectivity.get_connected_entities(bucket_ordinal);
+    case stk::topology::FACE_RANK: return m_fixed_face_connectivity.get_connected_entities(bucket_ordinal);
+    case stk::topology::ELEM_RANK: return m_fixed_element_connectivity.get_connected_entities(bucket_ordinal);
+    default: return m_dynamic_other_connectivity.get_connected_entities(bucket_ordinal);
+    }
+  }
+
+  ConnectedEntities get_dynamic_connectivity(unsigned bucket_ordinal, EntityRank rank) const
+  {
+    switch(rank) {
+    case stk::topology::NODE_RANK: return m_dynamic_node_connectivity.get_connected_entities(bucket_ordinal);
+    case stk::topology::EDGE_RANK: return m_dynamic_edge_connectivity.get_connected_entities(bucket_ordinal);
+    case stk::topology::FACE_RANK: return m_dynamic_face_connectivity.get_connected_entities(bucket_ordinal);
+    case stk::topology::ELEM_RANK: return m_dynamic_element_connectivity.get_connected_entities(bucket_ordinal);
+    default: return m_dynamic_other_connectivity.get_connected_entities(bucket_ordinal);
+    }
+  }
 
   impl::BucketConnectivity<stk::topology::NODE_RANK,    FIXED_CONNECTIVITY> m_fixed_node_connectivity;
   impl::BucketConnectivity<stk::topology::EDGE_RANK,    FIXED_CONNECTIVITY> m_fixed_edge_connectivity;

@@ -112,9 +112,8 @@
 #include "Amesos2.hpp"
 #include "Amesos2_Version.hpp"
 
-
 int main(int argc, char *argv[]) {
-  Tpetra::ScopeGuard mpiSession(&argc,&argv);
+  Tpetra::ScopeGuard mpiSession(&argc, &argv);
 
   typedef Tpetra::MultiVector<> MV;
   typedef MV::scalar_type Scalar;
@@ -122,51 +121,50 @@ int main(int argc, char *argv[]) {
   typedef MV::global_ordinal_type GO;
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> MAT;
 
-  using Tpetra::global_size_t;
-  using Teuchos::tuple;
   using std::endl;
+  using Teuchos::tuple;
+  using Tpetra::global_size_t;
 
-  std::ostream &out = std::cout;
+  std::ostream &out              = std::cout;
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  size_t myRank = comm->getRank();
+  size_t myRank                       = comm->getRank();
 
-  out << "Amesos2 stand-alone test" << endl << endl;
+  out << "Amesos2 stand-alone test" << endl
+      << endl;
 
   const size_t numVectors = 1;
 
-  int numGlobalElements = 1000;
-  RCP<const Tpetra::Map<> > map = Tpetra::createUniformContigMap<LO, GO> (numGlobalElements, comm);
-  const size_t numMyElements = map->getLocalNumElements();
+  int numGlobalElements                         = 1000;
+  RCP<const Tpetra::Map<> > map                 = Tpetra::createUniformContigMap<LO, GO>(numGlobalElements, comm);
+  const size_t numMyElements                    = map->getLocalNumElements();
   Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
-  RCP<MAT> A = Tpetra::createCrsMatrix<Scalar>(map,3);
+  RCP<MAT> A = Tpetra::createCrsMatrix<Scalar>(map, 3);
 
   // 1D Laplace
-  for (size_t i=0; i<numMyElements; i++) {
+  for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues( myGlobalElements[i],
-          tuple<GO>( myGlobalElements[i], myGlobalElements[i]+1 ),
-          tuple<Scalar> ( 2.0, -1.0 ) );
-    }
-    else if (myGlobalElements[i] == numGlobalElements-1) {
-      A->insertGlobalValues( myGlobalElements[i],
-          tuple<GO>( myGlobalElements[i]-1, myGlobalElements[i] ),
-          tuple<Scalar> ( -1.0, 2.0 ) );
-    }
-    else {
-      A->insertGlobalValues( myGlobalElements[i],
-          tuple<GO>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
-          tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
+      A->insertGlobalValues(myGlobalElements[i],
+                            tuple<GO>(myGlobalElements[i], myGlobalElements[i] + 1),
+                            tuple<Scalar>(2.0, -1.0));
+    } else if (myGlobalElements[i] == numGlobalElements - 1) {
+      A->insertGlobalValues(myGlobalElements[i],
+                            tuple<GO>(myGlobalElements[i] - 1, myGlobalElements[i]),
+                            tuple<Scalar>(-1.0, 2.0));
+    } else {
+      A->insertGlobalValues(myGlobalElements[i],
+                            tuple<GO>(myGlobalElements[i] - 1, myGlobalElements[i], myGlobalElements[i] + 1),
+                            tuple<Scalar>(-1.0, 2.0, -1.0));
     }
   }
   A->fillComplete();
 
   /* Create X */
-  RCP<MV> X = rcp(new MV(map,numVectors));
+  RCP<MV> X = rcp(new MV(map, numVectors));
   Teuchos::ScalarTraits<Scalar>::seedrandom(846930886);
   X->randomize();
 
@@ -179,14 +177,14 @@ int main(int argc, char *argv[]) {
   }
 
   /* Create B  */
-  RCP<MV> B = rcp(new MV(map,numVectors));
-  A->apply(*X,*B,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+  RCP<MV> B = rcp(new MV(map, numVectors));
+  A->apply(*X, *B, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
 
   /* Reset X */
-  X->putScalar( (Scalar) 0.0);
+  X->putScalar((Scalar)0.0);
 
   // Create solver interface to Superlu through Amesos::Factory
-  RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
+  RCP<Amesos2::Solver<MAT, MV> > solver = Amesos2::create<MAT, MV>("Superlu", A, X, B);
 
   // Solve
   solver->symbolicFactorization().numericFactorization().solve();

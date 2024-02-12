@@ -165,7 +165,7 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2) {
     return false;
   }
 
-  typedef typename Kokkos::Details::ArithTraits<
+  typedef typename Kokkos::ArithTraits<
       typename scalar_view_t::non_const_value_type>::mag_type eps_type;
   eps_type eps = std::is_same<eps_type, float>::value ? 2 * 1e-3 : 1e-7;
 

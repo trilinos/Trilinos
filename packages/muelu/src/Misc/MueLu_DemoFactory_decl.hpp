@@ -52,57 +52,57 @@
 
 namespace MueLu {
 
-  /*!
-    @class DemoFactory class.
-    @brief empty factory for demonstration
-  */
+/*!
+  @class DemoFactory class.
+  @brief empty factory for demonstration
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class DemoFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class DemoFactory : public SingleLevelFactoryBase {
 #undef MUELU_DEMOFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    DemoFactory();
+  //! Constructor.
+  DemoFactory();
 
-    //! Destructor.
-    virtual ~DemoFactory();
+  //! Destructor.
+  virtual ~DemoFactory();
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &currentLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level &currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level & currentLevel) const;
+  //! Build an object with this factory.
+  void Build(Level &currentLevel) const;
 
-    //@}
+  //@}
 
-  private:
-    // TODO add member variables
+ private:
+  // TODO add member variables
 
-  }; // class DemoFactory
+};  // class DemoFactory
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_DEMOFACTORY_SHORT
-#endif // MUELU_DEMOFACTORY_DECL_HPP
+#endif  // MUELU_DEMOFACTORY_DECL_HPP

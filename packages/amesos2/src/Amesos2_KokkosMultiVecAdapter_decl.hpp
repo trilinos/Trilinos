@@ -221,13 +221,16 @@ namespace Amesos2 {
 
     template<typename KV>
     bool
-    get1dCopy_kokkos_view (bool bInitialize, KV& kokkos_view,
-                size_t lda,
-                Teuchos::Ptr<
-                  const Tpetra::Map<local_ordinal_t,
-                  global_ordinal_t,
-                  node_t> > distribution_map,
-                EDistribution distribution) const {
+    get1dCopy_kokkos_view (
+      bool bInitialize, KV& kokkos_view,
+      [[maybe_unused]] size_t lda,
+      [[maybe_unused]] Teuchos::Ptr<
+        const Tpetra::Map<local_ordinal_t,
+        global_ordinal_t,
+        node_t> 
+      > distribution_map,
+      [[maybe_unused]] EDistribution distribution
+    ) const {
       bool bAssigned; // deep_copy_or_assign_view sets true if assigned (no deep copy)
       deep_copy_or_assign_view(bInitialize, kokkos_view, *mv_, bAssigned);
       return bAssigned;
@@ -268,13 +271,16 @@ namespace Amesos2 {
 
     template<typename KV>
     void
-    put1dData_kokkos_view (KV& kokkos_new_data,
-              size_t lda,
-              Teuchos::Ptr<
-                const Tpetra::Map<local_ordinal_t,
-                global_ordinal_t,
-                node_t> > distribution_map,
-              EDistribution) const {
+    put1dData_kokkos_view (
+      KV& kokkos_new_data,
+      [[maybe_unused]] size_t lda,
+      [[maybe_unused]] Teuchos::Ptr<
+        const Tpetra::Map<local_ordinal_t,
+        global_ordinal_t,
+        node_t>
+      > distribution_map,
+      EDistribution
+    ) const {
       deep_copy_or_assign_view(*mv_, kokkos_new_data);
     }
 

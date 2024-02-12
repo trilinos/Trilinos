@@ -69,6 +69,16 @@ namespace ML_Epetra
                           const Epetra_CrsMatrix & K0_Matrix,                  // Nodal Laplacian (for aggregation)
                           const Teuchos::ParameterList& List,
                           const bool ComputePrec = true);
+
+    // Parameter-list driven version of main constructor
+    // Paramters of relevance (below) should be RCP's to matrices:
+    // FaceNode Face-to-node interpolation matrix
+    // D0    - Discrete gradient w/o BCs
+    // D1    - Discrete curl w/o BCs
+    // K0    - Nodal Laplacian (for aggregation)
+    GradDivPreconditioner(const Epetra_CrsMatrix& K2_Matrix,      // Face Grad-div + Mass
+                          const Teuchos::ParameterList& List,
+                          const bool ComputePrec = true);
     //@}
 
 

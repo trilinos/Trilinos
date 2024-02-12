@@ -330,7 +330,7 @@ template <>
 struct Datatype<unsigned long>
 {
   static MPI_Datatype type() {
-    return MPI_UNSIGNED_LONG;
+    return (sizeof(uint64_t) == sizeof(unsigned long)) ? MPI_UINT64_T : MPI_UNSIGNED_LONG;
   }
 };
 

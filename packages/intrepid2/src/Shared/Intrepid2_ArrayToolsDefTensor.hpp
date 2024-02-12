@@ -668,111 +668,237 @@ namespace Intrepid2 {
 
 
   namespace FunctorArrayTools {
-    /**
-       \brief Functor for matvecProduct see Intrepid2::ArrayTools for more
-    */
-    template < typename OutputViewType, 
-               typename leftInputViewType, 
-               typename rightInputViewType>
-    struct F_matvecProduct {
-      /**/  OutputViewType     _output;
-      const leftInputViewType  _leftInput;
-      const rightInputViewType _rightInput;
-
-      const bool _isTranspose;
-      
-      KOKKOS_INLINE_FUNCTION
-      F_matvecProduct(OutputViewType     output_,
-                      leftInputViewType  leftInput_,
-                      rightInputViewType rightInput_,
-                      const bool isTranspose_)
-        : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_), _isTranspose(isTranspose_) {}
-
-      template<typename resultViewType,
-               typename leftViewType,
-               typename rightViewType>
-      KOKKOS_FORCEINLINE_FUNCTION
-      static void 
-      apply_matvec_product(      resultViewType &result, 
-                           const leftViewType   &left,
-                           const rightViewType  &right,
-                           const bool isTranspose) {
-        const ordinal_type iend = result.extent(0);
-        const ordinal_type jend = right.extent(0);
-
-        typedef typename resultViewType::value_type value_type; 
-
-        switch (left.rank()) {
-        case 2:
-          if (isTranspose) {
-            for (ordinal_type i=0;i<iend;++i) {
-              value_type tmp(0);
-              for (ordinal_type j=0;j<jend;++j)
-                tmp += left(j, i)*right(j);
-              result(i) = tmp;
-            }
-          } else {
-            for (ordinal_type i=0;i<iend;++i) {
-              value_type tmp(0);
-              for (ordinal_type j=0;j<jend;++j)
-                tmp += left(i, j)*right(j);
-              result(i) = tmp;
-            }
-          }
-          break;
-        case 1: { //matrix is diagonal
-          for (ordinal_type i=0;i<iend;++i)
-            result(i) = left(i)*right(i);
-          break;
+  /**
+     \brief Functor for matvecProduct; new version avoids both subviews and branching.  See Intrepid2::ArrayTools for more.
+  */
+  template < typename OutputViewType,
+             typename leftInputViewType,
+             typename rightInputViewType,
+             ordinal_type leftInputRank,
+             ordinal_type rightInputRank,
+             bool hasField,
+             bool isTranspose>
+  struct F_matvecProduct {
+    /**/  OutputViewType     _output;
+    const leftInputViewType  _leftInput;
+    const rightInputViewType _rightInput;
+    
+    const ordinal_type _iend;
+    const ordinal_type _jend;
+    
+    using value_type = typename OutputViewType::value_type;
+    
+    KOKKOS_INLINE_FUNCTION
+    F_matvecProduct(OutputViewType     output_,
+                        leftInputViewType  leftInput_,
+                        rightInputViewType rightInput_)
+      : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
+        _iend(output_.extent_int(output_.rank()-1)), _jend(rightInput_.extent_int(rightInputRank-1))
+    {}
+    
+    //  ****** hasField == true cases ******
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const ordinal_type cl,
+                    const ordinal_type bf,
+                    const ordinal_type pt) const
+    {
+      apply_matvec_product(cl, bf, pt);
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==4 && r==4 && hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &bf,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      if (isTranspose) {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, j,i)*_rightInput(cl,bf,pt, j);
+          _output(cl,bf,pt, i) = tmp;
         }
-        case 0:  { //matrix is a scaled identity
-          const value_type val = left();
-          for (ordinal_type i=0;i<iend;++i) {
-            result(i) = val*right(i);
-          }
-          break;
-        }
+      } else {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, i,j)*_rightInput(cl,bf,pt, j);
+          _output(cl,bf,pt, i) = tmp;
         }
       }
-      
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type pt) const {
-        const auto rightRank = _rightInput.rank();
-        const auto leftRank  = _leftInput.rank();
-        
-        auto result = Kokkos::subview(_output, cl, pt, Kokkos::ALL());
-        
-        const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
-        const auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
-                            leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
-                                            Kokkos::subview(_leftInput, cl, lpt));
-        
-        const auto right = ( rightRank == 2 ? Kokkos::subview(_rightInput,     pt, Kokkos::ALL()) :
-                                              Kokkos::subview(_rightInput, cl, pt, Kokkos::ALL()) );
-        apply_matvec_product( result, left, right, _isTranspose );
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==4 && r==3 && hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &bf,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      if (isTranspose) {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, j,i)*_rightInput(bf,pt, j);
+          _output(cl,bf,pt, i) = tmp;
+        }
+      } else {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, i,j)*_rightInput(bf,pt, j);
+          _output(cl,bf,pt, i) = tmp;
+        }
       }
-      
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type bf,
-                      const ordinal_type pt) const {
-        const auto rightRank = _rightInput.rank();
-        const auto leftRank  = _leftInput.rank();
-
-        auto result = Kokkos::subview(_output, cl, bf, pt, Kokkos::ALL());
-
-        const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
-        const auto left = ( leftRank == 4 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL(), Kokkos::ALL()) :
-                            leftRank == 3 ? Kokkos::subview(_leftInput, cl, lpt, Kokkos::ALL()) :
-                                            Kokkos::subview(_leftInput, cl, lpt));
-        
-        const auto right = ( rightRank == 3 ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL()) :
-                                              Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL())); 
-        
-        apply_matvec_product( result, left, right, _isTranspose );
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==3 && r==4 && hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &bf,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      for (ordinal_type i=0;i<_iend;++i)
+        _output(cl,bf,pt, i) = _leftInput(cl,lpt, i)*_rightInput(cl,bf,pt, i);
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==3 && r==3 && hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &bf,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      for (ordinal_type i=0;i<_iend;++i)
+        _output(cl,bf,pt, i) = _leftInput(cl,lpt, i)*_rightInput(bf,pt, i);
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==2 && r==4 && hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &bf,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      const value_type & val = _leftInput(cl,lpt);
+      for (ordinal_type i=0;i<_iend;++i) {
+        _output(cl,bf,pt, i) = val*_rightInput(cl,bf,pt, i);
       }
-    };
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==2 && r==3 && hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &bf,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      const value_type & val = _leftInput(cl,lpt);
+      for (ordinal_type i=0;i<_iend;++i) {
+        _output(cl,bf,pt, i) = val*_rightInput(bf,pt, i);
+      }
+    }
+    
+    //  ****** hasField == false cases ******
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const ordinal_type cl,
+                    const ordinal_type pt) const
+    {
+      apply_matvec_product(cl, pt);
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==4 && r==3 && !hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      if (isTranspose) {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, j,i)*_rightInput(cl,pt, j);
+          _output(cl,pt, i) = tmp;
+        }
+      } else {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, i,j)*_rightInput(cl,pt, j);
+          _output(cl,pt, i) = tmp;
+        }
+      }
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==4 && r==2 && !hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      if (isTranspose) {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, j,i)*_rightInput(pt, j);
+          _output(cl,pt, i) = tmp;
+        }
+      } else {
+        for (ordinal_type i=0;i<_iend;++i) {
+          value_type tmp(0);
+          for (ordinal_type j=0;j<_jend;++j)
+            tmp += _leftInput(cl,lpt, i,j)*_rightInput(pt, j);
+          _output(cl,pt, i) = tmp;
+        }
+      }
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==3 && r==3 && !hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      for (ordinal_type i=0;i<_iend;++i)
+        _output(cl,pt, i) = _leftInput(cl,lpt, i)*_rightInput(cl,pt, i);
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==3 && r==2 && !hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      for (ordinal_type i=0;i<_iend;++i)
+        _output(cl,pt, i) = _leftInput(cl,lpt, i)*_rightInput(pt, i);
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==2 && r==3 && !hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      const value_type & val = _leftInput(cl,lpt);
+      for (ordinal_type i=0;i<_iend;++i) {
+        _output(cl,pt, i) = val*_rightInput(cl,pt, i);
+      }
+    }
+    
+    template <ordinal_type l=leftInputRank, ordinal_type r=rightInputRank, bool hf=hasField>
+    KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if_t<l==2 && r==2 && !hf, void>
+    apply_matvec_product(const ordinal_type   &cl,
+                         const ordinal_type   &pt) const {
+      const auto lpt  = (_leftInput.extent(1) == 1 ? size_type(0) : pt);
+      const value_type & val = _leftInput(cl,lpt);
+      for (ordinal_type i=0;i<_iend;++i) {
+        _output(cl,pt, i) = val*_rightInput(pt, i);
+      }
+    }
+  };
   } //namespace
 
   template<typename DeviceType>
@@ -786,24 +912,117 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput,
                  const bool hasField,
                  const bool isTranspose ) {
+    
+    using Output = Kokkos::DynRankView<outputValueType,    outputProperties...>;
+    using Left   = const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>;
+    using Right  = const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>;
+    
+    // FTNMAB: FunctorType with left rank N, right rank M, hasField = (A==T), isTranspose = (B==T)
+    
+    // hasField == true
+    using FT44TT = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,4,  true,  true>;
+    using FT43TT = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,3,  true,  true>;
+    using FT44TF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,4,  true, false>;
+    using FT43TF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,3,  true, false>;
+    
+    // for left rank 3, 2, isTranspose does not matter
+    using FT34TF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,3,4,  true, false>;
+    using FT33TF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,3,3,  true, false>;
+    using FT24TF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,2,4,  true, false>;
+    using FT23TF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,2,3,  true, false>;
+    
+    // hasField == false
+    using FT43FT = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,3, false,  true>;
+    using FT42FT = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,2, false,  true>;
+    using FT43FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,3, false, false>;
+    using FT42FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,4,2, false, false>;
+    
+    // for left rank 3, 2, isTranspose does not matter
+    using FT33FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,3,3, false, false>;
+    using FT32FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,3,2, false, false>;
+    using FT23FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,2,3, false, false>;
+    using FT22FF = FunctorArrayTools::F_matvecProduct<Output,Left,Right,2,2, false, false>;
 
-    typedef       Kokkos::DynRankView<outputValueType,    outputProperties...>      OutputViewType;
-    typedef const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
-    typedef const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
-    typedef FunctorArrayTools::F_matvecProduct<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
-
-    if (hasField) {
-      using range_policy_type = Kokkos::MDRangePolicy
-        < ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-      range_policy_type policy( { 0, 0, 0 },
-                                { output.extent(0), output.extent(1), output.extent(2) } );
-      Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
-    } else {
-      using range_policy_type = Kokkos::MDRangePolicy
-        < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
-      range_policy_type policy( { 0, 0 },
-                                { output.extent(0), output.extent(1) } );
-      Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
+    const ordinal_type l = leftInput.rank();
+    const ordinal_type r = rightInput.rank();
+    
+    using range_policy2 = Kokkos::MDRangePolicy< ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    range_policy2 policy2( { 0, 0 }, { output.extent(0), output.extent(1) } );
+    
+    using range_policy3 = Kokkos::MDRangePolicy< ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    range_policy3 policy3( { 0, 0, 0 }, { output.extent(0), output.extent(1), output.extent(2) } );
+    
+    // just to make the below a little easier to read, we pack l and r together:
+    const ordinal_type lr = l * 10 + r;
+    const auto &ov = output;
+    const auto &lv = leftInput;
+    const auto &rv = rightInput;
+    
+    if (hasField) // this means we want policy3
+    {
+      if (l == 4)
+      {
+        // isTranspose matters
+        if (isTranspose)
+        {
+          switch (r)
+          {
+            case 4:  { FT44TT f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); } break;
+            default: { FT43TT f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); }
+          }
+        }
+        else
+        {
+          switch (r)
+          {
+            case 4:  { FT44TF f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); } break;
+            default: { FT43TF f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); }
+          }
+        }
+      }
+      else // l == 3 or 2; isTranspose does not matter
+      {
+        switch (lr)
+        {
+          case 34: { FT34TF f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); } break;
+          case 33: { FT33TF f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); } break;
+          case 24: { FT24TF f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); } break;
+          default: { FT23TF f(ov,lv,rv); Kokkos::parallel_for( policy3, f ); } // 23
+        }
+      }
+    }
+    else // hasField is false; use policy2
+    {
+      if (l == 4)
+      {
+        // isTranspose matters
+        if (isTranspose)
+        {
+          switch (r)
+          {
+            case 3:  { FT43FT f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } break;
+            default: { FT42FT f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } // 2
+          }
+        }
+        else
+        {
+          switch (r)
+          {
+            case 3:  { FT43FF f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } break;
+            default: { FT42FF f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } // 2
+          }
+        }
+      }
+      else // l == 3 or 2; isTranspose does not matter
+      {
+        switch (lr)
+        {
+          case 33: { FT33FF f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } break;
+          case 32: { FT32FF f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } break;
+          case 23: { FT23FF f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } break;
+          default: { FT22FF f(ov,lv,rv); Kokkos::parallel_for( policy2, f ); } // 22
+        }
+      }
     }
   }
 

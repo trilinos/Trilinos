@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,26 +13,26 @@
 #include <stdio.h>
 
 void chaco_divide(struct vtx_data **graph,         /* graph data structure */
-            int               nvtxs,         /* number of vertices in graph */
-            int               nedges,        /* number of edges in graph */
-            int               using_vwgts,   /* are vertex weights being used? */
-            int               using_ewgts,   /* are edge weights being used? */
-            double *          vwsqrt,        /* sqrt of vertex weights (length nvtxs+1) */
-            int               igeom,         /* geometry dimension for inertial method */
-            float **          coords,        /* coordinates for inertial method */
-            int *             assignment,    /* set number of each vtx (length n) */
-            double *          goal,          /* desired set sizes */
-            int               architecture,  /* 0 => hypercube, d => d-dimensional mesh */
-            float *           term_wgts[],   /* weights for terminal propagation */
-            int               global_method, /* global partitioning algorithm */
-            int               local_method,  /* local partitioning algorithm */
-            int               rqi_flag,      /* should I use multilevel eigensolver? */
-            int               vmax,          /* if so, # vertices to coarsen down to */
-            int               ndims,         /* number of eigenvectors */
-            double            eigtol,        /* tolerance on eigenvectors */
-            int (*hop_mtx)[MAXSETS],         /* between-set hop costs for KL */
-            int nsets,                       /* number of sets to partition into */
-            int striping                     /* partition by striping into pieces? */
+                  int               nvtxs,         /* number of vertices in graph */
+                  int               nedges,        /* number of edges in graph */
+                  int               using_vwgts,   /* are vertex weights being used? */
+                  int               using_ewgts,   /* are edge weights being used? */
+                  double           *vwsqrt,        /* sqrt of vertex weights (length nvtxs+1) */
+                  int               igeom,         /* geometry dimension for inertial method */
+                  float           **coords,        /* coordinates for inertial method */
+                  int              *assignment,    /* set number of each vtx (length n) */
+                  double           *goal,          /* desired set sizes */
+                  int               architecture,  /* 0 => hypercube, d => d-dimensional mesh */
+                  float            *term_wgts[],   /* weights for terminal propagation */
+                  int               global_method, /* global partitioning algorithm */
+                  int               local_method,  /* local partitioning algorithm */
+                  int               rqi_flag,      /* should I use multilevel eigensolver? */
+                  int               vmax,          /* if so, # vertices to coarsen down to */
+                  int               ndims,         /* number of eigenvectors */
+                  double            eigtol,        /* tolerance on eigenvectors */
+                  int (*hop_mtx)[MAXSETS],         /* between-set hop costs for KL */
+                  int nsets,                       /* number of sets to partition into */
+                  int striping                     /* partition by striping into pieces? */
 )
 {
   extern int           DEBUG_TRACE;        /* trace main execution path? */
@@ -47,17 +47,17 @@ void chaco_divide(struct vtx_data **graph,         /* graph data structure */
   extern int           VERTEX_COVER;       /* form/improve vtx separator via matching? */
   extern int           COARSE_BPM;         /* apply matching/flow while uncoarsening? */
   struct connect_data *cdata;              /* data for enforcing connectivity */
-  double *             yvecs[MAXDIMS + 1]; /* space for pointing to eigenvectors */
+  double              *yvecs[MAXDIMS + 1]; /* space for pointing to eigenvectors */
   double               evals[MAXDIMS + 1]; /* corresponding eigenvalues */
   double               weights[MAXSETS];   /* vertex weight in each set */
   double               maxdeg;             /* maximum weighted degree of a vertex */
   double               total_weight;       /* weight of all vertices */
   double               temp_goal[2];       /* goal to simulate bisection while striping */
-  double *             fake_goal;          /* either goal or temp_goal */
-  int *                active;             /* keeping track of vtxs in BFS (length nvtxs) */
-  int *                bndy_list;          /* list of boundary vtxs */
-  int *                null_ptr;           /* argument to klspiff */
-  int *                mark;               /* for marking vtxs in BFS (length nvtxs+1) */
+  double              *fake_goal;          /* either goal or temp_goal */
+  int                 *active;             /* keeping track of vtxs in BFS (length nvtxs) */
+  int                 *bndy_list;          /* list of boundary vtxs */
+  int                 *null_ptr;           /* argument to klspiff */
+  int                 *mark;               /* for marking vtxs in BFS (length nvtxs+1) */
   int                  vwgt_max;           /* largest vertex weight */
   int                  max_dev;            /* largest allowed deviation from balance */
   int                  mediantype;         /* how to map from eigenvectors to partition */
@@ -65,13 +65,6 @@ void chaco_divide(struct vtx_data **graph,         /* graph data structure */
   int                  mkconnected;        /* enforce connectivity in spectral method? */
   int                  i;                  /* loop counters */
   int                  simple_type;        /* which type of simple partitioning to use */
-  int                  find_bndy(), find_side_bndy();
-  void                 make_connected(), print_connected(), coarsen_kl(), eigensolve();
-  void                 coarsen_klv(), klvspiff();
-  void                 assign(), make_unconnected(), inertial(), klspiff(), simple_part();
-  void                 count_weights(), bpm_improve(), countup_vtx_sep();
-  double               find_maxdeg();
-
   maxdeg = 0;
 
   if (DEBUG_TRACE > 0) {

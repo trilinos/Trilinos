@@ -41,6 +41,18 @@
 #include <Shards_Array.hpp>             // for ArrayDimTag::size_type, etc
 #include <string>                       // for string
 
+#define DEPRECATED_SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ADT ) \
+  class STK_DEPRECATED ADT : public shards::ArrayDimTag { \
+  public: \
+    const char * name() const { static const char n[] = # ADT; return n; } \
+    const ADT & tag() { static const ADT self ; return self ; } \
+  private: \
+  ~ADT() {} \
+  ADT() {} \
+    ADT( const ADT & ); \
+    ADT & operator = ( const ADT & ); \
+  };
+
 namespace stk {
 namespace mesh {
 
@@ -57,21 +69,28 @@ namespace mesh {
  *   stk::mesh::Field<double, stk::mesh::Cartesian>
  */
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( SimpleArrayTag )
+DEPRECATED_SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( SimpleArrayTag )
 
 /**
  *   \brief Implement an shards::ArrayDimTag for Cartesian coordinate dimensions.
  *
  *   A Cartesian coordinate has up to three dimensions in X, Y, Z order.
  */
-struct Cartesian3d : public shards::ArrayDimTag {
+struct STK_DEPRECATED Cartesian3d : public shards::ArrayDimTag {
 
   enum { Size = 3 };                    ///< default size
 
   enum { X = 0 , Y = 1 , Z = 2 };       ///< Identifiers for each dimension
 
-  const char * name() const ;
-  static const Cartesian3d & tag();       ///< Singleton
+  const char * name() const {
+    static const char n[] = "Cartesian3d";
+    return n;
+  }
+
+  static const Cartesian3d & tag() {
+    static const Cartesian3d self;
+    return self;
+  }
 
 private:
   Cartesian3d() {}
@@ -84,14 +103,21 @@ private:
  *
  *   A Cartesian coordinate has up to two dimensions in X, Y order.
  */
-struct Cartesian2d: public shards::ArrayDimTag {
+struct STK_DEPRECATED Cartesian2d: public shards::ArrayDimTag {
 
   enum { Size = 2 };                    ///< default size
 
   enum { X = 0 , Y = 1 };       ///< Identifiers for each dimension
 
-  const char * name() const ;
-  static const Cartesian2d & tag();       ///< Singleton
+  const char * name() const {
+    static const char n[] = "Cartesian2d";
+    return n;
+  }
+
+  static const Cartesian2d & tag() {
+    static const Cartesian2d self;
+    return self;
+  }
 
 private:
   Cartesian2d() {}
@@ -99,21 +125,28 @@ private:
   Cartesian2d & operator = ( const Cartesian2d & );
 };
 
-typedef Cartesian3d Cartesian;
+STK_DEPRECATED typedef Cartesian3d Cartesian;
 /**
  *   \brief Implement an shards::ArrayDimTag for Cylindrical coordinate dimensions.
  *
  *   A Cylindral coordinate has up to three dimensions in
  *   radius, angle, and longitudinal-distance order.
  */
-struct Cylindrical : public shards::ArrayDimTag {
+struct STK_DEPRECATED Cylindrical : public shards::ArrayDimTag {
 
   enum { Radius = 0 , R = 0 ,           ///< Identifiers for each dimension
          Angle = 1 ,  A = 1 ,
          Z = 2 };
 
-  const char * name() const ;
-  static const Cylindrical & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "Cylindrical";
+    return n;
+  }
+
+  static const Cylindrical & tag() {
+    static const Cylindrical self;
+    return self;
+  }
 
 private:
   Cylindrical() {}
@@ -127,7 +160,7 @@ private:
  * \todo REFACTOR  Where should FullTensor live, in the application,
  *                 in the toolkit or a common application header?
  */
-struct FullTensor36 : public shards::ArrayDimTag {
+struct STK_DEPRECATED FullTensor36 : public shards::ArrayDimTag {
 
   enum { Size = 9 };
 
@@ -146,8 +179,15 @@ struct FullTensor36 : public shards::ArrayDimTag {
          YX = 6 , YY = 1 , YZ = 4 ,
          ZX = 5 , ZY = 7 , ZZ = 2 };
 
-  const char * name() const ;
-  static const FullTensor36 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "FullTensor36";
+    return n;
+  }
+
+  static const FullTensor36 & tag() {
+    static const FullTensor36 self;
+    return self;
+  }
 
 private:
   FullTensor36() {}
@@ -155,20 +195,27 @@ private:
   FullTensor36 & operator = ( const FullTensor36 & );
 };
 
-typedef FullTensor36 FullTensor;
+STK_DEPRECATED typedef FullTensor36 FullTensor;
 
 /**
  *  \brief Implement an shards::ArrayDimTag for FullTensor.
  */
-struct FullTensor22 : public shards::ArrayDimTag {
+struct STK_DEPRECATED FullTensor22 : public shards::ArrayDimTag {
 
   enum { Size = 4 };
 
   enum { XX = 0 , XY = 2 , 
          YX = 3 , YY = 1};
 
-  const char * name() const ;
-  static const FullTensor22 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "FullTensor22";
+    return n;
+  }
+
+  static const FullTensor22 & tag() {
+    static const FullTensor22 self;
+    return self;
+  }
 
 private:
   FullTensor22() {}
@@ -184,7 +231,7 @@ private:
  * \todo REFACTOR  Where should SymmetricTensor live, in the application,
  *                 in the toolkit or a common application header?
  */
-struct SymmetricTensor33 : public shards::ArrayDimTag {
+struct STK_DEPRECATED SymmetricTensor33 : public shards::ArrayDimTag {
 
   enum { Size = 6 };
 
@@ -192,8 +239,15 @@ struct SymmetricTensor33 : public shards::ArrayDimTag {
          YX = 3 , YY = 1,  YZ = 4, 
          ZX = 5 , ZY = 4,  ZZ = 2};
 
-  const char * name() const  ;
-  static const SymmetricTensor33 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "SymmetricTensor33";
+    return n;
+  }
+
+  static const SymmetricTensor33 & tag() {
+    static const SymmetricTensor33 self;
+    return self;
+  }
 
 private:
   SymmetricTensor33() {}
@@ -201,7 +255,7 @@ private:
   SymmetricTensor33 & operator = ( const SymmetricTensor33 & );
 };
 
-typedef SymmetricTensor33 SymmetricTensor;
+STK_DEPRECATED typedef SymmetricTensor33 SymmetricTensor;
 
 /**
  *  \brief Implement an shards::ArrayDimTag for SymmetricTensor.
@@ -210,15 +264,22 @@ typedef SymmetricTensor33 SymmetricTensor;
  *  has the radius and height of the cylindrical coordinate
  *  system but with no theta coordinate.
  */
-struct SymmetricTensor31 : public shards::ArrayDimTag {
+struct STK_DEPRECATED SymmetricTensor31 : public shards::ArrayDimTag {
 
   enum { Size = 4 };
 
   enum { rr = 0 , rz = 2 , 
          zr = 3 , zz = 1};
 
-  const char * name() const  ;
-  static const SymmetricTensor31 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "SymmetricTensor31";
+    return n;
+  }
+
+  static const SymmetricTensor31 & tag() {
+    static const SymmetricTensor31 self;
+    return self;
+  }
 
 private:
   SymmetricTensor31() {}
@@ -229,15 +290,22 @@ private:
 /**
  *  \brief Implement an shards::ArrayDimTag for SymmetricTensor.
  */
-struct SymmetricTensor21 : public shards::ArrayDimTag {
+struct STK_DEPRECATED SymmetricTensor21 : public shards::ArrayDimTag {
 
   enum { Size = 3 };
 
   enum { XX = 0 , XY = 2 , 
          YX = 2 , YY = 1 };
 
-  const char * name() const  ;
-  static const SymmetricTensor21 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "SymmetricTensor21";
+    return n;
+  }
+
+  static const SymmetricTensor21 & tag() {
+    static const SymmetricTensor21 self;
+    return self;
+  }
 
 private:
   SymmetricTensor21() {}
@@ -254,7 +322,7 @@ private:
  * forces the diagonals to be zero and only the three off-diagonal
  * elements are useful.
  */
-struct AsymmetricTensor03 : public shards::ArrayDimTag {
+struct STK_DEPRECATED AsymmetricTensor03 : public shards::ArrayDimTag {
 
   enum { Size = 3 };
 
@@ -262,8 +330,15 @@ struct AsymmetricTensor03 : public shards::ArrayDimTag {
              YX = 0 ,/* YY = 0 */  YZ = 1 , 
              ZX = 2 ,   ZY = 1  /* ZZ=0 */ };
 
-  const char * name() const  ;
-  static const AsymmetricTensor03 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "AsymmetricTensor03";
+    return n;
+  }
+
+  static const AsymmetricTensor03 & tag() {
+    static const AsymmetricTensor03 self;
+    return self;
+  }
 
 private:
   AsymmetricTensor03() {}
@@ -271,20 +346,27 @@ private:
   AsymmetricTensor03 & operator = ( const AsymmetricTensor03 & );
 };
 
-typedef AsymmetricTensor03 AsymmetricTensor;
+STK_DEPRECATED typedef AsymmetricTensor03 AsymmetricTensor;
 
 /**
  *  \brief Implement an shards::ArrayDimTag for Matrix.
  */
-struct Matrix22 : public shards::ArrayDimTag {
+struct STK_DEPRECATED Matrix22 : public shards::ArrayDimTag {
 
   enum { Size = 4 };
 
   enum { XX = 0 , XY = 2 , 
          YX = 1,  YY = 3 };
 
-  const char * name() const  ;
-  static const Matrix22 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "Matrix22";
+    return n;
+  }
+
+  static const Matrix22 & tag() {
+    static const Matrix22 self;
+    return self;
+  }
 
 private:
   Matrix22() {}
@@ -295,7 +377,7 @@ private:
 /**
  *  \brief Implement an shards::ArrayDimTag for Matrix.
  */
-struct Matrix33 : public shards::ArrayDimTag {
+struct STK_DEPRECATED Matrix33 : public shards::ArrayDimTag {
 
   enum { Size = 9 };
 
@@ -303,8 +385,15 @@ struct Matrix33 : public shards::ArrayDimTag {
          YX = 1 , YY = 4 , YZ = 7 ,
          ZX = 2 , ZY = 5 , ZZ = 8 };
 
-  const char * name() const  ;
-  static const Matrix33 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "Matrix33";
+    return n;
+  }
+
+  static const Matrix33 & tag() {
+    static const Matrix33 self;
+    return self;
+  }
 
 private:
   Matrix33() {}
@@ -312,7 +401,7 @@ private:
   Matrix33 & operator = ( const Matrix33 & );
 };
 
-typedef Matrix33 Matrix;
+STK_DEPRECATED typedef Matrix33 Matrix;
 
 //----------------------------------------------------------------------
 

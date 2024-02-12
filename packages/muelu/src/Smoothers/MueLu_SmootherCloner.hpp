@@ -59,8 +59,7 @@
 
 namespace MueLu {
 
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_SMOOTHERBASECLONER_SHORT
-#endif //ifndef MUELU_SMOOTHERBASECLONER_HPP
-
+#endif  // ifndef MUELU_SMOOTHERBASECLONER_HPP

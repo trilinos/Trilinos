@@ -80,6 +80,7 @@ void coarse_search(
 // Note that the search results that are placed in the intersections result argument
 // are not sorted. If the caller needs this vector to be sorted, you must
 // call std::sort(intersections.begin(), intersections.end()) or similar.
+//BEGINcoarse_search_impl
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
 void coarse_search(std::vector<std::pair<DomainBox, DomainIdent>> const& domain,
     std::vector<std::pair<RangeBox, RangeIdent>> const& range,
@@ -105,7 +106,7 @@ void coarse_search(std::vector<std::pair<DomainBox, DomainIdent>> const& domain,
     break;
   }
 }
-
+//ENDcoarse_search_impl
 }} // namespace stk::search
 
 #endif // stk_search_CoarseSearch_hpp

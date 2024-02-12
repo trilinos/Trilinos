@@ -1,0 +1,20 @@
+name: Check MPI_COMM_WORLD
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Search for MPI_COMM_WORLD in modified lines
+      run: |
+        python $GITHUB_WORKSPACE/commonTools/test/utilities/check-mpi-comm-world-usage.py \
+        --base origin/${{ github.event.pull_request.base.ref }} \
+        --head ${{ github.event.pull_request.head.sha }}

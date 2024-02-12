@@ -17,7 +17,7 @@
 #ifndef KOKKOS_SPARSE_FINDRELOFFSET_HPP
 #define KOKKOS_SPARSE_FINDRELOFFSET_HPP
 
-/// \file Kokkos_Sparse_findRelOffset.hpp
+/// \file KokkosSparse_findRelOffset.hpp
 /// \brief Find the relative offset of a column index in a sparse
 ///   graph's or sparse matrix's row.
 

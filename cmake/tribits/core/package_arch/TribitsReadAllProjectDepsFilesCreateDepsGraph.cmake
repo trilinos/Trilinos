@@ -39,11 +39,12 @@
 
 
 # Standard TriBITS system includes
-include(TribitsConstants)
+include("${CMAKE_CURRENT_LIST_DIR}/../common/TribitsConstants.cmake")
 include(TribitsProcessExtraRepositoriesList)
 include(TribitsProcessPackagesAndDirsLists)
 include(TribitsProcessTplsLists)
 include(TribitsReadDepsFilesCreateDepsGraph)
+include(TribitsConfigureTiming)
 
 # Standard TriBITS utilities includes
 include(TimingUtils)

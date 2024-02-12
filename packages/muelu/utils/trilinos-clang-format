@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# We need to run this from the Trilinos/packages/<package> directory,
+# so we'll check to see if there's a .clang-format file.   If there isn't
+# we error out.
+if [ -e .clang-format ]; then :
+else
+    echo "ERROR: .clang-format not found.  Please run from the Trilinos/packages/<package> directory."
+    exit -2;
+fi
+
+# Load the module
+module load sems-clang/14.0.2
+
+# Check for clang-format
+which clang-format 
+if [ $? -ne 0 ]; then
+    echo "ERROR: Cannot find clang-format"
+    exit -1;
+fi
+
+echo "Version: `clang-format --version`"
+
+
+# grab all *.hpp files and *.cpp files in the MueLu src directory
+HEADERS=$(find . -name "*.hpp")
+SOURCES=$(find . -name "*.cpp")
+
+echo "Running clang formatting..."
+
+# apply clang-format inline to each **.hpp, utilizing the style file
+for HEADER in ${HEADERS} ; do
+  echo ${HEADER}
+  clang-format -style=file -i ${HEADER}
+done
+
+# apply clang-format inline to each **.cpp, utilizing the style file
+for SOURCE in ${SOURCES} ; do
+  echo ${SOURCE}
+  clang-format -style=file -i ${SOURCE}
+done

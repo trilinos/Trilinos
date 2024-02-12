@@ -24,6 +24,7 @@ enum SyncMode {
   Any
 };
 
+//BEGINCouplingReservedNames
 static const std::string AppName = "Application Name";
 static const std::string TimeSyncMode = "Time Sync Mode";
 static const std::string InitialTime = "Initial Time";
@@ -32,6 +33,7 @@ static const std::string TimeStep = "Time Step";
 static const std::string FinalTime = "Final Time";
 static const std::string IsFinished = "Is Finished";
 static const std::string SuccessFlag = "Is Successful";
+//ENDCouplingReservedNames
 
 }
 }

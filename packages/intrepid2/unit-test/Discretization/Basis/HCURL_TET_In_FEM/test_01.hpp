@@ -62,23 +62,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
 
 namespace Intrepid2 {
 
 namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-
 
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HCURL_TET_In_FEM_Test01(const bool verbose) {
@@ -121,8 +109,6 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
-
   const scalar_type tol = tolerence();
   int errorFlag = 0;
 
@@ -148,13 +134,13 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
 
     const ordinal_type cardinality = tetBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, cardinality , dim);
     tetBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
     RealSpaceTools<DeviceType>::clone(dofCoords, dofCoords_scalar);
 
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoeffs, cardinality , dim);
     tetBasis.getDofCoeffs(dofCoeffs);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
@@ -208,7 +194,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     
 
     const ordinal_type cardinality = tetBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, cardinality , dim);
     tetBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
@@ -224,10 +210,10 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     const ordinal_type numFields = tetBasis.getCardinality();
 
     //Normals at each edge
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(tangents, numFields,dim); // normals at each point basis point
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(edgeTan, dim );
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(faceTan1, dim );
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(faceTan2, dim );
+    DynRankViewHostScalarValueType ConstructWithLabel(tangents, numFields,dim); // normals at each point basis point
+    DynRankViewHostScalarValueType ConstructWithLabel(edgeTan, dim );
+    DynRankViewHostScalarValueType ConstructWithLabel(faceTan1, dim );
+    DynRankViewHostScalarValueType ConstructWithLabel(faceTan2, dim );
 
     const auto allTags = tetBasis.getAllDofTags();
 
@@ -309,7 +295,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     const ordinal_type cardinality = tetBasis.getCardinality();
 
     //Need to use Scalar type for lattice because PointTools dont's work with FAD types
-    DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+    DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
     RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
@@ -395,7 +381,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
     const ordinal_type cardinality = tetBasis.getCardinality();
     
-    DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+    DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
     RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);

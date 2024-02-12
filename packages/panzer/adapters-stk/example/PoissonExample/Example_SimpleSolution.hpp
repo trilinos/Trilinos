@@ -70,7 +70,8 @@ class SimpleSolution : public panzer::EvaluatorWithBaseImpl<Traits>,
 
 public:
     SimpleSolution(const std::string & name,
-                       const panzer::IntegrationRule & ir);
+                   const panzer::IntegrationRule & ir,
+                   const bool curvilinear);
                                                                         
     void postRegistrationSetup(typename Traits::SetupData d,           
                                PHX::FieldManager<Traits>& fm);        
@@ -85,6 +86,8 @@ private:
   PHX::MDField<ScalarT,Cell,Point> solution;
   PHX::MDField<ScalarT,Cell,Point,Dim> solution_grad;
   int ir_degree, ir_index;
+
+  const bool curvilinear;
 };
 
 }

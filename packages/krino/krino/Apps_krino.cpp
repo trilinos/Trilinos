@@ -21,11 +21,12 @@ int main( int argc, char ** argv )
 
   bool is_parsing = true;
 
+  krino::Simulation simulation("krino simulation");
+
   try {
-    krino::Parser::parse();
+    krino::Parser::parse(simulation);
 
     is_parsing = false;
-    krino::Simulation & simulation = krino::Simulation::get();
     simulation.commit();
     simulation.initialize();
     simulation.execute();
@@ -38,9 +39,6 @@ int main( int argc, char ** argv )
     stk::diag::Trace::Preserve preserve__;
     startup.handle_exception("Unknown",is_parsing);
   }
-
-  // call Simulation::reset() manually to make sure the associated static objects are destroyed before MPI_FINALIZE is called by ~Startup
-  krino::Simulation::reset();
 
   // all done
   return 0;

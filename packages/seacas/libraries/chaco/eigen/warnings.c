@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -11,23 +11,23 @@
 #include <stdio.h> // for fprintf, NULL, FILE, stdout
 
 /* Post various warnings about computation  */
-void warnings(double *          workn,    /* work vector (1..n) */
+void warnings(double           *workn,    /* work vector (1..n) */
               struct vtx_data **A,        /* graph */
-              double **         y,        /* eigenvectors */
+              double          **y,        /* eigenvectors */
               int               n,        /* number of vtxs */
-              double *          lambda,   /* ritz approximation to eigenvals of A */
-              double *          vwsqrt,   /* square roots of vertex weights */
-              double *          Ares,     /* how well Lanczos calc. eigpair lambda,y */
-              double *          bound,    /* on ritz pair approximations to eig pairs of A */
-              int *             index,    /* the Ritz index of an eigenpair */
+              double           *lambda,   /* ritz approximation to eigenvals of A */
+              double           *vwsqrt,   /* square roots of vertex weights */
+              double           *Ares,     /* how well Lanczos calc. eigpair lambda,y */
+              double           *bound,    /* on ritz pair approximations to eig pairs of A */
+              int              *index,    /* the Ritz index of an eigenpair */
               int               d,        /* problem dimension = number of eigvecs to find */
               int               j,        /* number of Lanczos iterations used */
               int               maxj,     /* maximum number of Lanczos iterations */
               double            Sres_max, /* Max value of Sres */
               double            eigtol,   /* tolerance on eigenvectors */
-              double *          u,        /* Lanczos vector; here used as workspace */
+              double           *u,        /* Lanczos vector; here used as workspace */
               double            Anorm,    /* Gershgorin bound on eigenvalue */
-              FILE *            out_file  /* output file */
+              FILE             *out_file  /* output file */
 )
 {
   extern int    DEBUG_EVECS;              /* print debugging output? */
@@ -43,10 +43,7 @@ void warnings(double *          workn,    /* work vector (1..n) */
   int           i;                        /* loop index */
   int           hosed;                    /* flag for serious Lanczos problems */
   int           pass;                     /* which time through we are on */
-  FILE *        outfile = NULL;           /* set to output file or stdout */
-  double        checkeig();               /* calculate residual of eigenvector of A */
-  void          doubleout_file();         /* print a double precision number */
-  void          bail();                   /* our exit routine */
+  FILE         *outfile = NULL;           /* set to output file or stdout */
 
   hosed = FALSE;
   for (pass = 1; pass <= 2; pass++) {

@@ -254,32 +254,19 @@ KLU2<Matrix,Vector>::solve_impl(
         host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
-      if ( is_contiguous_ == true ) {
-        bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(initialize_data, B, bValues_,
-              as<size_t>(ld_rhs),
-              ROOTED, this->rowIndexBase_);
-      }
-      else {
-        bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(initialize_data, B, bValues_,
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
+
+      bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
 
       // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
-      if ( is_contiguous_ == true ) {
-        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-              as<size_t>(ld_rhs),
-              ROOTED, this->rowIndexBase_);
-      }
-      else {
-        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-              as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-      }
+      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
 
       // klu_tsolve is going to put the solution x into the input b.
       // Copy b to x then solve in x.
@@ -393,18 +380,12 @@ KLU2<Matrix,Vector>::solve_impl(
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-            as<size_t>(ld_rhs),
-            ROOTED, this->rowIndexBase_);
-    }
-    else {
-      Util::put_1d_data_helper_kokkos_view<
-        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-            as<size_t>(ld_rhs),
-            CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
-    }
+    Util::put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+        as<size_t>(ld_rhs),
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        this->rowIndexBase_);
+
   }
 
   return(ierr);
@@ -491,7 +472,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
   if ( single_proc_optimization() ) {
     // Do nothing in this case - Crs raw pointers will be used
   }
-  else 
+  else
   {
 
 #ifdef HAVE_AMESOS2_TIMERS
@@ -514,18 +495,12 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
-    if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
-        ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
-            nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
-    }
-    else {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
-        ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_,
-            nnz_ret, CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
-    }
+    Util::get_ccs_helper_kokkos_view<
+      MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
+      ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        ARBITRARY,
+        this->rowIndexBase_);
   }
 
   if( this->root_ ) {

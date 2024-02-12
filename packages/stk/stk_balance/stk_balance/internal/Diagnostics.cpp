@@ -164,118 +164,6 @@ UnsignedWithPercentDiagnostic::print_avg(unsigned )
 }
 
 
-void
-DoubleWithPercentDiagnostic::collect_data(stk::ParallelMachine pm, int numRanks)
-{
-  stk::CommSparse comm(pm);
-  stk::pack_and_communicate(comm, [this, &comm]()
-  {
-    for (const auto & localValue : m_localValues) {
-      comm.send_buffer(0).pack<int>(localValue.first);
-      comm.send_buffer(0).pack<double>(localValue.second);
-    }
-  });
-
-  if (stk::parallel_machine_rank(pm) == 0) {
-    m_values.resize(numRanks, 0);
-
-    for (int proc = 0; proc < stk::parallel_machine_size(pm); ++proc) {
-      while (comm.recv_buffer(proc).remaining()) {
-        int rank;
-        double value;
-        comm.recv_buffer(proc).unpack<int>(rank);
-        comm.recv_buffer(proc).unpack<double>(value);
-        STK_ThrowRequire(rank < numRanks);
-        m_values[rank] = value;
-      }
-    }
-  }
-}
-
-void
-DoubleWithPercentDiagnostic::process_data(stk::ParallelMachine pm)
-{
-  if (stk::parallel_machine_rank(pm) == 0) {
-    m_min = compute_min(m_values);
-    m_max = compute_max(m_values);
-    m_avg = compute_avg(m_values);
-
-    const double maxPercent = (m_avg > 0.0) ? 100. * (m_max - m_avg) / m_avg
-                                            : 0.0;
-    const double minPercent = (m_avg > 0.0) ? 100. * (m_min - m_avg) / m_avg
-                                            : 0.0;
-
-    std::ostringstream osMax;
-    osMax << std::fixed << std::setprecision(1) << std::showpos << maxPercent;
-
-    std::ostringstream osMin;
-    osMin << std::fixed << std::setprecision(1) << std::showpos << minPercent;
-
-    m_percentSize = std::max(osMax.str().size(), osMin.str().size());
-  }
-}
-
-double
-DoubleWithPercentDiagnostic::compute_min(const std::vector<double> & data)
-{
-  return *std::min_element(data.begin(), data.end());
-}
-
-double
-DoubleWithPercentDiagnostic::compute_max(const std::vector<double> & data)
-{
-  return *std::max_element(data.begin(), data.end());
-}
-
-double
-DoubleWithPercentDiagnostic::compute_avg(const std::vector<double> & data)
-{
-  if (data.empty()) {
-    return 0.0;
-  }
-  return std::accumulate(data.begin(), data.end(), 0.0) / data.size();
-}
-
-std::string
-DoubleWithPercentDiagnostic::print_value_with_percent(double value)
-{
-  const double percent = (m_avg > 0.0) ? 100. * (value - m_avg) / m_avg
-                                       : 0.0;
-  std::ostringstream os;
-  os << std::fixed << std::setprecision(m_decimalOutput) << value
-     << " (" << std::setw(m_percentSize) << std::fixed << std::setprecision(1) << std::showpos << percent << "%)";
-
-  return os.str();
-}
-
-std::string
-DoubleWithPercentDiagnostic::print_rank_value(unsigned , int rank)
-{
-  return print_value_with_percent(m_values[rank]);
-}
-
-std::string
-DoubleWithPercentDiagnostic::print_min(unsigned )
-{
-  return print_value_with_percent(m_min);
-}
-
-std::string
-DoubleWithPercentDiagnostic::print_max(unsigned )
-{
-  return print_value_with_percent(m_max);
-}
-
-std::string
-DoubleWithPercentDiagnostic::print_avg(unsigned )
-{
-  std::ostringstream os;
-  os << std::fixed << std::setprecision(m_decimalOutput) << m_avg << std::string(m_percentSize+4, ' ');
-
-  return os.str();
-}
-
-
 MultiUnsignedDiagnostic::MultiUnsignedDiagnostic(unsigned numColumns)
   : m_localValues(numColumns),
     m_values(numColumns),
@@ -423,8 +311,306 @@ MultiUnsignedWithPercentDiagnostic::print_avg(unsigned column)
 }
 
 
+void
+DoubleWithPercentDiagnostic::collect_data(stk::ParallelMachine pm, int numRanks)
+{
+  stk::CommSparse comm(pm);
+  stk::pack_and_communicate(comm, [this, &comm]()
+  {
+    for (const auto & localValue : m_localValues) {
+      comm.send_buffer(0).pack<int>(localValue.first);
+      comm.send_buffer(0).pack<double>(localValue.second);
+    }
+  });
+
+  if (stk::parallel_machine_rank(pm) == 0) {
+    m_values.resize(numRanks, 0);
+
+    for (int proc = 0; proc < stk::parallel_machine_size(pm); ++proc) {
+      while (comm.recv_buffer(proc).remaining()) {
+        int rank;
+        double value;
+        comm.recv_buffer(proc).unpack<int>(rank);
+        comm.recv_buffer(proc).unpack<double>(value);
+        STK_ThrowRequire(rank < numRanks);
+        m_values[rank] = value;
+      }
+    }
+  }
+}
+
+void
+DoubleWithPercentDiagnostic::process_data(stk::ParallelMachine pm)
+{
+  if (stk::parallel_machine_rank(pm) == 0) {
+    m_min = compute_min(m_values);
+    m_max = compute_max(m_values);
+    m_avg = compute_avg(m_values);
+
+    const double maxPercent = (m_avg > 0.0) ? 100. * (m_max - m_avg) / m_avg
+                                            : 0.0;
+    const double minPercent = (m_avg > 0.0) ? 100. * (m_min - m_avg) / m_avg
+                                            : 0.0;
+
+    std::ostringstream osMax;
+    osMax << std::fixed << std::setprecision(1) << std::showpos << maxPercent;
+
+    std::ostringstream osMin;
+    osMin << std::fixed << std::setprecision(1) << std::showpos << minPercent;
+
+    m_percentSize = std::max(osMax.str().size(), osMin.str().size());
+  }
+}
+
+double
+DoubleWithPercentDiagnostic::compute_min(const std::vector<double> & data)
+{
+  return *std::min_element(data.begin(), data.end());
+}
+
+double
+DoubleWithPercentDiagnostic::compute_max(const std::vector<double> & data)
+{
+  return *std::max_element(data.begin(), data.end());
+}
+
+double
+DoubleWithPercentDiagnostic::compute_avg(const std::vector<double> & data)
+{
+  if (data.empty()) {
+    return 0.0;
+  }
+  return std::accumulate(data.begin(), data.end(), 0.0) / data.size();
+}
+
+std::string
+DoubleWithPercentDiagnostic::print_value_with_percent(double value)
+{
+  const double percent = (m_avg > 0.0) ? 100. * (value - m_avg) / m_avg
+                                       : 0.0;
+  std::ostringstream os;
+  os << std::fixed << std::setprecision(m_decimalOutput) << value
+     << " (" << std::setw(m_percentSize) << std::fixed << std::setprecision(1) << std::showpos << percent << "%)";
+
+  return os.str();
+}
+
+std::string
+DoubleWithPercentDiagnostic::print_rank_value(unsigned , int rank)
+{
+  return print_value_with_percent(m_values[rank]);
+}
+
+std::string
+DoubleWithPercentDiagnostic::print_min(unsigned )
+{
+  return print_value_with_percent(m_min);
+}
+
+std::string
+DoubleWithPercentDiagnostic::print_max(unsigned )
+{
+  return print_value_with_percent(m_max);
+}
+
+std::string
+DoubleWithPercentDiagnostic::print_avg(unsigned )
+{
+  std::ostringstream os;
+  os << std::fixed << std::setprecision(m_decimalOutput) << m_avg << std::string(m_percentSize+4, ' ');
+
+  return os.str();
+}
+
+
+MultiDoubleDiagnostic::MultiDoubleDiagnostic(unsigned numColumns, unsigned decimalOutput)
+  : m_localValues(numColumns),
+    m_values(numColumns),
+    m_min(numColumns),
+    m_max(numColumns),
+    m_avg(numColumns),
+    m_numColumns(numColumns),
+    m_decimalOutput(decimalOutput)
+{
+}
+
+void
+MultiDoubleDiagnostic::collect_data(stk::ParallelMachine pm, int numRanks)
+{
+  stk::CommSparse comm(pm);
+  stk::pack_and_communicate(comm, [this, &comm]()
+  {
+    for (unsigned column = 0; column < m_numColumns; ++column) {
+      for (const auto & localValue : m_localValues[column]) {
+        comm.send_buffer(0).pack<unsigned>(column);
+        comm.send_buffer(0).pack<int>(localValue.first);
+        comm.send_buffer(0).pack<double>(localValue.second);
+      }
+    }
+  });
+
+  if (stk::parallel_machine_rank(pm) == 0) {
+    for (unsigned column = 0; column < m_numColumns; ++column) {
+      m_values[column].resize(numRanks, 0);
+    }
+
+    for (int proc = 0; proc < stk::parallel_machine_size(pm); ++proc) {
+      while (comm.recv_buffer(proc).remaining()) {
+        unsigned column;
+        int rank;
+        double value;
+        comm.recv_buffer(proc).unpack<unsigned>(column);
+        comm.recv_buffer(proc).unpack<int>(rank);
+        comm.recv_buffer(proc).unpack<double>(value);
+        STK_ThrowRequire(rank < numRanks);
+        m_values[column][rank] = value;
+      }
+    }
+  }
+}
+
+void
+MultiDoubleDiagnostic::process_data(stk::ParallelMachine pm)
+{
+  if (stk::parallel_machine_rank(pm) == 0) {
+    for (unsigned column = 0; column < m_numColumns; ++column) {
+      m_min[column] = compute_min(m_values[column]);
+      m_max[column] = compute_max(m_values[column]);
+      m_avg[column] = compute_avg(m_values[column]);
+    }
+  }
+}
+
+std::string
+MultiDoubleDiagnostic::print_value(double value)
+{
+  std::ostringstream os;
+  os << std::fixed << std::setprecision(m_decimalOutput) << value;
+
+  return os.str();
+}
+
+std::string
+MultiDoubleDiagnostic::print_rank_value(unsigned column, int rank)
+{
+  return print_value(m_values[column][rank]);
+}
+
+std::string
+MultiDoubleDiagnostic::print_min(unsigned column)
+{
+  return print_value(m_min[column]);
+}
+
+std::string
+MultiDoubleDiagnostic::print_max(unsigned column)
+{
+  return print_value(m_max[column]);
+}
+
+std::string
+MultiDoubleDiagnostic::print_avg(unsigned column)
+{
+  return print_value(m_avg[column]);
+}
+
+double
+MultiDoubleDiagnostic::compute_min(const std::vector<double> & data)
+{
+  return *std::min_element(data.begin(), data.end());
+}
+
+double
+MultiDoubleDiagnostic::compute_max(const std::vector<double> & data)
+{
+  return *std::max_element(data.begin(), data.end());
+}
+
+double
+MultiDoubleDiagnostic::compute_avg(const std::vector<double> & data)
+{
+  if (data.empty()) {
+    return 0.0;
+  }
+  return std::accumulate(data.begin(), data.end(), 0.0) / data.size();
+}
+
+
+void
+MultiDoubleWithPercentDiagnostic::process_data(stk::ParallelMachine pm)
+{
+  if (stk::parallel_machine_rank(pm) == 0) {
+    for (unsigned column = 0; column < m_numColumns; ++column) {
+      m_min[column] = compute_min(m_values[column]);
+      m_max[column] = compute_max(m_values[column]);
+      m_avg[column] = compute_avg(m_values[column]);
+
+      const double maxPercent = (m_avg[column] > 0.0) ? 100.0 * (m_max[column] - m_avg[column]) / m_avg[column]
+                                                      : 0.0;
+      const double minPercent = (m_avg[column] > 0.0) ? 100.0 * (m_min[column] - m_avg[column]) / m_avg[column]
+                                                      : 0.0;
+
+      std::ostringstream osMax;
+      osMax << std::fixed << std::setprecision(1) << std::showpos << maxPercent;
+
+      std::ostringstream osMin;
+      osMin << std::fixed << std::setprecision(1) << std::showpos << minPercent;
+
+      m_percentSize[column] = std::max(osMax.str().size(), osMin.str().size());
+    }
+  }
+}
+
+std::string
+MultiDoubleWithPercentDiagnostic::print_value_with_percent(unsigned column, double value)
+{
+  const double percent = (m_avg[column] > 0.0) ? 100.0 * (value - m_avg[column]) / m_avg[column]
+                                               : 0.0;
+  std::ostringstream os;
+  os << std::fixed << std::setprecision(m_decimalOutput) << value
+     << " (" << std::setw(m_percentSize[column]) << std::fixed << std::setprecision(1)
+     << std::showpos << percent << "%)";
+
+  return os.str();
+}
+
+std::string
+MultiDoubleWithPercentDiagnostic::print_rank_value(unsigned column, int rank)
+{
+  return print_value_with_percent(column, m_values[column][rank]);
+}
+
+std::string
+MultiDoubleWithPercentDiagnostic::print_min(unsigned column)
+{
+  return print_value_with_percent(column, m_min[column]);
+}
+
+std::string
+MultiDoubleWithPercentDiagnostic::print_max(unsigned column)
+{
+  return print_value_with_percent(column, m_max[column]);
+}
+
+std::string
+MultiDoubleWithPercentDiagnostic::print_avg(unsigned column)
+{
+  std::ostringstream os;
+  os << std::fixed << std::setprecision(m_decimalOutput) << m_avg[column]
+     << std::string(m_percentSize[column]+4, ' ');
+
+  return os.str();
+}
+
+
 void set_up_diagnostics(const stk::balance::BalanceSettings & balanceSettings)
 {
+  if ((impl::g_diagnosticsContainer.size() >= 2) &&
+      (get_diagnostic<TotalElementWeightDiagnostic>()->num_columns() !=
+       static_cast<unsigned>(balanceSettings.getNumCriteria()))) {
+    impl::g_diagnosticsContainer.clear();
+  }
+
   if (impl::g_diagnosticsContainer.size() == 0) {
     register_diagnostic<ElementCountDiagnostic>();
     register_diagnostic<TotalElementWeightDiagnostic>(static_cast<unsigned>(balanceSettings.getNumCriteria()));

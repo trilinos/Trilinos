@@ -35,7 +35,7 @@
 #ifndef stk_expreval_DeviceVariable_defn_hpp
 #define stk_expreval_DeviceVariable_defn_hpp
 
-#include "DeviceVariable_defn.hpp"
+#include "DeviceVariable_decl.hpp"
 
 namespace stk {
 namespace expreval {
@@ -46,7 +46,8 @@ DeviceVariable::DeviceVariable()
     m_size(1),
     m_stride(1),
     m_doublePtr(&m_doubleValue),
-    m_doubleValue(0.0)
+    m_doubleValue(0.0),
+    m_isModifiable(true)
 {
 }
 
@@ -54,7 +55,8 @@ KOKKOS_INLINE_FUNCTION
 DeviceVariable::DeviceVariable(const Variable::Type variableType, int variableSize, int variableStride)
   : m_type(variableType),
     m_size(variableSize),
-    m_stride(variableStride)
+    m_stride(variableStride),
+    m_isModifiable(true)
 {
   switch (variableType) {
   case Variable::Type::DOUBLE:
@@ -90,27 +92,94 @@ DeviceVariable::operator=(const DeviceVariable & deviceVariable)
 }
 
 KOKKOS_INLINE_FUNCTION
-double &
+double
 DeviceVariable::getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const
 {
-  STK_NGP_ThrowRequireMsg(m_type == Variable::DOUBLE, "Only double arrays are allowed.");
-  STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Invalid array variable.");
+  if (m_type == Variable::Type::DOUBLE) {
+    STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Invalid array variable.");
 
-  if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
-    STK_NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
-    STK_NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
+    if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
+      STK_NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
 
-    return m_doublePtr[index*m_stride];
-  }
-  else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
-    STK_NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
-    STK_NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
+      return m_doublePtr[index*m_stride];
+    }
+    else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
+      STK_NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
 
-    return m_doublePtr[(index-1)*m_stride];
+      return m_doublePtr[(index-1)*m_stride];
+    }
+    else {
+      STK_NGP_ThrowErrorMsg("Invalid ArrayOffsetType.");
+      return m_doublePtr[0];
+    }
   }
   else {
-    STK_NGP_ThrowErrorMsg("Invalid ArrayOffsetType.")
-    return m_doublePtr[0];
+    STK_NGP_ThrowRequireMsg(m_intPtr != nullptr, "Invalid array variable.");
+
+    if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
+      STK_NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
+
+      return static_cast<double>(m_intPtr[index*m_stride]);
+    }
+    else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
+      STK_NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
+
+      return static_cast<double>(m_intPtr[(index-1)*m_stride]);
+    }
+    else {
+      STK_NGP_ThrowErrorMsg("Invalid ArrayOffsetType.");
+      return static_cast<double>(m_intPtr[0]);
+    }
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+void
+DeviceVariable::assignArrayValue(int index, Variable::ArrayOffset arrayOffsetType, double value) const
+{
+  STK_NGP_ThrowRequireMsg(m_isModifiable, "Cannot modify const array.");
+
+  if (m_type == Variable::Type::DOUBLE) {
+    STK_NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Invalid array variable.");
+
+    if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
+      STK_NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
+
+      const_cast<double&>(m_doublePtr[index*m_stride]) = value;
+    }
+    else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
+      STK_NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
+
+      const_cast<double&>(m_doublePtr[(index-1)*m_stride]) = value;
+    }
+    else {
+      STK_NGP_ThrowErrorMsg("Invalid ArrayOffsetType.");
+    }
+  }
+  else {
+    STK_NGP_ThrowRequireMsg(m_intPtr != nullptr, "Invalid array variable.");
+
+    if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
+      STK_NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
+
+      const_cast<int&>(m_intPtr[index*m_stride]) = static_cast<int>(value);
+    }
+    else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
+      STK_NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
+      STK_NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
+
+      const_cast<int&>(m_intPtr[(index-1)*m_stride]) = static_cast<int>(value);
+    }
+    else {
+      STK_NGP_ThrowErrorMsg("Invalid ArrayOffsetType.");
+    }
   }
 }
 
@@ -137,12 +206,35 @@ DeviceVariable::getValue() const
 
 KOKKOS_INLINE_FUNCTION
 void
+DeviceVariable::bind(const double& value_ref, int definedLength, int strideLength)
+{
+  m_type = Variable::DOUBLE;
+  m_doublePtr = &value_ref;
+  m_size = definedLength;
+  m_stride = strideLength;
+  m_isModifiable = false;
+}
+
+KOKKOS_INLINE_FUNCTION
+void
 DeviceVariable::bind(double& value_ref, int definedLength, int strideLength)
 {
   m_type = Variable::DOUBLE;
   m_doublePtr = &value_ref;
   m_size = definedLength;
   m_stride = strideLength;
+  m_isModifiable = true;
+}
+
+KOKKOS_INLINE_FUNCTION
+void
+DeviceVariable::bind(const int& value_ref, int definedLength, int strideLength)
+{
+  m_type = Variable::INTEGER;
+  m_intPtr = &value_ref;
+  m_size = definedLength;
+  m_stride = strideLength;
+  m_isModifiable = false;
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -153,34 +245,21 @@ DeviceVariable::bind(int& value_ref, int definedLength, int strideLength)
   m_intPtr = &value_ref;
   m_size = definedLength;
   m_stride = strideLength;
+  m_isModifiable = true;
 }
 
 KOKKOS_INLINE_FUNCTION
 DeviceVariable &
-DeviceVariable::operator=(const double& value)
+DeviceVariable::operator=(double value)
 {
-  STK_NGP_ThrowRequireMsg(m_size == 1, "double = Cannot access vector variable as a scalar.");
+  STK_NGP_ThrowRequireMsg(m_size == 1, "double assignment cannot access vector variable as a scalar.");
+  STK_NGP_ThrowRequireMsg(m_isModifiable, "double assignment to a const variable.");
 
   if (m_type == Variable::INTEGER) {
-    *m_intPtr = static_cast<int>(value);
+    *const_cast<int*>(m_intPtr) = static_cast<int>(value);
   }
   else if (m_type == Variable::DOUBLE) {
-    *m_doublePtr = value;
-  }
-  return *this;
-}
-
-KOKKOS_INLINE_FUNCTION
-DeviceVariable&
-DeviceVariable::operator=(const int& value)
-{
-  STK_NGP_ThrowRequireMsg(m_size == 1, "int = Cannot access vector variable as a scalar.");
-
-  if (m_type == Variable::INTEGER) {
-    *m_intPtr = value;
-  }
-  else if (m_type == Variable::DOUBLE) {
-    *m_doublePtr = static_cast<double>(value);
+    *const_cast<double*>(m_doublePtr) = value;
   }
   return *this;
 }

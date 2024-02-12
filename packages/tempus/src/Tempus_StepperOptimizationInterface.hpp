@@ -9,7 +9,7 @@
 #ifndef Tempus_Stepper_Optimization_Interface_hpp
 #define Tempus_Stepper_Optimization_Interface_hpp
 
-//Teuchos
+// Teuchos
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -36,11 +36,9 @@ namespace Tempus {
  * parameters and param_index determines which model parameter this
  * corresponds to.
  */
-template<class Scalar>
-class StepperOptimizationInterface
-{
-public:
-
+template <class Scalar>
+class StepperOptimizationInterface {
+ public:
   StepperOptimizationInterface() {}
 
   virtual ~StepperOptimizationInterface() {}
@@ -50,11 +48,10 @@ public:
 
   //! Compute time step residual
   virtual void computeStepResidual(
-    Thyra::VectorBase<Scalar>& residual,
-    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-    const Teuchos::Array<Scalar>& t,
-    const Thyra::VectorBase<Scalar>& p,
-    const int param_index) const = 0;
+      Thyra::VectorBase<Scalar>& residual,
+      const Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t, const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const = 0;
 
   //! Compute time step Jacobian
   /*!
@@ -62,33 +59,29 @@ public:
    * computed with respect to.
    */
   virtual void computeStepJacobian(
-    Thyra::LinearOpBase<Scalar>& jacobian,
-    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-    const Teuchos::Array<Scalar>& t,
-    const Thyra::VectorBase<Scalar>& p,
-    const int param_index,
-    const int deriv_index) const = 0;
+      Thyra::LinearOpBase<Scalar>& jacobian,
+      const Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t, const Thyra::VectorBase<Scalar>& p,
+      const int param_index, const int deriv_index) const = 0;
 
   //! Compute time step derivative w.r.t. model parameters
   virtual void computeStepParamDeriv(
-    Thyra::LinearOpBase<Scalar>& deriv,
-    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-    const Teuchos::Array<Scalar>& t,
-    const Thyra::VectorBase<Scalar>& p,
-    const int param_index) const = 0;
+      Thyra::LinearOpBase<Scalar>& deriv,
+      const Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t, const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const = 0;
 
   //! Compute time step Jacobian solver
   /*!
    * Derivative is always w.r.t. the most current solution vector
    */
   virtual void computeStepSolver(
-    Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
-    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-    const Teuchos::Array<Scalar>& t,
-    const Thyra::VectorBase<Scalar>& p,
-    const int param_index) const = 0;
+      Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
+      const Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
+      const Teuchos::Array<Scalar>& t, const Thyra::VectorBase<Scalar>& p,
+      const int param_index) const = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_Stepper_hpp
+#endif  // Tempus_Stepper_hpp

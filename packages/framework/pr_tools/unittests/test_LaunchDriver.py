@@ -27,15 +27,12 @@ class Test_LaunchDriver(unittest.TestCase):
 
     ## Test LaunchDriver methods
     def testUnitGetLaunchEnv(self):
-      env = ld.get_launch_env(self.build_name+"_rdc", "dne")
-      self.assertEqual(env, "env TRILINOS_MAX_CORES=96 ")
-
-      env = ld.get_launch_env(self.build_name, "dne")
+      env = ld.get_launch_env("dne")
       self.assertEqual(env, "")
 
 
     def testUnitGetLaunchCmd(self):
-      cmd = ld.get_launch_cmd(self.build_name, "dne")
+      cmd = ld.get_launch_cmd("dne")
       self.assertEqual(cmd, " ")
 
 

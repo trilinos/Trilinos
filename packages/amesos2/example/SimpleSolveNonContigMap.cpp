@@ -75,7 +75,7 @@
 int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
-#ifdef HAVE_AMESOS2_SHYLUBASKER
+#ifdef HAVE_AMESOS2_SHYLU_NODEBASKER
   std::string solver_name = "ShyLUBasker";
 #else
   std::string solver_name = "Basker";
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
 
 //    Teuchos::ParameterList & sublist_params = amesos2_params.sublist(solver_name);
 //     sublist_params.set("IsContiguous", false, "Are GIDs Contiguous");
-#ifdef HAVE_AMESOS2_SHYLUBASKER
+#ifdef HAVE_AMESOS2_SHYLU_NODEBASKER
     if ( solver_name == "ShyLUBasker" ) {
       amesos2_params.sublist(solver_name).set("num_threads", 1, "Number of threads");
 //      sublist_params.set("num_threads", 1, "Number of threads");

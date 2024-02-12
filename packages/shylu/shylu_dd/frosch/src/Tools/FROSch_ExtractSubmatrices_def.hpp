@@ -378,6 +378,16 @@ namespace FROSch {
                 nnzJJ);
 
             // make it into offsets
+#if KOKKOSKERNELS_VERSION >= 40199
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsI, RowptrII);
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsI, RowptrIJ);
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsJ, RowptrJI);
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+                (1+numRowsJ, RowptrJJ);
+#else
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
                 (1+numRowsI, RowptrII);
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
@@ -386,6 +396,7 @@ namespace FROSch {
                 (1+numRowsJ, RowptrJI);
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
                 (1+numRowsJ, RowptrJJ);
+#endif
 
             // allocate kII block
             indices_type IndicesII ("IndicesII", nnzII);

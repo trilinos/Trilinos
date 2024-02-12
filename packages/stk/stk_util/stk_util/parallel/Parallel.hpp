@@ -76,7 +76,7 @@ inline ParallelMachine parallel_machine_null() { return MPI_COMM_NULL ; }
 inline ParallelMachine parallel_machine_init( int * argc , char *** argv )
 {
   MPI_Init( argc , argv );
-  return MPI_COMM_WORLD ;
+  return MPI_COMM_WORLD ; // CHECK: ALLOW MPI_COMM_WORLD
 }
 
 /**
@@ -128,6 +128,11 @@ inline void parallel_machine_finalize()
 // Common parallel machine needs.
 
 namespace stk {
+
+inline ParallelMachine parallel_machine_world()
+{
+  return MPI_COMM_WORLD; // CHECK: ALLOW MPI_COMM_WORLD
+}
 
 /**
  * @brief Member function <b>parallel_machine_size</b> ...

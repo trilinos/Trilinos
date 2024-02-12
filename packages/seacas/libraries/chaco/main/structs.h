@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 #pragma once
-
 /**< An array of these stores all the data for the graph/matrix. */
 struct vtx_data
 {
@@ -133,3 +132,5 @@ struct flists
   float         *list;
   struct flists *next;
 };
+
+#include "prototypes.h"

@@ -68,7 +68,7 @@ Tet10Fixture::Tet10Fixture(MetaData& meta,
     m_bulk_data( bulk ),
     m_elem_parts( ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
-    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
+    m_coord_field( stk::mesh::legacy::declare_field<CoordFieldType>(m_meta, stk::topology::NODE_RANK, "Coordinates") )
 {
   //put coord-field on all nodes:
   put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
@@ -91,7 +91,7 @@ Tet10Fixture::Tet10Fixture(stk::ParallelMachine pm,
     m_bulk_data(*m_bulk_p),
     m_elem_parts( 1, &m_meta.declare_part_with_topology("tet_part", stk::topology::TET_10) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
-    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
+    m_coord_field( stk::mesh::legacy::declare_field<CoordFieldType>(m_meta, stk::topology::NODE_RANK, "Coordinates") )
 {
 
   //put coord-field on all nodes:
@@ -117,7 +117,7 @@ Tet10Fixture::Tet10Fixture(stk::ParallelMachine pm,
     m_bulk_data(*m_bulk_p),
     m_elem_parts( 1, &m_meta.declare_part_with_topology("tet_part", stk::topology::TET_10) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
-    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordsName) )
+    m_coord_field( stk::mesh::legacy::declare_field<CoordFieldType>(m_meta, stk::topology::NODE_RANK, coordsName) )
 {
 
   //put coord-field on all nodes:

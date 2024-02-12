@@ -75,10 +75,10 @@ GearsFixture::GearsFixture(ParallelMachine pm, size_t num_gears, GearParams gear
     cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", stk::topology::ELEMENT_RANK)),
     hex_part( meta_data.declare_part_with_topology("hex8_part", stk::topology::HEX_8)),
     wedge_part( meta_data.declare_part_with_topology("wedge6_part", stk::topology::WEDGE_6)),
-    cartesian_coord_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "coordinates", ONE_STATE)),
-    displacement_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "displacement", TWO_STATE)),
-    translation_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "translation", ONE_STATE)),
-    cylindrical_coord_field( meta_data.declare_field<CylindricalField>(stk::topology::NODE_RANK, "cylindrical_coordinates", ONE_STATE)),
+    cartesian_coord_field( stk::mesh::legacy::declare_field<CartesianField>(meta_data, stk::topology::NODE_RANK, "coordinates", ONE_STATE)),
+    displacement_field( stk::mesh::legacy::declare_field<CartesianField>(meta_data, stk::topology::NODE_RANK, "displacement", TWO_STATE)),
+    translation_field( stk::mesh::legacy::declare_field<CartesianField>(meta_data, stk::topology::NODE_RANK, "translation", ONE_STATE)),
+    cylindrical_coord_field( stk::mesh::legacy::declare_field<CylindricalField>(meta_data, stk::topology::NODE_RANK, "cylindrical_coordinates", ONE_STATE)),
     m_gears()
 {
 

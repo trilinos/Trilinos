@@ -153,7 +153,7 @@ template <typename scalar_t>
   void ImbalanceMetrics<scalar_t>::printHeader(std::ostream &os)
 {
   os << std::setw(20) << " ";
-  os << std::setw(11) << "min" << std::setw(11) << "max" << std::setw(11) << "avg";
+  os << std::setw(15) << "min" << std::setw(15) << "max" << std::setw(15) << "avg";
   os << std::setw(2) << " ";
   os << std::setw(10) << "imbalance";
   os << std::endl;
@@ -184,13 +184,17 @@ template <typename scalar_t>
     label = oss.str();
   }
 
+  auto min = this->getMetricValue("global minimum");
+  auto max = this->getMetricValue("global maximum");
+  auto avg = this->getMetricValue("global average");
+  int precision = 4;
+  if( min > 999 ) { precision = 0; }
+  else if( min > 99 ) { precision = 2; }
+
   os << std::setw(20) << label;
-  os << std::setw(11) << std::setprecision(4) 
-     << this->getMetricValue("global minimum");
-  os << std::setw(11) << std::setprecision(4) 
-     << this->getMetricValue("global maximum");
-  os << std::setw(11) << std::setprecision(4) 
-     << this->getMetricValue("global average");
+  os << std::setw(15) << std::setprecision(precision) << min;
+  os << std::setw(15) << std::setprecision(precision) << max;
+  os << std::setw(15) << std::setprecision(precision) << avg;
 
   os << std::setw(2) << " ";
   os << std::setw(10) << std::setprecision(4) 

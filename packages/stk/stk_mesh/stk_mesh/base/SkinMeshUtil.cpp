@@ -167,9 +167,11 @@ void SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                           stk::mesh::impl::LocalId localId,
                                           std::vector<int>& exposedSides)
 {
-    int maxSidesThisElement = bucket.topology().num_sides();
+    stk::topology elemTopo = bucket.topology();
+    int maxSidesThisElement = elemTopo.num_sides();
     exposedSides.clear();
-    if(stk::mesh::impl::does_element_have_side(bucket.mesh(), element))
+    const bool elemHasSide = elemTopo.dimension() == bucket.mesh().mesh_meta_data().spatial_dimension();
+    if(elemHasSide)
     {
         if(skinSelector(bucket))
             get_exposed_sides(localId, maxSidesThisElement, exposedSides);
@@ -269,7 +271,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                 {
                     isElement2InSelector = remoteSkinSelector[graphEdge.elem2()];
                     if(!isElement2InSelector) continue;
-                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2()], scratchOrdinals1);
+                    should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, parallelPartInfo[graphEdge.elem2()].elementPartOrdinals, scratchOrdinals1);
                 }
                 else
                 {

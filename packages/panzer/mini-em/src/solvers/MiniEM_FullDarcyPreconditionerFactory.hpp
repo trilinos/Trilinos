@@ -31,6 +31,7 @@ private:
    bool doDebug;
    bool useAsPreconditioner;
    double dt;
+   std::vector<int> pCoarsenSchedule_;
 
    // type of preconditioner for Schur complement
    std::string S_sigma_prec_type_;

@@ -60,22 +60,28 @@ public:
   DeviceVariable& operator=(const DeviceVariable& deviceVariable);
 
   KOKKOS_FUNCTION
-  double& getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const;
+  double getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const;
+
+  KOKKOS_FUNCTION
+  void assignArrayValue(int index, Variable::ArrayOffset arrayOffsetType, double value) const;
 
   KOKKOS_FUNCTION
   double getValue() const;
 
   KOKKOS_FUNCTION
+  void bind(const double& value_ref, int definedLength, int strideLength);
+
+  KOKKOS_FUNCTION
   void bind(double& value_ref, int definedLength, int strideLength);
+
+  KOKKOS_FUNCTION
+  void bind(const int& value_ref, int definedLength, int strideLength);
 
   KOKKOS_FUNCTION
   void bind(int& value_ref, int definedLength, int strideLength);
 
   KOKKOS_FUNCTION
-  DeviceVariable& operator=(const double& value);
-
-  KOKKOS_FUNCTION
-  DeviceVariable& operator=(const int& value);
+  DeviceVariable& operator=(double value);
 
 private:
   Variable::Type m_type;
@@ -83,14 +89,16 @@ private:
   int m_stride;
 
   union {
-    double * m_doublePtr;
-    int * m_intPtr;
+    const double * m_doublePtr;
+    const int * m_intPtr;
   };
 
   union {
     double m_doubleValue;
     int m_intValue;
   };
+
+  bool m_isModifiable;
 };
 
 }

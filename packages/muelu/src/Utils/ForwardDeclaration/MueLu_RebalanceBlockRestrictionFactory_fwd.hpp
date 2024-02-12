@@ -46,18 +46,13 @@
 #ifndef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_FWD_HPP
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class RebalanceBlockRestrictionFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class RebalanceBlockRestrictionFactory;
 }
 
 #ifndef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_FWD_HPP
+#endif  // MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_FWD_HPP

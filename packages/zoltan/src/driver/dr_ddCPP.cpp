@@ -58,7 +58,7 @@ int build_elem_dd(MESH_INFO_PTR mesh)
 {
   destroy_elem_dd();
 
-  dd = new Zoltan_DD(MPI_COMM_WORLD, 1, 0, 0, 0, 0);
+  dd = new Zoltan_DD(zoltan_get_global_comm(), 1, 0, 0, 0, 0);
 
   return update_elem_dd(mesh);
 }

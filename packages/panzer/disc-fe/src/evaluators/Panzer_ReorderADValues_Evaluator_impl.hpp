@@ -60,7 +60,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & /* elementBlock */,
                           const GlobalIndexer & /* indexerSrc */,
                           const GlobalIndexer & /* indexerDest */)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
 
   // build the vector of fields that this is dependent on
@@ -87,7 +87,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & /* elementBlock */,
                           const GlobalIndexer & /* indexerSrc */,
                           const GlobalIndexer & /* indexerDest */)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
   TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
 
@@ -109,10 +109,6 @@ template<typename EvalT,typename TRAITS>
 void panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData /* workset */)
 {
-  // just copy fields if there is no AD data
-  //for(std::size_t i = 0; i < inFields_.size(); ++i)
-  //  for(typename PHX::MDField<ScalarT>::size_type j = 0; j < inFields_[i].size(); ++j)
-  //    outFields_[i][j] = inFields_[i][j];
   for(std::size_t i = 0; i < inFields_.size(); ++i)
    outFields_[i].deep_copy(inFields_[i]);
 }
@@ -129,7 +125,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & elementBlock,
                           const GlobalIndexer & indexerSrc,
                           const GlobalIndexer & indexerDest)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
 
   // build the vector of fields that this is dependent on
@@ -163,7 +159,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & elementBlock,
                           const GlobalIndexer & indexerSrc,
                           const GlobalIndexer & indexerDest)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
   TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
 
@@ -201,112 +197,67 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 // **********************************************************************
 template<typename TRAITS>
 void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
-evaluateFields(typename TRAITS::EvalData /* workset */)
+evaluateFields(typename TRAITS::EvalData workset)
 {
   // for AD data do a reordering
-
-  // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"ERROR: panzer::ReorderADValues_Evaluator: This is currently broken for the Kokkkos Transition!  Contact Drekar team to fix!");
-
   for(std::size_t fieldIndex = 0; fieldIndex < inFields_.size(); ++fieldIndex) {
 
-    
     const auto & inField_v = inFields_[fieldIndex].get_view();
     const auto & outField_v = outFields_[fieldIndex].get_view();
-    auto inField = Kokkos::create_mirror_view(inField_v);
-    auto outField = Kokkos::create_mirror_view(outField_v);
-    Kokkos::deep_copy(inField, inField_v);
+    const auto & dstFromSrcMap_v = dstFromSrcMapView_;
 
-    if(inField.size()>0) {
+    if(inField_v.size()>0) {
 
-      switch (inFields_[fieldIndex].rank()) {
-      case (1):
-	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.extent(0); ++i) {
-	  outField(i).val() = inField(i).val();
-	  for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
-	    outField(i).fastAccessDx(dx) = inField(i).fastAccessDx(dstFromSrcMap_[dx]);
-	}
-	break;
-      case (2):
-	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.extent(0); ++i)
-	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.extent(1); ++j) {
-	    outField(i,j).val() = inField(i,j).val();
-	    for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
-	      outField(i,j).fastAccessDx(dx) = inField(i,j).fastAccessDx(dstFromSrcMap_[dx]);
-	  }
-	break;
-      case (3):
-	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.extent(0); ++i)
-	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.extent(1); ++j)
-	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.extent(2); ++k) {
-	      outField(i,j,k).val() = inField(i,j,k).val();
-	      for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
-		outField(i,j,k).fastAccessDx(dx) = inField(i,j,k).fastAccessDx(dstFromSrcMap_[dx]);
-	    }
-	break;
-      case (4):
-	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.extent(0); ++i)
-	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.extent(1); ++j)
-	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.extent(2); ++k)
-	      for (typename PHX::MDField<ScalarT>::size_type l = 0; l < inField.extent(3); ++l) {
-		outField(i,j,k,l).val() = inField(i,j,k,l).val();
-		for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
-		  outField(i,j,k,l).fastAccessDx(dx) = inField(i,j,k,l).fastAccessDx(dstFromSrcMap_[dx]);
-	      }
-	break;
-      case (5):
-	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.extent(0); ++i)
-	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.extent(1); ++j)
-	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.extent(2); ++k)
-	      for (typename PHX::MDField<ScalarT>::size_type l = 0; l < inField.extent(3); ++l)
-		for (typename PHX::MDField<ScalarT>::size_type m = 0; m < inField.extent(4); ++m) {
-		  outField(i,j,k,l,m).val() = inField(i,j,k,l,m).val();
-		  for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
-		    outField(i,j,k,l,m).fastAccessDx(dx) = inField(i,j,k,l,m).fastAccessDx(dstFromSrcMap_[dx]);
-		}
-	break;
-      case (6):
-	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.extent(0); ++i)
-	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.extent(1); ++j)
-	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.extent(2); ++k)
-	      for (typename PHX::MDField<ScalarT>::size_type l = 0; l < inField.extent(3); ++l)
-		for (typename PHX::MDField<ScalarT>::size_type m = 0; m < inField.extent(4); ++m)
-		  for (typename PHX::MDField<ScalarT>::size_type n = 0; n < inField.extent(5); ++n) {
-		    outField(i,j,k,l,m,n).val() = inField(i,j,k,l,m,n).val();
-		    for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
-		      outField(i,j,k,l,m,n).fastAccessDx(dx) = inField(i,j,k,l,m,n).fastAccessDx(dstFromSrcMap_[dx]);
-		  }
-	break;
+      const auto rank = inField_v.rank();
+      if (rank==1) {
+        Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",workset.num_cells,KOKKOS_LAMBDA(const int& i){
+          outField_v(i).val() = inField_v(i).val();
+          for (size_t dx = 0; dx < dstFromSrcMap_v.size(); ++dx)
+            outField_v(i).fastAccessDx(dx) = inField_v(i).fastAccessDx(dstFromSrcMap_v(dx));
+        });
       }
-
-    }
-    Kokkos::deep_copy(outField_v, outField);
-  }
-
-//Irina TOFIX
-/*
-  for(std::size_t i = 0; i < inFields_.size(); ++i) {
-
-    for(typename PHX::MDField<ScalarT>::size_type j = 0; j < inFields_[i].size(); ++j) {
-      // allocated scalar fields
-      outFields_[i][j] = ScalarT(dstFromSrcMap_.size(), inFields_[i][j].val());
-
-      ScalarT & outField = outFields_[i][j];
-      const ScalarT & inField = inFields_[i][j];
-
-      // the jacobian must be initialized, otherwise its just a value copy
-      if(inField.size()>0) {
-        // loop over the sensitivity indices: all DOFs on a cell
-        outField.resize(dstFromSrcMap_.size());
-
-        // copy jacobian entries correctly reordered
-        for(std::size_t k=0;k<dstFromSrcMap_.size();k++) 
-          outField.fastAccessDx(k) = inField.fastAccessDx(dstFromSrcMap_[k]);
+      else if (rank==2) {
+        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<2>> policy({0,0},{static_cast<int64_t>(workset.num_cells),static_cast<int64_t>(inField_v.extent(1))});
+        Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j){
+          outField_v(i,j).val() = inField_v(i,j).val();
+          for (size_t dx = 0; dx < dstFromSrcMap_v.size(); ++dx)
+            outField_v(i,j).fastAccessDx(dx) = inField_v(i,j).fastAccessDx(dstFromSrcMap_v(dx));
+        });
       }
- 
-      outField.val() = inField.val();
+      else if (rank==3) {
+        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{static_cast<int64_t>(workset.num_cells),
+              static_cast<int64_t>(inField_v.extent(1)),static_cast<int64_t>(inField_v.extent(2))});
+        Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j, const int& k){
+          outField_v(i,j,k).val() = inField_v(i,j,k).val();
+          for (size_t dx = 0; dx < dstFromSrcMap_v.size(); ++dx)
+            outField_v(i,j,k).fastAccessDx(dx) = inField_v(i,j,k).fastAccessDx(dstFromSrcMap_v(dx));
+        });
+      }
+      else if (rank==4) {
+        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<4>> policy({0,0,0,0},{static_cast<int64_t>(workset.num_cells),
+              static_cast<int64_t>(inField_v.extent(1)),static_cast<int64_t>(inField_v.extent(2)),
+              static_cast<int64_t>(inField_v.extent(3))});
+        Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j, const int& k, const int& l){
+          outField_v(i,j,k,l).val() = inField_v(i,j,k,l).val();
+          for (size_t dx = 0; dx < dstFromSrcMap_v.size(); ++dx)
+            outField_v(i,j,k,l).fastAccessDx(dx) = inField_v(i,j,k,l).fastAccessDx(dstFromSrcMap_v(dx));
+        });
+      }
+      else if (rank==5) {
+        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<5>> policy({0,0,0,0,0},{static_cast<int64_t>(workset.num_cells),
+              static_cast<int64_t>(inField_v.extent(1)),static_cast<int64_t>(inField_v.extent(2)),
+              static_cast<int64_t>(inField_v.extent(3)),static_cast<int64_t>(inField_v.extent(4))});
+        Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j, const int& k, const int& l, const int& m){
+          outField_v(i,j,k,l,m).val() = inField_v(i,j,k,l,m).val();
+            for (size_t dx = 0; dx < dstFromSrcMap_v.size(); ++dx)
+            outField_v(i,j,k,l,m).fastAccessDx(dx) = inField_v(i,j,k,l,m).fastAccessDx(dstFromSrcMap_v(dx));
+        });
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR AD Reorder, rank size " << rank << " not supported!");
+      }
     }
   }
-*/
 }
 
 // **********************************************************************
@@ -370,14 +321,20 @@ buildSrcToDestMap(const std::string & elementBlock,
 
   // Build map
   TEUCHOS_ASSERT(maxDest>0);
-  dstFromSrcMap_ = std::vector<int>(maxDest+1,-1);
+  std::vector<int> dstFromSrcMap(maxDest+1,-1);
   for(std::map<int,int>::const_iterator itr=offsetMap.begin();
       itr!=offsetMap.end();++itr) {
-    dstFromSrcMap_[itr->second] = itr->first;
+    dstFromSrcMap[itr->second] = itr->first;
   }
+
+  dstFromSrcMapView_ = Kokkos::View<int*>("dstFromSrcMapView_",dstFromSrcMap.size());
+  auto dfsm_host = Kokkos::create_mirror_view(Kokkos::HostSpace(),dstFromSrcMapView_);
+  for (size_t i=0; i < dstFromSrcMapView_.size(); ++i)
+    dfsm_host(i) = dstFromSrcMap[i];
+
+  Kokkos::deep_copy(dstFromSrcMapView_,dfsm_host);
 }
 
 // **********************************************************************
 
 #endif
-

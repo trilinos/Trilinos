@@ -210,7 +210,7 @@ void Fast_Marching::initialize(ParallelErrorMessage& err)
     const double * curr_node_dist = field_data<double>(dRef, node);
     STK_ThrowAssert(nullptr != curr_node_dist);
 
-    Vector3d coords = Vector3d::ZERO;
+    stk::math::Vector3d coords = stk::math::Vector3d::ZERO;
     const double * xptr = field_data<double>(xRef, node);
     STK_ThrowAssert(nullptr != xptr);
     for ( int d = 0; d < dim; d++ )
@@ -293,9 +293,9 @@ Fast_Marching::have_crossing(const stk::mesh::Entity & elem) const
   return false;
 }
 
-static std::function<const Vector3d &(stk::mesh::Entity)> build_get_fm_node_coordinates(Fast_Marching * fm)
+static std::function<const stk::math::Vector3d &(stk::mesh::Entity)> build_get_fm_node_coordinates(Fast_Marching * fm)
 {
-  return [fm](stk::mesh::Entity node) -> const Vector3d &
+  return [fm](stk::mesh::Entity node) -> const stk::math::Vector3d &
     {
       Fast_Marching_Node * fm_node = fm->get_fm_node(node);
       STK_ThrowAssert(fm_node);
@@ -464,7 +464,7 @@ Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elemNodes, in
   static constexpr double far = std::numeric_limits<double>::max();
 
   const std::array<int,3> lnn = get_oriented_nodes_triangle(nodeToUpdate);
-  const std::array<Vector3d,3> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords()};
+  const std::array<stk::math::Vector3d,3> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords()};
   const std::array<double,2> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist()};
   const int sign = elemNodes[lnn[2]]->sign();
   const double signedDist = eikonal_solve_triangle(x, d, sign, far, speed);
@@ -477,7 +477,7 @@ Fast_Marching::update_tetrahedron(std::vector<Fast_Marching_Node *> & elemNodes,
 {
   static constexpr double far = std::numeric_limits<double>::max();
   const std::array<int,4> lnn = get_oriented_nodes_tetrahedron(nodeToUpdate);
-  const std::array<Vector3d,4> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords(), elemNodes[lnn[3]]->coords()};
+  const std::array<stk::math::Vector3d,4> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords(), elemNodes[lnn[3]]->coords()};
   const std::array<double,3> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist(), elemNodes[lnn[2]]->signed_dist()};
   const int sign = elemNodes[lnn[3]]->sign();
   const double signedDist = eikonal_solve_tetrahedron(x, d, sign, far, speed);

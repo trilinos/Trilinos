@@ -46,18 +46,13 @@
 #ifndef MUELU_AGGREGATIONPHASE2BALGORITHM_FWD_HPP
 #define MUELU_AGGREGATIONPHASE2BALGORITHM_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AggregationPhase2bAlgorithm;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class AggregationPhase2bAlgorithm;
 }
 
 #ifndef MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
 #define MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
 #endif
 
-
-
-#endif // MUELU_AGGREGATIONPHASE2BALGORITHM_FWD_HPP
+#endif  // MUELU_AGGREGATIONPHASE2BALGORITHM_FWD_HPP

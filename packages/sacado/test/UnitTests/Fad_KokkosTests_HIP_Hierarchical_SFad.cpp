@@ -50,7 +50,7 @@ typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,64> RightContiguous64;
   VIEW_FAD_TESTS_SFLD( F, RightContiguous64, D )
 
 // Instantiate tests for HIP device
-using Kokkos::Experimental::HIP;
+using Kokkos::HIP;
 VIEW_FAD_TESTS_FDC(  SFadType , HIP )
 VIEW_FAD_TESTS_SFDC( SFadType , HIP )
 

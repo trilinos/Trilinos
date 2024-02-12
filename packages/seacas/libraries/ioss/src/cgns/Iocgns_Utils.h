@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -19,32 +19,50 @@
 #include <Ioss_Utils.h>
 #include <cgns/Iocgns_Defines.h>
 #include <cgnslib.h>
+#include <fmt/format.h>
 #include <ostream>
 #include <string>
 
 // Used in Iocgns_DatabaseIO.C and Iocgns_ParallelDatabase.C
 // non-Member function -- can't access m_cgnsFilePtr; make sure cgns_file_ptr is passed in...
 #define CGCHECK(funcall)                                                                           \
-  if ((funcall) != CG_OK) {                                                                        \
-    Iocgns::Utils::cgns_error(cgns_file_ptr, __FILE__, __func__, __LINE__, myProcessor);           \
-  }
+  do {                                                                                             \
+    if ((funcall) != CG_OK) {                                                                      \
+      Iocgns::Utils::cgns_error(cgns_file_ptr, __FILE__, __func__, __LINE__, myProcessor);         \
+    }                                                                                              \
+  } while (0)
 
 // Member function -- can access m_cgnsFilePtr
 #define CGCHECKM(funcall)                                                                          \
-  if ((funcall) != CG_OK) {                                                                        \
-    Iocgns::Utils::cgns_error(m_cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);           \
-  }
+  do {                                                                                             \
+    if ((funcall) != CG_OK) {                                                                      \
+      Iocgns::Utils::cgns_error(m_cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);         \
+    }                                                                                              \
+  } while (0)
 
 #define CGCHECKNP(funcall)                                                                         \
-  if ((funcall) != CG_OK) {                                                                        \
-    Iocgns::Utils::cgns_error(cgns_file_ptr, __FILE__, __func__, __LINE__, -1);                    \
-  }
+  do {                                                                                             \
+    if ((funcall) != CG_OK) {                                                                      \
+      Iocgns::Utils::cgns_error(cgns_file_ptr, __FILE__, __func__, __LINE__, -1);                  \
+    }                                                                                              \
+  } while (0)
 
 // Used in Iocgns_Decomposition.C
 #define CGCHECK2(funcall)                                                                          \
-  if ((funcall) != CG_OK) {                                                                        \
-    Iocgns::Utils::cgns_error(filePtr, __FILE__, __func__, __LINE__, m_decomposition.m_processor); \
-  }
+  do {                                                                                             \
+    if ((funcall) != CG_OK) {                                                                      \
+      Iocgns::Utils::cgns_error(filePtr, __FILE__, __func__, __LINE__,                             \
+                                m_decomposition.m_processor);                                      \
+    }                                                                                              \
+  } while (0)
+
+inline auto format_as(CGNS_ENUMT(BCType_t) t) { return BCTypeName[t]; }
+inline auto format_as(CGNS_ENUMT(DataType_t) t) { return DataTypeName[t]; }
+inline auto format_as(CGNS_ENUMT(ElementType_t) t) { return ElementTypeName[t]; }
+inline auto format_as(CGNS_ENUMT(GridConnectivityType_t) t) { return GridConnectivityTypeName[t]; }
+inline auto format_as(CGNS_ENUMT(GridLocation_t) t) { return GridLocationName[t]; }
+inline auto format_as(CGNS_ENUMT(PointSetType_t) t) { return PointSetTypeName[t]; }
+inline auto format_as(CGNS_ENUMT(ZoneType_t) t) { return ZoneTypeName[t]; }
 
 namespace Iocgns {
   class StructuredZoneData;

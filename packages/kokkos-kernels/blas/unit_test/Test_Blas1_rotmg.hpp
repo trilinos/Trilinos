@@ -218,14 +218,10 @@ void set_rotmg_input_ref_vals(const int test_case, View0& d1, View0& d2,
 }
 }  // namespace Test
 
-template <class Scalar, class ExecutionSpace>
+template <class Scalar, class Device>
 int test_rotmg() {
-  Kokkos::View<Scalar, Kokkos::Device<ExecutionSpace,
-                                      typename ExecutionSpace::memory_space>>
-      d1("d1"), d2("d2"), x1("x1"), y1("y1");
-  Kokkos::View<Scalar[5], Kokkos::Device<ExecutionSpace,
-                                         typename ExecutionSpace::memory_space>>
-      param("param");
+  Kokkos::View<Scalar, Device> d1("d1"), d2("d2"), x1("x1"), y1("y1");
+  Kokkos::View<Scalar[5], Device> param("param");
   Kokkos::View<Scalar[9], Kokkos::DefaultHostExecutionSpace> ref_vals(
       "reference values");
 

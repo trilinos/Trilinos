@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,11 +14,11 @@
 #include "ifdefx.h"
 #include "mdcgi.h"
 
-void cgix11_(); /* tell linker to load driver */
+void cgix11_(anything **, int, anything **); /* tell linker to load driver */
 
-void cgisx11() /* make name external so linker will load file*/ {}
+void cgisx11(void) /* make name external so linker will load file*/ {}
 
-void cgi_def_ini()
+void cgi_def_ini(void)
 {
   anything *devid;
 

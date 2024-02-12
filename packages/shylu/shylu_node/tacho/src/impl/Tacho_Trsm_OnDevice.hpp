@@ -96,7 +96,7 @@ struct Trsm<ArgSide, ArgUplo, ArgTransA, Algo::OnDevice> {
       r_val = cublas_invoke(member, diagA, alpha, A, B);
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value)
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value)
       r_val = rocblas_invoke(member, diagA, alpha, A, B);
 #endif
     return r_val;

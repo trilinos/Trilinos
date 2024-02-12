@@ -58,19 +58,24 @@ void setup_multiple_blocks(stk::mesh::MetaData& meta, unsigned numBlocks)
   }
 }
 
-void setup_elem_fields_on_blocks(stk::mesh::MetaData& meta, unsigned numFields)
+void setup_elem_fields_on_blocks(stk::mesh::MetaData& meta, unsigned numFields, bool allFieldsSameSize)
 {
-  std::vector<stk::mesh::FieldBase*> fields(numFields);
-  for(unsigned f=0; f<numFields; ++f) {
-    fields[f] = &meta.declare_field<double>(stk::topology::ELEM_RANK, std::string("elemField"+std::to_string(f)));
+  {
+    std::vector<stk::mesh::FieldBase*> fields(numFields);
+    for(unsigned f=0; f<numFields; ++f) {
+      fields[f] = &meta.declare_field<double>(stk::topology::ELEM_RANK, std::string("elemField"+std::to_string(f)));
+    }
   }
 
-  const unsigned scalarsPerEntity = 3;
+  unsigned scalarsPerEntity = 1;
   stk::mesh::PartVector elemBlocks;
   stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
   for(stk::mesh::Part* elemBlock : elemBlocks) {
-    for(stk::mesh::FieldBase* field : fields) {
+    for(stk::mesh::FieldBase* field : meta.get_fields(stk::topology::ELEM_RANK)) {
       stk::mesh::put_field_on_mesh(*field, *elemBlock, scalarsPerEntity, nullptr);
+    }
+    if(!allFieldsSameSize) {
+      ++scalarsPerEntity;
     }
   }
 }

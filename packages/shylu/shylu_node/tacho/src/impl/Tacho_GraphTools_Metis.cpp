@@ -63,32 +63,67 @@ void GraphTools_Metis::setVerbose(const bool verbose) { _verbose = verbose; }
 void GraphTools_Metis::setOption(const int id, const idx_t value) { _options[id] = value; }
 
 ///
-/// reorder by metis
+/// reorder by amd
+///
+template <>
+int32_t GraphTools_Metis::amd_order<int32_t> (int32_t n, const int32_t *xadj, const int32_t *adjncy, int32_t *perm, double *control, double *info) {
+  return trilinos_amd_order(n, xadj, adjncy, perm, control, info);
+}
+
+template <>
+int64_t GraphTools_Metis::amd_order<int64_t> (int64_t n, const int64_t *xadj, const int64_t *adjncy, int64_t *perm, double *control, double *info) {
+  return trilinos_amd_l_order(n, xadj, adjncy, perm, control, info);
+}
+
+///
+/// reorder by metis or amd
 ///
 
 void GraphTools_Metis::reorder(const ordinal_type verbose) {
   Kokkos::Timer timer;
   double t_metis = 0;
 
-  int ierr = 0;
+  int algo = 2;
+  if (algo == 0) {
+    for (ordinal_type i = 0; i < _nvts; ++i) {
+      _perm(i) = i;
+      _peri(i) = i;
+    }
+  } else if (algo == 1) {
+    int ierr = 0;
+    double amd_info[TRILINOS_AMD_INFO];
 
-  idx_t *xadj = (idx_t *)_xadj.data();
-  idx_t *adjncy = (idx_t *)_adjncy.data();
-  idx_t *vwgt = (idx_t *)_vwgt.data();
+    timer.reset();
+    ierr = GraphTools_Metis::amd_order(_nvts, _xadj.data(), _adjncy.data(), _perm_t.data(), NULL, amd_info);
+    t_metis = timer.seconds();
 
-  idx_t *perm = (idx_t *)_perm_t.data();
-  idx_t *peri = (idx_t *)_peri_t.data();
+    for (idx_t i = 0; i < _nvts; ++i) {
+      _perm(i) = _perm_t(i);
+      _peri(_perm(i)) = i;
+    }
 
-  timer.reset();
-  ierr = METIS_NodeND(&_nvts, xadj, adjncy, vwgt, _options, perm, peri);
-  t_metis = timer.seconds();
+    TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in trilinos_amd");
+  } else {
+    int ierr = 0;
 
-  for (idx_t i = 0; i < _nvts; ++i) {
-    _perm(i) = _perm_t(i);
-    _peri(i) = _peri_t(i);
+    idx_t *xadj = (idx_t *)_xadj.data();
+    idx_t *adjncy = (idx_t *)_adjncy.data();
+    idx_t *vwgt = (idx_t *)_vwgt.data();
+
+    idx_t *perm = (idx_t *)_perm_t.data();
+    idx_t *peri = (idx_t *)_peri_t.data();
+
+    timer.reset();
+    ierr = METIS_NodeND(&_nvts, xadj, adjncy, vwgt, _options, perm, peri);
+    t_metis = timer.seconds();
+
+    for (idx_t i = 0; i < _nvts; ++i) {
+      _perm(i) = _perm_t(i);
+      _peri(i) = _peri_t(i);
+    }
+
+    TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in METIS_NodeND");
   }
-
-  TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in METIS_NodeND");
   _is_ordered = true;
 
   if (verbose) {

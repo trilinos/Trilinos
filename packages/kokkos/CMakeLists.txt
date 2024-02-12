@@ -140,14 +140,20 @@ IF (NOT CMAKE_SIZEOF_VOID_P)
     MESSAGE(FATAL_ERROR "Kokkos did not configure correctly and failed to validate compiler. The most likely cause is linkage errors during CMake compiler validation. Please consult the CMake error log shown below for the exact error during compiler validation")
   ENDIF()
 ELSEIF (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-  MESSAGE(FATAL_ERROR "Kokkos assumes a 64-bit build; i.e., 8-byte pointers, but found ${CMAKE_SIZEOF_VOID_P}-byte pointers instead")
+  IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    MESSAGE(WARNING "32-bit builds are experimental and not officially supported.")
+    SET(KOKKOS_IMPL_32BIT ON)
+  ELSE()
+    MESSAGE(FATAL_ERROR "Kokkos assumes a 64-bit build, i.e., 8-byte pointers, but found ${CMAKE_SIZEOF_VOID_P}-byte pointers instead;")
+  ENDIF()
 ENDIF()
 
 
 set(Kokkos_VERSION_MAJOR 4)
-set(Kokkos_VERSION_MINOR 0)
+set(Kokkos_VERSION_MINOR 2)
 set(Kokkos_VERSION_PATCH 1)
 set(Kokkos_VERSION "${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR}.${Kokkos_VERSION_PATCH}")
+message(STATUS "Kokkos version: ${Kokkos_VERSION}")
 math(EXPR KOKKOS_VERSION "${Kokkos_VERSION_MAJOR} * 10000 + ${Kokkos_VERSION_MINOR} * 100 + ${Kokkos_VERSION_PATCH}")
 # mathematical expressions below are not stricly necessary but they eliminate
 # the rather aggravating leading 0 in the releases patch version number, and,
@@ -246,7 +252,6 @@ ENDIF()
 # subpackages
 
 ## This restores the old behavior of ProjectCompilerPostConfig.cmake
-# It sets the CMAKE_CXX_FLAGS globally to those used by Kokkos
 # We must do this before KOKKOS_PACKAGE_DECL
 IF (KOKKOS_HAS_TRILINOS)
   # Overwrite the old flags at the top-level
@@ -274,21 +279,13 @@ IF (KOKKOS_HAS_TRILINOS)
     SET(KOKKOSCORE_XCOMPILER_OPTIONS "${KOKKOSCORE_XCOMPILER_OPTIONS} -Xcompiler ${XCOMP_FLAG}")
     LIST(APPEND KOKKOS_ALL_COMPILE_OPTIONS -Xcompiler ${XCOMP_FLAG})
   ENDFOREACH()
-  SET(KOKKOSCORE_CXX_FLAGS "${KOKKOSCORE_COMPILE_OPTIONS} ${KOKKOSCORE_XCOMPILER_OPTIONS}")
   IF (KOKKOS_ENABLE_CUDA)
     STRING(REPLACE ";" " " KOKKOSCORE_CUDA_OPTIONS    "${KOKKOS_CUDA_OPTIONS}")
     FOREACH(CUDAFE_FLAG ${KOKKOS_CUDAFE_OPTIONS})
       SET(KOKKOSCORE_CUDAFE_OPTIONS "${KOKKOSCORE_CUDAFE_OPTIONS} -Xcudafe ${CUDAFE_FLAG}")
       LIST(APPEND KOKKOS_ALL_COMPILE_OPTIONS -Xcudafe ${CUDAFE_FLAG})
     ENDFOREACH()
-    SET(KOKKOSCORE_CXX_FLAGS "${KOKKOSCORE_CXX_FLAGS} ${KOKKOSCORE_CUDA_OPTIONS} ${KOKKOSCORE_CUDAFE_OPTIONS}")
   ENDIF()
-  # Both parent scope and this package
-  # In ProjectCompilerPostConfig.cmake, we capture the "global" flags Trilinos wants in
-  # TRILINOS_TOPLEVEL_CXX_FLAGS
-  SET(CMAKE_CXX_FLAGS "${TRILINOS_TOPLEVEL_CXX_FLAGS} ${KOKKOSCORE_CXX_FLAGS}" PARENT_SCOPE)
-  SET(CMAKE_CXX_FLAGS "${TRILINOS_TOPLEVEL_CXX_FLAGS} ${KOKKOSCORE_CXX_FLAGS}")
-  #CMAKE_CXX_FLAGS will get added to Kokkos and Kokkos dependencies automatically here
   #These flags get set up in KOKKOS_PACKAGE_DECL, which means they
   #must be configured before KOKKOS_PACKAGE_DECL
   SET(KOKKOS_ALL_COMPILE_OPTIONS
@@ -308,7 +305,6 @@ KOKKOS_PROCESS_SUBPACKAGES()
 # E) If Kokkos itself is enabled, process the Kokkos package
 #
 
-KOKKOS_EXCLUDE_AUTOTOOLS_FILES()
 KOKKOS_PACKAGE_POSTPROCESS()
 KOKKOS_CONFIGURE_CORE()
 
@@ -317,6 +313,8 @@ IF (NOT KOKKOS_HAS_TRILINOS AND NOT Kokkos_INSTALL_TESTING)
   #Make sure in-tree projects can reference this as Kokkos::
   #to match the installed target names
   ADD_LIBRARY(Kokkos::kokkos ALIAS kokkos)
+  # all_libs target is required for TriBITS-compliance
+  ADD_LIBRARY(Kokkos::all_libs ALIAS kokkos)
   TARGET_LINK_LIBRARIES(kokkos INTERFACE ${KOKKOS_COMPONENT_LIBRARIES})
   KOKKOS_INTERNAL_ADD_LIBRARY_INSTALL(kokkos)
 ENDIF()

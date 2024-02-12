@@ -47,9 +47,8 @@
 
 #include <generated/Iogn_DashSurfaceMesh.h>
 #include <generated/Iogn_GeneratedMesh.h>
-#include <init/Ionit_Initializer.h>
 #include <generated/Iogn_DatabaseIO.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_IOFactory.h>
 #include <Ioss_Utils.h>
 #include <Ioss_Region.h>

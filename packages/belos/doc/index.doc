@@ -57,7 +57,7 @@ via the following included solvers:
    <li>Flexible variants:  Flexible GMRES
    </ul>
 
-   \section contributors Belos Contributors
+   \section Belos_contributors Belos Contributors
 
    The following people have contributed to the development of %Belos:
 

@@ -231,7 +231,7 @@ public:
       TPETRA_DETAILS_SPACES_THROW(
           "requested instance id "
           << i << " (>= " << Tpetra::Details::Behavior::spacesIdWarnLimit()
-          << ") set by TPETRA_SPACES_ID_WARN_LIMT");
+          << ") set by TPETRA_SPACES_ID_WARN_LIMIT");
     }
 
     // make sure we can store an exec space at index i for priority
@@ -454,7 +454,7 @@ constexpr KOKKOS_INLINE_FUNCTION bool is_gpu_exec_space<Kokkos::Cuda>() {
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool
-is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+is_gpu_exec_space<Kokkos::HIP>() {
   return true;
 }
 #endif

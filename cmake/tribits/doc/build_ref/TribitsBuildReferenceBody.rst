@@ -376,6 +376,7 @@ See the following use cases:
 * `Enable all packages (and optionally all tests)`_
 * `Disable a package and all its dependencies`_
 * `Remove all package enables in the cache`_
+* `Speed up debugging dependency handling`_
 
 
 Determine the list of packages that can be enabled
@@ -516,7 +517,7 @@ example::
 
 The above will enable the package test suites for ``<TRIBITS_PACKGE_1>`` and
 ``<TRIBITS_PACKGE_3>`` but **not** for ``<TRIBITS_PACKAGE_2>`` (or any other
-packages that might get implicitly enabled).  One might use this approch if
+packages that might get implicitly enabled).  One might use this approach if
 one wants to build and install package ``<TRIBITS_PACKAGE_2>`` but does not
 want to build and run the test suite for that package.
 
@@ -654,6 +655,22 @@ expensive configure time checks (like the standard CMake compiler checks) and
 to preserve other cache variables that you have set and don't want to loose.
 For example, one would want to do this to avoid more expensive compiler and
 TPL checks.
+
+
+Speed up debugging dependency handling
++++++++++++++++++++++++++++++++++++++++
+
+To speed up debugging the package enable/disable dependency handling, set the
+cache variable::
+
+  -D <Project>_TRACE_DEPENDENCY_HANDLING_ONLY=ON
+
+This will result in only performing the package enable/disable dependency
+handling logic and tracing what would be done to configure the compilers and
+configure the various enabled packages but not actually do that work.  This
+can greatly speed up the time to complete the ``cmake`` configure command when
+debugging the dependency handling (or when creating tests that check that
+behavior).
 
 
 Selecting compiler and linker options
@@ -1333,7 +1350,7 @@ c) **Setting up to run MPI programs:**
 
   MPI test and example executables are passed to CTest ``add_test()`` as::
 
-    add_test(
+    add_test(NAME <testName> COMMAND
       ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
       ${MPI_EXEC_NUMPROCS_FLAG} <NP>
       ${MPI_EXEC_POST_NUMPROCS_FLAGS}
@@ -1994,9 +2011,10 @@ external packages has several consequences:
   (Otherwise, a configure error will result from the mismatch.)
 
 * The definition of any TriBITS external packages/TPLs that are enabled
-  upstream dependencies from any of these internally defined packages being
-  treated as external packages will be defined by the calls to
-  ``find_package(<TRIBITS_PACKAGE>)`` and will **not** be found again.
+  upstream dependencies from any of these external packages should be defined
+  automatically and will **not** be found again. (But there can be exceptions
+  for minimally TriBITS-compliant external packages; see the section
+  "TriBITS-Compliant External Packages" in the "TriBITS Users Guide".)
 
 The logic for treating internally defined packages as external packages will
 be printed in the CMake configure output in the section ``Adjust the set of
@@ -2016,21 +2034,34 @@ the terminal TriBITS-compliant external packages.  This is shown in the CMake
 output in the section ``Getting information for all enabled TriBITS-compliant
 or upstream external packages/TPLs`` and looks like::
 
-  Getting information for all enabled TriBITS-compliant or upstream external packages/TPLs ...
+  Getting information for all enabled TriBITS-compliant or upstream external packages/TPLs in reverse order ...
 
-  Processing enabled external package/TPL: <TPL1> (...)
-  -- The external package/TPL <TPL1> will be read in by a downstream TriBITS-compliant external package
-  Processing enabled external package/TPL: <TPL2> (...)
-  -- The external package/TPL <TPL2> will be read in by a downstream TriBITS-compliant external package
-  Processing enabled external package/TPL: <PKG1> (...)
-  -- The external package/TPL <PKG1> will be read in by a downstream TriBITS-compliant external package
   Processing enabled external package/TPL: <PKG2> (...)
   -- Calling find_package(<PKG2> for TriBITS-compliant external package
+  Processing enabled external package/TPL: <PKG1> (...)
+  -- The external package/TPL <PKG1> was defined by a downstream TriBITS-compliant external package already processed
+  Processing enabled external package/TPL: <TPL2> (...)
+  -- The external package/TPL <TPL2> was defined by a downstream TriBITS-compliant external package already processed
+  Processing enabled external package/TPL: <TPL1> (...)
+  -- The external package/TPL <TPL1> was defined by a downstream TriBITS-compliant external package already processed
 
 In the above example ``<TPL1>``, ``<TPL2>`` and ``<PKG1>`` are all direct or
 indirect dependencies of ``<PKG2>`` and therefore calling just
 ``find_package(<PKG2>)`` fully defines those TriBITS-compliant external
 packages as well.
+
+All remaining TPLs that are not defined in that first reverse loop are defined
+in a second forward loop over regular TPLs::
+
+  Getting information for all remaining enabled external packages/TPLs ...
+
+NOTE: The case is also supported where a TriBITS-compliant external package
+like ``<PKG2>`` does not define all of it upstream dependencies (i.e. does not
+define the ``<TPL2>::all_libs`` target) and these external packages/TPLs will
+be found again.  This allows the possibility of finding different/inconsistent
+upstream dependencies but this is allowed to accommodate some packages with
+non-TriBITS CMake build systems that don't create fully TriBITS-compliant
+external packages.
 
 
 xSDK Configuration Options
@@ -2918,6 +2949,20 @@ the source distribution tarball.
 NOTE: If the base ``.git/`` directory is missing, then no
 ``<Project>RepoVersion.txt`` file will get generated and a ``NOTE`` message is
 printed to cmake STDOUT.
+
+
+Show parent(s) commit info in the repo version output
+----------------------------------------------------
+
+.. _<Project>_SHOW_GIT_COMMIT_PARENTS:
+
+When working with local git repos for the project sources, one can include
+the repo's head commit parent(s) info in the repo version output using::
+
+   -D <Project>_SHOW_GIT_COMMIT_PARENTS=ON
+
+For each parent commit, this will include their SHA1, author name, date, email
+and its 80 character summary message in the repo version output string.
 
 
 Generating git version date files
@@ -4168,14 +4213,23 @@ match files to exclude, set::
 
   -D <Project>_DUMP_CPACK_SOURCE_IGNORE_FILES=ON
 
+Extra directories or files can be excluded from the reduced source tarball by
+adding the configure argument::
+
+  "-DCPACK_SOURCE_IGNORE_FILES=<extra-exclude-regex-0>;<extra-exclude-regex-1>;..."
+
+NOTE: The entries in ``CPACK_SOURCE_IGNORE_FILES`` are regexes and **not**
+file globs, so be careful when specifying these or more files and directories
+will be excluded from the reduced source tarball that intended/desired.
+
 While a set of default CPack source generator types is defined for this
 project (see the ``CMakeCache.txt`` file), it can be overridden using, for
 example::
 
   -D <Project>_CPACK_SOURCE_GENERATOR="TGZ;TBZ2"
 
-(see CMake documentation to find out the types of supported CPack source
-generators on your system).
+(See CMake documentation to find out the types of CPack source generators
+supported on your system.)
 
 NOTE: When configuring from an untarred source tree that has missing packages,
 one must configure with::
@@ -4205,7 +4259,7 @@ just using the standard ``ctest -D Experimental`` command are:
 For more details, see `tribits_ctest_driver()`_.
 
 To use the ``dashboard`` target, first, configure as normal but add cache vars
-for the the build and test parallel levels with::
+for the build and test parallel levels with::
 
   -DCTEST_BUILD_FLAGS=-j4 -DCTEST_PARALLEL_LEVEL=4
 

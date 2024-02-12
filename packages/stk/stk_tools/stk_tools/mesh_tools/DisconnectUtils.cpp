@@ -46,20 +46,23 @@ namespace impl {
 
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part)
 {
-  const bool isElementPart = (part.primary_entity_rank() == stk::topology::ELEM_RANK);
-  const bool isIoPart      = stk::io::has_io_part_attribute(part);
-  return (isElementPart && isIoPart);
+  return ((part.primary_entity_rank() == stk::topology::ELEM_RANK) && stk::io::has_io_part_attribute(part));
 }
 
-stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element)
+stk::mesh::Part* get_block_part_for_bucket(const stk::mesh::BulkData & bulk, const stk::mesh::Bucket& bucket)
 {
-  const stk::mesh::PartVector & elementParts = bulk.bucket(element).supersets();
+  const stk::mesh::PartVector & elementParts = bucket.supersets();
   for (stk::mesh::Part * part : elementParts) {
     if (is_block(bulk, *part)) {
       return part;
     }
   }
   return nullptr;
+}
+
+stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element)
+{
+  return get_block_part_for_bucket(bulk, bulk.bucket(element));
 }
 
 int get_block_id_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element)
@@ -78,10 +81,14 @@ void fill_block_membership(const stk::mesh::BulkData& bulk, stk::mesh::Entity no
   const unsigned numElems = bulk.num_elements(node);
   const stk::mesh::Entity* elements = bulk.begin_elements(node);
 
+  stk::mesh::Part* prevBlock = nullptr;
   for(unsigned i=0; i<numElems; ++i) {
     stk::mesh::Part* block = get_block_part_for_element(bulk, elements[i]);
     STK_ThrowRequire(block != nullptr);
-    stk::util::insert_keep_sorted_and_unique(block, members, stk::mesh::PartLess());
+    if (block != prevBlock) {
+      stk::util::insert_keep_sorted_and_unique(block, members, stk::mesh::PartLess());
+      prevBlock = block;
+    }
   }
 }
 

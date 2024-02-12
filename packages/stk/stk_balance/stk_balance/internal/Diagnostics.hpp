@@ -99,7 +99,6 @@ protected:
   unsigned m_avg = 0;
 };
 
-
 class UnsignedWithPercentDiagnostic : public UnsignedDiagnostic
 {
 public:
@@ -117,6 +116,60 @@ protected:
   std::string print_value_with_percent(unsigned value);
 
   unsigned m_percentSize = 0;
+};
+
+class MultiUnsignedDiagnostic : public Diagnostic
+{
+public:
+  explicit MultiUnsignedDiagnostic(unsigned numColumns);
+  virtual ~MultiUnsignedDiagnostic() override = default;
+
+  void store_value(unsigned column, int rank, unsigned value) { m_localValues[column][rank] = value; }
+  double get_rank_value(unsigned column, int rank) { return m_values[column][rank]; }
+
+  virtual unsigned num_columns() { return m_numColumns; }
+
+  virtual void collect_data(stk::ParallelMachine comm, int numRanks) override;
+  virtual void process_data(stk::ParallelMachine comm) override;
+
+  virtual std::string print_rank_value(unsigned column, int rank) override { return std::to_string(m_values[column][rank]); }
+  virtual std::string print_min(unsigned column) override { return std::to_string(m_min[column]); }
+  virtual std::string print_max(unsigned column) override { return std::to_string(m_max[column]); }
+  virtual std::string print_avg(unsigned column) override { return std::to_string(m_avg[column]); }
+
+protected:
+  unsigned compute_min(const std::vector<unsigned> & data);
+  unsigned compute_max(const std::vector<unsigned> & data);
+  unsigned compute_avg(const std::vector<unsigned> & data);
+
+  std::vector<std::map<int, unsigned>> m_localValues;
+  std::vector<std::vector<unsigned>> m_values;
+  std::vector<unsigned> m_min;
+  std::vector<unsigned> m_max;
+  std::vector<unsigned> m_avg;
+  unsigned m_numColumns;
+};
+
+class MultiUnsignedWithPercentDiagnostic : public MultiUnsignedDiagnostic
+{
+public:
+  MultiUnsignedWithPercentDiagnostic(unsigned numColumns)
+    : MultiUnsignedDiagnostic(numColumns),
+      m_percentSize(numColumns)
+  {}
+  virtual ~MultiUnsignedWithPercentDiagnostic() override = default;
+
+  virtual void process_data(stk::ParallelMachine comm) override;
+
+  virtual std::string print_rank_value(unsigned column, int rank) override;
+  virtual std::string print_min(unsigned column) override;
+  virtual std::string print_max(unsigned column) override;
+  virtual std::string print_avg(unsigned column) override;
+
+protected:
+  std::string print_value_with_percent(unsigned column, unsigned value);
+
+  std::vector<unsigned> m_percentSize;
 };
 
 
@@ -158,48 +211,49 @@ protected:
   unsigned m_decimalOutput;
 };
 
-
-class MultiUnsignedDiagnostic : public Diagnostic
+class MultiDoubleDiagnostic : public Diagnostic
 {
 public:
-  explicit MultiUnsignedDiagnostic(unsigned numColumns);
-  virtual ~MultiUnsignedDiagnostic() override = default;
+  explicit MultiDoubleDiagnostic(unsigned numColumns, unsigned decimalOutput = 3);
+  virtual ~MultiDoubleDiagnostic() override = default;
 
-  void store_value(unsigned column, int rank, unsigned value) { m_localValues[column][rank] = value; }
+  void store_value(unsigned column, int rank, double value) { m_localValues[column][rank] = value; }
   double get_rank_value(unsigned column, int rank) { return m_values[column][rank]; }
 
-  virtual unsigned num_columns() { return m_numColumns; }
+  virtual unsigned num_columns() override { return m_numColumns; }
 
   virtual void collect_data(stk::ParallelMachine comm, int numRanks) override;
   virtual void process_data(stk::ParallelMachine comm) override;
 
-  virtual std::string print_rank_value(unsigned column, int rank) override { return std::to_string(m_values[column][rank]); }
-  virtual std::string print_min(unsigned column) override { return std::to_string(m_min[column]); }
-  virtual std::string print_max(unsigned column) override { return std::to_string(m_max[column]); }
-  virtual std::string print_avg(unsigned column) override { return std::to_string(m_avg[column]); }
+  virtual std::string print_rank_value(unsigned column, int rank) override;
+  virtual std::string print_min(unsigned column) override;
+  virtual std::string print_max(unsigned column) override;
+  virtual std::string print_avg(unsigned column) override;
 
 protected:
-  unsigned compute_min(const std::vector<unsigned> & data);
-  unsigned compute_max(const std::vector<unsigned> & data);
-  unsigned compute_avg(const std::vector<unsigned> & data);
+  double compute_min(const std::vector<double> & data);
+  double compute_max(const std::vector<double> & data);
+  double compute_avg(const std::vector<double> & data);
+  std::string print_value(double value);
 
-  std::vector<std::map<int, unsigned>> m_localValues;
-  std::vector<std::vector<unsigned>> m_values;
-  std::vector<unsigned> m_min;
-  std::vector<unsigned> m_max;
-  std::vector<unsigned> m_avg;
+  std::vector<std::map<int, double>> m_localValues;
+  std::vector<std::vector<double>> m_values;
+  std::vector<double> m_min;
+  std::vector<double> m_max;
+  std::vector<double> m_avg;
   unsigned m_numColumns;
+  unsigned m_decimalOutput;
 };
 
 
-class MultiUnsignedWithPercentDiagnostic : public MultiUnsignedDiagnostic
+class MultiDoubleWithPercentDiagnostic : public MultiDoubleDiagnostic
 {
 public:
-  MultiUnsignedWithPercentDiagnostic(unsigned numColumns)
-    : MultiUnsignedDiagnostic(numColumns),
+  explicit MultiDoubleWithPercentDiagnostic(unsigned numColumns, unsigned decimalOutput = 3)
+    : MultiDoubleDiagnostic(numColumns, decimalOutput),
       m_percentSize(numColumns)
   {}
-  virtual ~MultiUnsignedWithPercentDiagnostic() override = default;
+  virtual ~MultiDoubleWithPercentDiagnostic() override = default;
 
   virtual void process_data(stk::ParallelMachine comm) override;
 
@@ -209,10 +263,11 @@ public:
   virtual std::string print_avg(unsigned column) override;
 
 protected:
-  std::string print_value_with_percent(unsigned column, unsigned value);
+  std::string print_value_with_percent(unsigned column, double value);
 
   std::vector<unsigned> m_percentSize;
 };
+
 
 
 class ElementCountDiagnostic : public UnsignedWithPercentDiagnostic

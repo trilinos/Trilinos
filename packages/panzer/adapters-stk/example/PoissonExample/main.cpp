@@ -74,6 +74,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
+#include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
@@ -93,7 +94,8 @@ using Teuchos::rcp;
 
 void testInitialization(const int basis_order,
                         const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-                        std::vector<panzer::BC>& bcs);
+                        std::vector<panzer::BC>& bcs,
+                        const bool curvilinear);
 
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
@@ -115,19 +117,31 @@ int main(int argc,char * argv[])
 
    int x_elements=10,y_elements=10,basis_order=1;
    std::string celltype = "Quad"; // or "Tri"
+   std::string mesh_name = "";
+   std::string problem_name = "rectangle";
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
-   clp.setDocString("This example solves Poisson problem with Quad and Tri inline mesh with high order.\n");
+   clp.setDocString("This example solves a Poisson problem with Quad and Tri inline mesh on a square domain" 
+       " or with a user-supplied mesh on an annular domain.\n");
 
-   clp.setOption("cell",&celltype);
-   clp.setOption("x-elements",&x_elements);
-   clp.setOption("y-elements",&y_elements);
+   clp.setOption("cell",&celltype);         // ignored if mesh file is supplied
+   clp.setOption("x-elements",&x_elements); // ignored if mesh file is supplied
+   clp.setOption("y-elements",&y_elements); // ignored if mesh file is supplied
    clp.setOption("basis-order",&basis_order); 
+   clp.setOption("mesh-filename",&mesh_name);
+   clp.setOption("problem",&problem_name);
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
    if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+
+   // two problems are supported -- one on a rectangular domain, one on an annular domain
+   bool curvilinear = false;
+   if      (problem_name == "rectangle") {}
+   else if (problem_name == "annulus") {curvilinear = true;}
+   else
+     throw std::runtime_error("Problem not supported: try rectangle or annulus");
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -138,24 +152,27 @@ int main(int argc,char * argv[])
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
-   if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
-   else if (celltype == "Tri")  mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
-   else 
-     throw std::runtime_error("not supported celltype argument: try Quad or Tri");
+   if (mesh_name == "") {
+    if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
+    else if (celltype == "Tri")  mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
+    else 
+      throw std::runtime_error("not supported celltype argument: try Quad or Tri");
+    // construction of uncommitted (no elements) mesh 
+    ////////////////////////////////////////////////////////
+
+    // set mesh factory parameters
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",1);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",x_elements);
+    pl->set("Y Elements",y_elements);
+    mesh_factory->setParameterList(pl);
+   } else {
+    mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory(mesh_name));
+   }
    
    // other declarations
    const std::size_t workset_size = 20;
-
-   // construction of uncommitted (no elements) mesh 
-   ////////////////////////////////////////////////////////
-
-   // set mesh factory parameters
-   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-   pl->set("X Blocks",1);
-   pl->set("Y Blocks",1);
-   pl->set("X Elements",x_elements);
-   pl->set("Y Elements",y_elements);
-   mesh_factory->setParameterList(pl);
 
    RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
@@ -168,7 +185,7 @@ int main(int argc,char * argv[])
    {
       bool build_transient_support = false;
 
-      testInitialization(basis_order, ipb, bcs);
+      testInitialization(basis_order, ipb, bcs, curvilinear);
       
       const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
@@ -240,10 +257,10 @@ int main(int argc,char * argv[])
     wkstContainer->setWorksetSize(workset_size);
     wkstContainer->setGlobalIndexer(dofManager);
 
-   // Setup response library for checking the error in this manufactered solution
+   // Setup response library for checking the error in this manufactured solution and computing area
    ////////////////////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
+   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > exampleResponseLibrary
       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
    {
@@ -258,14 +275,19 @@ int main(int argc,char * argv[])
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_L2_ERROR";
 
-     errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
+     exampleResponseLibrary->addResponse("L2 Error",eBlocks,builder);
 
      builder.comm = MPI_COMM_WORLD;
      builder.cubatureDegree = integration_order;
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_H1_ERROR";
 
-     errorResponseLibrary->addResponse("H1 Error",eBlocks,builder);
+     exampleResponseLibrary->addResponse("H1 Error",eBlocks,builder);
+
+     builder.quadPointField = "AREA";
+
+     exampleResponseLibrary->addResponse("Area",eBlocks,builder);
+
    }
 
 
@@ -279,6 +301,10 @@ int main(int argc,char * argv[])
 
    Teuchos::ParameterList closure_models("Closure Models");
    {
+     // the exact solution is different depending on rectangular or annular domain
+     closure_models.set<bool>("Curvilinear",curvilinear);
+     // compute area (since we are in 2D)
+     closure_models.sublist("solid").sublist("AREA").set<double>("Value",1.0);
      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","SIMPLE SOURCE"); // a constant source
       // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
      // required for error calculation
@@ -321,7 +347,7 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
    {
       user_data.set<int>("Workset Size",workset_size);
-      errorResponseLibrary->buildResponseEvaluators(physicsBlocks,
+      exampleResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                                     cm_factory,
                                                     closure_models,
                                                     user_data);
@@ -407,6 +433,7 @@ int main(int argc,char * argv[])
       // the same celltype/order are ok as they are staged one after
       // another in the ADD_ADVANCED_TEST cmake macro.
       std::ostringstream filename;
+      if (curvilinear) filename << "annulus_";
       filename << "output_" << celltype << "_p" << basis_order << ".exo";
       mesh->writeToExodus(filename.str());
    }
@@ -422,20 +449,28 @@ int main(int argc,char * argv[])
       respInput.alpha = 0;
       respInput.beta = 1;
 
-      Teuchos::RCP<panzer::ResponseBase> l2_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
+      Teuchos::RCP<panzer::ResponseBase> area_resp = exampleResponseLibrary->getResponse<panzer::Traits::Residual>("Area");
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > area_resp_func = 
+             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(area_resp);
+      Teuchos::RCP<Thyra::VectorBase<double> > area_respVec = Thyra::createMember(area_resp_func->getVectorSpace());
+      area_resp_func->setVector(area_respVec);
+
+      Teuchos::RCP<panzer::ResponseBase> l2_resp = exampleResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
       Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > l2_resp_func = 
              Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(l2_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > l2_respVec = Thyra::createMember(l2_resp_func->getVectorSpace());
       l2_resp_func->setVector(l2_respVec);
 
-      Teuchos::RCP<panzer::ResponseBase> h1_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
+      Teuchos::RCP<panzer::ResponseBase> h1_resp = exampleResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
       Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func = 
              Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
       h1_resp_func->setVector(h1_respVec);
+      double area_exact = 1.;
+      if (curvilinear) area_exact = M_PI * 1.0 * 1.0 - M_PI * .5 * .5;
 
-      errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
-      errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+      exampleResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
+      exampleResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
       lout << "This is the Basis Order" << std::endl;
       lout << "Basis Order = " << basis_order << std::endl;
@@ -443,6 +478,8 @@ int main(int argc,char * argv[])
       lout << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
       lout << "This is the H1 Error" << std::endl;
       lout << "H1 Error = " << sqrt(h1_resp_func->value) << std::endl;
+      lout << "This is the error in area" << std::endl;
+      lout << "Area Error = " << abs(area_resp_func->value - area_exact) << std::endl;
    }
 
    // all done!
@@ -455,7 +492,8 @@ int main(int argc,char * argv[])
 
 void testInitialization(const int basis_order,
                         const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-                        std::vector<panzer::BC>& bcs)
+                        std::vector<panzer::BC>& bcs,
+                        const bool curvilinear)
 {
   {
     const int integration_order = 10;
@@ -467,6 +505,37 @@ void testInitialization(const int basis_order,
     p.set("Integration Order",integration_order);
   }
   
+  if (curvilinear) { // Boundary conditions for annulus are T = 5 on inner circle, T = 1 on outer
+   {
+      std::size_t bc_id = 0;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "inner";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }    
+
+   {
+      std::size_t bc_id = 1;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "outer";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 1.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }
+  } else { // Boundary conditions for rectangular domain are 0 Dirichlet everywhere
    {
       std::size_t bc_id = 0;
       panzer::BCType bctype = panzer::BCT_Dirichlet;
@@ -526,4 +595,5 @@ void testInitialization(const int basis_order,
   		    strategy, p);
       bcs.push_back(bc);
    }    
+  }
 }

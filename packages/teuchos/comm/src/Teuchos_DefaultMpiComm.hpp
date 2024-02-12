@@ -75,7 +75,7 @@
 namespace Teuchos {
 
 //! Human-readable string version of the given MPI error code.
-std::string
+TEUCHOSCOMM_LIB_DLL_EXPORT std::string
 mpiErrorCodeToString (const int err);
 
 namespace details {
@@ -92,13 +92,13 @@ namespace details {
   /// \note This function may allow a memory leak in your program, if
   ///   you have allowed the MPI_Comm to persist after MPI_Finalize
   ///   has been called.
-  void safeCommFree (MPI_Comm* comm);
+  TEUCHOSCOMM_LIB_DLL_EXPORT void safeCommFree (MPI_Comm* comm);
 
   /// Set the given communicator's error handler to \c handler.
   ///
   /// If the MPI version is >= 2, this calls MPI_Comm_set_handler().
   /// If the MPI version is 1, this calls MPI_Errhandler_set().
-  int setCommErrhandler (MPI_Comm comm, MPI_Errhandler handler);
+  TEUCHOSCOMM_LIB_DLL_EXPORT int setCommErrhandler (MPI_Comm comm, MPI_Errhandler handler);
 
 } // namespace details
 

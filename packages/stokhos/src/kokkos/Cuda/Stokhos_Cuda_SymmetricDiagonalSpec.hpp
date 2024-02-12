@@ -67,7 +67,10 @@ public:
   {
     const int d = block.dimension();
     const int warp_size = Kokkos::Impl::CudaTraits::WarpSize;
-    const int y = ( Kokkos::Impl::cuda_internal_maximum_warp_count() * warp_size ) / d ;
+    auto const maxWarpCount = std::min<unsigned>(
+        execution_space().cuda_device_prop().maxThreadsPerBlock / warp_size,
+        warp_size);
+    const int y = ( maxWarpCount * warp_size ) / d ;
 
     if ( 0 == y ) {
       throw std::runtime_error( std::string("Stokhos::Multiply< SymmetricDiagonalSpec<Cuda> > ERROR: block too large") );

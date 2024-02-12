@@ -97,10 +97,6 @@ public:
     scalar_t, lno_t, gno_t, node_t> xt_mvector_t;
 #endif
 
-  /*! \brief Destructor
-   */
-  ~XpetraMultiVectorAdapter() { }
-
   /*! \brief Constructor
    *
    *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
@@ -177,7 +173,7 @@ public:
         std::ostringstream emsg;
         emsg << __FILE__ << ":" << __LINE__
              << "  Invalid weight index " << idx << std::endl;
-        throw std::runtime_error(emsg.str()); 
+        throw std::runtime_error(emsg.str());
     }
 
     size_t length;

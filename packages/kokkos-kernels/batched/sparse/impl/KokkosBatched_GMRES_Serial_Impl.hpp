@@ -45,9 +45,9 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
                                                const KrylovHandleType& handle,
                                                const int GMRES_id) {
   typedef int OrdinalType;
-  typedef typename Kokkos::Details::ArithTraits<
+  typedef typename Kokkos::ArithTraits<
       typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
-  typedef Kokkos::Details::ArithTraits<MagnitudeType> ATM;
+  typedef Kokkos::ArithTraits<MagnitudeType> ATM;
 
   using SerialCopy1D = SerialCopy<Trans::NoTranspose, 1>;
   using SerialCopy2D = SerialCopy<Trans::NoTranspose, 2>;

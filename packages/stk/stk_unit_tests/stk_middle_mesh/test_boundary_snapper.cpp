@@ -452,6 +452,72 @@ TEST(MeshBoundarySnapper, TestMeshExchangeBoundaryEdgesRemoteUpdate)
   }
 }
 
+TEST(MeshBoundarySnapper, SimpleMeshesFinerMesh1)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
+    GTEST_SKIP();
+
+  MeshSpec spec, spec2;
+  spec.numelX = 5;
+  spec.numelY = 5;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;
+
+  spec2.numelX = 4;
+  spec2.numelY = 4;
+  spec2.xmin   = 0;
+  spec2.xmax   = 1;
+  spec2.ymin   = 0;
+  spec2.ymax   = 1;
+
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<Mesh> mesh1 = create_mesh(spec, func);
+  std::shared_ptr<Mesh> mesh2 = create_mesh(spec2, func);
+
+  MeshBoundarySnapper snapper;
+  snapper.snap(mesh1, mesh2, MPI_COMM_WORLD);
+
+  test_areas_positive(mesh1);
+  test_areas_positive(mesh2);
+  test_areas_equal(mesh1, mesh2);
+}
+
+TEST(MeshBoundarySnapper, SimpleMeshesFinerMesh2)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
+    GTEST_SKIP();
+
+  MeshSpec spec, spec2;
+  spec.numelX = 4;
+  spec.numelY = 4;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;
+
+  spec2.numelX = 5;
+  spec2.numelY = 5;
+  spec2.xmin   = 0;
+  spec2.xmax   = 1;
+  spec2.ymin   = 0;
+  spec2.ymax   = 1;
+
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<Mesh> mesh1 = create_mesh(spec, func);
+  std::shared_ptr<Mesh> mesh2 = create_mesh(spec2, func);
+
+  MeshBoundarySnapper snapper;
+  snapper.snap(mesh1, mesh2, MPI_COMM_WORLD);
+
+  test_areas_positive(mesh1);
+  test_areas_positive(mesh2);
+  test_areas_equal(mesh1, mesh2);
+}
+
 } // namespace impl
 } // namespace middle_mesh
 } // namespace stk

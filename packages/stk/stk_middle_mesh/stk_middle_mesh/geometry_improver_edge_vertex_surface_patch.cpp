@@ -34,6 +34,7 @@ void GeometryImproverEdgeVertexSurfacePatch::setup_vert_status_field()
     }
 }
 
+
 utils::Point GeometryImproverEdgeVertexSurfacePatch::get_normal_vector(mesh::MeshEntityPtr edge2, double xi)
 {
   auto& normalField    = *m_normalField;

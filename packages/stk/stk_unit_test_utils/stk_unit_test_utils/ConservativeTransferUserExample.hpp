@@ -89,32 +89,31 @@ class ConservativeTransferUserForTest : public stk::transfer::ConservativeTransf
 
     void set_middle_mesh(std::shared_ptr<mesh::Mesh> middleMesh,
                          mesh::VariableSizeFieldPtr<mesh::MeshEntityPtr> inputMeshToMiddleMesh    ,
-                         mesh::FieldPtr<utils::Point> middleMeshQuadPointOnInputMesh)
+                         mesh::FieldPtr<utils::Point> middleMeshQuadPointOnInputMesh) override
     {
       m_middleMesh = middleMesh;
       m_inputMeshToMiddleMesh = inputMeshToMiddleMesh;
       m_middleMeshQuadPointsOnInputMesh = middleMeshQuadPointOnInputMesh;
     }
 
-    void interpolate_to_quad_pts(mesh::FieldPtr<double> functionSolValsPtr, mesh::FieldPtr<double> functionQuadValsPtr) override
+    void interpolate_to_quad_pts(const mesh::FieldPtr<double> functionSolValsPtr, mesh::FieldPtr<double> functionQuadValsPtr) override
     {
       assert(functionSolValsPtr->get_mesh() == m_inputMesh);
       assert(functionQuadValsPtr->get_mesh() == m_middleMesh);
+      assert(functionSolValsPtr->get_num_comp() == functionQuadValsPtr->get_num_comp());
 
       int numQuadPointsPerElement          = functionQuadValsPtr->get_field_shape().count[2];
       auto& inputMeshToMiddleMesh          = *m_inputMeshToMiddleMesh;
       auto& middleMeshQuadPointOnInputMesh = *m_middleMeshQuadPointsOnInputMesh;
-      auto& solVals  =  *functionSolValsPtr;
+      auto& solVals  = *functionSolValsPtr;
       auto& quadVals = *functionQuadValsPtr;
-      std::array<double, mesh::MAX_DOWN> elInputVals, basisVals;
+      quadVals.set(0);
+      std::array<double, mesh::MAX_DOWN> basisVals;
       std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> elInputVerts;
       for (auto& elInput : m_inputMesh->get_elements())
         if (elInput)
         {
           int nverts = mesh::get_downward(elInput, 0, elInputVerts.data());
-          for (int k=0; k < nverts; ++k)
-            elInputVals[k] = solVals(elInputVerts[k], 0, 0);
-
           for (int i=0; i < inputMeshToMiddleMesh.get_num_comp(elInput, 0); ++i)
           {
             mesh::MeshEntityPtr elMiddle = inputMeshToMiddleMesh(elInput, 0, i);
@@ -122,20 +121,21 @@ class ConservativeTransferUserForTest : public stk::transfer::ConservativeTransf
             {
               utils::Point quadPtXi = middleMeshQuadPointOnInputMesh(elMiddle, j, 0);
               m_finiteElement.get_basis_vals(elInput->get_type(), quadPtXi, basisVals);
-              double val_j = 0;
               for (int k=0; k < nverts; ++k)
-                val_j += basisVals[k] * elInputVals[k];
-
-              quadVals(elMiddle, j, 0) = val_j;
+              {
+                for (int d=0; d < solVals.get_num_comp(); ++d)
+                  quadVals(elMiddle, j, d) += basisVals[k] * solVals(elInputVerts[k], 0, d);
+              }
             }
           }
         }
     }
 
-    void finish_integration(mesh::FieldPtr<double> functionQuadValsPtr, mesh::FieldPtr<double> functionSolValsPtr) override
+    void finish_integration(const mesh::FieldPtr<double> functionQuadValsPtr, mesh::FieldPtr<double> functionSolValsPtr) override
     {
       assert(functionQuadValsPtr->get_mesh() == m_middleMesh);
       assert(functionSolValsPtr->get_mesh() == m_inputMesh);
+      assert(functionQuadValsPtr->get_num_comp() == functionSolValsPtr->get_num_comp());
 
       int numQuadPointsPerElement          = functionQuadValsPtr->get_field_shape().count[2];
       auto& inputMeshToMiddleMesh          = *m_inputMeshToMiddleMesh;
@@ -161,44 +161,48 @@ class ConservativeTransferUserForTest : public stk::transfer::ConservativeTransf
               double weight = m_finiteElement.get_quad_weights(elMiddle->get_type())[j];
 
               for (int k=0; k < nverts; ++k)
-                solVals(elInputVerts[k], 0, 0) += quadVals(elMiddle, j, 0) * basisVals[k] * weight * detJacobian;
+                for (int d=0; d < quadVals.get_num_comp(); ++d)
+                  solVals(elInputVerts[k], 0, d) += quadVals(elMiddle, j, d) * basisVals[k] * weight * detJacobian;
             }
           }
         }   
     }
 
-    void solve_linear_system(mesh::FieldPtr<double> linearSystemRhsPtr, mesh::FieldPtr<double> functionSolValsPtr) override
+    void solve_linear_system(const mesh::FieldPtr<double> linearSystemRhsPtr, mesh::FieldPtr<double> functionSolValsPtr) override
     {                             
       assert(linearSystemRhsPtr->get_mesh() == m_inputMesh);
       assert(functionSolValsPtr->get_mesh() == m_inputMesh);
+      assert(linearSystemRhsPtr->get_num_comp() == functionSolValsPtr->get_num_comp());
 
       utils::impl::Matrix<double> massMatrix(m_numDofs, m_numDofs);
       compute_mass_matrix(massMatrix);
 
-      std::vector<double> rhs(m_numDofs);
+      std::vector<double> rhs(m_numDofs * functionSolValsPtr->get_num_comp());
       auto& dofNums = *m_dofNums;
       auto& linearSystemRhs = *linearSystemRhsPtr;
       for (auto& vert : m_inputMesh->get_vertices())
         if (vert)
         {
           int dof = dofNums(vert, 0, 0);
-          rhs[dof] = linearSystemRhs(vert, 0, 0);
+          for (int d=0; d < linearSystemRhs.get_num_comp(); ++d)
+            rhs[dof + d * m_numDofs] = linearSystemRhs(vert, 0, d);
         }
 
       std::vector<int> ipiv(m_numDofs);
-      utils::impl::solve_linear_system(massMatrix, ipiv.data(), rhs.data());
+      utils::impl::solve_linear_system(massMatrix, ipiv.data(), rhs.data(), linearSystemRhs.get_num_comp());
 
       auto& solVals = *functionSolValsPtr;
       for (auto& vert : m_inputMesh->get_vertices())
         if (vert)
         {
           int dof = dofNums(vert, 0, 0);
-          solVals(vert, 0, 0) = rhs[dof];
+          for (int d=0; d < solVals.get_num_comp(); ++d)
+          solVals(vert, 0, d) = rhs[dof + d * m_numDofs];
         }
     }
 
     // only needed for testing
-    double integrate_function(mesh::FieldPtr<double> functionSolValsPtr)
+    std::vector<double> integrate_function(const mesh::FieldPtr<double> functionSolValsPtr) override
     {
       assert(functionSolValsPtr->get_mesh() == m_inputMesh);
 
@@ -208,7 +212,7 @@ class ConservativeTransferUserForTest : public stk::transfer::ConservativeTransf
       auto& solVals  =  *functionSolValsPtr;
       std::array<double, mesh::MAX_DOWN> elInputVals, basisVals;
       std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> elInputVerts;
-      double integralVal = 0;
+      std::vector<double> integralVals(solVals.get_num_comp(), 0);
       for (auto& elInput : m_inputMesh->get_elements())
         if (elInput)
         {
@@ -227,16 +231,14 @@ class ConservativeTransferUserForTest : public stk::transfer::ConservativeTransf
               m_finiteElement.get_basis_vals(elInput->get_type(), quadPtXi, basisVals);
               double weight = m_finiteElement.get_quad_weights(elMiddle->get_type())[j];
 
-              double val_j = 0;
               for (int k=0; k < nverts; ++k)
-                val_j += basisVals[k] * elInputVals[k];
-
-              integralVal += val_j * weight * detJacobian;
+                for (int d=0; d < solVals.get_num_comp(); ++d)
+                  integralVals[d] += basisVals[k] * weight * detJacobian * solVals(elInputVerts[k], 0, d);
             }
           }
         }
 
-      return integralVal;
+      return integralVals;
     }
 
 

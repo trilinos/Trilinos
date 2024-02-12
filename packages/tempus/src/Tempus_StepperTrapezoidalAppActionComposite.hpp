@@ -21,12 +21,10 @@ namespace Tempus {
  *  Inidividual AppActions are executed in the order in which they
  *  were added.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperTrapezoidalAppActionComposite
-  : virtual public Tempus::StepperTrapezoidalAppAction<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperTrapezoidalAppAction<Scalar> {
+ public:
   /// Default constructor
   StepperTrapezoidalAppActionComposite();
 
@@ -35,32 +33,33 @@ public:
 
   /// Execute application action for Subcycling Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperTrapezoidal<Scalar> > stepper,
-    const typename StepperTrapezoidalAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperTrapezoidal<Scalar> > stepper,
+      const typename StepperTrapezoidalAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
   {
-    for(auto& a : appActions_)
-      a->execute(sh, stepper, actLoc);
+    for (auto& a : appActions_) a->execute(sh, stepper, actLoc);
   }
 
   // Add AppAction to the AppAction vector.
-  void addTrapezoidalAppAction(Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > appAction);
+  void addTrapezoidalAppAction(
+      Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > appAction);
   {
     appActions_.push_back(appAction);
   }
 
   // Clear the AppAction vector.
   void clearTrapezoidalAppActions();
-  { appActions_.clear();}
+  {
+    appActions_.clear();
+  }
 
   // Return the size of the AppAction vector.
   std::size_t getSize() const { return appActions_.size(); }
 
-private:
-
-  std::vector<Teuchos::RCP<StepperTrapezoidalAppAction<Scalar > > > appActions_;
-
+ private:
+  std::vector<Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > > appActions_;
 };
 
-} // namespace Tempus
-#endif // Tempus_StepperTrapezoidalAppActionComposite_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperTrapezoidalAppActionComposite_hpp

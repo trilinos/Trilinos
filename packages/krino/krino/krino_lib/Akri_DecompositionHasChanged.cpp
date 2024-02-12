@@ -232,14 +232,14 @@ static bool snap_displacements_at_node_are_small_compared_to_parent_edges(const 
     const stk::mesh::Selector & parentElementSelector,
     const double snapTol)
 {
-  const Vector3d snapDisplacements(field_data<double>(cdfemSnapField, node), mesh.mesh_meta_data().spatial_dimension());
+  const stk::math::Vector3d snapDisplacements(field_data<double>(cdfemSnapField, node), mesh.mesh_meta_data().spatial_dimension());
   const double snapDisplacmentsSqrLength = snapDisplacements.length_squared();
-  const Vector3d nodeCoords(field_data<double>(coordsField, node), mesh.mesh_meta_data().spatial_dimension());
+  const stk::math::Vector3d nodeCoords(field_data<double>(coordsField, node), mesh.mesh_meta_data().spatial_dimension());
   std::vector<stk::mesh::Entity> neighborNodes;
   fill_neighbor_nodes(mesh, node, parentElementSelector, neighborNodes);
   for (auto && nbr : neighborNodes)
   {
-    const Vector3d nbrCoords(field_data<double>(coordsField, nbr), mesh.mesh_meta_data().spatial_dimension());
+    const stk::math::Vector3d nbrCoords(field_data<double>(coordsField, nbr), mesh.mesh_meta_data().spatial_dimension());
     const double edgeSqrLength = (nbrCoords-nodeCoords).length_squared();
     if (snapDisplacmentsSqrLength > snapTol*snapTol * edgeSqrLength)
       return false;

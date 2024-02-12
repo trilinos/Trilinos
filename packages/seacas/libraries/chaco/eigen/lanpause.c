@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -25,8 +25,6 @@ int lanpause(int      j,         /* current step */
   extern double DOUBLE_EPSILON; /* machine precision */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
-  double        dot(double *vec1, int beg, int end, double *vec2); /* standard dot product */
-  void          checkorth();
 
   /* Check orthogonality of last Lanczos vector against previous ones */
   if (DEBUG_EVECS > 3) {
@@ -85,8 +83,6 @@ int lanpause_float(int     j,         /* current step */
   extern double DOUBLE_EPSILON; /* machine precision */
   double        paige_dot;      /* q[j]^T q[1] */
   double        paigetol;       /* pause if paigedot > paigetol */
-  double        dot_float(float *vec1, int beg, int end, float *vec2); /* standard dot product */
-  void          checkorth_float();
 
   /* Check orthogonality of last Lanczos vector against previous ones */
   if (DEBUG_EVECS > 3) {

@@ -26,6 +26,7 @@ ADD_SUBDIRECTORIES(
   Map
   MatrixMatrix
   Merge
+  MPIAdvance
   MultiVector
   Node
   Operator

@@ -16,7 +16,6 @@
 
 namespace Tempus {
 
-
 /** \brief HHT-Alpha time stepper.
  *
  * Here, we implement the HHT-Alpha scheme in predictor/corrector form;
@@ -42,98 +41,105 @@ namespace Tempus {
  *  The First-Same-As-Last (FSAL) principle is not used with the
  *  HHT-Alpha method.
  */
-template<class Scalar>
-class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar> {
+ public:
   /** \brief Default constructor.
    *
    *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
-  */
+   */
   StepperHHTAlpha();
 
   /// Constructor
   StepperHHTAlpha(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    std::string schemeName,
-    Scalar beta,
-    Scalar gamma,
-    Scalar alpha_f_,
-    Scalar alpha_m_,
-    const Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> >& stepperHHTAlphaAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+      bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
+      bool zeroInitialGuess, std::string schemeName, Scalar beta, Scalar gamma,
+      Scalar alpha_f_, Scalar alpha_m_,
+      const Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> >&
+          stepperHHTAlphaAppAction);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
+  virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setAppAction(
+  virtual void setAppAction(
       Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > getAppAction() const
-    { return stepperHHTAlphaAppAction_; }
+  virtual Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > getAppAction() const
+  {
+    return stepperHHTAlphaAppAction_;
+  }
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */)
+  {
+  }
 
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getOrder() const {
-      if (gamma_ == 0.5) return 2.0;
-      else return 1.0;
-    }
-    virtual Scalar getOrderMin() const {return 1.0;}
-    virtual Scalar getOrderMax() const {return 2.0;}
+  /// Get a default (initial) StepperState
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  virtual Scalar getOrder() const
+  {
+    if (gamma_ == 0.5)
+      return 2.0;
+    else
+      return 1.0;
+  }
+  virtual Scalar getOrderMin() const { return 1.0; }
+  virtual Scalar getOrderMax() const { return 2.0; }
 
-    virtual bool isExplicit()         const {return false;}
-    virtual bool isImplicit()         const {return true;}
-    virtual bool isExplicitImplicit() const
-      {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod()   const {return true;}
-    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
+  virtual bool isExplicit() const { return false; }
+  virtual bool isImplicit() const { return true; }
+  virtual bool isExplicitImplicit() const
+  {
+    return isExplicit() && isImplicit();
+  }
+  virtual bool isOneStepMethod() const { return true; }
+  virtual bool isMultiStepMethod() const { return !isOneStepMethod(); }
+  virtual OrderODE getOrderODE() const { return SECOND_ORDER_ODE; }
   //@}
 
   /// Return W_xDotxDot_coeff = d(xDotDot)/d(x).
-  virtual Scalar getW_xDotDot_coeff (const Scalar dt) const
-    { return Scalar(1.0)/(beta_*dt*dt); }
+  virtual Scalar getW_xDotDot_coeff(const Scalar dt) const
+  {
+    return Scalar(1.0) / (beta_ * dt * dt);
+  }
   /// Return alpha = d(xDot)/d(x).
-  virtual Scalar getAlpha(const Scalar dt) const { return gamma_/(beta_*dt); }
+  virtual Scalar getAlpha(const Scalar dt) const
+  {
+    return gamma_ / (beta_ * dt);
+  }
   /// Return beta  = d(x)/d(x).
-  virtual Scalar getBeta (const Scalar ) const { return Scalar(1.0); }
+  virtual Scalar getBeta(const Scalar) const { return Scalar(1.0); }
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const;
 
   void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
+                       const Thyra::VectorBase<Scalar>& v,
+                       const Thyra::VectorBase<Scalar>& a,
+                       const Scalar dt) const;
+
+  void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
+                           const Thyra::VectorBase<Scalar>& d,
                            const Thyra::VectorBase<Scalar>& v,
                            const Thyra::VectorBase<Scalar>& a,
                            const Scalar dt) const;
-
-  void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                             const Thyra::VectorBase<Scalar>& d,
-                             const Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
 
   void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
                                const Thyra::VectorBase<Scalar>& v) const;
@@ -142,17 +148,17 @@ public:
                                    const Thyra::VectorBase<Scalar>& d) const;
 
   void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
-                            const Thyra::VectorBase<Scalar>& a_n) const;
+                           const Thyra::VectorBase<Scalar>& a_n) const;
 
   void correctVelocity(Thyra::VectorBase<Scalar>& v,
-                           const Thyra::VectorBase<Scalar>& vPred,
-                           const Thyra::VectorBase<Scalar>& a,
-                           const Scalar dt) const;
+                       const Thyra::VectorBase<Scalar>& vPred,
+                       const Thyra::VectorBase<Scalar>& a,
+                       const Scalar dt) const;
 
   void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                             const Thyra::VectorBase<Scalar>& dPred,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
+                           const Thyra::VectorBase<Scalar>& dPred,
+                           const Thyra::VectorBase<Scalar>& a,
+                           const Scalar dt) const;
 
   void setSchemeName(std::string schemeName);
   void setBeta(Scalar beta);
@@ -160,8 +166,7 @@ public:
   void setAlphaF(Scalar alpha_f);
   void setAlphaM(Scalar alpha_m);
 
-private:
-
+ private:
   Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > stepperHHTAlphaAppAction_;
 
   std::string schemeName_;
@@ -171,19 +176,15 @@ private:
   Scalar alpha_m_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
-
 };
-
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
-template<class Scalar>
-Teuchos::RCP<StepperHHTAlpha<Scalar> >
-createStepperHHTAlpha(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl);
+template <class Scalar>
+Teuchos::RCP<StepperHHTAlpha<Scalar> > createStepperHHTAlpha(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
+}  // namespace Tempus
 
-} // namespace Tempus
-
-#endif // Tempus_StepperHHTAlpha_decl_hpp
+#endif  // Tempus_StepperHHTAlpha_decl_hpp

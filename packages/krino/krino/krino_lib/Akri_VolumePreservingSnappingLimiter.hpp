@@ -3,7 +3,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <Akri_FieldRef.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -19,7 +19,7 @@ public:
     const FieldRef coordsField,
     const ElementToBlockConverter & elementToBlockConverter,
     const double volumeConservationTol);
-  bool is_snap_allowed(const stk::mesh::Entity node, const Vector3d & snapLocation) const;
+  bool is_snap_allowed(const stk::mesh::Entity node, const stk::math::Vector3d & snapLocation) const;
 private:
   std::set<stk::mesh::Part*> get_blocks_to_consider(const stk::mesh::Entity node) const;
   const stk::mesh::BulkData & myMesh;

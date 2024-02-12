@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -64,6 +64,17 @@ namespace Iogn {
   class IOGN_EXPORT DatabaseIO : public Ioss::DatabaseIO
   {
   public:
+    /**
+       The `filename` string for the generated mesh specifies the option string that will be passed
+       to GeneratedMesh to generate the mesh.  For example
+       \code
+       DatabaseIO(region, "10x12x8|shell:xX|nodeset:xyz|sideset:XYZ", ...);
+       \endcode
+       Would generate a cube mesh with sides of 10 elements in X, 12 elements in Y, and 8 elements
+       in Z with shells on the min and max X extent.  There would be a nodeset on each of the
+       minimum x, y, and z faces and sidesets on the maximum x, y, z faces. See the
+       Iogn::GeneratedMesh::GeneratedMesh documentation for more details.
+    */
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
                Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     DatabaseIO(const DatabaseIO &from)            = delete;
@@ -71,7 +82,7 @@ namespace Iogn {
 
     ~DatabaseIO() override;
 
-    const std::string get_format() const override { return "Generated"; }
+    std::string get_format() const override { return "Generated"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed

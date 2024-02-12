@@ -46,18 +46,13 @@
 #ifndef MUELU_XPETRAOPERATOR_FWD_HPP
 #define MUELU_XPETRAOPERATOR_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class XpetraOperator;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class XpetraOperator;
 }
 
 #ifndef MUELU_XPETRAOPERATOR_SHORT
 #define MUELU_XPETRAOPERATOR_SHORT
 #endif
 
-
-
-#endif // MUELU_XPETRAOPERATOR_FWD_HPP
+#endif  // MUELU_XPETRAOPERATOR_FWD_HPP

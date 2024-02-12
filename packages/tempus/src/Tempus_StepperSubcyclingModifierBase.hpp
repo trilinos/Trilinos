@@ -33,12 +33,10 @@ namespace Tempus {
  *  algorithm documentation of the StepperSubcycling.
  */
 
-template<class Scalar>
+template <class Scalar>
 class StepperSubcyclingModifierBase
-  : virtual public Tempus::StepperSubcyclingAppAction<Scalar>
-{
-private:
-
+  : virtual public Tempus::StepperSubcyclingAppAction<Scalar> {
+ private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -49,21 +47,22 @@ private:
    *  For the Modifier interface, this adaptor is a "simple pass through".
    */
   void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperSubcycling<Scalar> > stepper,
-    const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION actLoc)
-  { this->modify(sh, stepper, actLoc); }
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperSubcycling<Scalar> > stepper,
+      const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION actLoc)
+  {
+    this->modify(sh, stepper, actLoc);
+  }
 
-public:
-
+ public:
   /// Modify Subcycling Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperSubcycling<Scalar> > /* stepper */,
-    const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
-
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperSubcycling<Scalar> > /* stepper */,
+      const typename StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION
+          actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperSubcyclingModifierBase_hpp
+#endif  // Tempus_StepperSubcyclingModifierBase_hpp

@@ -32,26 +32,39 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE(
-    stk_balance_unit_tester
+if(HAVE_STK_Trilinos)
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+  TRIBITS_ADD_EXECUTABLE(stk_balance_unit_tester
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
-    )
+  )
 
-TRIBITS_ADD_TEST(
-    stk_balance_unit_tester
+  TRIBITS_ADD_TEST(stk_balance_unit_tester
     NAME STK_Balance_basic
     ARGS "--gtest_filter=BasicLoadBalance.*"
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
     NOEXEPREFIX
-    )
+  )
+else()
+  add_executable(stk_balance_unit_tester ${SOURCES})
+  target_link_libraries(stk_balance_unit_tester stk_unit_test_utils)
+  target_link_libraries(stk_balance_unit_tester stk_mesh_fixtures)
+
+  target_include_directories(stk_balance_unit_tester PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  target_link_libraries(stk_balance_unit_tester stk_balance_lib)
+  target_link_libraries(stk_balance_unit_tester stk_unit_main)
+  
+  add_test("stk_balance" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_balance_unit_tester --gtest_filter=BasicLoadBalance.*")
+endif()
 

@@ -82,7 +82,7 @@ class TwostageGaussSeidel {
   using internal_vector_view_t =
       typename TwoStageGaussSeidelHandleType::vector_view_t;
 
-  using ST    = Kokkos::Details::ArithTraits<scalar_t>;
+  using ST    = Kokkos::ArithTraits<scalar_t>;
   using mag_t = typename ST::mag_type;
 
  private:
@@ -407,7 +407,7 @@ class TwostageGaussSeidel {
     // functor for storing both valuesL & valuesU (with parallel_for)
     KOKKOS_INLINE_FUNCTION
     void operator()(const Tag_valuesLU &, const ordinal_t i) const {
-      const_scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one();
+      const_scalar_t one = Kokkos::ArithTraits<scalar_t>::one();
       ordinal_t nnzL     = row_map(i);
       ordinal_t nnzU     = row_map2(i);
       ordinal_t nnzLa    = 0;
@@ -633,22 +633,18 @@ class TwostageGaussSeidel {
     // shift ptr so that it now contains offsets (combine it with the previous
     // functor calls?)
     if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                            execution_space>(
+      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
           1 + num_rows, rowmap_viewL);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                              execution_space>(
+        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
             1 + num_rows, rowmap_viewLa);
       }
     }
     if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                            execution_space>(
+      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
           1 + num_rows, rowmap_viewU);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<row_map_view_t,
-                                                              execution_space>(
+        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(
             1 + num_rows, rowmap_viewUa);
       }
     }
@@ -851,8 +847,8 @@ class TwostageGaussSeidel {
              bool init_zero_x_vector = false, int numIter = 1,
              scalar_t omega = ST::one(), bool apply_forward = true,
              bool apply_backward = true, bool /*update_y_vector*/ = true) {
-    const_scalar_t one  = Kokkos::Details::ArithTraits<scalar_t>::one();
-    const_scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero();
+    const_scalar_t one  = Kokkos::ArithTraits<scalar_t>::one();
+    const_scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
     double tic;
     Kokkos::Timer timer;

@@ -573,7 +573,7 @@ bool Behavior::overlapCommunicationAndComputation ()
 
 size_t Behavior::spacesIdWarnLimit ()
 {
-  constexpr char envVarName[] = "TPETRA_SPACES_ID_WARN_LIMT";
+  constexpr char envVarName[] = "TPETRA_SPACES_ID_WARN_LIMIT";
   constexpr size_t defaultValue(16);
 
   static size_t value_ = defaultValue;
@@ -594,7 +594,54 @@ bool Behavior::timeKokkosDeepCopy()
 
 }    
 
+bool Behavior::timeKokkosDeepCopyVerbose1() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE1";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}    
+
+bool Behavior::timeKokkosDeepCopyVerbose2() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE2";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}    
+
+bool Behavior::timeKokkosFence() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_FENCE";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}  
+
+bool Behavior::timeKokkosFunctions() 
+{
+  constexpr char envVarName[] = "TPETRA_TIME_KOKKOS_FUNCTIONS";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+
+}  
+
 
 } // namespace Details
 } // namespace Tpetra
-

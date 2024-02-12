@@ -88,11 +88,10 @@
 #include <BelosBlockGmresSolMgr.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
+#include <BelosXpetraAdapter.hpp>  // => This header defines Belos::XpetraOp
+#include <BelosMueLuAdapter.hpp>   // => This header defines Belos::MueLuOp
+#include <BelosTpetraAdapter.hpp>  // => This header defines Belos::TpetraOp
 #endif
-
 
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
@@ -126,75 +125,101 @@
 #include "SetupRegionHierarchy_def.hpp"
 #include "SolveRegionHierarchy_def.hpp"
 
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
+  using Teuchos::ArrayRCP;
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayRCP;
   using Teuchos::TimeMonitor;
-  using Teuchos::ParameterList;
 
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   // const int numRanks = comm->getSize();
-  const int myRank   = comm->getRank();
+  const int myRank = comm->getRank();
 
   // =========================================================================
   // Convenient definitions
   // =========================================================================
   using STS = Teuchos::ScalarTraits<SC>;
   SC zero = STS::zero(), one = STS::one();
-  using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-  using real_type = typename STS::coordinateType;
-  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  using magnitude_type        = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  using real_type             = typename STS::coordinateType;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
 
   // =========================================================================
   // Parameters initialization
   // =========================================================================
   GO nx = 10, ny = 10, nz = 10;
-  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
-  Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
+  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                                       // manage parameters of Xpetra
 
-  std::string xmlFileName           = "";                  clp.setOption("xml",                   &xmlFileName,           "read parameters from an xml file");
-  std::string yamlFileName          = "";                  clp.setOption("yaml",                  &yamlFileName,          "read parameters from a yaml file");
-  std::string solverType            = "region";            clp.setOption("solverType",            &solverType,            "iterative solver to be used: (region | Richardson | CG)");
-  std::string convergenceLog        = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,        "file in which the convergence history of the linear solver is stored");
-  int         maxIts                = 200;                 clp.setOption("its",                   &maxIts,                "maximum number of solver iterations");
-  double      tol                   = 1e-12;               clp.setOption("tol",                   &tol,                   "solver convergence tolerance");
-  bool        scaleResidualHist     = true;                clp.setOption("scale", "noscale",      &scaleResidualHist,     "scaled Krylov residual history");
-  bool        serialRandom          = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
-  std::string cycleType = "V";                             clp.setOption("cycleType", &cycleType, "{Multigrid cycle type. Possible values: V, W.");
-  std::string smootherType          = "Jacobi";            clp.setOption("smootherType",          &smootherType,          "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
-  int         smootherIts           = 2;                   clp.setOption("smootherIts",           &smootherIts,           "number of smoother iterations");
-  double      smootherDamp          = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,          "damping parameter for the level smoother");
-  double      smootherChebyEigRatio = 2.0;                 clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
-  double      smootherChebyBoostFactor = 1.1;              clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
-  bool        keepCoarseCoords      = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
-  bool        coarseSolverRebalance = false;               clp.setOption("rebalance-coarse", "no-rebalance-coarse", &coarseSolverRebalance, "rebalance before AMG coarse grid solve");
-  int         rebalanceNumPartitions = -1;                   clp.setOption("numPartitions",         &rebalanceNumPartitions, "number of partitions for rebalancing the coarse grid AMG solve");
-  std::string coarseSolverType      = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,      "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
-  std::string unstructured          = "{}";                clp.setOption("unstructured",          &unstructured,          "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
-  std::string coarseAmgXmlFile      = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,      "Read parameters for AMG as coarse level solve from this xml file.");
-  std::string coarseSmootherXMLFile = "";                  clp.setOption("coarseSmootherXML",     &coarseSmootherXMLFile, "File containing the parameters to use with the coarse level smoother.");
-  std::string equilibrate = "no" ;                         clp.setOption("equilibrate",           &equilibrate,           "equilibrate the system (no | diag | 1-norm)");
+  std::string xmlFileName = "";
+  clp.setOption("xml", &xmlFileName, "read parameters from an xml file");
+  std::string yamlFileName = "";
+  clp.setOption("yaml", &yamlFileName, "read parameters from a yaml file");
+  std::string solverType = "region";
+  clp.setOption("solverType", &solverType, "iterative solver to be used: (region | Richardson | CG)");
+  std::string convergenceLog = "residual_norm.txt";
+  clp.setOption("convergence-log", &convergenceLog, "file in which the convergence history of the linear solver is stored");
+  int maxIts = 200;
+  clp.setOption("its", &maxIts, "maximum number of solver iterations");
+  double tol = 1e-12;
+  clp.setOption("tol", &tol, "solver convergence tolerance");
+  bool scaleResidualHist = true;
+  clp.setOption("scale", "noscale", &scaleResidualHist, "scaled Krylov residual history");
+  bool serialRandom = false;
+  clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
+  std::string cycleType = "V";
+  clp.setOption("cycleType", &cycleType, "{Multigrid cycle type. Possible values: V, W.");
+  std::string smootherType = "Jacobi";
+  clp.setOption("smootherType", &smootherType, "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
+  int smootherIts = 2;
+  clp.setOption("smootherIts", &smootherIts, "number of smoother iterations");
+  double smootherDamp = 0.67;
+  clp.setOption("smootherDamp", &smootherDamp, "damping parameter for the level smoother");
+  double smootherChebyEigRatio = 2.0;
+  clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+  double smootherChebyBoostFactor = 1.1;
+  clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
+  bool keepCoarseCoords = false;
+  clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
+  bool coarseSolverRebalance = false;
+  clp.setOption("rebalance-coarse", "no-rebalance-coarse", &coarseSolverRebalance, "rebalance before AMG coarse grid solve");
+  int rebalanceNumPartitions = -1;
+  clp.setOption("numPartitions", &rebalanceNumPartitions, "number of partitions for rebalancing the coarse grid AMG solve");
+  std::string coarseSolverType = "direct";
+  clp.setOption("coarseSolverType", &coarseSolverType, "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
+  std::string unstructured = "{}";
+  clp.setOption("unstructured", &unstructured, "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
+  std::string coarseAmgXmlFile = "";
+  clp.setOption("coarseAmgXml", &coarseAmgXmlFile, "Read parameters for AMG as coarse level solve from this xml file.");
+  std::string coarseSmootherXMLFile = "";
+  clp.setOption("coarseSmootherXML", &coarseSmootherXMLFile, "File containing the parameters to use with the coarse level smoother.");
+  std::string equilibrate = "no";
+  clp.setOption("equilibrate", &equilibrate, "equilibrate the system (no | diag | 1-norm)");
 #ifdef HAVE_MUELU_CUDA
-  bool profileSetup = false;                               clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
-  bool profileSolve = false;                               clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+  bool profileSetup = false;
+  clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+  bool profileSolve = false;
+  clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
-  int  cacheSize = 0;                                      clp.setOption("cachesize",               &cacheSize,           "cache size (in KB)");
-  bool useStackedTimer   = false;                          clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
-  bool showTimerSummary = true;                            clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
+  int cacheSize = 0;
+  clp.setOption("cachesize", &cacheSize, "cache size (in KB)");
+  bool useStackedTimer = false;
+  clp.setOption("stacked-timer", "no-stacked-timer", &useStackedTimer, "use stacked timer");
+  bool showTimerSummary = true;
+  clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
@@ -202,7 +227,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Instead of checking each time for rank, create a rank 0 stream
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  Teuchos::FancyOStream& out = *fancy;
+  Teuchos::FancyOStream &out       = *fancy;
   out.setOutputToRootOnly(0);
 
   ParameterList paramList;
@@ -218,18 +243,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   }
 
-  Array<RCP<Teuchos::ParameterList> > smootherParams(1); //TODO: this is good, resized to numlevel
+  Array<RCP<Teuchos::ParameterList> > smootherParams(1);  // TODO: this is good, resized to numlevel
   smootherParams[0] = rcp(new Teuchos::ParameterList());
-  smootherParams[0]->set("smoother: type",    smootherType);
-  smootherParams[0]->set("smoother: sweeps",  smootherIts);
+  smootherParams[0]->set("smoother: type", smootherType);
+  smootherParams[0]->set("smoother: sweeps", smootherIts);
   smootherParams[0]->set("smoother: damping", smootherDamp);
   smootherParams[0]->set("smoother: Chebyshev eigRatio", smootherChebyEigRatio);
   smootherParams[0]->set("smoother: Chebyshev boost factor", smootherChebyBoostFactor);
 
-  bool useUnstructured = false;
+  bool useUnstructured        = false;
   Array<LO> unstructuredRanks = Teuchos::fromStringToArray<LO>(unstructured);
-  for(int idx = 0; idx < unstructuredRanks.size(); ++idx) {
-    if(unstructuredRanks[idx] == myRank) {useUnstructured = true;}
+  for (int idx = 0; idx < unstructuredRanks.size(); ++idx) {
+    if (unstructuredRanks[idx] == myRank) {
+      useUnstructured = true;
+    }
   }
 
   // Retrieve matrix parameters (they may have been changed on the command line)
@@ -242,27 +269,26 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::ostringstream galeriStream;
 #ifdef HAVE_MUELU_OPENMP
   std::string node_name = Node::name();
-  if(!comm->getRank() && !node_name.compare("OpenMP/Wrapper"))
-    galeriStream<<"OpenMP Max Threads = "<<omp_get_max_threads()<<std::endl;
+  if (!comm->getRank() && !node_name.compare("OpenMP/Wrapper"))
+    galeriStream << "OpenMP Max Threads = " << omp_get_max_threads() << std::endl;
 #endif
-
 
   comm->barrier();
   Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
-  if(useStackedTimer)
+  if (useStackedTimer)
     stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
   Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Build Composite Matrix")));
 
-
   RCP<Matrix> A;
-  RCP<Map>    nodeMap, dofMap;
+  RCP<Map> nodeMap, dofMap;
   RCP<Vector> X, B;
-  RCP<MultiVector>           nullspace;
+  RCP<MultiVector> nullspace;
   RCP<RealValuedMultiVector> coordinates;
 
-  galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
+  galeriStream << "========================================================\n"
+               << xpetraParameters << galeriParameters;
 
   // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
   //                                 d1  d2  d3
@@ -274,8 +300,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // size. For example, np=14 will give a 7-by-2 distribution.
   // If you don't want Galeri to do this, specify mx or my on the galeriList.
   std::string matrixType = galeriParameters.GetMatrixType();
-  int numDimensions  = 0;
-  int numDofsPerNode = 0;
+  int numDimensions      = 0;
+  int numDofsPerNode     = 0;
   Teuchos::Array<GO> procsPerDim(3);
   Teuchos::Array<GO> gNodesPerDim(3);
   Teuchos::Array<LO> lNodesPerDim(3);
@@ -285,19 +311,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
   if (matrixType == "Laplace1D") {
     numDimensions = 1;
-    nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", nodeMap, galeriList);
+    nodeMap       = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
+    coordinates   = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("1D", nodeMap, galeriList);
 
   } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
              matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
     numDimensions = 2;
-    nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
+    nodeMap       = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+    coordinates   = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
     numDimensions = 3;
-    nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
+    nodeMap       = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+    coordinates   = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("3D", nodeMap, galeriList);
   }
 
   // Expand map to do multiple DOF per node for block problems
@@ -308,7 +334,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   } else {
     numDofsPerNode = 1;
   }
-  dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+  dofMap = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, numDofsPerNode);
 
   galeriStream << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
                << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
@@ -317,15 +343,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
     // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
-    galeriList.set("right boundary" , "Neumann");
+    galeriList.set("right boundary", "Neumann");
     galeriList.set("bottom boundary", "Neumann");
-    galeriList.set("top boundary"   , "Neumann");
-    galeriList.set("front boundary" , "Neumann");
-    galeriList.set("back boundary"  , "Neumann");
+    galeriList.set("top boundary", "Neumann");
+    galeriList.set("front boundary", "Neumann");
+    galeriList.set("back boundary", "Neumann");
   }
 
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
   A = Pr->BuildMatrix();
 
   A->SetFixedBlockSize(numDofsPerNode);
@@ -335,40 +361,40 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   X = VectorFactory::Build(dofMap);
   B = VectorFactory::Build(dofMap);
 
-  if(serialRandom) {
-    //Build the seed on rank zero and broadcast it.
+  if (serialRandom) {
+    // Build the seed on rank zero and broadcast it.
     size_t localNumElements = 0;
-    if(comm->getRank() == 0) {
+    if (comm->getRank() == 0) {
       localNumElements = static_cast<size_t>(dofMap->getGlobalNumElements());
     }
-    RCP<Map> serialMap = MapFactory::Build(dofMap->lib(),
-                                           dofMap->getGlobalNumElements(),
-                                           localNumElements,
-                                           0,
-                                           comm);
+    RCP<Map> serialMap  = MapFactory::Build(dofMap->lib(),
+                                            dofMap->getGlobalNumElements(),
+                                            localNumElements,
+                                            0,
+                                            comm);
     RCP<Vector> Xserial = VectorFactory::Build(serialMap);
     Xserial->setSeed(251743369);
-    Xserial->randomize(true);// using xpetra's randomize. Otherwise random vector is only consistent for first 128 entries
+    Xserial->randomize(true);  // using xpetra's randomize. Otherwise random vector is only consistent for first 128 entries
     RCP<Import> randomnessImporter = ImportFactory::Build(serialMap, dofMap);
     X->doImport(*Xserial, *randomnessImporter, Xpetra::INSERT);
   } else {
     // we set seed for reproducibility
     Utilities::SetRandomSeed(*comm);
-    X->randomize(true);// using xpetra's randomize. Otherwise random vector is only consistent for first 128 entries
+    X->randomize(true);  // using xpetra's randomize. Otherwise random vector is only consistent for first 128 entries
   }
   A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
   Teuchos::Array<typename STS::magnitudeType> norms(1);
   B->norm2(norms);
-  B->scale(one/norms[0]);
+  B->scale(one / norms[0]);
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
 #ifdef MATLAB_COMPARE
-  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("Ax.mm",*B);
-  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("A.mm",*A);
+  Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Ax.mm", *B);
+  Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A.mm", *A);
   B->putScalar(zero);
-  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("rhs.mm",*B);
-  Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("x.mm",*X);
+  Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("rhs.mm", *B);
+  Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("x.mm", *X);
 #endif
   out << galeriStream.str();
 
@@ -380,14 +406,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Set aggregation type for each region
   std::string aggregationRegionType;
   RCP<ParameterList> interfaceParams = rcp(new ParameterList());
-  if(useUnstructured) {
+  if (useUnstructured) {
     aggregationRegionType = "uncoupled";
   } else {
     aggregationRegionType = "structured";
   }
 
   // Loading geometric info from galeri
-  if(numDimensions == 1) {
+  if (numDimensions == 1) {
     gNodesPerDim[0] = galeriList.get<GO>("nx");
     gNodesPerDim[1] = 1;
     gNodesPerDim[2] = 1;
@@ -399,7 +425,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     procsPerDim[0] = galeriList.get<GO>("mx");
     procsPerDim[1] = 1;
     procsPerDim[2] = 1;
-  } else if(numDimensions == 2) {
+  } else if (numDimensions == 2) {
     gNodesPerDim[0] = galeriList.get<GO>("nx");
     gNodesPerDim[1] = galeriList.get<GO>("ny");
     gNodesPerDim[2] = 1;
@@ -411,7 +437,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     procsPerDim[0] = galeriList.get<GO>("mx");
     procsPerDim[1] = galeriList.get<GO>("my");
     procsPerDim[2] = 1;
-  } else if(numDimensions == 3) {
+  } else if (numDimensions == 3) {
     gNodesPerDim[0] = galeriList.get<GO>("nx");
     gNodesPerDim[1] = galeriList.get<GO>("ny");
     gNodesPerDim[2] = galeriList.get<GO>("nz");
@@ -446,17 +472,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // First we count how many nodes the region needs to send and receive
   // and allocate arrays accordingly
   Array<int> boundaryConditions;
-  int maxRegPerGID = 0;
-  int numInterfaces = 0;
+  int maxRegPerGID       = 0;
+  int numInterfaces      = 0;
   LO numLocalRegionNodes = 0;
-  Array<GO>  sendGIDs;
+  Array<GO> sendGIDs;
   Array<int> sendPIDs;
-  Array<LO>  rNodesPerDim(3);
-  Array<LO>  compositeToRegionLIDs(nodeMap->getLocalNumElements()*numDofsPerNode);
-  Array<GO>  quasiRegionGIDs;
-  Array<GO>  quasiRegionCoordGIDs;
-  Array<GO>  interfaceGIDs;
-  Array<LO>  interfaceLIDsData;
+  Array<LO> rNodesPerDim(3);
+  Array<LO> compositeToRegionLIDs(nodeMap->getLocalNumElements() * numDofsPerNode);
+  Array<GO> quasiRegionGIDs;
+  Array<GO> quasiRegionCoordGIDs;
+  Array<GO> interfaceGIDs;
+  Array<LO> interfaceLIDsData;
 
   createRegionData(numDimensions, useUnstructured, numDofsPerNode,
                    gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
@@ -466,7 +492,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                    interfaceGIDs, interfaceLIDsData);
 
   // std::cout << "p=" << myRank << " | numSend=" << numSend << std::endl;
-            // << ", numReceive=" << numReceive << std::endl;
+  // << ", numReceive=" << numReceive << std::endl;
   // std::cout << "p=" << myRank << " | receiveGIDs: " << receiveGIDs << std::endl;
   // std::cout << "p=" << myRank << " | receivePIDs: " << receivePIDs << std::endl;
   // std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
@@ -475,8 +501,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Second we actually fill the send and receive arrays with appropriate data
   // which will allow us to compute the region and composite maps.
   // Now we can construct a list of GIDs that corresponds to rowMap
-  Array<LO>  interfacesDimensions, interfacesLIDs;
-  if(useUnstructured) {
+  Array<LO> interfacesDimensions, interfacesLIDs;
+  if (useUnstructured) {
     findInterface(numDimensions, rNodesPerDim, boundaryConditions,
                   interfacesDimensions, interfacesLIDs);
 
@@ -488,8 +514,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     //           << "p=" << myRank << " | interfacesLIDs: " << interfacesLIDs << std::endl;
   }
 
-  interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", interfacesDimensions); // nodesPerDimensions);
-  interfaceParams->set<Array<LO> >("interfaces: interface nodes",      interfacesLIDs); // interfaceLIDs);
+  interfaceParams->set<Array<LO> >("interfaces: nodes per dimensions", interfacesDimensions);  // nodesPerDimensions);
+  interfaceParams->set<Array<LO> >("interfaces: interface nodes", interfacesLIDs);             // interfaceLIDs);
 
   // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs << std::endl;
   // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
@@ -509,34 +535,34 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.1 - Build Region Maps")));
 
-  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > rowMap, colMap;
-  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > revisedRowMap, revisedColMap;
-  rowMap = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
+  Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > rowMap, colMap;
+  Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > revisedRowMap, revisedColMap;
+  rowMap        = Xpetra::MapFactory<LO, GO, Node>::Build(dofMap->lib(),
                                                           Teuchos::OrdinalTraits<GO>::invalid(),
                                                           quasiRegionGIDs(),
                                                           dofMap->getIndexBase(),
                                                           dofMap->getComm());
-  colMap = rowMap;
-  revisedRowMap = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
-                                                                 Teuchos::OrdinalTraits<GO>::invalid(),
-                                                                 numLocalRegionNodes*numDofsPerNode,
-                                                                 dofMap->getIndexBase(),
-                                                                 dofMap->getComm());
+  colMap        = rowMap;
+  revisedRowMap = Xpetra::MapFactory<LO, GO, Node>::Build(dofMap->lib(),
+                                                          Teuchos::OrdinalTraits<GO>::invalid(),
+                                                          numLocalRegionNodes * numDofsPerNode,
+                                                          dofMap->getIndexBase(),
+                                                          dofMap->getComm());
   revisedColMap = revisedRowMap;
 
   // Build objects needed to construct the region coordinates
-  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > quasiRegCoordMap = Xpetra::MapFactory<LO,GO,Node>::
-    Build(nodeMap->lib(),
-          Teuchos::OrdinalTraits<GO>::invalid(),
-          quasiRegionCoordGIDs(),
-          nodeMap->getIndexBase(),
-          nodeMap->getComm());
-  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > regCoordMap = Xpetra::MapFactory<LO,GO,Node>::
-    Build(nodeMap->lib(),
-          Teuchos::OrdinalTraits<GO>::invalid(),
-          numLocalRegionNodes,
-          nodeMap->getIndexBase(),
-          nodeMap->getComm());
+  Teuchos::RCP<Xpetra::Map<LO, GO, NO> > quasiRegCoordMap = Xpetra::MapFactory<LO, GO, Node>::
+      Build(nodeMap->lib(),
+            Teuchos::OrdinalTraits<GO>::invalid(),
+            quasiRegionCoordGIDs(),
+            nodeMap->getIndexBase(),
+            nodeMap->getComm());
+  Teuchos::RCP<Xpetra::Map<LO, GO, NO> > regCoordMap = Xpetra::MapFactory<LO, GO, Node>::
+      Build(nodeMap->lib(),
+            Teuchos::OrdinalTraits<GO>::invalid(),
+            numLocalRegionNodes,
+            nodeMap->getIndexBase(),
+            nodeMap->getComm());
 
   comm->barrier();
   tmLocal = Teuchos::null;
@@ -545,15 +571,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Setup importers
   RCP<Import> rowImport;
   RCP<Import> colImport;
-  rowImport = ImportFactory::Build(dofMap, rowMap);
-  colImport = ImportFactory::Build(dofMap, colMap);
+  rowImport                 = ImportFactory::Build(dofMap, rowMap);
+  colImport                 = ImportFactory::Build(dofMap, colMap);
   RCP<Import> coordImporter = ImportFactory::Build(nodeMap, quasiRegCoordMap);
 
   comm->barrier();
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.3 - Import ghost GIDs")));
 
-  Array<GO>  interfaceCompositeGIDs, interfaceRegionGIDs;
+  Array<GO> interfaceCompositeGIDs, interfaceRegionGIDs;
   ExtractListOfInterfaceRegionGIDs(revisedRowMap, interfaceLIDsData, interfaceRegionGIDs);
 
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts;
@@ -589,7 +615,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                      rowImport, quasiRegionMats, regionMats);
 
   // If we don't need the composite operator on the fine level anymore, free it!
-  if(solverType == "region") A = Teuchos::null;
+  if (solverType == "region") A = Teuchos::null;
 
   comm->barrier();
   tmLocal = Teuchos::null;
@@ -614,12 +640,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   regionNullspace->replaceMap(revisedRowMap);
 
   // create region coordinates vector
-  regionCoordinates = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
+  regionCoordinates = Xpetra::MultiVectorFactory<real_type, LO, GO, NO>::Build(quasiRegCoordMap,
                                                                                coordinates->getNumVectors());
   regionCoordinates->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
   regionCoordinates->replaceMap(regCoordMap);
 
-  using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using Tpetra_CrsMatrix   = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   /* Stuff for multi-level algorithm
@@ -639,45 +665,43 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   coarseSolverData->set<std::string>("smoother xml file", coarseSmootherXMLFile);
   RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
-
   // Create MueLu Hierarchy Initially...
   // Read MueLu parameter list form xml file
   RCP<ParameterList> mueluParams = Teuchos::rcp(new ParameterList());
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, mueluParams.ptr(), *dofMap->getComm());
 
   // Insert region-specific data into parameter list
-  const std::string userName = "user data";
-  Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
-  userParamList.set<int>        ("int numDimensions", numDimensions);
-  userParamList.set<Array<LO> > ("Array<LO> lNodesPerDim", regionNodesPerDim);
+  const std::string userName            = "user data";
+  Teuchos::ParameterList &userParamList = mueluParams->sublist(userName);
+  userParamList.set<int>("int numDimensions", numDimensions);
+  userParamList.set<Array<LO> >("Array<LO> lNodesPerDim", regionNodesPerDim);
   userParamList.set<std::string>("string aggregationRegionType", aggregationRegionType);
-  userParamList.set<Array<LO> > ("Array<LO> nodeOnInterface", interfaceParams->get<Array<LO> >("interfaces: interface nodes"));
-  userParamList.set<Array<LO> > ("Array<LO> interfacesDimensions", interfaceParams->get<Array<LO> >("interfaces: nodes per dimensions"));
-  if(Teuchos::nonnull(regionCoordinates)) {
+  userParamList.set<Array<LO> >("Array<LO> nodeOnInterface", interfaceParams->get<Array<LO> >("interfaces: interface nodes"));
+  userParamList.set<Array<LO> >("Array<LO> interfacesDimensions", interfaceParams->get<Array<LO> >("interfaces: nodes per dimensions"));
+  if (Teuchos::nonnull(regionCoordinates)) {
     userParamList.set("Coordinates", regionCoordinates);
   }
-  if(Teuchos::nonnull(regionNullspace)) {
+  if (Teuchos::nonnull(regionNullspace)) {
     userParamList.set("Nullspace", regionNullspace);
   }
 
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("CreateXpetraPreconditioner: Hierarchy")));
 
   // Create multigrid hierarchy part 1
-  RCP<Hierarchy> regHierarchy  = MueLu::CreateXpetraPreconditioner(regionMats, *mueluParams);
+  RCP<Hierarchy> regHierarchy = MueLu::CreateXpetraPreconditioner(regionMats, *mueluParams);
 
   {
     RCP<MueLu::Level> level = regHierarchy->GetLevel(0);
-    level->Set<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport",rowImport);
-    level->Set<ArrayView<LocalOrdinal> > ("compositeToRegionLIDs", compositeToRegionLIDs() );
+    level->Set<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport", rowImport);
+    level->Set<ArrayView<LocalOrdinal> >("compositeToRegionLIDs", compositeToRegionLIDs());
     level->Set<RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >("interfaceGIDs", interfaceGIDsMV);
     level->Set<RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >("regionsPerGIDWithGhosts", regionsPerGIDWithGhosts);
     level->Set<Teuchos::ArrayRCP<LocalOrdinal> >("regionMatVecLIDs", regionMatVecLIDs);
     level->Set<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("regionInterfaceImporter", regionInterfaceImporter);
-    level->print( std::cout, MueLu::Extreme );
+    level->print(std::cout, MueLu::Extreme);
   }
 
   tmLocal = Teuchos::null;
-
 
   // Create multigrid hierarchy part 2
   createRegionHierarchy(numDimensions,
@@ -693,8 +717,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   hierarchyData->print();
 
-
-
   comm->barrier();
   tm = Teuchos::null;
 
@@ -702,10 +724,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   const int numLevels = regHierarchy->GetNumLevels();
 
   // Set data for fast MatVec
-  for(LO levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
-    RCP<MueLu::Level> level = regHierarchy->GetLevel(levelIdx);
+  for (LO levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
+    RCP<MueLu::Level> level                                = regHierarchy->GetLevel(levelIdx);
     RCP<Xpetra::Import<LO, GO, NO> > regionInterfaceImport = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("regionInterfaceImporter");
-    Teuchos::ArrayRCP<LO>            regionMatVecLIDs1     = level->Get<Teuchos::ArrayRCP<LO> >("regionMatVecLIDs");
+    Teuchos::ArrayRCP<LO> regionMatVecLIDs1                = level->Get<Teuchos::ArrayRCP<LO> >("regionMatVecLIDs");
     smootherParams[levelIdx]->set("Fast MatVec: interface LIDs",
                                   regionMatVecLIDs1);
     smootherParams[levelIdx]->set("Fast MatVec: interface importer",
@@ -722,68 +744,67 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
 #ifdef DUMP_LOCALX_AND_A
-    FILE *fp;
-    char str[80];
-    sprintf(str,"theMatrix.%d",myRank);
-    fp = fopen(str,"w");
-    fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
-    LO numNzs = 0;
-    for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
-      ArrayView<const LO> AAcols;
-      ArrayView<const SC> AAvals;
-      regionMats->getLocalRowView(kkk, AAcols, AAvals);
-      const int *Acols    = AAcols.getRawPtr();
-      const SC  *Avals = AAvals.getRawPtr();
-      numNzs += AAvals.size();
-    }
-    fprintf(fp, "%d %d %d\n",regionMats->getLocalNumRows(),regionMats->getLocalNumRows(),numNzs);
+  FILE *fp;
+  char str[80];
+  sprintf(str, "theMatrix.%d", myRank);
+  fp = fopen(str, "w");
+  fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  LO numNzs = 0;
+  for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
+    ArrayView<const LO> AAcols;
+    ArrayView<const SC> AAvals;
+    regionMats->getLocalRowView(kkk, AAcols, AAvals);
+    const int *Acols = AAcols.getRawPtr();
+    const SC *Avals  = AAvals.getRawPtr();
+    numNzs += AAvals.size();
+  }
+  fprintf(fp, "%d %d %d\n", regionMats->getLocalNumRows(), regionMats->getLocalNumRows(), numNzs);
 
-    for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
-      ArrayView<const LO> AAcols;
-      ArrayView<const SC> AAvals;
-      regionMats->getLocalRowView(kkk, AAcols, AAvals);
-      const int *Acols    = AAcols.getRawPtr();
-      const SC  *Avals = AAvals.getRawPtr();
-      LO RowLeng = AAvals.size();
-      for (LO kk = 0; kk < RowLeng; kk++) {
-          fprintf(fp, "%d %d %22.16e\n",kkk+1,Acols[kk]+1,Avals[kk]);
-      }
+  for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
+    ArrayView<const LO> AAcols;
+    ArrayView<const SC> AAvals;
+    regionMats->getLocalRowView(kkk, AAcols, AAvals);
+    const int *Acols = AAcols.getRawPtr();
+    const SC *Avals  = AAvals.getRawPtr();
+    LO RowLeng       = AAvals.size();
+    for (LO kk = 0; kk < RowLeng; kk++) {
+      fprintf(fp, "%d %d %22.16e\n", kkk + 1, Acols[kk] + 1, Avals[kk]);
     }
-    fclose(fp);
-    // sprintf(str,"theX.%d",myRank);
-    // fp = fopen(str,"w");
-    // ArrayRCP<SC> lX= regX->getDataNonConst(0);
-    // for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
-    // fclose(fp);
+  }
+  fclose(fp);
+  // sprintf(str,"theX.%d",myRank);
+  // fp = fopen(str,"w");
+  // ArrayRCP<SC> lX= regX->getDataNonConst(0);
+  // for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
+  // fclose(fp);
 #endif
 
-  if(solverType == "region") {
+  if (solverType == "region") {
     solveRegionProblemRichardson(tol, scaleResidualHist, maxIts,
-        cycleType, convergenceLog,
-        coarseSolverData, smootherParams, hierarchyData,
-        regHierarchy, X, B);
-  } else if(solverType == "Richardson") {
+                                 cycleType, convergenceLog,
+                                 coarseSolverData, smootherParams, hierarchyData,
+                                 regHierarchy, X, B);
+  } else if (solverType == "Richardson") {
     solveCompositeProblemRichardson(tol, scaleResidualHist, maxIts,
-        cycleType, convergenceLog,
-        coarseSolverData, smootherParams, hierarchyData,
-        regHierarchy, A, X, B);
-  } else if(solverType == "CG") {
+                                    cycleType, convergenceLog,
+                                    coarseSolverData, smootherParams, hierarchyData,
+                                    regHierarchy, A, X, B);
+  } else if (solverType == "CG") {
     solveCompositeProblemPCG(tol, scaleResidualHist, maxIts,
-        cycleType, convergenceLog,
-        coarseSolverData, smootherParams, hierarchyData,
-        regHierarchy, A, X, B);
+                             cycleType, convergenceLog,
+                             coarseSolverData, smootherParams, hierarchyData,
+                             regHierarchy, A, X, B);
   } else {
-    throw std::runtime_error("Unknown solverType: "+solverType);
+    throw std::runtime_error("Unknown solverType: " + solverType);
   }
 
   comm->barrier();
-  tm = Teuchos::null;
+  tm                = Teuchos::null;
   globalTimeMonitor = Teuchos::null;
 
-  if (showTimerSummary)
-  {
+  if (showTimerSummary) {
     RCP<ParameterList> reportParams = rcp(new ParameterList);
-    const std::string filter = "";
+    const std::string filter        = "";
     if (useStackedTimer) {
       Teuchos::StackedTimer::OutputOptions options;
       options.output_fraction = options.output_histogram = options.output_minmax = true;
@@ -805,5 +826,5 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }

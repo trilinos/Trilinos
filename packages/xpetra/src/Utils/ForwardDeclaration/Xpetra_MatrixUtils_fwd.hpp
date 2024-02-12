@@ -47,12 +47,12 @@
 #define XPETRA_MATRIXUTILS_FWD_HPP
 
 namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatrixUtils;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MatrixUtils;
 }
 
 #ifndef XPETRA_MATRIXUTILS_SHORT
 #define XPETRA_MATRIXUTILS_SHORT
 #endif
 
-#endif // XPETRA_MATRIXUTILS_FWD_HPP
+#endif  // XPETRA_MATRIXUTILS_FWD_HPP

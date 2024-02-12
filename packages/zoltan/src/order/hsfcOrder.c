@@ -98,7 +98,7 @@ int Zoltan_LocalHSFC_Order(
   ZOLTAN_ID_TYPE tmp, offset=0;
 
   int myrank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
+  MPI_Comm_rank(zoltan_get_global_comm(),&myrank);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 

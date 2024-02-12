@@ -489,6 +489,174 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
 
 }  // end iluk_numeric
 
+template <class ExecutionSpace, class IlukHandle, class ARowMapType,
+          class AEntriesType, class AValuesType, class LRowMapType,
+          class LEntriesType, class LValuesType, class URowMapType,
+          class UEntriesType, class UValuesType>
+void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
+                          const std::vector<IlukHandle *> &thandle_v,
+                          const std::vector<ARowMapType> &A_row_map_v,
+                          const std::vector<AEntriesType> &A_entries_v,
+                          const std::vector<AValuesType> &A_values_v,
+                          const std::vector<LRowMapType> &L_row_map_v,
+                          const std::vector<LEntriesType> &L_entries_v,
+                          std::vector<LValuesType> &L_values_v,
+                          const std::vector<URowMapType> &U_row_map_v,
+                          const std::vector<UEntriesType> &U_entries_v,
+                          std::vector<UValuesType> &U_values_v) {
+  using size_type               = typename IlukHandle::size_type;
+  using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
+  using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
+  using WorkViewType            = typename IlukHandle::work_view_t;
+  using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
+
+  // Create vectors for handles' data in streams
+  int nstreams = execspace_v.size();
+  std::vector<size_type> nlevels_v(nstreams);
+  std::vector<LevelHostViewType> lvl_ptr_h_v(nstreams);
+  std::vector<HandleDeviceEntriesType> lvl_idx_v(nstreams);  // device views
+  std::vector<nnz_lno_t> lvl_start_v(nstreams);
+  std::vector<nnz_lno_t> lvl_end_v(nstreams);
+  std::vector<WorkViewType> iw_v(nstreams);  // device views
+  std::vector<bool> stream_have_level_v(nstreams);
+
+  // Retrieve data from handles and find max. number of levels among streams
+  size_type nlevels_max = 0;
+  for (int i = 0; i < nstreams; i++) {
+    nlevels_v[i]           = thandle_v[i]->get_num_levels();
+    lvl_ptr_h_v[i]         = thandle_v[i]->get_host_level_ptr();
+    lvl_idx_v[i]           = thandle_v[i]->get_level_idx();
+    iw_v[i]                = thandle_v[i]->get_iw();
+    stream_have_level_v[i] = true;
+    if (nlevels_max < nlevels_v[i]) nlevels_max = nlevels_v[i];
+  }
+
+  // Assume all streams use the same algorithm
+  if (thandle_v[0]->get_algorithm() ==
+      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
+    // Main loop must be performed sequential
+    for (size_type lvl = 0; lvl < nlevels_max; lvl++) {
+      // Initial work across streams at each level
+      for (int i = 0; i < nstreams; i++) {
+        // Only do this if this stream has this level
+        if (lvl < nlevels_v[i]) {
+          lvl_start_v[i] = lvl_ptr_h_v[i](lvl);
+          lvl_end_v[i]   = lvl_ptr_h_v[i](lvl + 1);
+          if ((lvl_end_v[i] - lvl_start_v[i]) != 0)
+            stream_have_level_v[i] = true;
+          else
+            stream_have_level_v[i] = false;
+        } else
+          stream_have_level_v[i] = false;
+      }
+
+      // Main work of the level across streams
+      // 1. Launch work on all streams
+      for (int i = 0; i < nstreams; i++) {
+        // Launch only if stream i-th has this level
+        if (stream_have_level_v[i]) {
+          ILUKLvlSchedRPNumericFunctor<
+              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
+              LValuesType, URowMapType, UEntriesType, UValuesType,
+              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+              tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
+                   L_row_map_v[i], L_entries_v[i], L_values_v[i],
+                   U_row_map_v[i], U_entries_v[i], U_values_v[i], lvl_idx_v[i],
+                   iw_v[i], lvl_start_v[i]);
+          Kokkos::parallel_for(
+              "parfor_rp",
+              Kokkos::RangePolicy<ExecutionSpace>(execspace_v[i],
+                                                  lvl_start_v[i], lvl_end_v[i]),
+              tstf);
+        }  // end if (stream_have_level_v[i])
+      }    // end for streams
+    }      // end for lvl
+  }        // end SEQLVLSCHD_RP
+  else if (thandle_v[0]->get_algorithm() ==
+           KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+    using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
+
+    std::vector<LevelHostViewType> lvl_nchunks_h_v(nstreams);
+    std::vector<LevelHostViewType> lvl_nrowsperchunk_h_v(nstreams);
+    std::vector<nnz_lno_t> lvl_rowid_start_v(nstreams);
+    std::vector<int> team_size_v(nstreams);
+
+    for (int i = 0; i < nstreams; i++) {
+      lvl_nchunks_h_v[i]       = thandle_v[i]->get_level_nchunks();
+      lvl_nrowsperchunk_h_v[i] = thandle_v[i]->get_level_nrowsperchunk();
+      team_size_v[i]           = thandle_v[i]->get_team_size();
+    }
+
+    // Main loop must be performed sequential
+    for (size_type lvl = 0; lvl < nlevels_max; lvl++) {
+      // Initial work across streams at each level
+      nnz_lno_t lvl_nchunks_max = 0;
+      for (int i = 0; i < nstreams; i++) {
+        // Only do this if this stream has this level
+        if (lvl < nlevels_v[i]) {
+          lvl_start_v[i] = lvl_ptr_h_v[i](lvl);
+          lvl_end_v[i]   = lvl_ptr_h_v[i](lvl + 1);
+          if ((lvl_end_v[i] - lvl_start_v[i]) != 0) {
+            stream_have_level_v[i] = true;
+            lvl_rowid_start_v[i]   = 0;
+            if (lvl_nchunks_max < lvl_nchunks_h_v[i](lvl))
+              lvl_nchunks_max = lvl_nchunks_h_v[i](lvl);
+          } else
+            stream_have_level_v[i] = false;
+        } else
+          stream_have_level_v[i] = false;
+      }
+
+      // Main work of the level across streams -- looping through chunnks
+      for (int chunkid = 0; chunkid < lvl_nchunks_max; chunkid++) {
+        // 1. Launch work on all streams (for each chunk)
+        for (int i = 0; i < nstreams; i++) {
+          // Launch only if stream i-th has this level
+          if (stream_have_level_v[i]) {
+            // Launch only if stream i-th has this chunk
+            if (chunkid < lvl_nchunks_h_v[i](lvl)) {
+              // 1.a. Specify number of rows (i.e. number of teams) to launch
+              nnz_lno_t lvl_nrows_chunk = 0;
+              if ((lvl_rowid_start_v[i] + lvl_nrowsperchunk_h_v[i](lvl)) >
+                  (lvl_end_v[i] - lvl_start_v[i]))
+                lvl_nrows_chunk =
+                    (lvl_end_v[i] - lvl_start_v[i]) - lvl_rowid_start_v[i];
+              else
+                lvl_nrows_chunk = lvl_nrowsperchunk_h_v[i](lvl);
+
+              // 1.b. Create functor for stream i-th and launch
+              ILUKLvlSchedTP1NumericFunctor<
+                  ARowMapType, AEntriesType, AValuesType, LRowMapType,
+                  LEntriesType, LValuesType, URowMapType, UEntriesType,
+                  UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+                  tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
+                       L_row_map_v[i], L_entries_v[i], L_values_v[i],
+                       U_row_map_v[i], U_entries_v[i], U_values_v[i],
+                       lvl_idx_v[i], iw_v[i],
+                       lvl_start_v[i] + lvl_rowid_start_v[i]);
+              if (team_size_v[i] == -1)
+                Kokkos::parallel_for(
+                    "parfor_tp1",
+                    policy_type(execspace_v[i], lvl_nrows_chunk, Kokkos::AUTO),
+                    tstf);
+              else
+                Kokkos::parallel_for(
+                    "parfor_tp1",
+                    policy_type(execspace_v[i], lvl_nrows_chunk,
+                                team_size_v[i]),
+                    tstf);
+
+              // 1.c. Ready to move to next chunk
+              lvl_rowid_start_v[i] += lvl_nrows_chunk;
+            }  // end if (chunkid < lvl_nchunks_h_v[i](lvl))
+          }    // end if (stream_have_level_v[i])
+        }      // end for streams
+      }        // end for chunkid
+    }          // end for lvl
+  }            // end SEQLVLSCHD_TP1
+
+}  // end iluk_numeric_streams
+
 }  // namespace Experimental
 }  // namespace Impl
 }  // namespace KokkosSparse

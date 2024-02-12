@@ -208,7 +208,8 @@ namespace Intrepid2 {
              typename vinvValueType,        class ...vinvProperties>
     void
     Basis_HGRAD_QUAD_Cn_FEM::
-    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues( const typename DT::execution_space& space,
+                     Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                const EOperator operatorType ) {
@@ -221,7 +222,7 @@ namespace Intrepid2 {
       const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
       const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
       typedef typename inputPointViewType::value_type inputPointType;
 
@@ -231,7 +232,7 @@ namespace Intrepid2 {
 
       auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
       typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
-      workViewType  work(Kokkos::view_alloc("Basis_HGRAD_QUAD_Cn_FEM::getValues::work", vcprop), workSize, inputPoints.extent(0));
+      workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_QUAD_Cn_FEM::getValues::work", vcprop), workSize, inputPoints.extent(0));
 
       switch (operatorType) {
       case OPERATOR_VALUE: {

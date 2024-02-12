@@ -58,49 +58,45 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 
 namespace MueLu {
-  /*!
-    @class MergedBlockedMatrix
-    @brief Factory provides a merged version of a blocked matrix
-  */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class MergedBlockedMatrixFactory : public SingleLevelFactoryBase {
+/*!
+  @class MergedBlockedMatrix
+  @brief Factory provides a merged version of a blocked matrix
+*/
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class MergedBlockedMatrixFactory : public SingleLevelFactoryBase {
 #undef MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    MergedBlockedMatrixFactory();
+  MergedBlockedMatrixFactory();
 
-    virtual ~MergedBlockedMatrixFactory() { }
-    //@}
+  virtual ~MergedBlockedMatrixFactory() {}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level &currentLevel) const;
+  void DeclareInput(Level &currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
-    void Build(Level &currentLevel) const;
-    //@}
+  //! @name Build methods.
+  //@{
+  void Build(Level &currentLevel) const;
+  //@}
 
+ private:
+};  // class MergedBlockedMatrixFactory
 
-
-  private:
-
-
-  }; //class MergedBlockedMatrixFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
 

@@ -73,7 +73,7 @@ public:
   using val_type =
     typename std::remove_const<typename LocalSparseMatrixType::value_type>::type;
   using mag_type = typename ScalingFactorsViewType::non_const_value_type;
-  static_assert (ScalingFactorsViewType::Rank == 1,
+  static_assert (ScalingFactorsViewType::rank == 1,
                  "scalingFactors must be a rank-1 Kokkos::View.");
   using device_type = typename LocalSparseMatrixType::device_type;
 

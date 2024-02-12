@@ -97,15 +97,15 @@ typedef struct hypre_ParVector_struct hypre_ParVector;
 
 // The Python script that generates the ParameterMap needs to be after these typedefs
 typedef HYPRE_Int (*int_func)(HYPRE_Solver, HYPRE_Int);
-typedef HYPRE_Int (*double_func)(HYPRE_Solver, double);
-typedef HYPRE_Int (*double_int_func)(HYPRE_Solver, double, HYPRE_Int);
-typedef HYPRE_Int (*int_double_func)(HYPRE_Solver, HYPRE_Int, double);
+typedef HYPRE_Int (*double_func)(HYPRE_Solver, HYPRE_Real);
+typedef HYPRE_Int (*double_int_func)(HYPRE_Solver, HYPRE_Real, HYPRE_Int);
+typedef HYPRE_Int (*int_double_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Real);
 typedef HYPRE_Int (*int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int);
 typedef HYPRE_Int (*int_star_func)(HYPRE_Solver, HYPRE_Int*);
 typedef HYPRE_Int (*int_star_star_func)(HYPRE_Solver, HYPRE_Int**);
-typedef HYPRE_Int (*double_star_func)(HYPRE_Solver, double*);
-typedef HYPRE_Int (*int_int_double_double_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, double, double);
-typedef HYPRE_Int (*int_int_int_double_int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, HYPRE_Int, double, HYPRE_Int, HYPRE_Int);
+typedef HYPRE_Int (*double_star_func)(HYPRE_Solver, HYPRE_Real*);
+typedef HYPRE_Int (*int_int_double_double_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, HYPRE_Real, HYPRE_Real);
+typedef HYPRE_Int (*int_int_int_double_int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, HYPRE_Int, HYPRE_Real, HYPRE_Int, HYPRE_Int);
 typedef HYPRE_Int (*char_star_func)(HYPRE_Solver, char*);
 
 
@@ -131,36 +131,36 @@ namespace Ifpack2 {
       int_func_(hypreMapIntFunc_.at(funct_name)),
       int_param1_(param1) {}
 
-    //! Single double constructor.
-    FunctionParameter(Hypre_Chooser chooser, double_func funct, double param1):
+    //! Single HYPRE_Real constructor.
+    FunctionParameter(Hypre_Chooser chooser, double_func funct, HYPRE_Real param1):
       chooser_(chooser),
       option_(1),
       double_func_(funct),
       double_param1_(param1) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Real param1):
       chooser_(chooser),
       option_(1),
       double_func_(hypreMapDoubleFunc_.at(funct_name)),
       double_param1_(param1) {}
 
     //! Single double, single int constructor.
-    FunctionParameter(Hypre_Chooser chooser, double_int_func funct, double param1, HYPRE_Int param2):
+    FunctionParameter(Hypre_Chooser chooser, double_int_func funct, HYPRE_Real param1, HYPRE_Int param2):
       chooser_(chooser),
       option_(2),
       double_int_func_(funct),
       int_param1_(param2),
       double_param1_(param1) {}
 
-    //! Single int, single double constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_double_func funct, HYPRE_Int param1, double param2):
+    //! Single int, single HYPRE_Real constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_double_func funct, HYPRE_Int param1, HYPRE_Real param2):
       chooser_(chooser),
       option_(10),
       int_double_func_(funct),
       int_param1_(param1),
       double_param1_(param2) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, HYPRE_Int param2):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Real param1, HYPRE_Int param2):
       chooser_(chooser),
       option_(2),
       double_int_func_(hypreMapDoubleIntFunc_.at(funct_name)),
@@ -195,7 +195,7 @@ namespace Ifpack2 {
       int_star_func_(hypreMapIntStarFunc_.at(funct_name)),
       int_star_param_(param1) {}
 
-    //! Double pointer constructor.
+    //! HYPRE_Real pointer constructor.
     FunctionParameter(Hypre_Chooser chooser, double_star_func funct, double* param1):
       chooser_(chooser),
       option_(5),
@@ -209,7 +209,7 @@ namespace Ifpack2 {
       double_star_param_(param1) {}
 
     //! Two ints, two doubles constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_int_double_double_func funct, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
+    FunctionParameter(Hypre_Chooser chooser, int_int_double_double_func funct, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Real param3, HYPRE_Real param4):
       chooser_(chooser),
       option_(6),
       int_int_double_double_func_(funct),
@@ -218,7 +218,7 @@ namespace Ifpack2 {
       double_param1_(param3),
       double_param2_(param4) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Real param3, HYPRE_Real param4):
       chooser_(chooser),
       option_(6),
       int_int_double_double_func_(hypreMapIntIntDoubleDoubleFunc_.at(funct_name)),
@@ -240,8 +240,8 @@ namespace Ifpack2 {
       int_star_star_func_(hypreMapIntStarStarFunc_.at(funct_name)),
       int_star_star_param_(param1) {}
 
-    //! Five ints, one double constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_int_int_double_int_int_func funct, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
+    //! Five ints, one HYPRE_Real constructor.
+    FunctionParameter(Hypre_Chooser chooser, int_int_int_double_int_int_func funct, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, HYPRE_Real param4, HYPRE_Int param5, HYPRE_Int param6):
       chooser_(chooser),
       option_(8),
       int_int_int_double_int_int_func_(funct),
@@ -252,7 +252,7 @@ namespace Ifpack2 {
       int_param5_(param6),
       double_param1_(param4) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, HYPRE_Real param4, HYPRE_Int param5, HYPRE_Int param6):
       chooser_(chooser),
       option_(8),
       int_int_int_double_int_int_func_(hypreMapIntIntIntDoubleIntIntFunc_.at(funct_name)),
@@ -369,11 +369,11 @@ namespace Ifpack2 {
     HYPRE_Int int_param3_;
     HYPRE_Int int_param4_;
     HYPRE_Int int_param5_;
-    double double_param1_;
-    double double_param2_;
+    HYPRE_Real double_param1_;
+    HYPRE_Real double_param2_;
     HYPRE_Int *int_star_param_;
     HYPRE_Int **int_star_star_param_;
-    double *double_star_param_;
+    HYPRE_Real *double_star_param_;
     char *char_star_param_;
 
     static const std::map<std::string, int_func> hypreMapIntFunc_;

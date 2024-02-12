@@ -55,9 +55,164 @@
 #include "Teuchos_TwoDArray.hpp"
 
 #include "Teuchos_Reader.hpp"
+
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+#include "yaml-cpp/yaml.h"
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 #include "Teuchos_YAML.hpp"
 
+
 namespace Teuchos {
+
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+
+/* see https://github.com/jbeder/yaml-cpp/issues/261
+   there are times when we want to insist that a parameter
+   value be interpreted as a string despite it being parseable
+   as a number.
+   the standard way to do this in YAML is to put the number in quotes,
+   i.e. '1e-3' instead of 1e-3.
+   however, the usual YAML::Node::as<T> system doesn't respect quoting
+   when trying to cast to numbers.
+   so, this is our own version of as<T>, called quoted_as<T>, using
+   the Tag workaround suggested in the issue linked above. */
+
+template <typename T>
+struct QuotedAs {
+  static T eval(::YAML::Node const& node) {
+    // this "!" tag apparently denotes that the value was quoted
+    if (node.Tag() == "!") {
+      throw std::runtime_error("quoted_as from quoted string to number");
+    }
+    return node.as<T>();
+  }
+};
+
+template <>
+struct QuotedAs<std::string> {
+  // only a cast to string will succeed if quoted
+  static std::string eval(::YAML::Node const& node) { return node.as<std::string>(); }
+};
+
+template <typename T>
+static T quoted_as(::YAML::Node const& node) { return QuotedAs<T>::eval(node); }
+
+template<typename T>
+Teuchos::Array<T> getYamlArray(const ::YAML::Node& node)
+{
+  Teuchos::Array<T> arr;
+  for(::YAML::const_iterator it = node.begin(); it != node.end(); it++)
+  {
+    arr.push_back(quoted_as<T>(*it));
+  }
+  return arr;
+}
+
+bool checkYamlTwoDArrayIsRagged(const ::YAML::Node& node)
+{
+  bool ragged = false;
+  for (::YAML::const_iterator it = node.begin(); it != node.end(); ++it)
+  {
+    if (it->size() != node.begin()->size())
+    {
+      ragged=true;
+    }
+  }
+  return ragged;
+}
+
+template<typename T> Teuchos::TwoDArray<T> getYamlTwoDArray(const ::YAML::Node& node)
+{
+  Teuchos::TwoDArray<T> arr;
+  typename Teuchos::TwoDArray<T>::size_type i, j;
+  arr.resizeRows(node.size());
+  arr.resizeCols(node.begin()->size());
+  i = 0;
+  for (::YAML::const_iterator rit = node.begin(); rit != node.end(); ++rit)
+  {
+    j = 0;
+    for (::YAML::const_iterator cit = rit->begin(); cit != rit->end(); ++cit)
+    {
+      arr(i, j) = quoted_as<T>(*cit);
+      ++j;
+    }
+   ++i;
+  }
+  return arr;
+}
+
+int getYamlArrayDim(const ::YAML::Node& node)
+{
+  int ndim = 0;
+  if (node.Type() == ::YAML::NodeType::Sequence)
+  {
+    ++ndim;
+    if (node.begin()->Type() == ::YAML::NodeType::Sequence)
+    {
+      ++ndim;
+      if (node.begin()->begin()->Type() == ::YAML::NodeType::Sequence)
+      {
+        ++ndim;
+      }
+    }
+  }
+  return ndim;
+}
+
+template <typename tarray_t, typename T>
+tarray_t getYaml2DRaggedArray(::YAML::Node node, int ndim, std::string key)
+{
+  tarray_t base_arr;
+  if (ndim == 2) {
+    Teuchos::Array<T> sub_arr;
+    for (::YAML::const_iterator it1 = node.begin(); it1 != node.end(); ++it1) {
+      for (::YAML::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+        sub_arr.push_back(quoted_as<T>(*it2));
+      } base_arr.push_back(sub_arr);
+    sub_arr.clear();
+    }
+  }
+  else
+  {
+    throw YamlSequenceError(std::string("MDArray \"" + key + "\" must have dim 2."));
+  }
+  return base_arr;
+}
+
+// This handles the requested use case of a list of 2D arrays; further nesting would require a getYaml4DArray() function,
+// which could be straightforwardly implemented along the lines of the below function.
+
+template <typename tarray_t, typename T>
+tarray_t getYaml3DArray(::YAML::Node node, int ndim, std::string key)
+{
+  tarray_t base_arr;
+  if (ndim == 3) {
+    Teuchos::Array<Teuchos::Array<T>> sub_arr;
+    Teuchos::Array<T> sub_sub_arr;
+    for (::YAML::const_iterator it1 = node.begin(); it1 != node.end(); ++it1) {
+      for (::YAML::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+        for (::YAML::const_iterator it3 = it2->begin(); it3 != it2->end(); ++it3) {
+          sub_sub_arr.push_back(quoted_as<T>(*it3));
+        } sub_arr.push_back(sub_sub_arr);
+      sub_sub_arr.clear();
+      } base_arr.push_back(sub_arr);
+    sub_arr.clear();
+    }
+  }
+  else
+  {
+    throw YamlSequenceError(std::string("MDArray \"" + key + "\" must have dim 3."));
+  }
+  return base_arr;
+}
+
+template <typename T>
+void safe_set_entry(ParameterList& list, std::string const& name_in, T const& entry_in) {
+  TEUCHOS_TEST_FOR_EXCEPTION(list.isParameter(name_in), ParserFail,
+      "Parameter \"" << name_in << "\" already exists in list \"" << list.name() << "\"\n");
+  list.set(name_in, entry_in);
+}
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 std::string remove_trailing_whitespace(std::string const& in) {
   std::size_t new_end = 0;
@@ -910,7 +1065,7 @@ class Reader : public Teuchos::Reader {
     /* per Trilinos issue #2090, there can be trailing comments after the block
        scalar which are less indented than it, but they will be included in the
        final NEWLINE token.
-       this code removes all contiguous trailing lines which are less indented 
+       this code removes all contiguous trailing lines which are less indented
        than the content.
      */
     while (true) {
@@ -1076,36 +1231,285 @@ namespace YAMLParameterList
 
 Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text, const std::string& name)
 {
-  Teuchos::YAMLParameterList::Reader reader;
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+  auto yaml_input = ::YAML::LoadAll(text); // std::vector<::YAML::Node>
+  return readParams(yaml_input);
+#else
   any result;
+  Teuchos::YAMLParameterList::Reader reader;
   reader.read_string(result, text, name);
   ParameterList& pl = any_ref_cast<ParameterList>(result);
   return Teuchos::rcp(new ParameterList(pl));
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 }
 
 Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile)
 {
-  Teuchos::YAMLParameterList::Reader reader;
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+  auto yaml_input = ::YAML::LoadAllFromFile(yamlFile);
+  return readParams(yaml_input);
+#else
   any result;
+  Teuchos::YAMLParameterList::Reader reader;
   reader.read_file(result, yamlFile);
   ParameterList& pl = any_ref_cast<ParameterList>(result);
   return Teuchos::rcp(new ParameterList(pl));
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 }
 
 Teuchos::RCP<Teuchos::ParameterList> parseYamlStream(std::istream& yaml)
 {
-  Teuchos::YAMLParameterList::Reader reader;
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+  auto yaml_input = ::YAML::LoadAll(yaml);
+  return readParams(yaml_input);
+#else
   any result;
+  Teuchos::YAMLParameterList::Reader reader;
   reader.read_stream(result, yaml, "parseYamlStream");
   ParameterList& pl = any_ref_cast<ParameterList>(result);
   return Teuchos::rcp(new ParameterList(pl));
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 }
+
+// The following three functions (readParams, processMapNode, and processKeyValueNode)
+// were previously removed from Trilinos in PR 1779 (Teuchos: use Parser, not yaml-cpp, to read YAML PL).
+
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+
+Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<::YAML::Node>& lists)
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList); //pl is the root ParameterList to be returned
+  // If there is exactly one element in "lists", assume it is the anonymous top-level parameter list
+  // If there are more than one, place them all in the anonymous top-level list
+  for(size_t i = 0; i < lists.size(); i++)
+  {
+    processMapNode(lists[i], *pl, true);
+  }
+  return pl;
+}
+
+void processMapNode(const ::YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel)
+{
+  if (node.Type() != ::YAML::NodeType::Map)
+  {
+    throw YamlStructureError("All top-level elements of the YAML file must be maps.");
+  }
+  if (topLevel)
+  {
+    parent.setName(node.begin()->first.as<std::string>());
+    processMapNode(node.begin()->second, parent);
+  }
+  else
+  {
+    for (::YAML::const_iterator i = node.begin(); i != node.end(); i++)
+    {
+      // make sure the key type is a string
+      if(i->first.Type() != ::YAML::NodeType::Scalar)
+      {
+        throw YamlKeyError("Keys must be YAML scalars (int, double, or string)");
+      }
+      // if this conversion fails and throws for any reason (shouldn't), let the caller handle it
+      const std::string key = quoted_as<std::string>(i->first);
+      processKeyValueNode(key, i->second, parent, topLevel);
+    }
+  }
+}
+
+void processKeyValueNode(const std::string& key, const ::YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel)
+{
+  // node (value) type can be a map (for nested param lists),
+  // a scalar (int, double, string), or a sequence of doubles (vector<double>)
+  if(node.Type() == ::YAML::NodeType::Scalar)
+  {
+    try
+    {
+      safe_set_entry<int>(parent, key, quoted_as<int>(node));
+    }
+    catch(...)
+    {
+      try
+      {
+        safe_set_entry<long long>(parent, key, quoted_as<long long>(node));
+      }
+      catch(...)
+      {
+        try
+        {
+          safe_set_entry<double>(parent, key, quoted_as<double>(node));
+        }
+        catch(...)
+        {
+          try
+          {
+            bool raw_bool = quoted_as<bool>(node);
+
+            /* yaml-cpp parses ON/OFF as a bool, but the in-house parser does not.
+               To preserve backwards compatibility, make sure the string passes
+               the in-house parser's is_parseable_as<bool> function (which protects
+               against the ON/OFF case).
+               Otherwise, a failure is observed in YAML_ConvertFromXML unit test.*/
+
+            std::string raw_string = quoted_as<std::string>(node);
+            if (is_parseable_as<bool>(raw_string))
+            {
+              safe_set_entry<bool>(parent, key, raw_bool);
+            }
+            else
+            {
+              safe_set_entry<std::string>(parent, key, raw_string);
+            }
+          }
+          catch(...)
+          {
+            safe_set_entry<std::string>(parent, key, quoted_as<std::string>(node));
+          }
+        }
+      }
+    }
+  }
+  else if(node.Type() == ::YAML::NodeType::Map)
+  {
+    if(topLevel)
+    {
+      processMapNode(node, parent);
+    }
+    else
+    {
+      Teuchos::ParameterList& sublist = parent.sublist(key);
+      processMapNode(node, sublist);
+    }
+  }
+  else if(node.Type() == ::YAML::NodeType::Sequence)
+  {
+    int ndim = getYamlArrayDim(node);
+    if (ndim == 1)
+    {
+      ::YAML::Node const& first_value = *(node.begin());
+      try
+      {
+        quoted_as<int>(first_value);
+        safe_set_entry<Teuchos::Array<int>>(parent, key, getYamlArray<int>(node));
+      }
+      catch(...)
+      {
+        try
+        {
+          quoted_as<double>(first_value);
+          safe_set_entry<Teuchos::Array<double>>(parent, key, getYamlArray<double>(node));
+        }
+        catch(...)
+        {
+          try
+          {
+            quoted_as<std::string>(first_value);
+            safe_set_entry<Teuchos::Array<std::string>>(parent, key, getYamlArray<std::string>(node));
+          }
+          catch(...)
+          {
+            throw YamlSequenceError(std::string("Array \"") + key + "\" must contain int, double, bool or string");
+          }
+        }
+      }
+    }
+    else if (ndim == 2)
+    {
+      bool is_ragged = checkYamlTwoDArrayIsRagged(node);
+      ::YAML::Node const& first_value = *(node.begin()->begin());
+      try
+      {
+        quoted_as<int>(first_value);
+        using arr_t = Teuchos::Array<Teuchos::Array<int>>;
+        if (is_ragged) {
+          safe_set_entry<arr_t>(parent, key, getYaml2DRaggedArray<arr_t, int>(node, ndim, key));
+        } else {
+          safe_set_entry<Teuchos::TwoDArray<int>>(parent, key, getYamlTwoDArray<int>(node));
+        }
+      }
+      catch(...)
+      {
+        try
+        {
+          quoted_as<double>(first_value);
+          using arr_t = Teuchos::Array<Teuchos::Array<double>>;
+          if (is_ragged) {
+            safe_set_entry<arr_t>(parent, key, getYaml2DRaggedArray<arr_t, double>(node, ndim, key));
+          } else {
+            safe_set_entry<Teuchos::TwoDArray<double>>(parent, key, getYamlTwoDArray<double>(node));
+          }
+        }
+        catch(...)
+        {
+          try
+          {
+            quoted_as<std::string>(first_value);
+            using arr_t = Teuchos::Array<Teuchos::Array<std::string>>;
+            if (is_ragged) {
+              safe_set_entry<arr_t>(parent, key, getYaml2DRaggedArray<arr_t, std::string>(node, ndim, key));
+            } else {
+              safe_set_entry<Teuchos::TwoDArray<std::string>>(parent, key, getYamlTwoDArray<std::string>(node));
+            }
+          }
+          catch(...)
+          {
+            throw YamlSequenceError(std::string("TwoDArray \"") + key + "\" must contain int, double, bool or string");
+          }
+        }
+      }
+    }
+    else if (ndim == 3)
+    {
+      ::YAML::Node const& first_value = *(node.begin()->begin()->begin());
+      try
+      {
+        quoted_as<int>(first_value);
+        using arr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<int>>>;
+        safe_set_entry<arr_t>(parent, key, getYaml3DArray<arr_t, int>(node, ndim, key));
+      }
+      catch(...)
+      {
+        try
+        {
+          quoted_as<double>(first_value);
+          using arr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<double>>>;
+          safe_set_entry<arr_t>(parent, key, getYaml3DArray<arr_t, double>(node, ndim, key));
+
+        }
+        catch(...)
+        {
+          try
+          {
+            quoted_as<std::string>(first_value);
+            using arr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<std::string>>>;
+            safe_set_entry<arr_t>(parent, key, getYaml3DArray<arr_t, std::string>(node, ndim, key));
+
+          }
+          catch(...)
+          {
+            throw YamlSequenceError(std::string("3DArray \"") + key + "\" must contain int, double, bool or string");
+          }
+        }
+      }
+    }
+  }
+  else if(node.Type() == ::YAML::NodeType::Null)
+  {
+    // treat NULL as empty sublist (not an error)
+    parent.sublist(key);
+  }
+  else
+  {
+    // Undefined
+    throw YamlUndefinedNodeError("Value type in a key-value pair must be one of: int, double, string, array, sublist.");
+  }
+}
+
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
 
 void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
 {
-  //warn the user if floats/doubles with integer values will be printed incorrectly
+  // warn the user if floats/doubles with integer values will be printed incorrectly
   std::ios_base::fmtflags flags = yaml.flags();
-  //make temporary stringstream to test flags
+  // make temporary stringstream to test flags
   std::ostringstream testStream;
   testStream.flags(flags);
   double testVal = 1;
@@ -1113,10 +1517,10 @@ void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
   bool popFlags = false;
   if(testStream.str() == "1")
   {
-    //must add showpoint to flags while writing yaml
-    //this will always disambiguate (double) n and n, even if stream precision is 0
-    //prints as "n.0000" where the number of trailing zeros is the stream precision
-    //note: in YAML, "5." is a double but not an int
+    // must add showpoint to flags while writing yaml
+    // this will always disambiguate (double) n and n, even if stream precision is 0
+    // prints as "n.0000" where the number of trailing zeros is the stream precision
+    // note: in YAML, "5." is a double but not an int
     std::cout << "Warning: yaml stream format flags would confuse double with integer value with int.\n";
     std::cout << "Setting std::ios::showpoint on the stream to fix this (will restore flags when done)\n";
     std::ios_base::fmtflags flagsCopy = flags;
@@ -1134,7 +1538,7 @@ void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
     writeParameterList(pl, yaml, 2);
   }
   yaml << "...\n";
-  //restore flags
+  // restore flags
   if(popFlags)
   {
     yaml.flags(flags);

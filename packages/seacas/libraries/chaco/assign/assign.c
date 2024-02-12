@@ -1,25 +1,26 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
+#include "defs.h"
 #include "structs.h"
 #include <stdio.h> // for printf
 
 void assign(struct vtx_data **graph,        /* data structure with vtx weights */
-            double **         yvecs,        /* ptr to list of y-vectors (lengths nvtxs+1) */
+            double          **yvecs,        /* ptr to list of y-vectors (lengths nvtxs+1) */
             int               nvtxs,        /* number of vertices in graph */
             int               ndims,        /* number of vectors for dividing */
             int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
             int               nsets,        /* number of sets to divide into */
-            double *          wsqrt,        /* sqrt of vertex weights */
-            int *             sets,         /* processor assignment for my vtxs */
-            int *             active,       /* space for nvtxs integers */
+            double           *wsqrt,        /* sqrt of vertex weights */
+            int              *sets,         /* processor assignment for my vtxs */
+            int              *active,       /* space for nvtxs integers */
             int               mediantype,   /* which partitioning strategy to use */
-            double *          goal,         /* desired set sizes */
+            double           *goal,         /* desired set sizes */
             int               vwgt_max      /* largest vertex weight */
 )
 {
@@ -28,9 +29,6 @@ void assign(struct vtx_data **graph,        /* data structure with vtx weights *
   double     theta, phi, gamma; /* angles for optimal rotation */
   double     temp;
   int        using_vwgts; /* are vertex weights active? */
-  double     tri_prod();
-  double     opt2d();
-  void       y2x(), mapper(), rotate2d(), opt3d(), rotate3d();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering assign, nvtxs = %d, ndims = %d>\n", nvtxs, ndims);

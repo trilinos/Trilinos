@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,7 +38,7 @@ namespace Ioss {
 namespace Ioexnl {
   using EntityIdSet = std::set<std::pair<int64_t, int64_t>>;
   using SideSetSet  = std::set<std::string>;
-  using SideSetMap  = std::map<std::string, const std::string, std::less<const std::string>>;
+  using SideSetMap  = std::map<std::string, const std::string, std::less<>>;
 
   using NameTopoKey = std::pair<std::string, const Ioss::ElementTopology *>;
   struct IOEXNL_EXPORT NameTopoKeyCompare

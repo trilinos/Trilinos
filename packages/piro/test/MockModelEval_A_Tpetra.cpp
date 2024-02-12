@@ -679,6 +679,7 @@ void MockModelEval_A_Tpetra::evalModelImpl(
       // W(x, x_dot) = beta * W(x) - alpha * Id
       const Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =
         Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(W_out, true);
+      W_out_crs->resumeFill();
       W_out_crs->scale(beta);
 
       const double diag = -alpha;

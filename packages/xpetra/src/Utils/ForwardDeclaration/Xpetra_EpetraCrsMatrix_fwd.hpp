@@ -49,11 +49,12 @@
 #include <Epetra_ConfigDefs.h>
 
 namespace Xpetra {
-  template<class GO, class NO> class EpetraCrsMatrixT;
+template <class GO, class NO>
+class EpetraCrsMatrixT;
 }
 
 #ifndef XPETRA_EPETRACRSMATRIX_SHORT
 #define XPETRA_EPETRACRSMATRIX_SHORT
 #endif
 
-#endif // XPETRA_EPETRACRSMATRIX_FWD_HPP
+#endif  // XPETRA_EPETRACRSMATRIX_FWD_HPP

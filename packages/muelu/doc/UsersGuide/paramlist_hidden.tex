@@ -95,6 +95,8 @@
         
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
         
+\cbb{aggregation: use ml scaling of drop tol}{bool}{false}{Enables ML-style scaling of drop tol, where the drop tol halves with each successive level.}
+        
 \cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
         
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
@@ -138,7 +140,11 @@
         
 \cbb{aggregation: enable phase 3}{bool}{true}{Turn on/off phase 3 of aggregation}
         
+\cbb{aggregation: match ML phase1}{bool}{false}{Match ML's phase 1. In particular, setting this to true will ignore boundary neighbors in trying to pick root nodes.}
+        
 \cbb{aggregation: match ML phase2a}{bool}{false}{Match ML's phase 2a. In particular, setting this to true will include the root node into the tentative aggregates in phase 2a.}
+        
+\cbb{aggregation: match ML phase2b}{bool}{false}{Match ML's phase 2b.}
         
 \cbb{aggregation: phase2a agg factor}{double}{0.5}{Agg factor for Phase 2a sizes}
         
@@ -279,6 +285,8 @@
         
 \cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
         
+\cbb{sa: eigen-analysis type}{string}{power-method}{Algorithm for eigen-analysis for SA.  Options: "power-method" (default) or "cg".}
+        
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         
 \cbb{sa: use rowsumabs diagonal scaling}{bool}{false}{Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.}
@@ -297,6 +305,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{sa: rowsumabs replace single entry row with zero}{bool}{true}{If a row has a single entry, set the inverse of the diagonal entry to be zero.}
         
 \cbb{replicate: npdes}{int}{1}{ Used with multigrid algorithm 'replicate' to transform scalar prolongator to one  for PDE systems with npdes dofs per node. }
+        
+\cbb{combine: numBlks}{int}{1}{ Used with multigrid algorithm 'combine' to combine multiple sub-block prolongators into one  for PDE systems (numBlks x numBlks). }
         
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
@@ -385,6 +395,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
         
+\cbb{repartition: explicit via new copy rebalance P and R}{bool}{false}{Fully explicit rebalancing of R and P during setup that makes new copy and invokes fill copy.  Slowest rebalancing option, but needed by combine mg algo.}
+        
 \cbb{repartition: rebalance Nullspace}{bool}{true}{Rebalancing of Nullspace during the setup.}
         
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
@@ -434,6 +446,8 @@ optimized neighbor discovery for Importer construction.}
 \cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
         
 \cbb{maxwell1: dump matrices}{bool}{false}{Dump matrices to disk.}
+        
+\cbb{maxwell1: nodal smoother fix zero diagonal threshold}{double}{1e-10}{Specifies the fix zero diagonals threshold to be used for the nodal smoothing matrices.}
         
 \cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
         

@@ -36,7 +36,7 @@ typedef std::map<std::string,std::vector<std::string>> PartnamePhasenameMap;
 
 struct LS_Field
 {
-  LS_Field(const std::string & name_, const Surface_Identifier & identifier_, const FieldRef isovar_, const double isoval_, const LevelSet * const ptr_, const CDFEM_Inequality_Spec * const deathPtr_ = nullptr)
+  LS_Field(const std::string & name_, const Surface_Identifier & identifier_, const FieldRef isovar_, const double isoval_, const LevelSet * const ptr_ = nullptr, const CDFEM_Inequality_Spec * const deathPtr_ = nullptr)
     : name(name_), identifier(identifier_), isovar(isovar_), isoval(isoval_), ptr(ptr_), deathPtr(deathPtr_) {
     STK_ThrowRequireMsg(isovar_.valid(), "Invalid field " + isovar_.name() + " used in CDFEM initialization");
   }
@@ -78,6 +78,9 @@ public:
   stk::mesh::Selector get_negative_levelset_interface_selector(const Surface_Identifier levelSetIdentifier) const;
   stk::mesh::Selector get_negative_levelset_block_selector(const Surface_Identifier levelSetIdentifier) const;
 
+  std::vector<unsigned> get_levelset_decomposed_block_ordinals(const Surface_Identifier levelSetIdentifier) const;
+  stk::mesh::Selector get_levelset_decomposed_blocks_selector(const Surface_Identifier levelSetIdentifier) const;
+
   void check_phase_parts() const;
 
   bool phases_defined() const { return !my_phase_parts.empty(); }
@@ -95,13 +98,13 @@ public:
   bool is_interface(const stk::mesh::Part * io_part) const;
   const stk::mesh::Part * find_conformal_io_part(const stk::mesh::Part & io_part, const PhaseTag & phase) const;
   const stk::mesh::Part * find_nonconformal_part(const stk::mesh::Part & io_part) const;
+  const stk::mesh::Part * find_original_part(const stk::mesh::Part & io_part) const;
   const stk::mesh::Part * find_interface_part(const stk::mesh::Part & vol0, const stk::mesh::Part & vol1) const;
   const PhaseTag & get_iopart_phase(const stk::mesh::Part & io_part) const;
 
   void add_decomposed_part(const stk::mesh::Part & part) { all_decomposed_blocks_selector |= part; }
   const stk::mesh::Selector & get_all_decomposed_blocks_selector() const { return all_decomposed_blocks_selector; }
 
-  stk::mesh::Selector get_interface_part_selector(const LS_Field & ls_field);
   void register_blocks_for_level_set(const Surface_Identifier levelSetIdentifier,
       const std::vector<stk::mesh::Part *> & blocks_decomposed_by_ls);
   stk::mesh::Selector get_all_conformal_surfaces_selector() const;
@@ -173,6 +176,7 @@ private:
   PartToBoolMap part_is_conformal_map;
   PartToBoolMap part_is_nonconformal_map;
   PartToPartMap part_to_nonconformal_part_map;
+  PartToPartMap nonconformal_to_original_part_map;
   PartToPhaseTagMap part_to_phase_map;
 
   stk::mesh::Selector all_decomposed_blocks_selector;

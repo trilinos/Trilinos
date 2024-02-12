@@ -74,7 +74,8 @@
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 
-#ifdef __INTEL_COMPILER
+// Needs to be reassessed with OneAPI?
+#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER))
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 

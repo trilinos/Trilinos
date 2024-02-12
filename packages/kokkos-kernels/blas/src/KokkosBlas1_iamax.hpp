@@ -26,17 +26,29 @@ namespace KokkosBlas {
 /// \brief Return the (smallest) index of the element of the maximum magnitude
 /// of the vector x.
 ///
+/// \tparam execution_space a Kokkos execution space where the kernel will run.
 /// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
 ///
+/// \param space [in] execution space instance where the kernel will run.
 /// \param x [in] Input 1-D View.
 ///
 /// \return The (smallest) index of the element of the maximum magnitude; a
 /// single value.
 ///         Note: Returned index is 1-based for compatibility with Fortran.
-template <class XVector>
-typename XVector::size_type iamax(const XVector& x) {
+template <class execution_space, class XVector,
+          typename std::enable_if<Kokkos::is_execution_space_v<execution_space>,
+                                  int>::type = 0>
+typename XVector::size_type iamax(const execution_space& space,
+                                  const XVector& x) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+                "KokkosBlas::iamax: execution_space must be a valid Kokkos "
+                "execution space");
   static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::iamax: XVector must be a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XVector::memory_space>::accessible,
+      "KokkosBlas::iamax: XVector must be accessible from execution_space");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::iamax: "
                 "Both Vector inputs must have rank 1.");
@@ -49,39 +61,71 @@ typename XVector::size_type iamax(const XVector& x) {
       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVector_Internal;
 
-  typedef Kokkos::View<index_type, typename XVector_Internal::array_layout,
-                       Kokkos::HostSpace,
+  using layout_t = typename XVector_Internal::array_layout;
+
+  typedef Kokkos::View<index_type, layout_t, Kokkos::HostSpace,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RVector_Internal;
 
   index_type result;
-  RVector_Internal R = RVector_Internal(&result);
+  RVector_Internal R = RVector_Internal(&result, layout_t());
   XVector_Internal X = x;
 
-  Impl::Iamax<RVector_Internal, XVector_Internal>::iamax(R, X);
-  Kokkos::fence();
+  Impl::Iamax<execution_space, RVector_Internal, XVector_Internal>::iamax(space,
+                                                                          R, X);
+  space.fence();
   return result;
+}
+
+/// \brief Return the (smallest) index of the element of the maximum magnitude
+/// of the vector x.
+///
+/// The kernel is executed in the default stream/queue associated
+/// with the execution space of XVector.
+///
+/// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
+///
+/// \param x [in] Input 1-D View.
+///
+/// \return The (smallest) index of the element of the maximum magnitude; a
+/// single value.
+///         Note: Returned index is 1-based for compatibility with Fortran.
+template <class XVector>
+typename XVector::size_type iamax(const XVector& x) {
+  return iamax(typename XVector::execution_space{}, x);
 }
 
 /// \brief R(j) = iamax(X(i,j))
 ///
 /// Replace each entry in R with the (smallest) index of the element of the
 /// maximum magnitude of the corresponding entry in X.
+/// This function is non-blocking and thread-safe.
 ///
 /// \tparam RMV 0-D or 1-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
 ///
+/// \param space [in] execution space instance where the kernel will run.
+/// \param R [out] Output View (rank 0 or 1) containing the results.
+/// \param X [in] Input View (rank 1 or 2).
+///
 /// Note for TPL cuBLAS: When TPL cuBLAS iamax is used and returns result to a
 /// view, RMV must be 0-D view and XMV must be 1-D view.
-template <class RV, class XMV>
-void iamax(const RV& R, const XMV& X,
+template <class execution_space, class RV, class XMV>
+void iamax(const execution_space& space, const RV& R, const XMV& X,
            typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+                "KokkosBlas::iamax: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::iamax: "
                 "R is not a Kokkos::View.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::iamax: "
                 "X is not a Kokkos::View.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::iamax: XMV must be accessible from execution_space.");
   static_assert(std::is_same<typename RV::value_type,
                              typename RV::non_const_value_type>::value,
                 "KokkosBlas::iamax: R is const.  "
@@ -135,7 +179,27 @@ void iamax(const RV& R, const XMV& X,
   RV_Internal R_internal  = R;
   XMV_Internal X_internal = X;
 
-  Impl::Iamax<RV_Internal, XMV_Internal>::iamax(R_internal, X_internal);
+  Impl::Iamax<execution_space, RV_Internal, XMV_Internal>::iamax(
+      space, R_internal, X_internal);
+}
+
+/// \brief R(j) = iamax(X(i,j))
+///
+/// Replace each entry in R with the (smallest) index of the element of the
+/// maximum magnitude of the corresponding entry in X.
+/// This function is non-blocking and thread-safe.
+/// The kernel is executed in the default stream/queue associated
+/// with the execution space of XVector.
+///
+/// \tparam RMV 0-D or 1-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+///
+/// Note for TPL cuBLAS: When TPL cuBLAS iamax is used and returns result to a
+/// view, RMV must be 0-D view and XMV must be 1-D view.
+template <class RV, class XMV>
+void iamax(const RV& R, const XMV& X,
+           typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  iamax(typename XMV::execution_space{}, R, X);
 }
 
 }  // namespace KokkosBlas

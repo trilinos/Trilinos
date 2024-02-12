@@ -15,7 +15,6 @@ class Mesh;
 template <typename T>
 class VariableSizeField : public impl::FieldBase
 {
- 
 
   public:
     VariableSizeField(const FieldShape& fshape, const impl::EntityCount count, std::shared_ptr<Mesh> mesh)
@@ -88,6 +87,11 @@ class VariableSizeField : public impl::FieldBase
 
     std::shared_ptr<Mesh> get_mesh() const { return m_mesh; }
 
+    StorageUsage get_storage_usage() const
+    {
+      return m_fields[0].get_storage_usage() + m_fields[1].get_storage_usage() + m_fields[2].get_storage_usage();
+    }
+
   protected:
     void add_entity(int dim) override { m_fields[dim].add_entity(); }
 
@@ -123,6 +127,13 @@ VariableSizeFieldPtr<T> create_variable_size_field(std::shared_ptr<Mesh> mesh, c
   mesh->attach_field(field);
 
   return field;
+}
+
+template <typename T>
+double compute_storage_efficiency(VariableSizeFieldPtr<T> field)
+{
+  StorageUsage usage = field->get_storage_usage();
+  return double(usage.numUsed)/std::max(usage.numAllocated, size_t(1));
 }
 
 } // namespace mesh

@@ -62,18 +62,18 @@ namespace Compat {
 // This KokkosClassic namespace is used for getting the DefaultNode in some classes
 namespace KokkosClassic {
 
-  namespace Details {
-} //namespace Details
+namespace Details {
+}  // namespace Details
 
-  class DefaultNode {
-    public:
-# ifdef EPETRA_HAVE_OMP
-    typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode DefaultNodeType;
-# else
-    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode DefaultNodeType;
-# endif
-  };
+class DefaultNode {
+ public:
+#ifdef EPETRA_HAVE_OMP
+  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode DefaultNodeType;
+#else
+  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode DefaultNodeType;
+#endif
+};
 
-}
+}  // namespace KokkosClassic
 
 #endif

@@ -55,7 +55,6 @@
 #include "Thyra_RowStatLinearOpBase.hpp"
 #include "Teuchos_Assert.hpp"
 
-
 NOX::RowSumScaling::
 RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& inv_row_sum_vec,
           ENOX_WhenToUpdateScaling s) :
@@ -96,6 +95,10 @@ computeScaling(const NOX::Solver::Generic& solver)
 
   RCP<const NOX::Thyra::Group> thyra_group =
     rcp_dynamic_cast<const NOX::Thyra::Group>(group);
+
+  if (thyra_group.is_null()) {
+    thyra_group = Teuchos::rcp_dynamic_cast<const NOX::Thyra::Group>(group->getNestedGroup(),true);
+  }
 
   if (!thyra_group->isJacobian()) {
     RCP<NOX::Thyra::Group> tmp_nox_thyra_group =

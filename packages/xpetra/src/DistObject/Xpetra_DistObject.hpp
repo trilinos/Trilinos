@@ -57,87 +57,84 @@
 
 namespace Xpetra {
 
-  template <class Packet,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-  class DistObject
-    : virtual public Teuchos::Describable
-  {
+template <class Packet,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class DistObject
+  : virtual public Teuchos::Describable {
+ public:
+  //! @name Constructor/Destructor Methods
+  //@{
 
-  public:
+  //! Destructor.
+  virtual ~DistObject() {}
 
-    //! @name Constructor/Destructor Methods
-    //@{
+  //@}
 
-    //! Destructor.
-    virtual ~DistObject() { }
+  //! @name Public methods for redistributing data
+  //@{
 
-   //@}
+  //! Import data into this object using an Import object ("forward mode").
+  virtual void doImport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) = 0;
 
-    //! @name Public methods for redistributing data
-    //@{
+  //! Import data into this object using an Import object ("forward mode").
+  virtual void beginImport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) { doImport(source, importer, CM); };
 
-    //! Import data into this object using an Import object ("forward mode").
-    virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
+  //! Import data into this object using an Import object ("forward mode").
+  virtual void endImport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM){};
 
-    //! Import data into this object using an Import object ("forward mode").
-    virtual void beginImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { doImport(source, importer, CM); };
+  //! Export data into this object using an Export object ("forward mode").
+  virtual void doExport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM) = 0;
 
-    //! Import data into this object using an Import object ("forward mode").
-    virtual void endImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { };
+  //! Export data into this object using an Export object ("forward mode").
+  virtual void beginExport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM) { doExport(source, exporter, CM); };
 
-    //! Export data into this object using an Export object ("forward mode").
-    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
+  //! Export data into this object using an Export object ("forward mode").
+  virtual void endExport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM){};
 
-    //! Export data into this object using an Export object ("forward mode").
-    virtual void beginExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { doExport(source, exporter, CM); };
+  //! Import data into this object using an Export object ("reverse mode").
+  virtual void doImport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM) = 0;
 
-    //! Export data into this object using an Export object ("forward mode").
-    virtual void endExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { };
+  //! Import data into this object using an Export object ("reverse mode").
+  virtual void beginImport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM) { doImport(source, exporter, CM); };
 
-    //! Import data into this object using an Export object ("reverse mode").
-    virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
+  //! Import data into this object using an Export object ("reverse mode").
+  virtual void endImport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM){};
 
-    //! Import data into this object using an Export object ("reverse mode").
-    virtual void beginImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { doImport(source, exporter, CM); };
+  //! Export data into this object using an Import object ("reverse mode").
+  virtual void doExport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) = 0;
 
-    //! Import data into this object using an Export object ("reverse mode").
-    virtual void endImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { };
+  //! Export data into this object using an Import object ("reverse mode").
+  virtual void beginExport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) { doExport(source, importer, CM); };
 
-    //! Export data into this object using an Import object ("reverse mode").
-    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)=0;
+  //! Export data into this object using an Import object ("reverse mode").
+  virtual void endExport(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> &source, const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM){};
 
-    //! Export data into this object using an Import object ("reverse mode").
-    virtual void beginExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { doExport(source, importer, CM); };
+  //@}
 
-    //! Export data into this object using an Import object ("reverse mode").
-    virtual void endExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { };
+  //! @name Attribute accessor methods
+  //@{
 
-    //@}
+  //! The Map describing the parallel distribution of this object.
+  virtual Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const = 0;
 
-    //! @name Attribute accessor methods
-    //@{
+  //@}
 
-    //! The Map describing the parallel distribution of this object.
-    virtual Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const = 0;
+  //! @name Implementation of Teuchos::Describable
+  //@{
 
-    //@}
+  //! One-line descriptiion of this object.
+  virtual std::string description() const = 0;
 
-    //! @name Implementation of Teuchos::Describable
-    //@{
+  //! Print a descriptiion of this object to the given output stream.
+  virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const = 0;
 
-    //! One-line descriptiion of this object.
-    virtual std::string description() const = 0;
+  //@}
 
-    //! Print a descriptiion of this object to the given output stream.
-    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
+};  // DistObject class
 
-    //@}
-
-  }; // DistObject class
-
-} // Xpetra namespace
+}  // namespace Xpetra
 
 #define XPETRA_DISTOBJECT_SHORT
-#endif // XPETRA_DISTOBJECT_HPP
+#endif  // XPETRA_DISTOBJECT_HPP

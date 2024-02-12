@@ -135,19 +135,6 @@ stk::balance::GraphEdge create_graph_edge(const stk::mesh::BulkData &bulk,
   return stk::balance::GraphEdge(element1, element2Id, vertex2ParallelOwner, edgeWeight);
 }
 
-bool should_create_graph_edge(const stk::mesh::BulkData &bulk,
-                              const stk::mesh::Selector& selector,
-                              const stk::balance::BalanceSettings &balanceSettings,
-                              const stk::mesh::Entity & element1,
-                              const stk::mesh::Entity & element2)
-{
-  const bool isValidGraphEdge = is_valid_graph_connectivity(bulk, selector, balanceSettings, element1, element2);
-  const bool notSpiderElement1 = !stk::balance::internal::should_omit_spider_element(bulk, balanceSettings, element1);
-  const bool notSpiderElement2 = !stk::balance::internal::should_omit_spider_element(bulk, balanceSettings, element2);
-
-  return isValidGraphEdge && notSpiderElement1 && notSpiderElement2;
-}
-
 void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkData& stkMeshBulkData,
                                                           const stk::balance::BalanceSettings &balanceSettings,
                                                           const std::vector<stk::balance::GraphEdge> &graphEdges,
@@ -231,7 +218,7 @@ public:
           bool considerOnlySelectedOwnedElement = (m_bulk.bucket(possiblyConnectedElement).owned() &&
                                                    m_selector(m_bulk.bucket(possiblyConnectedElement)));
           if (considerOnlySelectedOwnedElement) {
-            if (should_create_graph_edge(m_bulk, m_selector, m_balanceSettings, elementOfConcern, possiblyConnectedElement)) {
+            if (is_valid_graph_connectivity(m_bulk, m_selector, m_balanceSettings, elementOfConcern, possiblyConnectedElement)) {
               graphEdges.push_back(create_graph_edge(m_bulk, m_balanceSettings, m_localIds, elementOfConcern, possiblyConnectedElement));
             }
           }
@@ -245,14 +232,14 @@ public:
             const stk::mesh::EntityId elementOfConcernId = m_bulk.identifier(elementOfConcern);
             const stk::mesh::EntityId possiblyConnectedElementId = m_bulk.identifier(possiblyConnectedElement);
             if (elementOfConcernId < possiblyConnectedElementId) {
-              if (should_create_graph_edge(m_bulk, m_selector, m_balanceSettings, elementOfConcern, possiblyConnectedElement)) {
+              if (is_valid_graph_connectivity(m_bulk, m_selector, m_balanceSettings, elementOfConcern, possiblyConnectedElement)) {
                 graphEdges.emplace_back(create_graph_edge(m_bulk, m_balanceSettings, elementOfConcern, possiblyConnectedElement));
                 graphEdges.emplace_back(create_graph_edge(m_bulk, m_balanceSettings, possiblyConnectedElement, elementOfConcern));
               }
             }
           }
           else {
-            if (should_create_graph_edge(m_bulk, m_selector, m_balanceSettings, elementOfConcern, possiblyConnectedElement)) {
+            if (is_valid_graph_connectivity(m_bulk, m_selector, m_balanceSettings, elementOfConcern, possiblyConnectedElement)) {
               graphEdges.emplace_back(create_graph_edge(m_bulk, m_balanceSettings, elementOfConcern, possiblyConnectedElement));
             }
           }
@@ -311,27 +298,25 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
         unsigned local_id = stk::balance::internal::get_local_id(localIds, elementOfConcern);
         mVertexIds[local_id] = getAdjacencyId(stkMeshBulkData, elementOfConcern, useLocalIds, localIds);
 
-        if (not stk::balance::internal::should_omit_spider_element(stkMeshBulkData, balanceSettings, elementOfConcern)) {
-          if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONSTANT) {
-            mVertexWeights[local_id] = 1;
-          }
-          else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::TOPOLOGY) {
-            mVertexWeights[local_id] = balanceSettings.getGraphVertexWeight(bucket.topology());
-          }
-          else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONNECTIVITY) {
-            const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(stkMeshBulkData);
-            mVertexWeights[local_id] = *stk::mesh::field_data(connectivityWeights, elementOfConcern);
-          }
-          else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::FIELD) {
-            mVertexWeights[local_id] = 0; //real field weights set in adjust_vertex_weights
-          }
-          else {
-            STK_ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
-          }
-
-          stk::balance::internal::fillEntityCentroid(stkMeshBulkData, coord, elementOfConcern, &mVertexCoordinates[local_id*spatialDimension]);
-          graphEdgeCreator.create_graph_edges_for_element(elementOfConcern, graphEdges);
+        if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONSTANT) {
+          mVertexWeights[local_id] = 1;
         }
+        else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::TOPOLOGY) {
+          mVertexWeights[local_id] = balanceSettings.getGraphVertexWeight(bucket.topology());
+        }
+        else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONNECTIVITY) {
+          const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(stkMeshBulkData);
+          mVertexWeights[local_id] = *stk::mesh::field_data(connectivityWeights, elementOfConcern);
+        }
+        else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::FIELD) {
+          mVertexWeights[local_id] = 0; //real field weights set in adjust_vertex_weights
+        }
+        else {
+          STK_ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
+        }
+
+        stk::balance::internal::fillEntityCentroid(stkMeshBulkData, coord, elementOfConcern, &mVertexCoordinates[local_id*spatialDimension]);
+        graphEdgeCreator.create_graph_edges_for_element(elementOfConcern, graphEdges);
       }
     }
   }

@@ -50,6 +50,11 @@ void fixup_ghosted_to_shared_nodes(BulkData& bulk);
 // Helper functions:
 void find_ghosted_nodes_that_need_to_be_shared(const BulkData & bulk, stk::mesh::EntityVector& ghosted_nodes_that_are_now_shared);
 
+void cleanup_all_downward_orphan_entities(BulkData& bulk, stk::mesh::EntityRank maxOrphanRank = stk::topology::FACE_RANK);
+void cleanup_orphan_nodes(BulkData& bulk);
+void cleanup_orphan_edges(BulkData& bulk);
+void cleanup_orphan_faces(BulkData& bulk);
+
 } // namespace mesh
 } // namespace stk
 

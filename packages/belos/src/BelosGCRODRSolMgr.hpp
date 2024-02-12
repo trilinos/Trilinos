@@ -186,6 +186,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
       #if defined(HAVE_TEUCHOS_LONG_DOUBLE) 
         static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
                        std::is_same<ScalarType, std::complex<double> >::value ||
+                       std::is_same<ScalarType, Kokkos::complex<double> >::value ||
                        std::is_same<ScalarType, float>::value ||
                        std::is_same<ScalarType, double>::value ||
                        std::is_same<ScalarType, long double>::value,
@@ -194,6 +195,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
        #else
         static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
                        std::is_same<ScalarType, std::complex<double> >::value ||
+                       std::is_same<ScalarType, Kokkos::complex<double> >::value ||
                        std::is_same<ScalarType, float>::value ||
                        std::is_same<ScalarType, double>::value,
                        "Belos::GCRODRSolMgr: ScalarType must be one of the four "

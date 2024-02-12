@@ -43,7 +43,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/LegacyCoordinateSystems.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
@@ -76,7 +76,7 @@ public:
       skinPart(meta.declare_part_with_topology("skin", get_side_topology())),
       block1(meta.declare_part_with_topology("block_1", get_element_topology())),
       activePart(meta.declare_part("active")),
-      coordField(meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates"))
+      coordField(stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::legacy::Cartesian>>(meta, stk::topology::NODE_RANK, "coordinates"))
     {
         if (bulkData.parallel_size() <= 2)
         {
@@ -147,7 +147,7 @@ protected:
     stk::mesh::Part& skinPart;
     stk::mesh::Part& block1;
     stk::mesh::Part& activePart;
-    stk::mesh::Field<double, stk::mesh::Cartesian> &coordField;
+    stk::mesh::Field<double, stk::mesh::legacy::Cartesian> &coordField;
 private:
 };
 
@@ -185,7 +185,7 @@ public:
             set_node_coords(coordField, i+1, twoElemTwoSharedSideCoordinates[i]);
     }
 
-    void set_node_coords(stk::mesh::Field<double, stk::mesh::Cartesian>& coordField, stk::mesh::EntityId id, const std::vector<double> &coords)
+    void set_node_coords(stk::mesh::Field<double, stk::mesh::legacy::Cartesian>& coordField, stk::mesh::EntityId id, const std::vector<double> &coords)
     {
         stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, id);
         if(bulkData.is_valid(node) && bulkData.bucket(node).owned())

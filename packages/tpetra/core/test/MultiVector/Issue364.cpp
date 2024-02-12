@@ -172,7 +172,7 @@ namespace { // (anonymous)
     using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
     using IST = typename MV::impl_scalar_type;
 
-    const IST ONE = Kokkos::Details::ArithTraits<IST>::one ();
+    const IST ONE = Kokkos::ArithTraits<IST>::one ();
 
     out << "Test MultiVector dual view semantics with a "
       "view of a noncontiguous set of columns" << endl;
@@ -207,7 +207,7 @@ namespace { // (anonymous)
       for (LO j = 0; j < numVecs; ++j) {
         for (LO i = 0; i < lclNumRows; ++i) {
           X_lcl(i,j) = curVal;
-          curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
+          curVal = curVal + Kokkos::ArithTraits<IST>::one ();
         }
       }
     }
@@ -395,7 +395,7 @@ namespace { // (anonymous)
     typedef typename Kokkos::View<IST**, DT>::HostMirror::memory_space
       host_memory_space;
 
-    const IST ONE = Kokkos::Details::ArithTraits<IST>::one ();
+    const IST ONE = Kokkos::ArithTraits<IST>::one ();
     const IST TWO = ONE + ONE;
 
     out << "Test MultiVector dual view semantics with two disjoint, "
@@ -452,7 +452,7 @@ namespace { // (anonymous)
         for (LO j = 0; j < numVecs; ++j) {
           for (LO i = 0; i < lclNumRows; ++i) {
             X_lcl(i,j) = curVal;
-            curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
+            curVal = curVal + Kokkos::ArithTraits<IST>::one ();
           }
         }
       }

@@ -65,70 +65,69 @@
 
 namespace MueLu {
 
-  /*!
-    @class RebalanceBlockRestrictionFactory class.
-    @brief Applies permutation to restriction operators.
-    @ingroup MueLuTransferClasses
-  */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class RebalanceBlockRestrictionFactory : public TwoLevelFactoryBase {
+/*!
+  @class RebalanceBlockRestrictionFactory class.
+  @brief Applies permutation to restriction operators.
+  @ingroup MueLuTransferClasses
+*/
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class RebalanceBlockRestrictionFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor.
-    RebalanceBlockRestrictionFactory():UseSingleSourceImporters_(false) { }
+  //! Constructor.
+  RebalanceBlockRestrictionFactory()
+    : UseSingleSourceImporters_(false) {}
 
-    //! Destructor.
-    virtual ~RebalanceBlockRestrictionFactory() { }
+  //! Destructor.
+  virtual ~RebalanceBlockRestrictionFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
-    //! Add a factory manager
-    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+  //! Add a factory manager
+  void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
 
-    //! Get the importers from a single source
-    void SetSingleSourceImporters(bool value){UseSingleSourceImporters_=value;}
+  //! Get the importers from a single source
+  void SetSingleSourceImporters(bool value) { UseSingleSourceImporters_ = value; }
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+  //! Build an object with this factory.
+  void Build(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-  
-  private:
+ private:
+  //! Input factories
+  std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
 
-    //! Input factories
-    std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
-    
-    bool UseSingleSourceImporters_;
+  bool UseSingleSourceImporters_;
 
-  }; // class RebalanceBlockTransferFactory
+};  // class RebalanceBlockTransferFactory
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_SHORT
 #endif /* MUELU_REBALANCEBLOCKRESTRICTIONFACTORY_DECL_HPP_ */

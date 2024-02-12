@@ -33,14 +33,16 @@ OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- reposito
 -- team [github package name for @mentions and labels, CASE-SENSITIVE]\n  -e
 -- (r)eviewer [github handle]\n  -i
 -- issue [generate a github issue with the following text]\n   -s
--- summary/description [first comment, ideally should reference github issue]"
+-- summary/description [first comment, ideally should reference github issue]\n   -F
+-- force the PR generation even if the existing checkout isn't clean"
 EXAMPLE_USAGE="Example: makepr.sh -t \"MueLu\" -t \"Xpetra\" -e \"jhux2\" -e \"csiefer2\" -s \"Fixes issue #666\" \"MueLu: implement nifty feature\""
 
 LABELS="\"AT: AUTOMERGE\""
 reviewers=""
 
 # Parse command line options.
-while getopts hvf:r:b:t:e:s:i: OPT; do
+FORCE=0
+while getopts hvFf:r:b:t:e:s:i: OPT; do
     case "$OPT" in
         h)
             echo -e $USAGE
@@ -51,6 +53,9 @@ while getopts hvf:r:b:t:e:s:i: OPT; do
         v)
             echo "`basename $0` version 0.1"
             exit 0
+            ;;
+        F)
+            FORCE=1
             ;;
         f)
             fork=$OPTARG
@@ -101,8 +106,12 @@ fi
 # Make sure there are no diff'd files
 git diff-index --quiet HEAD
 if [ $? -ne 0 ]; then
-    echo "This repo contains file diffs.  Cannot generate PR"
-    exit -1
+    if [ $FORCE -eq 0 ]; then
+        echo "This repo contains file diffs.  Cannot generate PR"
+        exit -1
+    else
+        echo "This repo contains file diffs.  But you used -F.  Proceeding under the assumption of user competence."
+    fi
 fi
 
 # Make sure the local branch matches $mainBranch

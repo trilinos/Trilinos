@@ -92,3 +92,6 @@ include("${Trilinos_SOURCE_DIR}/commonTools/build_stats/BuildStatsWrappers.cmake
 generate_build_stats_wrappers()
 remove_build_stats_file_on_configure()
 remove_build_stats_timing_files_on_fresh_configure()
+
+# Set up C++ language standard selection
+include(SetTrilinosCxxStandard)

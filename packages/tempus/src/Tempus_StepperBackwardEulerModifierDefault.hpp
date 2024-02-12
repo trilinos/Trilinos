@@ -16,7 +16,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperBackwardEuler.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperBackwardEuler.
@@ -27,41 +26,38 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperBackwardEulerModifierDefault
-  : virtual public Tempus::StepperBackwardEulerModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperBackwardEulerModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperBackwardEulerModifierDefault(){}
+  StepperBackwardEulerModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperBackwardEulerModifierDefault(){}
+  virtual ~StepperBackwardEulerModifierDefault() {}
 
   /// Modify BackwardEuler Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperBackwardEuler<Scalar> > /* stepper */,
-    const typename StepperBackwardEulerAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperBackwardEuler<Scalar> > /* stepper */,
+      const typename StepperBackwardEulerAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperBackwardEulerAppAction<Scalar>::BEGIN_STEP:
       case StepperBackwardEulerAppAction<Scalar>::BEFORE_SOLVE:
       case StepperBackwardEulerAppAction<Scalar>::AFTER_SOLVE:
-      case StepperBackwardEulerAppAction<Scalar>::END_STEP:
-      {
+      case StepperBackwardEulerAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperBackwardEulerModifierDefault_hpp
+#endif  // Tempus_StepperBackwardEulerModifierDefault_hpp

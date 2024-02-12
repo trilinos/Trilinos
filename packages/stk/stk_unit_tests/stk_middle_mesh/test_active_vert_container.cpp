@@ -3,11 +3,14 @@
 #include "stk_middle_mesh/boundary_fixture.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"
 #include "stk_middle_mesh/point.hpp"
+#include "stk_middle_mesh/utils.hpp"
+#include "stk_middle_mesh/create_sharing_from_verts.hpp"
 
 namespace {
 
 using stk::middle_mesh::opt::impl::ActiveVertData;
 using stk::middle_mesh::utils::Point;
+using namespace stk::middle_mesh;
 
 class AlwaysTrue
 {
@@ -147,6 +150,7 @@ TEST(ActiveVertContainer, 2Procs)
   EXPECT_EQ(container.get_active_verts().size(), centerPts.size());
   for (auto& centerPt : centerPts)
   {
+    std::cout << "\nchecking patch centered at " << centerPt << std::endl;
     ActiveVertData& patch1 = get_closest_patch(container, centerPt);
     EXPECT_TRUE(has_vert(patch1, centerPt + Point(-delta, -delta), 1e-12));
     EXPECT_TRUE(has_vert(patch1, centerPt + Point(0,      -delta), 1e-12));
@@ -211,5 +215,82 @@ TEST(ActiveVertContainer, 2Procs)
     EXPECT_TRUE(has_vert(patch3, {0.53, 0.50}, 1e-12));
     EXPECT_TRUE(has_vert(patch3, {0.54, 0.75}, 1e-12));
     EXPECT_TRUE(has_vert(patch3, {0.55, 1.00}, 1e-12));    
+  }
+}
+
+TEST(ActiveVertContainer, VertNotConnectedByLocalElement)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 2)
+  {
+    GTEST_SKIP();
+  }
+
+  auto mesh = mesh::make_empty_mesh(MPI_COMM_WORLD);
+
+  int myrank = utils::impl::comm_rank(MPI_COMM_WORLD);
+  if (myrank == 0)
+  {
+    auto v1 = mesh->create_vertex({0,    0.5, 0});
+    auto v2 = mesh->create_vertex({0.5,  0.5, 0});
+    auto v3 = mesh->create_vertex({0.75, 0.5, 0});
+    auto v4 = mesh->create_vertex({0,    1.0, 0});
+    auto v5 = mesh->create_vertex({0.5,  1.0, 0});
+    auto v6 = mesh->create_vertex({1.0,  1.0, 0});
+    auto v7 = mesh->create_vertex({1.25, 0.5, 0});
+    auto v8 = mesh->create_vertex({1.0,  0.0, 0});
+
+    mesh->create_quad_from_verts(v1, v2, v5, v4);
+    mesh->create_quad_from_verts(v2, v3, v6, v5);
+    mesh->create_quad_from_verts(v8, v7, v6, v3);
+
+    v1->add_remote_shared_entity({1, 3});
+    v2->add_remote_shared_entity({1, 4});
+    v3->add_remote_shared_entity({1, 5});
+    v8->add_remote_shared_entity({1, 2});    
+
+  } else
+  {
+    auto v1 = mesh->create_vertex({0,    0.0, 0});
+    auto v2 = mesh->create_vertex({0.5,  0.0, 0});
+    auto v3 = mesh->create_vertex({1.0,  0.0, 0});
+
+    auto v4 = mesh->create_vertex({0,    0.5, 0});
+    auto v5 = mesh->create_vertex({0.5,  0.5, 0});
+    auto v6 = mesh->create_vertex({0.75, 0.5, 0});
+
+    mesh->create_quad_from_verts(v1, v2, v5, v4);
+    mesh->create_quad_from_verts(v2, v3, v6, v5);
+
+    v4->add_remote_shared_entity({0, 0});
+    v5->add_remote_shared_entity({0, 1});
+    v6->add_remote_shared_entity({0, 2});
+    v3->add_remote_shared_entity({0, 7});    
+  }
+
+  mesh::impl::CreateSharingFromVert edgeSharing(mesh);
+  edgeSharing.create_sharing_from_verts();
+
+  auto filter = [&](mesh::MeshEntityPtr vert) 
+  { 
+    if (myrank == 0)
+    {
+      return vert->get_id() == 1;
+    } else
+    {
+      return vert->get_id() == 4;
+    }
+  };
+
+  auto isValid = [](mesh::MeshEntityPtr vert) { return true; };
+  mesh::impl::ActiveVertContainer activeVerts(mesh, filter, isValid);
+
+  if (myrank == 0)
+  {
+    EXPECT_EQ(activeVerts.get_active_verts().size(), 1u);
+
+    auto& activeVert = activeVerts.get_active_verts()[0];
+
+    EXPECT_EQ(activeVert.get_num_local_verts(), 7);
+    EXPECT_EQ(activeVert.get_num_verts(), 9);
   }
 }

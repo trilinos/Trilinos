@@ -57,29 +57,29 @@
 #include "MueLu_Level_fwd.hpp"
 
 namespace MueLuTests {
-  // Forward declaration of friend tester class used to UnitTest ReplicatePFactory
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ReplicatePFactoryTester;
-}
+// Forward declaration of friend tester class used to UnitTest ReplicatePFactory
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ReplicatePFactoryTester;
+}  // namespace MueLuTests
 
 namespace MueLu {
 
 /*!
   @class ReplicatePFactory
   @ingroup MueLuTransferClasses
-  @brief Prolongator factory that replicates 'Psubblock' matrix to create new prolongator suitable for PDE systems 
+  @brief Prolongator factory that replicates 'Psubblock' matrix to create new prolongator suitable for PDE systems
 
 
   Takes a previously generated prolongator for a scalar PDE and effectively makes a block diagonal prolongator
   by replicating it "replicate: npdes" times so that it can be used with a PDE system. A normal use case
-  would be to run an existing MueLu multigrid algorithm on a scalar PDE to generate a hierarchy.  Then use 
-  something like 
+  would be to run an existing MueLu multigrid algorithm on a scalar PDE to generate a hierarchy.  Then use
+  something like
 
   MueLu::HierarchyUtils<SC,LO,GO,NO>::CopyBetweenHierarchies(*scalarHierarchy,*systemHierarchy, "P",  "Psubblock", "RCP<Matrix>");
 
   to copy it to the new hierarchy. This new hierarchy would then have <Parameter name="multigrid algorithm" type="string"  value="replicate"/>
   in its parameter list to then invoke RepliatePFactory. Currently, this is used in src/Operators/MueLu_Maxwell1_def.hpp with an example
-  in test/maxwell. 
+  in test/maxwell.
 
   ## Input/output of ReplicatePFactory ##
 
@@ -104,52 +104,50 @@ namespace MueLu {
   | P                 | ReplicatePFactory | Prolongator                                                                                                      |
 
 */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class ReplicatePFactory : public PFactory {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class ReplicatePFactory : public PFactory {
 #undef MUELU_REPLICATEPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  friend class MueLuTests::ReplicatePFactoryTester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-    friend class MueLuTests::ReplicatePFactoryTester<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  //! Constructor
+  ReplicatePFactory() {}
 
-    //! Constructor
-    ReplicatePFactory() { }
+  //! Destructor.
+  virtual ~ReplicatePFactory() {}
+  //@}
 
-    //! Destructor.
-    virtual ~ReplicatePFactory() { }
-    //@}
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-    void Build (Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  //@}
 
-    //@}
+ private:
+  int numPDEs_;
 
-  private:
+};  // class ReplicatePFactory
 
-    int numPDEs_;
-
-  }; //class ReplicatePFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_REPLICATEPFACTORY_SHORT
-#endif // MUELU_REPLICATEPFACTORY_DECL_HPP
+#endif  // MUELU_REPLICATEPFACTORY_DECL_HPP

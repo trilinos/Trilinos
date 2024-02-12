@@ -1,11 +1,12 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
+#include "defs.h"
 #include <math.h>  // for fabs, sqrt
 #include <stdio.h> // for printf
 
@@ -34,7 +35,6 @@ void tri_solve(double *alpha,  /* vector of Lanczos scalars */
   double     tol;         /* cutoff for numerical singularity */
   double     diff;        /* an element of the residual vector */
   double     res;         /* the norm of the residual vector */
-  void       bail();      /* our exit routine */
 
   /* set cut-off for "zero" pivot */
   tol = 1.0e-15;

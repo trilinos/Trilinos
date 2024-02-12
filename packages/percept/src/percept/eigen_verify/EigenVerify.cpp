@@ -50,7 +50,7 @@ void EigenVerify::create_mesh_data(stk::io::StkMeshIoBroker * mesh_data,
 
 void EigenVerify::load_time_data(const int m)
 {
-  Teuchos::RCP<Ioss::Region> ioss_region = mesh_data[m]->get_input_io_region();
+  std::shared_ptr<Ioss::Region> ioss_region = mesh_data[m]->get_input_ioss_region();
 
   const int numTimeSteps =
     ioss_region->get_property("state_count").get_int();

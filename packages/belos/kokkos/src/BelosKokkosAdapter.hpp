@@ -541,11 +541,12 @@ public:
   
   /// Valid norm types are Belos::TwoNorm, Belos::OneNorm,
   /// and Belos::InfNorm.
-  void MvNorm ( std::vector<ScalarType>& normvec, NormType norm_type = TwoNorm ) const{
+  void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType norm_type = TwoNorm ) const{
 
     //Put output vector in unmanaged Kokkos view:
-    UMHostViewVectorType normView_h(normvec.data(),myView.extent(1));
-    ViewVectorType normView_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"Norm"),myView.extent(1));
+    using magnitudeType = typename Teuchos::ScalarTraits<ScalarType>::magnitudeType;
+    Kokkos::View<magnitudeType*,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> normView_h(normvec.data(),myView.extent(1));
+    Kokkos::View<magnitudeType*,Kokkos::LayoutLeft, Device> normView_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"Norm"),myView.extent(1));
 
     switch( norm_type ) { 
       case ( OneNorm ) : 

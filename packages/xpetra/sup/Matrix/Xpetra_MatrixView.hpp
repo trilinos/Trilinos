@@ -61,58 +61,58 @@ Declarations for the class Xpetra::MatrixView.
 */
 namespace Xpetra {
 
-  template <class Scalar,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-  class MatrixView { // TODO : virtual public Teuchos::Describable {
-    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class MatrixView {  // TODO : virtual public Teuchos::Describable {
+  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 
-  public:
+ public:
+  //! @name Constructor/Destructor Methods
+  //@{
 
-    //! @name Constructor/Destructor Methods
-    //@{
+  //! Constructor
+  MatrixView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap)
+    : rowMap_(rowMap)
+    , colMap_(colMap)
+    , maxEigValueEstimate_(-Teuchos::ScalarTraits<Scalar>::one()) {}
 
-    //! Constructor
-    MatrixView(const RCP<const Map> &rowMap, const RCP<const Map> &colMap)
-      : rowMap_ (rowMap), colMap_(colMap), maxEigValueEstimate_(-Teuchos::ScalarTraits<Scalar>::one())
-    { }
+  //! Destructor
+  virtual ~MatrixView() {}
 
-    //! Destructor
-    virtual ~MatrixView() {}
+  //@}
 
-    //@}
+  //! @name Map access methods
+  //@{
+  //! Returns the Map that describes the row distribution in this matrix.
+  const RCP<const Map> &GetRowMap() const { return rowMap_; }
 
-    //! @name Map access methods
-    //@{
-    //! Returns the Map that describes the row distribution in this matrix.
-    const RCP<const Map> & GetRowMap() const { return rowMap_; }
+  //! \brief Returns the Map that describes the column distribution in this matrix.
+  const RCP<const Map> &GetColMap() const { return colMap_; }
 
-    //! \brief Returns the Map that describes the column distribution in this matrix.
-    const RCP<const Map> & GetColMap() const { return colMap_; }
+  //! Returns the Map that describes the row distribution in this matrix.
+  void SetRowMap(const RCP<const Map> &rowMap) { rowMap_ = rowMap; }
 
-    //! Returns the Map that describes the row distribution in this matrix.
-    void SetRowMap(const RCP<const Map> & rowMap) { rowMap_ = rowMap; }
+  //! \brief Set the Map that describes the column distribution in this matrix.
+  void SetColMap(const RCP<const Map> &colMap) { colMap_ = colMap; }
+  //@}
 
-    //! \brief Set the Map that describes the column distribution in this matrix.
-    void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
-    //@}
+  //! \brief Set an maximum eigenvalue estimate for this matrix.
+  void SetMaxEigenvalueEstimate(Scalar const &sigma) { maxEigValueEstimate_ = sigma; }
 
-    //! \brief Set an maximum eigenvalue estimate for this matrix.
-    void SetMaxEigenvalueEstimate(Scalar const &sigma) { maxEigValueEstimate_ = sigma; }
+  //! \brief Return the maximum eigenvalue estimate for this matrix.
+  Scalar GetMaxEigenvalueEstimate() const { return maxEigValueEstimate_; }
 
-    //! \brief Return the maximum eigenvalue estimate for this matrix.
-    Scalar GetMaxEigenvalueEstimate() const { return maxEigValueEstimate_; }
+ private:
+  RCP<const Map> rowMap_;
+  RCP<const Map> colMap_;
 
-  private:
-    RCP<const Map> rowMap_;
-    RCP<const Map> colMap_;
+  Scalar maxEigValueEstimate_;
 
-    Scalar maxEigValueEstimate_;
+};  // class MatrixView
 
-  }; // class MatrixView
-
-} // namespace Xpetra
+}  // namespace Xpetra
 
 #define XPETRA_MATRIXVIEW_SHORT
-#endif //XPETRA_MATRIX_VIEW_DECL_HPP
+#endif  // XPETRA_MATRIX_VIEW_DECL_HPP

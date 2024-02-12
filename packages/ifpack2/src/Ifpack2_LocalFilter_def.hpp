@@ -62,13 +62,13 @@ bool
 LocalFilter<MatrixType>::
 mapPairsAreFitted (const row_matrix_type& A)
 {
-  const map_type& rangeMap = * (A.getRangeMap ());
-  const map_type& rowMap = * (A.getRowMap ());
-  const bool rangeAndRowFitted = mapPairIsFitted (rowMap, rangeMap);
+  const auto rangeMap = A.getRangeMap();
+  const auto rowMap = A.getRowMap();
+  const bool rangeAndRowFitted = mapPairIsFitted (*rowMap, *rangeMap);
 
-  const map_type& domainMap = * (A.getDomainMap ());
-  const map_type& columnMap = * (A.getColMap ());
-  const bool domainAndColumnFitted = mapPairIsFitted (columnMap, domainMap);
+  const auto domainMap = A.getDomainMap();
+  const auto columnMap = A.getColMap();
+  const bool domainAndColumnFitted = mapPairIsFitted (*columnMap, *domainMap);
 
   //Note BMK 6-22: Map::isLocallyFitted is a local-only operation, not a collective.
   //This means that it can return different values on different ranks. This can cause MPI to hang,
@@ -853,8 +853,8 @@ typename
 LocalFilter<MatrixType>::mag_type
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
-  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
-  typedef Kokkos::Details::ArithTraits<mag_type> STM;
+  typedef Kokkos::ArithTraits<scalar_type> STS;
+  typedef Kokkos::ArithTraits<mag_type> STM;
   typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
   const size_type maxNumRowEnt = getLocalMaxNumRowEntries ();

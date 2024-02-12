@@ -47,12 +47,12 @@
 #define XPETRA_BLOCKEDVECTOR_FWD_HPP
 
 namespace Xpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class BlockedVector;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlockedVector;
 }
 
 #ifndef XPETRA_BLOCKEDVECTOR_SHORT
 #define XPETRA_BLOCKEDVECTOR_SHORT
 #endif
 
-#endif // XPETRA_VECTORFACTORY_FWD_HPP
+#endif  // XPETRA_VECTORFACTORY_FWD_HPP

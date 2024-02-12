@@ -142,55 +142,13 @@ int testElement(const std::string &name, unsigned spatialDim)
                       "edge count");
 
   // NOTE: Ioss counts edges and faces as boundaries for shell elements
-  int add_boundary = 0;
-  if (add_to == 1 && element->spatial_dimension() == 3 && element->parametric_dimension() == 2)
-    add_boundary = cell.num_edges();
-  errors += my_assert(static_cast<int>(cell.num_sides()) + add_boundary,
+  errors += my_assert(static_cast<int>(cell.num_sides()),
                       element->number_boundaries(),
                       "boundary count");
 
   return errors;
 }
 }
-
-#ifndef STK_USE_SIMPLE_FIELDS
-
-TEST(UnitTestTopology_legacy, testUnit)
-{
-  Ioss::StorageInitializer initialize_storage;
-  Ioss::Initializer        initialize_topologies;
-
-  Ioss::NameList elements;
-  int element_count = Ioss::ElementTopology::describe(&elements);
-
-  int errors = 0;
-  unsigned spatialDim = 3;
-  for (int i=0; i < element_count; i++) {
-    // FIXME: Need to totally skip tetra7 for now
-    if (elements[i] == "tetra7") {
-      continue;
-    }
-
-    int current_error = testElement(elements[i], spatialDim);
-    if (elements[i] != "node"    &&
-        elements[i] != "bar2"    &&
-        elements[i] != "bar3"    &&
-        elements[i] != "bar4"    &&
-        elements[i] != "spring2" &&
-        elements[i] != "spring3") {
-      errors += current_error;
-    }
-    else {
-      if (current_error > 0)
-        std::cerr << "\t\tIGNORING " << elements[i] << " ERRORS...\n";
-    }
-  }
-  ASSERT_TRUE(errors == 0);
-}
-
-#endif // STK_USE_SIMPLE_FIELDS
-
-namespace simple_fields {
 
 TEST(UnitTestTopology, testUnit)
 {
@@ -224,5 +182,3 @@ TEST(UnitTestTopology, testUnit)
   }
   ASSERT_TRUE(errors == 0);
 }
-
-} // namespace simple_fields

@@ -59,20 +59,11 @@
 #include "Teuchos_RCP.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+
 namespace Intrepid2 {
 
 namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
 
 template<typename ValueType, typename DeviceType>
 int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
@@ -107,7 +98,6 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
   << "===============================================================================\n";
 
   typedef Kokkos::DynRankView<ValueType, DeviceType> DynRankView;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   const ValueType tol = tolerence();
   int errorFlag = 0;

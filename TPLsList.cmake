@@ -55,7 +55,7 @@
 
 TRIBITS_REPOSITORY_DEFINE_TPLS(
   MKL             "cmake/TPLs/"    EX
-  yaml-cpp        "cmake/TPLs/"    EX
+  yamlcpp         "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
   CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    PT
   CUBLAS          "cmake/TPLs/"    PT
@@ -65,6 +65,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Cusp            "cmake/TPLs/"    ST
   ROCBLAS         "cmake/TPLs/"    PT
   ROCSPARSE       "cmake/TPLs/"    PT
+  ROCSOLVER       "cmake/TPLs/"    PT
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    PT
   HWLOC           "cmake/TPLs/"    ST

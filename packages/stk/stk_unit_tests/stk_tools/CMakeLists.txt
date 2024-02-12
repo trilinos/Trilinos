@@ -32,19 +32,28 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_tools)
-
 FILE(GLOB SOURCES mesh_clone/*.cpp mesh_tools/*.cpp block_extractor/*.cpp)
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/UnitTestExtractBlocks.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_tools_unit_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_tools)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_tools_unit_tests
     SOURCES ${SOURCES}
     ARGS "--gtest_filter=Cloning*.*"
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX
-    )
+  )
+else()
+  add_executable(stk_tools_unit_tests ${SOURCES})
+  target_link_libraries(stk_tools_unit_tests PUBLIC stk_tools_lib)
+  target_link_libraries(stk_tools_unit_tests PUBLIC stk_unit_main)
+
+  target_include_directories(stk_tools_unit_tests PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()
 

@@ -125,8 +125,8 @@ namespace Xpetra {
     return Teuchos::null;  // make compiler happy
   }
 
-#endif // HAVE_XPETRA_INT_LONG_LONG
+#endif  // HAVE_XPETRA_INT_LONG_LONG
 
 } // namespace Xpetra
-#endif // if 0
+#endif  // if 0
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,9 +41,6 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
   int    elem_work = 0; /* is DIM_NUM_EL_BLK defined? If so, there's work to do */
   int    edge_work = 0; /* is DIM_NUM_ED_BLK defined? If so, there's work to do */
   int    face_work = 0; /* is DIM_NUM_FA_BLK defined? If so, there's work to do */
-#if NC_HAS_HDF5
-  int fill = NC_FILL_CHAR;
-#endif
 
   int *edge_id_int = NULL;
   int *face_id_int = NULL;
@@ -214,7 +211,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-#if NC_HAS_HDF5
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
 #define EX_PREPARE_ATTRIB_ARRAY(TNAME, CURBLK, DNAME, DVAL, ID, VANAME, VADIM0, VADIM1, VANNAME)   \
   if (DVAL[iblk] > 0) {                                                                            \
     if ((status = nc_def_dim(exoid, DNAME(CURBLK + 1), DVAL[iblk], &VADIM1)) != NC_NOERR) {        \
@@ -250,6 +247,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
       ex_err_fn(exoid, __func__, errmsg, status);                                                  \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
+    int fill = NC_FILL_CHAR;                                                                       \
     nc_def_var_fill(exoid, temp, 0, &fill);                                                        \
   }
 #else

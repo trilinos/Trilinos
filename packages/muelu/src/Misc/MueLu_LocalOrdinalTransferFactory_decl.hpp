@@ -58,7 +58,7 @@ namespace MueLu {
 /*!
   @class LocalOrdinalTransferFactory class.
   @brief Class for transferring a vector of local ordinals from a finer level to a coarser one, where each aggregate has a unique one
-  
+
 
   ## Input/output of LocalOrdinalTransferFactory ##
 
@@ -90,77 +90,77 @@ namespace MueLu {
   | TransferVec | LocalOrdinalTransferFactory   | coarse level transfervec
 */
 
-
-
-  template<class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class LocalOrdinalTransferFactory : public TwoLevelFactoryBase {
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class LocalOrdinalTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_LOCALORDINALTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    // Default constructor is distabled
-    LocalOrdinalTransferFactory() = delete;
+  // Default constructor is distabled
+  LocalOrdinalTransferFactory() = delete;
 
-    /*! @brief Constructor.
+  /*! @brief Constructor.
 
-       @param vectorName The name of the quantity to be restricted.
-       @param restrictionName The name of the restriction Matrix.
+     @param vectorName The name of the quantity to be restricted.
+     @param restrictionName The name of the restriction Matrix.
 
-       The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
-       <tt>vectorName</tt>.
-    */
-    LocalOrdinalTransferFactory(const std::string & TransferVecName, const std::string & mode): TransferVecName_(TransferVecName) {
-      if(mode == "classical") useAggregatesMode_ = false;
-      else useAggregatesMode_ = true;
-    }
+     The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
+     <tt>vectorName</tt>.
+  */
+  LocalOrdinalTransferFactory(const std::string &TransferVecName, const std::string &mode)
+    : TransferVecName_(TransferVecName) {
+    if (mode == "classical")
+      useAggregatesMode_ = false;
+    else
+      useAggregatesMode_ = true;
+  }
 
-    //! Destructor.
-    virtual ~LocalOrdinalTransferFactory() { }
+  //! Destructor.
+  virtual ~LocalOrdinalTransferFactory() {}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &finelevel, Level &coarseLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level &finelevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level & fineLevel, Level &coarseLevel) const;
+  //! Build an object with this factory.
+  void Build(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-  private:
+ private:
+  void BuildAggregates(Level &fineLevel, Level &coarseLevel) const;
 
-    void BuildAggregates(Level & fineLevel, Level &coarseLevel) const;
+  void BuildFC(Level &fineLevel, Level &coarseLevel) const;
 
-    void BuildFC(Level & fineLevel, Level &coarseLevel) const;
-    
-    //! Use aggregates mode (as opposed to FC mode)
-    bool useAggregatesMode_;
+  //! Use aggregates mode (as opposed to FC mode)
+  bool useAggregatesMode_;
 
-    //! The name for the vector to be transfered.  This allows us to have multiple factories for different variables
-    std::string TransferVecName_;
+  //! The name for the vector to be transfered.  This allows us to have multiple factories for different variables
+  std::string TransferVecName_;
 
-  }; // class LocalOrdinalTransferFactory
+};  // class LocalOrdinalTransferFactory
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_LOCALORDINALTRANSFERFACTORY_SHORT
-#endif // MUELU_LOCALORDINALTRANSFER_FACTORY_DECL_HPP
+#endif  // MUELU_LOCALORDINALTRANSFER_FACTORY_DECL_HPP

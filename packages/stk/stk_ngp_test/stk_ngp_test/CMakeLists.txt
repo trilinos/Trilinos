@@ -32,22 +32,29 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_ngp_test/stk_ngp_test)
-
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES ngp_test.cpp)
 
-TRIBITS_ADD_LIBRARY(
-    stk_ngp_test
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_ngp_test
     NOINSTALLHEADERS ${HEADERS}
     SOURCES ${SOURCES}
     ${Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG}
     )
+else()
+  add_library(stk_ngp_test ${SOURCES})
+  target_link_libraries(stk_ngp_test PUBLIC stk_util_ngp)
+  target_link_libraries(stk_ngp_test PUBLIC Kokkos::kokkos)
+endif()
+
+target_include_directories(stk_ngp_test PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_ngp_test>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
   ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_ngp_test/)
 
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_ngp_test DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

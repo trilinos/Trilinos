@@ -246,14 +246,12 @@ FAD_UNARYOP_MACRO(fabs,
                     val_type(-expr.dx(i,j)),
                   expr.val(j) >= 0 ? val_type(+expr.fastAccessDx(i,j)) :
                     val_type(-expr.fastAccessDx(i,j)))
-#ifdef HAVE_SACADO_CXX11
 FAD_UNARYOP_MACRO(cbrt,
                   CbrtOp,
                   std::cbrt(expr.val()),
                   std::cbrt(expr.val(j)),
                   expr.dx(i,j)/(val_type(3)*std::cbrt(expr.val(j)*expr.val(j))),
                   expr.fastAccessDx(i,j)/(val_type(3)*std::cbrt(expr.val(j)*expr.val(j))))
-#endif
 
 #undef FAD_UNARYOP_MACRO
 

@@ -111,5 +111,7 @@ inline std::string getStackTrace()
 #endif
 }
 
+int wait_for_debugger();
+
 #endif
 

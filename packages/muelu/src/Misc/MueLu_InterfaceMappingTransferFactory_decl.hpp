@@ -52,8 +52,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 
-namespace MueLu
-{
+namespace MueLu {
 
 /*!
   @class InterfaceMappingTransferFactory
@@ -73,14 +72,13 @@ namespace MueLu
   The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see InterfaceAggregationFactory::GetValidParameters).<br>
   The * in the @c requested column states that the data is requested as input with all dependencies (see InterfaceAggregationFactory::DeclareInput).
 */
-template <class LocalOrdinal = DefaultLocalOrdinal,
+template <class LocalOrdinal  = DefaultLocalOrdinal,
           class GlobalOrdinal = DefaultGlobalOrdinal,
-          class Node = DefaultNode>
-class InterfaceMappingTransferFactory : public TwoLevelFactoryBase
-{
+          class Node          = DefaultNode>
+class InterfaceMappingTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
-public:
+ public:
   //! Constructor.
   InterfaceMappingTransferFactory() = default;
 
@@ -92,6 +90,6 @@ public:
   void Build(Level &fineLevel, Level &coarseLevel) const override;
 };
 
-} // namespace MueLu
+}  // namespace MueLu
 #define MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
 #endif /* MUELU_INTERFACEMAPPINGTRANSFERFACTORY_DECL_HPP_ */

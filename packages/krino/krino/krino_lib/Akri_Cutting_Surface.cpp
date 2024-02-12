@@ -16,27 +16,27 @@
 namespace krino{
 
 int
-Plane_Cutting_Surface::sign_at_position(const Vector3d & p_coords) const
+Plane_Cutting_Surface::sign_at_position(const stk::math::Vector3d & p_coords) const
 {
   return my_plane.signed_distance(p_coords) < 0. ? -1 : 1;
 }
 
 bool
-Plane_Cutting_Surface::on_surface(const Vector3d & p_coords, const double tol) const
+Plane_Cutting_Surface::on_surface(const stk::math::Vector3d & p_coords, const double tol) const
 {
   return std::abs(my_plane.signed_distance(p_coords)) < tol;
 }
 
 double
-Plane_Cutting_Surface::interface_crossing_position(const Segment3d & edge) const
+Plane_Cutting_Surface::interface_crossing_position(const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
-  const double signed_dist_node0 = my_plane.signed_distance(edge.GetNode(0));
-  const double signed_dist_node1 = my_plane.signed_distance(edge.GetNode(1));
+  const double signed_dist_node0 = my_plane.signed_distance(edgeNodeCoords[0]);
+  const double signed_dist_node1 = my_plane.signed_distance(edgeNodeCoords[1]);
 
   if((signed_dist_node0 < 0) == (signed_dist_node1 < 0))
   {
     std::stringstream str;
-    str << "Failed to find intersection of plane " << my_plane << " with segment " << edge;
+    str << "Failed to find intersection of plane " << my_plane << " with segment with nodes " << edgeNodeCoords[0] << " and " << edgeNodeCoords[1];
     throw std::runtime_error(str.str());
   }
 
@@ -52,7 +52,7 @@ std::string Plane_Cutting_Surface::print() const
   return os.str();
 }
 
-Intersecting_Planes_Cutting_Surface::Intersecting_Planes_Cutting_Surface(const Vector3d & p0, const Vector3d & p1, const Vector3d & p2, const Vector3d & p3)
+Intersecting_Planes_Cutting_Surface::Intersecting_Planes_Cutting_Surface(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1, const stk::math::Vector3d & p2, const stk::math::Vector3d & p3)
 : Cutting_Surface()
 {
   // Points p0 and p2 lie on the line common to the two planes
@@ -70,7 +70,7 @@ Intersecting_Planes_Cutting_Surface::Intersecting_Planes_Cutting_Surface(const V
 }
 
 int
-Intersecting_Planes_Cutting_Surface::sign_at_position(const Vector3d & p_coords) const
+Intersecting_Planes_Cutting_Surface::sign_at_position(const stk::math::Vector3d & p_coords) const
 {
   const double signed_dist0 = my_plane0.signed_distance(p_coords);
   const double signed_dist1 = my_plane1.signed_distance(p_coords);
@@ -84,7 +84,7 @@ Intersecting_Planes_Cutting_Surface::sign_at_position(const Vector3d & p_coords)
 }
 
 bool
-Intersecting_Planes_Cutting_Surface::on_surface(const Vector3d & p_coords, const double tol) const
+Intersecting_Planes_Cutting_Surface::on_surface(const stk::math::Vector3d & p_coords, const double tol) const
 {
   const double signed_dist0 = my_plane0.signed_distance(p_coords);
   const double signed_dist1 = my_plane1.signed_distance(p_coords);
@@ -98,12 +98,12 @@ Intersecting_Planes_Cutting_Surface::on_surface(const Vector3d & p_coords, const
 }
 
 double
-Intersecting_Planes_Cutting_Surface::interface_crossing_position(const Segment3d & edge) const
+Intersecting_Planes_Cutting_Surface::interface_crossing_position(const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
-  const double signed_dist0_node0 = my_plane0.signed_distance(edge.GetNode(0));
-  const double signed_dist0_node1 = my_plane0.signed_distance(edge.GetNode(1));
-  const double signed_dist1_node0 = my_plane1.signed_distance(edge.GetNode(0));
-  const double signed_dist1_node1 = my_plane1.signed_distance(edge.GetNode(1));
+  const double signed_dist0_node0 = my_plane0.signed_distance(edgeNodeCoords[0]);
+  const double signed_dist0_node1 = my_plane0.signed_distance(edgeNodeCoords[1]);
+  const double signed_dist1_node0 = my_plane1.signed_distance(edgeNodeCoords[0]);
+  const double signed_dist1_node1 = my_plane1.signed_distance(edgeNodeCoords[1]);
 
   double pos0 = signed_dist0_node0 / (signed_dist0_node0-signed_dist0_node1);
   double pos1 = signed_dist1_node0 / (signed_dist1_node0-signed_dist1_node1);
@@ -128,7 +128,7 @@ Intersecting_Planes_Cutting_Surface::interface_crossing_position(const Segment3d
   std::stringstream str;
   str << "Failed to find intersection of Intersecting_Planes_Cutting_Surface with planes "
       << my_plane0 << " and " << my_plane1
-      << " with segment " << edge
+      << " with segment with nodes " << edgeNodeCoords[0] << " and " << edgeNodeCoords[1]
       << " with crossings " << pos0 << " and " << pos1 << " with diff " << pos0-pos1 << " sign_case_id " << sign_case_id;
   throw std::runtime_error(str.str());
 }
@@ -141,11 +141,11 @@ std::string Intersecting_Planes_Cutting_Surface::print() const
   return os.str();
 }
 
-std::string print_plane_visualization(const Plane3d & plane, std::array<int,4> & geomIds, const std::string & description)
+std::string print_plane_visualization(const stk::math::Plane3d & plane, std::array<int,4> & geomIds, const std::string & description)
 {
   std::ostringstream os;
-  const Vector3d x0 = plane.constant() * plane.normal();
-  const Vector3d x1 = x0 + plane.normal();
+  const stk::math::Vector3d x0 = plane.constant() * plane.normal();
+  const stk::math::Vector3d x1 = x0 + plane.normal();
   os << "Create vertex " << x0[0] << " " << x0[1] << " " << x0[2] << std::endl;
   os << "Create vertex " << x1[0] << " " << x1[1] << " " << x1[2] << std::endl;
   os << "Create curve vertex " << ++geomIds[0] << " " << ++geomIds[0] << std::endl;

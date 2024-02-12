@@ -144,8 +144,9 @@ void ParentsToChildMapper::build_map(const stk::mesh::BulkData & mesh, const Fie
       for(unsigned i=0; i < b_ptr->size(); ++i)
       {
         const stk::mesh::Entity child_node = (*b_ptr)[i];
-        const auto parent_ids = get_edge_node_parent_ids(mesh, parent_ids_field, child_node);
-        my_parents_to_child_map[{parent_ids[0], parent_ids[1]}] = mesh.identifier(child_node);
+        const auto parentIds = get_child_node_parent_ids(mesh, parent_ids_field, child_node);
+        if (2 == parentIds.size())
+          my_parents_to_child_map[{parentIds[0], parentIds[1]}] = mesh.identifier(child_node);
       }
     }
   }

@@ -93,7 +93,7 @@ struct Hash {
   ///
   /// It is legal to call this function in a Kokkos parallel kernel.
   static KOKKOS_INLINE_FUNCTION result_type
-  hashFunc (const argument_type& key, const offset_type& size) {
+  hashFunc (const argument_type& /*key*/, const offset_type& /*size*/) {
     static_assert (! std::is_same<result_type, int>::value,
                    "Not yet implemented for ResultType != int");
   }
@@ -109,7 +109,7 @@ struct Hash {
   /// implementation is a function of result_type.  The point is to
   /// factor out all of the non-generic stuff into this Hash struct,
   /// which can be specialized for the types of interest.
-  static result_type getRecommendedSize (const offset_type size) {
+  static result_type getRecommendedSize (const offset_type /*size*/) {
     static_assert (! std::is_same<result_type, int>::value,
                    "Not yet implemented for ResultType != int");
   }

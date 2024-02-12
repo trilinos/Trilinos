@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -68,17 +68,17 @@ namespace Epetra {
 // in a FEM problem are ordered [u0,v0,p0,u1,v1,p1,...]). Current
 // implimentation only supports a fixed number of variables
 //
-//    arguments: 
-//       vars - Number of different variables 
+//    arguments:
+//       vars - Number of different variables
 //       map  - original Epetra_Map to be broken up
 //       comm - Epetra_Comm object related to the map
 //
-StridedMappingStrategy::StridedMappingStrategy(const std::vector<int> & vars,const RCP<const Epetra_Map> & map,
-                                               const Epetra_Comm & comm)
-{
-   rangeMap_ = map;
-   domainMap_ = map;
-   buildBlockTransferData(vars, rangeMap_,comm);
+StridedMappingStrategy::StridedMappingStrategy(const std::vector<int>& vars,
+                                               const RCP<const Epetra_Map>& map,
+                                               const Epetra_Comm& comm) {
+  rangeMap_  = map;
+  domainMap_ = map;
+  buildBlockTransferData(vars, rangeMap_, comm);
 }
 
 // Virtual function defined in MappingStrategy.  This copies
@@ -89,28 +89,29 @@ StridedMappingStrategy::StridedMappingStrategy(const std::vector<int> & vars,con
 //      X       - source Epetra_MultiVector
 //      thyra_X - destination Thyra::MultiVectorBase
 //
-void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
-                                                 const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X) const 
-{
-   int count = X.NumVectors(); 
+void StridedMappingStrategy::copyEpetraIntoThyra(
+    const Epetra_MultiVector& X,
+    const Teuchos::Ptr<Thyra::MultiVectorBase<double> >& thyra_X) const {
+  int count = X.NumVectors();
 
-   std::vector<RCP<Epetra_MultiVector> > subX;
+  std::vector<RCP<Epetra_MultiVector> > subX;
 
-   // allocate vectors to copy into
-   Strided::buildSubVectors(blockMaps_,subX,count);
+  // allocate vectors to copy into
+  Strided::buildSubVectors(blockMaps_, subX, count);
 
-   // copy source vector to X vector
-   Strided::one2many(subX,X,blockImport_);
+  // copy source vector to X vector
+  Strided::one2many(subX, X, blockImport_);
 
-   // convert subX to an array of multi vectors
-   Teuchos::Array<RCP<Thyra::MultiVectorBase<double> > > thyra_subX;
-   Teuchos::Ptr<Thyra::ProductMultiVectorBase<double> > prod_X
-         = Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(thyra_X);
-   for(unsigned int i=0;i<blockMaps_.size();i++) {
-      RCP<Thyra::DefaultSpmdMultiVector<double> > vec 
-            = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(prod_X->getNonconstMultiVectorBlock(i)); 
-      fillDefaultSpmdMultiVector(vec,subX[i]);
-   }
+  // convert subX to an array of multi vectors
+  Teuchos::Array<RCP<Thyra::MultiVectorBase<double> > > thyra_subX;
+  Teuchos::Ptr<Thyra::ProductMultiVectorBase<double> > prod_X =
+      Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(thyra_X);
+  for (unsigned int i = 0; i < blockMaps_.size(); i++) {
+    RCP<Thyra::DefaultSpmdMultiVector<double> > vec =
+        rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(
+            prod_X->getNonconstMultiVectorBlock(i));
+    fillDefaultSpmdMultiVector(vec, subX[i]);
+  }
 }
 
 // Virtual function defined in MappingStrategy.  This copies
@@ -121,22 +122,22 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
 //      thyra_Y - source Thyra::MultiVectorBase
 //      Y       - destination Epetra_MultiVector
 //
-void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
-                                                 Epetra_MultiVector& Y) const
-{
-   std::vector<RCP<const Epetra_MultiVector> > subY;
-   RCP<const Thyra::DefaultProductMultiVector<double> > prod_Y 
-         = rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<double> >(thyra_Y);
+void StridedMappingStrategy::copyThyraIntoEpetra(
+    const RCP<const Thyra::MultiVectorBase<double> >& thyra_Y, Epetra_MultiVector& Y) const {
+  std::vector<RCP<const Epetra_MultiVector> > subY;
+  RCP<const Thyra::DefaultProductMultiVector<double> > prod_Y =
+      rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<double> >(thyra_Y);
 
-   // convert thyra product vector to subY
-   for(unsigned int i=0;i<blockMaps_.size();i++)
-      subY.push_back(Thyra::get_Epetra_MultiVector(*blockMaps_[i].second,prod_Y->getMultiVectorBlock(i)));
+  // convert thyra product vector to subY
+  for (unsigned int i = 0; i < blockMaps_.size(); i++)
+    subY.push_back(
+        Thyra::get_Epetra_MultiVector(*blockMaps_[i].second, prod_Y->getMultiVectorBlock(i)));
 
-   // endow the subVectors with required information about the maps
-   Strided::associateSubVectors(blockMaps_,subY);
+  // endow the subVectors with required information about the maps
+  Strided::associateSubVectors(blockMaps_, subY);
 
-   // copy solution vectors to Y vector
-   Strided::many2one(Y,subY,blockExport_);
+  // copy solution vectors to Y vector
+  Strided::many2one(Y, subY, blockExport_);
 }
 
 // this is the core routine that builds the maps
@@ -151,11 +152,12 @@ void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVec
 //       baseMap - basic map to use in the transfers
 //       comm    - Epetra_Comm object
 //
-void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Map> & baseMap, const Epetra_Comm & comm)
-{
-   // build maps and exporters/importers
-   Strided::buildSubMaps(*baseMap,vars,comm,blockMaps_);
-   Strided::buildExportImport(*baseMap, blockMaps_, blockExport_,blockImport_);
+void StridedMappingStrategy::buildBlockTransferData(const std::vector<int>& vars,
+                                                    const Teuchos::RCP<const Epetra_Map>& baseMap,
+                                                    const Epetra_Comm& comm) {
+  // build maps and exporters/importers
+  Strided::buildSubMaps(*baseMap, vars, comm, blockMaps_);
+  Strided::buildExportImport(*baseMap, blockMaps_, blockExport_, blockImport_);
 }
 
 // Builds a blocked Thyra operator that uses the strided
@@ -168,27 +170,28 @@ void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & var
 //    returns: Blocked Thyra linear operator with sub blocks
 //             defined by this mapping strategy
 //
-const Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > 
-StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,const std::string & label) const
-{
-   int dim = blockMaps_.size();
+const Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > StridedMappingStrategy::buildBlockedThyraOp(
+    const RCP<const Epetra_CrsMatrix>& crsContent, const std::string& label) const {
+  int dim = blockMaps_.size();
 
-   RCP<Thyra::DefaultBlockedLinearOp<double> > A = Thyra::defaultBlockedLinearOp<double>();
+  RCP<Thyra::DefaultBlockedLinearOp<double> > A = Thyra::defaultBlockedLinearOp<double>();
 
-   A->beginBlockFill(dim,dim);
-   for(int i=0;i<dim;i++) {
-      for(int j=0;j<dim;j++) {
-         // label block correctly
-         std::stringstream ss;
-         ss << label << "_" << i << "," << j;
+  A->beginBlockFill(dim, dim);
+  for (int i = 0; i < dim; i++) {
+    for (int j = 0; j < dim; j++) {
+      // label block correctly
+      std::stringstream ss;
+      ss << label << "_" << i << "," << j;
 
-         // build the blocks and place it the right location
-         A->setNonconstBlock(i,j,Thyra::nonconstEpetraLinearOp(Strided::buildSubBlock(i,j,*crsContent,blockMaps_),ss.str()));
-      }
-   } // end for i
-   A->endBlockFill();
+      // build the blocks and place it the right location
+      A->setNonconstBlock(i, j,
+                          Thyra::nonconstEpetraLinearOp(
+                              Strided::buildSubBlock(i, j, *crsContent, blockMaps_), ss.str()));
+    }
+  }  // end for i
+  A->endBlockFill();
 
-   return A;
+  return A;
 }
 
 // Rebuilds a blocked Thyra operator that uses the strided
@@ -201,22 +204,23 @@ StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & 
 //       A - Destination block linear op composed of blocks of
 //           Epetra_CrsMatrix at all relevant locations
 //
-void StridedMappingStrategy::rebuildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,
-                                                   const RCP<Thyra::BlockedLinearOpBase<double> > & A) const
-{
-   int dim = blockMaps_.size();
+void StridedMappingStrategy::rebuildBlockedThyraOp(
+    const RCP<const Epetra_CrsMatrix>& crsContent,
+    const RCP<Thyra::BlockedLinearOpBase<double> >& A) const {
+  int dim = blockMaps_.size();
 
-   for(int i=0;i<dim;i++) {
-      for(int j=0;j<dim;j++) {
-         // get Epetra version of desired block
-         RCP<Thyra::LinearOpBase<double> > Aij = A->getNonconstBlock(i,j);
-         RCP<Epetra_CrsMatrix> eAij = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*Aij),true);
+  for (int i = 0; i < dim; i++) {
+    for (int j = 0; j < dim; j++) {
+      // get Epetra version of desired block
+      RCP<Thyra::LinearOpBase<double> > Aij = A->getNonconstBlock(i, j);
+      RCP<Epetra_CrsMatrix> eAij =
+          rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*Aij), true);
 
-         // rebuild the blocks and place it the right location
-         Strided::rebuildSubBlock(i,j,*crsContent,blockMaps_,*eAij);
-      }
-   } // end for i
+      // rebuild the blocks and place it the right location
+      Strided::rebuildSubBlock(i, j, *crsContent, blockMaps_, *eAij);
+    }
+  }  // end for i
 }
 
-} // end namespace Epetra
-} // end namespace Teko
+}  // end namespace Epetra
+}  // end namespace Teko

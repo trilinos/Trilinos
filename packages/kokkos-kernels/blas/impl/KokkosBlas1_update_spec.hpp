@@ -27,7 +27,8 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class XMV, class YMV, class ZMV, int rank = ZMV::rank>
+template <class execution_space, class XMV, class YMV, class ZMV,
+          int rank = ZMV::rank>
 struct update_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -45,6 +46,7 @@ struct update_eti_spec_avail {
                                           MEM_SPACE)                       \
   template <>                                                              \
   struct update_eti_spec_avail<                                            \
+      EXEC_SPACE,                                                          \
       Kokkos::View<const SCALAR*, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
@@ -68,6 +70,7 @@ struct update_eti_spec_avail {
                                              MEM_SPACE)                     \
   template <>                                                               \
   struct update_eti_spec_avail<                                             \
+      EXEC_SPACE,                                                           \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
@@ -100,11 +103,15 @@ namespace Impl {
 /// Z(i,j) = alpha*X(i,j) + beta*Y(i,j) + gamma*Z(i,j),
 ///
 /// with special cases for alpha, beta, or gamma = 0.
-template <class XMV, class YMV, class ZMV, int rank = ZMV::rank,
-          bool tpl_spec_avail = update_tpl_spec_avail<XMV, YMV, ZMV>::value,
-          bool eti_spec_avail = update_eti_spec_avail<XMV, YMV, ZMV>::value>
+template <class execution_space, class XMV, class YMV, class ZMV,
+          int rank = ZMV::rank,
+          bool tpl_spec_avail =
+              update_tpl_spec_avail<execution_space, XMV, YMV, ZMV>::value,
+          bool eti_spec_avail =
+              update_eti_spec_avail<execution_space, XMV, YMV, ZMV>::value>
 struct Update {
-  static void update(const typename XMV::non_const_value_type& alpha,
+  static void update(const execution_space& space,
+                     const typename XMV::non_const_value_type& alpha,
                      const XMV& X,
                      const typename YMV::non_const_value_type& beta,
                      const YMV& Y,
@@ -114,14 +121,16 @@ struct Update {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Partial specialization for XMV, YMV, and ZMV rank-2 Views.
-template <class XMV, class YMV, class ZMV>
-struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class XMV, class YMV, class ZMV>
+struct Update<execution_space, XMV, YMV, ZMV, 2, false,
+              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<typename ZMV::non_const_value_type> ATC;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATB;
+  typedef Kokkos::ArithTraits<typename ZMV::non_const_value_type> ATC;
 
-  static void update(const typename XMV::non_const_value_type& alpha,
+  static void update(const execution_space& space,
+                     const typename XMV::non_const_value_type& alpha,
                      const XMV& X,
                      const typename YMV::non_const_value_type& beta,
                      const YMV& Y,
@@ -194,24 +203,24 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
       if (numRows * numCols < static_cast<size_type>(INT_MAX)) {
         typedef int index_type;
-        V_Update_Generic<decltype(X_0), decltype(Y_0), decltype(Z_0),
-                         index_type>(alpha, X_0, beta, Y_0, gamma, Z_0, a, b,
-                                     c);
+        V_Update_Generic<execution_space, decltype(X_0), decltype(Y_0),
+                         decltype(Z_0), index_type>(space, alpha, X_0, beta,
+                                                    Y_0, gamma, Z_0, a, b, c);
       } else {
         typedef typename XMV::size_type index_type;
-        V_Update_Generic<decltype(X_0), decltype(Y_0), decltype(Z_0),
-                         index_type>(alpha, X_0, beta, Y_0, gamma, Z_0, a, b,
-                                     c);
+        V_Update_Generic<execution_space, decltype(X_0), decltype(Y_0),
+                         decltype(Z_0), index_type>(space, alpha, X_0, beta,
+                                                    Y_0, gamma, Z_0, a, b, c);
       }
     } else {
       if (numRows * numCols < static_cast<size_type>(INT_MAX)) {
         typedef int index_type;
-        MV_Update_Generic<XMV, YMV, ZMV, index_type>(alpha, X, beta, Y, gamma,
-                                                     Z, a, b, c);
+        MV_Update_Generic<execution_space, XMV, YMV, ZMV, index_type>(
+            space, alpha, X, beta, Y, gamma, Z, a, b, c);
       } else {
         typedef typename XMV::size_type index_type;
-        MV_Update_Generic<XMV, YMV, ZMV, index_type>(alpha, X, beta, Y, gamma,
-                                                     Z, a, b, c);
+        MV_Update_Generic<execution_space, XMV, YMV, ZMV, index_type>(
+            space, alpha, X, beta, Y, gamma, Z, a, b, c);
       }
     }
     Kokkos::Profiling::popRegion();
@@ -219,14 +228,16 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 };
 
 // Partial specialization for XV, YV, and ZV rank-1 Views.
-template <class XV, class YV, class ZV>
-struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class XV, class YV, class ZV>
+struct Update<execution_space, XV, YV, ZV, 1, false,
+              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<typename ZV::non_const_value_type> ATC;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATB;
+  typedef Kokkos::ArithTraits<typename ZV::non_const_value_type> ATC;
 
-  static void update(const typename XV::non_const_value_type& alpha,
+  static void update(const execution_space& space,
+                     const typename XV::non_const_value_type& alpha,
                      const XV& X, const typename YV::non_const_value_type& beta,
                      const YV& Y,
                      const typename ZV::non_const_value_type& gamma,
@@ -291,12 +302,12 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      V_Update_Generic<XV, YV, ZV, index_type>(alpha, X, beta, Y, gamma, Z, a,
-                                               b, c);
+      V_Update_Generic<execution_space, XV, YV, ZV, index_type>(
+          space, alpha, X, beta, Y, gamma, Z, a, b, c);
     } else {
       typedef typename XV::size_type index_type;
-      V_Update_Generic<XV, YV, ZV, index_type>(alpha, X, beta, Y, gamma, Z, a,
-                                               b, c);
+      V_Update_Generic<execution_space, XV, YV, ZV, index_type>(
+          space, alpha, X, beta, Y, gamma, Z, a, b, c);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -318,6 +329,7 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_UPDATE_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,       \
                                          MEM_SPACE)                        \
   extern template struct Update<                                           \
+      EXEC_SPACE,                                                          \
       Kokkos::View<const SCALAR*, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
@@ -331,6 +343,7 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_UPDATE_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,       \
                                          MEM_SPACE)                        \
   template struct Update<                                                  \
+      EXEC_SPACE,                                                          \
       Kokkos::View<const SCALAR*, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
@@ -352,6 +365,7 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,     \
                                             MEM_SPACE)                      \
   extern template struct Update<                                            \
+      EXEC_SPACE,                                                           \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
@@ -365,6 +379,7 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_UPDATE_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,     \
                                             MEM_SPACE)                      \
   template struct Update<                                                   \
+      EXEC_SPACE,                                                           \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
@@ -376,7 +391,5 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       2, false, true>;
 
 #include <KokkosBlas1_update_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_update_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_update_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_UPDATE_SPEC_HPP_

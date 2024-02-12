@@ -95,6 +95,7 @@ using Teuchos::RCP;
  *                       <th> "Use ModelEvaluator" Code Snippet
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Construct the ModelEvaluator.</b>
  *      The ModelEvaluator, VanDerPol_ModelEvaluator_02, now has all
  *      information to construct the problem, including the problem
  *      size, vectorLength, parameters, and initial conditions.
@@ -113,6 +114,7 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Get ICs from the ModelEvaluator.</b>
  *      The initial conditions (i.e., nominal values) have moved to
  *      the VanDerPol_ModelEvaluator_02 constructor, and can retrieved
  *      via getNominalValues().
@@ -142,13 +144,14 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
- *     Before calling evalModel(InArgs, OutArgs), the InArgs and
- *     OutArgs need to be setup.  For an explicit ODE, we need to
- *     set the time, the solution vector, x, and the time derivative,
- *     x_dot. In InArgs, x_dot needs to be set to null to indicate
- *     it is an explicit ODE evaluation.  Finally, we set the outArgs
- *     f evaluation to the time derivative, xDot, so it is filled
- *     with the result.
+ *      <b>Setup InArgs and OutArgs for the ModelEvaluator.</b>
+ *      Before calling evalModel(InArgs, OutArgs), the InArgs and
+ *      OutArgs need to be setup.  For an explicit ODE, we need to
+ *      set the time, the solution vector, x, and the time derivative,
+ *      x_dot. In InArgs, x_dot needs to be set to null to indicate
+ *      it is an explicit ODE evaluation.  Finally, we set the outArgs
+ *      f evaluation to the time derivative, xDot, so it is filled
+ *      with the result.
  *    <td>
  *      @code
  *      @endcode
@@ -165,6 +168,7 @@ using Teuchos::RCP;
  *      @endcode
  *    <tr VALIGN=TOP>
  *    <td>
+ *      <b>Evaluate the ModelEvaluator.</b>
  *      The righthand-side evaluation is now in the ModelEvaluator,
  *      and is called with evalModel(InArgs, OutArgs).  Note that
  *      xDot has been filled in and can be accessed for the Forward-Euler
@@ -193,7 +197,7 @@ using Teuchos::RCP;
  *
  *  - Back to: \ref tutorials
  *  - Previous: \ref example-01
- *  - Next: Intro SolutionState
+ *  - Next: \ref example-03
  */
 int main(int argc, char *argv[])
 {
@@ -205,23 +209,23 @@ int main(int argc, char *argv[])
       model = Teuchos::rcp(new VanDerPol_ModelEvaluator_02<double>());
 
     // Get initial conditions from ModelEvaluator::getNominalValues.
+    int n = 0;
+    double time = 0.0;
+    bool passed = true;   // ICs are considered passed.
     RCP<Thyra::VectorBase<double> > x_n    =
       model->getNominalValues().get_x()->clone_v();
     RCP<Thyra::VectorBase<double> > xDot_n =
       model->getNominalValues().get_x_dot()->clone_v();
 
     // Timestep size
-    double time = 0.0;
     double finalTime = 2.0;
     int nTimeSteps = 2001;
     const double constDT = finalTime/(nTimeSteps-1);
 
     // Advance the solution to the next timestep.
-    int n = 0;
-    bool passing = true;
     cout << n << "  " << time << "  " << get_ele(*(x_n), 0)
                               << "  " << get_ele(*(x_n), 1) << endl;
-    while (passing && time < finalTime && n < nTimeSteps) {
+    while (passed && time < finalTime && n < nTimeSteps) {
 
       // Initialize next time step
       RCP<Thyra::VectorBase<double> > x_np1 = x_n->clone_v(); // at time index n+1
@@ -245,13 +249,13 @@ int main(int argc, char *argv[])
       // Take the timestep - Forward Euler
       Thyra::V_VpStV(x_np1.ptr(), *x_n, dt, *xDot_n);
 
-      // Test if solution is passing.
+      // Test if solution has passed.
       if ( std::isnan(Thyra::norm(*x_np1)) ) {
-        passing = false;
+        passed = false;
       } else {
         // Promote to next step (n <- n+1).
-        n++;
         Thyra::V_V(x_n.ptr(), *x_np1);
+        n++;
       }
 
       // Output
@@ -276,7 +280,7 @@ int main(int argc, char *argv[])
     cout << "Relative L2 Norm of the error (regression) = "
          << x_L2norm_error/x_L2norm_regress << endl;
     if ( x_L2norm_error > 1.0e-08*x_L2norm_regress) {
-      passing = false;
+      passed = false;
       cout << "FAILED regression constraint!" << endl;
     }
 
@@ -294,10 +298,10 @@ int main(int argc, char *argv[])
     cout << "Relative L2 Norm of the error (best)       = "
          << x_L2norm_error/x_L2norm_best << endl;
     if ( x_L2norm_error > 0.02*x_L2norm_best) {
-      passing = false;
+      passed = false;
       cout << "FAILED best constraint!" << endl;
     }
-    if (passing) success = true;
+    if (passed) success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

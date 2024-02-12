@@ -299,9 +299,9 @@ void run_spgemm_jacobi(Parameters params) {
                                            void, size_type>
       slow_crstmat_t;
 
-  char *a_mat_file = params.a_mtx_bin_file;
-  char *b_mat_file = params.b_mtx_bin_file;
-  char *c_mat_file = params.c_mtx_bin_file;
+  const char *a_mat_file = params.a_mtx_bin_file.c_str();
+  const char *b_mat_file = params.b_mtx_bin_file.c_str();
+  const char *c_mat_file = params.c_mtx_bin_file.c_str();
 
   slow_crstmat_t a_slow_crsmat, b_slow_crsmat, c_slow_crsmat;
   fast_crstmat_t a_fast_crsmat, b_fast_crsmat, c_fast_crsmat;

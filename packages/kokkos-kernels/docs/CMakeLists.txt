@@ -1,10 +1,7 @@
 # Source: https://devblogs.microsoft.com/cppblog/clear-functional-c-documentation-with-sphinx-breathe-doxygen-cmake/
 # Author: Evan Harvey <eharvey@sandia.gov>
 find_package(Doxygen REQUIRED)
-find_package(Sphinx REQUIRED)
 
-set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR})
-set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/docs/sphinx)
 set(KOKKOS_INCLUDE_DIR ${Kokkos_DIR}/../../../include)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/conf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -36,12 +33,21 @@ add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
 
 add_custom_target(Doxygen ALL DEPENDS ${DOXYGEN_INDEX_FILE})
 
+## If we can find sphinx, add that target too
+find_package(Sphinx)
 
-add_custom_target(Sphinx ALL
-        COMMAND ${SPHINX_EXECUTABLE} -b html
-        # Tell Breathe where to find the Doxygen output
-        -Dbreathe_projects.${PROJECT_NAME}=${DOXYGEN_OUTPUT_DIR}/xml
-        ${SPHINX_SOURCE} ${SPHINX_BUILD}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS Doxygen
-        COMMENT "Generating documentation with Sphinx")
+if (Sphinx_FOUND)
+        set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR})
+        set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/docs/sphinx)
+
+        add_custom_target(Sphinx ALL
+                COMMAND ${SPHINX_EXECUTABLE} -W --keep-going -b html
+                # Tell Breathe where to find the Doxygen output
+                -Dbreathe_projects.${PROJECT_NAME}=${DOXYGEN_OUTPUT_DIR}/xml
+                ${SPHINX_SOURCE} ${SPHINX_BUILD}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                DEPENDS Doxygen
+                COMMENT "Generating documentation with Sphinx")
+else() # Sphinx_FOUND
+        message(STATUS "Sphinx not found. Only Doxygen docs can be built")
+endif() # Sphinx_FOUND

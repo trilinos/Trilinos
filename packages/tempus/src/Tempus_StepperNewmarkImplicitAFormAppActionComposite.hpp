@@ -21,12 +21,10 @@ namespace Tempus {
  *  Inidividual AppActions are executed in the order in which they
  *  were added.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperNewmarkImplicitAFormAppActionComposite
-  : virtual public Tempus::StepperNewmarkImplicitAFormAppAction<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperNewmarkImplicitAFormAppAction<Scalar> {
+ public:
   /// Default constructor
   StepperNewmarkImplicitAFormAppActionComposite();
 
@@ -35,32 +33,34 @@ public:
 
   /// Execute application action for NewmarkImplicitAForm Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > stepper,
-    const typename StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > stepper,
+      const typename StepperNewmarkImplicitAFormAppAction<
+          Scalar>::ACTION_LOCATION actLoc)
   {
-    for(auto& a : appActions_)
-      a->execute(sh, stepper, actLoc);
+    for (auto& a : appActions_) a->execute(sh, stepper, actLoc);
   }
 
   // Add AppAction to the AppAction vector.
-  void addNewmarkImplicitAFormAppAction(Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction);
+  void addNewmarkImplicitAFormAppAction(
+      Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction);
   {
     appActions_.push_back(appAction);
   }
 
   // Clear the AppAction vector.
   void clearAppActions();
-  { appActions_.clear();}
+  {
+    appActions_.clear();
+  }
 
   // Return the size of the AppAction vector.
   std::size_t getSize() const { return appActions_.size(); }
 
-private:
-
-  std::vector<Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar > > > appActions_;
-
+ private:
+  std::vector<Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > >
+      appActions_;
 };
 
-} // namespace Tempus
-#endif // Tempus_StepperNewmarkImplicitAFormAppActionComposite_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperNewmarkImplicitAFormAppActionComposite_hpp

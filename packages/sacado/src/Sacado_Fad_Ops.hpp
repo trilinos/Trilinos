@@ -259,14 +259,12 @@ FAD_UNARYOP_MACRO(fabs,
                   fabs(expr.val()),
                   if_then_else( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
                   if_then_else( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
-#ifdef HAVE_SACADO_CXX11
 FAD_UNARYOP_MACRO(cbrt,
                   CbrtOp,
                   using std::cbrt;,
                   cbrt(expr.val()),
                   expr.dx(i)/(value_type(3)*cbrt(expr.val()*expr.val())),
                   expr.fastAccessDx(i)/(value_type(3)*cbrt(expr.val()*expr.val())))
-#endif
 
 #undef FAD_UNARYOP_MACRO
 
@@ -2168,7 +2166,6 @@ namespace Sacado {
 // Can't use the above macros because it is a ternary operator (sort of).
 // Also, relies on C++11
 
-#ifdef  HAVE_SACADO_CXX11
 
 namespace Sacado {
   namespace Fad {
@@ -2461,7 +2458,7 @@ namespace Sacado {
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      mpl::is_same< typename Expr<T>::value_type,
+      std::is_same< typename Expr<T>::value_type,
                     typename Expr<T>::scalar_type>,
       Expr< IfThenElseOp< CondT, ConstExpr<typename Expr<T>::scalar_type>,
                           Expr<T> > >
@@ -2478,7 +2475,7 @@ namespace Sacado {
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      mpl::is_same< typename Expr<T>::value_type,
+      std::is_same< typename Expr<T>::value_type,
                     typename Expr<T>::scalar_type>,
       Expr< IfThenElseOp< CondT, Expr<T>,
                           ConstExpr<typename Expr<T>::scalar_type> > >
@@ -2494,11 +2491,7 @@ namespace Sacado {
   }
 }
 
-#endif
-
 //-------------------------- Relational Operators -----------------------
-
-#ifdef  HAVE_SACADO_CXX11
 
 namespace Sacado {
   namespace Fad {
@@ -2541,42 +2534,6 @@ namespace Sacado {                                                      \
     }                                                                   \
   }                                                                     \
 }
-
-#else
-
-#define FAD_RELOP_MACRO(OP)                                             \
-namespace Sacado {                                                      \
-  namespace Fad {                                                       \
-    template <typename ExprT1, typename ExprT2>                         \
-    SACADO_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const Expr<ExprT2>& expr2)                             \
-    {                                                                   \
-      return expr1.val() OP expr2.val();                                \
-    }                                                                   \
-                                                                        \
-    template <typename ExprT2>                                          \
-    SACADO_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const typename Expr<ExprT2>::value_type& a,            \
-                 const Expr<ExprT2>& expr2)                             \
-    {                                                                   \
-      return a OP expr2.val();                                          \
-    }                                                                   \
-                                                                        \
-    template <typename ExprT1>                                          \
-    SACADO_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const typename Expr<ExprT1>::value_type& b)            \
-    {                                                                   \
-      return expr1.val() OP b;                                          \
-    }                                                                   \
-  }                                                                     \
-}
-
-#endif
 
 FAD_RELOP_MACRO(==)
 FAD_RELOP_MACRO(!=)

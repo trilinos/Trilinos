@@ -13,7 +13,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperNewmarkExplicitAFormAppAction.hpp"
 
-
 namespace Tempus {
 
 /** \brief Base ModifierX for StepperNewmarkExplicitAForm.
@@ -33,12 +32,10 @@ namespace Tempus {
  *  (StepperNewmarkExplicitAFormAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperNewmarkExplicitAForm.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperNewmarkExplicitAFormModifierXBase
-  : virtual public Tempus::StepperNewmarkExplicitAFormAppAction<Scalar>
-{
-private:
-
+  : virtual public Tempus::StepperNewmarkExplicitAFormAppAction<Scalar> {
+ private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -48,74 +45,68 @@ private:
    *
    *  For the ModifierX interface, this adaptor maps the
    *  StepperNewmarkExplicitAFormAppAction::ACTION_LOCATION to the
-   *  StepperNewmarkExplicitAFormModifierX::MODIFIERX_TYPE, and only pass the solution
+   *  StepperNewmarkExplicitAFormModifierX::MODIFIERX_TYPE, and only pass the
+   * solution
    *  (\f$x\f$ and/or \f$\dot{x}\f$ and other parameters to the modify
    *  function.
    */
-  void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperNewmarkExplicitAForm<Scalar> > stepper,
-    const typename StepperNewmarkExplicitAFormAppAction<Scalar>::ACTION_LOCATION actLoc)
+  void execute(Teuchos::RCP<SolutionHistory<Scalar> > sh,
+               Teuchos::RCP<StepperNewmarkExplicitAForm<Scalar> > stepper,
+               const typename StepperNewmarkExplicitAFormAppAction<
+                   Scalar>::ACTION_LOCATION actLoc)
   {
     using Teuchos::RCP;
 
-    MODIFIER_TYPE modType = X_BEGIN_STEP;
+    MODIFIER_TYPE modType                    = X_BEGIN_STEP;
     RCP<SolutionState<Scalar> > workingState = sh->getWorkingState();
-    const Scalar time = workingState->getTime();
-    const Scalar dt   = workingState->getTimeStep();
+    const Scalar time                        = workingState->getTime();
+    const Scalar dt                          = workingState->getTimeStep();
     RCP<Thyra::VectorBase<Scalar> > x;
 
-    switch(actLoc) {
-      case StepperNewmarkExplicitAFormAppAction<Scalar>::BEGIN_STEP:
-      {
+    switch (actLoc) {
+      case StepperNewmarkExplicitAFormAppAction<Scalar>::BEGIN_STEP: {
         modType = X_BEGIN_STEP;
-        x = workingState->getX();
+        x       = workingState->getX();
         break;
       }
-      case StepperNewmarkExplicitAFormAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
-      {
+      case StepperNewmarkExplicitAFormAppAction<Scalar>::BEFORE_EXPLICIT_EVAL: {
         modType = X_BEFORE_EXPLICIT_EVAL;
-        x = workingState->getX();
+        x       = workingState->getX();
         break;
       }
-      case StepperNewmarkExplicitAFormAppAction<Scalar>::AFTER_EXPLICIT_EVAL:
-      {
+      case StepperNewmarkExplicitAFormAppAction<Scalar>::AFTER_EXPLICIT_EVAL: {
         modType = X_AFTER_EXPLICIT_EVAL;
-        x = workingState->getX();
+        x       = workingState->getX();
         break;
       }
-      case StepperNewmarkExplicitAFormAppAction<Scalar>::END_STEP:
-      {
+      case StepperNewmarkExplicitAFormAppAction<Scalar>::END_STEP: {
         modType = X_END_STEP;
-        x = workingState->getX();
+        x       = workingState->getX();
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
 
     this->modify(x, time, dt, modType);
   }
 
-public:
-
+ public:
   /// Indicates the location of application action (see algorithm).
   enum MODIFIER_TYPE {
-    X_BEGIN_STEP,     ///< Modify \f$x\f$ at the beginning of the step.
-    X_BEFORE_EXPLICIT_EVAL,    ///< Modify \f$x\f$ before the explicit evaluation.
-    X_AFTER_EXPLICIT_EVAL,    ///< Modify \f$x\f$ after the explicit evaluation.
-    X_END_STEP        ///< Modify \f$x\f$ at the end of the step.
+    X_BEGIN_STEP,            ///< Modify \f$x\f$ at the beginning of the step.
+    X_BEFORE_EXPLICIT_EVAL,  ///< Modify \f$x\f$ before the explicit evaluation.
+    X_AFTER_EXPLICIT_EVAL,   ///< Modify \f$x\f$ after the explicit evaluation.
+    X_END_STEP               ///< Modify \f$x\f$ at the end of the step.
   };
 
   /// Modify solution based on the MODIFIER_TYPE.
-  virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
-    const Scalar /* time */, const Scalar /* dt */,
-    const MODIFIER_TYPE modType) = 0;
-
+  virtual void modify(Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
+                      const Scalar /* time */, const Scalar /* dt */,
+                      const MODIFIER_TYPE modType) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperNewmarkExplicitAFormModifierXBase_hpp
+#endif  // Tempus_StepperNewmarkExplicitAFormModifierXBase_hpp

@@ -766,7 +766,7 @@ protected:
 
 /// \class SyncTimeMonitor
 /// \brief A TimeMonitor that waits at a MPI barrier before destruction.
-class SyncTimeMonitor :
+class TEUCHOSCOMM_LIB_DLL_EXPORT SyncTimeMonitor :
     public TimeMonitor {
 public:
 

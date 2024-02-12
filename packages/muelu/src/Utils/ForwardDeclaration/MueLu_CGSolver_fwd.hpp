@@ -46,18 +46,13 @@
 #ifndef MUELU_CGSOLVER_FWD_HPP
 #define MUELU_CGSOLVER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class CGSolver;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class CGSolver;
 }
 
 #ifndef MUELU_CGSOLVER_SHORT
 #define MUELU_CGSOLVER_SHORT
 #endif
 
-
-
-#endif // MUELU_CGSOLVER_FWD_HPP
+#endif  // MUELU_CGSOLVER_FWD_HPP

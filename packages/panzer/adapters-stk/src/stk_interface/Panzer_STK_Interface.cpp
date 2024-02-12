@@ -44,6 +44,7 @@
 #include <Panzer_STK_Interface.hpp>
 
 #include <Teuchos_as.hpp>
+#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 
 #include <limits>
 
@@ -108,12 +109,14 @@ STK_Interface::STK_Interface()
    : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
 {
   metaData_ = rcp(new stk::mesh::MetaData());
+  metaData_->use_simple_fields();
 }
 
 STK_Interface::STK_Interface(Teuchos::RCP<stk::mesh::MetaData> metaData)
   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
 {
   metaData_ = metaData;
+  metaData_->use_simple_fields();
 }
 
 STK_Interface::STK_Interface(unsigned dim)
@@ -123,6 +126,7 @@ STK_Interface::STK_Interface(unsigned dim)
    entity_rank_names.push_back("FAMILY_TREE");
 
    metaData_ = rcp(new stk::mesh::MetaData(dimension_,entity_rank_names));
+   metaData_->use_simple_fields();
 
    initializeFromMetaData();
 }
@@ -161,13 +165,12 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
 
    // add & declare field if not already added...currently assuming linears
    if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
-      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
+      SolutionFieldType * field = metaData_->get_field<double>(stk::topology::NODE_RANK, fieldName);
       if(field==0)
-         field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
+         field = &metaData_->declare_field<double>(stk::topology::NODE_RANK, fieldName);
       if ( initialized_ )  {
         metaData_->enable_late_fields();
-        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
-        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol );
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(), nullptr);
       }
       fieldNameToSolution_[key] = field;
    }
@@ -181,14 +184,13 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
 
    // add & declare field if not already added...currently assuming linears
    if(fieldNameToCellField_.find(key)==fieldNameToCellField_.end()) {
-      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
+      SolutionFieldType * field = metaData_->get_field<double>(stk::topology::ELEMENT_RANK, fieldName);
       if(field==0)
-         field = &metaData_->declare_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
+         field = &metaData_->declare_field<double>(stk::topology::ELEMENT_RANK, fieldName);
 
       if ( initialized_ )  {
         metaData_->enable_late_fields();
-        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
-        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol );
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(), nullptr);
       }
       fieldNameToCellField_[key] = field;
    }
@@ -202,15 +204,14 @@ void STK_Interface::addEdgeField(const std::string & fieldName,const std::string
 
    // add & declare field if not already added...currently assuming linears
    if(fieldNameToEdgeField_.find(key)==fieldNameToEdgeField_.end()) {
-      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::EDGE_RANK, fieldName);
+      SolutionFieldType * field = metaData_->get_field<double>(stk::topology::EDGE_RANK, fieldName);
       if(field==0) {
-         field = &metaData_->declare_field<SolutionFieldType>(stk::topology::EDGE_RANK, fieldName);
+         field = &metaData_->declare_field<double>(stk::topology::EDGE_RANK, fieldName);
       }
 
       if ( initialized_ )  {
         metaData_->enable_late_fields();
-        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
-        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol );
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(), nullptr);
       }
       fieldNameToEdgeField_[key] = field;
    }
@@ -224,15 +225,14 @@ void STK_Interface::addFaceField(const std::string & fieldName,const std::string
 
    // add & declare field if not already added...currently assuming linears
    if(fieldNameToFaceField_.find(key)==fieldNameToFaceField_.end()) {
-      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::FACE_RANK, fieldName);
+      SolutionFieldType * field = metaData_->get_field<double>(stk::topology::FACE_RANK, fieldName);
       if(field==0) {
-         field = &metaData_->declare_field<SolutionFieldType>(stk::topology::FACE_RANK, fieldName);
+         field = &metaData_->declare_field<double>(stk::topology::FACE_RANK, fieldName);
       }
 
       if ( initialized_ )  {
         metaData_->enable_late_fields();
-        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
-        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol );
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(), nullptr);
       }
       fieldNameToFaceField_[key] = field;
    }
@@ -273,9 +273,9 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
       // add & declare field if not already added...currently assuming linears
       if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
 
-         SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
+         SolutionFieldType * field = metaData_->get_field<double>(stk::topology::NODE_RANK, dispName);
          if(field==0) {
-            field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
+            field = &metaData_->declare_field<double>(stk::topology::NODE_RANK, dispName);
          }
          fieldNameToSolution_[key] = field;
       }
@@ -299,15 +299,12 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
    procRank_ = stk::parallel_machine_rank(*mpiComm_->getRawMpiComm());
 
    // associating the field with a part: universal part!
-   stk::mesh::FieldTraits<VectorFieldType>::data_type* init_vf = nullptr; // gcc 4.8 hack
-   stk::mesh::FieldTraits<ProcIdFieldType>::data_type* init_pid = nullptr; // gcc 4.8 hack
-   stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr; // gcc 4.8 hack
-   stk::mesh::put_field_on_mesh( *coordinatesField_ , metaData_->universal_part(), getDimension(),init_vf);
-   stk::mesh::put_field_on_mesh( *edgesField_ , metaData_->universal_part(), getDimension(),init_vf);
+   stk::mesh::put_field_on_mesh( *coordinatesField_ , metaData_->universal_part(), getDimension(), nullptr);
+   stk::mesh::put_field_on_mesh( *edgesField_ , metaData_->universal_part(), getDimension(), nullptr);
    if (dimension_ > 2)
-     stk::mesh::put_field_on_mesh( *facesField_ , metaData_->universal_part(), getDimension(),init_vf);
-   stk::mesh::put_field_on_mesh( *processorIdField_ , metaData_->universal_part(),init_pid);
-   stk::mesh::put_field_on_mesh( *loadBalField_ , metaData_->universal_part(),init_sol);
+     stk::mesh::put_field_on_mesh( *facesField_ , metaData_->universal_part(), getDimension(), nullptr);
+   stk::mesh::put_field_on_mesh( *processorIdField_ , metaData_->universal_part(), nullptr);
+   stk::mesh::put_field_on_mesh( *loadBalField_ , metaData_->universal_part(), nullptr);
 
    initializeFieldsInSTK(fieldNameToSolution_, setupIO);
    initializeFieldsInSTK(fieldNameToCellField_, setupIO);
@@ -364,11 +361,16 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
          stk::io::put_io_part_attribute(*nodesPart_);
 
       stk::io::set_field_role(*coordinatesField_, Ioss::Field::MESH);
+      stk::io::set_field_output_type(*coordinatesField_, stk::io::FieldOutputType::VECTOR_3D);
       stk::io::set_field_role(*edgesField_, Ioss::Field::MESH);
-      if (dimension_ > 2)
+      stk::io::set_field_output_type(*edgesField_, stk::io::FieldOutputType::VECTOR_3D);
+      if (dimension_ > 2) {
          stk::io::set_field_role(*facesField_, Ioss::Field::MESH);
+         stk::io::set_field_output_type(*facesField_, stk::io::FieldOutputType::VECTOR_3D);
+      }
       stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
       // stk::io::set_field_role(*loadBalField_, Ioss::Field::TRANSIENT);
+
    }
 #endif
 
@@ -403,9 +405,8 @@ void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,s
 
    {
       std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
-      stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr; // gcc 4.8 hack
       for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
-        stk::mesh::put_field_on_mesh(*(*uniqueFieldIter),metaData_->universal_part(),init_sol);
+        stk::mesh::put_field_on_mesh(*(*uniqueFieldIter),metaData_->universal_part(),nullptr);
    }
 
 #ifdef PANZER_HAVE_IOSS
@@ -1721,12 +1722,12 @@ void STK_Interface::initializeFromMetaData()
    dimension_ = metaData_->spatial_dimension();
 
    // declare coordinates and node parts
-   coordinatesField_ = &metaData_->declare_field<VectorFieldType>(stk::topology::NODE_RANK, coordsString);
-   edgesField_       = &metaData_->declare_field<VectorFieldType>(stk::topology::EDGE_RANK, edgesString);
+   coordinatesField_ = &metaData_->declare_field<double>(stk::topology::NODE_RANK, coordsString);
+   edgesField_       = &metaData_->declare_field<double>(stk::topology::EDGE_RANK, edgesString);
    if (dimension_ > 2)
-     facesField_       = &metaData_->declare_field<VectorFieldType>(stk::topology::FACE_RANK, facesString);
-   processorIdField_ = &metaData_->declare_field<ProcIdFieldType>(stk::topology::ELEMENT_RANK, "PROC_ID");
-   loadBalField_     = &metaData_->declare_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, "LOAD_BAL");
+     facesField_       = &metaData_->declare_field<double>(stk::topology::FACE_RANK, facesString);
+   processorIdField_ = &metaData_->declare_field<ProcIdData>(stk::topology::ELEMENT_RANK, "PROC_ID");
+   loadBalField_     = &metaData_->declare_field<double>(stk::topology::ELEMENT_RANK, "LOAD_BAL");
 
    // stk::mesh::put_field( *coordinatesField_ , getNodeRank() , metaData_->universal_part() );
 

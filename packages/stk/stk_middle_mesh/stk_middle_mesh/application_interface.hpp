@@ -5,8 +5,7 @@
 #include "mesh_quality_improver_opts.hpp"
 #include "mesh_snapper_opts.hpp"
 #include "nonconformal4_opts.hpp"
-#include "stk_middle_mesh/application_interface.hpp"
-
+#include "bounding_box_search_opts.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -61,6 +60,7 @@ struct MiddleGridOpts
     MiddleGridType type = MiddleGridType::NormalProjection;
 
     NormalProjectionOpts normalProjectionOpts;
+    search::BoundingBoxSearchOpts searchOpts;
 };
 
 class XiCoordinates
@@ -122,7 +122,8 @@ class ApplicationInterface
 
 enum class ApplicationInterfaceType
 {
-  FakeParallel = 0
+  FakeParallel = 0,
+  Parallel
 };
 
 std::shared_ptr<ApplicationInterface> application_interface_factory(

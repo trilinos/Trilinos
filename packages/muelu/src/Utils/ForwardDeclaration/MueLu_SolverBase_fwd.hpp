@@ -46,18 +46,13 @@
 #ifndef MUELU_SOLVERBASE_FWD_HPP
 #define MUELU_SOLVERBASE_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class SolverBase;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class SolverBase;
 }
 
 #ifndef MUELU_SOLVERBASE_SHORT
 #define MUELU_SOLVERBASE_SHORT
 #endif
 
-
-
-#endif // MUELU_SOLVERBASE_FWD_HPP
+#endif  // MUELU_SOLVERBASE_FWD_HPP

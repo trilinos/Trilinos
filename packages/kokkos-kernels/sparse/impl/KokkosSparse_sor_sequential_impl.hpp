@@ -17,7 +17,7 @@
 #ifndef KOKKOSSPARSE_IMPL_SOR_HPP
 #define KOKKOSSPARSE_IMPL_SOR_HPP
 
-/// \file Kokkos_Sparse_impl_sor.hpp
+/// \file KokkosSparse_impl_sor.hpp
 /// \brief Sequential implementations of Gauss-Seidel and SOR.
 ///
 /// This file exists mainly as a temporary porting aid.  Until we can
@@ -77,7 +77,7 @@ void gaussSeidel(const LocalOrdinal numRows, const LocalOrdinal numCols,
                  const OffsetType b_stride, RangeScalar* const X,
                  const OffsetType x_stride, const MatrixScalar* const D,
                  const MatrixScalar omega, const char direction[]) {
-  using Kokkos::Details::ArithTraits;
+  using Kokkos::ArithTraits;
   typedef LocalOrdinal LO;
   const OffsetType theNumRows = static_cast<OffsetType>(numRows);
   const OffsetType theNumCols = static_cast<OffsetType>(numCols);
@@ -247,7 +247,7 @@ void reorderedGaussSeidel(
     const MatrixScalar* const D, const LocalOrdinal* const rowInd,
     const LocalOrdinal numRowInds,  // length of rowInd
     const MatrixScalar omega, const char direction[]) {
-  using Kokkos::Details::ArithTraits;
+  using Kokkos::ArithTraits;
   typedef LocalOrdinal LO;
   const OffsetType theNumRows = static_cast<OffsetType>(numRows);
   const OffsetType theNumCols = static_cast<OffsetType>(numCols);
@@ -323,7 +323,7 @@ void reorderedGaussSeidel(
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero();
+          x_temp[c] = Kokkos::ArithTraits<RangeScalar>::zero();
         }
         for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
           const LO j              = ind[k];
@@ -344,7 +344,7 @@ void reorderedGaussSeidel(
       for (LO ii = numRowInds - 1; ii != 0; --ii) {
         LO i = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero();
+          x_temp[c] = Kokkos::ArithTraits<RangeScalar>::zero();
         }
         for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
           const LO j              = ind[k];
@@ -362,7 +362,7 @@ void reorderedGaussSeidel(
         const LO ii = 0;
         LO i        = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero();
+          x_temp[c] = Kokkos::ArithTraits<RangeScalar>::zero();
         }
         for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
           const LO j              = ind[k];

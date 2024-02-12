@@ -36,12 +36,12 @@ namespace Tempus {
  * (df/dx)(x,p) * dx/dp + df/dp(x,p).
  */
 template <typename Scalar>
-class CombinedForwardSensitivityModelEvaluator :
-    public Thyra::StateFuncModelEvaluatorBase<Scalar>,
+class CombinedForwardSensitivityModelEvaluator
+  : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
     public SensitivityModelEvaluatorBase<Scalar> {
-public:
-  typedef Thyra::VectorBase<Scalar>  Vector;
-  typedef Thyra::MultiVectorBase<Scalar>  MultiVector;
+ public:
+  typedef Thyra::VectorBase<Scalar> Vector;
+  typedef Thyra::MultiVectorBase<Scalar> MultiVector;
 
   //! Constructor
   /*!
@@ -71,20 +71,24 @@ public:
    * </ul>
    */
   CombinedForwardSensitivityModelEvaluator(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_residual_model,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_solve_model,
-    const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
-    const Teuchos::RCP<MultiVector>& dxdp_init = Teuchos::null,
-    const Teuchos::RCP<MultiVector>& dx_dotdp_init = Teuchos::null,
-    const Teuchos::RCP<MultiVector>& dx_dotdot_dp_init = Teuchos::null);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >&
+          sens_residual_model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >&
+          sens_solve_model,
+      const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
+      const Teuchos::RCP<MultiVector>& dxdp_init              = Teuchos::null,
+      const Teuchos::RCP<MultiVector>& dx_dotdp_init          = Teuchos::null,
+      const Teuchos::RCP<MultiVector>& dx_dotdot_dp_init      = Teuchos::null);
 
   /** \name Public functions overridden from SensitivityModelEvaulator. */
   //@{
 
   //! Get the underlying model 'f'
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getForwardModel() const
-  { return model_; }
+  {
+    return model_;
+  }
 
   //@}
 
@@ -125,16 +129,14 @@ public:
 
   static Teuchos::RCP<const Teuchos::ParameterList> getValidParameters();
 
-private:
-
+ private:
   typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
 
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
-
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
@@ -169,6 +171,6 @@ private:
   mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dgdx_mv_;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
 #endif

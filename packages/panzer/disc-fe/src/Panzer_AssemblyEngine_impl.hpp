@@ -120,12 +120,16 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 
   if ( flags.getValue() & EvaluationFlags::Scatter) {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_scatter("+PHX::print<EvalT>()+")",eval_scatter);
-    m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
-
-    m_lin_obj_factory->beginFill(*in.container_);
-    gedc.ghostToGlobal(LOC::F | LOC::Mat);
-    m_lin_obj_factory->endFill(*in.container_);
-
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::lof->ghostToGlobalContainer("+PHX::print<EvalT>()+")",lof_gtgc);
+      m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
+    }
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::gedc.ghostToGlobal("+PHX::print<EvalT>()+")",gedc_gtg);
+      m_lin_obj_factory->beginFill(*in.container_);
+      gedc.ghostToGlobal(LOC::F | LOC::Mat);
+      m_lin_obj_factory->endFill(*in.container_);
+    }
     m_lin_obj_factory->endFill(*in.ghostedContainer_);
   }
 

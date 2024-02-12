@@ -27,6 +27,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include <type_traits>
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -36,9 +38,8 @@
 #include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #include "Sacado_mpl_apply.hpp"
-#include "Sacado_mpl_is_convertible.hpp"
 
-// Some classes for testing mpl::is_convertible<From,To>
+// Some classes for testing std::is_convertible<From,To>
 struct A {};
 struct B {
   B() {}
@@ -52,12 +53,12 @@ const int global_fad_size = 10;
 // Test is_convertible<From,To> behaves as expected
 TEUCHOS_UNIT_TEST( Conversion, IsConvertible )
 {
-  const bool is_b_a = Sacado::mpl::is_convertible<B,A>::value;
-  const bool is_a_b = Sacado::mpl::is_convertible<A,B>::value;
-  const bool is_c_a = Sacado::mpl::is_convertible<C,A>::value;
-  const bool is_int_double = Sacado::mpl::is_convertible<int,double>::value;
-  const bool is_double_int = Sacado::mpl::is_convertible<double,int>::value;
-  const bool is_double_a = Sacado::mpl::is_convertible<double,A>::value;
+  const bool is_b_a = std::is_convertible<B,A>::value;
+  const bool is_a_b = std::is_convertible<A,B>::value;
+  const bool is_c_a = std::is_convertible<C,A>::value;
+  const bool is_int_double = std::is_convertible<int,double>::value;
+  const bool is_double_int = std::is_convertible<double,int>::value;
+  const bool is_double_a = std::is_convertible<double,A>::value;
   TEST_EQUALITY( is_b_a, false );
   TEST_EQUALITY( is_a_b, true );
   TEST_EQUALITY( is_c_a, true );
@@ -74,17 +75,17 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
   typedef typename Sacado::ScalarType<ad_type>::type scalar_type;
 
   const bool is_value_ad =
-    Sacado::mpl::is_convertible<value_type,ad_type>::value;
+    std::is_convertible<value_type,ad_type>::value;
   const bool is_ad_value =
-    Sacado::mpl::is_convertible<ad_type,value_type>::value;
+    std::is_convertible<ad_type,value_type>::value;
   const bool is_scalar_ad =
-    Sacado::mpl::is_convertible<scalar_type,ad_type>::value;
+    std::is_convertible<scalar_type,ad_type>::value;
   const bool is_ad_scalar =
-    Sacado::mpl::is_convertible<ad_type,scalar_type>::value;
+    std::is_convertible<ad_type,scalar_type>::value;
   const bool is_not_view = ! Sacado::IsView<ad_type>::value;
 
   const bool is_int_ad =
-    Sacado::mpl::is_convertible<value_type,ad_type>::value;
+    std::is_convertible<value_type,ad_type>::value;
 
   TEST_EQUALITY( is_value_ad, is_not_view );
   TEST_EQUALITY_CONST( is_ad_value, false );
@@ -92,7 +93,6 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
   TEST_EQUALITY_CONST( is_ad_scalar, false );
   TEST_EQUALITY( is_int_ad, is_not_view );
 
-#ifdef HAVE_SACADO_CXX11
   // Get the type of the result of the expression 'ad_type * ad_type'
   // The use of declval gets around actually instantiation objects of type
   // ad_type.
@@ -100,16 +100,15 @@ bool test_ad_conversions(Teuchos::FancyOStream& out)
   typedef decltype(std::declval<value_type>()*std::declval<value_type>()) val_expr_type;
 
   const bool is_ad_expr_ad =
-    Sacado::mpl::is_convertible<ad_expr_type,ad_type>::value;
+    std::is_convertible<ad_expr_type,ad_type>::value;
   const bool is_val_expr_ad =
-    Sacado::mpl::is_convertible<val_expr_type,ad_type>::value;
+    std::is_convertible<val_expr_type,ad_type>::value;
 
   TEST_EQUALITY( is_ad_expr_ad, is_not_view );
   TEST_EQUALITY( is_val_expr_ad, is_not_view );
 
   // typedef typename ad_expr_type::value_type ad_expr_value_type;
   // std::cout << typeid(ad_expr_value_type).name() << std::endl;
-#endif
 
   return success;
 }

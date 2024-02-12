@@ -14,19 +14,19 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorAdjointSensitivity)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorAdjointSensitivity)
 
-  // Nonmember ctor
-  template Teuchos::RCP<IntegratorAdjointSensitivity<double> >
-  createIntegratorAdjointSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>        parameterList,
+// Nonmember ctor
+template Teuchos::RCP<IntegratorAdjointSensitivity<double> >
+createIntegratorAdjointSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> parameterList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& adjoint_model);
 
-  // Nonmember ctor
-  template Teuchos::RCP<IntegratorAdjointSensitivity<double> >
-  createIntegratorAdjointSensitivity();
+// Nonmember ctor
+template Teuchos::RCP<IntegratorAdjointSensitivity<double> >
+createIntegratorAdjointSensitivity();
 
-} // namespace Tempus
+}  // namespace Tempus
 
 #endif

@@ -46,18 +46,13 @@
 #ifndef MUELU_SMOOTHER_FWD_HPP
 #define MUELU_SMOOTHER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Smoother;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class Smoother;
 }
 
 #ifndef MUELU_SMOOTHER_SHORT
 #define MUELU_SMOOTHER_SHORT
 #endif
 
-
-
-#endif // MUELU_SMOOTHER_FWD_HPP
+#endif  // MUELU_SMOOTHER_FWD_HPP

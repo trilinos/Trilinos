@@ -53,104 +53,99 @@
 
 namespace Xpetra {
 
-  template <class Scalar,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-  class Vector
-    : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
-  {
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class Vector
+  : public virtual MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+ public:
+  using scalar_type         = Scalar;
+  using local_ordinal_type  = LocalOrdinal;
+  using global_ordinal_type = GlobalOrdinal;
+  using node_type           = Node;
 
-  public:
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot;                 // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm1;               // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::norm2;               // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normInf;             // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::meanValue;           // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValue;  // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValue;  // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceLocalValue;   // overloading, not hiding
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoLocalValue;   // overloading, not hiding
 
-    using scalar_type         = Scalar;
-    using local_ordinal_type  = LocalOrdinal;
-    using global_ordinal_type = GlobalOrdinal;
-    using node_type           = Node;
+  typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
+  template <class TargetDeviceType, class AccessType>
+  typename std::conditional<
+      std::is_same<
+          typename dual_view_type::t_dev_um::execution_space::memory_space,
+          typename TargetDeviceType::memory_space>::value,
+      typename dual_view_type::t_dev_um,
+      typename dual_view_type::t_host_um>::type
+  getLocalView(AccessType access_type) const {
+    return this->MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template getLocalView<TargetDeviceType>(access_type);
+  }
 
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::dot;          // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm1;        // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm2;        // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normInf;      // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::meanValue;    // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceGlobalValue; // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoGlobalValue; // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::replaceLocalValue;  // overloading, not hiding
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::sumIntoLocalValue;  // overloading, not hiding
+  //! @name Constructor/Destructor Methods
+  //@{
 
+  //! Destructor.
+  virtual ~Vector() {}
 
-    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+  //@}
 
-    template<class TargetDeviceType, class AccessType>
-     typename std::conditional<
-       std::is_same<
-         typename dual_view_type::t_dev_um::execution_space::memory_space,
-         typename TargetDeviceType::memory_space>::value,
-         typename dual_view_type::t_dev_um,
-         typename dual_view_type::t_host_um>::type
-     getLocalView (AccessType access_type) const {
-       return this->MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>(access_type);
-     }
+  //! @name Post-construction modification routines
+  //@{
 
-    //! @name Constructor/Destructor Methods
-    //@{
+  //! Replace current value at the specified location with specified value.
+  virtual void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) = 0;
 
-    //! Destructor.
-    virtual ~Vector() { }
+  //! Adds specified value to existing value at the specified location.
+  virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) = 0;
 
-   //@}
+  //! Replace current value at the specified location with specified values.
+  virtual void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) = 0;
 
-    //! @name Post-construction modification routines
-    //@{
+  //! Adds specified value to existing value at the specified location.
+  virtual void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) = 0;
 
-    //! Replace current value at the specified location with specified value.
-    virtual void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value)= 0;
+  //@}
 
-    //! Adds specified value to existing value at the specified location.
-    virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value)= 0;
+  //! @name Mathematical methods
+  //@{
 
-    //! Replace current value at the specified location with specified values.
-    virtual void replaceLocalValue(LocalOrdinal myRow, const Scalar &value)= 0;
+  //! Computes dot product of this Vector against input Vector x.
+  virtual Scalar dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &a) const = 0;
 
-    //! Adds specified value to existing value at the specified location.
-    virtual void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value)= 0;
+  //! Return 1-norm of this Vector.
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const = 0;
 
-    //@}
+  //! Compute 2-norm of this Vector.
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const = 0;
 
-    //! @name Mathematical methods
-    //@{
+  //! Compute Inf-norm of this Vector.
+  virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const = 0;
 
-    //! Computes dot product of this Vector against input Vector x.
-    virtual Scalar dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const = 0;
+  //! Compute mean (average) value of this Vector.
+  virtual Scalar meanValue() const = 0;
 
-    //! Return 1-norm of this Vector.
-    virtual typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm1() const = 0;
+  //@}
 
-    //! Compute 2-norm of this Vector.
-    virtual typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm2() const = 0;
+  //! @name Overridden from Teuchos::Describable
+  //@{
 
-    //! Compute Inf-norm of this Vector.
-    virtual typename Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const = 0;
+  //! Return a simple one-line description of this object.
+  virtual std::string description() const = 0;
 
-    //! Compute mean (average) value of this Vector.
-    virtual Scalar meanValue() const = 0;
+  //! Print the object with some verbosity level to an FancyOStream object.
+  virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const = 0;
 
-    //@}
+  //@}
 
-    //! @name Overridden from Teuchos::Describable
-    //@{
-
-    //! Return a simple one-line description of this object.
-    virtual std::string description() const = 0;
-
-    //! Print the object with some verbosity level to an FancyOStream object.
-    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-
-    //@}
-
-  }; // Vector class
-} // Xpetra namespace
+};  // Vector class
+}  // namespace Xpetra
 
 #define XPETRA_VECTOR_SHORT
-#endif // XPETRA_VECTOR_HPP
+#endif  // XPETRA_VECTOR_HPP

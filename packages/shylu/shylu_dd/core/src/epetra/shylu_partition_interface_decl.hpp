@@ -74,7 +74,7 @@
 #endif
 
 //#include <Zoltan2_config.h>
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE)
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -112,7 +112,7 @@ private:
   Teuchos::ParameterList* pList;
   Matrix* A;
   ///other handlers needed by zoltan2 and isorropia
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE) && (!defined(HAVE_SHYLU_DDCORE_TPETRA) || defined(HAVE_TPETRA_INST_INT_INT))
   int partitionZoltan2();
   Zoltan2::XpetraCrsMatrixAdapter<Matrix,Vector> *zadapter;
   Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter<Matrix,Vector> > *zproblem;

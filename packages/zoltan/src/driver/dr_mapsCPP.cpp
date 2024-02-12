@@ -380,7 +380,7 @@ Zoltan_Comm *comm;
    * Create DDirectory and register all owned elements. 
    */
 
-  dd = new Zoltan_DD(MPI_COMM_WORLD, 1, 1, 0, 0, 0);
+  dd = new Zoltan_DD(zoltan_get_global_comm(), 1, 1, 0, 0, 0);
 
   ierr = dd->Update(gids, lids, NULL, NULL, num_elems);
 
@@ -453,7 +453,7 @@ Zoltan_Comm *comm;
    * Check for errors 
    */
 
-  MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_SUM, zoltan_get_global_comm());
 
   if (gerror) {
     Gen_Error(0, "Fatal:  Error returned by DDirectory Test");
@@ -493,7 +493,7 @@ Zoltan_Comm *comm;
     i_want[j++] = my_gids[i];
   }
 
-  comm = new Zoltan_Comm(num_nbor, ownerlist, MPI_COMM_WORLD, 747, 
+  comm = new Zoltan_Comm(num_nbor, ownerlist, zoltan_get_global_comm(), 747, 
                         &num_others);
 
   /*
@@ -622,7 +622,7 @@ printf("Test comm copy functions\n");
      * output of generated map is serialized (and not junked up).
      */
     int nprocs = 0;
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    MPI_Comm_size(zoltan_get_global_comm(), &nprocs);
     print_sync_end(proc, nprocs, 1);
   }
 

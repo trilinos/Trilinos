@@ -54,57 +54,55 @@
 
 namespace MueLu {
 
-  /*!
-    @class StructuredLineDetectionFactory class.
-    @brief Factory building line detection information on structured meshes
-  */
+/*!
+  @class StructuredLineDetectionFactory class.
+  @brief Factory building line detection information on structured meshes
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class StructuredLineDetectionFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class StructuredLineDetectionFactory : public SingleLevelFactoryBase {
 #undef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! @name Constructors/Destructors.
-    //@{
+  StructuredLineDetectionFactory() {}
 
-    StructuredLineDetectionFactory() { }
+  //! Destructor.
+  virtual ~StructuredLineDetectionFactory() {}
 
-    //! Destructor.
-    virtual ~StructuredLineDetectionFactory() { }
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //@}
 
-    //@}
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& currentLevel) const;
 
-    void DeclareInput(Level& currentLevel) const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  /*!
+    @brief Build method.
 
-    /*!
-      @brief Build method.
+    Builds line detection information and stores it in currentLevel
+    */
+  void Build(Level& currentLevel) const;
 
-      Builds line detection information and stores it in currentLevel
-      */
-    void Build(Level& currentLevel) const;
+  //@}
 
-    //@}
+ private:
+};  // class StructuredLineDetectionFactory
 
-  private:
-
-  }; //class StructuredLineDetectionFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
-#endif // MUELU_STRUCTUREDLINEDETECTIONFACTORY_DECL_HPP
+#endif  // MUELU_STRUCTUREDLINEDETECTIONFACTORY_DECL_HPP

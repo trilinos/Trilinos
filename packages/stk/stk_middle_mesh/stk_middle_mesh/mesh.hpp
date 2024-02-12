@@ -4,7 +4,7 @@
 #include "field_manager.hpp"
 #include "geo_classification.hpp"
 #include "mesh_entity.hpp"
-#include "mpi.h"
+#include "stk_util/parallel/Parallel.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -83,7 +83,7 @@ class Mesh
     void delete_face(MeshEntityPtr face);
 
   private:
-    explicit Mesh(MPI_Comm comm = MPI_COMM_WORLD)
+    explicit Mesh(MPI_Comm comm = parallel_machine_world())
       : m_comm(comm)
     {
     }
@@ -131,13 +131,13 @@ class Mesh
     friend std::shared_ptr<Mesh> make_empty_mesh(MPI_Comm comm);
 };
 
-int count_valid(const std::vector<MeshEntityPtr> entities);
+int count_valid(const std::vector<MeshEntityPtr>& entities);
 
 // count number of elements that have angles outside the range
 // [theta_min, theta_max], angles in degrees
 int check_angles(std::shared_ptr<Mesh> mesh, const double thetaMin, const double thetaMax);
 
-void check_topology(std::shared_ptr<Mesh> mesh);
+void check_topology(std::shared_ptr<Mesh> mesh, int maxDim=2);
 
 void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::vector<MeshEntityPtr>& entitiesDown);
 
@@ -164,7 +164,10 @@ int get_bridge_adjacent(MeshEntityPtr e, const int viaDim, const int targetDim, 
 
 int get_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
 
+int get_local_id(MeshEntityPtr higherDimensionEntity, MeshEntityPtr lowerDimensionEntity);
+
 RemoteSharedEntity get_owner_remote(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
+
 bool check_is_entity_owner(std::shared_ptr<Mesh> mesh, MeshEntityPtr entity);
 
 RemoteSharedEntity get_remote_shared_entity(MeshEntityPtr entity, int rank);
@@ -268,7 +271,7 @@ void check_vertices_null(std::vector<MeshEntityPtr> entities);
 int count_entities_of_type(std::shared_ptr<mesh::Mesh> mesh, MeshEntityType type);
 
 
-std::shared_ptr<Mesh> make_empty_mesh(MPI_Comm comm = MPI_COMM_WORLD);
+std::shared_ptr<Mesh> make_empty_mesh(MPI_Comm comm = parallel_machine_world());
 
 } // namespace mesh
 

@@ -34,6 +34,7 @@ understand the internals of TriBITS.
 @MACRO:    tribits_parse_subpackages_append_packages_add_options() +
 @MACRO:    tribits_prep_to_read_dependencies() +
 @MACRO:    tribits_process_all_repository_deps_setup_files() +
+@MACRO:    tribits_process_enabled_tpls() +
 @MACRO:    tribits_process_package_dependencies_lists() +
 @MACRO:    tribits_process_packages_and_dirs_lists() +
 @MACRO:    tribits_process_project_dependency_setup_file() +
@@ -50,6 +51,6 @@ understand the internals of TriBITS.
 @MACRO:    tribits_save_off_dependency_vars() +
 @MACRO:    tribits_set_dep_packages() +
 @FUNCTION: tribits_trace_file_processing() +
-@FUNCTION: tribits_write_package_client_export_files_install_targets() +
+@FUNCTION: tribits_write_package_client_export_files_export_and_install_targets() +
 @MACRO:    tribits_write_xml_dependency_files() +
 @FUNCTION: tribits_write_xml_dependency_files_if_supported() +

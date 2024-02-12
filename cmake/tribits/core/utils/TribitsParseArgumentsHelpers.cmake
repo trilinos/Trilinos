@@ -46,7 +46,7 @@
 ################################################################################
 
 
-include(MessageWrapper)
+include("${CMAKE_CURRENT_LIST_DIR}/MessageWrapper.cmake")
 
 
 # @FUNCTION: tribits_check_for_unparsed_arguments()

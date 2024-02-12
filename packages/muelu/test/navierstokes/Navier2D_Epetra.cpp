@@ -114,8 +114,7 @@
  *
  */
 
-
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   typedef double Scalar;
   typedef int LocalOrdinal;
@@ -129,12 +128,12 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
 
   bool success = false;
   try {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    RCP<Teuchos::FancyOStream> out      = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setOutputToRootOnly(0);
     *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
@@ -149,180 +148,189 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor clp(false);
 
     // - Levels
-    LO  optMaxLevels     = 4;              clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
-    int optMaxCoarseSize = 1;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
+    LO optMaxLevels = 4;
+    clp.setOption("maxLevels", &optMaxLevels, "maximum number of levels allowed");
+    int optMaxCoarseSize = 1;
+    clp.setOption("maxCoarseSize", &optMaxCoarseSize, "maximum #dofs in coarse operator");  // FIXME clp doesn't like long long int
 
     // - Repartitioning
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-    int    optRepartition    = 1;             clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
-    LO     optMinRowsPerProc = 50;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
-    double optNnzImbalance   = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
+    int optRepartition = 1;
+    clp.setOption("repartition", &optRepartition, "enable repartitioning");
+    LO optMinRowsPerProc = 50;
+    clp.setOption("minRowsPerProc", &optMinRowsPerProc, "min #rows allowable per proc before repartitioning occurs");
+    double optNnzImbalance = 1.2;
+    clp.setOption("nnzImbalance", &optNnzImbalance, "max allowable nonzero imbalance before repartitioning occurs");
 #else
     int optRepartition = 0;
 #endif
 
     switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
-
 
     /////////////////////////////////////////////
     // custom parameters
     LO maxLevels = optMaxLevels;
 
-    GO maxCoarseSize=optMaxCoarseSize;
-    std::string aggOrdering = "natural";
-    int minPerAgg=3;
-    int maxNbrAlreadySelected=0;
+    GO maxCoarseSize          = optMaxCoarseSize;
+    std::string aggOrdering   = "natural";
+    int minPerAgg             = 3;
+    int maxNbrAlreadySelected = 0;
 
     int globalNumDofs = 1500;
-    int nProcs = comm->getSize();
-    int nDofsPerNode = 3;
+    int nProcs        = comm->getSize();
+    int nDofsPerNode  = 3;
 
-    int nLocalDofs = (int) globalNumDofs / nProcs;
-    nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
+    int nLocalDofs     = (int)globalNumDofs / nProcs;
+    nLocalDofs         = nLocalDofs - (nLocalDofs % nDofsPerNode);
     int nCumulatedDofs = 0;
-    MueLu_sumAll(comm,nLocalDofs, nCumulatedDofs);
-    //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
+    MueLu_sumAll(comm, nLocalDofs, nCumulatedDofs);
+    // Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
 
-    if(comm->getRank() == nProcs-1) {
+    if (comm->getRank() == nProcs - 1) {
       nLocalDofs += globalNumDofs - nCumulatedDofs;
     }
 
     std::cout << "PROC: " << comm->getRank() << " numLocalDofs=" << nLocalDofs << std::endl;
 
     // read in problem
-    Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
-    Epetra_CrsMatrix * ptrA = 0;
-    Epetra_Vector * ptrf = 0;
+    Epetra_Map emap(globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
+    Epetra_CrsMatrix* ptrA    = 0;
+    Epetra_Vector* ptrf       = 0;
     Epetra_MultiVector* ptrNS = 0;
 
     std::cout << "Reading matrix market file" << std::endl;
-    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",emap,emap,emap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",emap,ptrf);
-    RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
-    RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt", emap, emap, emap, ptrA);
+    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt", emap, ptrf);
+    RCP<Epetra_CrsMatrix> epA    = Teuchos::rcp(ptrA);
+    RCP<Epetra_Vector> epv       = Teuchos::rcp(ptrf);
     RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
     // Epetra_CrsMatrix -> Xpetra::Matrix
-    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(epA));
+    RCP<CrsMatrix> exA       = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO, NO>(epA));
     RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
-    RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
+    RCP<Matrix> Op           = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
 
-    Op->SetFixedBlockSize(nDofsPerNode);   // 2 velocity dofs and 1 pressure dof per node.
+    Op->SetFixedBlockSize(nDofsPerNode);  // 2 velocity dofs and 1 pressure dof per node.
 
     // Epetra_Vector -> Xpetra::Vector
-    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
+    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVectorT<int, Node>(epv));
 
-    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epNS));
+    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int, Node>(epNS));
 
     // Epetra_Map -> Xpetra::Map
-    const RCP< const Map> map = Xpetra::toXpetra<int,Node>(emap);
+    const RCP<const Map> map = Xpetra::toXpetra<int, Node>(emap);
 
-    RCP<Hierarchy> H = rcp ( new Hierarchy() );
+    RCP<Hierarchy> H = rcp(new Hierarchy());
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     H->SetMaxCoarseSize(maxCoarseSize);
 
     // build finest Level
     RCP<MueLu::Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    Finest->Set("A",Op);
-    //Finest->Set("Nullspace",xNS);
+    Finest->Set("A", Op);
+    // Finest->Set("Nullspace",xNS);
 
-    if (optRepartition==1) {
+    if (optRepartition == 1) {
       // create null space
 
       RCP<MultiVector> nullspace;
       // determine numPDEs
       LocalOrdinal numPDEs = 1;
-      if(Op->IsView("stridedMaps")==true) {
-        Xpetra::viewLabel_t oldView = Op->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-        //TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap()) == Teuchos::null, Exceptions::BadCast, "cast to strided row map failed.");
+      if (Op->IsView("stridedMaps") == true) {
+        Xpetra::viewLabel_t oldView = Op->SwitchToView("stridedMaps");  // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+        // TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap()) == Teuchos::null, Exceptions::BadCast, "cast to strided row map failed.");
         numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(Op->getRowMap())->getFixedBlockSize();
         oldView = Op->SwitchToView(oldView);
       }
 
-      //GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
+      // GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
       nullspace = MultiVectorFactory::Build(Op->getDomainMap(), numPDEs);
 
-      for (int i=0; i<numPDEs; ++i) {
+      for (int i = 0; i < numPDEs; ++i) {
         Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
-        int numBlocks = nsValues.size() / numPDEs;
-        for (int j=0; j< numBlocks; ++j) {
-          nsValues[j*numPDEs + i] = 1.0;
+        int numBlocks                      = nsValues.size() / numPDEs;
+        for (int j = 0; j < numBlocks; ++j) {
+          nsValues[j * numPDEs + i] = 1.0;
         }
       }
-      Finest->Set("Nullspace",nullspace);
+      Finest->Set("Nullspace", nullspace);
     }
 
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-    dropFact->SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
+    dropFact->SetParameter("lightweight wrap", Teuchos::ParameterEntry(false));
     dropFact->SetVerbLevel(MueLu::Extreme);
 
-    //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
-    //dropFact->SetPreDropFunction(predrop);
+    // RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));
+    // dropFact->SetPreDropFunction(predrop);
     RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
     UncoupledAggFact->SetFactory("Graph", dropFact);
     *out << "========================= Aggregate option summary =========================" << std::endl;
     *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
     *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-    UncoupledAggFact->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+    UncoupledAggFact->SetMinNodesPerAggregate(minPerAgg);  // TODO should increase if run anything other than 1D
     UncoupledAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
     std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
     if (aggOrdering == "natural" || aggOrdering == "random" || aggOrdering == "graph") {
       *out << "aggregate ordering :                    " << aggOrdering << std::endl;
       UncoupledAggFact->SetOrdering(aggOrdering);
     } else {
-      std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
+      std::string msg =
+          "main: bad aggregation option "
+          "" +
+          aggOrdering +
+          ""
+          ".";
       throw(MueLu::Exceptions::RuntimeError(msg));
     }
     *out << "=============================================================================" << std::endl;
 
     // build non-rebalanced transfer operators
-    RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
-    RCP<Factory> Rfact  = rcp( new GenericRFactory());
-    //RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-    //RCP<Factory>   Rfact  = rcp( new TransPFactory() );
-    RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
+    RCP<PgPFactory> Pfact = rcp(new PgPFactory());
+    RCP<Factory> Rfact    = rcp(new GenericRFactory());
+    // RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
+    // RCP<Factory>   Rfact  = rcp( new TransPFactory() );
+    RCP<RAPFactory> Acfact = rcp(new RAPFactory());
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
     // build level smoothers
     RCP<SmootherPrototype> smooProto;
     std::string ifpackType;
     Teuchos::ParameterList ifpackList;
-    ifpackList.set("relaxation: sweeps", (LO) 3);
-    ifpackList.set("relaxation: damping factor", (SC) 0.6); // 0.7
+    ifpackList.set("relaxation: sweeps", (LO)3);
+    ifpackList.set("relaxation: damping factor", (SC)0.6);  // 0.7
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Gauss-Seidel");
 
-    smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+    smooProto = Teuchos::rcp(new TrilinosSmoother(ifpackType, ifpackList));
     RCP<SmootherFactory> SmooFact;
     if (maxLevels > 1)
-      SmooFact = rcp( new SmootherFactory(smooProto) );
+      SmooFact = rcp(new SmootherFactory(smooProto));
 
     // create coarsest smoother
     RCP<SmootherPrototype> coarsestSmooProto;
     std::string type = "";
     Teuchos::ParameterList coarsestSmooList;
 #if defined(HAVE_AMESOS_SUPERLU)
-    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
+    coarsestSmooProto = Teuchos::rcp(new DirectSolver("Superlu", coarsestSmooList));
 #else
-    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
+    coarsestSmooProto  = Teuchos::rcp(new DirectSolver("Klu", coarsestSmooList));
 #endif
     RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
 
     FactoryManager M;
     M.SetKokkosRefactor(false);
     M.SetFactory("Graph", dropFact);
-    //M.SetFactory("UnAmalgamationInfo", amalgFact);
+    // M.SetFactory("UnAmalgamationInfo", amalgFact);
     M.SetFactory("Aggregates", UncoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarsestSmooFact);
 
-    if(optRepartition == 0) {
+    if (optRepartition == 0) {
       // no rebalancing
       M.SetFactory("P", Pfact);
       M.SetFactory("R", Rfact);
@@ -377,7 +385,7 @@ int main(int argc, char *argv[]) {
       RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
       RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
       RebalancedRFact->SetFactory("R", Rfact);
-      //RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
+      // RebalancedRFact->SetFactory("Coordinates", TransferCoordinatesFact);
 
       // Compute Ac from rebalanced P and R
       RCP<Factory> RebalancedAFact = rcp(new RebalanceAcFactory());
@@ -387,8 +395,8 @@ int main(int argc, char *argv[]) {
       M.SetFactory("A", RebalancedAFact);
       M.SetFactory("P", RebalancedPFact);
       M.SetFactory("R", RebalancedRFact);
-      M.SetFactory("Nullspace",   RebalancedPFact);
-      M.SetFactory("Importer",    RepartitionFact);
+      M.SetFactory("Nullspace", RebalancedPFact);
+      M.SetFactory("Importer", RepartitionFact);
 #else
       // no re-balancing available
       M.SetFactory("P", Pfact);
@@ -399,21 +407,21 @@ int main(int argc, char *argv[]) {
 
     H->Setup(M, 0, maxLevels);
 
-    { // some debug output
+    {  // some debug output
       // print out content of levels
       std::cout << "FINAL CONTENT of multigrid levels" << std::endl;
-      for(LO l = 0; l < H->GetNumLevels(); l++) {
+      for (LO l = 0; l < H->GetNumLevels(); l++) {
         RCP<Level> coarseLevel = H->GetLevel(l);
         coarseLevel->print(*out);
       }
       std::cout << "END FINAL CONTENT of multigrid levels" << std::endl;
-    } // end debug output
+    }  // end debug output
 
-    RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
+    RCP<MultiVector> xLsg = MultiVectorFactory::Build(map, 1);
 
     // Use AMG directly as an iterative method
     {
-      xLsg->putScalar( (SC) 0.0);
+      xLsg->putScalar((SC)0.0);
 
       // calculate initial (absolute) residual
       Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
@@ -421,15 +429,14 @@ int main(int argc, char *argv[]) {
       *out << "||x_0|| = " << norms[0] << std::endl;
 
       // apply ten multigrid iterations
-      H->Iterate(*xRhs,*xLsg,10);
+      H->Iterate(*xRhs, *xLsg, 10);
 
       // calculate and print residual
-      RCP<MultiVector> xTmp = MultiVectorFactory::Build(map,1);
-      Op->apply(*xLsg,*xTmp,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-      xRhs->update((SC)-1.0,*xTmp,(SC)1.0);
+      RCP<MultiVector> xTmp = MultiVectorFactory::Build(map, 1);
+      Op->apply(*xLsg, *xTmp, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
+      xRhs->update((SC)-1.0, *xTmp, (SC)1.0);
       xRhs->norm2(norms);
       *out << "||x|| = " << norms[0] << std::endl;
-
     }
 
     //
@@ -464,7 +471,7 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 #else
   std::cout << "Epetra (and/or EpetraExt) are not available. Skip test." << std::endl;
   return EXIT_SUCCESS;

@@ -44,11 +44,12 @@
 #include <limits>
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_Print.hpp"
+#include "Phalanx_MDField_UnmanagedAllocator.hpp"
+#include "Phalanx_Evaluator_UnmanagedFieldDummy.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -192,4 +193,36 @@ TEUCHOS_UNIT_TEST(unmanaged_mdfield, basic)
     }
   }
 
+}
+
+// This reproduces a bug in a panzer unit test that was using the
+// UnmanagedFieldDummy evaluator class. The evaluator was binding a
+// pointer to a field that went out of scope. The tag should have been
+// used instead of the field to get the Dummy binder instead of the
+// MDField binder.
+TEUCHOS_UNIT_TEST(unmanaged_mdfield, UnmanagedFieldBinderIssue)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  using ScalarType = MyTraits::Residual::ScalarT;
+  using EvalType = MyTraits::Residual;
+
+  FieldManager<MyTraits> fm;
+
+  {
+    RCP<MDALayout<CELL,BASIS>> dl = rcp(new MDALayout<CELL,BASIS>("H-Grad",10,4));
+    MDField<ScalarType,CELL,BASIS> a = allocateUnmanagedMDField<ScalarType,CELL,BASIS>("a",dl);
+
+    fm.setUnmanagedField<EvalType>(a);
+
+    auto e = rcp(new PHX::UnmanagedFieldDummy<EvalType,MyTraits,PHX::MDField<ScalarType,CELL,BASIS>>(a));
+    fm.registerEvaluator<EvalType>(e);
+
+    PHX::Tag<ScalarType> tag_a("a",dl);
+    fm.requireField<MyTraits::Residual>(tag_a);
+  }
+
+  TEST_NOTHROW(fm.postRegistrationSetup(0));
 }

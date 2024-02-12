@@ -97,8 +97,8 @@ namespace Intrepid2 {
     for(ordinal_type i=0;i<numVerts-1;++i)
       for(ordinal_type j=i+1;j<numVerts;++j)
         INTREPID2_TEST_FOR_ABORT( ( subCellVerts[i] == subCellVerts[j] ), 
-                        ">>> ERROR (Intrepid::Orientation::getOrientation): " \
-                        "Invalid subCellVerts, same vertex ids are repeated");
+                                 ">>> ERROR (Intrepid::Orientation::getOrientation): " \
+                                 "Invalid subCellVerts, some vertex ids are repeated");
 #endif
 
     ordinal_type rotation = 0; // find smallest vertex id

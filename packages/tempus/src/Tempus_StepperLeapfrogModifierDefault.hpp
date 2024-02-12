@@ -13,7 +13,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperLeapfrogModifierBase.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperLeapfrog.
@@ -21,42 +20,38 @@ namespace Tempus {
  *  The default modifier provides no-op functionality for the modifier.
  *  See StepperLeapfrogModifierBase for details on the algorithm.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperLeapfrogModifierDefault
-  : virtual public Tempus::StepperLeapfrogModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperLeapfrogModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperLeapfrogModifierDefault(){}
+  StepperLeapfrogModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperLeapfrogModifierDefault(){}
+  virtual ~StepperLeapfrogModifierDefault() {}
 
   /// Modify Leapfrog Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperLeapfrog<Scalar> > /* stepper */,
-    const typename StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperLeapfrog<Scalar> > /* stepper */,
+      const typename StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperLeapfrogAppAction<Scalar>::BEGIN_STEP:
       case StepperLeapfrogAppAction<Scalar>::BEFORE_X_UPDATE:
       case StepperLeapfrogAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
       case StepperLeapfrogAppAction<Scalar>::BEFORE_XDOT_UPDATE:
-      case StepperLeapfrogAppAction<Scalar>::END_STEP:
-      {
+      case StepperLeapfrogAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperLeapfrogModifierDefault_hpp
+#endif  // Tempus_StepperLeapfrogModifierDefault_hpp

@@ -28,44 +28,31 @@
 namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_team_nrm2(int N, int K) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch K teams of the maximum number of threads per team
   const team_policy policy(K, Kokkos::AUTO);
 
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
+  view_stride_adapter<ViewTypeA> a("A", N, K);
 
-  typename vfA_type::BaseType b_a("A", N, K);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
-  ViewTypeA a = vfA_type::view(b_a);
+  Kokkos::fill_random(a.d_view, rand_pool, ScalarA(10));
 
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-
-  typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
-
-  typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
-
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
-
-  Kokkos::fill_random(b_a, rand_pool, ScalarA(10));
-
-  Kokkos::deep_copy(h_b_a, b_a);
-
-  typename ViewTypeA::const_type c_a = a;
+  Kokkos::deep_copy(a.h_base, a.d_base);
 
   typename AT::mag_type *expected_result = new typename AT::mag_type[K];
   for (int j = 0; j < K; j++) {
     expected_result[j] = typename AT::mag_type();
     for (int i = 0; i < N; i++)
-      expected_result[j] += AT::abs(h_a(i, j)) * AT::abs(h_a(i, j));
+      expected_result[j] += AT::abs(a.h_view(i, j)) * AT::abs(a.h_view(i, j));
     expected_result[j] =
-        Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(
-            expected_result[j]);
+        Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
@@ -79,7 +66,7 @@ void impl_test_team_nrm2(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         d_r(teamId)      = KokkosBlas::Experimental::nrm2(
-            teamMember, Kokkos::subview(a, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(a.d_view, Kokkos::ALL(), teamId));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < K; k++) {
@@ -94,7 +81,7 @@ void impl_test_team_nrm2(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         d_r(teamId)      = KokkosBlas::Experimental::nrm2(
-            teamMember, Kokkos::subview(c_a, Kokkos::ALL(), teamId));
+            teamMember, Kokkos::subview(a.d_view_const, Kokkos::ALL(), teamId));
       });
   Kokkos::deep_copy(r, d_r);
   for (int k = 0; k < K; k++) {
@@ -128,8 +115,7 @@ int test_team_nrm2() {
   // Test::impl_test_team_nrm2<view_type_a_lr, Device>(132231,5);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_team_nrm2<view_type_a_ls, Device>(0, 5);
@@ -144,31 +130,27 @@ int test_team_nrm2() {
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_float) {
-  test_team_nrm2<float, TestExecSpace>();
-}
+TEST_F(TestCategory, team_nrm2_float) { test_team_nrm2<float, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_double) {
-  test_team_nrm2<double, TestExecSpace>();
-}
+TEST_F(TestCategory, team_nrm2_double) { test_team_nrm2<double, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_nrm2_complex_double) {
-  test_team_nrm2<Kokkos::complex<double>, TestExecSpace>();
+  test_team_nrm2<Kokkos::complex<double>, TestDevice>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_int) { test_team_nrm2<int, TestExecSpace>(); }
+TEST_F(TestCategory, team_nrm2_int) { test_team_nrm2<int, TestDevice>(); }
 #endif
 
 #endif  // Check for lambda availability in CUDA backend

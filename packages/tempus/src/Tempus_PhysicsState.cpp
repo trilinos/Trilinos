@@ -13,7 +13,7 @@
 #include "Tempus_PhysicsState_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhysicsState)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhysicsState)
 }
 
 #endif

@@ -64,10 +64,10 @@ this directory.
 // Define default data types
 //#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
-//typedef double                                                              Scalar;
-//typedef int                                                                 LocalOrdinal;
-//typedef int                                                                 GlobalOrdinal;
-//typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType                         Node;
+// typedef double                                                              Scalar;
+// typedef int                                                                 LocalOrdinal;
+// typedef int                                                                 GlobalOrdinal;
+// typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType                         Node;
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -95,7 +95,7 @@ this directory.
 #include <BelosMueLuAdapter.hpp>
 #endif
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
   // Most MueLu and Xpetra classes are templated on some or all of the
   // following template types: Scalar, LocalOrdinal, GlobalOrdinal,
@@ -122,9 +122,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // you don't have to write the namespace along with the class or
   // object name. This is especially helpful with commonly used things
   // like std::endl or Teuchos::RCP.
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ParameterList;
 
   // Start up MPI, if using MPI. Trilinos doesn't have to be built
   // with MPI; it's called a "serial" build if you build without MPI.
@@ -158,7 +158,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // Make an output stream (for verbose output) that only prints on
   // Process 0 of the communicator.
   Teuchos::oblackholestream blackHole;
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
+  std::ostream &out = (myRank == 0) ? std::cout : blackHole;
 
   // Teuchos provides an interface to get arguments from the command
   // line. The first argument indicates that we don't want any
@@ -171,36 +171,43 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   //  - Xpetra parameters: Allow switching between Epetra and Tpetra.
   //  - Driver parameters: These are specified below.
   GO nx = 6, ny = 5, nz = 163;
-  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
-  Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
+  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D");  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                                       // manage parameters of Xpetra
 
-  std::string xmlFileName = "driver1.xml";   clp.setOption("xml",                   &xmlFileName,     "read parameters from a file [default = 'scalingTest.xml']");
+  std::string xmlFileName = "driver1.xml";
+  clp.setOption("xml", &xmlFileName, "read parameters from a file [default = 'scalingTest.xml']");
 
-  std::string solveType    = "cg";              clp.setOption("solver",                &solveType,       "solve type: (cg | gmres)");
-  double      tol          = 1e-12;             clp.setOption("tol",                   &tol,             "solver convergence tolerance");
-  int         maxIts       = 200;               clp.setOption("its",                   &maxIts,           "maximum number of solver iterations");
+  std::string solveType = "cg";
+  clp.setOption("solver", &solveType, "solve type: (cg | gmres)");
+  double tol = 1e-12;
+  clp.setOption("tol", &tol, "solver convergence tolerance");
+  int maxIts = 200;
+  clp.setOption("its", &maxIts, "maximum number of solver iterations");
 
-  std::string mapFile;                          clp.setOption("map",                   &mapFile,          "map data file");
-  std::string matrixFile;                       clp.setOption("matrix",                &matrixFile,       "matrix data file");
-  std::string coordFile;                        clp.setOption("coords",                &coordFile,        "coordinates data file");
+  std::string mapFile;
+  clp.setOption("map", &mapFile, "map data file");
+  std::string matrixFile;
+  clp.setOption("matrix", &matrixFile, "matrix data file");
+  std::string coordFile;
+  clp.setOption("coords", &coordFile, "coordinates data file");
 
   // Command line processor parsing stage
   switch (clp.parse(argc, argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
   // Retrieve matrix parameters (they may have been changed on the
   // command line).
   ParameterList galeriList = galeriParameters.GetParameterList();
-//galeriList.set("mx",6); galeriList.set("my",5); galeriList.set("mz",1);
+  // galeriList.set("mx",6); galeriList.set("my",5); galeriList.set("mz",1);
 
   // Construct the problem data.  Typically, we construct the matrix,
   // coordinates, and nullspace, though only the matrix is mandatory.
-  RCP<Matrix>      A;
-  RCP<const Map>   map;
+  RCP<Matrix> A;
+  RCP<const Map> map;
   RCP<MultiVector> coordinates;
   if (matrixFile.empty()) {
     // Use Galeri to construct the data
@@ -208,7 +215,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Galeri provides several pre-defined problem types, including
     // some stencil based ones (like Laplace matrices in 2D and 3D),
     // and some others (like elasticity in 2D and 3D)
-    out << "========================================================\n" << xpetraParameters << galeriParameters;
+    out << "========================================================\n"
+        << xpetraParameters << galeriParameters;
 
     // Galeri will attempt to create a square-as-possible distribution of
     // subdomains di, e.g.,
@@ -229,16 +237,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Create map (Map) and coordinates (MultiVector).  Xpetra's Map
     // and MultiVector imitate Tpetra's interface.
     if (matrixType == "Laplace1D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+      map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+      map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+      map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, galeriList);
     }
 
     out << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
@@ -248,8 +256,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     // Construct the matrix based on the problem name and provided
     // parameters.
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
 
   } else {
@@ -260,12 +268,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // (though you may avoid that in a serial run), a matrix (in a
     // MatrixMarket format), and a file with coordinates.
     if (!mapFile.empty())
-      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
+      map = Xpetra::IO<SC, LO, GO, Node>::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
 
-    A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, map);
+    A = Xpetra::IO<SC, LO, GO, Node>::Read(matrixFile, map);
 
     if (!coordFile.empty())
-      coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(coordFile, map);
+      coordinates = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(coordFile, map);
   }
 
   // For scalar equations, we assume that the constant vector is a
@@ -276,7 +284,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   nullspace->putScalar(one);
 
   out << "Galeri complete.\n========================================================" << std::endl;
-std::cout << coordinates << std::endl;
+  std::cout << coordinates << std::endl;
 
   // Hierarchy is a key concept in MueLu. Once set up, it has all the
   // data required to apply the preconditioner. MueLu provides
@@ -302,7 +310,7 @@ std::cout << coordinates << std::endl;
   // subsequent coarser levels have increasing indices.  This way, if
   // we have L levels, level 0 corresponds to the finest level, and
   // level L-1 is the coarsest level.
-  RCP<Level>     L = H->GetLevel(0);
+  RCP<Level> L = H->GetLevel(0);
 
   // Setting the finest level matrix is mandatory in MueLu. However,
   // setting the nullspace and coordinates is optional. If nullspace
@@ -310,23 +318,23 @@ std::cout << coordinates << std::endl;
   // vector. Coordinates are needed only in two cases: if one uses
   // distance Laplacian filtering, or one uses repartitioning (which
   // is based on geometric partitioning).
-  L->Set("A",         A);
+  L->Set("A", A);
   L->Set("Nullspace", nullspace);
 
-/*
-  if (!coordinates.is_null())
-    L->Set("Coordinates", coordinates);
-*/
+  /*
+    if (!coordinates.is_null())
+      L->Set("Coordinates", coordinates);
+  */
 
-Teuchos::ArrayRCP<LO> SemiCoarsenInfo = Teuchos::arcp<LO>(3);
-SemiCoarsenInfo[NUM_ZPTS] = nz;
-SemiCoarsenInfo[ORIENTATION] = VERTICAL;
-//L->Set("SemiCoarsenInfo",SemiCoarsenInfo, MueLu::NoFactory::get() );
-L->Set("SemiCoarsenInfo",SemiCoarsenInfo);
+  Teuchos::ArrayRCP<LO> SemiCoarsenInfo = Teuchos::arcp<LO>(3);
+  SemiCoarsenInfo[NUM_ZPTS]             = nz;
+  SemiCoarsenInfo[ORIENTATION]          = VERTICAL;
+  // L->Set("SemiCoarsenInfo",SemiCoarsenInfo, MueLu::NoFactory::get() );
+  L->Set("SemiCoarsenInfo", SemiCoarsenInfo);
 
-printf("before level print\n");
-L->print(std::cout,Teuchos::VERB_EXTREME);
-printf("after level print\n");
+  printf("before level print\n");
+  L->print(std::cout, Teuchos::VERB_EXTREME);
+  printf("after level print\n");
 
   // Now that we have set the mandatory data, we can construct the
   // preconditioner.  The result of this is a fully constructed
@@ -357,11 +365,11 @@ printf("after level print\n");
 
     Teuchos::Array<MT> norms(1);
     B->norm2(norms);
-    B->scale(one/norms[0]);
+    B->scale(one / norms[0]);
     X->putScalar(zero);
   }
 #ifdef HAVE_MUELU_BELOS
-  typedef MultiVector          MV;
+  typedef MultiVector MV;
   typedef Belos::OperatorT<MV> OP;
 
   // Internally, Belos uses its own types. We use special wrappers to
@@ -369,18 +377,18 @@ printf("after level print\n");
   // one of many different ways one could choose to wrap MueLu and
   // Xpetra objects in order to get them to work with Belos.
   RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A));
-  RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H));
+  RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));
 
   // Construct a Belos LinearProblem object. This is a complete
   // problem formulation. All the data necessary to solve the system
   // are now inside that problem.
-  RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem =
-    rcp (new Belos::LinearProblem<SC, MV, OP> (belosOp, X, B));
-  belosProblem->setRightPrec (belosPrec);
+  RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem =
+      rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+  belosProblem->setRightPrec(belosPrec);
 
   // Prepare the linear problem to solve the linear system that was
   // already passed in.
-  bool set = belosProblem->setProblem ();
+  bool set = belosProblem->setProblem();
   if (!set) {
     out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return EXIT_FAILURE;
@@ -391,11 +399,11 @@ printf("after level print\n");
   // the number of iterations or its verbosity. For a full list of
   // Belos parameters, please consult the Belos package documentation.
   ParameterList belosList;
-  belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-  belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-  belosList.set("Output Frequency",      1);
-  belosList.set("Output Style",          Belos::Brief);
+  belosList.set("Maximum Iterations", maxIts);  // Maximum number of iterations allowed
+  belosList.set("Convergence Tolerance", tol);  // Relative convergence tolerance requested
+  belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+  belosList.set("Output Frequency", 1);
+  belosList.set("Output Style", Belos::Brief);
 
   // Create a Belos iterative linear solver
   //
@@ -406,9 +414,9 @@ printf("after level print\n");
   // interface in Belos.
   RCP<Belos::SolverManager<SC, MV, OP> > solver;
   if (solveType == "cg")
-    solver = rcp(new Belos::PseudoBlockCGSolMgr<SC,MV,OP>(belosProblem, rcp(&belosList, false)));
+    solver = rcp(new Belos::PseudoBlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
   else if (solveType == "gmres")
-    solver = rcp(new Belos::BlockGmresSolMgr   <SC,MV,OP>(belosProblem, rcp(&belosList, false)));
+    solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
 
   // Finally, perform the solve.  We wrap it in a try-catch block,
   // since Belos indicates erros by throwing exceptions.
@@ -419,17 +427,21 @@ printf("after level print\n");
     // Get the number of iterations for this solve.
     out << "Converged in " << solver->getNumIters() << " iterations" << std::endl;
 
-  } catch(...) {
-    out << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+  } catch (...) {
+    out << std::endl
+        << "ERROR:  Belos threw an error! " << std::endl;
   }
 
   // Check convergence
   if (ret != Belos::Converged)
-    out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+    out << std::endl
+        << "ERROR:  Belos did not converge! " << std::endl;
   else
-    out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    out << std::endl
+        << "SUCCESS:  Belos converged!" << std::endl;
 #else
-  out << std::endl << "MueLu has been compiled without Belos support!" << std::endl;
+  out << std::endl
+      << "MueLu has been compiled without Belos support!" << std::endl;
 #endif
   // GlobalMPISession calls MPI_Finalize() in its destructor, if
   // appropriate. You don't have to do anything here!  Just return
@@ -437,14 +449,10 @@ printf("after level print\n");
   return 0;
 }
 
-
 //- -- --------------------------------------------------------
 #define MUELU_AUTOMATIC_TEST_ETI_NAME main_
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }
-
-
-

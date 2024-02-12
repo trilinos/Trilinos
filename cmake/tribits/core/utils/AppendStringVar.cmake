@@ -37,9 +37,11 @@
 # ************************************************************************
 # @HEADER
 
-include(ConcatStrings)
-include(PrintVar)
-include(TribitsDeprecatedHelpers)
+include_guard()
+
+include("${CMAKE_CURRENT_LIST_DIR}/ConcatStrings.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/PrintVar.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/TribitsDeprecatedHelpers.cmake")
 
 
 # @FUNCTION: append_string_var()

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,8 +9,6 @@
 #include "smalloc.h" // for smalloc, sfree
 #include "structs.h" // for vtx_data
 #include <stdio.h>   // for NULL, printf
-
-extern void makeccoords();
 
 void makecgraph(struct vtx_data  **graph,       /* array of vtx data for graph */
                 int                nvtxs,       /* number of vertices in graph */
@@ -52,9 +50,6 @@ void makecgraph(struct vtx_data  **graph,       /* array of vtx data for graph *
   int               cvtx;            /* vertex number in coarsened graph */
   int               cneighbor;       /* neighboring vertex number in coarsened graph */
   int               i, j;            /* loop counters */
-  double            seconds(void);
-
-  void makev2cv(), countcedges();
 
   /* Compute the number of vertices and edges in the coarsened graph, */
   /* and construct start pointers into coarsened edge array. */
@@ -215,7 +210,7 @@ void makecgraph(struct vtx_data  **graph,       /* array of vtx data for graph *
 
   /* If desired, make new vtx coordinates = center-of-mass of their parents. */
   if (coords != NULL && ccoords != NULL && igeom > 0) {
-    makeccoords(graph, nvtxs, cnvtxs, mflag, v2cv, igeom, coords, ccoords);
+    makeccoords(graph, cnvtxs, mflag, v2cv, igeom, coords, ccoords);
   }
 
   make_cgraph_time += seconds() - time;

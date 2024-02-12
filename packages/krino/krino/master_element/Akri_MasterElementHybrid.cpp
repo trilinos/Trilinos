@@ -13,38 +13,61 @@
 #include <stk_mesh/base/MetaData.hpp> // for get_cell_topology
 #include <Akri_MasterElementCalc.hpp>
 
-#ifdef __INTEL_COMPILER
-#include <Intrepid_FieldContainer.hpp>
-#else
-//FieldContainer has shadowed variables
-//this disables the checking on GCC only
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#include <Intrepid_FieldContainer.hpp>
-#pragma GCC diagnostic pop
-#endif
-#include <Intrepid_DefaultCubatureFactory.hpp>
-#include <Intrepid_Cubature.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Intrepid_FunctionSpaceTools.hpp>
-#include <Intrepid_HGRAD_LINE_Cn_FEM.hpp>
+#include <Kokkos_DynRankView.hpp>
+#include <Intrepid2_Cubature.hpp>
+#include <Intrepid2_DefaultCubatureFactory.hpp>
 
 namespace krino {
 
-MasterElementHybrid::MasterElementHybrid(
-    stk::topology topology,
-    std::unique_ptr<Basis> basis)
-: m_topology(topology),
-  m_Basis(std::move(basis))
+static std::unique_ptr<Basis> get_basis_for_topology(stk::topology t)
 {
-  // set the cubature
-  Intrepid::DefaultCubatureFactory<double> cubatureFactory;
-  Teuchos::RCP<Intrepid::Cubature<double>> intrepidCubature = cubatureFactory.create(stk::mesh::get_cell_topology(topology), 2*m_Basis->degree());
-  m_numIntgPts = intrepidCubature->getNumPoints();
+  switch(t())
+  {
+  case stk::topology::LINE_2:
+      return std::make_unique<Basis_LINE_2>();
+  case stk::topology::LINE_3:
+      return std::make_unique<Basis_LINE_3>();
+  case stk::topology::TRI_3:
+  case stk::topology::TRI_3_2D:
+      return std::make_unique<Basis_TRI_3>();
+  case stk::topology::TRI_6:
+  case stk::topology::TRI_6_2D:
+      return std::make_unique<Basis_TRI_6>();
+  case stk::topology::QUAD_4:
+  case stk::topology::QUAD_4_2D:
+      return std::make_unique<Basis_QUAD_4>();
+  case stk::topology::QUAD_9:
+  case stk::topology::QUAD_9_2D:
+      return std::make_unique<Basis_QUAD_9>();
+  case stk::topology::TET_4:
+      return std::make_unique<Basis_TET_4>();
+  case stk::topology::TET_10:
+      return std::make_unique<Basis_TET_10>();
+  case stk::topology::HEX_8:
+      return std::make_unique<Basis_HEX_8>();
+  case stk::topology::HEX_27:
+      return std::make_unique<Basis_HEX_27>();
+  case stk::topology::WEDGE_6:
+      return std::make_unique<Basis_WEDGE_6>();
+  default:
+      throw std::runtime_error("Element topology not found in get_basis_for_topology(): " + t.name());
+  }
+}
+
+MasterElementHybrid::MasterElementHybrid(stk::topology topology)
+: m_topology(topology)
+{
+  m_Basis = get_basis_for_topology(topology);
+  using PointType = double;
+  using WeightType = double;
+  using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
+  auto intrepid2Cubature = Intrepid2::DefaultCubatureFactory().create<ExecutionSpace, PointType, WeightType>(stk::mesh::get_cell_topology(topology), 2*m_Basis->degree());
+
+  m_numIntgPts = intrepid2Cubature->getNumPoints();
 
   m_numNodes = topology.num_nodes();
-  m_numElemDims  = intrepidCubature->getDimension();
+  m_numElemDims  = intrepid2Cubature->getDimension();
 
   // Allocate reference data
   m_shapeFuncs.resize(m_numIntgPts*m_numNodes);
@@ -54,12 +77,9 @@ MasterElementHybrid::MasterElementHybrid(
   m_refCoords.resize(m_numNodes*m_numElemDims);
   m_refVolume = m_Basis->parametric_volume();
 
-  // retrieve the cubature points and weights
-  std::vector<int> refPointsDims = {m_numIntgPts, m_numElemDims};
-  Intrepid::FieldContainer<double> refPointsFC( refPointsDims, m_refPoints.data() );
-  std::vector<int> refWeightsDims = {m_numIntgPts};
-  Intrepid::FieldContainer<double> refWeightsFC( refWeightsDims, m_refWeights.data() );
-  intrepidCubature->getCubature(refPointsFC, refWeightsFC);
+  Kokkos::DynRankView<double, ExecutionSpace> refPoints(m_refPoints.data(), m_numIntgPts, m_numElemDims);
+  Kokkos::DynRankView<double, ExecutionSpace> refWeights(m_refWeights.data(), m_numIntgPts);
+  intrepid2Cubature->getCubature(refPoints, refWeights);
 
   // compute the reference values and gradients at the integration points
   m_Basis->shape_fcn(m_numIntgPts, m_refPoints.data(), m_shapeFuncs.data());
@@ -74,6 +94,10 @@ MasterElementHybrid::MasterElementHybrid(
       m_centroidParCoords[d] += m_refCoords[n*m_numElemDims + d];
     }
   }
+}
+
+MasterElementHybrid::~MasterElementHybrid()
+{
 }
 
 void

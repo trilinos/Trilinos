@@ -57,7 +57,7 @@
 // Do explicit instantiation of MueLu::Details::LinearSolverFactory,
 // for Epetra objects.
 template class MueLu::Details::LinearSolverFactory<Epetra_MultiVector, Epetra_Operator, double>;
-#endif // HAVE_MUELU_EPETRA
+#endif  // HAVE_MUELU_EPETRA
 
 // Define typedefs that make the Tpetra macros work
 TPETRA_ETI_MANGLING_TYPEDEFS()
@@ -65,8 +65,8 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // Do explicit instantiation of MueLu::Details::LinearSolverFactory, for
 // Tpetra objects, for all combinations of Tpetra template parameters
 // for which Tpetra does explicit template instantiation (ETI).
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( MUELU_DETAILS_LINEARSOLVERFACTORY_INSTANT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_DETAILS_LINEARSOLVERFACTORY_INSTANT)
 
 // TODO amk: do we also have to do this for Xpetra?
 
-#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
+#endif  // HAVE_MUELU_EXPLICIT_INSTANTIATION

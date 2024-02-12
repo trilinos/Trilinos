@@ -81,71 +81,74 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-int main(int argc,char * argv[])
-{
-   // calls MPI_Init and MPI_Finalize
-   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+int main(int argc, char* argv[]) {
+  // calls MPI_Init and MPI_Finalize
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-   // build global communicator
-   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  // build global communicator
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
-   // Read in the matrix, store pointer as an RCP
-   Epetra_CrsMatrix * ptrA = 0;
-   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm",Comm,ptrA);
-   RCP<Epetra_CrsMatrix> A = rcp(ptrA);
+  // Read in the matrix, store pointer as an RCP
+  Epetra_CrsMatrix* ptrA = 0;
+  EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm", Comm, ptrA);
+  RCP<Epetra_CrsMatrix> A = rcp(ptrA);
 
-   // read in the RHS vector
-   Epetra_Vector * ptrb = 0;
-   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->OperatorRangeMap(),ptrb);
-   RCP<Epetra_Vector> b = rcp(ptrb);
+  // read in the RHS vector
+  Epetra_Vector* ptrb = 0;
+  EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm", A->OperatorRangeMap(), ptrb);
+  RCP<Epetra_Vector> b = rcp(ptrb);
 
-   // allocate vectors
-   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
-   x->PutScalar(0.0);
+  // allocate vectors
+  RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
+  x->PutScalar(0.0);
 
-   // Break apart the strided linear system
-   /////////////////////////////////////////////////////////
+  // Break apart the strided linear system
+  /////////////////////////////////////////////////////////
 
-   // Block the linear system using a strided epetra operator
-   std::vector<int> vec(2); vec[0] = 2; vec[1] = 1; /*@ \label{lned:define-strided} @*/
-   Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA
-         = Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec,A));
+  // Block the linear system using a strided epetra operator
+  std::vector<int> vec(2);
+  vec[0] = 2;
+  vec[1] = 1; /*@ \label{lned:define-strided} @*/
+  Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA =
+      Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec, A));
 
-   // Build the preconditioner /*@ \label{lned:construct-prec} @*/
-   /////////////////////////////////////////////////////////
+  // Build the preconditioner /*@ \label{lned:construct-prec} @*/
+  /////////////////////////////////////////////////////////
 
-   // build an InverseLibrary
-   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
+  // build an InverseLibrary
+  RCP<Teko::InverseLibrary> invLib =
+      Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
 
-   // build the inverse factory needed by the example preconditioner
-   RCP<Teko::InverseFactory> inverse  /*@ \label{lned:define-inv-fact} @*/
-         = invLib->getInverseFactory("Amesos");
+  // build the inverse factory needed by the example preconditioner
+  RCP<Teko::InverseFactory> inverse /*@ \label{lned:define-inv-fact} @*/
+      = invLib->getInverseFactory("Amesos");
 
-   // build the preconditioner factory
-   RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(inverse,true)); /*@ \label{lned:const-prec-strategy} @*/
-   RCP<Teko::BlockPreconditionerFactory> precFact /*@ \label{lned:const-prec-fact} @*/
-          = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
+  // build the preconditioner factory
+  RCP<Teko::NS::LSCStrategy> strategy =
+      rcp(new Teko::NS::InvLSCStrategy(inverse, true)); /*@ \label{lned:const-prec-strategy} @*/
+  RCP<Teko::BlockPreconditionerFactory> precFact        /*@ \label{lned:const-prec-fact} @*/
+      = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
 
-   // using the preconditioner factory construct an Epetra_Operator
-   Teko::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lned:const-epetra-prec} @*/
-   prec.buildPreconditioner(sA); // fill epetra preconditioner using the strided operator
+  // using the preconditioner factory construct an Epetra_Operator
+  Teko::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lned:const-epetra-prec} @*/
+  prec.buildPreconditioner(sA);  // fill epetra preconditioner using the strided operator
 
-   // Build and solve the linear system
-   /////////////////////////////////////////////////////////
+  // Build and solve the linear system
+  /////////////////////////////////////////////////////////
 
-   // Setup the linear solve: notice A is used directly
-   Epetra_LinearProblem problem(&*A,&*x,&*b); /*@ \label{lned:aztec-solve} @*/
+  // Setup the linear solve: notice A is used directly
+  Epetra_LinearProblem problem(&*A, &*x, &*b); /*@ \label{lned:aztec-solve} @*/
 
-   // build the solver
-   AztecOO solver(problem);
-   solver.SetAztecOption(AZ_solver,AZ_gmres);
-   solver.SetAztecOption(AZ_precond,AZ_none);
-   solver.SetAztecOption(AZ_kspace,1000);
-   solver.SetAztecOption(AZ_output,10);
-   solver.SetPrecOperator(&prec);
+  // build the solver
+  AztecOO solver(problem);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_precond, AZ_none);
+  solver.SetAztecOption(AZ_kspace, 1000);
+  solver.SetAztecOption(AZ_output, 10);
+  solver.SetPrecOperator(&prec);
 
-   // solve the linear system
-   solver.Iterate(1000,1e-5);
+  // solve the linear system
+  solver.Iterate(1000, 1e-5);
 
-   return 0;
+  return 0;
 }

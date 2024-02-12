@@ -156,7 +156,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
+  auto owned_element_to_node_gids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
@@ -174,10 +174,10 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     // - Copy the global node ids for current element into an array.
     // - Since each element's contribution is a clique, we can re-use this for
     //   each row associated with this element's contribution.
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_gids.extent(1); element_node_idx++)
     {
       global_ids_in_row[element_node_idx] = 
-	owned_element_to_node_ids(element_gidx, element_node_idx);
+	owned_element_to_node_gids(element_gidx, element_node_idx);
     }
 
     // Add the contributions from the current row into the graph.
@@ -186,7 +186,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     //   - node 1 inserts [0, 1, 4, 5]
     //   - node 4 inserts [0, 1, 4, 5]
     //   - node 5 inserts [0, 1, 4, 5]
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_gids.extent(1); element_node_idx++)
     {
        fe_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
     }
@@ -238,6 +238,9 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
 
+  const int numOwnedElements = mesh.getNumOwnedElements();
+  const int nodesPerElem = mesh.getOwnedElementToNode().extent(1);
+
   RCP<fe_matrix_type> fe_matrix;
   RCP<fe_multivector_type> rhs;
 
@@ -248,7 +251,8 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     fe_matrix = rcp(new fe_matrix_type(fe_graph));
     rhs = rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
-    Kokkos::View<local_ordinal_type[4][4], hostType> element_matrix ("element_matrix");
+    Kokkos::View<local_ordinal_type[4][4], hostType>
+      element_matrix("element_matrix");
     Teuchos::Array<Scalar> element_rhs(4);
 
     Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list
@@ -256,35 +260,39 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
 
     // Loop over elements
     Tpetra::beginAssembly(*fe_matrix,*rhs);
-    for (size_t element_gidx = 0;
-         element_gidx < mesh.getNumOwnedElements ();
+    for (int element_gidx = 0; element_gidx < numOwnedElements;
          ++element_gidx) {
       // Get the contributions for the current element
+      // shape info injected here in real life
+      // "GetElementMatrix"
       ReferenceQuad4(element_matrix);
       ReferenceQuad4RHS(element_rhs);
 
-      for (size_t element_node_idx=0;
-	   element_node_idx < owned_element_to_node_ids.extent(1);
-	   ++element_node_idx) {
-	column_global_ids[element_node_idx] =
-	  owned_element_to_node_ids(element_gidx, element_node_idx);
+      for (int element_node_idx=0;
+	         element_node_idx < nodesPerElem;
+	         ++element_node_idx) {
+	      column_global_ids[element_node_idx] =
+	        owned_element_to_node_gids(element_gidx, element_node_idx);
       }
 
       // For each node (row) on the current element:
       // - populate the values array
       // - add the values to the fe_matrix.
       // Note: hardcoded 4 here because we're using quads.
-      for (size_t element_node_idx = 0; element_node_idx < 4;
-	   ++element_node_idx) {
-	global_ordinal_type global_row_id =
-	  owned_element_to_node_ids(element_gidx, element_node_idx);
+      for (int element_node_idx = 0; element_node_idx < 4;
+	         ++element_node_idx) {
+	      global_ordinal_type global_row_id =
+	        owned_element_to_node_gids(element_gidx, element_node_idx);
 	
-	for(size_t col_idx=0; col_idx<4; col_idx++) {
-	  column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
-	}
+        for(int col_idx = 0; col_idx < 4; col_idx++) {
+          column_scalar_values[col_idx] = 
+            element_matrix(element_node_idx, col_idx);
+        }
 
-	fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-	rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+        fe_matrix->sumIntoGlobalValues(
+          global_row_id, column_global_ids, column_scalar_values);
+        rhs->sumIntoGlobalValue(
+          global_row_id, 0, element_rhs[element_node_idx]);
       }
     }
   } // timerElementLoopMatrix
@@ -388,7 +396,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
 
   {
     TimeMonitor timerElementLoopGraph(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)"));
-    auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
+    auto owned_element_to_node_gids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
     // for each element in the mesh...
     Tpetra::beginAssembly(*fe_graph);
@@ -400,10 +408,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       // - Since each element's contribution is a clique, we can re-use this for
       //   each row associated with this element's contribution.
       for (size_t element_node_idx = 0;
-           element_node_idx < owned_element_to_node_ids.extent(1);
+           element_node_idx < owned_element_to_node_gids.extent(1);
            ++element_node_idx) {
         global_ids_in_row[element_node_idx] =
-          owned_element_to_node_ids(element_gidx, element_node_idx);
+          owned_element_to_node_gids(element_gidx, element_node_idx);
       }
 
       // Add the contributions from the current row into the graph.
@@ -413,7 +421,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       //   - node 4 inserts [0, 1, 4, 5]
       //   - node 5 inserts [0, 1, 4, 5]
       for (size_t element_node_idx = 0;
-           element_node_idx < owned_element_to_node_ids.extent(1); ++element_node_idx) {
+           element_node_idx < owned_element_to_node_gids.extent(1); ++element_node_idx) {
         fe_graph->insertGlobalIndices (global_ids_in_row[element_node_idx],
                                        global_ids_in_row());
       }
@@ -468,78 +476,94 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
   RCP<TimeMonitor> timerElementLoopMemory = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.1) ElementLoop  (Memory)")));
 
-  // Because we're processing elements in parallel, we need storage for all of them
-  int numOwnedElements = mesh.getNumOwnedElements();
-  int nperel = mesh.getOwnedElementToNode().extent(1);
+  // the number of finite elements this process will handle, and the number of
+  // nodes associated with each element.
+  // This information will be used to pre-allocate storage to process elements
+  // in parallel.
+  const int numOwnedElements = mesh.getNumOwnedElements();
+  const int nodesPerElem = mesh.getOwnedElementToNode().extent(1);
 
   RCP<fe_matrix_type> fe_matrix = rcp(new fe_matrix_type(fe_graph));
   RCP<fe_multivector_type> rhs =
     rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
 
-  auto localMatrix  = fe_matrix->getLocalMatrixDevice();
+  
   auto localMap     = owned_plus_shared_map->getLocalMap();
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
  
-  pair_type alln = pair_type(0,nperel);
-  scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
-  scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*numOwnedElements);
-  local_ordinal_single_view_type  all_lcids("all_lids",nperel*numOwnedElements);
+  // no worksetting in this example
+  scalar_2d_array_type all_element_matrix(
+    "all_element_matrix",nodesPerElem*numOwnedElements);
+  scalar_1d_array_type all_element_rhs(
+    "all_element_rhs",nodesPerElem*numOwnedElements);
+  local_ordinal_single_view_type  all_lcids(
+    "all_lids",nodesPerElem*numOwnedElements);
 
   timerElementLoopMemory=Teuchos::null;
   {
     TimeMonitor timerElementLoopMatrix(*TimeMonitor::getNewTimer ("3.2) ElementLoop  (Matrix)"));
     Tpetra::beginAssembly(*fe_matrix,*rhs);
 
-    auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
+    auto owned_element_to_node_gids = 
+      mesh.getOwnedElementToNode().getDeviceView(
+        Tpetra::Access::ReadOnly);
 
     // Loop over elements
-    auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    auto localRHS = 
+      rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    auto localMatrix = fe_matrix->getLocalMatrixDevice();
     // Work around subview of managed views being slower than unmanaged
     auto all_element_rhs_unmanaged = makeUnmanaged(all_element_rhs);
     auto all_element_matrix_unmanaged = makeUnmanaged(all_element_matrix);
     auto all_lcids_unmanaged = makeUnmanaged(all_lcids);
-    //  Tpetra::beginAssembly(*fe_matrix,*rhs);
     Kokkos::parallel_for
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
-       KOKKOS_LAMBDA (const size_t element_gidx) {
-        // Get subviews
-        pair_type location_pair (nperel*element_gidx, nperel*(element_gidx+1));
-        auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
-        auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
-        auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
+       KOKKOS_LAMBDA (const size_t element_idx) {
+      const pair_type location_pair(
+        nodesPerElem*element_idx, nodesPerElem*(element_idx+1));
 
-        // Get the contributions for the current element
-        ReferenceQuad4(element_matrix);
-        ReferenceQuad4RHS(element_rhs);
+      // this thread's piece of device allocation
+      auto element_matrix = Kokkos::subview(
+        all_element_matrix_unmanaged, location_pair, Kokkos::ALL);
+      auto element_lcids = 
+        Kokkos::subview(all_lcids_unmanaged,location_pair);
+      auto element_rhs = 
+        Kokkos::subview(all_element_rhs_unmanaged, location_pair);
 
-        // Get the local column ids array for this element
-        for (int element_node_idx = 0; element_node_idx < nperel;
-             ++element_node_idx) {
-          element_lcids(element_node_idx) =
-            localColMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
-        }
+      // Get the contributions for the current element
+      ReferenceQuad4(element_matrix);
+      ReferenceQuad4RHS(element_rhs);
+
+      // Get the local column ids array for this element
+      for (int element_node_idx = 0; element_node_idx < nodesPerElem;
+            ++element_node_idx) {
+        element_lcids(element_node_idx) =
+          localColMap.getLocalElement(
+            owned_element_to_node_gids(element_idx, element_node_idx));
+      }
         
-        // For each node (row) on the current element:
-        // - populate the values array
-        // - add the values to the fe_matrix.
+      // For each node (row) on the current element:
+      // - populate the values array
+      // - add the values to the fe_matrix.
+      for (int element_node_idx = 0; element_node_idx < nodesPerElem; 
+            ++element_node_idx) {
+        const local_ordinal_type local_row_id =
+          localMap.getLocalElement(owned_element_to_node_gids(
+            element_idx, element_node_idx));
 
-        for (int element_node_idx = 0; element_node_idx < nperel; ++element_node_idx) {
-          const local_ordinal_type local_row_id =
-            localMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
-          auto row_values = Kokkos::subview(element_matrix, element_node_idx, alln);
-
-          // Force atomics on sums
-          for (int col_idx = 0; col_idx < nperel; ++col_idx) {
-            localMatrix.sumIntoValues (local_row_id, &element_lcids(col_idx), 1,
-                                       &(element_matrix(element_node_idx,col_idx)),
-                                       true, true);
-          }
-          Kokkos::atomic_add (&(localRHS(local_row_id,0)), element_rhs[element_node_idx]);
+        // Atomically contribute for sums: parallel elements may be contributing
+        // to the same node at the same time
+        for (int col_idx = 0; col_idx < nodesPerElem; ++col_idx) {
+          localMatrix.sumIntoValues(local_row_id, &element_lcids(col_idx), 1,
+                                    &(element_matrix(element_node_idx,col_idx)),
+                                    true, true);
         }
-
-      });
+        Kokkos::atomic_add(
+          &(localRHS(local_row_id,0)), element_rhs[element_node_idx]);
+      }
+    });
   }
 
 

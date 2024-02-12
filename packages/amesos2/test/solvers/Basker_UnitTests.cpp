@@ -106,7 +106,6 @@ namespace {
   // using Amesos2::MatrixAdapter;
   // using Amesos2::MultiVecAdapter;
   using Amesos2::Basker;
-  using Amesos2::Meta::is_same;
 
   typedef Tpetra::Map<>::node_type Node;
 
@@ -152,7 +151,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos2::is_same<> )
+     * - Correct typedefs
      */
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -190,13 +189,13 @@ namespace {
     TEST_ASSERT( solver->getStatus().getNumSolve() == 0 );
 
     // The following should all pass at compile time
-    //TEST_ASSERT( (is_same<MAT,typename SOLVER::matrix_type>::value) );
-    //TEST_ASSERT( (is_same<MV,typename SOLVER::vector_type>::value) );
-    //TEST_ASSERT( (is_same<SCALAR,typename SOLVER::scalar_type>::value) );
-    //TEST_ASSERT( (is_same<LO,typename SOLVER::local_ordinal_type>::value) );
-    //TEST_ASSERT( (is_same<GO,typename SOLVER::global_ordinal_type>::value) );
-    //TEST_ASSERT( (is_same<global_size_t,typename SOLVER::global_size_type>::value) );
-    // TEST_ASSERT( (is_same<Node,typename SOLVER::node_type>::value) );
+    //TEST_ASSERT( (std::is_same_v<MAT,typename SOLVER::matrix_type>) );
+    //TEST_ASSERT( (std::is_same_v<MV,typename SOLVER::vector_type>) );
+    //TEST_ASSERT( (std::is_same_v<SCALAR,typename SOLVER::scalar_type>) );
+    //TEST_ASSERT( (std::is_same_v<LO,typename SOLVER::local_ordinal_type>) );
+    //TEST_ASSERT( (std::is_same_v<GO,typename SOLVER::global_ordinal_type>) );
+    //TEST_ASSERT( (std::is_same_v<global_size_t,typename SOLVER::global_size_type>) );
+    // TEST_ASSERT( (std::is_same_v<Node,typename SOLVER::node_type>) );
   }
 
 
@@ -778,22 +777,14 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Solve, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NonContigGID, SCALAR, LO, GO )
 
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
-  UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
-
-#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
-  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)       \
-  UNIT_TEST_GROUP_ORDINAL(int)
-
-#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
+#define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
   UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)                 \
   UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
-  //Add JDB (10-19-215)
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
+
 #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   UNIT_TEST_GROUP_ORDINAL(int)
   typedef long int LongInt;
@@ -816,7 +807,5 @@ namespace {
   #endif
 #endif  // EXPL-INST
 
-
-#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 } // end anonymous namespace

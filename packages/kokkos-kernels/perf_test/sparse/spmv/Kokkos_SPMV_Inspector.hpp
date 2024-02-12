@@ -28,7 +28,7 @@ struct SPMV_Inspector_Functor {
   typedef typename AMatrix::non_const_size_type size_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   const value_type alpha;
   AMatrix m_A;

@@ -2,6 +2,9 @@
 # simple_stratimikos_example
 #
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+
 TRIBITS_ADD_EXECUTABLE(
   simple_stratimikos_example
   SOURCES
@@ -88,7 +91,6 @@ TRIBITS_ADD_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
-
 
 #
 # Generate sample output
@@ -208,3 +210,6 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO AND ${PACKAGE_NAME}_ENABLE_Belos)
     )
 
 ENDIF()
+
+ENDIF()
+

@@ -263,11 +263,13 @@ void ReconstructionSidesetUpdater::reconstruct_sidesets()
 
 void ReconstructionSidesetUpdater::modification_begin_notification()
 {
+
 }
 
 void ReconstructionSidesetUpdater::finished_modification_end_notification()
 {
   m_stkSideSets.clear();
+  m_helper.reset_internal_sideset_detection(false);
 }
 
 void ReconstructionSidesetUpdater::started_modification_end_notification()
@@ -319,20 +321,7 @@ void ReconstructionSidesetUpdater::elements_moved_procs_notification(const Entit
 {
 }
 
-
-const std::string &op_string(OPERATION op)
-{
-  static std::string added("added");
-  static std::string destroyed("destroyed");
-  static std::string unknown("unknown");
-
-  if(op == ADDED) return added;
-  if(op == DELETED) return destroyed;
-
-  return unknown;
-}
-
-void ReconstructionSidesetUpdater::tag_sideset(Entity entity, const Part& part, OPERATION op)
+void ReconstructionSidesetUpdater::tag_sideset(Entity entity, const Part& part)
 {
   if (m_bulkData.bucket_ptr(entity) != nullptr)
   {
@@ -343,19 +332,19 @@ void ReconstructionSidesetUpdater::tag_sideset(Entity entity, const Part& part, 
   }
 }
 
-void ReconstructionSidesetUpdater::insert_parts(Entity entity, const ConstPartVector& parts, OPERATION op)
+void ReconstructionSidesetUpdater::insert_parts(Entity entity, const ConstPartVector& parts)
 {
   for(const Part* part : parts) {
-    tag_sideset(entity, *part, op);
+    tag_sideset(entity, *part);
   }
 }
 
-void ReconstructionSidesetUpdater::insert_parts(Entity entity, const OrdinalVector& parts, OPERATION op)
+void ReconstructionSidesetUpdater::insert_parts(Entity entity, const OrdinalVector& parts)
 {
   const MetaData& meta = m_bulkData.mesh_meta_data();
   for(Ordinal partOrdinal : parts) {
     const Part& part = *meta.get_parts()[partOrdinal];
-    tag_sideset(entity, part, op);
+    tag_sideset(entity, part);
   }
 }
 
@@ -373,8 +362,7 @@ const Selector& IncrementalSidesetUpdater::get_cached_sideset_selector(const Par
 
   if(iter == m_cachedSidesetSelectors.end()) {
     std::vector<const Part *> touchingBlocks = m_metaData.get_blocks_touching_surface(part);
-    //Selector selector = ((touchingBlocks.size() > 0) ? selectUnion(touchingBlocks) : m_metaData.universal_part()); // & m_activeSelector;
-    Selector selector = selectUnion(touchingBlocks); // & m_activeSelector;
+    Selector selector = selectUnion(touchingBlocks);
     const auto entry = m_cachedSidesetSelectors.insert({part, selector});
     return entry.first->second;
   }
@@ -542,8 +530,7 @@ void IncrementalSidesetUpdater::started_modification_end_notification()
 
 void IncrementalSidesetUpdater::modification_begin_notification()
 {
-  m_helper.reset_internal_sideset_detection(m_elemChangedRankedParts);
-  m_elemChangedRankedParts = false;
+
 }
 
 void IncrementalSidesetUpdater::finished_modification_end_notification()
@@ -565,6 +552,9 @@ void IncrementalSidesetUpdater::finished_modification_end_notification()
   for(SideSet* sideset : sidesets) {
     sideset->clear_modification_flag();
   }
+
+  m_helper.reset_internal_sideset_detection(m_elemOrSideChangedRankedParts);
+  m_elemOrSideChangedRankedParts = false;
 }
 
 void IncrementalSidesetUpdater::remove_relation(Entity element, Entity face, ConnectivityOrdinal ordinal)
@@ -591,8 +581,8 @@ void IncrementalSidesetUpdater::add_relation(Entity element, Entity face, Connec
 
 void IncrementalSidesetUpdater::entity_deleted(Entity entity)
 {
-    update_sideset_vector();
-    m_helper.remove_entity_entries_from_sidesets(m_sidesets, entity, nullptr);
+  update_sideset_vector();
+  m_helper.remove_entity_entries_from_sidesets(m_sidesets, entity, nullptr);
 }
 
 void IncrementalSidesetUpdater::relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
@@ -601,6 +591,13 @@ void IncrementalSidesetUpdater::relation_destroyed(Entity from, Entity to, Conne
     update_sideset_vector();
     m_helper.remove_side_entry_from_sidesets(m_sidesets, from, ordinal, nullptr);
     remove_relation(from, to, ordinal);
+  }
+}
+
+void IncrementalSidesetUpdater::relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+{
+  if(m_bulkData.entity_rank(from) == stk::topology::ELEM_RANK && m_bulkData.entity_rank(to) == m_metaData.side_rank()) {
+    add_relation(from, to, ordinal);
   }
 }
 
@@ -742,18 +739,25 @@ void IncrementalSidesetUpdater::fill_sidesets_from_parts(const PartVector& parts
   add_sidesets_from_parts(parts, sidesets);
 }
 
-bool contains_ranked_part(const MetaData& meta, const OrdinalVector& parts)
+namespace impl {
+bool contains_elem_or_side_ranked_part(const MetaData& meta, const OrdinalVector& parts)
 {
+  const stk::mesh::EntityRank sideRank = meta.side_rank();
+
   for (unsigned ord : parts) {
-    if (meta.get_part(ord).primary_entity_rank() != stk::topology::INVALID_RANK) {
+    const stk::mesh::EntityRank partRank = meta.get_part(ord).primary_entity_rank();
+    if ((partRank == stk::topology::ELEM_RANK) || (partRank == sideRank)) {
       return true;
     }
   }
   return false;
 }
+}
 
 void IncrementalSidesetUpdater::entity_parts_removed(Entity entity, const OrdinalVector& parts)
 {
+  m_elemOrSideChangedRankedParts = m_elemOrSideChangedRankedParts || impl::contains_elem_or_side_ranked_part(m_metaData, parts);
+
   if(m_bulkData.entity_rank(entity) == m_metaData.side_rank()) {
     std::vector<SideSet*> sidesets;
     fill_sidesets_from_part_ordinals(parts, sidesets);
@@ -764,11 +768,8 @@ void IncrementalSidesetUpdater::entity_parts_removed(Entity entity, const Ordina
     if (m_bulkData.bucket_ptr(entity) != nullptr && m_bulkData.num_sides(entity) > 0) {
       accumulate_element_block_part_changes(entity, parts);
     }
-
-    m_elemChangedRankedParts = m_elemChangedRankedParts || contains_ranked_part(m_metaData, parts);
   }
 }
-
 
 void IncrementalSidesetUpdater::fill_sidesets_and_selectors_from_blocks_touching_surfaces(const OrdinalVector& parts,
                                                                                           SideSetSelectorVector& sidesetsAndSelectors)
@@ -793,6 +794,8 @@ void IncrementalSidesetUpdater::fill_sidesets_and_selectors_from_blocks_touching
 
 void IncrementalSidesetUpdater::entity_parts_added(Entity entity, const OrdinalVector& parts)
 {
+  m_elemOrSideChangedRankedParts = m_elemOrSideChangedRankedParts || impl::contains_elem_or_side_ranked_part(m_metaData, parts);
+
   if(m_bulkData.entity_rank(entity) == m_metaData.side_rank()) {
     SideSetSelectorVector sidesets;
     fill_sidesets_and_selectors_from_part_ordinals(parts, sidesets);
@@ -813,15 +816,6 @@ void IncrementalSidesetUpdater::entity_parts_added(Entity entity, const OrdinalV
 
       m_helper.add_sideset_entry_for_element_selected_by_sidesets(entity, sidesetsAndSelectors);
     }
-    m_elemChangedRankedParts = m_elemChangedRankedParts || contains_ranked_part(m_metaData, parts);
-  }
-}
-
-
-void IncrementalSidesetUpdater::relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
-{
-  if(m_bulkData.entity_rank(from) == stk::topology::ELEM_RANK && m_bulkData.entity_rank(to) == m_metaData.side_rank()) {
-    add_relation(from, to, ordinal);
   }
 }
 

@@ -21,12 +21,10 @@ namespace Tempus {
  *  Inidividual AppActions are executed in the order in which they
  *  were added.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperBackwardEulerAppActionComposite
-  : virtual public Tempus::StepperBackwardEulerAppAction<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperBackwardEulerAppAction<Scalar> {
+ public:
   /// Default constructor
   StepperBackwardEulerAppActionComposite();
 
@@ -35,32 +33,34 @@ public:
 
   /// Execute application action for BackwardEuler Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperBackwardEuler<Scalar> > stepper,
-    const typename StepperBackwardEulerAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperBackwardEuler<Scalar> > stepper,
+      const typename StepperBackwardEulerAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
   {
-    for(auto& a : appActions_)
-      a->execute(sh, stepper, actLoc);
+    for (auto& a : appActions_) a->execute(sh, stepper, actLoc);
   }
 
   // Add AppAction to the AppAction vector.
-  void addBackwardEulerAppAction(Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > appAction);
+  void addBackwardEulerAppAction(
+      Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > appAction);
   {
     appActions_.push_back(appAction);
   }
 
   // Clear the AppAction vector.
   void clearBackwardEulerAppActions();
-  { appActions_.clear();}
+  {
+    appActions_.clear();
+  }
 
   // Return the size of the AppAction vector.
   std::size_t getSize() const { return appActions_.size(); }
 
-private:
-
-  std::vector<Teuchos::RCP<StepperBackwardEulerAppAction<Scalar > > > appActions_;
-
+ private:
+  std::vector<Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > >
+      appActions_;
 };
 
-} // namespace Tempus
-#endif // Tempus_StepperBackwardEulerAppActionComposite_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperBackwardEulerAppActionComposite_hpp

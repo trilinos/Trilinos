@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -161,7 +161,7 @@ void Ioss::transfer_assemblies(Ioss::Region &region, Ioss::Region &output_region
       // create a members list containing entities from input
       // database.  We need corresponding entities from output
       // database...
-      auto o_assem = new Ioss::Assembly(*assm);
+      auto *o_assem = new Ioss::Assembly(*assm);
       o_assem->remove_members();
 
       // Now, repopulate member list with corresponding entities from output database...
@@ -198,7 +198,7 @@ void Ioss::transfer_blobs(Ioss::Region &region, Ioss::Region &output_region,
       }
       size_t count = blob->entity_count();
       total_entities += count;
-      auto o_blob = new Ioss::Blob(*blob);
+      auto *o_blob = new Ioss::Blob(*blob);
       output_region.add(o_blob);
     }
 
@@ -382,8 +382,8 @@ namespace {
       }
 
       // Get vector of all boundary faces which will be output as the skin...
-      auto &faces = face_generator.faces("ALL");
-      for (auto &face : faces) {
+      const auto &faces = face_generator.faces("ALL");
+      for (const auto &face : faces) {
         if (face.elementCount_ == 1) {
           boundary.push_back(face);
         }
@@ -448,14 +448,14 @@ namespace {
       // Get topology of the sideset faces. Using just block[0] since for what we are doing, doesn't
       // really matter.
       const auto &blocks    = region.get_element_blocks();
-      auto        topo      = blocks[0]->topology();
+      const auto *topo      = blocks[0]->topology();
       auto        elem_topo = topo->name();
       auto        face_topo = topo->boundary_type(0)->name();
 
-      auto ss = new Ioss::SideSet(output_region.get_database(), "boundary");
+      auto *ss = new Ioss::SideSet(output_region.get_database(), "boundary");
       output_region.add(ss);
-      auto sb = new Ioss::SideBlock(output_region.get_database(), "boundary", face_topo, elem_topo,
-                                    boundary.size());
+      auto *sb = new Ioss::SideBlock(output_region.get_database(), "boundary", face_topo, elem_topo,
+                                     boundary.size());
       ss->add(sb);
     }
 
@@ -633,7 +633,7 @@ namespace {
       if (options.define_geometry && options.boundary_sideset) {
         auto *ss = output_region.get_sideset("boundary");
         if (ss != nullptr) {
-          auto sb = ss->get_side_block("boundary");
+          auto *sb = ss->get_side_block("boundary");
           if (output_region.get_database()->int_byte_size_api() == 4) {
             output_boundary_sideset(sb, boundary, (int)0);
           }
@@ -868,7 +868,7 @@ namespace {
         size_t count = iblock->entity_count();
         total_entities += count;
 
-        auto block = new T(*iblock);
+        auto *block = new T(*iblock);
         output_region.add(block);
       }
       if (options.output_summary && rank == 0) {
@@ -903,7 +903,7 @@ namespace {
           size_t count = iblock->entity_count();
           total_entities += count;
 
-          auto block = iblock->clone(output_region.get_database());
+          auto *block = iblock->clone(output_region.get_database());
           output_region.add(block);
           transfer_mesh_info(iblock, block);
 
@@ -925,7 +925,7 @@ namespace {
           size_t count = iblock->entity_count();
           total_entities += count;
 
-          auto block = iblock->clone(output_region.get_database());
+          auto *block = iblock->clone(output_region.get_database());
           output_region.add(block);
           transfer_mesh_info(iblock, block);
 
@@ -981,7 +981,7 @@ namespace {
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DebugOut(), "{}, ", name);
       }
-      auto surf = new Ioss::SideSet(*ss);
+      auto *surf = new Ioss::SideSet(*ss);
       output_region.add(surf);
 
       // Fix up the optional 'owner_block' in copied SideBlocks...
@@ -1024,7 +1024,7 @@ namespace {
         }
         size_t count = set->entity_count();
         total_entities += count;
-        auto o_set = new T(*set);
+        auto *o_set = new T(*set);
         output_region.add(o_set);
       }
 
@@ -1077,7 +1077,7 @@ namespace {
         const std::string &name = ics->name();
         fmt::print(Ioss::DebugOut(), "{}, ", name);
       }
-      auto cs = new Ioss::CommSet(*ics);
+      auto *cs = new Ioss::CommSet(*ics);
       output_region.add(cs);
     }
     if (options.debug && rank == 0) {
@@ -1450,14 +1450,14 @@ namespace {
   void add_proc_id(Ioss::Region &region, int rank)
   {
     region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-    auto &sblocks = region.get_structured_blocks();
-    for (auto &sb : sblocks) {
+    const auto &sblocks = region.get_structured_blocks();
+    for (const auto &sb : sblocks) {
       sb->field_add(
           Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
     }
 
-    auto &eblocks = region.get_element_blocks();
-    for (auto &eb : eblocks) {
+    const auto &eblocks = region.get_element_blocks();
+    for (const auto &eb : eblocks) {
       eb->field_add(
           Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
     }
@@ -1468,12 +1468,12 @@ namespace {
     auto step = region.add_state(0.0);
     region.begin_state(step);
 
-    for (auto &sb : sblocks) {
+    for (const auto &sb : sblocks) {
       std::vector<double> proc_id(sb->entity_count(), rank);
       sb->put_field_data("processor_id", proc_id);
     }
 
-    for (auto &eb : eblocks) {
+    for (const auto &eb : eblocks) {
       std::vector<double> proc_id(eb->entity_count(), rank);
       eb->put_field_data("processor_id", proc_id);
     }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -142,6 +142,21 @@ namespace Ioss {
 
     SMART_ASSERT(global_cell_count >= cell_count)(global_cell_count)(cell_count);
     SMART_ASSERT(global_node_count >= node_count)(global_node_count)(node_count);
+
+    if ((m_ijkGlobal[0] < m_ijk[0] + m_offset[0]) || (m_ijkGlobal[1] < m_ijk[1] + m_offset[1]) ||
+        (m_ijkGlobal[2] < m_ijk[2] + m_offset[2])) {
+      auto               util = get_database()->util();
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "\nERROR: Inconsistent Structured Block parameters for block {} on rank {}.\n"
+                 "       Global IJK: {} x {} x {}; Local IJK: {} x {} x {}; Offset: {} x {} x {}\n"
+                 "       Global must be >= Local + Offset.\n",
+                 my_name, util.parallel_rank(), m_ijkGlobal[0], m_ijkGlobal[1], m_ijkGlobal[2],
+                 m_ijk[0], m_ijk[1], m_ijk[2], m_offset[0], m_offset[1], m_offset[2]);
+      std::cerr << errmsg.str();
+      IOSS_ERROR(errmsg);
+    }
+
     SMART_ASSERT(m_ijkGlobal[0] >= m_ijk[0])(m_ijkGlobal[0])(m_ijk[0]);
     SMART_ASSERT(m_ijkGlobal[1] >= m_ijk[1])(m_ijkGlobal[1])(m_ijk[1]);
     SMART_ASSERT(m_ijkGlobal[2] >= m_ijk[2])(m_ijkGlobal[2])(m_ijk[2]);
@@ -203,8 +218,8 @@ namespace Ioss {
 
   StructuredBlock *StructuredBlock::clone(DatabaseIO *database) const
   {
-    int  index_dim = properties.get("component_degree").get_int();
-    auto block     = new StructuredBlock(database, name(), index_dim, m_ijk, m_offset, m_ijkGlobal);
+    int   index_dim = properties.get("component_degree").get_int();
+    auto *block = new StructuredBlock(database, name(), index_dim, m_ijk, m_offset, m_ijkGlobal);
 
     block->m_zoneConnectivity    = m_zoneConnectivity;
     block->m_boundaryConditions  = m_boundaryConditions;
@@ -289,6 +304,12 @@ namespace Ioss {
                                                    size_t data_size) const
   {
     return get_database()->put_field(this, field, data, data_size);
+  }
+
+  int64_t StructuredBlock::internal_get_zc_field_data(const Field &field, void **data,
+                                                      size_t *data_size) const
+  {
+    return get_database()->get_zc_field(this, field, data, data_size);
   }
 
   AxisAlignedBoundingBox StructuredBlock::get_bounding_box() const
@@ -510,12 +531,10 @@ namespace Ioss {
     if (quiet && this->m_zoneConnectivity != rhs.m_zoneConnectivity) {
       return false;
     }
-    else {
-      if (!vec_equal(this->m_zoneConnectivity, rhs.m_zoneConnectivity)) {
-        fmt::print(Ioss::OUTPUT(), "StructuredBlock: Zone Connectivity mismatch (size {} vs {})\n",
-                   this->m_zoneConnectivity.size(), rhs.m_zoneConnectivity.size());
-        same = false;
-      }
+    if (!vec_equal(this->m_zoneConnectivity, rhs.m_zoneConnectivity)) {
+      fmt::print(Ioss::OUTPUT(), "StructuredBlock: Zone Connectivity mismatch (size {} vs {})\n",
+                 this->m_zoneConnectivity.size(), rhs.m_zoneConnectivity.size());
+      same = false;
     }
 
     // NOTE: this comparison assumes that the elements of this vector will
@@ -523,11 +542,9 @@ namespace Ioss {
     if (quiet && this->m_boundaryConditions != rhs.m_boundaryConditions) {
       return false;
     }
-    else {
-      if (!vec_equal(this->m_boundaryConditions, rhs.m_boundaryConditions)) {
-        fmt::print(Ioss::OUTPUT(), "StructuredBlock: Boundary Conditions mismatch\n");
-        same = false;
-      }
+    if (!vec_equal(this->m_boundaryConditions, rhs.m_boundaryConditions)) {
+      fmt::print(Ioss::OUTPUT(), "StructuredBlock: Boundary Conditions mismatch\n");
+      same = false;
     }
 
     if (!quiet) {

@@ -54,6 +54,7 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include "AnasaziGlobalComm.hpp"
 #endif
 
 /*!  \class Anasazi::OutputStreamTraits
@@ -86,8 +87,8 @@ struct OutputStreamTraits {
     MPI_Initialized(&mpiStarted);
     if (mpiStarted)
     {
-      MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-      MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+      MPI_Comm_rank(get_global_comm(), &myRank);
+      MPI_Comm_size(get_global_comm(), &numProcs);
     }
     fos->setProcRankAndSize(myRank, numProcs);
     fos->setOutputToRootOnly(rootRank);

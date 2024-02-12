@@ -19,12 +19,6 @@ TRIBITS_PACKAGE(TrilinosSS)
 ADD_SUBDIRECTORY(src)
 
 #
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-#
 # D) Do standard postprocessing
 #
 

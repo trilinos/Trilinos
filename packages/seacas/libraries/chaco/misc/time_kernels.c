@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,7 +10,7 @@
 #include <math.h>  // for sqrt
 #include <stdio.h> // for printf, NULL
 
-static double checkvec();
+static double checkvec(double *dvec, int beg, int end, float *svec);
 
 /* Benchmark certain kernel operations */
 void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
@@ -34,19 +34,6 @@ void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
   float         factor_float, fac_float;
   int           loops;
   double        min_time, target_time;
-
-  double *mkvec(int nl, int nh);
-  float  *mkvec_float(int nl, int nh);
-  void    frvec(double *v, int nl), frvec_float(float *v, int nl);
-  void    vecran();
-  double  ch_norm(double *vec, int beg, int end), dot(double *vec1, int beg, int end, double *vec2);
-  double  norm_float(), dot_float(float *vec1, int beg, int end, float *vec2);
-  double  seconds(void);
-  void    scadd(), scadd_float(),
-      update(double *vec1, int beg, int end, double *vec2, double fac, double *vec3),
-      update_float(float *vec1, int beg, int end, float *vec2, float fac, float *vec3);
-  void splarax(), splarax_float();
-  void perturb_init(), perturb_clear();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering time_kernels>\n");

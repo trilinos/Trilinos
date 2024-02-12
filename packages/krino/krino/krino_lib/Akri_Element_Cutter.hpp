@@ -31,11 +31,11 @@ class Element_Cutter
 public:
   Element_Cutter(const MasterElement & masterElement) : myTopology(masterElement.get_topology()) {}
   virtual ~Element_Cutter() {}
-  double interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const;
-  int sign_at_position(const InterfaceID interface, const Vector3d & p_coords) const;
-  virtual bool have_crossing(const InterfaceID interface, const Segment3d & edge) const = 0;
-  virtual int get_ls_per_interface_phase_at_location(const Vector3d & pCoords) const = 0;
-  virtual void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
+  double interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const;
+  int sign_at_position(const InterfaceID interface, const stk::math::Vector3d & p_coords) const;
+  virtual bool have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const = 0;
+  virtual int get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const = 0;
+  virtual void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const = 0;
 
@@ -47,7 +47,7 @@ public:
   virtual bool is_one_ls_per_phase() const = 0;
   void fill_interior_intersections(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
   void fill_interior_intersections(std::vector<ElementIntersection> & intersections) const;
-  void fill_tetrahedron_face_interior_intersections(const std::array<Vector3d,3> & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
+  void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
   static std::string visualize_cutting_surfaces(const stk::topology & topology, const InterfaceToSurface & cuttingSurfaces);
   virtual std::string visualize() const { return visualize_cutting_surfaces(myTopology, cutting_surfaces); }
 
@@ -67,7 +67,7 @@ protected:
   InterfaceToSurface cutting_surfaces;
 
 private:
-  virtual bool intersection_point_is_real(const Vector3d & intersection, const std::vector<int> & sortedDomains) const = 0;
+  virtual bool intersection_point_is_real(const stk::math::Vector3d & intersection, const std::vector<int> & sortedDomains) const = 0;
   void fill_triangle_interior_intersection_points(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
   void fill_tetrahedron_interior_intersection_points(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
 };
@@ -80,13 +80,13 @@ public:
     const std::vector<bool> & areParentEdgesOrientedSameAsElementEdges,
     const std::function<bool(const std::array<unsigned,4> &)> & intersectingPlanesDiagonalPicker);
   virtual bool is_one_ls_per_phase() const override { return false; }
-  virtual bool have_crossing(const InterfaceID interface, const Segment3d & edge) const override;
-  virtual int get_ls_per_interface_phase_at_location(const Vector3d & pCoords) const override;
-  virtual void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
+  virtual bool have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
+  virtual int get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const override;
+  virtual void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const override;
 private:
-  virtual bool intersection_point_is_real(const Vector3d & intersection, const std::vector<int> & sortedDomains) const override { return true; }
+  virtual bool intersection_point_is_real(const stk::math::Vector3d & intersection, const std::vector<int> & sortedDomains) const override { return true; }
   static std::vector<Edge_Crossing> build_cut_edges(const InterfaceID & interface,
     const std::vector<const CDFEM_Parent_Edge *> & parentEdges,
     const std::vector<bool> & parentEdgeIsOrientedSameAsElementEdge);
@@ -100,15 +100,15 @@ public:
     const std::vector<bool> & areParentEdgesOrientedSameAsElementEdges,
     const std::function<bool(const std::array<unsigned,4> &)> & intersectingPlanesDiagonalPicker);
   virtual bool is_one_ls_per_phase() const override { return true; }
-  virtual bool have_crossing(const InterfaceID interface, const Segment3d & edge) const override;
-  virtual int get_ls_per_interface_phase_at_location(const Vector3d & pCoords) const override;
-  virtual void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
+  virtual bool have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
+  virtual int get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const override;
+  virtual void add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const override;
   virtual std::string visualize() const override { return visualize_cutting_surfaces(myTopology, all_cutting_surfaces); }
 
 private:
-  virtual bool intersection_point_is_real(const Vector3d & intersection, const std::vector<int> & sortedDomains) const override;
+  virtual bool intersection_point_is_real(const stk::math::Vector3d & intersection, const std::vector<int> & sortedDomains) const override;
   static std::vector<Edge_Crossing> build_cut_edges(const InterfaceID & interface,
     const std::vector<const CDFEM_Parent_Edge *> & parentEdges,
     const std::vector<bool> & parentEdgeIsOrientedSameAsElementEdge);

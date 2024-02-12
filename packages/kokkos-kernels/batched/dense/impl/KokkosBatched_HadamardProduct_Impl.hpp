@@ -101,28 +101,44 @@ KOKKOS_INLINE_FUNCTION int SerialHadamardProduct::invoke(const XViewType& X,
   static_assert(
       Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: YViewType must have rank 2.");
-  static_assert(VViewType::Rank == 2,
+  static_assert(VViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: VViewType must have rank 2.");
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
         "X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
+        "X: %d x %d, "
+        "Y: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#endif
     return 1;
   }
   if (X.extent(0) != V.extent(0) || X.extent(1) != V.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
         "X: %d x %d, "
         "V: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)V.extent(0), (int)V.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
+        "X: %d x %d, "
+        "V: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)V.extent(0), (int)V.extent(1));
+#endif
     return 1;
   }
 #endif
@@ -152,28 +168,44 @@ KOKKOS_INLINE_FUNCTION int TeamHadamardProduct<MemberType>::invoke(
   static_assert(
       Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: YViewType must have rank 2.");
-  static_assert(VViewType::Rank == 2,
+  static_assert(VViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: VViewType must have rank 2.");
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
         "X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
+        "X: %d x %d, "
+        "Y: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#endif
     return 1;
   }
   if (X.extent(0) != V.extent(0) || X.extent(1) != V.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
         "X: %d x %d, "
         "V: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)V.extent(0), (int)V.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
+        "X: %d x %d, "
+        "V: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)V.extent(0), (int)V.extent(1));
+#endif
     return 1;
   }
 #endif
@@ -205,28 +237,44 @@ KOKKOS_INLINE_FUNCTION int TeamVectorHadamardProduct<MemberType>::invoke(
   static_assert(
       Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: YViewType must have rank 2.");
-  static_assert(VViewType::Rank == 2,
+  static_assert(VViewType::rank == 2,
                 "KokkosBatched::HadamardProduct: VViewType must have rank 2.");
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
         "X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
+        "X: %d x %d, "
+        "Y: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
+#endif
     return 1;
   }
   if (X.extent(0) != V.extent(0) || X.extent(1) != V.extent(1)) {
+#if KOKKOS_VERSION < 40199
     KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
         "X: %d x %d, "
         "V: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)V.extent(0), (int)V.extent(1));
+#else
+    Kokkos::printf(
+        "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
+        "X: %d x %d, "
+        "V: %d x %d\n",
+        (int)X.extent(0), (int)X.extent(1), (int)V.extent(0), (int)V.extent(1));
+#endif
     return 1;
   }
 #endif

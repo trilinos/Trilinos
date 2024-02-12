@@ -37,15 +37,14 @@
 
 //----------------------------------------------------------------------
 
+#include <stk_mesh/base/Types.hpp>      // for PartVector, OrdinalVector, etc
+#include <stk_topology/topology.hpp>    // for topology
+#include <stk_util/util/CSet.hpp>
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for int64_t
-#include <algorithm>                    // for sort, unique
 #include <iosfwd>                       // for ostream
-#include <stk_mesh/base/Types.hpp>      // for PartVector, OrdinalVector, etc
-#include <stk_mesh/baseImpl/PartImpl.hpp>  // for PartImpl
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector, vector<>::iterator
-#include "stk_topology/topology.hpp"    // for topology
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
@@ -83,7 +82,7 @@ public:
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns the PartRepository which created this part.
    */
-  MetaData & mesh_meta_data() const { return m_partImpl.mesh_meta_data(); }
+  MetaData & mesh_meta_data() const { return *m_mesh_meta_data; }
 
   BulkData & mesh_bulk_data() const;
 
@@ -94,14 +93,14 @@ public:
    *   nodes of those elements are also members of an element part.
    *   Return InvalidEntityRank if no primary entity type.
    */
-  EntityRank primary_entity_rank() const { return m_partImpl.primary_entity_rank(); }
+  EntityRank primary_entity_rank() const { return m_entity_rank; }
 
-  stk::topology topology() const { return m_partImpl.topology(); }
+  stk::topology topology() const { return m_topology; }
 
   /** \brief  Application-defined text name of this part, must be unique within the set of parts owned by a MetaData*/
-  const std::string & name() const { return m_partImpl.name(); }
+  const std::string & name() const { return m_name; }
 
-  bool force_no_induce() const { return m_partImpl.force_no_induce(); }
+  bool force_no_induce() const { return m_force_no_induce; }
 
   /** \brief Should we induce this part
    *
@@ -122,21 +121,21 @@ public:
   }
 
   //whether an entity's membership in this part is required to be the same on each processor that shares/ghosts the entity.
-  bool entity_membership_is_parallel_consistent() const { return m_partImpl.entity_membership_is_parallel_consistent(); }
-  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_partImpl.entity_membership_is_parallel_consistent(trueOrFalse); }
+  bool entity_membership_is_parallel_consistent() const { return m_entity_membership_is_parallel_consistent; }
+  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_entity_membership_is_parallel_consistent = trueOrFalse; }
 
-  int64_t id() const { return m_partImpl.id(); }
+  int64_t id() const { return m_id; }
 
   /** \brief  Internally generated ordinal of this part that is unique
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
    */
-  unsigned mesh_meta_data_ordinal() const { return m_partImpl.mesh_meta_data_ordinal(); }
+  unsigned mesh_meta_data_ordinal() const { return m_ordinal; }
 
   /** \brief  Parts that are supersets of this part. */
-  const PartVector & supersets() const { return m_partImpl.supersets(); }
+  const PartVector & supersets() const { return m_supersets; }
 
   /** \brief  Parts that are subsets of this part. */
-  const PartVector & subsets() const { return m_partImpl.subsets(); }
+  const PartVector & subsets() const { return m_subsets; }
 
   /** \brief  Check if argument is subset of this */
   bool contains(const Part& part) const;
@@ -149,18 +148,63 @@ public:
 
   /** \brief  Query attribute that has been attached to this part */
   template<class A>
-  const A * attribute() const { return m_partImpl.attribute<A>(); }
+  const A * attribute() const { return m_attribute.template get<A>(); }
 
 private:
 
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns the PartRepository which created this part.
    */
-  MetaData & meta_data() const { return m_partImpl.mesh_meta_data(); }
+  MetaData & meta_data() const { return *m_mesh_meta_data; }
 
-  CSet & get_attributes() { return m_partImpl.get_attributes(); }
+  void set_id(int64_t inputId) { m_id = inputId; }
 
-  impl::PartImpl m_partImpl;
+  CSet & get_attributes() { return m_attribute; }
+
+  void set_primary_entity_rank( EntityRank entity_rank );
+
+  void set_topology( stk::topology topo )
+  {
+    if ( topo == stk::topology::INVALID_TOPOLOGY || topo == m_topology ) return;
+  
+    STK_ThrowErrorMsgIf( m_topology != stk::topology::INVALID_TOPOLOGY && m_topology != topo,
+        "Error set_topology: part " << name()
+        << " already defined with " << m_topology
+        << " conflicts with  " << topo);
+  
+    STK_ThrowErrorMsgIf(m_entity_rank != stk::topology::INVALID_RANK && m_entity_rank != topo.rank(),
+        "Error set_topology: part " << name()
+        << " already defined with " << m_entity_rank
+        << " conflicts with  " << topo << " which has rank " << topo.rank());
+  
+    m_entity_rank = topo.rank();
+    m_topology = topo;
+  }
+
+  bool add_part_to_subset(Part & part);
+  bool add_part_to_superset(Part & part);
+
+  void set_force_no_induce(bool input) { m_force_no_induce = input; }
+
+  template<class T>
+  const T * declare_attribute_with_delete( const T *);
+  template<class T>
+  const T * declare_attribute_no_delete( const T *);
+  template<class T>
+  bool remove_attribute( const T *);
+
+  MetaData* const   m_mesh_meta_data;
+  const std::string m_name;
+  EntityRank        m_entity_rank;
+  stk::topology     m_topology;
+  int64_t           m_id;
+  CSet              m_attribute;
+  PartVector        m_subsets;
+  bool              m_subsetsEmpty;
+  PartVector        m_supersets;
+  const unsigned    m_ordinal;
+  bool              m_force_no_induce;
+  bool              m_entity_membership_is_parallel_consistent;
 
   /* \brief  A part is owned by a PartRepository, as such only the owning
    *         PartRepository can create, delete, or modify a part.
@@ -177,8 +221,23 @@ private:
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods on PartRepository.
    */
-  Part( MetaData * arg_meta_data , const std::string & arg_name, EntityRank arg_rank, size_t arg_ordinal, bool arg_force_no_induce = false)
-    : m_partImpl(arg_meta_data, arg_name, arg_rank, arg_ordinal, arg_force_no_induce)
+  Part(MetaData * arg_meta_data,
+       const std::string & arg_name,
+       EntityRank arg_rank,
+       size_t arg_ordinal,
+       bool arg_force_no_induce = false)
+    : m_mesh_meta_data(arg_meta_data),
+      m_name(arg_name),
+      m_entity_rank(arg_rank),
+      m_topology(stk::topology::INVALID_TOPOLOGY),
+      m_id(Part::INVALID_ID),
+      m_attribute(),
+      m_subsets(),
+      m_subsetsEmpty(true),
+      m_supersets(),
+      m_ordinal(arg_ordinal),
+      m_force_no_induce(arg_force_no_induce),
+      m_entity_membership_is_parallel_consistent(true)
   { }
 
   ~Part() {}
@@ -188,6 +247,30 @@ private:
 
 #endif /* DOXYGEN_COMPILE */
 };
+
+template<class T>
+inline
+const T *
+Part::declare_attribute_with_delete( const T * a )
+{ 
+  return m_attribute.template insert_with_delete<T>( a );
+}
+
+template<class T>
+inline
+const T *
+Part::declare_attribute_no_delete( const T * a )
+{
+  return m_attribute.template insert_no_delete<T>( a );
+}
+
+template<class T>
+inline
+bool
+Part::remove_attribute( const T * a )
+{
+  return m_attribute.template remove<T>( a );
+}
 
 //----------------------------------------------------------------------
 /** \brief  Ordering operator for parts. */
@@ -260,8 +343,8 @@ template<class Iterator>
 inline
 bool contains_ordinal( Iterator beg, Iterator end, unsigned part_ordinal )
 {
-  for(Iterator i=beg; i!=end; ++i) {
-    if (*i == part_ordinal) return true;
+  while(beg!=end) {
+    if (*beg++ == part_ordinal) return true;
   }
 
   return false;

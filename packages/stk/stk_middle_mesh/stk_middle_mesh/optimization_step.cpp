@@ -23,6 +23,7 @@ double OptimizationStep::improve_quality_single(ActiveVertData& active)
 
   // update observables
   auto deltaXPt    = ptPrime - ptPrime0;
+  //std::cout << "vert " << active.get_current_vert()->get_id() << " delta_x = " << deltaXPt << std::endl;
   deltaXPt.z       = 0;
   double deltaXMag = std::sqrt(dot(deltaXPt, deltaXPt));
 

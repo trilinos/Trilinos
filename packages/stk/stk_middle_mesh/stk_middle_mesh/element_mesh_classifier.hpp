@@ -3,6 +3,7 @@
 
 #include "element_mesh_extractor.hpp"
 #include "mesh_agglomerator.hpp"
+#include "mesh_entity.hpp"
 #include "mesh_relational_data.hpp"
 #include "predicates/point_classifier_normal_wrapper.hpp"
 
@@ -25,7 +26,7 @@ class ElementMeshClassifier
       , m_classifier(classifier)
     {}
 
-    void classify(ElementMeshData& elementMeshData, int numConstraintEdges);
+    void classify(ElementMeshData& elementMeshData, int numConstraintEdges, const std::vector<mesh::MeshEntityPtr>& mesh2Els);
 
   private:
     template <typename T>
@@ -78,6 +79,7 @@ class ElementMeshClassifier
     std::shared_ptr<MeshRelationalData> m_relationalData;
     std::shared_ptr<predicates::impl::PointClassifierNormalWrapper> m_classifier;
     ElementMeshData m_elementMeshData;
+    std::vector<mesh::MeshEntityPtr> m_mesh2Els;
     std::vector<bool> m_agglomerationsClassified;
     static constexpr bool M_OUTPUT = false;
 };

@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -67,78 +67,96 @@ namespace TpetraHelpers {
   *
   * Converts a Epetra_MultiVector to a Thyra::MultiVectorBase object. The structure of
   * the Epetra_MultiVector is assumed to be described by a map produced from the vector space
-  * containing the destination vector. For instance if there is a vector \f$v = [ [v_0, v_1] , v_2]^T\f$
+  * containing the destination vector. For instance if there is a vector \f$v = [ [v_0, v_1] ,
+  v_2]^T\f$
   * where \f$v_0\f$, \f$v_1\f$ and \f$v_2\f$ are all subvectors then the Epetra_Map
   * corresponding to \f$v\f$ would have indicies
-    
+
     \f$v_0^0, v_0^1,\ldots,v_0^{n_0},
        v_1^0, v_1^1,\ldots,v_1^{n_1}
        v_2^0, v_2^1,\ldots,v_2^{n_2} \f$.
-  
+
   * That is the each of the subvectors are stacked on top of each other. The possibly recursive
   * block structure is then dictated by the vector space. The resulting Thyra::MultiVectorBase
   * object will be in the vectors space, with the contents of the Epetra_MultiVector copied to it.
   *
-  * \param[in]     epetraX  Source Epetra_MultiVector object to be converted. See assumptions in Preconditions section.
-  * \param[in,out] thyraX   Destination Thyra::MultiVectorBase. See assumptions in Preconditions section
+  * \param[in]     epetraX  Source Epetra_MultiVector object to be converted. See assumptions in
+  Preconditions section.
+  * \param[in,out] thyraX   Destination Thyra::MultiVectorBase. See assumptions in Preconditions
+  section
   *
   * <b>Preconditions</b><ul>
-  * <li> [mv.Map()==thyraVSToEpetraMap(thyraX->space())] This method assumes that the map used to create
-  *      <code>epetraX</code> was created using the thyraVSToEpetraMap function using the vector space defining
-         <code>thyraX</code>
+  * <li> [mv.Map()==thyraVSToEpetraMap(thyraX->space())] This method assumes that the map used to
+  create
+  *      <code>epetraX</code> was created using the thyraVSToEpetraMap function using the vector
+  space defining <code>thyraX</code>
   * <li> All subvectors are of type Thyra::SpmdMultiVectorBase or Thyra::ProductMultiVectorBase
   * </ul>
   *
   * <b>Postconditions</b><ul>
-  * <li> [<code>thryaX==epetraX</code>] Contents of <code>epetraX</code> are copied into <code>thyraX</code>
+  * <li> [<code>thryaX==epetraX</code>] Contents of <code>epetraX</code> are copied into
+  <code>thyraX</code>
   * </ul>
   *
   * \note Due to a Thyra issue with a somewhat incomplete inheritance hierarchy surrounding
-  *       the <code>SpmdMultiVectorBase</code> and <code>SpmdVectorBase</code> interfaces <code>thyraX</code> must be of
-  *       type <code>SpmdMultiVectorBase</code>, <code>ProductMultiVectorBase</code>, or <code>ProductVectorBase</code>.
-  *       Notice that this does not include the <code>SpmdVectorBase</code> class. A fix of this might involve a more
+  *       the <code>SpmdMultiVectorBase</code> and <code>SpmdVectorBase</code> interfaces
+  <code>thyraX</code> must be of
+  *       type <code>SpmdMultiVectorBase</code>, <code>ProductMultiVectorBase</code>, or
+  <code>ProductVectorBase</code>.
+  *       Notice that this does not include the <code>SpmdVectorBase</code> class. A fix of this
+  might involve a more
   *       general implementation and use of <code>DetachedSpmdMultiVectorView</code>.
   */
-void blockTpetraToThyra(const Tpetra::MultiVector<ST,LO,GO,NT> & tpetraX,const Teuchos::Ptr<Thyra::MultiVectorBase<ST> > & thyraX); 
+void blockTpetraToThyra(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
+                        const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyraX);
 
 /** \brief Convert a Thyra::MultiVectorBase object to a Epetra_MultiVector object with
   *        the map defined by the Epetra_Map.
   *
   * Converts a Thyra::MultiVectorBase object to a Epetra_MultiVector object. The Epetra_MultiVector
-  * should have been created to be compatiable with the Thyra multi-vector, i.e. using the corresponding
+  * should have been created to be compatiable with the Thyra multi-vector, i.e. using the
+  corresponding
   * map create by a call to thyraVSToEpetraMap. For example, for a Thyra::MultiVectorBase object
   * \f$v = [ [v_0, v_1] , v_2]^T\f$ where \f$v_0\f$, \f$v_1\f$ and \f$v_2\f$ are all subvectors,
   * the Epetra_MultiVector object will have global indicies
-    
+
     \f$v_0^0, v_0^1,\ldots,v_0^{n_0},
        v_1^0, v_1^1,\ldots,v_1^{n_1}
        v_2^0, v_2^1,\ldots,v_2^{n_2} \f$.
-  
+
   * That is the each of the subvectors are stacked on top of each other. The possibly recursive
-  * block structure is then dictated by the Thyra::MultiVectorBase object. The resulting Epetra_MultiVector 
+  * block structure is then dictated by the Thyra::MultiVectorBase object. The resulting
+  Epetra_MultiVector
   * object will be a copy of the Thyra::MultiVectorBase object.
   *
-  * \param[in]     thyraX  Source Thyra::MultiVectorBase object to be converted. See assumptions in Preconditions section.
+  * \param[in]     thyraX  Source Thyra::MultiVectorBase object to be converted. See assumptions in
+  Preconditions section.
   * \param[in,out] epetraX Destination Epetra_MultiVector. See assumptions in Preconditions section
   *
   * <b>Preconditions</b><ul>
-  * <li> [<code>epetraX.Map()==thyraVSToEpetraMap(thyraX->space())</code>] This method assumes that the map used to create
-  *      <code>epetraX</code> was created using the thyraVSToEpetraMap function using the vector space defining
-         <code>thyraX</code>
+  * <li> [<code>epetraX.Map()==thyraVSToEpetraMap(thyraX->space())</code>] This method assumes that
+  the map used to create
+  *      <code>epetraX</code> was created using the thyraVSToEpetraMap function using the vector
+  space defining <code>thyraX</code>
   * <li> All subvectors are of type Thyra::SpmdMultiVectorBase or Thyra::ProductMultiVectorBase
   * </ul>
   *
   * <b>Postconditions</b><ul>
-  * <li> [<code>thryaX==epetraX</code>] Contents of <code>epetraX</code> are copied into <code>thyraX</code>
+  * <li> [<code>thryaX==epetraX</code>] Contents of <code>epetraX</code> are copied into
+  <code>thyraX</code>
   * </ul>
   *
   * \note Due to a Thyra issue with a somewhat incomplete inheritance hierarchy surrounding
-  *       the <code>SpmdMultiVectorBase</code> and <code>SpmdVectorBase</code> interfaces <code>thyraX</code> must be of
-  *       type <code>SpmdMultiVectorBase</code>, <code>ProductMultiVectorBase</code>, or <code>ProductVectorBase</code>.
-  *       Notice that this does not include the <code>SpmdVectorBase</code> class. A fix of this might involve a more
+  *       the <code>SpmdMultiVectorBase</code> and <code>SpmdVectorBase</code> interfaces
+  <code>thyraX</code> must be of
+  *       type <code>SpmdMultiVectorBase</code>, <code>ProductMultiVectorBase</code>, or
+  <code>ProductVectorBase</code>.
+  *       Notice that this does not include the <code>SpmdVectorBase</code> class. A fix of this
+  might involve a more
   *       general implementation and use of <code>ConstDetachedSpmdMultiVectorView</code>.
   */
-void blockThyraToTpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<ST> > & thyraX,Tpetra::MultiVector<ST,LO,GO,NT> & tpetraX);
+void blockThyraToTpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<ST> >& thyraX,
+                        Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX);
 
 /** \brief From a Thyra vector space create a compatable Epetra_Map
   *
@@ -150,12 +168,12 @@ void blockThyraToTpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<ST> > & 
   * As an example consider the vector space that describes vectors of the form
   * \f$v = [ [v_0, v_1] , v_2]^T\f$ where \f$v_0\f$, \f$v_1\f$ and \f$v_2\f$ are all subvectors.
   * The Epetra_Map created from this vector space will have global indicies
-    
+
     \f$v_0^0, v_0^1,\ldots,v_0^{n_0},
        v_1^0, v_1^1,\ldots,v_1^{n_1}
        v_2^0, v_2^1,\ldots,v_2^{n_2} \f$.
-  
-  * That is the each of the subvectors are stacked on top of each other. 
+
+  * That is the each of the subvectors are stacked on top of each other.
   *
   * \param[in] vs   A vector space object from which the Epetra_Map is to be created
   * \param[in] comm The Epetra_Comm object used to create the Epetra_Map
@@ -168,10 +186,11 @@ void blockThyraToTpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<ST> > & 
   *      Thyra::SpmdMultiVectorBase objects.
   * </ul>
   */
-const Teuchos::RCP<Tpetra::Map<LO,GO,NT> >
-thyraVSToTpetraMap(const Thyra::VectorSpaceBase<ST> & vs,const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > & comm);
+const Teuchos::RCP<Tpetra::Map<LO, GO, NT> > thyraVSToTpetraMap(
+    const Thyra::VectorSpaceBase<ST>& vs,
+    const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >& comm);
 
-} // end namespace Epetra
-} // end namespace Teko
+}  // namespace TpetraHelpers
+}  // end namespace Teko
 
 #endif

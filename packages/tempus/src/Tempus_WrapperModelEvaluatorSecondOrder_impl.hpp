@@ -11,11 +11,9 @@
 
 namespace Tempus {
 
-
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-WrapperModelEvaluatorSecondOrder<Scalar>::
-createInArgs() const
+WrapperModelEvaluatorSecondOrder<Scalar>::createInArgs() const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -30,11 +28,9 @@ createInArgs() const
   return std::move(inArgs);
 }
 
-
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-WrapperModelEvaluatorSecondOrder<Scalar>::
-createOutArgsImpl() const
+WrapperModelEvaluatorSecondOrder<Scalar>::createOutArgsImpl() const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -43,19 +39,17 @@ createOutArgsImpl() const
 
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(appModel_->Np(),0);
+  outArgs.set_Np_Ng(appModel_->Np(), 0);
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
 
   return std::move(outArgs);
 }
 
-
 template <typename Scalar>
-void
-WrapperModelEvaluatorSecondOrder<Scalar>::
-evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+void WrapperModelEvaluatorSecondOrder<Scalar>::evalModelImpl(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -63,13 +57,12 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP;
 
-  //Setup initial condition
-  //Create and populate inArgs
-  MEB::InArgs<Scalar> appInArgs = appModel_->createInArgs();
+  // Setup initial condition
+  // Create and populate inArgs
+  MEB::InArgs<Scalar> appInArgs   = appModel_->createInArgs();
   MEB::OutArgs<Scalar> appOutArgs = appModel_->createOutArgs();
 
-  switch (schemeType_)
-  {
+  switch (schemeType_) {
     case NEWMARK_IMPLICIT_AFORM: {
       // Specific for the Newmark Implicit a-Form stepper.  May want to
       // redesign this for a generic second-order scheme to not have an
@@ -83,48 +76,47 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       // Compute the velocity.
       // v_n = velocity_{pred} + \gamma dt a_n
       auto velocity = Thyra::createMember(inArgs.get_x()->space());
-      Thyra::V_StVpStV(velocity.ptr(),
-        Scalar(1.0), *v_pred_, delta_t_*gamma_, *inArgs.get_x());
+      Thyra::V_StVpStV(velocity.ptr(), Scalar(1.0), *v_pred_, delta_t_ * gamma_,
+                       *inArgs.get_x());
       appInArgs.set_x_dot(velocity);
 
       // Compute the displacement.
       // d_n = displacement_{pred} + \beta dt^2 a_n
       auto displacement = Thyra::createMember(inArgs.get_x()->space());
-      Thyra::V_StVpStV(displacement.ptr(),
-        Scalar(1.0), *d_pred_, beta_*delta_t_*delta_t_, *inArgs.get_x());
+      Thyra::V_StVpStV(displacement.ptr(), Scalar(1.0), *d_pred_,
+                       beta_ * delta_t_ * delta_t_, *inArgs.get_x());
       appInArgs.set_x(displacement);
 
-      appInArgs.set_W_x_dot_dot_coeff(Scalar(1.0));         // da/da
-      appInArgs.set_alpha(gamma_*delta_t_);                 // dv/da
-      appInArgs.set_beta(beta_*delta_t_*delta_t_);          // dd/da
+      appInArgs.set_W_x_dot_dot_coeff(Scalar(1.0));     // da/da
+      appInArgs.set_alpha(gamma_ * delta_t_);           // dv/da
+      appInArgs.set_beta(beta_ * delta_t_ * delta_t_);  // dd/da
 
       appInArgs.set_t(t_);
-      for (int i=0; i<appModel_->Np(); ++i) {
+      for (int i = 0; i < appModel_->Np(); ++i) {
         if (inArgs.get_p(i) != Teuchos::null)
           appInArgs.set_p(i, inArgs.get_p(i));
       }
 
-      //Setup output condition
-      //Create and populate outArgs
+      // Setup output condition
+      // Create and populate outArgs
       appOutArgs.set_f(outArgs.get_f());
       appOutArgs.set_W_op(outArgs.get_W_op());
 
       // build residual and jacobian
-      appModel_->evalModel(appInArgs,appOutArgs);
+      appModel_->evalModel(appInArgs, appOutArgs);
       break;
     }
 
     case NEWMARK_IMPLICIT_DFORM: {
       // Setup initial condition
       // Populate inArgs
-      RCP<Thyra::VectorBase<Scalar> const>
-      d = inArgs.get_x();
+      RCP<Thyra::VectorBase<Scalar> const> d = inArgs.get_x();
 
-      RCP<Thyra::VectorBase<Scalar>>
-      v = Thyra::createMember(inArgs.get_x()->space());
+      RCP<Thyra::VectorBase<Scalar>> v =
+          Thyra::createMember(inArgs.get_x()->space());
 
-      RCP<Thyra::VectorBase<Scalar>>
-      a = Thyra::createMember(inArgs.get_x()->space());
+      RCP<Thyra::VectorBase<Scalar>> a =
+          Thyra::createMember(inArgs.get_x()->space());
 
 #ifdef DEBUG_OUTPUT
       Teuchos::Range1D range;
@@ -151,8 +143,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       *out_ << "\n*** a_bef ***\n";
 #endif
 
-      Scalar const
-      c = 1.0 / beta_ / delta_t_ / delta_t_;
+      Scalar const c = 1.0 / beta_ / delta_t_ / delta_t_;
 
       // compute acceleration
       // a_{n+1} = (d_{n+1} - d_pred) / dt / dt / beta
@@ -160,16 +151,16 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
       // compute velocity
       // v_{n+1} = v_pred + \gamma dt a_{n+1}
-      Thyra::V_StVpStV(
-          Teuchos::ptrFromRef(*v), 1.0, *v_pred_, delta_t_ * gamma_, *a);
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*v), 1.0, *v_pred_,
+                       delta_t_ * gamma_, *a);
 
       appInArgs.set_x(d);
       appInArgs.set_x_dot(v);
       appInArgs.set_x_dot_dot(a);
 
-      appInArgs.set_W_x_dot_dot_coeff(c);               // da/dd
-      appInArgs.set_alpha(gamma_ / delta_t_ / beta_);   // dv/dd
-      appInArgs.set_beta(1.0);                          // dd/dd
+      appInArgs.set_W_x_dot_dot_coeff(c);              // da/dd
+      appInArgs.set_alpha(gamma_ / delta_t_ / beta_);  // dv/dd
+      appInArgs.set_beta(1.0);                         // dd/dd
 
       appInArgs.set_t(t_);
       for (int i = 0; i < appModel_->Np(); ++i) {
@@ -191,8 +182,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
       // compute velocity
       // v_{n+1} = v_pred + \gamma dt a_{n+1}
-      Thyra::V_StVpStV(
-          Teuchos::ptrFromRef(*v), 1.0, *v_pred_, delta_t_ * gamma_, *a);
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*v), 1.0, *v_pred_,
+                       delta_t_ * gamma_, *a);
 
       appInArgs.set_x(d);
       appInArgs.set_x_dot(v);
@@ -225,7 +216,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   }
 }
 
-
-} // namespace Tempus
+}  // namespace Tempus
 
 #endif  // Tempus_WrapperModelEvaluatorSecondOrder_impl_hpp

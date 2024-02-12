@@ -71,14 +71,14 @@ bool sorted_domains_form_quadruple_point(const bool is_one_interface_per_phase, 
 
 void fill_tetrahedron_face_surface_intersection_points(const int iFace, const Cutting_Surface * surf0, const Cutting_Surface * surf1, const std::vector<int> & sortedDomains, std::vector<ElementIntersection> & intersections)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   if (find_intersection_of_two_planes_and_side_of_tet(iFace, surf0->get_plane(), surf1->get_plane(), intersectionPoint))
     intersections.emplace_back(intersectionPoint, sortedDomains);
 }
 
 void fill_tetrahedron_interior_surface_intersection_points(const Cutting_Surface * surf0, const Cutting_Surface * surf1, const Cutting_Surface * surf2, const std::vector<int> & sortedDomains, std::vector<ElementIntersection> & intersections)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   if (find_intersection_of_three_planes_within_tet(surf0->get_plane(), surf1->get_plane(), surf2->get_plane(), intersectionPoint))
     intersections.emplace_back(intersectionPoint, sortedDomains);
 }
@@ -94,7 +94,7 @@ std::string visualize_element(const stk::topology & topology, std::array<int,4> 
   std::ostringstream os;
   for (unsigned n=0; n<numNodes; ++n)
   {
-    Vector3d nodeCoord(&elemNodeParamCoords[n*dim],dim);
+    stk::math::Vector3d nodeCoord(&elemNodeParamCoords[n*dim],dim);
     os << "Create vertex " << nodeCoord[0] << " " << nodeCoord[1] << " " << nodeCoord[2] << std::endl;
     usedGeomIds[0]++;
     os << "Create node " << usedGeomIds[0] << " vertex " << usedGeomIds[0] << std::endl;
@@ -129,7 +129,7 @@ void Element_Cutter::fill_triangle_interior_intersection_points(const ElementInt
 
   std::vector<int> sortedDomains;
   std::set<std::vector<int>> alreadyFound;
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
 
   intersections.clear();
   for (size_t index0=0; index0<interfacesWithCuttingSurface.size(); ++index0)
@@ -142,8 +142,8 @@ void Element_Cutter::fill_triangle_interior_intersection_points(const ElementInt
           sorted_domains_form_triple_point(is_one_ls_per_phase(), sortedDomains))
       {
         alreadyFound.insert(sortedDomains);
-        const Plane3d & plane0 = cutting_surfaces.at(interfacesWithCuttingSurface[index0])->get_plane();
-        const Plane3d & plane1 = cutting_surfaces.at(interfacesWithCuttingSurface[index1])->get_plane();
+        const stk::math::Plane3d & plane0 = cutting_surfaces.at(interfacesWithCuttingSurface[index0])->get_plane();
+        const stk::math::Plane3d & plane1 = cutting_surfaces.at(interfacesWithCuttingSurface[index1])->get_plane();
         if (find_intersection_of_two_2D_planes_within_tri(plane0, plane1, intersectionPoint) &&
             intersection_point_is_real(intersectionPoint, sortedDomains))
         {
@@ -154,28 +154,28 @@ void Element_Cutter::fill_triangle_interior_intersection_points(const ElementInt
   }
 }
 
-void Element_Cutter::fill_tetrahedron_face_interior_intersections(const std::array<Vector3d,3> & faceNodes,
+void Element_Cutter::fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
     const InterfaceID & interface1,
     const InterfaceID & interface2,
     const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & intersections) const
 {
-  const Plane3d facePlane{faceNodes[0], faceNodes[1], faceNodes[2]};
+  const stk::math::Plane3d facePlane{faceNodes[0], faceNodes[1], faceNodes[2]};
 
   std::vector<int> sortedDomains;
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
 
   intersections.clear();
   fill_sorted_domains(is_one_ls_per_phase(), interface1, interface2, sortedDomains);
   if (sorted_domains_form_triple_point(is_one_ls_per_phase(), sortedDomains))
   {
-    const Plane3d & plane0 = cutting_surfaces.at(interface1)->get_plane();
-    const Plane3d & plane1 = cutting_surfaces.at(interface2)->get_plane();
+    const stk::math::Plane3d & plane0 = cutting_surfaces.at(interface1)->get_plane();
+    const stk::math::Plane3d & plane1 = cutting_surfaces.at(interface2)->get_plane();
     if (intersectionPointFilter(sortedDomains) &&
         find_intersection_of_three_planes(plane0, plane1, facePlane, intersectionPoint) &&
         intersection_point_is_real(intersectionPoint, sortedDomains))
     {
-      const Vector3d faceCoords = triangle_parametric_coordinates_of_projected_point(faceNodes, intersectionPoint);
+      const stk::math::Vector3d faceCoords = triangle_parametric_coordinates_of_projected_point(faceNodes, intersectionPoint);
       if (within_tri_bounds(faceCoords))
         intersections.emplace_back(faceCoords, sortedDomains);
     }
@@ -189,7 +189,7 @@ void Element_Cutter::fill_tetrahedron_interior_intersection_points(const Element
 
   std::vector<int> sortedDomains;
   std::set<std::vector<int>> alreadyFound;
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
 
   intersections.clear();
   for (size_t index0=0; index0<interfacesWithCuttingSurface.size(); ++index0)
@@ -204,9 +204,9 @@ void Element_Cutter::fill_tetrahedron_interior_intersection_points(const Element
             sorted_domains_form_quadruple_point(is_one_ls_per_phase(), sortedDomains))
         {
           alreadyFound.insert(sortedDomains);
-          const Plane3d & plane0 = cutting_surfaces.at(interfacesWithCuttingSurface[index0])->get_plane();
-          const Plane3d & plane1 = cutting_surfaces.at(interfacesWithCuttingSurface[index1])->get_plane();
-          const Plane3d & plane2 = cutting_surfaces.at(interfacesWithCuttingSurface[index2])->get_plane();
+          const stk::math::Plane3d & plane0 = cutting_surfaces.at(interfacesWithCuttingSurface[index0])->get_plane();
+          const stk::math::Plane3d & plane1 = cutting_surfaces.at(interfacesWithCuttingSurface[index1])->get_plane();
+          const stk::math::Plane3d & plane2 = cutting_surfaces.at(interfacesWithCuttingSurface[index2])->get_plane();
           if (find_intersection_of_three_planes_within_tet(plane0, plane1, plane2, intersectionPoint) &&
               intersection_point_is_real(intersectionPoint, sortedDomains))
           {
@@ -261,7 +261,7 @@ std::unique_ptr<Element_Cutter> create_element_cutter(const bool oneLSPerPhase,
 
 
 int
-Element_Cutter::sign_at_position(const InterfaceID interface, const Vector3d & p_coords) const
+Element_Cutter::sign_at_position(const InterfaceID interface, const stk::math::Vector3d & p_coords) const
 {
   const auto iter = cutting_surfaces.find(interface);
   if(iter == cutting_surfaces.end())
@@ -276,12 +276,12 @@ Element_Cutter::sign_at_position(const InterfaceID interface, const Vector3d & p
 }
 
 double
-Element_Cutter::interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const
+Element_Cutter::interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
   STK_ThrowErrorMsgIf(cutting_surfaces.find(interface) == cutting_surfaces.end(),
       "No cutting surface found for interface " << interface);
   const Cutting_Surface & interface_surface = *(cutting_surfaces.find(interface)->second);
-  return interface_surface.interface_crossing_position(edge);
+  return interface_surface.interface_crossing_position(edgeNodeCoords);
 }
 
 void
@@ -328,7 +328,7 @@ static std::vector< std::array<unsigned,2> > get_element_edge_node_ordinals(cons
   return elemEdgeNodeOrdinals;
 }
 
-static std::vector<Vector3d>
+static std::vector<stk::math::Vector3d>
 get_parametric_node_coords_on_element_nodes_and_cut_edges(const MasterElement & masterElem,
     const std::vector<Element_Cutter::Edge_Crossing> & cutEdges,
     const std::vector< std::array<unsigned,2> > elemEdgeNodeOrdinals)
@@ -340,10 +340,10 @@ get_parametric_node_coords_on_element_nodes_and_cut_edges(const MasterElement & 
   const unsigned numEdges = baseTopology.num_edges();
   const int dim = baseTopology.dimension();
 
-  std::vector<Vector3d> nodeParamCoords(numNodes+numEdges);
+  std::vector<stk::math::Vector3d> nodeParamCoords(numNodes+numEdges);
 
   for (unsigned n=0; n<numNodes; ++n)
-    nodeParamCoords[n] = Vector3d(&elemNodeParamCoords[n*dim],dim);
+    nodeParamCoords[n] = stk::math::Vector3d(&elemNodeParamCoords[n*dim],dim);
 
   for (auto && cut_edge : cutEdges)
   {
@@ -410,7 +410,7 @@ get_node_signs_on_element_nodes(const stk::topology baseTopology,
 }
 
 static std::shared_ptr<Cutting_Surface>
-build_triangle_cutting_surface(const std::vector<int> & nodeSigns, const std::vector<Vector3d> & nodeParamCoords)
+build_triangle_cutting_surface(const std::vector<int> & nodeSigns, const std::vector<stk::math::Vector3d> & nodeParamCoords)
 {
   const int case_id = (nodeSigns[0]+1) +
                       (nodeSigns[1]+1)*3 +
@@ -490,7 +490,7 @@ build_triangle_cutting_surface(const std::vector<int> & nodeSigns, const std::ve
 
 static std::shared_ptr<Cutting_Surface>
 build_tetrahedral_cutting_surface(const std::vector<int> & nodeSigns,
-    const std::vector<Vector3d> & nodeParamCoords,
+    const std::vector<stk::math::Vector3d> & nodeParamCoords,
     const std::function<bool(const std::array<unsigned,4> &)> & intersectingPlanesDiagonalPicker)
 {
   const int case_id = (nodeSigns[0]+1) +
@@ -533,8 +533,8 @@ build_tetrahedral_cutting_surface(const std::vector<int> & nodeSigns,
     case 1:  // ls[0]=0 && ls[1]<0 && ls[2]<0 && ls[3]<0
     case 79: // ls[0]=0 && ls[1]>0 && ls[2]>0 && ls[3]>0
     {
-      const Vector3d x0p13 = nodeParamCoords[i0] + nodeParamCoords[i3]-nodeParamCoords[i1];
-      const Vector3d x0p12 = nodeParamCoords[i0] + nodeParamCoords[i2]-nodeParamCoords[i1];
+      const stk::math::Vector3d x0p13 = nodeParamCoords[i0] + nodeParamCoords[i3]-nodeParamCoords[i1];
+      const stk::math::Vector3d x0p12 = nodeParamCoords[i0] + nodeParamCoords[i2]-nodeParamCoords[i1];
       return (permute_case_id==1) ?
           (std::make_shared<Plane_Cutting_Surface>(nodeParamCoords[i0],x0p13,x0p12)) :
           (std::make_shared<Plane_Cutting_Surface>(nodeParamCoords[i0],x0p12,x0p13));
@@ -544,7 +544,7 @@ build_tetrahedral_cutting_surface(const std::vector<int> & nodeSigns,
     case 4:  // ls[0]=0 && ls[1]=0 && ls[2]<0 && ls[3]<0
     case 76: // ls[0]=0 && ls[1]=0 && ls[2]>0 && ls[3]>0
     {
-      const Vector3d x0p23 = nodeParamCoords[i0] + nodeParamCoords[i3]-nodeParamCoords[i2];
+      const stk::math::Vector3d x0p23 = nodeParamCoords[i0] + nodeParamCoords[i3]-nodeParamCoords[i2];
       return (permute_case_id==4) ?
           (std::make_shared<Plane_Cutting_Surface>(nodeParamCoords[i0],nodeParamCoords[i1],x0p23)) :
           (std::make_shared<Plane_Cutting_Surface>(nodeParamCoords[i1],nodeParamCoords[i0],x0p23));
@@ -670,21 +670,21 @@ LS_Per_Interface_Cutter::LS_Per_Interface_Cutter(const MasterElement & masterEle
 }
 
 bool
-LS_Per_Interface_Cutter::have_crossing(const InterfaceID interface, const Segment3d & edge) const
+LS_Per_Interface_Cutter::have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
   const auto iter = cutting_surfaces.find(interface);
   STK_ThrowRequire(iter != cutting_surfaces.end());
   const Cutting_Surface & interface_surface = *(iter->second);
-  return interface_surface.sign_at_position(edge.GetNode(0)) == -interface_surface.sign_at_position(edge.GetNode(1));
+  return interface_surface.sign_at_position(edgeNodeCoords[0]) == -interface_surface.sign_at_position(edgeNodeCoords[1]);
 }
 
-int LS_Per_Interface_Cutter::get_ls_per_interface_phase_at_location(const Vector3d & pCoords) const
+int LS_Per_Interface_Cutter::get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const
 {
   STK_ThrowRequireMsg(false, "Improper usage of LS_Per_Interface_Cutter.");
   return -1;
 }
 
-void LS_Per_Interface_Cutter::add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
+void LS_Per_Interface_Cutter::add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const
 {
@@ -771,7 +771,7 @@ std::shared_ptr<Cutting_Surface> One_LS_Per_Phase_Cutter::attempt_to_build_cutti
   return cuttingSurface;
 }
 
-static std::set<int> determine_optimal_phases_at_location(const Vector3d & location,
+static std::set<int> determine_optimal_phases_at_location(const stk::math::Vector3d & location,
     const InterfaceToSurface & allSurfaces)
 {
   // optimal phases are phases those that are on the "right" side of at least one surface,
@@ -794,7 +794,7 @@ static std::set<int> determine_optimal_phases_at_location(const Vector3d & locat
   return toPhases;
 }
 
-bool intersection_point_is_real(const Vector3d & intersectionPoint,
+bool intersection_point_is_real(const stk::math::Vector3d & intersectionPoint,
     const InterfaceToSurface & allSurfaces,
     const std::vector<int> & sortedDomains)
 {
@@ -831,12 +831,12 @@ static void add_triple_point_interfaces(const bool isOneLSPerPhase, const std::v
   }
 }
 
-static void add_interfaces_that_have_uncaptured_intersection_within_sides_of_tet(const std::vector<Vector3d> & elemNodesCoords,
+static void add_interfaces_that_have_uncaptured_intersection_within_sides_of_tet(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int>*> & nodesSnappedDomains,
     const InterfaceToSurface & allSurfaces,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   std::vector<int> sortedDomains;
   constexpr bool oneLSPerPhase(true);
 
@@ -857,13 +857,13 @@ static void add_interfaces_that_have_uncaptured_intersection_within_sides_of_tet
           for (int iFace=0; iFace<4; ++iFace)
           {
             topology.face_node_ordinals(iFace, faceNodes);
-            const std::array<Vector3d,3> faceNodeCoords{elemNodesCoords[faceNodes[0]], elemNodesCoords[faceNodes[1]], elemNodesCoords[faceNodes[2]]};
-            const Plane3d facePlane{elemNodesCoords[faceNodes[0]], elemNodesCoords[faceNodes[1]], elemNodesCoords[faceNodes[2]]};
+            const std::array<stk::math::Vector3d,3> faceNodeCoords{elemNodesCoords[faceNodes[0]], elemNodesCoords[faceNodes[1]], elemNodesCoords[faceNodes[2]]};
+            const stk::math::Plane3d facePlane{elemNodesCoords[faceNodes[0]], elemNodesCoords[faceNodes[1]], elemNodesCoords[faceNodes[2]]};
             if (!intersection_is_already_captured(nodesSnappedDomains, faceNodes, sortedDomains) &&
                 find_intersection_of_three_planes(facePlane, surface1.second->get_plane(), surface2.second->get_plane(), intersectionPoint) &&
                 intersection_point_is_real(intersectionPoint, allSurfaces, sortedDomains))
             {
-              const Vector3d faceCoords = triangle_parametric_coordinates_of_projected_point(faceNodeCoords, intersectionPoint);
+              const stk::math::Vector3d faceCoords = triangle_parametric_coordinates_of_projected_point(faceNodeCoords, intersectionPoint);
               if (within_tri_bounds(faceCoords))
                 add_triple_point_interfaces(oneLSPerPhase, sortedDomains, interfacesWithUncapturedCrossings);
             }
@@ -878,7 +878,7 @@ static void add_interfaces_that_have_uncaptured_intersection_within_sides_of_tet
     const InterfaceToSurface & allSurfaces,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   std::vector<int> sortedDomains;
   constexpr bool oneLSPerPhase(true);
 
@@ -909,12 +909,12 @@ static void add_interfaces_that_have_uncaptured_intersection_within_sides_of_tet
   }
 }
 
-static void add_interfaces_that_have_uncaptured_intersection_within_tri(const std::vector<Vector3d> & elemNodesCoords,
+static void add_interfaces_that_have_uncaptured_intersection_within_tri(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int>*> & nodesSnappedDomains,
     const InterfaceToSurface & allSurfaces,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   std::vector<int> sortedDomains;
   constexpr bool oneLSPerPhase(true);
   const std::vector<unsigned> triNodes = {0,1,2};
@@ -932,8 +932,8 @@ static void add_interfaces_that_have_uncaptured_intersection_within_tri(const st
             find_intersection_of_two_2D_planes_within_tri(surface1.second->get_plane(), surface2.second->get_plane(), intersectionPoint) && // ASSUME THAT PROVIDED TRIANGLE CONTAINED WITHIN PARENT TRIANGLE
             intersection_point_is_real(intersectionPoint, allSurfaces, sortedDomains))
         {
-          const std::array<Vector3d,3> triNodeCoords{elemNodesCoords[0], elemNodesCoords[1], elemNodesCoords[2]};
-          const Vector3d triCoords = triangle_parametric_coordinates_of_projected_point(triNodeCoords, intersectionPoint);
+          const std::array<stk::math::Vector3d,3> triNodeCoords{elemNodesCoords[0], elemNodesCoords[1], elemNodesCoords[2]};
+          const stk::math::Vector3d triCoords = triangle_parametric_coordinates_of_projected_point(triNodeCoords, intersectionPoint);
           if (within_tri_bounds(triCoords))
             add_triple_point_interfaces(oneLSPerPhase, sortedDomains, interfacesWithUncapturedCrossings);
         }
@@ -946,7 +946,7 @@ static void add_interfaces_that_have_uncaptured_intersection_within_tri(const st
     const InterfaceToSurface& allSurfaces,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings)
 {
-  Vector3d intersectionPoint;
+  stk::math::Vector3d intersectionPoint;
   std::vector<int> sortedDomains;
   constexpr bool oneLSPerPhase(true);
   const std::vector<unsigned> triNodes = {0,1,2};
@@ -983,7 +983,7 @@ static void add_interfaces_that_have_uncaptured_intersection_within_element(cons
 }
 
 static void add_interfaces_that_have_uncaptured_intersection_within_element(const stk::topology & baseTopology,
-    const std::vector<Vector3d> & elemNodesCoords,
+    const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int>*> & nodesSnappedDomains,
     const InterfaceToSurface & allSurfaces,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings)
@@ -996,7 +996,7 @@ static void add_interfaces_that_have_uncaptured_intersection_within_element(cons
     STK_ThrowRequireMsg(false, "Unsupported topology " << baseTopology);
 }
 
-void One_LS_Per_Phase_Cutter::add_interfaces_with_uncaptured_intersection_within_element(const std::vector<Vector3d> & elemNodesCoords,
+void One_LS_Per_Phase_Cutter::add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const
 {
@@ -1005,28 +1005,28 @@ void One_LS_Per_Phase_Cutter::add_interfaces_with_uncaptured_intersection_within
 }
 
 bool
-One_LS_Per_Phase_Cutter::have_crossing(const InterfaceID interface, const Segment3d & edge) const
+One_LS_Per_Phase_Cutter::have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
   const auto iter = cutting_surfaces.find(interface);
   STK_ThrowRequire(iter != cutting_surfaces.end());
   const Cutting_Surface & interface_surface = *(iter->second);
-  if (interface_surface.sign_at_position(edge.GetNode(0)) == -interface_surface.sign_at_position(edge.GetNode(1)))
+  if (interface_surface.sign_at_position(edgeNodeCoords[0]) == -interface_surface.sign_at_position(edgeNodeCoords[1]))
   {
-    const double loc = interface_crossing_position(interface, edge);
-    const Vector3d intersectionPoint = (1.-loc)*edge.GetNode(0) + loc*edge.GetNode(1);
+    const double loc = interface_crossing_position(interface, edgeNodeCoords);
+    const stk::math::Vector3d intersectionPoint = (1.-loc)*edgeNodeCoords[0] + loc*edgeNodeCoords[1];
     return krino::intersection_point_is_real(intersectionPoint, all_cutting_surfaces, {interface.first_ls(), interface.second_ls()});
   }
   return false;
 }
 
-int One_LS_Per_Phase_Cutter::get_ls_per_interface_phase_at_location(const Vector3d & pCoords) const
+int One_LS_Per_Phase_Cutter::get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const
 {
   const std::set<int> optimalPhases = determine_optimal_phases_at_location(pCoords, all_cutting_surfaces);
   STK_ThrowRequireMsg(optimalPhases.size()==1, "Unexpected phase configuration with " << optimalPhases.size() << " optimal phases when evaluated phase at " << pCoords << "\n" << visualize());
   return *optimalPhases.begin();
 }
 
-bool One_LS_Per_Phase_Cutter::intersection_point_is_real(const Vector3d & intersectionPoint,
+bool One_LS_Per_Phase_Cutter::intersection_point_is_real(const stk::math::Vector3d & intersectionPoint,
     const std::vector<int> & sortedDomains) const
 {
   return krino::intersection_point_is_real(intersectionPoint, all_cutting_surfaces, sortedDomains);

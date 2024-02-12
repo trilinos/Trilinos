@@ -1,5 +1,5 @@
 Kokkos Kernels documentation: Under Construction
-==========================================
+================================================
 .. toctree::
    :maxdepth: 2
 

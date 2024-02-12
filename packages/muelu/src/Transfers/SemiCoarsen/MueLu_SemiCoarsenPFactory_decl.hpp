@@ -54,14 +54,13 @@
 
 #include "MueLu_Level_fwd.hpp"
 
-#define  VERTICAL       1
-#define  HORIZONTAL     2
-#define  GRID_SUPPLIED -1
-#define  NUM_ZPTS       0
-#define  ORIENTATION    1
+#define VERTICAL 1
+#define HORIZONTAL 2
+#define GRID_SUPPLIED -1
+#define NUM_ZPTS 0
+#define ORIENTATION 1
 
 namespace MueLu {
-
 
 /*!
   @class SemiCoarsenPFactory
@@ -104,55 +103,55 @@ namespace MueLu {
   | NumZLayers | NoFactory | Number of z layers after coarsening. Necessary input for LineDetectionFactory. Useful input for TogglePFactory.
 
 */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class SemiCoarsenPFactory : public PFactory {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class SemiCoarsenPFactory : public PFactory {
 #undef MUELU_SEMICOARSENPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor
-    SemiCoarsenPFactory() : bTransferCoordinates_(false) { }
+  //! Constructor
+  SemiCoarsenPFactory()
+    : bTransferCoordinates_(false) {}
 
-    //! Destructor.
-    virtual ~SemiCoarsenPFactory() { }
-    //@}
+  //! Destructor.
+  virtual ~SemiCoarsenPFactory() {}
+  //@}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    void Build (Level& fineLevel, Level& coarseLevel) const;
-    void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  void Build(Level& fineLevel, Level& coarseLevel) const;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-    //@}
+  //@}
 
-  private:
-    LO FindCpts(LO const PtsPerLine, LO const CoarsenRate, LO const Thin, LO **LayerCpts) const;
-    LO MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
-                                  LO const VertLineId[], LO const DofsPerNode, RCP<Matrix>& Amat,
-                                  RCP<Matrix>& P, RCP<const Map>& coarseMap,
-                                  const RCP<MultiVector> fineNullspace, RCP<MultiVector>& coarseNullspace, RCP<Matrix>& R, bool buildRestriction, bool doLinear) const;
-    void RevertToPieceWiseConstant( RCP<Matrix>& P, LO BlkSize) const;
+ private:
+  LO FindCpts(LO const PtsPerLine, LO const CoarsenRate, LO const Thin, LO** LayerCpts) const;
+  LO MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
+                      LO const VertLineId[], LO const DofsPerNode, RCP<Matrix>& Amat,
+                      RCP<Matrix>& P, RCP<const Map>& coarseMap,
+                      const RCP<MultiVector> fineNullspace, RCP<MultiVector>& coarseNullspace, RCP<Matrix>& R, bool buildRestriction, bool doLinear) const;
+  void RevertToPieceWiseConstant(RCP<Matrix>& P, LO BlkSize) const;
 
+  mutable bool bTransferCoordinates_;  //< boolean which is true if coordinate information is available to be transferred to coarse coordinate information
+};                                     // class SemiCoarsenPFactory
 
-    mutable bool bTransferCoordinates_; //< boolean which is true if coordinate information is available to be transferred to coarse coordinate information
-  }; //class SemiCoarsenPFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_SEMICOARSENPFACTORY_SHORT
-#endif // MUELU_SEMICOARSENPFACTORY_DECL_HPP
+#endif  // MUELU_SEMICOARSENPFACTORY_DECL_HPP

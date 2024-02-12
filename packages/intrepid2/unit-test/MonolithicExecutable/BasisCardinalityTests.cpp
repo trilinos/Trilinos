@@ -576,6 +576,54 @@ namespace
     return result;
   }
 
+  TEUCHOS_UNIT_TEST( BasisCardinality, Pyramid_HGRAD )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_PYR;
+    
+    for (ordinal_type p=1; p<10; p++)
+    {
+      // expected cardinality is p^3 + 3p + 1
+      const ordinal_type expectedCardinality = p * p * p + 3 * p + 1;
+      
+      HierarchicalBasis hierarchicalBasis(p);
+      const ordinal_type actualCardinality = hierarchicalBasis.getCardinality();
+      TEST_EQUALITY(expectedCardinality, actualCardinality);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisCardinality, Pyramid_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_PYR;
+    
+    for (ordinal_type p=1; p<10; p++)
+    {
+      // expected cardinality is p^2 + 2p(p+1) + 3p^2(p-1):
+      // - quadrilateral face: p^2
+      // - triangular faces:   2p(p+1)
+      // - interior bubbles:   3p^2(p-1)
+      const ordinal_type expectedCardinality = p * p + 2 * p * (p+1) + 3 * p * p * (p-1);
+      
+      HierarchicalBasis hierarchicalBasis(p);
+      const ordinal_type actualCardinality = hierarchicalBasis.getCardinality();
+      TEST_EQUALITY(expectedCardinality, actualCardinality);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisCardinality, Pyramid_HVOL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_PYR;
+    
+    for (ordinal_type p=1; p<10; p++)
+    {
+      // expected cardinality is (p+1)^3
+      const ordinal_type expectedCardinality = (p+1) * (p+1) * (p+1);
+      
+      HierarchicalBasis hierarchicalBasis(p);
+      const ordinal_type actualCardinality = hierarchicalBasis.getCardinality();
+      TEST_EQUALITY(expectedCardinality, actualCardinality);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity_HDIV_HEX )
   {
     // TODO: finish this test.  (Can we do something templated on the BasisFamily??)

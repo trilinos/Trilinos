@@ -622,7 +622,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   using Teuchos::broadcast;
   using Teuchos::SerialComm;
   using Teuchos::rcp_dynamic_cast;
-  using std::cerr;
   using std::endl;
   typedef Teuchos::ScalarTraits<Packet> PT;
   //typedef typename PT::magnitudeType PacketMag; // unused
@@ -645,7 +644,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   const int numSendRecv = 4;
   const int sendLen = 3;
 
-  cerr << "Creating data" << endl;
+  out << "Creating data" << endl;
 
   const ArrayRCP<Packet> origInputData = arcp<Packet>(numSendRecv*sendLen);
   const ArrayRCP<Packet> origOutputData = arcp<Packet>(numSendRecv*sendLen);
@@ -662,7 +661,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
       }
     }
   }
-  cerr << "Broadcasting data" << endl;
+  out << "Broadcasting data" << endl;
   broadcast<Ordinal, Packet>( *comm, 0, origInputData() );
 
   const ArrayRCP<Packet> inputData = arcpClone<Packet>(origInputData());
@@ -671,7 +670,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   Array<RCP<Teuchos::CommRequest<Ordinal> > > recvRequests;
   Array<RCP<Teuchos::CommRequest<Ordinal> > > sendRequests;
 
-  cerr << "Exchanging data" << endl;
+  out << "Exchanging data" << endl;
 
   // Send from proc 0 to proc numProcs-1
   if (procRank == 0) {
@@ -702,7 +701,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
     }
   }
 
-  cerr << "Waiting on messages" << endl;
+  out << "Waiting on messages" << endl;
 
   if (procRank == 0) {
     waitAll( *comm, sendRequests() );
@@ -711,7 +710,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
     waitAll( *comm, recvRequests() );
   }
 
-  cerr << "Testing received data" << endl;
+  out << "Testing received data" << endl;
 
   if (!sendRequests.empty()) {
     for (int i = 0; i < numSendRecv; ++i) {

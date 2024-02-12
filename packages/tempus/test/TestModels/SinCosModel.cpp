@@ -13,8 +13,8 @@
 #include "SinCosModel_impl.hpp"
 
 namespace Tempus_Test {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SinCosModel)
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SinCosModelAdjoint)
-}
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SinCosModel)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SinCosModelAdjoint)
+}  // namespace Tempus_Test
 
 #endif

@@ -144,12 +144,12 @@ evaluateFields(
                                                                   parentCell);
     PHX::Device().fence();
 
-    const auto subcellTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
-    TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Triangle<>::key ||
-                   subcellTopo.getBaseKey() == shards::Quadrilateral<>::key);
+    const auto subcellBaseTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
+    TEUCHOS_ASSERT(subcellBaseTopo.getBaseKey() == shards::Triangle<>::key ||
+                   subcellBaseTopo.getBaseKey() == shards::Quadrilateral<>::key);
 
     const WorksetDetails & details = workset;
-    const auto subcellVertexCount = static_cast<Intrepid2::ordinal_type>(subcellTopo.getVertexCount());
+    const auto subcellVertexCount = static_cast<Intrepid2::ordinal_type>(subcellBaseTopo.getVertexCount());
 
     // Copy orientations to device.
     Kokkos::View<Intrepid2::Orientation*,PHX::Device> orientations_device(Kokkos::view_alloc("orientations_device",Kokkos::WithoutInitializing),orientations->size());

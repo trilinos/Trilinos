@@ -55,62 +55,60 @@
 
 namespace MueLu {
 
-  /*!
-    @class SegregatedAFactory class.
-    @brief Factory for building a new "segregated" A operator. Here, "segregated" means that the user
-           provides a map (containing a subset of the row gids of the input matrix A) and the factory
-           drops the off-diagonal entries (a,b) and (b,a) in A where "a" denotes a GID entry in the provided map
-           and "b" denotes a GID that is not contained in the provided map.
+/*!
+  @class SegregatedAFactory class.
+  @brief Factory for building a new "segregated" A operator. Here, "segregated" means that the user
+         provides a map (containing a subset of the row gids of the input matrix A) and the factory
+         drops the off-diagonal entries (a,b) and (b,a) in A where "a" denotes a GID entry in the provided map
+         and "b" denotes a GID that is not contained in the provided map.
 
-           The idea is to use the output matrix A as input for the aggregation factory to have control over
-           the aggregates and make sure that aggregates do not cross certain areas.
+         The idea is to use the output matrix A as input for the aggregation factory to have control over
+         the aggregates and make sure that aggregates do not cross certain areas.
 
-           Note: we have to drop the entries (i.e. not just set them to zero) as the CoalesceDropFactory
-                 does not distinguish between matrix entries which are zero and nonzero.
-  */
+         Note: we have to drop the entries (i.e. not just set them to zero) as the CoalesceDropFactory
+               does not distinguish between matrix entries which are zero and nonzero.
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class SegregatedAFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class SegregatedAFactory : public SingleLevelFactoryBase {
 #undef MUELU_SEGREGATEDAFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! Constructor.
+  SegregatedAFactory() = default;
 
-    //! Constructor.
-    SegregatedAFactory() = default;
+  //! Input
+  //@{
 
-    //! Input
-    //@{
+  void DeclareInput(Level& currentLevel) const;
 
-    void DeclareInput(Level& currentLevel) const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //@}
 
-    //@}
+  //! @name Build methods.
+  //@{
 
-    //! @name Build methods.
-    //@{
+  /*!
+    @brief Build method.
 
-    /*!
-      @brief Build method.
+    Builds filtered matrix and returns it in <tt>currentLevel</tt>.
+    */
+  void Build(Level& currentLevel) const;
 
-      Builds filtered matrix and returns it in <tt>currentLevel</tt>.
-      */
-    void Build(Level& currentLevel) const;
+  //@}
 
-    //@}
+ private:
+  //! Generating factory of input variable
+  mutable RCP<const FactoryBase> mapFact_;
 
-  private:
+};  // class SegregatedAFactory
 
-    //! Generating factory of input variable
-    mutable RCP<const FactoryBase> mapFact_;
-
-  }; //class SegregatedAFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_SEGREGATEDAFACTORY_SHORT
-#endif // MUELU_SEGREGATEDAFACTORY_DECL_HPP
+#endif  // MUELU_SEGREGATEDAFACTORY_DECL_HPP

@@ -12,50 +12,49 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration
-template<class Scalar> class StepperNewmarkImplicitDForm;
+template <class Scalar>
+class StepperNewmarkImplicitDForm;
 
 /** \brief Application Action for StepperNewmarkImplicitDForm.
  *
- *  This class provides a means to apply various actions with the NewmarkImplicitDForm time step.
- *  The data available to this class is solution variables (through
- *  SolutionHistory), and stepper data (through the Stepper).  It allows
- *  the application to just observe this data, i.e., use but not change
+ *  This class provides a means to apply various actions with the
+ * NewmarkImplicitDForm time step. The data available to this class is solution
+ * variables (through SolutionHistory), and stepper data (through the Stepper).
+ * It allows the application to just observe this data, i.e., use but not change
  *  any of it (USER BEWARE!).
  *
  *  The locations for these AppAction calls
  *  (StepperNewmarkImplicitDFormAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperNewmarkImplicitDForm.
  */
-template<class Scalar>
-class StepperNewmarkImplicitDFormAppAction
-{
-public:
-
+template <class Scalar>
+class StepperNewmarkImplicitDFormAppAction {
+ public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.
-    BEFORE_SOLVE,   ///< Before the implicit solve.
-    AFTER_SOLVE,    ///< After the implicit solve.
-    END_STEP        ///< At the end of the step.
+    BEGIN_STEP,    ///< At the beginning of the step.
+    BEFORE_SOLVE,  ///< Before the implicit solve.
+    AFTER_SOLVE,   ///< After the implicit solve.
+    END_STEP       ///< At the end of the step.
   };
 
   /// Constructor
-  StepperNewmarkImplicitDFormAppAction(){}
+  StepperNewmarkImplicitDFormAppAction() {}
 
   /// Destructor
-  virtual ~StepperNewmarkImplicitDFormAppAction(){}
+  virtual ~StepperNewmarkImplicitDFormAppAction() {}
 
   /// Execute application action for NewmarkImplicitDForm Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperNewmarkImplicitDForm<Scalar> > stepper,
-    const typename StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperNewmarkImplicitDForm<Scalar> > stepper,
+      const typename StepperNewmarkImplicitDFormAppAction<
+          Scalar>::ACTION_LOCATION actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperNewmarkImplicitDFormAppAction_hpp
+#endif  // Tempus_StepperNewmarkImplicitDFormAppAction_hpp

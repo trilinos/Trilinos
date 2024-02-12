@@ -47,9 +47,6 @@ IF(HAVE_STOKHOS_ENSEMBLE_GEMV)
   SET(Stokhos_Ensemble_GEMV_Team_Size 1 CACHE STRING "Team size used in the ensemble GEMV")
 ENDIF()
 
-# FIXME: Remove this hard-coded setting.  We always have C++11 now.
-SET(HAVE_STOKHOS_CXX11 ON)
-
 SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default OFF)
 IF(Stokhos_ENABLE_Sacado)
   SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default ON)

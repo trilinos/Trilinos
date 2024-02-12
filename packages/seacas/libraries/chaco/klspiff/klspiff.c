@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,7 +19,13 @@ struct bilist;
    It may be possible to overlap dvals with active in kl, requiring
    a total of nvtxs space.
 */
-static void free_kl();
+static void free_kl(
+    /* Free everything malloc'd for KL. */
+    struct bilist ****buckets,   /* space for bucket sorts */
+    struct bilist   **listspace, /* space for all bidirectional elements */
+    int             **dvals,     /* change in penalty for each possible move */
+    int             **tops       /* starting dval for each type of move */
+);
 
 void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
              int               nvtxs, /* number of vertices in graph */
@@ -55,9 +61,6 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
   double            hop_cost;    /* relative importance of hops/cuts */
   int               error;       /* out of space? */
   int               i, j;        /* loop counters */
-  double            seconds(void);
-  int               kl_init(), nway_kl();
-  void              count();
 
   time = seconds();
 

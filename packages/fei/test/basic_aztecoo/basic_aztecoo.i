@@ -1,1 +1,0 @@
-basic.input 1

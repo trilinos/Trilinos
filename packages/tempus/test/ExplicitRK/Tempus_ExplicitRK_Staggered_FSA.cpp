@@ -26,15 +26,15 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_Staggered_FSA_Tangent)
   test_sincos_fsa(method_name, false, true, out, success);
 }
 
-} // namespace Tempus_Test
+}  // namespace Tempus_Test
 
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Add "--method" command line argument
   Teuchos::CommandLineProcessor& CLP = Teuchos::UnitTestRepository::getCLP();
-  method_name = "";
+  method_name                        = "";
   CLP.setOption("method", &method_name, "Stepper method");
 
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);

@@ -91,6 +91,10 @@ public:
   typedef typename strum_type::global_size_type            global_size_type;
   typedef typename strum_type::node_type                          node_type;
 
+  typedef Kokkos::DefaultHostExecutionSpace                     HostExecSpaceType;
+  typedef Kokkos::View<global_ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
+  typedef Kokkos::View<scalar_type*, HostExecSpaceType>         host_value_type_array;
+
   /// \name Constructor/Destructor methods
   //@{
 
@@ -233,11 +237,11 @@ private:
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for STRUMPACK
-   Teuchos::Array<scalar_type> nzvals_;
-  // /// Stores the row indices of the nonzero entries
-   Teuchos::Array<global_ordinal_type> colind_;
-  // /// Stores the location in \c Ai_ and Aval_ that starts row j
-   Teuchos::Array<global_ordinal_type> rowptr_;
+  host_value_type_array nzvals_view_;
+  /// Stores the row indices of the nonzero entries
+  host_ordinal_type_array colind_view_;
+  /// Stores the location in \c Ai_ and Aval_ that starts row j
+  host_ordinal_type_array rowptr_view_;
   // /// 1D store for B values
    mutable Teuchos::Array<scalar_type> bvals_;
   // /// 1D store for X values

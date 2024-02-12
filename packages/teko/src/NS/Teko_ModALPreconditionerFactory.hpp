@@ -10,29 +10,26 @@
 #include "Teko_BlockPreconditionerFactory.hpp"
 #include "Teko_InvModALStrategy.hpp"
 
-namespace Teko
-{
+namespace Teko {
 
-namespace NS
-{
+namespace NS {
 
 /** \brief Class for saving state variables for
  * ModALPreconditionerFactory.
  */
-class ModALPrecondState : public BlockPreconditionerState
-{
-public:
-   ModALPrecondState();
+class ModALPrecondState : public BlockPreconditionerState {
+ public:
+  ModALPrecondState();
 
-   LinearOp pressureMassMatrix_;
-   LinearOp invPressureMassMatrix_;
-   ModifiableLinearOp B1tMpB1_, B2tMpB2_, B3tMpB3_;
-   ModifiableLinearOp A11p_, A22p_, A33p_;
-   ModifiableLinearOp invA11p_, invA22p_, invA33p_, invS_;
-   ModifiableLinearOp S_;
+  LinearOp pressureMassMatrix_;
+  LinearOp invPressureMassMatrix_;
+  ModifiableLinearOp B1tMpB1_, B2tMpB2_, B3tMpB3_;
+  ModifiableLinearOp A11p_, A22p_, A33p_;
+  ModifiableLinearOp invA11p_, invA22p_, invA33p_, invS_;
+  ModifiableLinearOp S_;
 
-   double gamma_;
-   bool isStabilized_;
+  double gamma_;
+  bool isStabilized_;
 };
 
 /** \brief Modified augmented Lagrangian-based preconditioner
@@ -78,7 +75,7 @@ public:
  * \end{array} \right]
  * \left[ \begin{array}{c}
  * u \\
-  * p
+ * p
  * \end{array} \right]
  * =
  * \left[ \begin{array}{c}
@@ -100,7 +97,8 @@ public:
  *
  * \f$
  * \left[ \begin{array}{ccc}
- * A_{11} + \gamma B_1^T W^{-1} B_1^T & A_{12} + \gamma B_1^T W^{-1} B_2^T & B_1^T - \gamma B_1^T W^{-1} C \\
+ * A_{11} + \gamma B_1^T W^{-1} B_1^T & A_{12} + \gamma B_1^T W^{-1} B_2^T & B_1^T - \gamma B_1^T
+ * W^{-1} C \\
  * 0 & A_{22} + \gamma B_2^T W^{-1} B_2^T & B_1^T - \gamma B_2^T W^{-1} C \\
  * 0 & 0 & S
  * \end{array} \right].
@@ -109,79 +107,68 @@ public:
  * More details (analysis, numerical results) can be found in [2].
  */
 
-class ModALPreconditionerFactory : public BlockPreconditionerFactory
-{
-public:
+class ModALPreconditionerFactory : public BlockPreconditionerFactory {
+ public:
+  ModALPreconditionerFactory();
 
-   ModALPreconditionerFactory();
+  ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory>& factory);
 
-   ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory> & factory);
+  ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory>& invFactoryA,
+                             const Teuchos::RCP<InverseFactory>& invFactoryS);
 
-   ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory> & invFactoryA,
-         const Teuchos::RCP<InverseFactory> & invFactoryS);
+  ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory>& factory,
+                             LinearOp& pressureMassMatrix);
 
-   ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory> & factory,
-         LinearOp & pressureMassMatrix);
+  ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory>& invFactoryA,
+                             const Teuchos::RCP<InverseFactory>& invFactoryS,
+                             LinearOp& pressureMassMatrix);
 
-   ModALPreconditionerFactory(const Teuchos::RCP<InverseFactory> & invFactoryA,
-         const Teuchos::RCP<InverseFactory> & invFactoryS,
-         LinearOp & pressureMassMatrix);
+  ModALPreconditionerFactory(const Teuchos::RCP<InvModALStrategy>& strategy);
 
-   ModALPreconditionerFactory(const Teuchos::RCP<InvModALStrategy> & strategy);
+  /** Set pressure mass matrix.
+   *
+   * \param[in] pressureMassMatrix
+   *            Pressure mass matrix.
+   */
+  void setPressureMassMatrix(const LinearOp& pressureMassMatrix) {
+    invOpsStrategy_->setPressureMassMatrix(pressureMassMatrix);
+  }
 
-   /** Set pressure mass matrix.
-    *
-    * \param[in] pressureMassMatrix
-    *            Pressure mass matrix.
-    */
-   void
-   setPressureMassMatrix(const LinearOp & pressureMassMatrix)
-   {
-      invOpsStrategy_->setPressureMassMatrix(pressureMassMatrix);
-   }
+  /** Set the augmentation parameter gamma.
+   *
+   * \param[in] gamma
+   *            Augmentation paramter.
+   */
+  void setGamma(double gamma) { invOpsStrategy_->setGamma(gamma); }
 
-   /** Set the augmentation parameter gamma.
-    *
-    * \param[in] gamma
-    *            Augmentation paramter.
-    */
-   void
-   setGamma(double gamma)
-   {
-      invOpsStrategy_->setGamma(gamma);
-   }
+  /**
+   * Build modified AL preconditioner.
+   *
+   * \param[in] alOp
+   *            The AL operator.
+   * \param[in] state
+   *            State object for storying reusable information about the AL operator.
+   */
+  virtual LinearOp buildPreconditionerOperator(BlockedLinearOp& alOp,
+                                               BlockPreconditionerState& state) const;
 
-   /**
-    * Build modified AL preconditioner.
-    *
-    * \param[in] alOp
-    *            The AL operator.
-    * \param[in] state
-    *            State object for storying reusable information about the AL operator.
-    */
-   virtual LinearOp
-   buildPreconditionerOperator(BlockedLinearOp & alOp,
-         BlockPreconditionerState & state) const;
+  /**
+   * Build the ModALPrecondState object.
+   */
+  virtual Teuchos::RCP<PreconditionerState> buildPreconditionerState() const {
+    return Teuchos::rcp(new ModALPrecondState());
+  }
 
-   /**
-    * Build the ModALPrecondState object.
-    */
-   virtual Teuchos::RCP<PreconditionerState>
-   buildPreconditionerState() const
-   {
-      return Teuchos::rcp(new ModALPrecondState());
-   }
+ protected:
+  using BlockPreconditionerFactory::buildPreconditionerOperator;
 
-protected:
-   using BlockPreconditionerFactory::buildPreconditionerOperator;
+  Teuchos::RCP<InvModALStrategy> invOpsStrategy_;
 
-   Teuchos::RCP<InvModALStrategy> invOpsStrategy_;
-
-   bool isSymmetric_;
+  bool isSymmetric_;
 };
 
-} // end namespace NS
+}  // end namespace NS
 
-} // end namespace Teko
+}  // end namespace Teko
 
 #endif /* __Teko_ModALPreconditionerFactory_hpp__ */

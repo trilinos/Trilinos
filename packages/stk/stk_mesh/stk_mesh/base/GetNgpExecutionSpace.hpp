@@ -111,7 +111,7 @@ inline ExecSpaceWrapper<> get_execution_space_with_stream()
   static bool printedOnce = false;
 
   if(launchBlockingIsOn && !printedOnce) {
-    sierra::Env::outputP0() << "CUDA_LAUNCH_BLOCKING is ON. Asynchronous operations will block." << std::endl;
+    sierra::Env::outputP0() << "stk::mesh::get_execution_space_with_stream: CUDA_LAUNCH_BLOCKING is ON. Asynchronous operations will block." << std::endl;
     printedOnce = true;
   }
 

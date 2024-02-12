@@ -73,10 +73,7 @@ AuxiliaryEquationSet_DarcySchurComplement(
   m_dof_names->push_back(dof_name);
 
   this->addDOF(dof_name,basis_type,basis_order,integration_order,"AUX_MASS_RESIDUAL_"+dof_name);
-  // this->addDOF(dof_name,basis_type,basis_order,integration_order);
   this->addDOFDiv(dof_name,"Div_"+dof_name);
-
-  this->addDOFTimeDerivative(dof_name);
 
   this->addClosureModel(model_id);
 

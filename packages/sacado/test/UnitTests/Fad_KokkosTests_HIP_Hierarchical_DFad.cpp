@@ -54,7 +54,7 @@ typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,64> RightContiguous64;
 //  work for DFads on HIP. See the file Sacado_DynamicArrayTriats.hpp
 //  for cuda specializations that need to be mirrored into HIP.
 
-// using Kokkos::Experimental::HIP;
+// using Kokkos::HIP;
 // VIEW_FAD_TESTS_FDC(  DFadType , HIP )
 
 int main( int argc, char* argv[] ) {
@@ -68,7 +68,7 @@ int main( int argc, char* argv[] ) {
 
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
   Sacado::createGlobalMemoryPool(
-    Kokkos::Experimental::HIP(),
+    Kokkos::HIP(),
     2*64*global_fad_size*global_num_rows*global_num_cols*sizeof(double),
     global_fad_size*sizeof(double),
     4*global_fad_size*sizeof(double),
@@ -78,7 +78,7 @@ int main( int argc, char* argv[] ) {
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
-  Sacado::destroyGlobalMemoryPool(Kokkos::Experimental::HIP());
+  Sacado::destroyGlobalMemoryPool(Kokkos::HIP());
 #endif
 
   // Finalize Cuda

@@ -1,6 +1,0 @@
-\begin{verbatim}
-  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setParameters(*(ib->getValidParameters()));
-  pl->sublist("Integrator Settings").set("Final Time", 1.0e-0);
-\end{verbatim}

@@ -44,6 +44,7 @@
 #include "stk_ngp_test/ngp_test.hpp"
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
+#include <stk_mesh/base/NgpReductions.hpp>
 #include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
@@ -201,5 +202,37 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
     Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);
     check_volatile_fast_shared_comm_map_values_on_device(ngpMesh, proc, deviceNgpMeshIndices);
   }
+}
+
+namespace {
+double reduce_on_host(stk::mesh::BulkData& bulk)
+{
+  auto ngp_mesh = stk::mesh::HostMesh(bulk);
+
+  double max_val = 0.0;
+  Kokkos::Max<double> max_reduction(max_val);
+
+  stk::mesh::for_each_entity_reduce(
+    ngp_mesh,
+    stk::topology::NODE_RANK,
+    !stk::mesh::Selector(),
+    max_reduction,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex i, double& thread_value) {
+      max_reduction.join(thread_value, 1.0);
+    });
+
+  return max_val;
+}
+}
+
+TEST(NgpHostMesh, FieldForEachEntityReduceOnHost_fromTylerVoskuilen)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, 2, 2, 2);
+  fixture.m_meta.commit();
+  fixture.generate_mesh();
+
+  auto maxZ = reduce_on_host(fixture.m_bulk_data);
+  EXPECT_EQ(1.0, maxZ);
 }
 

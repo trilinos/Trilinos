@@ -18,38 +18,38 @@ namespace Thyra {
 /** \brief Concrete <tt>PreconditionerBase</tt> subclass that
  * wraps a preconditioner operator in MultiVectorLinearOp.
  */
-template<class Scalar>
-class AdjointPreconditioner : virtual public PreconditionerBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class AdjointPreconditioner : virtual public PreconditionerBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
   /** \brief Construct to uninitialized. */
   AdjointPreconditioner() {}
 
-  void nonconstInitialize(
-    const RCP<PreconditionerBase<Scalar> > &prec) {
+  void nonconstInitialize(const RCP<PreconditionerBase<Scalar> > &prec)
+  {
     validateInitialize(prec);
     prec_ = prec;
   }
 
-  void initialize(
-    const RCP<const PreconditionerBase<Scalar> > &prec) {
+  void initialize(const RCP<const PreconditionerBase<Scalar> > &prec)
+  {
     validateInitialize(prec);
     prec_ = prec;
   }
 
-  RCP<PreconditionerBase<Scalar> >
-  getNonconstPreconditioner() { return prec_.getNonconstObj(); }
-
-  RCP<const PreconditionerBase<Scalar> >
-  getPreconditioner() const { return prec_.getConstObj(); }
-
-  void uninitialize() {
-    prec_.uninitialize();
+  RCP<PreconditionerBase<Scalar> > getNonconstPreconditioner()
+  {
+    return prec_.getNonconstObj();
   }
+
+  RCP<const PreconditionerBase<Scalar> > getPreconditioner() const
+  {
+    return prec_.getConstObj();
+  }
+
+  void uninitialize() { prec_.uninitialize(); }
 
   //@}
 
@@ -57,41 +57,59 @@ public:
   //@{
 
   bool isLeftPrecOpConst() const
-  { return prec_.getConstObj()->isLeftPrecOpConst(); }
+  {
+    return prec_.getConstObj()->isLeftPrecOpConst();
+  }
 
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstLeftPrecOp()
-  { return nonconstAdjoint(prec_.getNonconstObj()->getNonconstLeftPrecOp()); }
+  {
+    return nonconstAdjoint(prec_.getNonconstObj()->getNonconstLeftPrecOp());
+  }
 
   Teuchos::RCP<const LinearOpBase<Scalar> > getLeftPrecOp() const
-  { return adjoint(prec_.getConstObj()->getLeftPrecOp()); }
+  {
+    return adjoint(prec_.getConstObj()->getLeftPrecOp());
+  }
 
   bool isRightPrecOpConst() const
-  { return prec_.getConstObj()->isRightPrecOpConst(); }
+  {
+    return prec_.getConstObj()->isRightPrecOpConst();
+  }
 
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstRightPrecOp()
-  { return nonconstAdjoint(prec_.getNonconstObj()->getNonconstRightPrecOp()); }
+  {
+    return nonconstAdjoint(prec_.getNonconstObj()->getNonconstRightPrecOp());
+  }
 
   Teuchos::RCP<const LinearOpBase<Scalar> > getRightPrecOp() const
-  { return adjoint(prec_.getConstObj()->getRightPrecOp()); }
+  {
+    return adjoint(prec_.getConstObj()->getRightPrecOp());
+  }
 
   bool isUnspecifiedPrecOpConst() const
-  { return prec_.getConstObj()->isUnspecifiedPrecOpConst(); }
+  {
+    return prec_.getConstObj()->isUnspecifiedPrecOpConst();
+  }
 
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstUnspecifiedPrecOp()
-  { return nonconstAdjoint(
-      prec_.getNonconstObj()->getNonconstUnspecifiedPrecOp()); }
+  {
+    return nonconstAdjoint(
+        prec_.getNonconstObj()->getNonconstUnspecifiedPrecOp());
+  }
 
   Teuchos::RCP<const LinearOpBase<Scalar> > getUnspecifiedPrecOp() const
-  { return adjoint(prec_.getNonconstObj()->getUnspecifiedPrecOp()); }
+  {
+    return adjoint(prec_.getNonconstObj()->getUnspecifiedPrecOp());
+  }
 
   //@}
 
-private:
-
+ private:
   // //////////////////////////////
   // Private types
 
-  typedef Teuchos::ConstNonconstObjectContainer<PreconditionerBase<Scalar> > CNPB;
+  typedef Teuchos::ConstNonconstObjectContainer<PreconditionerBase<Scalar> >
+      CNPB;
 
   // //////////////////////////////
   // Private data members
@@ -102,23 +120,22 @@ private:
   // Private member functions
 
   static void validateInitialize(
-    const RCP<const PreconditionerBase<Scalar> > &prec) {
+      const RCP<const PreconditionerBase<Scalar> > &prec)
+  {
 #ifdef TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT(is_null(prec));
 #else
     (void)prec;
 #endif
   }
-
 };
 
 /** \brief Nonmember constructor function.
  *
  * \relates AdjointPreconditioner
  */
-template<class Scalar>
-RCP<AdjointPreconditioner<Scalar> >
-adjointPreconditioner()
+template <class Scalar>
+RCP<AdjointPreconditioner<Scalar> > adjointPreconditioner()
 {
   return Teuchos::rcp(new AdjointPreconditioner<Scalar>());
 }
@@ -127,14 +144,12 @@ adjointPreconditioner()
  *
  * \relates AdjointPreconditioner
  */
-template<class Scalar>
-RCP<AdjointPreconditioner<Scalar> >
-nonconstAdjointPreconditioner(
-  const RCP<PreconditionerBase<Scalar> > &prec
-  )
+template <class Scalar>
+RCP<AdjointPreconditioner<Scalar> > nonconstAdjointPreconditioner(
+    const RCP<PreconditionerBase<Scalar> > &prec)
 {
-  RCP<AdjointPreconditioner<Scalar> >
-    aprec = Teuchos::rcp(new AdjointPreconditioner<Scalar>());
+  RCP<AdjointPreconditioner<Scalar> > aprec =
+      Teuchos::rcp(new AdjointPreconditioner<Scalar>());
   aprec->nonconstInitialize(prec);
   return aprec;
 }
@@ -143,18 +158,16 @@ nonconstAdjointPreconditioner(
  *
  * \relates AdjointPreconditioner
  */
-template<class Scalar>
-RCP<AdjointPreconditioner<Scalar> >
-adjointPreconditioner(
-  const RCP<const PreconditionerBase<Scalar> > &prec
-  )
+template <class Scalar>
+RCP<AdjointPreconditioner<Scalar> > adjointPreconditioner(
+    const RCP<const PreconditionerBase<Scalar> > &prec)
 {
-  RCP<AdjointPreconditioner<Scalar> >
-    aprec = Teuchos::rcp(new AdjointPreconditioner<Scalar>());
+  RCP<AdjointPreconditioner<Scalar> > aprec =
+      Teuchos::rcp(new AdjointPreconditioner<Scalar>());
   aprec->initialize(prec);
   return aprec;
 }
 
-}       // end namespace Thyra
+}  // end namespace Thyra
 
 #endif

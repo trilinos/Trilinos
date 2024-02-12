@@ -13,7 +13,7 @@
 #include "Tempus_InterpolatorLagrange_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(InterpolatorLagrange)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(InterpolatorLagrange)
 }
 
 #endif

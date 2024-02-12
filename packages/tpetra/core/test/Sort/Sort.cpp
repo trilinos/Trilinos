@@ -263,13 +263,13 @@ test_fixedTypes_fixedArrayLength (bool& success,
 }
 
 // Fill the given array with distinct values.
-// Kokkos::Details::ArithTraits must have a specialization for ValueType.
+// Kokkos::ArithTraits must have a specialization for ValueType.
 template<class ValueType>
 void
 fillValues (ValueType values[],
             const int arrayLength)
 {
-  typedef Kokkos::Details::ArithTraits<ValueType> KAT;
+  typedef Kokkos::ArithTraits<ValueType> KAT;
   const ValueType ONE = KAT::one ();
 
   if (arrayLength >= 1) {

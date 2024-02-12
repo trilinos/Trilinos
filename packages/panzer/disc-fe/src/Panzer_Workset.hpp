@@ -124,8 +124,8 @@ namespace panzer {
     // DEPRECATED - use: getLocalCellIDs()
     std::vector<size_t> cell_local_ids;
 
-    /// DEPRECATED - use: getCellVertices()
-    CellCoordArray cell_vertex_coordinates;
+    /// DEPRECATED - use: getCellNodes()
+    CellCoordArray cell_node_coordinates;
 
     /// DEPRECATED - use: getElementBlock()
     std::string block_id;
@@ -184,10 +184,10 @@ namespace panzer {
     getSubcellDimension() const
     {return subcell_dim;}
 
-    /// Get the vertices for the cells
+    /// Get the node coordinates for the cells
     CellCoordArray
-    getCellVertices() const
-    {return cell_vertex_coordinates;}
+    getCellNodes() const
+    {return cell_node_coordinates;}
 
     /// Get the local cell IDs for the workset
     Kokkos::View<const int*,PHX::Device>

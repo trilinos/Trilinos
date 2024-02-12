@@ -37,7 +37,7 @@ macro(getTribitsExProj2StuffForAppByPackage)
   # Find each package and gather up all the <Package>::all_libs targets
   set(APP_DEPS_LIB_TARGETS "")
   foreach (packageName IN LISTS ${PROJECT_NAME}_USE_COMPONENTS)
-    find_package(${packageName} REQUIRED)
+    find_package(${packageName} CONFIG REQUIRED)
     message("Found ${packageName}!")
     list(APPEND APP_DEPS_LIB_TARGETS ${packageName}::all_libs)
   endforeach()
@@ -59,7 +59,8 @@ endmacro()
 #
 macro(getTribitsExProj2StuffForAppByProject)
 
-  find_package(TribitsExProj2 REQUIRED COMPONENTS ${${PROJECT_NAME}_USE_COMPONENTS})
+  find_package(TribitsExProj2 CONFIG REQUIRED
+    COMPONENTS ${${PROJECT_NAME}_USE_COMPONENTS})
 
   message("\nFound TribitsExProj2!  Here are the details: ")
   message("   TribitsExProj2_DIR = ${TribitsExProj2_DIR}")

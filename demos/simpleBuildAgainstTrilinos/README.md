@@ -17,6 +17,8 @@ To run this example, do the following steps.
     -D CMAKE_INSTALL_PREFIX=<tril-install-prefix> \
     -D TPL_ENABLE_MPI=ON \
     -D Trilinos_ENABLE_Tpetra=ON \
+    -D CMAKE_C_COMPILER=<c-compiler> \
+    -D CMAKE_CXX_COMPILER=<cxx-compiler> \    
     [other options] \
     <trilinos-src>
 ```
@@ -42,8 +44,24 @@ This will put a file called `TrilinosConfig.cmake` under a subdirectory of
   $ cd <app-build-dir>/
   $ cmake \
     -D CMAKE_PREFIX_PATH=<tril-install-prefix> \
+    -D CMAKE_C_COMPILER=<c-compiler> \
+    -D CMAKE_CXX_COMPILER=<cxx-compiler> \    
     <trilinos-src>/demos/simpleBuildAgainstTrilinos
 ```
+
+NOTE: To configure `simpleBuildAgainstTrilinos` against the installed Trilinos
+one must pass in compatible compilers used to build Trilinos. For CUDA builds,
+this means using `nvcc_wrapper` (e.g. using OpenMPI with `-D CMAKE_CXX_COMPILER=mpicxx`
+and setting environment variable `export OMPI_CXX=<base-path>/nvcc_wrapper`.)
+
+NOTE: To use the alternative `CMakeLists.txt` file that calls
+`find_package(Tpetra)` and links to `Tpetra::all_libs` instead of
+`find_package(Trilinos)`, copy the source tree `simpleBuildAgainstTrilinos` to
+a directory outside of the Trilinos source tree, copy the file
+`simpleBuildAgainstTrilinos/CMakeLists.by_package.cmake` to
+`simpleBuildAgainstTrilinos/CMakeLists.txt` and then configure as shown above
+(pointing to the copied and modified `simpleBuildAgainstTrilinos` source
+tree).
 
 ## 4. Build the application
 

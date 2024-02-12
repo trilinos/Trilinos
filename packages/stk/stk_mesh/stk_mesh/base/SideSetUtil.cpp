@@ -8,6 +8,8 @@
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
+#include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
+#include "stk_mesh/baseImpl/SideSetUtilImpl.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/diag/StringUtil.hpp"           // for Type, etc
 #include "stk_util/util/string_case_compare.hpp"
@@ -15,7 +17,6 @@
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 #include <algorithm>
 #include <utility>
-
 
 namespace stk {
 namespace mesh {
@@ -308,32 +309,11 @@ std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkDa
     return sidesetParts;
 }
 
-const stk::mesh::Part* get_element_block_selector_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
-{
-    const stk::mesh::Part* elementBlockPart = nullptr;;
-    const stk::mesh::PartVector& parts = bulkData.bucket(element).supersets();
-    unsigned block_counter = 0;
-    for(const stk::mesh::Part *part : parts)
-    {
-        if(stk::mesh::is_element_block(*part))
-        {
-            elementBlockPart = part;
-            block_counter++;
-        }
-    }
-
-    bool elementIsAssociatedWithOnlyOneElementBlock = block_counter == 1;
-    STK_ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
-    STK_ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
-    return elementBlockPart;
-}
-
-
 bool are_elements_in_different_element_blocks(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector& elements)
 {
     STK_ThrowRequireWithSierraHelpMsg(elements.size()>1);
 
-    stk::mesh::Selector elementBlockSelector = *get_element_block_selector_for_element(bulkData, elements[0]);
+    stk::mesh::Selector elementBlockSelector = *get_element_block_part(bulkData, elements[0]);
 
     bool allElementsSameBlock = true;
     for(unsigned i=1;i<elements.size();++i)
@@ -372,7 +352,7 @@ bool is_side_supported(const stk::mesh::BulkData &bulk, stk::mesh::Entity side, 
             supported = are_elements_in_different_element_blocks(bulk, elements);
 
         const stk::mesh::ElemElemGraph &graph = bulk.get_face_adjacent_element_graph();
-        const stk::mesh::Part* elementBlockPart = get_element_block_selector_for_element(bulk, elements[indexFirstOwnedElement]);
+        const stk::mesh::Part* elementBlockPart = get_element_block_part(bulk, elements[indexFirstOwnedElement]);
         stk::mesh::PartOrdinal partOrdinal = elementBlockPart->mesh_meta_data_ordinal();
         stk::mesh::impl::LocalId elementId = graph.get_local_element_id(elements[indexFirstOwnedElement]);
         stk::mesh::Ordinal ord = ordinals[indexFirstOwnedElement];
@@ -386,7 +366,7 @@ bool is_side_supported(const stk::mesh::BulkData &bulk, stk::mesh::Entity side, 
             {
                 const auto iter = parallelPartInfo.find(graphEdge.elem2());
                 STK_ThrowRequireWithSierraHelpMsg(iter!=parallelPartInfo.end());
-                const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals = iter->second;
+                const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals = iter->second.elementPartOrdinals;
                 bool found = std::binary_search(other_element_part_ordinals.begin(), other_element_part_ordinals.end(), partOrdinal);
                 if(found)
                 {
@@ -424,107 +404,39 @@ const stk::mesh::Part& get_sideset_parent(const stk::mesh::Part& sidesetPart)
     return sidesetPart;
 }
 
+
+
 std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bulk,
                                                   const stk::mesh::Part& sideSetPart,
                                                   stk::mesh::Entity face,
                                                   const stk::mesh::Part* activePart,
                                                   const stk::mesh::SideSet* inputSidesetPtr)
 {
-    const stk::mesh::MeshIndex& meshIndex = bulk.mesh_index(face);
-    const stk::mesh::Bucket& bucket = *meshIndex.bucket;
+  STK_ThrowRequireMsg(bulk.has_face_adjacent_element_graph(), "ERROR: Bulk data does not have face adjacency graph enabled");
 
-    stk::mesh::EntityRank sideRank = bulk.mesh_meta_data().side_rank();
-    STK_ThrowRequire(bucket.entity_rank() == sideRank);
-    STK_ThrowAssert(bucket.member(sideSetPart));
+  const Selector activeSelector = (activePart == nullptr) ? bulk.mesh_meta_data().universal_part() : *activePart;
 
-    const stk::mesh::SideSet* ssetPtr = inputSidesetPtr;
-    if (ssetPtr == nullptr) {
-      const stk::mesh::Part &parentPart = stk::mesh::get_sideset_parent(sideSetPart);
-      if(bulk.does_sideset_exist(parentPart))
-      {
-          ssetPtr = &bulk.get_sideset(parentPart);
-      }
-      else
-      {
-          return std::make_pair(false,false);
-      }
-    }
+  std::vector<std::shared_ptr<SidesetUpdater>> updaters = bulk.get_observer_type<SidesetUpdater>();
+  STK_ThrowRequireMsg(updaters.size() > 0, "ERROR: Bulk data does not have a SidesetUpdater enabled");
 
-    const stk::mesh::SideSet& sset = *ssetPtr;
+  impl::PolarityDataCache polarityDataCache(bulk, activeSelector, updaters[0]->get_parallel_part_info());
 
-    const unsigned bucketOrdinal = meshIndex.bucket_ordinal;
-    const unsigned numSideElements = bucket.num_elements(bucketOrdinal);
-    const stk::mesh::Entity* sideElements = bucket.begin_elements(bucketOrdinal);
-    const stk::mesh::ConnectivityOrdinal * sideOrdinals = bucket.begin_element_ordinals(bucketOrdinal);
-    const stk::mesh::Permutation * sidePermutations = bucket.begin_element_permutations(bucketOrdinal);
-
-    if (numSideElements == 1) {
-      //hopefully the most common case, fast/early return:
-      const bool isActive = (activePart == nullptr) || bulk.bucket(sideElements[0]).member(*activePart);
-      const bool inSideset = isActive && sset.contains(sideElements[0], sideOrdinals[0]);
-      const bool permutationZero = sidePermutations[0]==0;
-      const bool positivePolarity = (inSideset) ? permutationZero : !permutationZero;
-      return std::make_pair(inSideset, positivePolarity);
-    }
-
-    int numFound = 0;
-    bool foundElemWithPermutationZero = false;
-
-    for(unsigned i=0; i<numSideElements; ++i)
-    {
-        stk::mesh::Entity elem = sideElements[i];
-
-        if ((activePart != nullptr) && !bulk.bucket(elem).member(*activePart)) {
-            continue;
-        }
-
-        if(sset.contains(elem, sideOrdinals[i])) {
-            numFound++;
-            if (sidePermutations[i] == 0) {
-                foundElemWithPermutationZero = true;
-            }
-        }
-    }
-
-    return std::make_pair(numFound > 0, (numFound==1 ? foundElemWithPermutationZero : false));
+  return impl::internal_is_positive_sideset_polarity(sideSetPart, face, polarityDataCache, inputSidesetPtr);
 }
 
 std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face,
-                                                      const stk::mesh::Part* activePart)
+                                                       const stk::mesh::Part* activePart)
 {
-    std::pair<bool,bool> returnValue(false,false);
+  STK_ThrowRequireMsg(bulk.has_face_adjacent_element_graph(), "ERROR: Bulk data does not have face adjacency graph enabled");
 
-    std::vector<const stk::mesh::Part*> sidesetParts = get_sideset_io_parts(bulk, face);
+  const Selector activeSelector = (activePart == nullptr) ? bulk.mesh_meta_data().universal_part() : *activePart;
 
-    if(sidesetParts.size() == 0) {
-        return returnValue;
-    }
+  std::vector<std::shared_ptr<SidesetUpdater>> updaters = bulk.get_observer_type<SidesetUpdater>();
+  STK_ThrowRequireMsg(updaters.size() > 0, "ERROR: Bulk data does not have a SidesetUpdater enabled");
 
-    auto it = std::find_if(sidesetParts.begin(), sidesetParts.end(), [&](const stk::mesh::Part* p){
-      returnValue = is_positive_sideset_polarity(bulk, *p, face, activePart);
-      return returnValue.first;
-    });
+  impl::PolarityDataCache polarityDataCache(bulk, activeSelector, updaters[0]->get_parallel_part_info());
 
-    if (sidesetParts.size() > 1) {
-        stk::mesh::Selector activeSelector = activePart == nullptr ? bulk.mesh_meta_data().universal_part() : *activePart;
-        for(auto& ssetIter = it; ssetIter<sidesetParts.end(); ++ssetIter)
-        {
-            const stk::mesh::Part& sidesetPart = *(*ssetIter);
-            std::pair<bool,bool> partPolarity = is_positive_sideset_polarity(bulk, sidesetPart, face, activePart);
-
-            if (partPolarity.first && partPolarity != returnValue) {
-            stk::RuntimeWarningP0() <<
-                            "Polarity for face: " << bulk.identifier(face) << " on sideset: "
-                                                  << (*it)->name() << " has polarity = " << returnValue.first << ", " << returnValue.second
-                                                  << " does not match that on sideset: " << sidesetPart.name()
-                                                  << " has polarity = " << partPolarity.first << ", " << partPolarity.second;
-            } else if (returnValue.first == false && partPolarity.first == true) {
-              returnValue = partPolarity;
-            }
-        }
-    }
-
-    return returnValue;
+  return impl::internal_is_positive_sideset_face_polarity(face, polarityDataCache);
 }
 
 void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag)

@@ -39,6 +39,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedSerialTrsv {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b;
 
   ScalarType _alpha;
@@ -64,7 +65,7 @@ struct Functor_TestBatchedSerialTrsv {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, ParamTagType> policy(0, _b.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _b.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -74,7 +75,7 @@ template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_trsv(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ScalarType alpha(1.5);

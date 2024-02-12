@@ -67,8 +67,7 @@ TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
 
   stk::io::fill_mesh("generated:8x8x8", get_bulk());
 
-  const stk::mesh::BucketVector& notOwnedBuckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
-                                                                          !get_meta().locally_owned_part());
+  const stk::mesh::BucketVector& notOwnedBuckets = get_bulk().get_buckets(stk::topology::NODE_RANK, !get_meta().locally_owned_part());
 
   for(const stk::mesh::Bucket *bucket : notOwnedBuckets)
     for(stk::mesh::Entity node : *bucket)
@@ -102,10 +101,8 @@ TEST_F(ParallelHowTo, computeParallelSum)
 
   stk::io::fill_mesh("generated:8x8x8", get_bulk());
 
-  const stk::mesh::BucketVector& shared = get_bulk().get_buckets(stk::topology::NODE_RANK,
-                                                                 get_meta().globally_shared_part());
-  const stk::mesh::BucketVector& notShared = get_bulk().get_buckets(stk::topology::NODE_RANK,
-                                                                    !get_meta().globally_shared_part());
+  const stk::mesh::BucketVector& shared = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
+  const stk::mesh::BucketVector& notShared = get_bulk().get_buckets(stk::topology::NODE_RANK, !get_meta().globally_shared_part());
   expect_field_has_value(shared, field, initialValue);
   expect_field_has_value(notShared, field, initialValue);
 

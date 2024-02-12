@@ -46,18 +46,13 @@
 #ifndef MUELU_COARSENINGVISUALIZATIONFACTORY_FWD_HPP
 #define MUELU_COARSENINGVISUALIZATIONFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class CoarseningVisualizationFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class CoarseningVisualizationFactory;
 }
 
 #ifndef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
 #define MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_COARSENINGVISUALIZATIONFACTORY_FWD_HPP
+#endif  // MUELU_COARSENINGVISUALIZATIONFACTORY_FWD_HPP

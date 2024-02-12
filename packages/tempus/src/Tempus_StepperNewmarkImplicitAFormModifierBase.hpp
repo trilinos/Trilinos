@@ -13,7 +13,6 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperNewmarkImplicitAFormAppAction.hpp"
 
-
 namespace Tempus {
 
 /** \brief Base modifier for StepperNewmarkImplicitAForm.
@@ -33,12 +32,10 @@ namespace Tempus {
  *  (StepperNewmarkImplicitAFormAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperNewmarkImplicitAForm.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperNewmarkImplicitAFormModifierBase
-  : virtual public Tempus::StepperNewmarkImplicitAFormAppAction<Scalar>
-{
-private:
-
+  : virtual public Tempus::StepperNewmarkImplicitAFormAppAction<Scalar> {
+ private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -48,22 +45,23 @@ private:
    *
    *  For the Modifier interface, this adaptor is a "simple pass through".
    */
-  void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > stepper,
-    const typename StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION actLoc)
-  { this->modify(sh, stepper, actLoc); }
+  void execute(Teuchos::RCP<SolutionHistory<Scalar> > sh,
+               Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > stepper,
+               const typename StepperNewmarkImplicitAFormAppAction<
+                   Scalar>::ACTION_LOCATION actLoc)
+  {
+    this->modify(sh, stepper, actLoc);
+  }
 
-public:
-
+ public:
   /// Modify NewmarkImplicitAForm Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > /* stepper */,
-    const typename StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
-
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> > /* stepper */,
+      const typename StepperNewmarkImplicitAFormAppAction<
+          Scalar>::ACTION_LOCATION actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperNewmarkImplicitAFormModifierBase_hpp
+#endif  // Tempus_StepperNewmarkImplicitAFormModifierBase_hpp

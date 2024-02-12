@@ -6,30 +6,36 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
-aggregation: min agg size = 1   [unused]
-aggregation: max selected neighbors = 0   [unused]
-aggregation: ordering = natural   [unused]
-aggregation: preserve Dirichlet points = 0   [unused]
+aggregation: use ml scaling of drop tol = 1
+lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
+aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
+Nullspace factory (MueLu::NullspaceFactory)
+Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-sa: damping factor = 1.33333
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -37,18 +43,17 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RepairMainDiagonal = 0
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+repartition: start level = 2
 repartition: min rows per proc = 256
 repartition: max imbalance = 1.2
-Build (MueLu::RepartitionInterface)
-Build (MueLu::IsorropiaInterface)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-[empty list]
-[empty list]
+Build (MueLu::Zoltan2Interface)
+ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
@@ -61,30 +66,36 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
-aggregation: min agg size = 1   [unused]
-aggregation: max selected neighbors = 0   [unused]
-aggregation: ordering = natural   [unused]
-aggregation: preserve Dirichlet points = 0   [unused]
+aggregation: use ml scaling of drop tol = 1
+lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
+aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
+Nullspace factory (MueLu::NullspaceFactory)
+Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-sa: damping factor = 1.33333
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -92,18 +103,17 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RepairMainDiagonal = 0
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+repartition: start level = 2
 repartition: min rows per proc = 256
 repartition: max imbalance = 1.2
-Build (MueLu::RepartitionInterface)
-Build (MueLu::IsorropiaInterface)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-[empty list]
-[empty list]
+Build (MueLu::Zoltan2Interface)
+ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
@@ -116,30 +126,36 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 3
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
-aggregation: min agg size = 1   [unused]
-aggregation: max selected neighbors = 0   [unused]
-aggregation: ordering = natural   [unused]
-aggregation: preserve Dirichlet points = 0   [unused]
+aggregation: use ml scaling of drop tol = 1
+lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
+aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
+Nullspace factory (MueLu::NullspaceFactory)
+Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-sa: damping factor = 1.33333
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -147,18 +163,17 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RepairMainDiagonal = 0
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+repartition: start level = 2
 repartition: min rows per proc = 256
 repartition: max imbalance = 1.2
-Build (MueLu::RepartitionInterface)
-Build (MueLu::IsorropiaInterface)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-[empty list]
-[empty list]
+Build (MueLu::Zoltan2Interface)
+ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
@@ -171,30 +186,36 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 4
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Matrix filtering (MueLu::FilteredAFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
-aggregation: min agg size = 1   [unused]
-aggregation: max selected neighbors = 0   [unused]
-aggregation: ordering = natural   [unused]
-aggregation: preserve Dirichlet points = 0   [unused]
+aggregation: use ml scaling of drop tol = 1
+lightweight wrap = 1
+Filtered matrix is not being constructed as no filtering is being done
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
+aggregation: match ML phase1 = 1   [unused]
+aggregation: match ML phase2a = 1   [unused]
+aggregation: match ML phase2b = 1   [unused]
+Nullspace factory (MueLu::NullspaceFactory)
+Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-sa: damping factor = 1.33333
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -202,18 +223,17 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RepairMainDiagonal = 0
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
+repartition: start level = 2
 repartition: min rows per proc = 256
 repartition: max imbalance = 1.2
-Build (MueLu::RepartitionInterface)
-Build (MueLu::IsorropiaInterface)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-[empty list]
-[empty list]
+Build (MueLu::Zoltan2Interface)
+ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
@@ -223,7 +243,6 @@ type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 smoother -> 
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  Amesos2 -> 
   [empty list]
 
@@ -232,7 +251,7 @@ smoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 5
 Operator complexity = 1.49
-Smoother complexity = 1.98
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

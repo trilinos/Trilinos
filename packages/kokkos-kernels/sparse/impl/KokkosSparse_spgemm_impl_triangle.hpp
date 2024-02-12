@@ -1086,8 +1086,6 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     tmp += MaxRoughNonZero;
     nnz_lno_t *values2 = (nnz_lno_t *)(tmp);
 
-    hm2.hash_key_size = pow2_hash_size;
-
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
         [&](const nnz_lno_t &row_index) {
@@ -1251,7 +1249,8 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   const nnz_lno_t *min_result_row_for_each_row =
       this->handle->get_spgemm_handle()->get_min_col_of_row().data();
   nnz_lno_t max_row_size =
-      this->handle->get_spgemm_handle()->get_max_result_nnz();
+      this->handle->get_spgemm_handle()->get_max_result_nnz(
+          Kokkos::View<const size_type *, MyExecSpace>(rowmapC, m + 1));
 
   typedef KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace, nnz_lno_t>
       pool_memory_space;
@@ -1819,8 +1818,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                           p_entriesA, bnnz, p_rowmapB_begins, p_rowmapB_ends,
                           p_set_index_b, p_set_b, p_rowmapC, NULL, dummy);
 
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<c_row_view_t,
-                                                        MyExecSpace>(
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(
       this->a_row_cnt + 1, rowmapC_);
   MyExecSpace().fence();
 

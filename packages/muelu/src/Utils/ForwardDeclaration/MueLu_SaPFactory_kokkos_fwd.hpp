@@ -46,18 +46,13 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_FWD_HPP
 #define MUELU_SAPFACTORY_KOKKOS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class SaPFactory_kokkos;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class SaPFactory_kokkos;
 }
 
 #ifndef MUELU_SAPFACTORY_KOKKOS_SHORT
 #define MUELU_SAPFACTORY_KOKKOS_SHORT
 #endif
 
-
-
-#endif // MUELU_SAPFACTORY_KOKKOS_FWD_HPP
+#endif  // MUELU_SAPFACTORY_KOKKOS_FWD_HPP

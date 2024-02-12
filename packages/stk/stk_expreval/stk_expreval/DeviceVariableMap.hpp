@@ -79,7 +79,17 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
+  void bind(int variableIndex, const double& value_ref, int definedLength=1, int strideLength=1) {
+    m_deviceVariableMap[variableIndex].bind(value_ref, definedLength, strideLength);
+  }
+
+  KOKKOS_INLINE_FUNCTION
   void bind(int variableIndex, double& value_ref, int definedLength=1, int strideLength=1) {
+    m_deviceVariableMap[variableIndex].bind(value_ref, definedLength, strideLength);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void bind(int variableIndex, const int& value_ref, int definedLength=1, int strideLength=1) {
     m_deviceVariableMap[variableIndex].bind(value_ref, definedLength, strideLength);
   }
 

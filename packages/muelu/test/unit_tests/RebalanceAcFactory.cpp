@@ -102,91 +102,82 @@
 
 namespace MueLuTests {
 
-  //this macro declares the unit-test-class:
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "version: " << MueLu::Version() << std::endl;
+// this macro declares the unit-test-class:
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
 
-    auto rAcFactory = rcp(new RebalanceAcFactory());
-    TEST_ASSERT(!rAcFactory.is_null());
-    TEST_EQUALITY(rAcFactory->NumRebalanceFactories() == 0, true);
+  auto rAcFactory = rcp(new RebalanceAcFactory());
+  TEST_ASSERT(!rAcFactory.is_null());
+  TEST_EQUALITY(rAcFactory->NumRebalanceFactories() == 0, true);
 
-    // Add Factory
-    rAcFactory->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
-    rAcFactory->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
+  // Add Factory
+  rAcFactory->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
+  rAcFactory->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
 
-    TEST_EQUALITY(rAcFactory->NumRebalanceFactories() == 2, true);
+  TEST_EQUALITY(rAcFactory->NumRebalanceFactories() == 2, true);
 
-    auto paramList = rAcFactory->GetValidParameterList();
-    TEST_ASSERT(!paramList.is_null());
+  auto paramList = rAcFactory->GetValidParameterList();
+  TEST_ASSERT(!paramList.is_null());
+}
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithImporter, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
+    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+    return;
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithImporter, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "version: " << MueLu::Version() << std::endl;
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::CommandLineProcessor clp(false);
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
 
-    if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
-      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-      return;
-    }
+  Level aLevel;
+  Level corseLevel;
+  RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
-    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    Teuchos::CommandLineProcessor clp(false);
-    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2);  // can be an empty operator
+  corseLevel.Set("A", A);
+  RCP<const Import> importer = ImportFactory::Build(A->getRowMap(), map);
+  corseLevel.Set("Importer", importer);
 
-    Level aLevel;
-    Level corseLevel;
-    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
+  RebalancedAFact->SetDefaultVerbLevel(MueLu::Extreme);
+  RebalancedAFact->Build(aLevel, corseLevel);
+}
 
-    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2); //can be an empty operator
-    corseLevel.Set("A", A);
-    RCP<const Import> importer = ImportFactory::Build(A->getRowMap(), map);
-    corseLevel.Set("Importer", importer);
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithoutImporter, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
-    RebalancedAFact->SetDefaultVerbLevel(MueLu::Extreme);
-    RebalancedAFact->Build(aLevel, corseLevel);
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Level aLevel;
+  Level corseLevel;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2);  // can be an empty operator
+  corseLevel.Set("A", A);
+  RCP<const Import> importer = Teuchos::null;
+  corseLevel.Set("Importer", importer);
 
-  }
+  RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
+  RebalancedAFact->SetDefaultVerbLevel(MueLu::Extreme);
+  RebalancedAFact->Build(aLevel, corseLevel);
+}
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithoutImporter, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    out << "version: " << MueLu::Version() << std::endl;
-
-    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    Level aLevel;
-    Level corseLevel;
-    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2); //can be an empty operator
-    corseLevel.Set("A", A);
-    RCP<const Import> importer  = Teuchos::null;
-    corseLevel.Set("Importer", importer);
-
-    RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
-    RebalancedAFact->SetDefaultVerbLevel(MueLu::Extreme);
-    RebalancedAFact->Build(aLevel, corseLevel);
-
-  }
-
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, Constructor, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithoutImporter, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithImporter, Scalar, LO, GO, Node)
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, Constructor, Scalar, LO, GO, Node)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithoutImporter, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithImporter, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
-
-}//namespace MueLuTests
-
-
+}  // namespace MueLuTests

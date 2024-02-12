@@ -50,8 +50,8 @@
 #ifdef HAVE_MPI
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class RepartitionBlockDiagonalFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class RepartitionBlockDiagonalFactory;
 }
 
 #ifndef MUELU_REPARTITIONBLOCKDIAGONALFACTORY_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_REPARTITIONBLOCKDIAGONALFACTORY_FWD_HPP
+#endif  // MUELU_REPARTITIONBLOCKDIAGONALFACTORY_FWD_HPP

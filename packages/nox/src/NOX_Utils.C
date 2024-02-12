@@ -54,6 +54,7 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include <NOX_GlobalComm.H>
 #endif
 
 NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess,
@@ -160,7 +161,7 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
     MPI_Initialized(&mpiIsRunning);
     if (mpiIsRunning)
       {
-        MPI_Comm_rank(MPI_COMM_WORLD, &myPID);
+        MPI_Comm_rank(NOX::get_global_comm(), &myPID);
       }
     else
       {
@@ -221,7 +222,7 @@ NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p)
 
 std::ostream& NOX::operator<<(std::ostream& os, const NOX::Utils::Sci& s)
 {
-  os.setf(std::ios::scientific);
+  os.setf(std::ios::scientific, std::ios::floatfield);
   std::streamsize p = os.precision();
   os.precision(s.p);
   os << std::setw(s.p + 6) << s.d;

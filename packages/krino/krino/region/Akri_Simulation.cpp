@@ -24,21 +24,6 @@
 
 namespace krino{
 
-std::unique_ptr<Simulation> Simulation::the_simulation;
-
-Simulation & Simulation::build(const std::string & in_name)
-{
-  STK_ThrowRequireMsg(!the_simulation, "Simulation already set.");
-  the_simulation = std::make_unique<Simulation>(in_name);
-  return *the_simulation;
-}
-
-Simulation & Simulation::get()
-{
-  STK_ThrowRequireMsg(the_simulation, "Simulation should already be set.");
-  return *the_simulation;
-}
-
 Simulation::Simulation(const std::string & in_name)
   : my_name(in_name),
     my_timer("krino", sierra::Diag::sierraTimer()),
@@ -59,7 +44,7 @@ void Simulation::add_region(Region * region)
 }
 
 void Simulation::commit()
-{/* %TRACE% */ Trace trace__("krino::Simulation::commit()"); /* %TRACE% */
+{
   for (auto && region : my_regions)
   {
     region->commit();
@@ -67,7 +52,7 @@ void Simulation::commit()
 }
 
 void Simulation::execute()
-{/* %TRACE% */ Trace trace__("krino::Simulation::execute()"); /* %TRACE% */
+{
   stk::diag::TimeBlock timer__(my_timer);
 
   //=====================================
@@ -124,7 +109,7 @@ void Simulation::execute()
 
     for (auto && region : my_regions)
     {
-      region->get_stk_mesh_bulk_data().update_field_data_states();
+      region->mesh_bulk_data().update_field_data_states();
     }
   }
 
@@ -135,8 +120,6 @@ void Simulation::execute()
 void
 Simulation::print_performance_info() const
 {
-  /* %TRACE% */ Trace trace__("krino::Simulation::print_timer_information()"); /* %TRACE% */
-
   sierra::Env::outputP0() << sierra::Env::section_separator() << std::endl
                   << "Timing summary running on " << sierra::Env::parallel_size() << " processor" << (sierra::Env::parallel_size() == 1 ? "" : "s") << std::endl;
   stk::diag::printTimersTable(sierra::Env::outputP0(), sierra::Diag::sierraTimer(), stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, sierra::Env::parallel_comm());

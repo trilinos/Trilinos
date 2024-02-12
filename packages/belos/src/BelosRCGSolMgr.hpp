@@ -69,7 +69,7 @@
 \ingroup belos_solver_framework
 \author Michael Parks and Heidi Thornquist
 
-\section Belos_GCRODR_summary Summary
+\section Belos_RCGSol_summary Summary
 
 This class implements the GCRODR (Recycling GMRES) iterative linear
 solver.  This solver is suited for solving sequences of related linear

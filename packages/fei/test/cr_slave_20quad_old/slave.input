@@ -1,7 +1,0 @@
-WHICH_FEI OLDFEI
-SOLVER_LIBRARY Aztec
-PARAM_FILE parameters.Trilinos
-INPUT_FILE slave.in
-SOLN_FILE slave.soln
-CHECK_FILE slave.soln
-NUM_SOLVES 1

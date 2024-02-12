@@ -61,6 +61,7 @@ Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
     IsComputed_ (false),
     NumInitialize_ (0),
     NumCompute_ (0),
+    TimerForApply_(true),
     NumApply_ (0),
     InitializeTime_ (0.0),
     ComputeTime_ (0.0),
@@ -94,6 +95,8 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
 {
   // FIXME (mfh 25 Jan 2013) Casting away const is bad here.
   impl_.setParameters (const_cast<Teuchos::ParameterList&> (List));
+  if (List.isType<bool>("timer for apply"))
+    TimerForApply_ = List.get<bool>("timer for apply");
 }
 
 
@@ -241,17 +244,23 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
        scalar_type alpha,
        scalar_type beta) const
 {
+  Teuchos::RCP<Teuchos::Time> timer;
   const std::string timerName ("Ifpack2::Chebyshev::apply");
-  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
-  if (timer.is_null ()) {
-    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  if (TimerForApply_) {
+    timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+    if (timer.is_null ()) {
+      timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+    }
   }
 
-  double startTime = timer->wallTime();
+  Teuchos::Time time = Teuchos::Time(timerName);
+  double startTime = time.wallTime();
 
   // Start timing here.
   {
-    Teuchos::TimeMonitor timeMon (*timer);
+    Teuchos::RCP<Teuchos::TimeMonitor> timeMon;
+    if (TimerForApply_)
+      timeMon = Teuchos::rcp(new Teuchos::TimeMonitor(*timer));
 
     // compute() calls initialize() if it hasn't already been called.
     // Thus, we only need to check isComputed().
@@ -267,7 +276,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     applyImpl (X, Y, mode, alpha, beta);
   }
   ++NumApply_;
-  ApplyTime_ += (timer->wallTime() - startTime);
+  ApplyTime_ += (time.wallTime() - startTime);
 }
 
 

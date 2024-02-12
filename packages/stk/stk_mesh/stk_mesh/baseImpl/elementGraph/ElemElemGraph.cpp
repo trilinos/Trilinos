@@ -706,11 +706,10 @@ void report_error_with_invalid_ordinal(std::pair<stk::mesh::ConnectivityOrdinal,
 
 void ensure_fresh_modifiable_state(stk::mesh::BulkData& bulkData)
 {
-    if(bulkData.in_modifiable_state())
-    {
-        bulkData.modification_end();
-    }
-    bulkData.modification_begin();
+  if(bulkData.in_modifiable_state()) {
+    bulkData.modification_end();
+  }
+  bulkData.modification_begin();
 }
 
 class RemoteDeathBoundary
@@ -823,6 +822,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                              stk::mesh::ModEndOptimizationFlag modEndOpt)
 {
     ensure_fresh_modifiable_state(bulkData);
+    bulkData.m_bucket_repository.set_remove_mode_tracking();
     impl::create_sides_created_during_death_part(bulkData.mesh_meta_data());
 
     std::vector<stk::mesh::sharing_info> shared_modified;
@@ -917,6 +917,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
     }
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
     bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, active, modEndOpt);
+    bulkData.m_bucket_repository.set_remove_mode_fill_and_sort();
     return remote_death_boundary.get_topology_modification_status();
 }
 

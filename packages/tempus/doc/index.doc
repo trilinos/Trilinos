@@ -204,8 +204,25 @@
         <td> Utilize Thyra Vectors instead of C++ arrays.
     <tr><td> \ref example-02
         <td> Use ModelEvaluator for the problem description.
-    <tr><td> Example 3: Intro SolutionState
-        <td> Introduce SolutionState to manage the solution evoluation (under construction).
+    <tr><td> \ref example-03
+        <td> Introduce SolutionState to manage the solution evoluation.
+             Covers: solution vectors (\f$x\f$, \f$\dot{x}\f$, and
+             \f$\ddot{x}\f$) and metadata.
+    <tr><td> Adding SolutionHistory
+        <td> Adding SolutionHistory to store and interpolate solutions.
+             (under construction).
+    <tr><td> Use Steppers
+        <td> Use Steppers to enable various time steppers.
+             Covers: explicit and implicit ODE time steppers,
+             consistent initial conditions, and AppActions.
+    <tr><td> Introduce Time-step Controllers 
+        <td> Introduce TimeStepControllers to change the timestep size for
+             variable timestepping.
+             Covers: time step strategies and TimeEvents.
+    <tr><td> Utilize IntegratorBasic
+        <td> utilize IntegratorBasic to provide all the basic features
+             for Tempus time integrators.
+             Covers: IntegratorBasic and IntegratorObservers.
   </table>
 
   Also, one can look at the tests and unit tests for examples of usage,

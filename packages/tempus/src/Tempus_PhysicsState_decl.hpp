@@ -14,10 +14,9 @@
 #include <string>
 #include "Tempus_config.hpp"
 
-
 namespace Tempus {
 
-template<class Scalar>
+template <class Scalar>
 /** \brief PhysicsState is a simple class to hold information about the physics.
  *
  * <b>Design Considerations</b>
@@ -34,12 +33,10 @@ template<class Scalar>
  *   - The base class currently has a name so the Physics can be checked to
  *     see if PhysicsState matches the current physics.
  */
-class PhysicsState :
-  public Teuchos::Describable,
-  public Teuchos::VerboseObject<Tempus::PhysicsState<Scalar> >
-{
-public:
-
+class PhysicsState
+  : public Teuchos::Describable,
+    public Teuchos::VerboseObject<Tempus::PhysicsState<Scalar> > {
+ public:
   /// Constructor
   PhysicsState(std::string pN = "Tempus::PhysicsState");
 
@@ -60,16 +57,14 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
+  virtual std::string description() const;
 
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-protected:
-
-  std::string physicsName_;    ///< Name of the creating Physics.
-
+ protected:
+  std::string physicsName_;  ///< Name of the creating Physics.
 };
-} // namespace Tempus
-#endif // Tempus_PhysicsState_hpp
+}  // namespace Tempus
+#endif  // Tempus_PhysicsState_hpp

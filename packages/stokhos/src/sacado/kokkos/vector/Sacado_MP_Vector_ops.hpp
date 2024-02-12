@@ -821,6 +821,8 @@ MP_BINARYOP_MACRO(min, MinOp, ::min, using std::min;)
 MP_BINARYOP_MACRO(max, MaxOp, max, using std::max;)
 MP_BINARYOP_MACRO(min, MinOp, min, using std::min;)
 #endif
+MP_BINARYOP_MACRO(fmax, FMaxOp, fmax, using std::fmax;)
+MP_BINARYOP_MACRO(fmin, FMinOp, fmin, using std::fmin;)
 
 #undef MP_BINARYOP_MACRO
 

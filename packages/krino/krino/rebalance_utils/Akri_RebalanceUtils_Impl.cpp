@@ -227,30 +227,7 @@ accumulate_cdfem_child_weights_to_parents(const stk::mesh::BulkData & bulk_data,
 void accumulate_adaptivity_child_weights_to_parents(
     const stk::mesh::BulkData & bulk_data, const RefinementInterface& refinement, stk::mesh::Field<double> & element_weights_field)
 {
-  auto selector = stk::mesh::selectField(element_weights_field) &
-      bulk_data.mesh_meta_data().locally_owned_part();
-  std::vector<stk::mesh::Entity> all_dependents;
-  const auto & buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, selector);
-  for (auto && b_ptr : buckets)
-  {
-    for (auto && elem : *b_ptr)
-    {
-      if (!refinement.is_parent(elem)) continue;
-
-      all_dependents.clear();
-      refinement.fill_dependents(elem, all_dependents);
-
-      double child_weights_sum = 0.;
-      for (auto && dep : all_dependents)
-      {
-        double & child_weight = *stk::mesh::field_data(element_weights_field, dep);
-        child_weights_sum += child_weight;
-        child_weight = 0.;
-      }
-      double & parent_weight = *stk::mesh::field_data(element_weights_field, elem);
-      parent_weight += child_weights_sum;
-    }
-  }
+  refinement.update_element_rebalance_weights_incorporating_parallel_owner_constraints(element_weights_field);
 }
 
 namespace

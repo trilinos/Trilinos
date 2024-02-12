@@ -16,3 +16,5 @@ Building Developer Documentation
         make Doxygen
         make Sphinx
         open build/docs/docs/sphinx/index.html
+
+Alternatively, pass the --enable-docs option to cm_generate_makefile.bash.

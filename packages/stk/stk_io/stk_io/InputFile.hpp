@@ -35,8 +35,6 @@
 #ifndef STK_IO_Inputfile
 #define STK_IO_Inputfile
 
-#include <Teuchos_RCP.hpp>              // for is_null, RCP::operator->, etc
-#include <Teuchos_RCPStdSharedPtrConversions.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
 #include <stk_io/MeshField.hpp>
@@ -71,9 +69,6 @@ class Part;
                 const std::string &type,
                 DatabasePurpose purpose,
                 Ioss::PropertyManager& property_manager);
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023                
-      STK_DEPRECATED_MSG("This constructor has been deprecated. Please pass in std::shared_ptr instead of Teuchos::rcp.") InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
-#endif
       InputFile(std::shared_ptr<Ioss::Region> ioss_input_region);
 
       ~InputFile()
@@ -95,16 +90,6 @@ class Part;
       void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);
 
       void build_field_part_associations_from_grouping_entity(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missingFields);
-
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2023
-      STK_DEPRECATED_MSG("This function has been renamed get_input_ioss_region() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::Region> get_input_io_region()
-      {
-	      if (m_region.get() == nullptr && m_database.get() != nullptr) {
-	        create_ioss_region();
-	      }
-	      return Teuchos::rcp(m_region);
-      }
-#endif
 
       std::shared_ptr<Ioss::Region> get_input_ioss_region()
       {
@@ -136,13 +121,6 @@ class Part;
 
           return Ioss::SPLIT_INVALID;
       }
-
-#ifndef STK_HIDE_DEPRECATED_CODE
-      STK_DEPRECATED_MSG("This function has been renamed get_ioss_input_database() and now returns a std::shared_ptr.") Teuchos::RCP<Ioss::DatabaseIO> get_input_database()
-      {
-	      return Teuchos::rcp(m_database);
-      }
-#endif
 
       std::shared_ptr<Ioss::DatabaseIO> get_ioss_input_database()
       {

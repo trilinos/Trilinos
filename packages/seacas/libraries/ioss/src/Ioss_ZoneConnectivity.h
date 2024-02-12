@@ -33,8 +33,8 @@ namespace Ioss {
     // necessary.
     ZoneConnectivity() = default;
 
-    ZoneConnectivity(const std::string name, int owner_zone, const std::string donor_name,
-                     int donor_zone, const Ioss::IJK_t p_transform, const Ioss::IJK_t range_beg,
+    ZoneConnectivity(std::string name, int owner_zone, std::string donor_name, int donor_zone,
+                     const Ioss::IJK_t p_transform, const Ioss::IJK_t range_beg,
                      const Ioss::IJK_t range_end, const Ioss::IJK_t donor_beg,
                      const Ioss::IJK_t donor_end, const Ioss::IJK_t owner_offset = IJK_t(),
                      const Ioss::IJK_t donor_offset = IJK_t())

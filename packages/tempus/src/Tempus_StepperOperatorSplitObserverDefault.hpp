@@ -16,7 +16,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperOperatorSplit.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default observer for StepperOperatorSplit.
@@ -27,41 +26,38 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperOperatorSplitObserverDefault
-  : virtual public Tempus::StepperOperatorSplitObserverBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperOperatorSplitObserverBase<Scalar> {
+ public:
   /// Constructor
-  StepperOperatorSplitObserverDefault(){}
+  StepperOperatorSplitObserverDefault() {}
 
   /// Destructor
-  virtual ~StepperOperatorSplitObserverDefault(){}
+  virtual ~StepperOperatorSplitObserverDefault() {}
 
   /// Observe OperatorSplit Stepper at end of takeStep.
   virtual void observe(
-    Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<const StepperOperatorSplit<Scalar> > /* stepper */,
-    const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<const StepperOperatorSplit<Scalar> > /* stepper */,
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperOperatorSplitAppAction<Scalar>::BEGIN_STEP:
       case StepperOperatorSplitAppAction<Scalar>::BEFORE_STEPPER:
       case StepperOperatorSplitAppAction<Scalar>::AFTER_STEPPER:
-      case StepperOperatorSplitAppAction<Scalar>::END_STEP:
-      {
+      case StepperOperatorSplitAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperOperatorSplitObserverDefault_hpp
+#endif  // Tempus_StepperOperatorSplitObserverDefault_hpp

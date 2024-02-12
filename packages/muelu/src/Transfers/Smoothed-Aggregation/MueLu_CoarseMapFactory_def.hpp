@@ -65,148 +65,141 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const
-  {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace",  Teuchos::null, "Generating factory for null space.");
+  validParamList->set<RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
+  validParamList->set<RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory for null space.");
 
-    validParamList->set< std::string  >("Striding info", "{}", "Striding information");
-    validParamList->set< LocalOrdinal >("Strided block id", -1, "Strided block id");
+  validParamList->set<std::string>("Striding info", "{}", "Striding information");
+  validParamList->set<LocalOrdinal>("Strided block id", -1, "Strided block id");
 
-    // Domain GID offsets: list of offset values for domain gids (coarse gids) of tentative prolongator  (default = 0).
-    // For each multigrid level we can define a different offset value, ie for the prolongator between
-    // level 0 and level 1 we use the offset entry domainGidOffsets_[0], for the prolongator between
-    // level 1 and level 2 we use domainGidOffsets_[1]...
-    // If the vector domainGidOffsets_ is too short and does not contain a sufficient number of gid offset
-    // values for all levels, a gid offset of 0 is used for all the remaining levels!
-    // The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed
-    // equally over the procs (unless some reordering is done).
-    validParamList->set< std::string > ("Domain GID offsets", "{0}", "vector with offsets for GIDs for each level. If no offset GID value is given for the level we use 0 as default.");
+  // Domain GID offsets: list of offset values for domain gids (coarse gids) of tentative prolongator  (default = 0).
+  // For each multigrid level we can define a different offset value, ie for the prolongator between
+  // level 0 and level 1 we use the offset entry domainGidOffsets_[0], for the prolongator between
+  // level 1 and level 2 we use domainGidOffsets_[1]...
+  // If the vector domainGidOffsets_ is too short and does not contain a sufficient number of gid offset
+  // values for all levels, a gid offset of 0 is used for all the remaining levels!
+  // The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed
+  // equally over the procs (unless some reordering is done).
+  validParamList->set<std::string>("Domain GID offsets", "{0}", "vector with offsets for GIDs for each level. If no offset GID value is given for the level we use 0 as default.");
 
-    return validParamList;
+  return validParamList;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
+  Input(currentLevel, "Aggregates");
+  Input(currentLevel, "Nullspace");
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setStridingData(std::vector<size_t> stridingInfo) {
+  // store striding map in internal variable
+  stridingInfo_ = stridingInfo;
+
+  // try to remove string "Striding info" from parameter list to make sure,
+  // that stridingInfo_ is not replaced in the Build call.
+  std::string strStridingInfo;
+  strStridingInfo.clear();
+  SetParameter("Striding info", ParameterEntry(strStridingInfo));
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
+  FactoryMonitor m(*this, "Build", currentLevel);
+
+  GlobalOrdinal domainGIDOffset = GetDomainGIDOffset(currentLevel);
+  BuildCoarseMap(currentLevel, domainGIDOffset);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCoarseMap(
+    Level& currentLevel, const GlobalOrdinal domainGIDOffset) const {
+  RCP<Aggregates> aggregates = Get<RCP<Aggregates> >(currentLevel, "Aggregates");
+  GlobalOrdinal numAggs      = aggregates->GetNumAggregates();
+  RCP<const Map> aggMap      = aggregates->GetMap();
+
+  RCP<MultiVector> nullspace = Get<RCP<MultiVector> >(currentLevel, "Nullspace");
+
+  const size_t NSDim                  = nullspace->getNumVectors();
+  RCP<const Teuchos::Comm<int> > comm = aggMap->getComm();
+  const ParameterList& pL             = GetParameterList();
+
+  LocalOrdinal stridedBlockId = pL.get<LocalOrdinal>("Strided block id");
+
+  // read in stridingInfo from parameter list and fill the internal member variable
+  // read the data only if the parameter "Striding info" exists and is non-empty
+  if (pL.isParameter("Striding info")) {
+    std::string strStridingInfo = pL.get<std::string>("Striding info");
+    if (strStridingInfo.empty() == false) {
+      Teuchos::Array<size_t> arrayVal = Teuchos::fromStringToArray<size_t>(strStridingInfo);
+      stridingInfo_                   = Teuchos::createVector(arrayVal);
+    }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const
-  {
-    Input(currentLevel, "Aggregates");
-    Input(currentLevel, "Nullspace");
-  }
+  CheckForConsistentStridingInformation(stridedBlockId, NSDim);
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setStridingData(std::vector<size_t> stridingInfo)
-  {
-    // store striding map in internal variable
-    stridingInfo_ = stridingInfo;
+  GetOStream(Statistics2) << "domainGIDOffset: " << domainGIDOffset << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
 
-    // try to remove string "Striding info" from parameter list to make sure,
-    // that stridingInfo_ is not replaced in the Build call.
-    std::string strStridingInfo; strStridingInfo.clear();
-    SetParameter("Striding info", ParameterEntry(strStridingInfo));
-  }
+  // number of coarse level dofs (fixed by number of aggregates and blocksize data)
+  GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
+  GlobalOrdinal indexBase   = aggMap->getIndexBase();
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
-  {
-    FactoryMonitor m(*this, "Build", currentLevel);
+  RCP<const Map> coarseMap = StridedMapFactory::Build(aggMap->lib(),
+                                                      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                      nCoarseDofs,
+                                                      indexBase,
+                                                      stridingInfo_,
+                                                      comm,
+                                                      stridedBlockId,
+                                                      domainGIDOffset);
 
-    GlobalOrdinal domainGIDOffset = GetDomainGIDOffset(currentLevel);
-    BuildCoarseMap(currentLevel, domainGIDOffset);
-  }
+  Set(currentLevel, "CoarseMap", coarseMap);
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCoarseMap(
-    Level& currentLevel, const GlobalOrdinal domainGIDOffset) const
-  {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+GlobalOrdinal CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDomainGIDOffset(
+    Level& currentLevel) const {
+  GlobalOrdinal domainGidOffset = Teuchos::ScalarTraits<GlobalOrdinal>::zero();
 
-    RCP<Aggregates> aggregates = Get< RCP<Aggregates> >(currentLevel, "Aggregates");
-    GlobalOrdinal numAggs = aggregates->GetNumAggregates();
-    RCP<const Map> aggMap = aggregates->GetMap();
-
-    RCP<MultiVector> nullspace = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
-
-    const size_t NSDim = nullspace->getNumVectors();
-    RCP<const Teuchos::Comm<int> > comm = aggMap->getComm();
-    const ParameterList & pL = GetParameterList();
-
-    LocalOrdinal stridedBlockId = pL.get<LocalOrdinal>("Strided block id");
-
-    // read in stridingInfo from parameter list and fill the internal member variable
-    // read the data only if the parameter "Striding info" exists and is non-empty
-    if(pL.isParameter("Striding info")) {
-      std::string strStridingInfo = pL.get<std::string>("Striding info");
-      if(strStridingInfo.empty() == false) {
-        Teuchos::Array<size_t> arrayVal = Teuchos::fromStringToArray<size_t>(strStridingInfo);
-        stridingInfo_ = Teuchos::createVector(arrayVal);
+  std::vector<GlobalOrdinal> domainGidOffsets;
+  domainGidOffsets.clear();
+  const ParameterList& pL = GetParameterList();
+  if (pL.isParameter("Domain GID offsets")) {
+    std::string strDomainGIDs = pL.get<std::string>("Domain GID offsets");
+    if (strDomainGIDs.empty() == false) {
+      Teuchos::Array<GlobalOrdinal> arrayVal = Teuchos::fromStringToArray<GlobalOrdinal>(strDomainGIDs);
+      domainGidOffsets                       = Teuchos::createVector(arrayVal);
+      if (currentLevel.GetLevelID() < Teuchos::as<int>(domainGidOffsets.size())) {
+        domainGidOffset = domainGidOffsets[currentLevel.GetLevelID()];
       }
     }
-
-    CheckForConsistentStridingInformation(stridedBlockId, NSDim);
-
-    GetOStream(Statistics2) << "domainGIDOffset: " << domainGIDOffset << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
-
-    // number of coarse level dofs (fixed by number of aggregates and blocksize data)
-    GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
-    GlobalOrdinal indexBase = aggMap->getIndexBase();
-
-    RCP<const Map> coarseMap = StridedMapFactory::Build(aggMap->lib(),
-        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-        nCoarseDofs,
-        indexBase,
-        stridingInfo_,
-        comm,
-        stridedBlockId,
-        domainGIDOffset);
-
-    Set(currentLevel, "CoarseMap", coarseMap);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDomainGIDOffset(
-    Level& currentLevel) const
-  {
-    GlobalOrdinal domainGidOffset = Teuchos::ScalarTraits<GlobalOrdinal>::zero();
+  return domainGidOffset;
+}
 
-    std::vector<GlobalOrdinal> domainGidOffsets;
-    domainGidOffsets.clear();
-    const ParameterList & pL = GetParameterList();
-    if(pL.isParameter("Domain GID offsets")) {
-      std::string strDomainGIDs = pL.get<std::string>("Domain GID offsets");
-      if(strDomainGIDs.empty() == false) {
-        Teuchos::Array<GlobalOrdinal> arrayVal = Teuchos::fromStringToArray<GlobalOrdinal>(strDomainGIDs);
-        domainGidOffsets = Teuchos::createVector(arrayVal);
-        if(currentLevel.GetLevelID() < Teuchos::as<int>(domainGidOffsets.size()) ) {
-          domainGidOffset = domainGidOffsets[currentLevel.GetLevelID()];
-        }
-      }
-    }
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckForConsistentStridingInformation(
+    const LocalOrdinal stridedBlockId, const size_t nullspaceDimension) const {
+  // check for consistency of striding information with NSDim and nCoarseDofs
+  if (stridedBlockId == -1) {
+    // this means we have no real strided map but only a block map with constant blockSize "nullspaceDimension"
+    TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() > 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
+    stridingInfo_.clear();
+    stridingInfo_.push_back(nullspaceDimension);
+    TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() != 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
 
-    return domainGidOffset;
+  } else {
+    // stridedBlockId > -1, set by user
+    TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId > Teuchos::as<LO>(stridingInfo_.size() - 1), Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): it is stridingInfo_.size() <= stridedBlockId_. error.");
+    size_t stridedBlockSize = stridingInfo_[stridedBlockId];
+    TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != nullspaceDimension, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != nullspaceDimension. error.");
   }
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckForConsistentStridingInformation(
-    const LocalOrdinal stridedBlockId, const size_t nullspaceDimension) const
-  {
-    // check for consistency of striding information with NSDim and nCoarseDofs
-    if (stridedBlockId == -1) {
-      // this means we have no real strided map but only a block map with constant blockSize "nullspaceDimension"
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() > 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
-      stridingInfo_.clear();
-      stridingInfo_.push_back(nullspaceDimension);
-      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() != 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
-
-    } else {
-      // stridedBlockId > -1, set by user
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId > Teuchos::as<LO>(stridingInfo_.size() - 1), Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): it is stridingInfo_.size() <= stridedBlockId_. error.");
-      size_t stridedBlockSize = stridingInfo_[stridedBlockId];
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != nullspaceDimension , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != nullspaceDimension. error.");
-    }
-  }
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #endif /* MUELU_COARSEMAPFACTORY_DEF_HPP_ */

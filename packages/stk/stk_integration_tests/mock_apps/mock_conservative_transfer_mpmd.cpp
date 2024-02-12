@@ -12,11 +12,13 @@ void check_conservation(MPI_Comm unionComm,
   int myRank = utils::impl::comm_rank(unionComm);
   if (functionValsSend)
   {
-    double integralVal = sendCallback->integrate_function(functionValsSend);
+    double integralVal = sendCallback->integrate_function(functionValsSend)[0];
+
     MPI_Send(&integralVal, 1, MPI_DOUBLE, 1 - myRank, 666, unionComm);
   } else
   {
-    double integralVal = recvCallback->integrate_function(functionValsRecv);        
+    double integralVal = recvCallback->integrate_function(functionValsRecv)[0];   
+
     double integralValSender;
     MPI_Recv(&integralValSender, 1, MPI_DOUBLE, 1 - myRank, 666, unionComm, MPI_STATUS_IGNORE);
 
@@ -103,7 +105,7 @@ int main(int argc, char* argv[])
     MPI_Comm meshComm;
     MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
 
-    stk_interface::impl::StkMeshCreator creator(meshFileName, meshComm);
+    stk_interface::StkMeshCreator creator(meshFileName, "NONE", meshComm);
     std::shared_ptr<mesh::Mesh> inputMesh = creator.create_mesh_from_part(partName).mesh;
 
     std::shared_ptr<mesh::Mesh> inputMesh1 = color == 0 ? inputMesh : nullptr;

@@ -50,8 +50,9 @@
 #ifndef _ZOLTAN2_BASICVECTORADAPTER_HPP_
 #define _ZOLTAN2_BASICVECTORADAPTER_HPP_
 
-#include <Zoltan2_VectorAdapter.hpp>
+#include "Zoltan2_Adapter.hpp"
 #include <Zoltan2_StridedData.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 
 namespace Zoltan2 {
 
@@ -82,20 +83,19 @@ namespace Zoltan2 {
     can easily supply the data types for the library.
 */
 
-template <typename User>
-  class BasicVectorAdapter : public VectorAdapter<User> {
+template <typename User> class BasicVectorAdapter : public VectorAdapter<User> {
 
 public:
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef typename InputTraits<User>::scalar_t scalar_t;
-  typedef typename InputTraits<User>::lno_t lno_t;
-  typedef typename InputTraits<User>::gno_t gno_t;
-  typedef typename InputTraits<User>::offset_t offset_t;
-  typedef typename InputTraits<User>::part_t part_t;
-  typedef typename InputTraits<User>::node_t node_t;
-  typedef User user_t;
+  using scalar_t = typename InputTraits<User>::scalar_t;
+  using lno_t = typename InputTraits<User>::lno_t;
+  using gno_t = typename InputTraits<User>::gno_t;
+  using offset_t = typename InputTraits<User>::offset_t;
+  using part_t = typename InputTraits<User>::part_t;
+  using node_t = typename InputTraits<User>::node_t;
+  using user_t = User;
+  using Base = BaseAdapter<User>;
 
 #endif
 
@@ -114,14 +114,11 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicVectorAdapter(lno_t numIds, const gno_t *ids,
-                     const scalar_t *entries, int entryStride=1,
-                     bool usewgts=false,
-                     const scalar_t *wgts=NULL, int wgtStride=1):
-      numIds_(numIds), idList_(ids),
-      numEntriesPerID_(1), entries_(),
-      numWeights_(usewgts==true), weights_()
-  {
+  BasicVectorAdapter(lno_t numIds, const gno_t *ids, const scalar_t *entries,
+                     int entryStride = 1, bool usewgts = false,
+                     const scalar_t *wgts = NULL, int wgtStride = 1)
+      : numIds_(numIds), idList_(ids), numEntriesPerID_(1),
+        numWeights_(usewgts == true) {
     std::vector<const scalar_t *> values;
     std::vector<int> strides;
     std::vector<const scalar_t *> weightValues;
@@ -163,12 +160,12 @@ public:
    */
 
   BasicVectorAdapter(lno_t numIds, const gno_t *ids,
-    std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
-      numIds_(numIds), idList_(ids),
-      numEntriesPerID_(entries.size()), entries_(),
-      numWeights_(weights.size()), weights_()
-  {
+                     std::vector<const scalar_t *> &entries,
+                     std::vector<int> &entryStride,
+                     std::vector<const scalar_t *> &weights,
+                     std::vector<int> &weightStrides)
+      : numIds_(numIds), idList_(ids), numEntriesPerID_(entries.size()),
+        numWeights_(weights.size()) {
     createBasicVector(entries, entryStride, weights, weightStrides);
   }
 
@@ -198,27 +195,24 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicVectorAdapter(lno_t numIds, const gno_t *ids,
-                     const scalar_t *x, const scalar_t *y,
-                     const scalar_t *z,
-                     int xStride=1, int yStride=1, int zStride=1,
-                     bool usewgts=false, const scalar_t *wgts=NULL,
-                     int wgtStride=1) :
-      numIds_(numIds), idList_(ids), numEntriesPerID_(0), entries_(),
-      numWeights_(usewgts==true), weights_()
-  {
+  BasicVectorAdapter(lno_t numIds, const gno_t *ids, const scalar_t *x,
+                     const scalar_t *y, const scalar_t *z, int xStride = 1,
+                     int yStride = 1, int zStride = 1, bool usewgts = false,
+                     const scalar_t *wgts = NULL, int wgtStride = 1)
+      : numIds_(numIds), idList_(ids), numEntriesPerID_(0),
+        numWeights_(usewgts == true) {
     std::vector<const scalar_t *> values, weightValues;
     std::vector<int> strides, weightStrides;
 
-    if (x){
+    if (x) {
       values.push_back(x);
       strides.push_back(xStride);
       numEntriesPerID_++;
-      if (y){
+      if (y) {
         values.push_back(y);
         strides.push_back(yStride);
         numEntriesPerID_++;
-        if (z){
+        if (z) {
           values.push_back(z);
           strides.push_back(zStride);
           numEntriesPerID_++;
@@ -232,55 +226,95 @@ public:
     createBasicVector(values, strides, weightValues, weightStrides);
   }
 
-
-  ~BasicVectorAdapter() {};
-
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return numIds_;}
+  size_t getLocalNumIDs() const { return numIds_; }
 
-  void getIDsView(const gno_t *&ids) const {ids = idList_;}
+  void getIDsView(const gno_t *&ids) const { ids = idList_; }
 
-  void getIDsKokkosView(Kokkos::View<const gno_t *,
-    typename node_t::device_type> &ids) const
-  {
-    ids = this->kokkos_ids_;
+  void getIDsKokkosView(typename Base::ConstIdsDeviceView &ids) const {
+    ids = this->kIds_;
   }
 
-  int getNumWeightsPerID() const { return numWeights_;}
-
-  virtual void getWeightsKokkos2dView(Kokkos::View<scalar_t **,
-    typename node_t::device_type> &wgt) const
-  {
-    wgt = kokkos_weights_;
+  void getIDsHostView(typename Base::ConstIdsHostView &ids) const override {
+    auto hostIds = Kokkos::create_mirror_view(this->kIds_);
+    Kokkos::deep_copy(hostIds, this->kIds_);
+    ids = hostIds;
   }
 
-  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
-  {
-    if (idx < 0 || idx >= numWeights_) {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid vector index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
-    }
+  void getIDsDeviceView(typename Base::ConstIdsDeviceView &ids) const override {
+    ids = this->kIds_;
+  }
+
+  int getNumWeightsPerID() const { return numWeights_; }
+
+  virtual void
+  getWeightsKokkos2dView(typename Base::WeightsDeviceView &wgt) const {
+    wgt = kWeights_;
+  }
+
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const {
+    AssertCondition((idx >= 0) and (idx < numWeights_),
+                    "Invalid weight index.");
+
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
+  }
+
+  void getWeightsHostView(typename Base::WeightsHostView1D &hostWgts,
+                          int idx = 0) const override {
+    AssertCondition((idx >= 0) and (idx < numWeights_),
+                    "Invalid weight index.");
+
+    auto weightsDevice =
+        typename Base::WeightsDeviceView1D("weights", kWeights_.extent(0));
+    getWeightsDeviceView(weightsDevice, idx);
+
+    hostWgts = Kokkos::create_mirror_view(weightsDevice);
+    Kokkos::deep_copy(hostWgts, weightsDevice);
+  }
+
+  void getWeightsHostView(typename Base::WeightsHostView &wgts) const override {
+    auto hostWeights = Kokkos::create_mirror_view(kWeights_);
+    Kokkos::deep_copy(hostWeights, kWeights_);
+    wgts = hostWeights;
+  }
+
+  void getWeightsDeviceView(typename Base::WeightsDeviceView1D &deviceWgts,
+                            int idx = 0) const override {
+    AssertCondition((idx >= 0) and (idx < numWeights_),
+                    "Invalid weight index.");
+
+    const auto size = kWeights_.extent(0);
+    deviceWgts = typename Base::WeightsDeviceView1D("weights", size);
+
+    Kokkos::parallel_for(
+        size, KOKKOS_CLASS_LAMBDA(const int id) {
+          deviceWgts(id) = kWeights_(id, idx);
+        });
+
+    Kokkos::fence();
+  }
+
+  void
+  getWeightsDeviceView(typename Base::WeightsDeviceView &wgts) const override {
+    wgts = kWeights_;
   }
 
   ////////////////////////////////////////////////////
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumEntriesPerID() const { return numEntriesPerID_;}
+  int getNumEntriesPerID() const { return numEntriesPerID_; }
 
-  void getEntriesView(const scalar_t *&entries, int &stride, int idx = 0) const
-  {
+  void getEntriesView(const scalar_t *&entries, int &stride,
+                      int idx = 0) const {
     if (idx < 0 || idx >= numEntriesPerID_) {
       std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid vector index " << idx << std::endl;
+      emsg << __FILE__ << ":" << __LINE__ << "  Invalid vector index " << idx
+           << std::endl;
       throw std::runtime_error(emsg.str());
     }
     size_t length;
@@ -288,11 +322,20 @@ public:
   }
 
   void getEntriesKokkosView(
-    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-    Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-    typename node_t::device_type> & entries) const
-  {
-    entries = kokkos_entries_;
+      typename AdapterWithCoords<User>::CoordsDeviceView &entries) const {
+    entries = kEntries_;
+  }
+
+  void getEntriesHostView(typename AdapterWithCoords<User>::CoordsHostView
+                              &entries) const override {
+    auto hostEntries = Kokkos::create_mirror_view(kEntries_);
+    Kokkos::deep_copy(hostEntries, kEntries_);
+    entries = hostEntries;
+  }
+
+  void getEntriesDeviceView(typename AdapterWithCoords<User>::CoordsDeviceView
+                                &entries) const override {
+    entries = kEntries_;
   }
 
 private:
@@ -300,99 +343,95 @@ private:
   const gno_t *idList_;
 
   int numEntriesPerID_;
-  ArrayRCP<StridedData<lno_t, scalar_t> > entries_ ;
-
-  Kokkos::View<gno_t *, typename node_t::device_type> kokkos_ids_;
-
-  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-  Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-    typename node_t::device_type> kokkos_entries_;
-
   int numWeights_;
-  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 
-  Kokkos::View<scalar_t**, typename node_t::device_type> kokkos_weights_;
+  // Old API variable members
+  ArrayRCP<StridedData<lno_t, scalar_t>> entries_;
+  ArrayRCP<StridedData<lno_t, scalar_t>> weights_;
 
-  void createBasicVector(
-    std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
-  {
-    typedef StridedData<lno_t,scalar_t> input_t;
+  // New API variable members
+  typename Base::IdsDeviceView kIds_;
+  typename AdapterWithCoords<User>::CoordsDeviceView kEntries_;
+  typename Base::WeightsDeviceView kWeights_;
 
-    if (numIds_){
+  void createBasicVector(std::vector<const scalar_t *> &entries,
+                         std::vector<int> &entryStride,
+                         std::vector<const scalar_t *> &weights,
+                         std::vector<int> &weightStrides) {
+    typedef StridedData<lno_t, scalar_t> input_t;
+
+    if (numIds_) {
       // make kokkos ids
-      kokkos_ids_ = Kokkos::View<gno_t *, typename node_t::device_type>(
-        Kokkos::ViewAllocateWithoutInitializing("ids"), numIds_);
-      auto host_kokkos_ids_ = Kokkos::create_mirror_view(kokkos_ids_);
-      for(int n = 0; n < numIds_; ++n) {
-        host_kokkos_ids_(n) = idList_[n];
+      kIds_ = typename Base::IdsDeviceView(
+          Kokkos::ViewAllocateWithoutInitializing("ids"), numIds_);
+      auto host_kIds_ = Kokkos::create_mirror_view(kIds_);
+      for (int n = 0; n < numIds_; ++n) {
+        host_kIds_(n) = idList_[n];
       }
-      Kokkos::deep_copy(kokkos_ids_, host_kokkos_ids_);
+      Kokkos::deep_copy(kIds_, host_kIds_);
 
       // make coordinates
       int stride = 1;
       entries_ = arcp(new input_t[numEntriesPerID_], 0, numEntriesPerID_, true);
-      for (int v=0; v < numEntriesPerID_; v++) {
-        if (entryStride.size()) stride = entryStride[v];
-        ArrayRCP<const scalar_t> eltV(entries[v], 0, stride*numIds_, false);
+      for (int v = 0; v < numEntriesPerID_; v++) {
+        if (entryStride.size())
+          stride = entryStride[v];
+        ArrayRCP<const scalar_t> eltV(entries[v], 0, stride * numIds_, false);
         entries_[v] = input_t(eltV, stride);
       }
 
       // setup kokkos entries
-      // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-      kokkos_entries_ = Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-        typename node_t::device_type>(
-        Kokkos::ViewAllocateWithoutInitializing("entries"),
-        numIds_, numEntriesPerID_);
+      kEntries_ = typename AdapterWithCoords<User>::CoordsDeviceView(
+          Kokkos::ViewAllocateWithoutInitializing("entries"), numIds_,
+          numEntriesPerID_);
 
       size_t length;
-      const scalar_t * entriesPtr;
+      const scalar_t *entriesPtr;
 
-      auto host_kokkos_entries =
-        Kokkos::create_mirror_view(this->kokkos_entries_);
+      auto host_kokkos_entries = Kokkos::create_mirror_view(this->kEntries_);
 
-      for (int idx=0; idx < numEntriesPerID_; idx++) {
+      for (int idx = 0; idx < numEntriesPerID_; idx++) {
         entries_[idx].getStridedList(length, entriesPtr, stride);
         size_t fill_index = 0;
-        for(int n = 0; n < numIds_; ++n) {
-          host_kokkos_entries(fill_index++,idx) = entriesPtr[n*stride];
+        for (int n = 0; n < numIds_; ++n) {
+          host_kokkos_entries(fill_index++, idx) = entriesPtr[n * stride];
         }
       }
-      Kokkos::deep_copy(this->kokkos_entries_, host_kokkos_entries);
+      Kokkos::deep_copy(this->kEntries_, host_kokkos_entries);
     }
 
     if (numWeights_) {
       int stride = 1;
-      weights_ = arcp(new input_t [numWeights_], 0, numWeights_, true);
-      for (int w=0; w < numWeights_; w++){
-        if (weightStrides.size()) stride = weightStrides[w];
-        ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*numIds_, false);
+      weights_ = arcp(new input_t[numWeights_], 0, numWeights_, true);
+      for (int w = 0; w < numWeights_; w++) {
+        if (weightStrides.size())
+          stride = weightStrides[w];
+        ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride * numIds_, false);
         weights_[w] = input_t(wgtV, stride);
       }
 
       // set up final view with weights
-      kokkos_weights_ = Kokkos::View<scalar_t**,
-        typename node_t::device_type>(
-        Kokkos::ViewAllocateWithoutInitializing("kokkos weights"),
-        numIds_, numWeights_);
+      kWeights_ = typename Base::WeightsDeviceView(
+          Kokkos::ViewAllocateWithoutInitializing("kokkos weights"), numIds_,
+          numWeights_);
 
       // setup weights
       auto host_weight_temp_values =
-        Kokkos::create_mirror_view(this->kokkos_weights_);
-      for(int idx = 0; idx < numWeights_; ++idx) {
-        const scalar_t * weightsPtr;
+          Kokkos::create_mirror_view(this->kWeights_);
+      for (int idx = 0; idx < numWeights_; ++idx) {
+        const scalar_t *weightsPtr;
         size_t length;
         weights_[idx].getStridedList(length, weightsPtr, stride);
         size_t fill_index = 0;
-        for(size_t n = 0; n < length; n += stride) {
-          host_weight_temp_values(fill_index++,idx) = weightsPtr[n];
+        for (size_t n = 0; n < length; n += stride) {
+          host_weight_temp_values(fill_index++, idx) = weightsPtr[n];
         }
       }
-      Kokkos::deep_copy(this->kokkos_weights_, host_weight_temp_values);
+      Kokkos::deep_copy(this->kWeights_, host_weight_temp_values);
     }
   }
 };
 
-}  //namespace Zoltan2
+} // namespace Zoltan2
 
 #endif

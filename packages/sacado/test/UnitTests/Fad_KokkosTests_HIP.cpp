@@ -43,7 +43,7 @@
 #include "Fad_KokkosTests.hpp"
 
 // Instantiate tests for HIP device.  DFAD is disabled since HIP doesn't support UVM.
-using Kokkos::Experimental::HIP;
+using Kokkos::HIP;
 VIEW_FAD_TESTS_D( HIP )
 
 // Tests special size alignment for SFad on HIP is correct
@@ -54,7 +54,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipAligned)
   const int LocalDim = 2;
   typedef Sacado::Fad::SFad<double,StaticDim> FadType;
   typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
-  typedef Kokkos::Experimental::HIP Device;
+  typedef Kokkos::HIP Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
   typedef typename ViewType::traits TraitsType;
@@ -83,7 +83,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipNotAligned)
   const int LocalDim = 0;
   typedef Sacado::Fad::SFad<double,StaticDim> FadType;
   typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
-  typedef Kokkos::Experimental::HIP Device;
+  typedef Kokkos::HIP Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
   typedef typename ViewType::traits TraitsType;

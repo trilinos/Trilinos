@@ -1,0 +1,109 @@
+<ParameterList>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Source" type="string" value="Inline Mesh" />
+    <!-- <Parameter name="Source" type="string" value="Pamgen Mesh" /> -->
+    <!-- <Parameter name="Source" type="string" value="Exodus File" /> -->
+
+    <ParameterList name="Exodus File">
+      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <ParameterList name="Exodus Parameters">
+        <Parameter name="File Name" type="string" value="blob/blob.g" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Pamgen Mesh">
+      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <ParameterList name="Pamgen Parameters">
+        <Parameter name="File Name" type="string" value="pamgen.gen"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Inline Mesh">
+      <Parameter name="Mesh Dimension" type="int" value="3"/>
+      <!-- <Parameter name="Mesh Type" type="string" value="quad"/> -->
+      <Parameter name="Mesh Type" type="string" value="tet"/>
+      <Parameter name="CFL" type="double" value="4.0"/>
+      <ParameterList name="Mesh Factory Parameter List">
+        <Parameter name="X Procs" type="int" value="-1" />
+        <Parameter name="Y Procs" type="int" value="-1" />
+        <Parameter name="Z Procs" type="int" value="-1" />
+        <Parameter name="X Blocks" type="int" value="1" />
+        <Parameter name="Y Blocks" type="int" value="1" />
+        <Parameter name="Z Blocks" type="int" value="1" />
+        <Parameter name="X Elements" type="int" value="10" />
+        <Parameter name="Y Elements" type="int" value="10" />
+        <Parameter name="Z Elements" type="int" value="10" />
+        <!-- <ParameterList name="Periodic BCs"> -->
+        <!--   <Parameter name="Count" type="int" value="3"/> -->
+        <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
+        <!--   <Parameter name="Periodic Condition 2" type="string" value="yz-all 1e-8: left;right"/> -->
+        <!--   <Parameter name="Periodic Condition 3" type="string" value="xy-all 1e-8: front;back"/> -->
+        <!-- </ParameterList> -->
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+
+  <ParameterList name="Block ID to Physics ID Mapping">
+    <Parameter name="eblock-0_0_0" type="string" value="Maxwell Physics"/>
+  </ParameterList>
+
+  <ParameterList name="Block ID to Auxiliary Physics ID Mapping">
+    <Parameter name="eblock-0_0_0" type="string" value="Auxiliary Physics Block"/>
+  </ParameterList>
+
+   <ParameterList name="Assembly">
+     <Parameter name="Field Order"  type="string" value="blocked: u sigma"/>
+   </ParameterList>
+
+  <ParameterList name="Physics Blocks">
+    <!-- The 2x2 Darcy system -->
+    <!-- Gets 1/kappa from closure model 'darcy' -->
+    <ParameterList name="Maxwell Physics">
+      <ParameterList name="Maxwell Physics">
+        <Parameter name="Type"                 type="string" value="Darcy"/>
+        <Parameter name="Model ID"             type="string" value="darcy"/>
+        <Parameter name="Diffusivity"          type="string" value="kappa"/>
+        <Parameter name="Inverse Diffusivity"  type="string" value="1/kappa"/>
+        <Parameter name="Forcing"              type="string" value="f"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Closure Models">
+    <!-- Quantities for the Darcy equation -->
+    <!-- Note: 1/dt is added at runtime -->
+    <ParameterList name="darcy">
+      <ParameterList name="f">
+        <Parameter name="Type" type="string" value="RANDOM"/>
+        <Parameter name="DoF Name" type="string" value="u"/>
+        <Parameter name="seed" type="unsigned int" value="0"/>
+        <Parameter name="range min" type="double" value="0."/>
+        <Parameter name="range max" type="double" value="1."/>
+      </ParameterList>
+      <ParameterList name="kappa">
+        <Parameter name="Value" type="double" value="10."/>
+      </ParameterList>
+      <!-- Inverse Diffusivity -->
+      <ParameterList name="1/kappa">
+        <Parameter name="Value" type="double" value="0.1"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Responses">
+    <!-- None -->
+  </ParameterList>
+
+  <ParameterList name="Boundary Conditions">
+    <!-- natural BCs -->
+  </ParameterList>
+
+  <ParameterList name="Auxiliary Boundary Conditions">
+    <!-- None -->
+  </ParameterList>
+
+
+</ParameterList>

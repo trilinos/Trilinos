@@ -303,6 +303,16 @@ fillDomainBoxes(MPI_Comm comm)
     return domainBoxes;
 }
 
+inline void convertFloatBoxesToDoubleBoxes(const FloatBoxVector &floatBoxes, StkBoxVector& doubleBoxes)
+{
+  doubleBoxes.resize(floatBoxes.size());
+  for (size_t i=0;i<floatBoxes.size();i++) {
+    Point min(floatBoxes[i].first.get_x_min(), floatBoxes[i].first.get_y_min(), floatBoxes[i].first.get_z_min());
+    Point max(floatBoxes[i].first.get_x_max(), floatBoxes[i].first.get_y_max(), floatBoxes[i].first.get_z_max());
+    doubleBoxes[i] = std::make_pair(StkBox(min,max), floatBoxes[i].second);
+  }
+}
+
 inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
 {
     for (size_t i=0;i<domainBoxes.size();i++)
@@ -314,24 +324,27 @@ inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes
     }
 }
 
-inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxVector& domainBoxes)
+template<typename BoxType>
+inline void createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
+                                           stk::mesh::EntityRank rank,
+                                           std::vector<std::pair<BoxType,Ident>>& boundingBoxes)
 {
-    stk::mesh::EntityVector elements;
+    stk::mesh::EntityVector entities;
     const bool sortById = true;
-    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(), elements, sortById);
+    stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities, sortById);
 
-    size_t numberBoundingBoxes = elements.size();
-    domainBoxes.resize(numberBoundingBoxes);
+    size_t numberBoundingBoxes = entities.size();
+    boundingBoxes.resize(numberBoundingBoxes);
 
     stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
 
     std::vector<double> boxCoordinates(6);
 
-    for(size_t i=0;i<elements.size();++i)
+    for(size_t i=0;i<entities.size();++i)
     {
-        unsigned num_nodes = bulk.num_nodes(elements[i]);
+        unsigned num_nodes = bulk.num_nodes(entities[i]);
         std::vector<double> coordinates(3*num_nodes,0);
-        const stk::mesh::Entity* nodes = bulk.begin_nodes(elements[i]);
+        const stk::mesh::Entity* nodes = bulk.begin_nodes(entities[i]);
         for(unsigned j=0;j<num_nodes;++j)
         {
             double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
@@ -340,13 +353,18 @@ inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkD
             coordinates[3*j+2] = data[2];
         }
         findBoundingBoxCoordinates(coordinates, boxCoordinates);
-        unsigned id = bulk.identifier(elements[i]);
+        unsigned id = bulk.identifier(entities[i]);
         Ident domainBoxId(id, bulk.parallel_rank());
-        domainBoxes[i] = std::make_pair(FloatBox(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
-                                                boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
-                                                domainBoxId);
+        boundingBoxes[i] = std::make_pair(BoxType(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
+                                                  boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
+                                                  domainBoxId);
 
     }
+}
+
+inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxVector& domainBoxes)
+{
+  createBoundingBoxesForEntities(bulk, stk::topology::ELEM_RANK, domainBoxes);
 }
 
 inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string& volumeFilename, FloatBoxVector &domainBoxes)
@@ -690,37 +708,7 @@ inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes
 
 inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxVector& domainBoxes)
 {
-    stk::mesh::EntityVector elements;
-    const bool sortById = true;
-    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(), elements, sortById);
-
-    size_t numberBoundingBoxes = elements.size();
-    domainBoxes.resize(numberBoundingBoxes);
-
-    stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
-
-    std::vector<double> boxCoordinates(6);
-
-    for(size_t i=0;i<elements.size();++i)
-    {
-        unsigned num_nodes = bulk.num_nodes(elements[i]);
-        std::vector<double> coordinates(3*num_nodes,0);
-        const stk::mesh::Entity* nodes = bulk.begin_nodes(elements[i]);
-        for(unsigned j=0;j<num_nodes;++j)
-        {
-            double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
-            coordinates[3*j] = data[0];
-            coordinates[3*j+1] = data[1];
-            coordinates[3*j+2] = data[2];
-        }
-        findBoundingBoxCoordinates(coordinates, boxCoordinates);
-        unsigned id = bulk.identifier(elements[i]);
-        Ident domainBoxId(id, bulk.parallel_rank());
-        domainBoxes[i] = std::make_pair(FloatBox(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
-                                                boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
-                                                domainBoxId);
-
-    }
+  createBoundingBoxesForEntities(bulk, stk::topology::ELEM_RANK, domainBoxes);
 }
 
 inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string& volumeFilename, FloatBoxVector &domainBoxes)

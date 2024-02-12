@@ -213,7 +213,6 @@ namespace Teuchos {
         size_t lineNumber = startingLineNumber;
         bool allSucceeded = true;
         std::vector<size_t> badLineNumbers;
-        size_t validDataLines = 0;
         while (getline (in, line)) {
           size_t start, size;
           if (checkCommentLine (line, start, size, lineNumber, tolerant)) {
@@ -227,9 +226,6 @@ namespace Teuchos {
           allSucceeded = allSucceeded && localSuccess;
           if (! localSuccess) {
             badLineNumbers.push_back (lineNumber);
-          }
-          else {
-            ++validDataLines;
           }
         }
         return std::make_pair (allSucceeded, badLineNumbers);

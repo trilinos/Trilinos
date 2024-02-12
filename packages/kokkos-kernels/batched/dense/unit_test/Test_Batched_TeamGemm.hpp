@@ -41,6 +41,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedTeamGemm {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b, _c;
 
   ScalarType _alpha, _beta;
@@ -73,8 +74,8 @@ struct Functor_TestBatchedTeamGemm {
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _c.extent(0);
-    Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(league_size,
-                                                        Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size,
+                                                             Kokkos::AUTO);
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -90,7 +91,7 @@ void impl_test_batched_teamgemm(const int N, const int matAdim1,
   using transB          = typename ParamTagType::transB;
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::value_type;
-  using ats             = Kokkos::Details::ArithTraits<value_type>;
+  using ats             = Kokkos::ArithTraits<value_type>;
 
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5), beta = ScalarType(3.0);

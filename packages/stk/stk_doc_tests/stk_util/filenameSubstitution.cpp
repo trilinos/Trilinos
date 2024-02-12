@@ -35,6 +35,7 @@
 //BEGINFilenameSubstitution
 #include "gtest/gtest.h"
 #include "stk_util/environment/EnvData.hpp"         // for EnvData
+#include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/FileUtils.hpp"       // for filename_substitution
 #include "stk_util/environment/ParsedOptions.hpp"   // for ParsedOptions
 #include "stk_util/environment/ProgramOptions.hpp"  // for get_parsed_options
@@ -45,7 +46,8 @@ namespace
 TEST(StkUtilHowTo, useFilenameSubstitutionWithNoCommandLineOptions)
 {
   const std::string default_base_filename = "stdin";
-  const std::string numProcsString = "1";
+  const int numProcs = stk::parallel_machine_size(sierra::Env::parallel_comm());
+  const std::string numProcsString = std::to_string(numProcs);
   const std::string expected_filename = default_base_filename + "-" + numProcsString + ".e";
 
   std::string file_name = "%B-%P.e";
@@ -65,7 +67,8 @@ TEST(StkUtilHowTo, useFilenameSubstitutionWithFileComingFromCommandLineOptions)
   const std::string full_filename = "/path/to/" + base_filename + ".g";
   setFilenameInCommandLineOptions(full_filename);
 
-  const std::string numProcsString = "1";
+  const int numProcs = stk::parallel_machine_size(sierra::Env::parallel_comm());
+  const std::string numProcsString = std::to_string(numProcs);
   const std::string expected_filename = base_filename + "-" + numProcsString + ".e";
 
   std::string file_name = "%B-%P.e";

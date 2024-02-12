@@ -55,6 +55,7 @@ APPEND_SET(SOURCES
   RAPShiftFactory.cpp
   RebalanceAcFactory.cpp
   ReitzingerPFactory.cpp
+  Regression.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp
   SegregatedAFactory.cpp
@@ -117,8 +118,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
 )
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
+
+IF( HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
 APPEND_SET(SOURCES
   ParameterList/MLParameterListInterpreter.cpp
+)
+ENDIF()
+
+APPEND_SET(SOURCES
   ParameterList/CreateSublists.cpp
 )
 ENDIF()

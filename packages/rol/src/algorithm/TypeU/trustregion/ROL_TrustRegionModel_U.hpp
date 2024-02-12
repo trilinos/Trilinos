@@ -68,6 +68,7 @@ private:
   Ptr<Objective<Real>> obj_;
   Ptr<const Vector<Real>> x_, g_;
   Ptr<Vector<Real>> dual_;
+  Real tol_;
 
   Ptr<Secant<Real>> secant_;
   bool useSecantPrecond_;
@@ -82,7 +83,7 @@ protected:
       secant_->applyB(hv,v);
     }
     else {
-      obj_->hessVec(hv,v,*x_,tol);
+      obj_->hessVec(hv,v,*x_,tol_);
     }
   }
 
@@ -91,7 +92,7 @@ protected:
       secant_->applyH(hv,v);
     }
     else {
-      obj_->invHessVec(hv,v,*x_,tol);
+      obj_->invHessVec(hv,v,*x_,tol_);
     }
   }
 
@@ -100,7 +101,7 @@ protected:
       secant_->applyH(Pv,v);
     }
     else {
-      obj_->precond(Pv,v,*x_,tol);
+      obj_->precond(Pv,v,*x_,tol_);
     }
   }
   /***************************************************************************/
@@ -118,9 +119,7 @@ public:
     ParameterList &slist = list.sublist("General").sublist("Secant");
     useSecantPrecond_ = slist.get("Use as Preconditioner", false);
     useSecantHessVec_ = slist.get("Use as Hessian",        false);
-    if (secant_ == nullPtr) {
-      secant_ = SecantFactory<Real>(list,mode);
-    }
+    if (secant_ == nullPtr) secant_ = SecantFactory<Real>(list,mode);
   }
 
   void initialize(const Vector<Real> &x, const Vector<Real> &g) {
@@ -151,19 +150,20 @@ public:
 
   virtual void setData(Objective<Real>    &obj,
                        const Vector<Real> &x,
-                       const Vector<Real> &g) {
+                       const Vector<Real> &g,
+                       Real &tol) {
     obj_ = makePtrFromRef(obj);
     x_   = makePtrFromRef(x);
     g_   = makePtrFromRef(g);
+    tol_ = tol;
   }
 
   void update(const Vector<Real> &x, const Vector<Real> &s,
               const Vector<Real> &gold, const Vector<Real> &gnew,
               const Real snorm, const int iter) {
     // Update Secant Information
-    if (useSecantHessVec_ || useSecantPrecond_) {
+    if (useSecantHessVec_ || useSecantPrecond_)
       secant_->updateStorage(x,gnew,gold,s,snorm,iter);
-    }
   }
 
   /***************************************************************************/
@@ -173,7 +173,6 @@ public:
     applyHessian(*dual_,s,tol);
     dual_->scale(static_cast<Real>(0.5));
     dual_->plus(*g_);
-    //return dual_->dot(s.dual());
     return dual_->apply(s);
   }
 

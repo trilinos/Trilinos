@@ -59,40 +59,40 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> InitialBlockNumberFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> InitialBlockNumberFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
-#undef  SET_VALID_ENTRY
+  SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
+#undef SET_VALID_ENTRY
 
-    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
+  validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A");
 
-    return validParamList;
-  }
+  return validParamList;
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void InitialBlockNumberFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
-    Input(currentLevel, "A");
-  }
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void InitialBlockNumberFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
+  Input(currentLevel, "A");
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void InitialBlockNumberFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const {
-    FactoryMonitor m(*this, "Build", currentLevel);
-    const ParameterList  & pL = GetParameterList();
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void InitialBlockNumberFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
+  FactoryMonitor m(*this, "Build", currentLevel);
+  const ParameterList& pL = GetParameterList();
 
-    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-    LO blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
+  RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");
+  LO blocksize  = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
 
-    GetOStream(Statistics1) << "Generating interleaved blocking with "<<blocksize<<" equations"<<std::endl;
-    RCP<LocalOrdinalVector> BlockNumber = LocalOrdinalVectorFactory::Build(A->getRowMap(),false);
-    Teuchos::ArrayRCP<LO> bn_data = BlockNumber->getDataNonConst(0);
-    for(LO i=0; i<(LO)A->getRowMap()->getLocalNumElements();i++)
-      bn_data[i] = i % blocksize;
-    
-    Set(currentLevel,"BlockNumber",BlockNumber);
-  }
+  GetOStream(Statistics1) << "Generating interleaved blocking with " << blocksize << " equations" << std::endl;
+  RCP<LocalOrdinalVector> BlockNumber = LocalOrdinalVectorFactory::Build(A->getRowMap(), false);
+  Teuchos::ArrayRCP<LO> bn_data       = BlockNumber->getDataNonConst(0);
+  for (LO i = 0; i < (LO)A->getRowMap()->getLocalNumElements(); i++)
+    bn_data[i] = i % blocksize;
 
-} // namespace MueLu
+  Set(currentLevel, "BlockNumber", BlockNumber);
+}
 
-#endif // MUELU_INITIALBLOCKNUMBER_FACTORY_DEF_HPP
+}  // namespace MueLu
+
+#endif  // MUELU_INITIALBLOCKNUMBER_FACTORY_DEF_HPP

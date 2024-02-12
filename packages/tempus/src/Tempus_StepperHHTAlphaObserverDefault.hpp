@@ -16,7 +16,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperHHTAlpha.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default observer for StepperHHTAlpha.
@@ -27,41 +26,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperHHTAlphaObserverDefault
-  : virtual public Tempus::StepperHHTAlphaObserverBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperHHTAlphaObserverBase<Scalar> {
+ public:
   /// Constructor
-  StepperHHTAlphaObserverDefault(){}
+  StepperHHTAlphaObserverDefault() {}
 
   /// Destructor
-  virtual ~StepperHHTAlphaObserverDefault(){}
+  virtual ~StepperHHTAlphaObserverDefault() {}
 
   /// Observe HHTAlpha Stepper at end of takeStep.
   virtual void observe(
-    Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<const StepperHHTAlpha<Scalar> > /* stepper */,
-    const typename StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<const StepperHHTAlpha<Scalar> > /* stepper */,
+      const typename StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperHHTAlphaAppAction<Scalar>::BEGIN_STEP:
       case StepperHHTAlphaAppAction<Scalar>::BEFORE_SOLVE:
       case StepperHHTAlphaAppAction<Scalar>::AFTER_SOLVE:
-      case StepperHHTAlphaAppAction<Scalar>::END_STEP:
-      {
+      case StepperHHTAlphaAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperHHTAlphaObserverDefault_hpp
+#endif  // Tempus_StepperHHTAlphaObserverDefault_hpp

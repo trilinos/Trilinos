@@ -77,4 +77,4 @@ namespace Stratimikos {
 #endif
 #endif
 
-} // namespace Stratimikos
+}  // namespace Stratimikos

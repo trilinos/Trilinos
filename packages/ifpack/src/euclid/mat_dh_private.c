@@ -1166,7 +1166,7 @@ partition_and_distribute_metis_private (Mat_dh A, Mat_dh * Bout)
   /* broadcast number of rows to all processors */
   if (myid_dh == 0)
     m = A->m;
-  MPI_Bcast (&m, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast (&m, 1, MPI_INT, 0, MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
 
   /* broadcast number of nonzeros in each row to all processors */
   rowLengths = (int *) MALLOC_DH (m * sizeof (int));
@@ -1359,7 +1359,7 @@ partition_and_distribute_private (Mat_dh A, Mat_dh * Bout)
   /* broadcast number of rows to all processors */
   if (myid_dh == 0)
     m = A->m;
-  MPI_Bcast (&m, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast (&m, 1, MPI_INT, 0, MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
 
   /* broadcast number of nonzeros in each row to all processors */
   rowLengths = (int *) MALLOC_DH (m * sizeof (int));

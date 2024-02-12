@@ -46,18 +46,13 @@
 #ifndef MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_FWD_HPP
 #define MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class BlockedCoordinatesTransferFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlockedCoordinatesTransferFactory;
 }
 
 #ifndef MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_SHORT
 #define MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_FWD_HPP
+#endif  // MUELU_BLOCKEDCOORDINATESTRANSFERFACTORY_FWD_HPP

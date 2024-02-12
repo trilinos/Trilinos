@@ -194,8 +194,14 @@ void DisconnectGroup::store_node_sharing_info()
   unsigned numElems = m_bulk.num_elements(m_node);
   const stk::mesh::Entity* nodeElements = m_bulk.begin_elements(m_node);
 
+  const stk::mesh::Bucket* prevBucketPtr = nullptr;
+  stk::mesh::Part* part = nullptr;
   for(unsigned i = 0; i < numElems; i++) {
-    stk::mesh::Part* part = get_block_part_for_element(m_bulk, nodeElements[i]);
+    const stk::mesh::Bucket* bucketPtr = m_bulk.bucket_ptr(nodeElements[i]);
+    if (bucketPtr != prevBucketPtr) {
+      part = get_block_part_for_bucket(m_bulk, *bucketPtr);
+      prevBucketPtr = bucketPtr;
+    }
     int elemOwner = m_bulk.parallel_owner_rank(nodeElements[i]);
     insert_owner_info(part, elemOwner);
   }

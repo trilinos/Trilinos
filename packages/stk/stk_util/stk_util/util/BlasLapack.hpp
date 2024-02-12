@@ -98,6 +98,16 @@ void SIERRA_FORTRAN(dormqr)(const char* side, const char* tran, const int* m,
 void SIERRA_FORTRAN(dgecon)(const char* NORM,const int* N, const double* A, const int* LDA,
                             const double* ANORM, double* RCOND, double* WORK, int* IWORK, int* INFO );
 
+void SIERRA_FORTRAN(dgesvd)(const char* jobu, const char* jobvt, const int* m,
+                            const int* n, double* a, const int* lda, double* s,
+                            double* u, const int* ldu, double* vt, const int* ldvt,
+                            double* work, const int* lwork, int* info );   
+                            
+void SIERRA_FORTRAN(dgeqp3)(int* m, int* n, double* A, int* lda, int* jpvt, double* tau, double* work, int* lwork, int* info);
+
+#elif !defined(_MKL_LAPACK_H_)
+
+void SIERRA_FORTRAN(dgeqp3)(int* m, int* n, double* A, int* lda, int* jpvt, double* tau, double* work, int* lwork, int* info);
 
 #endif
 }

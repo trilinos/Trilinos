@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,13 +15,13 @@ int divide_procs(int              architecture, /* 0 => hypercube, d => d-dimens
                  int              ndims_tot,    /* total number of hypercube dimensions */
                  struct set_info *info_set,     /* data for all sets */
                  struct set_info *divide_set,   /* data for set being divided */
-                 int *            subsets,      /* subsets to be created */
+                 int             *subsets,      /* subsets to be created */
                  int              inert,        /* using inertial method? */
-                 int *            pndims_real,  /* actual ndims for this cut */
-                 int *            pnsets_real,  /* # sets created by this cut */
-                 int *            pstriping,    /* cut in single direction? */
-                 int *            cut_dirs,     /* direction of each cut if mesh */
-                 int *            mesh_dims,    /* size of full mesh */
+                 int             *pndims_real,  /* actual ndims for this cut */
+                 int             *pnsets_real,  /* # sets created by this cut */
+                 int             *pstriping,    /* cut in single direction? */
+                 int             *cut_dirs,     /* direction of each cut if mesh */
+                 int             *mesh_dims,    /* size of full mesh */
                  int              hops_special[][MAXSETS] /* hop matrix for nonstandard cases */
 )
 {
@@ -32,7 +32,6 @@ int divide_procs(int              architecture, /* 0 => hypercube, d => d-dimens
   int ndim_poss;       /* largest dimensionality possible */
   int idims;           /* true dimensionality of subgrid */
   int i;               /* loop counter */
-  int define_submeshes(), define_subcubes();
 
   if (architecture > 0) { /* Mesh, complicated case. */
     nsets_real = divide_set->span[0] * divide_set->span[1] * divide_set->span[2];
