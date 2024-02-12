@@ -103,9 +103,9 @@
 
       for(int i=0; i< mda.extent_int(0); ++i ) 
       {
-        for(int j=0; j< mda.extent_int(0); ++j )
-          for(int k=0; k< mda.extent_int(0); ++k )
-            for(int l=0; l< mda.extent_int(0); ++l ) 
+        for(int j=0; j< mda.extent_int(1); ++j )
+          for(int k=0; k< mda.extent_int(2); ++k )
+            for(int l=0; l< mda.extent_int(3); ++l ) 
             {
               std::ostringstream mistring;
               mistring << i << std::dec << " ";
