@@ -323,6 +323,9 @@ class TpetraCrsGraph
   /// \brief Access the local KokkosSparse::StaticCrsGraph data for device use
   local_graph_type getLocalGraphDevice() const;
 
+  //! Get offsets of the diagonal entries in the matrix.
+  void getLocalDiagOffsets(const Kokkos::View<size_t*, typename Node::device_type, Kokkos::MemoryUnmanaged>& offsets) const;
+
   //! Force the computation of global constants if we don't have them
   void computeGlobalConstants();
 

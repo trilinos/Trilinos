@@ -581,6 +581,14 @@ void TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented in " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 }
 
+//! Get a copy of the diagonal entries owned by this node, with local row indices.
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag,
+                     const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const {
+  throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented in " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
@@ -992,6 +1000,9 @@ class TpetraBlockCrsMatrix<Scalar, int, int, EpetraNode>
   //! Get a copy of the diagonal entries owned by this node, with local row indices.
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Teuchos::ArrayView<const size_t> &offsets) const {}
 
+  //! Get a copy of the diagonal entries owned by this node, with local row indices.
+  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const {}
+
   void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {}
 
   void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x) {}
@@ -1288,6 +1299,9 @@ class TpetraBlockCrsMatrix<Scalar, int, long long, EpetraNode>
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices.
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Teuchos::ArrayView<const size_t> &offsets) const {}
+
+  //! Get a copy of the diagonal entries owned by this node, with local row indices.
+  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const {}
 
   void replaceDiag(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const {}
 
