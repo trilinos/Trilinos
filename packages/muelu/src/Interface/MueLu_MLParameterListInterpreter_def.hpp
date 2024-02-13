@@ -85,7 +85,6 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 // #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
-// #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 

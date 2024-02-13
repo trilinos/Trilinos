@@ -106,7 +106,6 @@
 #include "MueLu_LowPrecisionFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -1802,7 +1801,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
                                    int /* levelID */, std::vector<keep_pair>& /* keeps */, RCP<Factory>& nullSpaceFactory) const {
   // Nullspace
-  MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
+  RCP<Factory> nullSpace = rcp(new NullspaceFactory());
 
   bool have_userNS = false;
   if (paramList.isParameter("Nullspace") && !paramList.get<RCP<MultiVector> >("Nullspace").is_null())

@@ -57,7 +57,7 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_NullspaceFactory.hpp"
 
 namespace MueLuTests {
 
@@ -332,7 +332,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeVectorB
   coarseLevel.Release("P", TentativePFact.get());  // release Ptent
   coarseLevel.Release("Nullspace", TentativePFact.get());
 
-  auto nspFact = Teuchos::rcp(new NullspaceFactory_kokkos());
+  auto nspFact = Teuchos::rcp(new NullspaceFactory());
   fineLevel.Request("Nullspace", nspFact.get());
 
   nspFact->Build(fineLevel);
