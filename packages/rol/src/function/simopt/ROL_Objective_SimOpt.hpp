@@ -84,7 +84,11 @@ public:
 
   /** \brief Compute value.
   */
-  virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+  virtual Real value_simopt( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) { return 0; }
+  virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol )
+  {
+    return value_simopt(u, z, tol);
+  }
 
   Real value( const Vector<Real> &x, Real &tol ) {
     const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
