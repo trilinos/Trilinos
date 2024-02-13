@@ -941,7 +941,7 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-IF(${PACKAGE_NAME}_ENABLE_Zoltan2)
+IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
 TRIBITS_ADD_TEST(
   tif_belos
   NAME BlockRelaxation_Zoltan2_belos
