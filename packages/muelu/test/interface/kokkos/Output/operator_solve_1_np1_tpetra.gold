@@ -9,7 +9,7 @@ smoother ->
  timer for apply = 0
 
 Level 1
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -43,7 +43,7 @@ smoother ->
  timer for apply = 0
 
 Level 2
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -77,7 +77,7 @@ smoother ->
  timer for apply = 0
 
 Level 3
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
