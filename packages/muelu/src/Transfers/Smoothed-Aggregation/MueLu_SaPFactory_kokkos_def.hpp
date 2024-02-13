@@ -46,11 +46,7 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#ifdef out
-#include "KokkosKernels_Handle.hpp"
-#include "KokkosSparse_spgemm.hpp"
-#include "KokkosSparse_spmv.hpp"
-#endif
+#include "Kokkos_ArithTraits.hpp"
 #include "MueLu_SaPFactory_kokkos_decl.hpp"
 
 #include <Xpetra_Matrix.hpp>
@@ -80,10 +76,14 @@ RCP<const ParameterList> SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
   SET_VALID_ENTRY("sa: enforce constraints");
   SET_VALID_ENTRY("tentative: calculate qr");
   SET_VALID_ENTRY("sa: max eigenvalue");
+  SET_VALID_ENTRY("sa: rowsumabs diagonal replacement tolerance");
+  SET_VALID_ENTRY("sa: rowsumabs diagonal replacement value");
+  SET_VALID_ENTRY("sa: rowsumabs replace single entry row with zero");
+  SET_VALID_ENTRY("sa: rowsumabs use automatic diagonal tolerance");
 #undef SET_VALID_ENTRY
 
-  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-  validParamList->set<RCP<const FactoryBase>>("P", Teuchos::null, "Tentative prolongator factory");
+  validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+  validParamList->set<RCP<const FactoryBase> >("P", Teuchos::null, "Tentative prolongator factory");
 
   // Make sure we don't recursively validate options for the matrixmatrix kernels
   ParameterList norecurse;
@@ -115,7 +115,12 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
   FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
-  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+  std::string levelIDs = toString(coarseLevel.GetLevelID());
+
+  const std::string prefix = "MueLu::SaPFactory(" + levelIDs + "): ";
+
+  typedef typename Teuchos::ScalarTraits<SC>::coordinateType Coordinate;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
 
   // Get default tentative prolongator factory
   // Getting it that way ensure that the same factory instance will be used for both SaPFactory_kokkos and NullspaceFactory.
@@ -127,8 +132,8 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   const ParameterList& pL = GetParameterList();
 
   // Level Get
-  RCP<Matrix> A     = Get<RCP<Matrix>>(fineLevel, "A");
-  RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", initialPFact.get());
+  RCP<Matrix> A     = Get<RCP<Matrix> >(fineLevel, "A");
+  RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix> >("P", initialPFact.get());
   RCP<Matrix> finalP;
   // If Tentative facctory bailed out (e.g., number of global aggregates is 0), then SaPFactory bails
   //  This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
@@ -140,7 +145,6 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
 
   if (restrictionMode_) {
     SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-
     A = Utilities::Transpose(*A, true);  // build transpose of A explicitly
   }
 
@@ -155,40 +159,52 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   if (coarseLevel.IsAvailable("AP reuse data", this)) {
     GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
-    APparams = coarseLevel.Get<RCP<ParameterList>>("AP reuse data", this);
+    APparams = coarseLevel.Get<RCP<ParameterList> >("AP reuse data", this);
 
     if (APparams->isParameter("graph"))
-      finalP = APparams->get<RCP<Matrix>>("graph");
+      finalP = APparams->get<RCP<Matrix> >("graph");
   }
   // By default, we don't need global constants for SaP
   APparams->set("compute global constants: temporaries", APparams->get("compute global constants: temporaries", false));
   APparams->set("compute global constants", APparams->get("compute global constants", false));
 
-  const SC dampingFactor        = as<SC>(pL.get<double>("sa: damping factor"));
-  const LO maxEigenIterations   = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
-  const bool estimateMaxEigen   = pL.get<bool>("sa: calculate eigenvalue estimate");
-  const bool useAbsValueRowSum  = pL.get<bool>("sa: use rowsumabs diagonal scaling");
-  const bool doQRStep           = pL.get<bool>("tentative: calculate qr");
-  const bool enforceConstraints = pL.get<bool>("sa: enforce constraints");
-  const SC userDefinedMaxEigen  = as<SC>(pL.get<double>("sa: max eigenvalue"));
+  const SC dampingFactor                   = as<SC>(pL.get<double>("sa: damping factor"));
+  const LO maxEigenIterations              = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
+  const bool estimateMaxEigen              = pL.get<bool>("sa: calculate eigenvalue estimate");
+  const bool useAbsValueRowSum             = pL.get<bool>("sa: use rowsumabs diagonal scaling");
+  const bool doQRStep                      = pL.get<bool>("tentative: calculate qr");
+  const bool enforceConstraints            = pL.get<bool>("sa: enforce constraints");
+  const MT userDefinedMaxEigen             = as<MT>(pL.get<double>("sa: max eigenvalue"));
+  double dTol                              = pL.get<double>("sa: rowsumabs diagonal replacement tolerance");
+  const MT diagonalReplacementTolerance    = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<MT>::eps() * 100 : as<MT>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));
+  const SC diagonalReplacementValue        = as<SC>(pL.get<double>("sa: rowsumabs diagonal replacement value"));
+  const bool replaceSingleEntryRowWithZero = pL.get<bool>("sa: rowsumabs replace single entry row with zero");
+  const bool useAutomaticDiagTol           = pL.get<bool>("sa: rowsumabs use automatic diagonal tolerance");
 
   // Sanity checking
   TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && enforceConstraints, Exceptions::RuntimeError,
                              "MueLu::TentativePFactory::MakeTentative: cannot use 'enforce constraints' and 'calculate qr' at the same time");
 
   if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
-    SC lambdaMax;
-    RCP<Vector> invDiag;
-    if (Teuchos::ScalarTraits<SC>::real(userDefinedMaxEigen) == Teuchos::ScalarTraits<SC>::real(-1.0)) {
+    Scalar lambdaMax;
+    Teuchos::RCP<Vector> invDiag;
+    if (userDefinedMaxEigen == -1.) {
       SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
       lambdaMax = A->GetMaxEigenvalueEstimate();
       if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
         GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
-        Magnitude stopTol = 1e-4;
-        invDiag           = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps() * 100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
-        if (useAbsValueRowSum)
+        Coordinate stopTol = 1e-4;
+        if (useAbsValueRowSum) {
+          const bool returnReciprocal = true;
+          invDiag                     = Utilities::GetLumpedMatrixDiagonal(*A, returnReciprocal,
+                                                                           diagonalReplacementTolerance,
+                                                                           diagonalReplacementValue,
+                                                                           replaceSingleEntryRowWithZero,
+                                                                           useAutomaticDiagTol);
+          TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
+                                     "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
           lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
-        else
+        } else
           lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
         A->SetMaxEigenvalueEstimate(lambdaMax);
       } else {
@@ -198,17 +214,23 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
       lambdaMax = userDefinedMaxEigen;
       A->SetMaxEigenvalueEstimate(lambdaMax);
     }
-    GetOStream(Statistics0) << "Prolongator damping factor = " << dampingFactor / lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
+    GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor / lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
 
     {
       SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-      {
-        SubFactoryMonitor m3(*this, "Diagonal Extraction", coarseLevel);
-        if (useAbsValueRowSum)
-          GetOStream(Runtime0) << "Using rowSumAbs diagonal" << std::endl;
-        if (invDiag == Teuchos::null)
-          invDiag = Utilities::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps() * 100, Teuchos::ScalarTraits<SC>::zero(), useAbsValueRowSum);
+      if (!useAbsValueRowSum)
+        invDiag = Utilities::GetMatrixDiagonalInverse(*A);  // default
+      else if (invDiag == Teuchos::null) {
+        GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
+        const bool returnReciprocal = true;
+        invDiag                     = Utilities::GetLumpedMatrixDiagonal(*A, returnReciprocal,
+                                                                         diagonalReplacementTolerance,
+                                                                         diagonalReplacementValue,
+                                                                         replaceSingleEntryRowWithZero,
+                                                                         useAutomaticDiagTol);
+        TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
       }
+
       SC omega = dampingFactor / lambdaMax;
       TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
@@ -216,7 +238,12 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
         SubFactoryMonitor m3(*this, "Xpetra::IteratorOps::Jacobi", coarseLevel);
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
-        if (enforceConstraints) SatisfyPConstraints(A, finalP);
+        if (enforceConstraints) {
+          if (A->GetFixedBlockSize() == 1)
+            optimalSatisfyPConstraintsForScalarPDEs(finalP);
+          else
+            SatisfyPConstraints(A, finalP);
+        }
       }
     }
 
@@ -225,6 +252,7 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   }
 
   // Level Set
+  RCP<Matrix> R;
   if (!restrictionMode_) {
     // prolongation factory is in prolongation mode
     if (!finalP.is_null()) {
@@ -234,30 +262,37 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
     }
     Set(coarseLevel, "P", finalP);
 
+    APparams->set("graph", finalP);
+    Set(coarseLevel, "AP reuse data", APparams);
+
     // NOTE: EXPERIMENTAL
     if (Ptent->IsView("stridedMaps"))
       finalP->CreateView("stridedMaps", Ptent);
 
   } else {
     // prolongation factory is in restriction mode
-    RCP<Matrix> R = Utilities::Transpose(*finalP, true);
-    Set(coarseLevel, "R", R);
-    if (!R.is_null()) {
-      std::ostringstream oss;
-      oss << "R_" << coarseLevel.GetLevelID();
-      R->setObjectLabel(oss.str());
+    {
+      SubFactoryMonitor m2(*this, "Transpose P", coarseLevel);
+      R = Utilities::Transpose(*finalP, true);
+      if (!R.is_null()) {
+        std::ostringstream oss;
+        oss << "R_" << coarseLevel.GetLevelID();
+        R->setObjectLabel(oss.str());
+      }
     }
+
+    Set(coarseLevel, "R", R);
 
     // NOTE: EXPERIMENTAL
     if (Ptent->IsView("stridedMaps"))
-      R->CreateView("stridedMaps", Ptent, true);
+      R->CreateView("stridedMaps", Ptent, true /*transposeA*/);
   }
 
   if (IsPrint(Statistics2)) {
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
     params->set("printCommInfo", true);
-    GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
+    GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo((!restrictionMode_ ? *finalP : *R), (!restrictionMode_ ? "P" : "R"), params);
   }
 
 }  // Build()
@@ -284,8 +319,9 @@ struct constraintKernel {
   using SC          = Scalar;
   using LO          = typename local_matrix_type::non_const_ordinal_type;
   using Device      = typename local_matrix_type::device_type;
-  const Scalar zero = Kokkos::ArithTraits<SC>::zero();
-  const Scalar one  = Kokkos::ArithTraits<SC>::one();
+  using KAT         = Kokkos::ArithTraits<SC>;
+  const Scalar zero = KAT::zero();
+  const Scalar one  = KAT::one();
   LO nPDEs;
   local_matrix_type localP;
   Kokkos::View<SC**, Device> ConstraintViolationSum;
@@ -314,14 +350,14 @@ struct constraintKernel {
 
       for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) {
         Rsum(rowIdx, entryIdx % nPDEs) += values(entryIdx);
-        if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) < Kokkos::ArithTraits<SC>::real(zero)) {
+        if (KAT::real(values(entryIdx)) < KAT::real(zero)) {
           ConstraintViolationSum(rowIdx, entryIdx % nPDEs) += values(entryIdx);
           values(entryIdx) = zero;
         } else {
-          if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) != Kokkos::ArithTraits<SC>::real(zero))
+          if (KAT::real(values(entryIdx)) != KAT::real(zero))
             nPositive(rowIdx, entryIdx % nPDEs) = nPositive(rowIdx, entryIdx % nPDEs) + 1;
 
-          if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(1.00001)) {
+          if (KAT::real(values(entryIdx)) > KAT::real(1.00001)) {
             ConstraintViolationSum(rowIdx, entryIdx % nPDEs) += (values(entryIdx) - one);
             values(entryIdx) = one;
           }
@@ -333,22 +369,22 @@ struct constraintKernel {
       // take into account any row sum that violates the contraints
 
       for (size_t k = 0; k < (size_t)nPDEs; k++) {
-        if (Kokkos::ArithTraits<SC>::real(Rsum(rowIdx, k)) < Kokkos::ArithTraits<SC>::magnitude(zero)) {
+        if (KAT::real(Rsum(rowIdx, k)) < KAT::magnitude(zero)) {
           ConstraintViolationSum(rowIdx, k) = ConstraintViolationSum(rowIdx, k) - Rsum(rowIdx, k);  // rstumin
-        } else if (Kokkos::ArithTraits<SC>::real(Rsum(rowIdx, k)) > Kokkos::ArithTraits<SC>::magnitude(1.00001)) {
+        } else if (KAT::real(Rsum(rowIdx, k)) > KAT::magnitude(1.00001)) {
           ConstraintViolationSum(rowIdx, k) = ConstraintViolationSum(rowIdx, k) + (one - Rsum(rowIdx, k));  // rstumin
         }
       }
 
       // check if row need modification
       for (size_t k = 0; k < (size_t)nPDEs; k++) {
-        if (Kokkos::ArithTraits<SC>::magnitude(ConstraintViolationSum(rowIdx, k)) != Kokkos::ArithTraits<SC>::magnitude(zero))
+        if (KAT::magnitude(ConstraintViolationSum(rowIdx, k)) != KAT::magnitude(zero))
           checkRow = true;
       }
       // modify row
       if (checkRow) {
         for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) {
-          if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(zero)) {
+          if (KAT::real(values(entryIdx)) > KAT::real(zero)) {
             values(entryIdx) = values(entryIdx) +
                                (ConstraintViolationSum(rowIdx, entryIdx % nPDEs) / (Scalar(nPositive(rowIdx, entryIdx % nPDEs)) != zero ? Scalar(nPositive(rowIdx, entryIdx % nPDEs)) : one));
           }
@@ -368,8 +404,8 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
   using LO          = typename local_matrix_type::non_const_ordinal_type;
   using Device      = typename local_matrix_type::device_type;
   using KAT         = Kokkos::ArithTraits<SC>;
-  const Scalar zero = Kokkos::ArithTraits<SC>::zero();
-  const Scalar one  = Kokkos::ArithTraits<SC>::one();
+  const Scalar zero = KAT::zero();
+  const Scalar one  = KAT::one();
   LO nPDEs;
   local_matrix_type localP;
   Kokkos::View<SC**, Device> origSorted;
