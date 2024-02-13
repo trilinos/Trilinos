@@ -113,6 +113,8 @@ const WorksetNeeds & WorksetContainer::lookupNeeds(const std::string & eBlock) c
 Teuchos::RCP<std::vector<Workset> >
 WorksetContainer::getWorksets(const WorksetDescriptor & wd)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::WorksetContainer::getWorksets()",pwkst_con_get_worksets);
+
    Teuchos::RCP<std::vector<Workset> > worksetVector;
    WorksetMap::iterator itr = worksets_.find(wd);
    if(itr==worksets_.end()) {
@@ -143,6 +145,8 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
 Teuchos::RCP<std::map<unsigned,Workset> >
 WorksetContainer::getSideWorksets(const WorksetDescriptor & desc)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::WorksetContainer::getSideWorksets()",pwkst_con_get_side_worksets);
+
    Teuchos::RCP<std::map<unsigned,Workset> > worksetMap;
 
    // this is the key for the workset map
@@ -205,6 +209,8 @@ addBasis(const std::string & type,int order,const std::string & rep_field)
 void WorksetContainer::
 applyOrientations(const Teuchos::RCP<const panzer::GlobalIndexer> & ugi)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::WorksetContainer::applyOrientations(ugi)",pwkst_con_apply_orts);
+
   // this gurantees orientations won't accidently be applied twice.
   TEUCHOS_ASSERT(globalIndexer_==Teuchos::null);
 
@@ -256,6 +262,8 @@ void WorksetContainer::
 applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) const
 {
   using Teuchos::RCP;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::WorksetContainer::applyOrientations(eBlock,worksets)",pwkst_con_apply_orts_eb_w);
 
   /////////////////////////////////
   // this is for volume worksets //
@@ -377,6 +385,8 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
 {
   using Teuchos::RCP;
   
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::WorksetContainer::applyOrientations(wd,worksets)",pwkst_con_apply_orts_wd_wksts);
+
   /////////////////////////////////
   // this is for side worksets //
   /////////////////////////////////
