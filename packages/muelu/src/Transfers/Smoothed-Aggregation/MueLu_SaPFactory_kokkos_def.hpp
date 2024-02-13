@@ -80,6 +80,7 @@ RCP<const ParameterList> SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
   SET_VALID_ENTRY("sa: rowsumabs diagonal replacement value");
   SET_VALID_ENTRY("sa: rowsumabs replace single entry row with zero");
   SET_VALID_ENTRY("sa: rowsumabs use automatic diagonal tolerance");
+  SET_VALID_ENTRY("use kokkos refactor");
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -239,10 +240,17 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
         if (enforceConstraints) {
-          if (A->GetFixedBlockSize() == 1)
-            optimalSatisfyPConstraintsForScalarPDEs(finalP);
-          else
-            SatisfyPConstraints(A, finalP);
+          if (!pL.get<bool>("use kokkos refactor")) {
+            if (A->GetFixedBlockSize() == 1)
+              optimalSatisfyPConstraintsForScalarPDEsNonKokkos(finalP);
+            else
+              SatisfyPConstraintsNonKokkos(A, finalP);
+          } else {
+            if (A->GetFixedBlockSize() == 1)
+              optimalSatisfyPConstraintsForScalarPDEs(finalP);
+            else
+              SatisfyPConstraints(A, finalP);
+          }
         }
       }
     }
@@ -312,6 +320,405 @@ void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
 // tentative P). After doing the modification to a row, we need to check
 // again the entire row to make sure that the modified row does not violate
 // the constraints.
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraintsNonKokkos(const RCP<Matrix> A, RCP<Matrix>& P) const {
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+  LO nPDEs          = A->GetFixedBlockSize();
+  Teuchos::ArrayRCP<Scalar> ConstraintViolationSum(nPDEs);
+  Teuchos::ArrayRCP<Scalar> Rsum(nPDEs);
+  Teuchos::ArrayRCP<size_t> nPositive(nPDEs);
+  for (size_t k = 0; k < (size_t)nPDEs; k++) ConstraintViolationSum[k] = zero;
+  for (size_t k = 0; k < (size_t)nPDEs; k++) Rsum[k] = zero;
+  for (size_t k = 0; k < (size_t)nPDEs; k++) nPositive[k] = 0;
+
+  for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar> vals1;
+    Teuchos::ArrayView<Scalar> vals;
+    P->getLocalRowView((LO)i, indices, vals1);
+    size_t nnz = indices.size();
+    if (nnz == 0) continue;
+
+    vals = ArrayView<Scalar>(const_cast<SC*>(vals1.getRawPtr()), nnz);
+
+    bool checkRow = true;
+
+    while (checkRow) {
+      // check constraints and compute the row sum
+
+      for (LO j = 0; j < indices.size(); j++) {
+        Rsum[j % nPDEs] += vals[j];
+        if (Teuchos::ScalarTraits<SC>::real(vals[j]) < Teuchos::ScalarTraits<SC>::real(zero)) {
+          ConstraintViolationSum[j % nPDEs] += vals[j];
+          vals[j] = zero;
+        } else {
+          if (Teuchos::ScalarTraits<SC>::real(vals[j]) != Teuchos::ScalarTraits<SC>::real(zero))
+            (nPositive[j % nPDEs])++;
+
+          if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(1.00001)) {
+            ConstraintViolationSum[j % nPDEs] += (vals[j] - one);
+            vals[j] = one;
+          }
+        }
+      }
+
+      checkRow = false;
+
+      // take into account any row sum that violates the contraints
+
+      for (size_t k = 0; k < (size_t)nPDEs; k++) {
+        if (Teuchos::ScalarTraits<SC>::real(Rsum[k]) < Teuchos::ScalarTraits<SC>::magnitude(zero)) {
+          ConstraintViolationSum[k] += (-Rsum[k]);  // rstumin
+        } else if (Teuchos::ScalarTraits<SC>::real(Rsum[k]) > Teuchos::ScalarTraits<SC>::magnitude(1.00001)) {
+          ConstraintViolationSum[k] += (one - Rsum[k]);  // rstumin
+        }
+      }
+
+      // check if row need modification
+      for (size_t k = 0; k < (size_t)nPDEs; k++) {
+        if (Teuchos::ScalarTraits<SC>::magnitude(ConstraintViolationSum[k]) != Teuchos::ScalarTraits<SC>::magnitude(zero))
+          checkRow = true;
+      }
+      // modify row
+      if (checkRow) {
+        for (LO j = 0; j < indices.size(); j++) {
+          if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(zero)) {
+            vals[j] += (ConstraintViolationSum[j % nPDEs] / (as<Scalar>(nPositive[j % nPDEs])));
+          }
+        }
+        for (size_t k = 0; k < (size_t)nPDEs; k++) ConstraintViolationSum[k] = zero;
+      }
+      for (size_t k = 0; k < (size_t)nPDEs; k++) Rsum[k] = zero;
+      for (size_t k = 0; k < (size_t)nPDEs; k++) nPositive[k] = 0;
+    }  // while (checkRow) ...
+  }    // for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNumNodeElements()); i++) ...
+}  // SatsifyPConstraints()
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::optimalSatisfyPConstraintsForScalarPDEsNonKokkos(RCP<Matrix>& P) const {
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+
+  LocalOrdinal maxEntriesPerRow = 100;  // increased later if needed
+  Teuchos::ArrayRCP<Scalar> scalarData(3 * maxEntriesPerRow);
+  bool hasFeasible;
+
+  for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar> vals1;
+    Teuchos::ArrayView<Scalar> vals;
+    P->getLocalRowView((LocalOrdinal)i, indices, vals1);
+    size_t nnz = indices.size();
+    if (nnz != 0) {
+      vals              = ArrayView<Scalar>(const_cast<SC*>(vals1.getRawPtr()), nnz);
+      Scalar rsumTarget = zero;
+      for (size_t j = 0; j < nnz; j++) rsumTarget += vals[j];
+
+      if (nnz > as<size_t>(maxEntriesPerRow)) {
+        maxEntriesPerRow = nnz * 3;
+        scalarData.resize(3 * maxEntriesPerRow);
+      }
+      hasFeasible = constrainRow(vals.getRawPtr(), as<LocalOrdinal>(nnz), zero, one, rsumTarget, vals.getRawPtr(), scalarData.getRawPtr());
+
+      if (!hasFeasible) {  // just set all entries to the same value giving a row sum of 1
+        for (size_t j = 0; j < nnz; j++) vals[j] = one / as<Scalar>(nnz);
+      }
+    }
+
+  }  // for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNumNodeElements()); i++) ...
+}  // SatsifyPConstraints()
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::constrainRow(Scalar* orig, LocalOrdinal nEntries, Scalar leftBound, Scalar rghtBound, Scalar rsumTarget, Scalar* fixedUnsorted, Scalar* scalarData) const {
+  /*
+     Input
+       orig          data that should be adjusted to satisfy bound constraints and
+                     row sum constraint. orig is not modified by this function.
+
+       nEntries      length or 'orig'
+
+       leftBound,    define bound constraints for the results.
+       rghtBound
+
+       rsumTarget    defines an equality constraint for the row sum
+
+       fixedUnsorted  on output, if a feasible solutuion exists then
+                      || orig - fixedUnsorted || = min  when also
+                      leftBound <= fixedUnsorted[i] <= rghtBound for all i
+                      and  sum(fixedUnsorted) = rsumTarget.
+
+                      Note: it is possible to use the same pointer for
+                      fixedUnsorted and orig. In this case, orig gets
+                      overwritten with the new constraint satisfying values.
+
+        scalarData    a work array that should be 3x nEntries.
+
+     On return constrain() indicates whether or not a feasible solution exists.
+  */
+
+  /*
+    Given a sequence of numbers    o1  ... on, fix these so that they are as
+    close as possible to the original but satisfy bound constraints and also
+    have the same row sum as the oi's. If we know who is going to lie on a
+    bound, then the "best" answer (i.e., || o - f ||_2 = min)  perturbs
+    each element that doesn't lie on a bound by the same amount.
+
+    We can represent the oi's by considering scattered points on a number line
+
+                   |                                                   |
+                   |                                                   |
+     o      o    o |  o        o     o           o       o     o       |o       o
+                   |                                                   |
+
+                   \____/                                              \____/
+                   <----                                               <----
+                   delta                                               delta
+
+    Bounds are shown by vertical lines. The fi's must lie within the bounds, so
+    the 3 leftmost points must be shifted to the right and the 2 rightmost must
+    be shifted to the left. If these fi points are all shifted to the bounds
+    while the others remain in the same location, the row sum constraint is
+    likely not satisfied and so more shifting is necessary.  In the figure, the f
+    rowsum is too large and so there must be more shifting to the left.
+
+    To minimize || o - f ||_2, we basically shift all "interiors" by the same
+    amount, denoted delta. The only trick is that some points near bounds are
+    still affected by the bounds and so these points might be shifted more or less
+    than delta. In the example,t he 3 rightmost points are shifted in the opposite
+    direction as delta to the bound. The 4th point is shifted by something less
+    than delta so it does not violate the lower bound. The rightmost point is
+    shifted to the bound by some amount larger than delta. However, the 2nd point
+    is shifted by delta (i.e., it lies inside the two bounds).
+
+    If we know delta, we can figure out everything. If we know which points
+    are special (not shifted by delta), we can also figure out everything.
+    The problem is these two things (delta and the special points) are
+    inter-connected. An algorithm for computing follows.
+
+    1) move exterior points to the bounds and compute how much the row sum is off
+       (rowSumDeviation). We assume now that the new row sum is high, so interior
+       points must be shifted left.
+
+    2) Mark closest point just left of the leftmost bound, closestToLeftBound,
+       and compute its distance to the leftmost bound.  Mark closest point to the
+       left of the rightmost bound, closestToRghtBound, and compute its distance to
+       right bound. There are two cases to consider.
+
+    3) Case 1: closestToLeftBound is closer than closestToRghtBound.
+       Assume that shifting by delta does not move closestToLeftBound past the
+       left bound. This means that it will be shifted by delta. However,
+       closestToRghtBound will be shifted by more than delta.  So the total
+       number of points shifted by delta (|interiorToBounds|) includes
+       closestToLeftBound up to and including the point just to the left of
+       closestToRghtBound. So
+
+                    delta = rowSumDeviation/ |interiorToBounds| .
+
+       Recall that rowSumDeviation already accounts for the non-delta shift of
+       of closestToRightBound.  Now check whether our assumption is valid.
+
+       If delta <= closestToLeftBoundDist, assumption is true so delta can be
+       applied to interiorToBounds ... and we are done.
+       Else assumption is false. Shift closestToLeftBound to the left bound.
+       Update rowSumDeviation, interiorToBounds, and identify new
+       closestToLeftBound. Repeat step 3).
+
+       Case 2: closestToRghtBound is closer than closestToLeftBound.
+       Assume that shifting by delta does not move closestToRghtBound past right
+       bound. This means that it must be shifted by more than delta to right
+       bound.  So the total number of points shifted by delta again includes
+       closestToLeftBound up to and including the point just to the left of
+       closestToRghtBound. So again compute
+
+                    delta = rowSumDeviation/ |interiorToBounds| .
+
+       If delta <= closestToRghtBoundDist, assumption is true so delta is
+       can be applied to interiorToBounds ... and we are done
+       Else  assumption is false. Put closestToRghtBound in the
+       interiorToBounds set. Remove it's contribution to rowSumDeviation,
+       identify new closestToRghtBound. Repeat step 3)
+
+
+    To implement, sort the oi's so things like closestToLeftBound is just index
+    into sorted array.  Updaing closestToLeftBound or closestToRghtBound requires
+    increment by 1.  |interiorToBounds|= closestToRghtBound -  closestToLeftBound
+    To handle the case when the rowsum is low (requiring right interior shifts),
+    just flip the signs on data and use the left-shift code (and then flip back
+    before exiting function.
+  */
+  bool hasFeasibleSol;
+  Scalar notFlippedLeftBound, notFlippedRghtBound, aBigNumber, *origSorted;
+  Scalar rowSumDeviation, temp, *fixedSorted, delta;
+  Scalar closestToLeftBoundDist, closestToRghtBoundDist;
+  LocalOrdinal closestToLeftBound, closestToRghtBound;
+  LocalOrdinal* inds;
+  bool flipped;
+
+  notFlippedLeftBound = leftBound;
+  notFlippedRghtBound = rghtBound;
+
+  if ((Teuchos::ScalarTraits<SC>::real(rsumTarget) >= Teuchos::ScalarTraits<SC>::real(leftBound * as<Scalar>(nEntries))) &&
+      (Teuchos::ScalarTraits<SC>::real(rsumTarget) <= Teuchos::ScalarTraits<SC>::real(rghtBound * as<Scalar>(nEntries))))
+    hasFeasibleSol = true;
+  else {
+    hasFeasibleSol = false;
+    return hasFeasibleSol;
+  }
+  flipped = false;
+  // compute aBigNumber to handle some corner cases where we need
+  // something large so that an if statement will be false
+  aBigNumber = Teuchos::ScalarTraits<SC>::zero();
+  for (LocalOrdinal i = 0; i < nEntries; i++) {
+    if (Teuchos::ScalarTraits<SC>::magnitude(orig[i]) > Teuchos::ScalarTraits<SC>::magnitude(aBigNumber))
+      aBigNumber = Teuchos::ScalarTraits<SC>::magnitude(orig[i]);
+  }
+  aBigNumber = aBigNumber + (Teuchos::ScalarTraits<SC>::magnitude(leftBound) + Teuchos::ScalarTraits<SC>::magnitude(rghtBound)) * as<Scalar>(100.0);
+
+  origSorted  = &scalarData[0];
+  fixedSorted = &(scalarData[nEntries]);
+  inds        = (LocalOrdinal*)&(scalarData[2 * nEntries]);
+
+  for (LocalOrdinal i = 0; i < nEntries; i++) inds[i] = i;
+  for (LocalOrdinal i = 0; i < nEntries; i++) origSorted[i] = orig[i]; /* orig no longer used */
+
+  // sort so that  orig[inds] is sorted.
+  std::sort(inds, inds + nEntries,
+            [origSorted](LocalOrdinal leftIndex, LocalOrdinal rightIndex) { return Teuchos::ScalarTraits<SC>::real(origSorted[leftIndex]) < Teuchos::ScalarTraits<SC>::real(origSorted[rightIndex]); });
+
+  for (LocalOrdinal i = 0; i < nEntries; i++) origSorted[i] = orig[inds[i]];
+  // find entry in origSorted just to the right of the leftBound
+  closestToLeftBound = 0;
+  while ((closestToLeftBound < nEntries) && (Teuchos::ScalarTraits<SC>::real(origSorted[closestToLeftBound]) <= Teuchos::ScalarTraits<SC>::real(leftBound))) closestToLeftBound++;
+
+  // find entry in origSorted just to the right of the rghtBound
+  closestToRghtBound = closestToLeftBound;
+  while ((closestToRghtBound < nEntries) && (Teuchos::ScalarTraits<SC>::real(origSorted[closestToRghtBound]) <= Teuchos::ScalarTraits<SC>::real(rghtBound))) closestToRghtBound++;
+
+  // compute distance between closestToLeftBound and the left bound and the
+  // distance between closestToRghtBound and the right bound.
+
+  closestToLeftBoundDist = origSorted[closestToLeftBound] - leftBound;
+  if (closestToRghtBound == nEntries)
+    closestToRghtBoundDist = aBigNumber;
+  else
+    closestToRghtBoundDist = origSorted[closestToRghtBound] - rghtBound;
+
+  // compute how far the rowSum is off from the target row sum taking into account
+  // numbers that have been shifted to satisfy bound constraint
+
+  rowSumDeviation = leftBound * as<Scalar>(closestToLeftBound) + as<Scalar>((nEntries - closestToRghtBound)) * rghtBound - rsumTarget;
+  for (LocalOrdinal i = closestToLeftBound; i < closestToRghtBound; i++) rowSumDeviation += origSorted[i];
+
+  // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
+  // is not the case, flip the signs of everything so that rowSumDeviation is now positive.
+  // Later we will flip the data back to its original form.
+  if (Teuchos::ScalarTraits<SC>::real(rowSumDeviation) < Teuchos::ScalarTraits<SC>::real(Teuchos::ScalarTraits<SC>::zero())) {
+    flipped   = true;
+    temp      = leftBound;
+    leftBound = -rghtBound;
+    rghtBound = temp;
+
+    /* flip sign of origSorted and reverse ordering so that the negative version is sorted */
+
+    if ((nEntries % 2) == 1) origSorted[(nEntries / 2)] = -origSorted[(nEntries / 2)];
+    for (LocalOrdinal i = 0; i < nEntries / 2; i++) {
+      temp                         = origSorted[i];
+      origSorted[i]                = -origSorted[nEntries - 1 - i];
+      origSorted[nEntries - i - 1] = -temp;
+    }
+
+    /* reverse bounds */
+
+    LocalOrdinal itemp     = closestToLeftBound;
+    closestToLeftBound     = nEntries - closestToRghtBound;
+    closestToRghtBound     = nEntries - itemp;
+    closestToLeftBoundDist = origSorted[closestToLeftBound] - leftBound;
+    if (closestToRghtBound == nEntries)
+      closestToRghtBoundDist = aBigNumber;
+    else
+      closestToRghtBoundDist = origSorted[closestToRghtBound] - rghtBound;
+
+    rowSumDeviation = -rowSumDeviation;
+  }
+
+  // initial fixedSorted so bounds are satisfied and interiors correspond to origSorted
+
+  for (LocalOrdinal i = 0; i < closestToLeftBound; i++) fixedSorted[i] = leftBound;
+  for (LocalOrdinal i = closestToLeftBound; i < closestToRghtBound; i++) fixedSorted[i] = origSorted[i];
+  for (LocalOrdinal i = closestToRghtBound; i < nEntries; i++) fixedSorted[i] = rghtBound;
+
+  while ((Teuchos::ScalarTraits<SC>::magnitude(rowSumDeviation) > Teuchos::ScalarTraits<SC>::magnitude(as<Scalar>(1.e-10) * rsumTarget))) {  // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
+    if (closestToRghtBound != closestToLeftBound)
+      delta = rowSumDeviation / as<Scalar>(closestToRghtBound - closestToLeftBound);
+    else
+      delta = aBigNumber;
+
+    if (Teuchos::ScalarTraits<SC>::magnitude(closestToLeftBoundDist) <= Teuchos::ScalarTraits<SC>::magnitude(closestToRghtBoundDist)) {
+      if (Teuchos::ScalarTraits<SC>::magnitude(delta) <= Teuchos::ScalarTraits<SC>::magnitude(closestToLeftBoundDist)) {
+        rowSumDeviation = Teuchos::ScalarTraits<SC>::zero();
+        for (LocalOrdinal i = closestToLeftBound; i < closestToRghtBound; i++) fixedSorted[i] = origSorted[i] - delta;
+      } else {
+        rowSumDeviation                 = rowSumDeviation - closestToLeftBoundDist;
+        fixedSorted[closestToLeftBound] = leftBound;
+        closestToLeftBound++;
+        if (closestToLeftBound < nEntries)
+          closestToLeftBoundDist = origSorted[closestToLeftBound] - leftBound;
+        else
+          closestToLeftBoundDist = aBigNumber;
+      }
+    } else {
+      if (Teuchos::ScalarTraits<SC>::magnitude(delta) <= Teuchos::ScalarTraits<SC>::magnitude(closestToRghtBoundDist)) {
+        rowSumDeviation = 0;
+        for (LocalOrdinal i = closestToLeftBound; i < closestToRghtBound; i++) fixedSorted[i] = origSorted[i] - delta;
+      } else {
+        rowSumDeviation = rowSumDeviation + closestToRghtBoundDist;
+        //        if (closestToRghtBound < nEntries) {
+        fixedSorted[closestToRghtBound] = origSorted[closestToRghtBound];
+        closestToRghtBound++;
+        //       }
+        if (closestToRghtBound >= nEntries)
+          closestToRghtBoundDist = aBigNumber;
+        else
+          closestToRghtBoundDist = origSorted[closestToRghtBound] - rghtBound;
+      }
+    }
+  }
+
+  if (flipped) {
+    /* flip sign of fixedSorted and reverse ordering so that the positve version is sorted */
+
+    if ((nEntries % 2) == 1) fixedSorted[(nEntries / 2)] = -fixedSorted[(nEntries / 2)];
+    for (LocalOrdinal i = 0; i < nEntries / 2; i++) {
+      temp                          = fixedSorted[i];
+      fixedSorted[i]                = -fixedSorted[nEntries - 1 - i];
+      fixedSorted[nEntries - i - 1] = -temp;
+    }
+  }
+  for (LocalOrdinal i = 0; i < nEntries; i++) fixedUnsorted[inds[i]] = fixedSorted[i];
+
+  /* check that no constraints are violated */
+
+  bool lowerViolation = false;
+  bool upperViolation = false;
+  bool sumViolation   = false;
+  using TST           = Teuchos::ScalarTraits<SC>;
+  temp                = TST::zero();
+  for (LocalOrdinal i = 0; i < nEntries; i++) {
+    if (TST::real(fixedUnsorted[i]) < TST::real(notFlippedLeftBound)) lowerViolation = true;
+    if (TST::real(fixedUnsorted[i]) > TST::real(notFlippedRghtBound)) upperViolation = true;
+    temp += fixedUnsorted[i];
+  }
+  SC tol = as<Scalar>(std::max(1.0e-8, as<double>(100 * TST::eps())));
+  if (TST::magnitude(temp - rsumTarget) > TST::magnitude(tol * rsumTarget)) sumViolation = true;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(lowerViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a lower bound violation??? ");
+  TEUCHOS_TEST_FOR_EXCEPTION(upperViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in an upper bound violation??? ");
+  TEUCHOS_TEST_FOR_EXCEPTION(sumViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a row sum violation??? ");
+
+  return hasFeasibleSol;
+}
 
 template <typename local_matrix_type>
 struct constraintKernel {

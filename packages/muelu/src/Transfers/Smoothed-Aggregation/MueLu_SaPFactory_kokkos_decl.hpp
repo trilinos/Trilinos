@@ -139,9 +139,15 @@ class SaPFactory_kokkos : public PFactory {
 
   void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
+  void SatisfyPConstraintsNonKokkos(RCP<Matrix> A, RCP<Matrix>& P) const;
+
+  void optimalSatisfyPConstraintsForScalarPDEsNonKokkos(RCP<Matrix>& P) const;
+
   void SatisfyPConstraints(RCP<Matrix> A, RCP<Matrix>& P) const;
 
   void optimalSatisfyPConstraintsForScalarPDEs(RCP<Matrix>& P) const;
+
+  bool constrainRow(Scalar* orig, LocalOrdinal nEntries, Scalar leftBound, Scalar rghtBound, Scalar rsumTarget, Scalar* fixedUnsorted, Scalar* scalarData) const;
 
   //@}
 };
