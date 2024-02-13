@@ -172,10 +172,17 @@ public:
 
              ---
   */
+  virtual void value_simopt(Vector<Real> &c,
+                     const Vector<Real> &u,
+                     const Vector<Real> &z,
+                     Real &tol) {};
   virtual void value(Vector<Real> &c,
                      const Vector<Real> &u,
                      const Vector<Real> &z,
-                     Real &tol) = 0;
+                     Real &tol)
+  {
+    value_simopt(c, u, z, tol);
+  }
 
   /** \brief Given \f$z\f$, solve \f$c(u,z)=0\f$ for \f$u\f$.
 
