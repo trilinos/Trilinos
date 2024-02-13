@@ -55,9 +55,9 @@ namespace percept {
         const int num_sides = topology.num_sides();
         const int num_side_nodes = topology.side_topology().num_nodes();
 
-        const double *nodal_coords[num_nodes];
+	std::vector<const double *> nodal_coords(num_nodes);
         const double *side_nodal_coords[3];
-        double side_normals[num_sides][spatial_dim];
+	std::vector<std::array<double,spatial_dim>> side_normals(num_sides);
 
         //auto surface_topology = topology.side_topology();
         for (int s = 0; s < num_sides; ++s)

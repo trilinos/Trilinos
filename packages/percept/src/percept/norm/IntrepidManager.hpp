@@ -156,49 +156,22 @@ using namespace Intrepid2;
   
 #define NUM(AClass) im.m_ ## AClass  . num
 
-      //hexJacobian(numCells, numCubPoints, spaceDim, spaceDim);
-
-
-      class temp
-      {
-        double m_dummy;
-      public:
-
-        double&       operator()(int i1, int i2, int i3)        { tni(); return m_dummy; }
-        const double& operator()(int i1, int i2, int i3) const  { tni(); return m_dummy; }
-
-        double&       operator()(int i1, int i2, int i3, int i4)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3, int i4, int i5)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4, int i5) const { tni(); return m_dummy;}
-
-      };
-
       /// ([P],[D])
       class CubaturePoints : public MDArray
       {
-        IntrepidManager& m_im;
+        const IntrepidManager& m_im;
       public:
         typedef MDArray BaseType;
 
-        CubaturePoints(IM& im) ;
+        CubaturePoints(const IM& im) ;
 
         void copyTo(MDArray& mda)
         {
           Kokkos::resize(mda, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
           Kokkos::deep_copy(mda, *this);
         }
-#if 1
-        //using BaseBaseType::operator();
 
-        double m_dummy;
-        double&       operator()(int i1, int i2)       ; //{ tni(); return m_dummy; }
-        const double& operator()(int i1, int i2) const ; //{ tni(); return m_dummy; }
-
-        double&       operator()(int i1, int i2, int i3); //       { tni(); return m_dummy; }
-        const double& operator()(int i1, int i2, int i3) const; // { tni(); return m_dummy; }
-#endif
+        using BaseType::operator();
       };
 
       /// ([P])
@@ -208,22 +181,9 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        CubatureWeights(IM& im);
-
-#if 1
-        double m_dummy;
-
-        double&       operator()(int i1, int i2)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3, int i4)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4) const { tni(); return m_dummy;}
-
+        CubatureWeights(const IM& im);
         using BaseType::operator();
-#endif
+
       };
 
       /// ([C], [V], [D])
@@ -232,20 +192,19 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        CellWorkSet(IM& im) ;
+        CellWorkSet(const IM& im);
         using BaseType::operator();
-        //void operator()(BulkData& bulkData, Bucket& bucket);
       };
 
       /// ([C], [P], [D])
       class PhysicalCoords : public MDArray
       {
 
-        IntrepidManager& m_im;
+        const IntrepidManager& m_im;
       public:
         typedef MDArray BaseType;
 
-        PhysicalCoords(IM& im);
+        PhysicalCoords(const IM& im);
 
         void operator()(CellWorkSet& c, CubaturePoints& xi);
         
@@ -254,30 +213,19 @@ using namespace Intrepid2;
           Kokkos::resize(mda, m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
           Kokkos::deep_copy(mda, *this);
         }
-#if 1
-        //using BaseBaseType::operator();
-
-        double m_dummy;
-        double&       operator()(int i1, int i2)       { tni(); return m_dummy; }
-        const double& operator()(int i1, int i2) const { tni(); return m_dummy; }
-
-        double&       operator()(int i1, int i2, int i3)      ;// { tni(); return m_dummy; }
-        const double& operator()(int i1, int i2, int i3) const ;//{ tni(); return m_dummy; }
-
-#endif
+        
+	using BaseType::operator();
 
       };
 
       /// ([C], [P], [D], [D])
       class Jacobian : public MDArray
       {
-
-        IntrepidManager& m_im;
-
+        const IntrepidManager& m_im;
       public:
         typedef MDArray BaseType;
 
-        Jacobian(IM& im);
+        Jacobian(const IM& im);
         void operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo);
 
         void copyTo(MDArray& mda)
@@ -286,26 +234,18 @@ using namespace Intrepid2;
           Kokkos::deep_copy(mda, *this);
         }
 
-        double m_dummy;
-        double&       operator()(int i1, int i2, int i3);
-        const double& operator()(int i1, int i2, int i3) const;
         using BaseType::operator();
       };
 
       /// ([C], [P], [D])
       class FaceNormal : public MDArray
       {
-        IntrepidManager& m_im;
-        void dummy_clang_error() { (void)m_im; }
       public:
         typedef MDArray BaseType;
 
-        FaceNormal(IM& im);
+        FaceNormal(const IM& im);
         void operator()(Jacobian& jac, int i_face, CellTopology& topo);
 
-        double m_dummy;
-        double&       operator()(int i1, int i2);
-        const double& operator()(int i1, int i2) const;
         using BaseType::operator();
       };
 
@@ -316,14 +256,9 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        JacobianInverse(IM& im);
+        JacobianInverse(const IM& im);
         void operator()(Jacobian& jac);
-#if 1
-        double m_dummy;
-        double&       operator()(int i1, int i2, int i3) { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3) const { tni(); return m_dummy;}
         using BaseType::operator();
-#endif
       };
 
       /// ([C], [P])
@@ -333,16 +268,10 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        //Jacobian(shards::shards::Array<Cub_Points_Tag>& xi, shards::Array<NodesPerElem_Tag>& c, Topology& topo) 
-        JacobianDet(IM& im);
+        JacobianDet(const IM& im);
 
         void operator()(Jacobian& jac);
         using BaseType::operator();
-
-        double m_dummy;
-        double&       operator()(int i1, int i2, int i3);
-        const double& operator()(int i1, int i2, int i3) const;
-
       };
 
 
@@ -354,23 +283,11 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        WeightedMeasure(IM& im);
+        WeightedMeasure(const IM& im);
 
         void operator()(CubatureWeights& w, JacobianDet& dJ);
         using BaseType::operator();
 
-#if 1
-        double m_dummy;
-
-        double&       operator()(int i1, int i2, int i3)        { tni(); return m_dummy; }
-        const double& operator()(int i1, int i2, int i3) const  { tni(); return m_dummy; }
-
-        double&       operator()(int i1, int i2, int i3, int i4)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3, int i4, int i5)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4, int i5) const { tni(); return m_dummy;}
-#endif
       };
 
       /// ([C], [P], [DOF])
@@ -380,25 +297,11 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        IntegrandValuesDOF(IM& im);
+        IntegrandValuesDOF(const IM& im);
 
         void copyFrom(MDArray& mda);
 
         using BaseType::operator();
-        double m_dummy;
-
-        double&       operator()(int i1, int i2)       { tni(); return m_dummy; }
-        const double& operator()(int i1, int i2) const { tni(); return m_dummy; }
-
-        //double&       operator()(int i1, int i2, int i3)       { tni(); return m_dummy; }
-        //const double& operator()(int i1, int i2, int i3) const { tni(); return m_dummy; }
-
-        double&       operator()(int i1, int i2, int i3, int i4)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3, int i4, int i5)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4, int i5) const { tni(); return m_dummy;}
-
       };
 
       /// ([C], [P])
@@ -408,26 +311,12 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        IntegrandValues(IM& im);
+        IntegrandValues(const IM& im);
 
         void copyFrom(MDArray& mda);
         void copyFrom(IM& im, MDArray& mda, int iDof);
 
         using BaseType::operator();
-        double m_dummy;
-
-        //double&       operator()(int i1, int i2)       { tni(); return m_dummy; }
-        //const double& operator()(int i1, int i2) const { tni(); return m_dummy; }
-
-        double&       operator()(int i1, int i2, int i3)       { tni(); return m_dummy; }
-        const double& operator()(int i1, int i2, int i3) const { tni(); return m_dummy; }
-
-        double&       operator()(int i1, int i2, int i3, int i4)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3, int i4, int i5)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4, int i5) const { tni(); return m_dummy;}
-
       };
 
       /// ([C], [DOF])
@@ -437,7 +326,7 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        IntegralDOF(IM& im);
+        IntegralDOF(const IM& im);
 
         /// wXdOmega: ([C], [P])
         /// iv:       ([C], [P], [DOF])
@@ -445,20 +334,6 @@ using namespace Intrepid2;
         void operator()(IntegrandValuesDOF& iv, WeightedMeasure& wXdOmega);
 
         using BaseType::operator();
-
-        double m_dummy;
-        double&       operator()(int i1)       { tni(); return m_dummy;}
-        const double& operator()(int i1) const { tni(); return m_dummy;}
-
-//         double&       operator()(int i1, int i2)       { tni(); return m_dummy;}
-//         const double& operator()(int i1, int i2) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3, int i4, int i5)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4, int i5) const { tni(); return m_dummy;}
-
       };
 
       /// ([C])
@@ -468,27 +343,13 @@ using namespace Intrepid2;
       public:
         typedef MDArray BaseType;
 
-        Integral(IM& im);
+        Integral(const IM& im);
 
         /// wXdOmega: ([C], [P])
         /// iv:       ([C], [P])
         /// this:     ([C])
         void operator()(IntegrandValues& iv, WeightedMeasure& wXdOmega);
         using BaseType::operator();
-
-        double m_dummy;
-        //double&       operator()(int i1)       { tni(); return m_dummy;}
-        //const double& operator()(int i1) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3) const { tni(); return m_dummy;}
-
-        double&       operator()(int i1, int i2, int i3, int i4, int i5)       { tni(); return m_dummy;}
-        const double& operator()(int i1, int i2, int i3, int i4, int i5) const { tni(); return m_dummy;}
-
       };
 
 
@@ -497,7 +358,7 @@ using namespace Intrepid2;
       {
       public:
         typedef MDArray BaseType;
-        FieldValues(IM& im);
+        FieldValues(const IM& im);
 
         void operator()(const stk::mesh::BulkData & bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, stk::mesh::FieldBase* field);
         void operator()(const stk::mesh::BulkData & bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, stk::mesh::FieldBase* field, MDArray& output_field_values);
@@ -512,7 +373,7 @@ using namespace Intrepid2;
         ComputeBases m_cb;
       public:
         typedef MDArray BaseType;
-        Bases(IM& im);
+        Bases(const IM& im);
 
         using BaseType::operator();
 

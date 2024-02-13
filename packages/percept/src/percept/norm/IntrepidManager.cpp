@@ -100,29 +100,15 @@
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     /// ([P],[D])
-    IntrepidManager::CubaturePoints::CubaturePoints(IM& im) : BaseType("IM::CubaturePoints", NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
+    IntrepidManager::CubaturePoints::CubaturePoints(const IM& im) : BaseType("IM::CubaturePoints", NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
     {
     }
 
-#if 1
-    double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3)
-    {
-      throw std::runtime_error("CubaturePoints:: operator()(int i1, int i2, int i3) not implemented");
-      return m_dummy;
-    }
-    const double& IntrepidManager::CubaturePoints::operator()(int i1, int i2, int i3) const {
-      throw std::runtime_error("CubaturePoints:: operator()(int i1, int i2, int i3) not implemented");
-      return m_dummy;
-    }
-
-    double& IntrepidManager::CubaturePoints::operator()(int i1, int i2) { return BaseType::operator()(i1, i2); }
-    const double& IntrepidManager::CubaturePoints::operator()(int i1, int i2) const { return BaseType::operator()(i1, i2); }
-#endif
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     /// ([P])
-    IntrepidManager::CubatureWeights::CubatureWeights(IM& im) : BaseType("IM::CubatureWeights", NUM(Cub_Points_Tag))
+    IntrepidManager::CubatureWeights::CubatureWeights(const IM& im) : BaseType("IM::CubatureWeights", NUM(Cub_Points_Tag))
     {
     }
 
@@ -131,7 +117,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [V], [D])
     IntrepidManager::CellWorkSet::
-    CellWorkSet(IM& im) : BaseType("IM::CellWorkSet", NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Spatial_Dim_Tag))
+    CellWorkSet(const IM& im) : BaseType("IM::CellWorkSet", NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Spatial_Dim_Tag))
     {
 
     }
@@ -142,7 +128,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [P], [D])
     IntrepidManager::PhysicalCoords::
-    PhysicalCoords(IM& im) : BaseType("IM::PhysicalCoords", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
+    PhysicalCoords(const IM& im) : BaseType("IM::PhysicalCoords", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag) ), m_im(im)
     {
     }
 
@@ -154,19 +140,13 @@
       auto basis = BasisTable::getBasis(*m_im.m_topo);
       Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(*this, xi, c, basis);
     }
-#if 1
-    double&     IntrepidManager::PhysicalCoords::
-    operator()(int i1, int i2, int i3) { return BaseType::operator()(i1, i2, i3); }
-    const double&     IntrepidManager::PhysicalCoords::
-    operator()(int i1, int i2, int i3) const { return BaseType::operator()(i1, i2, i3); }
-#endif
 
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P], [D], [D])
     IntrepidManager::Jacobian::
-    Jacobian(IM& im) : BaseType("IM::Jacobian", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
+    Jacobian(const IM& im) : BaseType("IM::Jacobian", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
     {
 
     }
@@ -177,19 +157,13 @@
     {
       CellTools<Kokkos::HostSpace>::setJacobian(*this, xi, c, topo);           // compute cell Jacobians
     }
-    //double m_dummy;
-    double&     IntrepidManager::Jacobian::
-    operator()(int i1, int i2, int i3) { return m_dummy;}
-    const double&     IntrepidManager::Jacobian::
-    operator()(int i1, int i2, int i3) const { return m_dummy;}
-
 
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P], [D])
     IntrepidManager::FaceNormal::
-    FaceNormal(IM& im) : BaseType("IM::FaceNormal", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag)), m_im(im)
+    FaceNormal(const IM& im) : BaseType("IM::FaceNormal", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag))
     {
 
     }
@@ -200,20 +174,13 @@
       Intrepid2::CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(*this, jac, i_face, topo);
     }
 
-    //double m_dummy;
-    double&     IntrepidManager::FaceNormal::
-    operator()(int i1, int i2) { return m_dummy;}
-    const double&     IntrepidManager::FaceNormal::
-    operator()(int i1, int i2) const { return m_dummy;}
-
-
 
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [P], [D], [D])
     IntrepidManager::JacobianInverse::
-    JacobianInverse(IM& im) : BaseType("IM::JacobianInverse", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag))
+    JacobianInverse(const IM& im) : BaseType("IM::JacobianInverse", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(Spatial_Dim_Tag), NUM(Spatial_Dim_Tag))
     {
 
     }
@@ -229,7 +196,7 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P])
     IntrepidManager::JacobianDet::
-    JacobianDet(IM& im) : BaseType("IM::JacobianDet", NUM(Elements_Tag), NUM(Cub_Points_Tag))
+    JacobianDet(const IM& im) : BaseType("IM::JacobianDet", NUM(Elements_Tag), NUM(Cub_Points_Tag))
     {
     }
 
@@ -245,7 +212,7 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P])
     IntrepidManager::WeightedMeasure::
-    WeightedMeasure(IM& im) : BaseType("IM::WeightedMeasure", NUM(Elements_Tag), NUM(Cub_Points_Tag))
+    WeightedMeasure(const IM& im) : BaseType("IM::WeightedMeasure", NUM(Elements_Tag), NUM(Cub_Points_Tag))
     {
     }
 
@@ -261,7 +228,7 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P], [DOF])
     IntrepidManager::IntegrandValuesDOF::
-    IntegrandValuesDOF(IM& im) : BaseType("IM::IntegrandValuesDOF", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag))
+    IntegrandValuesDOF(const IM& im) : BaseType("IM::IntegrandValuesDOF", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag))
     {
     }
     void
@@ -276,7 +243,7 @@
     //------------------------------------------------------------------------------------------------------------------------
       /// ([C], [P])
     IntrepidManager::IntegrandValues::
-    IntegrandValues(IM& im) : BaseType("IM::IntegrandValues", NUM(Elements_Tag), NUM(Cub_Points_Tag))
+    IntegrandValues(const IM& im) : BaseType("IM::IntegrandValues", NUM(Elements_Tag), NUM(Cub_Points_Tag))
     {
     }
     void
@@ -297,7 +264,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C], [DOF])
     IntrepidManager::IntegralDOF::
-    IntegralDOF(IM& im) : BaseType("IM::IntegralDOF", NUM(Elements_Tag), NUM(DOFs_Tag))
+    IntegralDOF(const IM& im) : BaseType("IM::IntegralDOF", NUM(Elements_Tag), NUM(DOFs_Tag))
     {
     }
 
@@ -322,7 +289,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C])
     IntrepidManager::Integral::
-    Integral(IM& im) : BaseType("IM::Integral", NUM(Elements_Tag))
+    Integral(const IM& im) : BaseType("IM::Integral", NUM(Elements_Tag))
     {
     }
 
@@ -350,7 +317,7 @@
     static ComputeBases s_compute_bases;
 
     IntrepidManager::Bases::
-    Bases(IM& im) : BaseType("IM::Bases", NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Cub_Points_Tag))
+    Bases(const IM& im) : BaseType("IM::Bases", NUM(Elements_Tag), NUM(NodesPerElem_Tag), NUM(Cub_Points_Tag))
                   , m_cb(ComputeBases()) 
          //, m_cb(new ComputeBases()) 
     {
@@ -376,7 +343,7 @@
     //------------------------------------------------------------------------------------------------------------------------
     /// ([C],[P],[DOF]): evaluated field values at each integration point in each cell:
     IntrepidManager::FieldValues::
-    FieldValues(IM& im) : BaseType("IM::FieldValues", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
+    FieldValues(const IM& im) : BaseType("IM::FieldValues", NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
     void IntrepidManager::FieldValues::operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, MDArray& transformed_basis_values, stk::mesh::FieldBase* field)
     {
