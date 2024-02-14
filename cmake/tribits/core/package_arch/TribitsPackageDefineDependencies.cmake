@@ -128,9 +128,9 @@ include(TribitsGeneralMacros)
 #     additional testing of some type.  (Add these to
 #     ``TEST_OPTIONAL_PACKAGES`` instead.)
 #
-# NOTE: The ``XXX_TPLS`` arguments/lists are **deprecated**.  At the package
-# level, there is no distinction between upstream internal and external
-# packages (i.e. TPLs) so all upstream package dependencies can (and should)
+# NOTE: The above ``XXX_TPLS`` arguments/lists are **deprecated**.  At the
+# package level, there is no distinction between upstream internal and
+# external packages/TPLs, so all upstream package dependencies can (and should)
 # be listed in the ``XXX_PACKAGES`` arguments/lists.  (There is no change in
 # behavior listing upstream packages in ``XXX_PACKAGES`` or the ``XXX_TPLS``
 # arguments/lists.)
@@ -155,8 +155,8 @@ include(TribitsGeneralMacros)
 # ``TEST_OPTIONAL_PACKAGES``.
 #
 # The upstream dependencies within a single list do not need to be listed in
-# any order.  For example if ``PKG2`` depends on ``PKG1``, and this given
-# package depends on both, then one can list::
+# any particular order.  For example, if ``PKG2`` depends on ``PKG1``, and
+# this given package depends on both, then one can list the dependencies as::
 #
 #   LIB_REQUIRED_PACKAGES PKG2 PKG1
 #

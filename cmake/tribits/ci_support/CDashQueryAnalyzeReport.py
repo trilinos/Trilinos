@@ -762,6 +762,16 @@ def getCDashQueryTestsBrowserUrl(cdashUrl, projectName, date, filterFields):
   return cdashUrl+"/queryTests.php?project="+projectName+dateArg+"&"+filterFields
 
 
+# Construct full cdash/api/v1/buildSummary.php query URL given the buildId
+def getCDashBuildSummaryQueryUrl(cdashUrl, buildId):
+  return cdashUrl+"/api/v1/buildSummary.php?buildid="+buildId
+
+
+# Construct full cdash/build browser URL given the buildId
+def getCDashBuildSummaryBrowserUrl(cdashUrl, buildId):
+  return cdashUrl+"/build/"+buildId
+
+
 # Copy a key/value pair from one dict to another if it eixsts
 def copyKeyDictIfExists(sourceDict_in, keyName_in, dict_inout):
   value = sourceDict_in.get(keyName_in, None)
