@@ -11,8 +11,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  triloamd01-gcc:
+  triloamd01-spack:
     runs-on: [self-hosted, triloamd01-gh-actions]
+    container:
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/gnu/gh-actions:latest
+      options: --hostname trilinos-container-spack-gcc
     steps:
       - name: env
         env:
