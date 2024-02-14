@@ -109,8 +109,6 @@ public:
 
   //! Tpetra::RowMatrix specialization corresponding to \c MatrixType.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
-  typedef Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type> crs_graph_type;
 
   static_assert (std::is_same<MatrixType, row_matrix_type>::value,
                  "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");

@@ -210,6 +210,11 @@ public:
                             global_ordinal_type,
                             node_type> row_matrix_type;
 
+  //! Type of the Tpetra::RowGraph specialization that this class uses.
+  typedef Tpetra::RowGraph<local_ordinal_type,
+                           global_ordinal_type,
+                           node_type> row_graph_type;
+
   //! Type of the Tpetra::Map specialization that this class uses.
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
@@ -467,10 +472,11 @@ public:
 
   //@}
 private:
-  //! Type of a read-only interface to a graph.
-  typedef Tpetra::RowGraph<local_ordinal_type,
+  //! Type of Tpetra::CrsGraph that this class uses to create local row-graph.
+  typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
-                           node_type> row_graph_type;
+                           node_type> crs_graph_type;
+
   //! Special case of apply() for when X and Y do not alias one another.
   void
   applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
@@ -513,6 +519,9 @@ private:
 
   //! Range Map of the locally filtered matrix.
   Teuchos::RCP<const map_type> localRangeMap_;
+
+  //! Local Graph
+  mutable Teuchos::RCP<const row_graph_type> local_graph_;
 
   //! Number of nonzeros in the local matrix.
   size_t NumNonzeros_;
