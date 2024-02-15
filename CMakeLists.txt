@@ -111,7 +111,7 @@ IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
 
-set(deprecated_packages Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML Triutils)
+set(deprecated_packages Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
 set(enabled_deprecated_packages "")
 FOREACH(package ${deprecated_packages})
   IF(Trilinos_ENABLE_${package})
