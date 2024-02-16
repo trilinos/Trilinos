@@ -127,12 +127,17 @@ namespace panzer {
         int num_cells_owned = 0;
         Kokkos::View<const panzer::LocalOrdinal*> cell_local_ids;
         if (useUserSuppliedBasisValues_) {
-          bv_ptr = basisValues_[block].get();
+          // Skip this block if there are no elements in this block on this mpi process
           auto tmp = connManager_->getElementBlock(block); // no ghosting or virtual in this case
+          if (tmp.size() == 0)
+            continue;
+
           Kokkos::View<panzer::LocalOrdinal*>::HostMirror cell_local_ids_host(tmp.data(),tmp.size());
           Kokkos::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
           Kokkos::deep_copy(cell_local_ids_nonconst,cell_local_ids_host);
           cell_local_ids = cell_local_ids_nonconst;
+
+          bv_ptr = basisValues_[block].get();
           num_cells_owned_ghosted_virtual = cell_local_ids.extent(0);
           num_cells_owned = cell_local_ids.extent(0);
         }
@@ -142,7 +147,12 @@ namespace panzer {
           // workset).
           panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
           const auto worksets = worksetContainer_->getWorksets(wd);
+          // Skip this block if there are no elements in this block on this mpi process
+          if (worksets->size() == 0)
+            continue;
+
           TEUCHOS_ASSERT(worksets->size() == 1);
+
           const auto& workset = (*worksets)[0];
           bv_ptr = &(workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_));
           num_cells_owned_ghosted_virtual = workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells();
@@ -267,12 +277,17 @@ namespace panzer {
         int num_cells_owned = 0;
         Kokkos::View<const panzer::LocalOrdinal*> cell_local_ids;
         if (useUserSuppliedBasisValues_) {
-          bv_ptr = basisValues_[block].get();
+          // Skip this block if there are no elements in this block on this mpi process
           auto tmp = connManager_->getElementBlock(block); // no ghosting or virtual in this case
+          if (tmp.size() == 0)
+            continue;
+
           Kokkos::View<panzer::LocalOrdinal*>::HostMirror cell_local_ids_host(tmp.data(),tmp.size());
           Kokkos::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
           Kokkos::deep_copy(cell_local_ids_nonconst,cell_local_ids_host);
           cell_local_ids = cell_local_ids_nonconst;
+
+          bv_ptr = basisValues_[block].get();
           num_cells_owned_ghosted_virtual = cell_local_ids.extent(0);
           num_cells_owned = cell_local_ids.extent(0);
         }
@@ -282,7 +297,12 @@ namespace panzer {
           // workset).
           panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
           const auto worksets = worksetContainer_->getWorksets(wd);
+          // Skip this block if there are no elements in this block on this mpi process
+          if (worksets->size() == 0)
+            continue;
+
           TEUCHOS_ASSERT(worksets->size() == 1);
+
           const auto& workset = (*worksets)[0];
           bv_ptr = &(workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_));
           num_cells_owned_ghosted_virtual = workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells();
