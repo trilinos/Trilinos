@@ -51,7 +51,6 @@
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
 #include "Ifpack2_LocalFilter.hpp"
-#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 

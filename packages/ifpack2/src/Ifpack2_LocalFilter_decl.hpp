@@ -45,6 +45,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Details_RowMatrix.hpp"
+#include "Tpetra_CrsGraph.hpp"
 #include <type_traits>
 #include <vector>
 
