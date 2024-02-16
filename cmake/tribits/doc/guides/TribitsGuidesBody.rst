@@ -1589,13 +1589,13 @@ are defined before a Package's ``CMakeLists.txt`` file is processed:
     imply that all of the required subpackages will be enabled, only that the
     parent package will be processed).
 
-  .. _${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:
+  .. _${PACKAGE_NAME}_ENABLE_${UPSTREAM_PACKAGE_NAME}:
 
-  ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}``
+  ``${PACKAGE_NAME}_ENABLE_${UPSTREAM_PACKAGE_NAME}``
 
     Set to ``ON`` if support for the optional `upstream`_ dependent package
-    ``${OPTIONAL_DEP_PACKAGE_NAME}`` is enabled in package
-    ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEP_PACKAGE_NAME}`` corresponds to
+    ``${UPSTREAM_PACKAGE_NAME}`` is enabled in package
+    ``${PACKAGE_NAME}``.  Here ``${UPSTREAM_PACKAGE_NAME}`` corresponds to
     each optional upstream package listed in the ``LIB_OPTIONAL_PACKAGES``
     and ``TEST_OPTIONAL_PACKAGES`` arguments to the
     `tribits_package_define_dependencies()`_ macro.
@@ -1603,11 +1603,11 @@ are defined before a Package's ``CMakeLists.txt`` file is processed:
     **NOTE:** It is important that the CMake code in the package's
     ``CMakeLists.txt`` files key off of this variable and **not** the
     project-level variable
-    ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` because the
+    ``${PROJECT_NAME}_ENABLE_${UPSTREAM_PACKAGE_NAME}`` because the
     package-level variable
-    ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` can be explicitly
+    ``${PACKAGE_NAME}_ENABLE_${UPSTREAM_PACKAGE_NAME}`` can be explicitly
     turned off by the user even through the packages ``${PACKAGE_NAME}`` and
-    ``${OPTIONAL_DEP_PACKAGE_NAME}`` are both enabled at the project level!
+    ``${UPSTREAM_PACKAGE_NAME}`` are both enabled at the project level!
     See `Support for optional package can be explicitly disabled`_.
 
     **NOTE:** This variable will also be set for required dependencies as well
@@ -1648,12 +1648,12 @@ are defined in the top-level project scope before a Package's
   ``HAVE_<PACKAGE_NAME_UC>_<UPSTREAM_PACKAGE_NAME_UC>``
 
     Set to ``ON`` if support for optional upstream package
-    ``${OPTIONAL_DEP_PACKAGE}`` is enabled in downstream package
+    ``${UPSTREAM_PACKAGE_NAME`` is enabled in downstream package
     ``${PACKAGE_NAME}``
-    (i.e. `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ = ``ON``) and
-    is set to ``FALSE`` otherwise.  Here, ``<PACKAGE_NAME_UC>`` and
+    (i.e. `${PACKAGE_NAME}_ENABLE_${UPSTREAM_PACKAGE_NAME}`_ = ``ON``) and is
+    set to ``FALSE`` otherwise.  Here, ``<PACKAGE_NAME_UC>`` and
     ``<UPSTREAM_PACKAGE_NAME_UC>`` are the upper-case names for the packages
-    ``${PACKAGE_NAME}`` and ``${OPTIONAL_DEP_PACKAGE_NAME}``, respectively.
+    ``${PACKAGE_NAME}`` and ``${UPSTREAM_PACKAGE_NAME}``, respectively.
     For example, if optional support for upstream package ``Triutils`` is
     enabled in downstream package ``EpetraExt`` in `ReducedMockTrilinos`_,
     then ``EpetraExt_ENABLE_TriUtils=ON`` and ``HAVE_EPETRAEXT_TRIUTILS=ON``.
@@ -1668,7 +1668,7 @@ are defined in the top-level project scope before a Package's
       #cmakedefine HAVE_EPETRAEXT_TRIUTILS
 
     NOTE: TriBITS automatically sets this variable depending on the value of
-    `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ during the step
+    `${PACKAGE_NAME}_ENABLE_${UPSTREAM_PACKAGE_NAME}`_ during the step
     "Adjust package and TPLs enables and disables" in `Full Processing of
     TriBITS Project Files`_.  And tweaking this variable after that must be
     done carefully as described in `How to tweak downstream TriBITS "ENABLE"
