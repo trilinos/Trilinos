@@ -197,7 +197,10 @@ int main(int argc, char *argv[]) {
                 << "\n-----------------------------------------------------------------"
                 << std::setprecision(9) << std::endl;
 
-            if (Teuchos::nonnull(p1)) {
+            if (Teuchos::is_null(p1)) {
+              out << "\nError: parameters pointer is null" << std::endl;
+              status += 33;
+            } else {
                 out << "\nParameters! {1,1}\n"
                     << *p1 << std::endl;
                 Thyra::DetachedVectorView<double> p_view(p1->clone_v());
@@ -212,7 +215,10 @@ int main(int argc, char *argv[]) {
                         << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
                 }
             }
-            if (Teuchos::nonnull(g1)) {
+            if (Teuchos::is_null(g1)) {
+              out << "\nError: Responses pointer is null" << std::endl;
+              status += 33;
+            } else {
                 out << "\nResponses! {8.0}\n"
                     << *g1 << std::endl;
                 Thyra::DetachedVectorView<double> g_view(g1);
@@ -228,7 +234,10 @@ int main(int argc, char *argv[]) {
                         << "Absolute difference: " << diff << " > tol: " << tol << std::endl;
                 }
             }
-            if (Teuchos::nonnull(gx)) {
+            if (Teuchos::is_null(gx)) {
+              out << "\nError: solution pointer is null" << std::endl;
+              status += 33;
+            } else {
                 out << "\nSolution! {1,2,3,4}\n"
                     << *gx << std::endl;
                 Thyra::DetachedVectorView<double> x_view(gx);
@@ -246,7 +255,10 @@ int main(int argc, char *argv[]) {
                         << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
                 }
             }
-            if (Teuchos::nonnull(dgdp)) {
+            if (Teuchos::is_null(dgdp)) {
+              out << "\nError: sensitivities pointer is null" << std::endl;
+              status += 33;
+            } else {
                 out << "\nSensitivities {6.66667, -8.0}\n"
                     << *dgdp << std::endl;
                 Thyra::DetachedVectorView<double> dgdp_view(dgdp->col(0));
@@ -263,7 +275,11 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            if (Teuchos::nonnull(hv)) {
+            if (Teuchos::is_null(hv)) {
+              //FIX this
+              //out << "\nError: hessian pointer is null" << std::endl;
+              //status += 33;
+            } else {
                 double hv_exact[4] = {6., -10./3, -10./3, 4.};
                 for (int i_direction = 0; i_direction < n_directions; i_direction++) {
                     out << "\n hv[" << i_direction << "]\n"
