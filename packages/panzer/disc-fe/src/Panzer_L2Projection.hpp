@@ -84,7 +84,7 @@ namespace panzer {
         projection onto a target basis.
 
         \param use_lumping (optional) If set to true, the returned mass matrix is a lumped diagonal mass matrix following Hinton, et al. 1976.
-        \param elementBlockMultipliers (optional) If non-null, a multiplier will be used for each element block. The elements should be ordered corresponding to commManger block ordering. 
+        \param elementBlockMultipliers (optional) If non-null, a multiplier will be used for each element block. The elements should be ordered corresponding to commManger block ordering.
         \returns Filled mass matrix in a Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device>>>
@@ -92,7 +92,7 @@ namespace panzer {
                       const std::unordered_map<std::string,double>* elementBlockMultipliers = nullptr);
 
     /** \brief Allocates, fills and returns a Tpetra::MultiVector
-        containing the inverse lumped mass matrix values as computed via Hinton 1976. 
+        containing the inverse lumped mass matrix values as computed via Hinton 1976.
 
         References:
 
