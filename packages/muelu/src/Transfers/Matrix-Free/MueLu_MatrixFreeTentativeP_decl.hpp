@@ -105,12 +105,12 @@ class MatrixFreeTentativeP : public Xpetra::Operator<Scalar, LocalOrdinal, Globa
   void residual(const MultiVector &X, const MultiVector &B, MultiVector &R) const override;
 
   // get the range map
-  Teuchos::RCP<const Map> getRangeMap() const override {
+  const Teuchos::RCP<const Map> getRangeMap() const override {
     return fine_map_;
   }
 
   // get the domain map
-  Teuchos::RCP<const Map> getDomainMap() const override {
+  const Teuchos::RCP<const Map> getDomainMap() const override {
     return coarse_map_;
   }
 
