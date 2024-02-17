@@ -67,10 +67,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KLU2
   ON
 )
 
-IF (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP)
-  tribits_disable_optional_dependency(ShyLU_NodeTacho "NOTE: Disabling ${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho because CUDA or HIP is enabled in Kokkos")
-ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Basker
    HAVE_AMESOS2_BASKER
    "Enable Basker in Amesos2"
