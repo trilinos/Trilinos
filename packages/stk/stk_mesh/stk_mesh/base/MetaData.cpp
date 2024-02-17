@@ -103,7 +103,7 @@ void MetaData::assign_topology(Part& part, stk::topology stkTopo)
 
   m_partTopologyVector[part_ordinal] = stkTopo;
 
-  part.m_partImpl.set_topology(stkTopo);
+  part.set_topology(stkTopo);
 
   STK_ThrowRequireMsg(stkTopo != stk::topology::INVALID_TOPOLOGY, "bad topology in MetaData::assign_topology");
 }
@@ -1011,8 +1011,6 @@ public:
       b.pack<unsigned>(field->number_of_states());
 
       //  Remaining Fields attributes that should be checked:
-      //    field->field_array_rank()
-      //    field->dimension_tags()
       //    field->data_traits()
       //    field->state()
       //    field->restrictions()

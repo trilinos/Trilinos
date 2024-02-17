@@ -54,8 +54,8 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
-#include "rocblas.h"
-#include "rocsolver.h"
+#include "rocblas/rocblas.h"
+#include "rocsolver/rocsolver.h"
 #endif
 
 #include "Tacho.hpp"

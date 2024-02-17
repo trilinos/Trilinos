@@ -58,7 +58,7 @@
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_CoalesceDropFactory_kokkos.hpp>
-#include <MueLu_UncoupledAggregationFactory_kokkos.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 
 #include <Tpetra_Details_KokkosCounter.hpp>
 
@@ -171,8 +171,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, Aggregration, Scalar, LocalOrdinal
   aLevel.Request("A");
   aLevel.Set("A", A);
 
-  RCP<CoalesceDropFactory_kokkos> dropFact        = rcp(new CoalesceDropFactory_kokkos());
-  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
   aggFact->SetFactory("Graph", dropFact);
   aLevel.Request(*aggFact);
   aggFact->Build(aLevel);

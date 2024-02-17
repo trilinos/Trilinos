@@ -59,7 +59,7 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
-#include "MueLu_AggregationStructuredAlgorithm_kokkos.hpp"
+#include "MueLu_AggregationStructuredAlgorithm.hpp"
 
 #include "MueLu_StructuredAggregationFactory_kokkos_decl.hpp"
 
@@ -210,7 +210,7 @@ void StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
 
   // Now we are ready for the big loop over the fine node that will assign each
   // node on the fine grid to an aggregate and a processor.
-  RCP<AggregationStructuredAlgorithm_kokkos> myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm_kokkos());
+  RCP<AggregationStructuredAlgorithm> myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm());
 
   if (interpolationOrder == 0 && outputAggregates) {
     RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));

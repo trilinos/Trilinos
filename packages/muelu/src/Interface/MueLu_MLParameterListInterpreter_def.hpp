@@ -85,10 +85,8 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 // #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
-// #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_IsorropiaInterface.hpp"
@@ -260,10 +258,7 @@ void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetP
 
   // Uncoupled aggregation
   RCP<Factory> AggFact = Teuchos::null;
-  if (useKokkosRefactor) {
-    AggFact = rcp(new UncoupledAggregationFactory_kokkos());
-  } else
-    AggFact = rcp(new UncoupledAggregationFactory());
+  AggFact              = rcp(new UncoupledAggregationFactory());
 
   AggFact->SetFactory("Graph", dropFact);
   AggFact->SetFactory("DofsPerNode", dropFact);

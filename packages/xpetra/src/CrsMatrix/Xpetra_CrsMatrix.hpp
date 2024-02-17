@@ -227,6 +227,9 @@ class CrsMatrix
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
   virtual void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Teuchos::ArrayView<const size_t> &offsets) const = 0;
 
+  //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+  virtual void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const = 0;
+
   //! Replace the diagonal entries of the matrix
   virtual void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) = 0;
 

@@ -37,6 +37,8 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_unit_test_utils/BuildMesh.hpp>
 
+namespace {
+
 using stk::unit_test_util::build_mesh;
 
 class BalanceSettingsTester : public ::testing::Test
@@ -233,6 +235,7 @@ std::vector<stk::topology::topology_t> get_3dim_2ndOrder_topologies() {
           stk::topology::TET_11,
           stk::topology::PYRAMID_13,
           stk::topology::PYRAMID_14,
+          stk::topology::WEDGE_12,
           stk::topology::WEDGE_15,
           stk::topology::WEDGE_18,
           stk::topology::HEX_20,
@@ -283,4 +286,49 @@ TEST_F(BalanceSettingsTester, numNodesRequiredForConnection)
   EXPECT_EQ(numRequiredCommonNodes(get_3dim_2ndOrder_topologies(), get_super_element_topologies()), NoConnection);
 
   EXPECT_EQ(numRequiredCommonNodes(get_super_element_topologies(), get_super_element_topologies()), NoConnection);
+}
+
+#define PRINT_AND_RETHROW(CODE_BLOCK, EXCEPT_STREAM)                           \
+  try {                                                                        \
+    do {                                                                       \
+      CODE_BLOCK;                                                              \
+    }                                                                          \
+    while(0);                                                                  \
+  }                                                                            \
+  catch(const std::exception& ex) {                                            \
+    EXCEPT_STREAM << "std::exception thrown: " << ex.what() << std::endl;      \
+    throw;                                                                     \
+  }                                                                            \
+  catch(...) {                                                                 \
+    EXCEPT_STREAM << "Unknown structure thrown" << std::endl;                  \
+    throw;                                                                     \
+  }
+
+#define EXPECT_NO_THROW_PRINT(CODE_BLOCK) EXPECT_NO_THROW(PRINT_AND_RETHROW(CODE_BLOCK, std::cerr))
+
+
+TEST(BalanceSettings, getGraphVertexWeight_allValidElementTopologies)
+{
+  stk::balance::GraphCreationSettings settings;
+  for (stk::topology t = stk::topology::BEGIN_ELEMENT_RANK; t < stk::topology::END_ELEMENT_RANK; ++t) {
+    EXPECT_NO_THROW_PRINT(settings.getGraphVertexWeight(t));
+  }
+}
+
+TEST(BalanceSettings, getGraphEdgeWeight_allValidElementTopologies)
+{
+  stk::balance::GraphCreationSettings settings;
+  for (stk::topology t = stk::topology::BEGIN_ELEMENT_RANK; t < stk::topology::END_ELEMENT_RANK; ++t) {
+    EXPECT_NO_THROW_PRINT(settings.getGraphEdgeWeight(t, t));
+  }
+}
+
+TEST(BalanceSettings, getNumNodesRequiredForConnection_allValidElementTopologies)
+{
+  stk::balance::GraphCreationSettings settings;
+  for (stk::topology t = stk::topology::BEGIN_ELEMENT_RANK; t < stk::topology::END_ELEMENT_RANK; ++t) {
+    EXPECT_NO_THROW_PRINT(settings.getNumNodesRequiredForConnection(t, t));
+  }
+}
+
 }

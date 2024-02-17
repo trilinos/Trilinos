@@ -19,7 +19,7 @@
 #include <vector>                                    // for vector
 
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
+#include "stk_mesh/base/LegacyCoordinateSystems.hpp"       // for Cartesian
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data
 #include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
@@ -75,7 +75,8 @@ void ConstructedMesh::populate_bulk_data(stk::mesh::BulkData& bulk)
     meta.set_part_id(block, elemBlock.id);
   }
 
-  stk::mesh::Field<double, stk::mesh::Cartesian> & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
+  stk::mesh::Field<double, stk::mesh::legacy::Cartesian> & coordsField =
+      stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::legacy::Cartesian>>(meta, stk::topology::NODE_RANK, "coordinates", 1);
   stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), m_spatialDimension, nullptr);
 
   bulk.modification_begin();

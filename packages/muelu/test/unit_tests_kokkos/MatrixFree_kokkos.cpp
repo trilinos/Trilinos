@@ -57,8 +57,8 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_MatrixFreeTentativePFactory.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
 
 namespace MueLuTests {
 
@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentative, Sc
   RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
   ParameterList aggParams;
   aggParams.set("aggregation: ordering", "natural");
   aggParams.set("aggregation: deterministic", true);
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeVect
   auto dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  auto aggFact = rcp(new UncoupledAggregationFactory());
   ParameterList aggParams;
   aggParams.set("aggregation: ordering", "natural");
   aggParams.set("aggregation: deterministic", true);
@@ -241,7 +241,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeVect
   coarseLevel.Release("P", MFTentativePFact.get());  // release Ptent
   coarseLevel.Release("Nullspace", MFTentativePFact.get());
 
-  auto nspFact = Teuchos::rcp(new NullspaceFactory_kokkos());
+  auto nspFact = Teuchos::rcp(new NullspaceFactory());
   fineLevel.Request("Nullspace", nspFact.get());
 
   nspFact->Build(fineLevel);
@@ -288,7 +288,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeUsin
   auto dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  auto aggFact = rcp(new UncoupledAggregationFactory());
   ParameterList aggParams;
   aggParams.set("aggregation: ordering", "natural");
   aggParams.set("aggregation: deterministic", true);
@@ -390,7 +390,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MatrixVsMatrixFre
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
     ParameterList aggParams;
     aggParams.set("aggregation: ordering", "natural");
     aggParams.set("aggregation: deterministic", true);
@@ -453,7 +453,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MatrixVsMatrixFre
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
     ParameterList aggParams;
     aggParams.set("aggregation: ordering", "natural");
     aggParams.set("aggregation: deterministic", true);

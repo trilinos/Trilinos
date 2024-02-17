@@ -199,6 +199,7 @@ class EpetraCrsMatrixT
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const {}
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {}
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Teuchos::ArrayView<const size_t> &offsets) const {}
+  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const {}
   void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {}
   void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x){};
   void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x){};
@@ -938,6 +939,11 @@ class EpetraCrsMatrixT<int, EpetraNode>
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /* diag */, const Teuchos::ArrayView<const size_t> & /* offsets */) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
+  }
+
+  //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /* diag */, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> & /* offsets */) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
   }
 
@@ -2040,6 +2046,11 @@ class EpetraCrsMatrixT<long long, EpetraNode>
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /* diag */, const Teuchos::ArrayView<const size_t> & /* offsets */) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
+  }
+
+  //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /* diag */, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> & /* offsets */) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
   }
 

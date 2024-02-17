@@ -107,7 +107,8 @@ inline void fill_element_block_parts(const MetaData& meta, stk::topology elemTop
 }
 
 inline stk::mesh::Part* get_element_block_part(const stk::mesh::BulkData& bulkData,
-                                               const std::vector<stk::mesh::PartOrdinal>& partOrdinals)
+                                               const std::vector<stk::mesh::PartOrdinal>& partOrdinals,
+                                               stk::mesh::EntityId elemId)
 {
   stk::mesh::Part* elementBlockPart = nullptr;;
   const stk::mesh::PartVector& allParts = bulkData.mesh_meta_data().get_parts();
@@ -118,42 +119,37 @@ inline stk::mesh::Part* get_element_block_part(const stk::mesh::BulkData& bulkDa
     stk::mesh::Part* part = allParts[partOrdinal];
     if(stk::mesh::is_element_block(*part))
     {
+      STK_ThrowRequireMsg(blockCounter==0, "element global-id "<<elemId<<" associated with 2 element-blocks: '"<<elementBlockPart->name()<<"' (id="<<elementBlockPart->id()<<"), and '"<<part->name()<<"' (id="<<part->id()<<"). Each element should only be in 1 element-block.");
       elementBlockPart = part;
       blockCounter++;
     }
   }
 
-  bool elementIsAssociatedWithOnlyOneElementBlock = blockCounter == 1;
-  STK_ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
-  STK_ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
-  return elementBlockPart;
-}
-
-inline stk::mesh::Part* get_element_block_part(const stk::mesh::Bucket& bucket)
-{
-  STK_ThrowRequireWithSierraHelpMsg(bucket.entity_rank() == stk::topology::ELEM_RANK);
-  stk::mesh::Part* elementBlockPart = nullptr;;
-  const stk::mesh::PartVector& parts = bucket.supersets();
-  unsigned blockCounter = 0;
-  for(stk::mesh::Part *part : parts)
-  {
-    if(stk::mesh::is_element_block(*part))
-    {
-      elementBlockPart = part;
-      blockCounter++;
-    }
-  }
-
-  bool elementIsAssociatedWithOnlyOneElementBlock = blockCounter == 1;
-  STK_ThrowRequireWithSierraHelpMsg(elementIsAssociatedWithOnlyOneElementBlock);
-  STK_ThrowRequireWithSierraHelpMsg(elementBlockPart != nullptr);
+  STK_ThrowRequireMsg(elementBlockPart != nullptr, "Failed to find element-block.");
   return elementBlockPart;
 }
 
 inline stk::mesh::Part* get_element_block_part(const stk::mesh::BulkData& bulkData,
                                                stk::mesh::Entity element)
 {
-  return get_element_block_part(bulkData.bucket(element));
+  const stk::mesh::Bucket& bucket = bulkData.bucket(element);
+  STK_ThrowAssertMsg(bucket.entity_rank() == stk::topology::ELEM_RANK, "get_element_block_part must be called with entity of rank stk::topology::ELEM_RANK, not "<<bucket.entity_rank());
+
+  const stk::mesh::PartVector& parts = bucket.supersets();
+  stk::mesh::Part* elementBlockPart = nullptr;;
+  unsigned blockCounter = 0;
+  for(stk::mesh::Part *part : parts)
+  {
+    if(stk::mesh::is_element_block(*part))
+    {
+      STK_ThrowRequireMsg(blockCounter==0, "element global-id "<<bulkData.identifier(element)<<" associated with 2 element-blocks: '"<<elementBlockPart->name()<<"' (id="<<elementBlockPart->id()<<"), and '"<<part->name()<<"' (id="<<part->id()<<"). Each element should only be in 1 element-block.");
+      elementBlockPart = part;
+      blockCounter++;
+    }
+  }
+
+  STK_ThrowRequireMsg(elementBlockPart != nullptr, "Failed to find element-block for element global-id "<<bulkData.identifier(element));
+  return elementBlockPart;
 }
 
 class ExodusTranslator

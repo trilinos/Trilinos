@@ -36,7 +36,7 @@
 #define STK_MESH_HETEROGENEOUS_MESH_HPP
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/LegacyCoordinateSystems.hpp>
 
 namespace stk {
 namespace mesh {
@@ -44,7 +44,7 @@ class MetaData;
 class BulkData;
 
 namespace fixtures {
-typedef mesh::Field<double, mesh::Cartesian> VectorFieldType;
+typedef mesh::Field<double, mesh::legacy::Cartesian> VectorFieldType;
 
 void heterogeneous_mesh_meta_data(stk::mesh::MetaData & meta_data, const VectorFieldType & node_coord);
 

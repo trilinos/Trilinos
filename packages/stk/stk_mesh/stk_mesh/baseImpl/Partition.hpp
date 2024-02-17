@@ -141,7 +141,7 @@ public:
 
   void reset_partition_key(const std::vector<unsigned>& newKey);
 
-  void set_remove_mode(RemoveMode removeMode) { m_removeMode = removeMode; }
+  void set_remove_mode(RemoveMode removeMode);
   RemoveMode get_remove_mode() const { return m_removeMode; }
 
 private:
@@ -149,6 +149,8 @@ private:
   BucketRepository *m_repository;
 
   EntityRank m_rank;
+
+  void check_sorted(const std::string& prefixMsg);
 
   // Identifies the partition, borrowing the representation from BucketRepository.
   std::vector<PartOrdinal> m_extPartitionKey;

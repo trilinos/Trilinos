@@ -56,8 +56,8 @@
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
 
 namespace MueLuTests {
 
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentative, Scala
   RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
   ParameterList aggParams;
   aggParams.set("aggregation: ordering", "natural");
   aggParams.set("aggregation: min agg size", 3);
@@ -290,7 +290,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeVectorB
   auto dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  auto aggFact = rcp(new UncoupledAggregationFactory());
   ParameterList aggParams;
   aggParams.set("aggregation: ordering", "natural");
   aggParams.set("aggregation: min agg size", 3);
@@ -332,7 +332,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeVectorB
   coarseLevel.Release("P", TentativePFact.get());  // release Ptent
   coarseLevel.Release("Nullspace", TentativePFact.get());
 
-  auto nspFact = Teuchos::rcp(new NullspaceFactory_kokkos());
+  auto nspFact = Teuchos::rcp(new NullspaceFactory());
   fineLevel.Request("Nullspace", nspFact.get());
 
   nspFact->Build(fineLevel);
@@ -391,7 +391,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeUsingDe
   auto dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  auto aggFact = rcp(new UncoupledAggregationFactory());
   ParameterList aggParams;
   aggParams.set("aggregation: ordering", "natural");
   aggParams.set("aggregation: min agg size", 3);

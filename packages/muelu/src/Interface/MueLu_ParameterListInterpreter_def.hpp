@@ -106,11 +106,9 @@
 #include "MueLu_LowPrecisionFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
 #include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
@@ -1107,7 +1105,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
   RCP<Factory> aggFactory;
   if (aggType == "uncoupled") {
-    MUELU_KOKKOS_FACTORY_NO_DECL(aggFactory, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
+    aggFactory = rcp(new UncoupledAggregationFactory());
     ParameterList aggParams;
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: mode", std::string, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering", std::string, aggParams);
@@ -1803,7 +1801,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_Nullspace(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
                                    int /* levelID */, std::vector<keep_pair>& /* keeps */, RCP<Factory>& nullSpaceFactory) const {
   // Nullspace
-  MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
+  RCP<Factory> nullSpace = rcp(new NullspaceFactory());
 
   bool have_userNS = false;
   if (paramList.isParameter("Nullspace") && !paramList.get<RCP<MultiVector> >("Nullspace").is_null())

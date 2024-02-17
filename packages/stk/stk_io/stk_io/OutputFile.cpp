@@ -663,33 +663,6 @@ int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data
     return m_currentOutputStep;
 }
 
-int OutputFile::write_defined_output_fields_for_selected_subset(const stk::mesh::BulkData& bulk_data,
-                                                                      std::vector<stk::mesh::Part*>& selectOutputElementParts,
-                                                                      const stk::mesh::FieldState *state)
-{
-    Ioss::Region *region = m_region.get();
-    STK_ThrowErrorMsgIf(region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
-
-    OutputParams params(*region, bulk_data);
-    setup_output_params(params);
-
-    const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
-    // Special processing for nodeblock (all nodes in model)...
-    put_field_data(params, meta_data.universal_part(), stk::topology::NODE_RANK,
-                   region->get_node_blocks()[0], m_namedFields, state);
-
-    for( auto part : selectOutputElementParts )
-    {
-        stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-        auto entity = region->get_entity(part->name());
-
-        if ( entity != nullptr && entity->type() != Ioss::SIDESET ) {
-            put_field_data(params, *part, rank, entity, m_namedFields, state);
-        }
-    }
-    return m_currentOutputStep;
-}
-
 void OutputFile::end_output_step()
 {
     m_region->end_state(m_currentOutputStep);

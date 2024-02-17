@@ -317,7 +317,12 @@ public:
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_SPACE_ID_WARN_LIMIT</tt> environment variable.
   static size_t spacesIdWarnLimit();
+
+  /// \brief Search the environment for TPETRA_ variables and reject unrecognized ones
+  static void reject_unrecognized_env_vars();
 };
+
+
 
 } // namespace Details
 } // namespace Tpetra

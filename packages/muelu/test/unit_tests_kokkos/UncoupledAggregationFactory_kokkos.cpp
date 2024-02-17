@@ -58,15 +58,15 @@
 #include <MueLu_TestHelpers_kokkos.hpp>
 #include <MueLu_Version.hpp>
 
-#include <MueLu_UncoupledAggregationFactory_kokkos.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
 
 namespace MueLuTests {
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
 
   out << "version: " << MueLu::Version() << std::endl;
-  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
   TEST_EQUALITY(aggFact != Teuchos::null, true);
   TEST_THROW(aggFact->SetOrdering("unknown_ordering"), Teuchos::Exceptions::InvalidParameterValue);
   aggFact->SetOrdering("natural");
@@ -86,7 +86,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Constructo
 
 }  // Constructor
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build, Sca
   RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
   aggFact->SetFactory("Graph", dropFact);
 
   aLevel.Request(*aggFact);
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build, Sca
 
 }  // Build
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build_MIS2_Coarsen, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -167,7 +167,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2
   RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
   aggFact->SetFactory("Graph", dropFact);
   aggFact->SetParameter("aggregation: coloring algorithm",
                         Teuchos::ParameterEntry(std::string("mis2 coarsening")));
@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2
 
 }  // Build_MIS2_Coarsen
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build_MIS2_Aggregate, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -214,7 +214,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2
   RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-  RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+  RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
   aggFact->SetFactory("Graph", dropFact);
   aggFact->SetParameter("aggregation: coloring algorithm",
                         Teuchos::ParameterEntry(std::string("mis2 aggregation")));
@@ -225,11 +225,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory_kokkos, Build_MIS2
 
 }  // Build_MIS2_Aggregate
 
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                                        \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Constructor, Scalar, LO, GO, Node)        \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build, Scalar, LO, GO, Node)              \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Coarsen, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory_kokkos, Build_MIS2_Aggregate, Scalar, LO, GO, Node)
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                                 \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Constructor, Scalar, LO, GO, Node)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build, Scalar, LO, GO, Node)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build_MIS2_Coarsen, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build_MIS2_Aggregate, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

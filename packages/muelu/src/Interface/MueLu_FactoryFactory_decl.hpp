@@ -161,13 +161,14 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
+#ifdef HAVE_MUELU_DEPRECATED_CODE
 #include "MueLu_NullspaceFactory_kokkos.hpp"
+#endif
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_MatrixFreeTentativePFactory.hpp"
-#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #include "MueLu_RegionRFactory_kokkos.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
@@ -305,13 +306,14 @@ class FactoryFactory : public BaseClass {
     if (factoryName == "ZeroSubBlockAFactory") return Build2<ZeroSubBlockAFactory>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "CoalesceDropFactory_kokkos") return Build2<CoalesceDropFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     if (factoryName == "NullspaceFactory_kokkos") return Build2<NullspaceFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
+#endif
     if (factoryName == "SaPFactory_kokkos") return Build2<SaPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "SemiCoarsenPFactory_kokkos") return Build2<SemiCoarsenPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "StructuredAggregationFactory_kokkos") return Build2<StructuredAggregationFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "TentativePFactory_kokkos") return Build2<TentativePFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
     if (factoryName == "MatrixFreeTentativePFactory") return Build2<MatrixFreeTentativePFactory>(paramList, factoryMapIn, factoryManagersIn);
-    if (factoryName == "UncoupledAggregationFactory_kokkos") return Build2<UncoupledAggregationFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
 
     // Handle removed Kokkos factories
     if (factoryName == "CoarseMapFactory_kokkos") return Build2<CoarseMapFactory>(paramList, factoryMapIn, factoryManagersIn);

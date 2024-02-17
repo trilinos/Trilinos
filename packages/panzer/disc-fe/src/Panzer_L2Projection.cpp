@@ -37,6 +37,7 @@ namespace panzer {
     elementBlockNames_ = elementBlockNames;
     worksetContainer_ = worksetContainer;
     setupCalled_ = true;
+    useUserSuppliedBasisValues_ = false;
 
     // Build target DOF Manager
     targetGlobalIndexer_ =
@@ -64,6 +65,18 @@ namespace panzer {
     targetGlobalIndexer_->buildGlobalUnknowns();
 
     // Check workset needs are correct
+  }
+
+  void panzer::L2Projection::useBasisValues(const std::map<std::string,Teuchos::RCP<panzer::BasisValues2<double>>>& bv)
+  {
+    useUserSuppliedBasisValues_ = true;
+    basisValues_ = bv;
+
+    // Check that the basis and integration descriptor match what was
+    // supplied in setup.
+    for (const auto& eblock : elementBlockNames_) {
+      TEUCHOS_ASSERT(basisValues_[eblock]->getBasisDescriptor()==targetBasisDescriptor_);
+    }
   }
 
   Teuchos::RCP<panzer::GlobalIndexer>
@@ -107,13 +120,49 @@ namespace panzer {
         if (elementBlockMultipliers != nullptr)
           ebMultiplier = elementBlockMultipliers->find(block)->second;
 
+        // Get the cell local ids and set the BasisValues object (BV
+        // can come from a user defined set or from WorksetContainer).
+        const panzer::BasisValues2<double>* bv_ptr;
+        int num_cells_owned_ghosted_virtual = 0;
+        int num_cells_owned = 0;
+        Kokkos::View<const panzer::LocalOrdinal*> cell_local_ids;
+        if (useUserSuppliedBasisValues_) {
+          bv_ptr = basisValues_[block].get();
+          auto tmp = connManager_->getElementBlock(block); // no ghosting or virtual in this case
+          Kokkos::View<panzer::LocalOrdinal*>::HostMirror cell_local_ids_host(tmp.data(),tmp.size());
+          Kokkos::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
+          Kokkos::deep_copy(cell_local_ids_nonconst,cell_local_ids_host);
+          cell_local_ids = cell_local_ids_nonconst;
+          num_cells_owned_ghosted_virtual = cell_local_ids.extent(0);
+          num_cells_owned = cell_local_ids.extent(0);
+        }
+        else {
+          // Based on descriptor, currently assumes there should only
+          // be one workset (partitioned path assumes a single
+          // workset).
+          panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+          const auto worksets = worksetContainer_->getWorksets(wd);
+          TEUCHOS_ASSERT(worksets->size() == 1);
+          const auto& workset = (*worksets)[0];
+          bv_ptr = &(workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_));
+          num_cells_owned_ghosted_virtual = workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells();
+          num_cells_owned = workset.numOwnedCells();
+          cell_local_ids = workset.getLocalCellIDs();
+        }
+        const auto& basisValues = *bv_ptr;
+
+        // Leaving the commented out workset loop in teh code for now
+        // in case we want to support the original workset
+        // construction path in the workset container that is used
+        // here.
+
         // Based on descriptor, currently assumes there should only be one workset
-        panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-        const auto worksets = worksetContainer_->getWorksets(wd);
+        // panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+        // const auto worksets = worksetContainer_->getWorksets(wd);
 
-        for (const auto& workset : *worksets) {
+        // for (const auto& workset : *worksets) {
 
-          const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+        //   const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
           const auto unweightedBasis = basisValues.getBasisValues(false).get_static_view();
           const auto weightedBasis = basisValues.getBasisValues(true).get_static_view();
@@ -128,17 +177,17 @@ namespace panzer {
           Kokkos::deep_copy(kOffsets, kOffsets_h);
 
           // Local Ids
-          PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+          PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", num_cells_owned_ghosted_virtual,
               targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
+          const auto cellLocalIdsNoGhost = Kokkos::subview(cell_local_ids,std::make_pair(0,num_cells_owned));
 
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
           const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
           if ( use_lumping ) {
-            Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+            Kokkos::parallel_for(num_cells_owned,KOKKOS_LAMBDA (const int& cell) {
               double total_mass = 0.0, trace = 0.0;
 
               panzer::LocalOrdinal cLIDs[256];
@@ -176,7 +225,7 @@ namespace panzer {
             });
 
           } else {
-            Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+            Kokkos::parallel_for(num_cells_owned,KOKKOS_LAMBDA (const int& cell) {
 
               panzer::LocalOrdinal cLIDs[256];
               const int numIds = static_cast<int>(localIds.extent(1));
@@ -201,7 +250,7 @@ namespace panzer {
 
             });
           }
-        }
+          //} loop over worksets
       }
     } else {
       auto M = ghostedMatrix->getLocalMatrixDevice();

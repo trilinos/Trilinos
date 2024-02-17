@@ -323,6 +323,9 @@ class TpetraBlockCrsMatrix
   //! Get offsets of the diagonal entries in the matrix.
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const;
 
+  //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+  void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const;
+
   void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag);
 
   //! Left scale operator with given vector values

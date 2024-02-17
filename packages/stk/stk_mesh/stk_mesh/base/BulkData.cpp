@@ -4353,7 +4353,7 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(Ent
         for(size_t entityIndex = 0; entityIndex < bucket.size(); entityIndex++)
         {
             Entity entity = bucket[entityIndex];
-            if ( state(entity) != Unchanged )
+            if ( is_valid(entity) && state(entity) != Unchanged )
             {
                 const stk::mesh::Entity* nodes = begin_nodes(entity);
 
@@ -4961,6 +4961,10 @@ void BulkData::batch_change_entity_parts( const stk::mesh::EntityVector& entitie
     STK_ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
                     <<"BulkData::change_entity_parts(vector-of-entities) can not be called within an outer modification scope.");
 
+    if (opt == ModEndOptimizationFlag::MOD_END_SORT) {
+      m_bucket_repository.set_remove_mode_tracking();
+    }
+
     OrdinalVector scratchOrdinalVec, scratchSpace;
     for(size_t i=0; i<entities.size(); ++i) {
       internal_verify_and_change_entity_parts(entities[i], add_parts[i], remove_parts[i],
@@ -4968,6 +4972,9 @@ void BulkData::batch_change_entity_parts( const stk::mesh::EntityVector& entitie
     }
 
     internal_modification_end_for_change_parts(opt);
+    if (opt == ModEndOptimizationFlag::MOD_END_SORT) {
+      m_bucket_repository.set_remove_mode_fill_and_sort();
+    }
 }
 
 void BulkData::batch_change_entity_parts(const stk::mesh::EntityVector& entities,
@@ -4986,9 +4993,16 @@ void BulkData::batch_change_entity_parts(const stk::mesh::EntityVector& entities
     STK_ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
                     <<"BulkData::change_entity_parts(vector-of-entities) can not be called within an outer modification scope.");
 
+    if (opt == ModEndOptimizationFlag::MOD_END_SORT) {
+      m_bucket_repository.set_remove_mode_tracking();
+    }
+
     internal_verify_and_change_entity_parts(entities, add_parts, remove_parts);
 
     internal_modification_end_for_change_parts(opt);
+    if (opt == ModEndOptimizationFlag::MOD_END_SORT) {
+      m_bucket_repository.set_remove_mode_fill_and_sort();
+    }
 }
 
 void BulkData::change_entity_parts(const Selector& selector,
@@ -5773,10 +5787,10 @@ void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
 
         m_modSummary.write_summary(m_meshModification.synchronized_count(), false);
 
+        internal_finish_modification_end(opt);
+
         if(parallel_size() > 1)
             check_mesh_consistency();
-
-        internal_finish_modification_end(opt);
     }
 }
 

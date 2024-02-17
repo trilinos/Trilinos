@@ -56,7 +56,6 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_IndexManager_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
-#include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 
 namespace MueLuTests {

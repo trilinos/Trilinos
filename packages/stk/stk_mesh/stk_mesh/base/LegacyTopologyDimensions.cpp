@@ -32,38 +32,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-//BEGIN
-#include <gtest/gtest.h>                // for TEST
-#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
-#include <stk_util/environment/perf_util.hpp>
-
+#include <stk_mesh/base/LegacyTopologyDimensions.hpp>
 
 namespace stk {
+namespace mesh {
+namespace legacy {
 
-TEST(stkMeshHowTo, makeNightlyTrackedTest)
-{
-  double start_time = stk::cpu_time();
+const char * ElementNode::name() const
+{ static const char n[] = "ElementNode" ; return n ; }
 
-  // <do-something>
+const ElementNode & ElementNode::tag()
+{ static const ElementNode self ; return self ; }
 
-  double first_timer = stk::cpu_time() - start_time;
+} // namespace legacy
+} // namespace mesh
+} // namespace stk
 
-  start_time = stk::cpu_time();
-
-  // <do-something-else>
-
-  double second_timer = stk::cpu_time() - start_time;
-
-  double total_time = first_timer + second_timer;
-
-  static const int NUM_TIMERS = 3;
-  const double timers[NUM_TIMERS] =
-    {first_timer, second_timer, total_time};
-  const char* timer_names[NUM_TIMERS] =
-    {"First Timer Name", "Second Timer Name", "Total time"};
-
-  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
-}
-
-}
-//END

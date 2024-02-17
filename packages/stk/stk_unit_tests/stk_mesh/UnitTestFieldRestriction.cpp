@@ -86,6 +86,30 @@ TEST( UnitTestFieldRestriction, copyConstruct )
   EXPECT_EQ( dim, tmpfr.dimension() );
 }
 
+TEST( UnitTestFieldRestriction, selects_part)
+{
+  stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
+  stk::mesh::Part& part_a = meta.declare_part("a");
+  stk::mesh::Part& part_b = meta.declare_part("b");
+
+  stk::mesh::FieldRestriction fr(part_a);
+  EXPECT_TRUE(fr.selects(part_a));
+  EXPECT_FALSE(fr.selects(part_b));
+}
+
+TEST( UnitTestFieldRestriction, union_selects_part)
+{
+  stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
+  stk::mesh::Part& part_a = meta.declare_part("a");
+  stk::mesh::Part& part_b = meta.declare_part("b");
+
+  stk::mesh::FieldRestriction fr(part_a);
+  fr.add_union(part_b);
+  EXPECT_TRUE(fr.selects(part_a));
+  EXPECT_TRUE(fr.selects(part_b));
+}
 
 TEST( UnitTestFieldRestriction, operatorEqual )
 {

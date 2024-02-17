@@ -95,7 +95,7 @@
   </ParameterList>
 
   <ParameterList name="Responses">
-    <ParameterList name="L2 Error E">
+    <ParameterList name="L2 Error E maxwell - analyticSolution">
       <Parameter name="Type" type="string" value="Functional"/>
       <Parameter name="Field Name" type="string" value="ERROR E"/>
       <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>

@@ -32,17 +32,50 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/base/TopologyDimensions.hpp>
+#include "gtest/gtest.h"
+#include "stk_topology/topology.hpp"
 
-namespace stk {
-namespace mesh {
+namespace {
 
-const char * ElementNode::name() const
-{ static const char n[] = "ElementNode" ; return n ; }
+//begin_num_sides
+TEST(stk_topology, shell_side_num_sides) {
+  stk::topology shell = stk::topology::SHELL_QUAD_4;
 
-const ElementNode & ElementNode::tag()
-{ static const ElementNode self ; return self ; }
+  EXPECT_TRUE(shell.is_valid());
+  EXPECT_TRUE(shell.is_shell());
 
-} // namespace mesh
-} // namespace stk
+  EXPECT_EQ(shell.rank(),stk::topology::ELEMENT_RANK);
+  EXPECT_EQ(shell.side_rank(),stk::topology::FACE_RANK);
 
+  EXPECT_EQ(shell.num_vertices(),4u);
+  EXPECT_EQ(shell.num_edges(),4u);
+
+  EXPECT_EQ(shell.num_faces(),2u);
+  EXPECT_EQ(shell.num_sides(),6u);
+  EXPECT_EQ(shell.num_sub_topology(shell.side_rank()), 2u);
+  EXPECT_NE(shell.num_sub_topology(shell.side_rank()), shell.num_sides());
+}
+//end_num_sides
+
+//begin_shell_side_topo
+TEST(stk_topology, shell_side_topology) {
+  stk::topology shell = stk::topology::SHELL_QUAD_4;
+
+  EXPECT_TRUE(shell.is_valid());
+  EXPECT_TRUE(shell.is_shell());
+
+  EXPECT_EQ(shell.num_faces(),2u);
+  EXPECT_EQ(shell.face_topology(0), stk::topology::QUAD_4);
+  EXPECT_EQ(shell.face_topology(1), stk::topology::QUAD_4);
+
+  EXPECT_EQ(shell.num_sides(),6u);
+  EXPECT_EQ(shell.side_topology(0), stk::topology::QUAD_4);
+  EXPECT_EQ(shell.side_topology(1), stk::topology::QUAD_4);
+  EXPECT_EQ(shell.side_topology(2), stk::topology::SHELL_SIDE_BEAM_2);
+  EXPECT_EQ(shell.side_topology(3), stk::topology::SHELL_SIDE_BEAM_2);
+  EXPECT_EQ(shell.side_topology(4), stk::topology::SHELL_SIDE_BEAM_2);
+  EXPECT_EQ(shell.side_topology(5), stk::topology::SHELL_SIDE_BEAM_2);
+}
+//end_shell_side_topo
+
+}

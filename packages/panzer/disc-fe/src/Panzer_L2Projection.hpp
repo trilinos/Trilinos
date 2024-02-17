@@ -28,6 +28,7 @@ namespace panzer {
   class DOFManager;
   class GlobalIndexer;
   class WorksetContainer;
+  template<typename T> class BasisValues2;
 
   /** \brief Unified set of tools for building objects for lumped and
       consistent L2 projects between bases.
@@ -42,6 +43,8 @@ namespace panzer {
     mutable Teuchos::RCP<panzer::WorksetContainer> worksetContainer_;
     bool setupCalled_;
     Teuchos::RCP<panzer::DOFManager> targetGlobalIndexer_;
+    bool useUserSuppliedBasisValues_;
+    std::map<std::string,Teuchos::RCP<panzer::BasisValues2<double>>> basisValues_;
 
   public:
 
@@ -63,6 +66,16 @@ namespace panzer {
                const Teuchos::RCP<const panzer::ConnManager>& connManager,
                const std::vector<std::string>& elementBlockNames,
                const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
+
+    /** \brief Override using the panzer::WorksetContainer and instead use the registered BasisValues object.
+
+        \param[in] bv BasisValues object setup in lazy evalaution mode with registered orientations if required.
+
+        The intention of this function is to minimize memory use and
+        redundant evaluations by avoiding workset construction and
+        enforcing lazy evaluation in basis values.
+     */
+    void useBasisValues(const std::map<std::string,Teuchos::RCP<panzer::BasisValues2<double>>>& map_eblock_to_bv);
 
     /// Returns the target global indexer. Will be null if setup() has not been called.
     Teuchos::RCP<panzer::GlobalIndexer> getTargetGlobalIndexer() const;

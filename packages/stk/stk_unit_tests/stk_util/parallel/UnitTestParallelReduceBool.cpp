@@ -6,7 +6,11 @@
 
 TEST(ParallelReduceBool, MPI_Cxx_Bool)
 {
-  EXPECT_NE(MPI_CXX_BOOL, MPI_DATATYPE_NULL);
+  if (stk::util::get_common_coupling_version() < 7 &&
+      stk::util::get_common_coupling_version() >= 3)
+  {
+    EXPECT_NE(MPI_CXX_BOOL, MPI_DATATYPE_NULL);
+  }
 }
 
 //-----------------------------------------------------------------------------
