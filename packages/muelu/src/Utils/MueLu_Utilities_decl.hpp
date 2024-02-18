@@ -95,6 +95,7 @@ class Epetra_Vector;
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_FEMultiVector.hpp>
+#include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 
@@ -512,7 +513,8 @@ class Utilities<double, int, int, Xpetra::EpetraNode> : public UtilitiesBase<dou
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     throw Exceptions::RuntimeError("Op2TpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
 #else
-    RCP<const Matrix> mat = rcp_dynamic_cast<const Matrix>(Op);
+    RCP<const Matrix> mat                                                               = rcp_dynamic_cast<const Matrix>(Op);
+    RCP<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rmat = rcp_dynamic_cast<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Op);
     if (!mat.is_null()) {
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(mat);
       if (crsOp == Teuchos::null)
@@ -529,6 +531,8 @@ class Utilities<double, int, int, Xpetra::EpetraNode> : public UtilitiesBase<dou
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
         return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
       }
+    } else if (!rmat.is_null()) {
+      return rmat->getTpetra_RowMatrix();
     } else {
       RCP<const TpetraOperator> tpOp                                                = rcp_dynamic_cast<const TpetraOperator>(Op, true);
       RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tOp   = tpOp->getOperatorConst();
@@ -543,7 +547,8 @@ class Utilities<double, int, int, Xpetra::EpetraNode> : public UtilitiesBase<dou
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     throw Exceptions::RuntimeError("Op2NonConstTpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
 #else
-    RCP<Matrix> mat = rcp_dynamic_cast<Matrix>(Op);
+    RCP<Matrix> mat                                                               = rcp_dynamic_cast<Matrix>(Op);
+    RCP<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rmat = rcp_dynamic_cast<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Op);
     if (!mat.is_null()) {
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(mat);
       if (crsOp == Teuchos::null)
@@ -560,6 +565,8 @@ class Utilities<double, int, int, Xpetra::EpetraNode> : public UtilitiesBase<dou
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
         return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
       }
+    } else if (!rmat.is_null()) {
+      return rmat->getTpetra_RowMatrixNonConst();
     } else {
       RCP<TpetraOperator> tpOp                                                = rcp_dynamic_cast<TpetraOperator>(Op, true);
       RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tOp   = tpOp->getOperator();
