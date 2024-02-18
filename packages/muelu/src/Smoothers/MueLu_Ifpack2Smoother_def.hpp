@@ -782,7 +782,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHiptmair(L
   }
   if (smoother2 == "CHEBYSHEV") {
     ParameterList& list2 = paramList.sublist("hiptmair: smoother list 2");
-    SetupChebyshevEigenvalues(currentLevel, "A", "EdgeMatrix ", list2);
+    SetupChebyshevEigenvalues(currentLevel, "NodeMatrix", "NodeMatrix ", list2);
   }
 
   // FIXME: Should really add some checks to make sure the eigenvalue calcs worked like in
