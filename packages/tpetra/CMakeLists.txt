@@ -986,6 +986,9 @@ ENDIF ()
 IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Tpetra_INST_DOUBLE)
   MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>.  However, Tpetra_INST_DOUBLE is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
 ENDIF ()
+IF (Tpetra_INST_COMPLEX_FLOAT AND NOT Tpetra_INST_FLOAT)
+  MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>.  However, Tpetra_INST_FLOAT is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
+ENDIF ()
 
 # Tpetra requires that the BLAS work for Scalar, as long as Scalar is
 # one of the four types (S, D, C, Z) that the BLAS promises to
