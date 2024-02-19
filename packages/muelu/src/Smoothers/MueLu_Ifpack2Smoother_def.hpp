@@ -717,14 +717,14 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshev(
     prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
     {
-      SubFactoryMonitor(*this, "Preconditioner init", currentLevel);
+      SubFactoryMonitor m(*this, "Preconditioner init", currentLevel);
       prec_->initialize();
     }
   } else
     SetPrecParameters();
 
   {
-    SubFactoryMonitor(*this, "Preconditioner compute", currentLevel);
+    SubFactoryMonitor m(*this, "Preconditioner compute", currentLevel);
     prec_->compute();
   }
 
