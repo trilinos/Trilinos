@@ -106,7 +106,6 @@
 #include "MueLu_LowPrecisionFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 
@@ -1940,7 +1939,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
   // Smoothed aggregation
-  MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
+  RCP<Factory> P = rcp(new SaPFactory());
   ParameterList Pparams;
   if (paramList.isSublist("matrixmatrix: kernel params"))
     Pparams.sublist("matrixmatrix: kernel params", false) = paramList.sublist("matrixmatrix: kernel params");

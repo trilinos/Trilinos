@@ -55,7 +55,7 @@
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
-#include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_SaPFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
@@ -68,7 +68,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, Constructor, Scalar, LocalO
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+  RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
   TEST_EQUALITY(sapFactory != Teuchos::null, true);
 
   out << *sapFactory << std::endl;
@@ -97,10 +97,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, Build, Scalar, LocalOrdinal
   coarseLevel.Set("P", Ptent);
 
   // construct the factory to be tested
-  const double dampingFactor        = 0.5;
-  RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+  const double dampingFactor = 0.5;
+  RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
   ParameterList Pparams;
   Pparams.set("sa: damping factor", dampingFactor);
+  Pparams.set("use kokkos refactor", true);
   sapFactory->SetParameterList(Pparams);
   sapFactory->SetFactory("A", MueLu::NoFactory::getRCP());
   sapFactory->SetFactory("P", MueLu::NoFactory::getRCP());
@@ -190,13 +191,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, EnforceConstraints, Scalar,
   coarseLevel.Set("P", Ptent);
 
   // construct the factory to be tested
-  const double dampingFactor        = 0.5;
-  RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+  const double dampingFactor = 0.5;
+  RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
   ParameterList Pparams;
   Pparams.set("sa: damping factor", dampingFactor);
   Pparams.set("sa: enforce constraints", true);
   Pparams.set("sa: max eigenvalue", (double)2.0);
   Pparams.set("tentative: calculate qr", false);
+  Pparams.set("use kokkos refactor", true);
 
   sapFactory->SetParameterList(Pparams);
   sapFactory->SetFactory("A", MueLu::NoFactory::getRCP());
@@ -243,7 +245,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, ConstrainRowOptimalScalarPD
   Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
   P                         = Xpetra::IO<SC, LO, GO, NO>::Read("../unit_tests/TestMatrices/SaP_constrainTest_P.mat", lib, comm);
 
-  RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+  RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
+  ParameterList Pparams;
+  Pparams.set("use kokkos refactor", true);
+  sapFactory->SetParameterList(Pparams);
   sapFactory->optimalSatisfyPConstraintsForScalarPDEs(P);
 
   // check that row sums are all one by checking the norm of the vector

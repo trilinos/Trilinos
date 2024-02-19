@@ -78,7 +78,6 @@
 #include "MueLu_InverseApproximationFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
-#include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 
 #include "MueLu_FactoryManager_decl.hpp"
@@ -130,11 +129,7 @@ const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal,
     if (varName == "Ptent") return MUELU_KOKKOS_FACTORY(varName, TentativePFactory, TentativePFactory_kokkos);
     if (varName == "P") {
       // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
-      RCP<Factory> factory;
-      if (useKokkos_)
-        factory = rcp(new SaPFactory_kokkos());
-      else
-        factory = rcp(new SaPFactory());
+      RCP<Factory> factory = rcp(new SaPFactory());
       factory->SetFactory("P", GetFactory("Ptent"));
       return SetAndReturnDefaultFactory(varName, factory);
     }

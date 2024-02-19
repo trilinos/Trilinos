@@ -13,7 +13,7 @@ smoother ->
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -97,7 +97,7 @@ smoother ->
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -156,7 +156,7 @@ smoother ->
 
 Level 3
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
