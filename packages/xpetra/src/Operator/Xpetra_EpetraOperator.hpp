@@ -71,13 +71,13 @@ class EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal, Node> {
   //@{
 
   //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
-  virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const {
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const {
     XPETRA_MONITOR("EpetraOperator::getDomainMap()");
     return toXpetra<GlobalOrdinal, Node>(op_->OperatorDomainMap());
   }
 
   //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
-  virtual Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const {
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const {
     XPETRA_MONITOR("EpetraOperator::getRangeMap()");
     return toXpetra<GlobalOrdinal, Node>(op_->OperatorRangeMap());
   }

@@ -1066,7 +1066,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   }
 
   //! \brief Returns the Map associated with the domain of this operator.
-  RCP<const Map> getDomainMap() const {
+  const RCP<const Map> getDomainMap() const {
     XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap()");
     return domainmaps_->getMap(); /*domainmaps_->getFullMap();*/
   }
@@ -1096,7 +1096,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   }
 
   //! Returns the Map associated with the range of this operator.
-  RCP<const Map> getRangeMap() const {
+  const RCP<const Map> getRangeMap() const {
     XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()");
     return rangemaps_->getMap(); /*rangemaps_->getFullMap();*/
   }

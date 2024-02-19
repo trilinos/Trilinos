@@ -397,11 +397,11 @@ class CrsMatrixWrap : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const;
+  const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const;
 
   //! Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const;
+  const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
   //! This might be <tt>null</tt> until fillComplete() is called.

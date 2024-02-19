@@ -122,12 +122,12 @@ Matrix2CrsMatrix(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   return SM_Matrix_->getDomainMap();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
   return SM_Matrix_->getRangeMap();
 }
 

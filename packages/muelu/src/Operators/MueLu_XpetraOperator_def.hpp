@@ -51,7 +51,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getDomainMap() const {
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
@@ -61,7 +61,7 @@ XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getRangeMap() const {
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;

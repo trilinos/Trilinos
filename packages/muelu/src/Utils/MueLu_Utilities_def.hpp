@@ -48,8 +48,10 @@
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <iostream>
 
 #include "MueLu_ConfigDefs.hpp"
+#include "Xpetra_TpetraRowMatrix.hpp"
 
 #ifdef HAVE_MUELU_EPETRA
 #ifdef HAVE_MPI
@@ -354,7 +356,8 @@ Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Utilities<Sca
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraRow(RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Op) {
-  RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mat = rcp_dynamic_cast<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
+  RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mat           = rcp_dynamic_cast<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
+  RCP<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rmat = rcp_dynamic_cast<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
   if (!mat.is_null()) {
     RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>> crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(mat);
     if (crsOp == Teuchos::null)
@@ -371,6 +374,8 @@ RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilitie
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
       return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
     }
+  } else if (!rmat.is_null()) {
+    return rmat->getTpetra_RowMatrix();
   } else {
     RCP<const Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpOp = rcp_dynamic_cast<const Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op, true);
     RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tOp        = tpOp->getOperatorConst();
@@ -381,7 +386,8 @@ RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilitie
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraRow(RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Op) {
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mat = rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mat           = rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
+  RCP<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rmat = rcp_dynamic_cast<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
   if (!mat.is_null()) {
     RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>> crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(mat);
     if (crsOp == Teuchos::null)
@@ -398,6 +404,8 @@ RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Utilities<Scal
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
       return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
     }
+  } else if (!rmat.is_null()) {
+    return rmat->getTpetra_RowMatrixNonConst();
   } else {
     RCP<Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpOp = rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op, true);
     RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tOp        = tpOp->getOperator();
