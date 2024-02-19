@@ -658,7 +658,7 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
         coarseParams->set("leftOverFactor", temp);
       }
       coarseParams->set("keepTransfers", -1);
-      TEUCHOS_ASSERT((0 <= keepTransfers) && (keepTransfers <= transferMatrices_.size()));
+      TEUCHOS_ASSERT((0 <= keepTransfers) && (keepTransfers <= Teuchos::as<int>(transferMatrices_.size())));
 
       size_t droppedTransfers = 0;
       for (int k = Teuchos::as<int>(transferMatrices_.size()) - 1; k >= 0; --k) {

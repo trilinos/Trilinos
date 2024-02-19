@@ -302,7 +302,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
       params.sublist("user data").set("Coordinates", coords);
 
-      H = MueLu::constructHierarchyFromAuxiliary(Teuchos::rcp_dynamic_cast<Operator>(op, true), auxH, params, out);
+      H = MueLu::constructHierarchyFromAuxiliary(op, auxH, params, out);
     }
 
 #ifdef HAVE_MUELU_BELOS

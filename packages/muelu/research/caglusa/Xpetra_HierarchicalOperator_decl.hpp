@@ -8,6 +8,8 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_TpetraBlockedMatrix.hpp>
+#include "Xpetra_OperatorWithDiagonal.hpp"
+#include "Xpetra_RowMatrix.hpp"
 
 namespace Xpetra {
 
@@ -15,7 +17,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-class HierarchicalOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+class HierarchicalOperator : public OperatorWithDiagonal<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
  public:
   using tHOp                = Tpetra::HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using map_type            = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -28,7 +30,9 @@ class HierarchicalOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalO
 
   //! Constructor
   HierarchicalOperator(const RCP<tHOp>& op)
-    : op_(op) {}
+    : op_(op) {
+    this->setTpetra_RowMatrix(op);
+  }
 
   HierarchicalOperator(const RCP<matrix_type>& nearField,
                        const RCP<blocked_matrix_type>& kernelApproximations,
@@ -89,9 +93,9 @@ class HierarchicalOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalO
   }
 
   //! Gets the operator out
-  RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator() { return op_; }
+  // RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_RowMatrix() const override { return op_; }
 
-  RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperatorConst() const { return op_; }
+  // RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_RowMatrixNonConst() const override { return op_; }
 
   void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
     describe(out, verbLevel, true);

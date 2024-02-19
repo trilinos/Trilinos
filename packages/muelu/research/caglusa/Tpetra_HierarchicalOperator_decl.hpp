@@ -6,6 +6,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_RowMatrix.hpp>
+#include <Tpetra_OperatorWithDiagonal.hpp>
 #include <Tpetra_BlockedMap_decl.hpp>
 #include <Tpetra_BlockedMatrix_decl.hpp>
 
@@ -52,7 +53,7 @@ template <class Scalar        = Tpetra::Operator<>::scalar_type,
           class LocalOrdinal  = typename Tpetra::Operator<Scalar>::local_ordinal_type,
           class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
           class Node          = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class HierarchicalOperator : public Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+class HierarchicalOperator : public Tpetra::OperatorWithDiagonal<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
  public:
   using matrix_type = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using mv_type     = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -181,90 +182,8 @@ class HierarchicalOperator : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Glob
     return nearField_->getLocalNumEntries();
   }
 
-  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  size_t getGlobalMaxNumRowEntries() const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  LocalOrdinal getBlockSize() const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  size_t getLocalMaxNumRowEntries() const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  bool hasColMap() const {
-    return false;
-  }
-
-  bool isLocallyIndexed() const {
-    return true;
-  }
-
-  bool isGloballyIndexed() const {
-    return true;
-  }
-
-  bool isFillComplete() const {
-    return true;
-  }
-
-  bool supportsRowViews() const {
-    return false;
-  }
-
-  void
-  getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                   nonconst_global_inds_host_view_type& Indices,
-                   nonconst_values_host_view_type& Values,
-                   size_t& NumEntries) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void
-  getLocalRowCopy(LocalOrdinal LocalRow,
-                  nonconst_local_inds_host_view_type& Indices,
-                  nonconst_values_host_view_type& Values,
-                  size_t& NumEntries) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void
-  getGlobalRowView(GlobalOrdinal GlobalRow,
-                   global_inds_host_view_type& indices,
-                   values_host_view_type& values) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void
-  getLocalRowView(LocalOrdinal LocalRow,
-                  local_inds_host_view_type& indices,
-                  values_host_view_type& values) const {
-    throw std::runtime_error("Not implemented.");
-  }
-
   void getLocalDiagCopy(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag) const {
     nearField_->getLocalDiagCopy(diag);
-  }
-
-  void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
-    throw std::runtime_error("Not implemented.");
-  }
-
-  mag_type getFrobeniusNorm() const {
-    return 0.;
   }
 
   void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
