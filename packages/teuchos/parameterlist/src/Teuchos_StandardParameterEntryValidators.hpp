@@ -2546,18 +2546,22 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ,const std::string &sublistName, const bool activeQuery
   ) const
 {
-  const bool validType = ( entry.getAny(activeQuery).type() == typeid(std::string) );
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
-    !validType, Exceptions::InvalidParameterType
-    ,"Error, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
-    << "\",type=\""<<entry.getAny(activeQuery).typeName()<<"\"}"
-    << "\nin the sublist \"" << sublistName << "\""
-    << "\nhas the wrong type."
-    << "\n\nThe correct type is \"string\"!"
-    );
-  const std::string
-    &strValue = any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
-  return getIntegralValue(strValue,paramName,sublistName); // This will validate the value and throw!
+  if (entry.isType<IntegralType>()){
+    return getValue<IntegralType>(entry);
+  } else{
+    const bool validType = ( entry.getAny(activeQuery).type() == typeid(std::string) );
+    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+      !validType, Exceptions::InvalidParameterType
+      ,"Error, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
+      << "\",type=\""<<entry.getAny(activeQuery).typeName()<<"\"}"
+      << "\nin the sublist \"" << sublistName << "\""
+      << "\nhas the wrong type."
+      << "\n\nThe correct type is \"string\"!"
+      );
+    const std::string
+      &strValue = any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
+    return getIntegralValue(strValue,paramName,sublistName); // This will validate the value and throw!
+  }
 }
 
 
