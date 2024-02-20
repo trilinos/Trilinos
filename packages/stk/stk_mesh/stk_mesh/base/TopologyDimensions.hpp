@@ -55,7 +55,7 @@ namespace mesh {
 /** \ingroup stk_mesh_field_dimension_tags
  *  \brief  Define an array dimension of the number of nodes per element.
  */
-class STK_DEPRECATED ElementNode : public shards::ArrayDimTag {
+class ElementNode : public shards::ArrayDimTag {
 public:
 
   const char * name() const {
@@ -63,13 +63,15 @@ public:
     return n;
   }
 
-  const ElementNode & tag() {
+  static const ElementNode & tag() {
     static const ElementNode self;
     return self;
   }
 
 private:
-  ElementNode() {}
+  ElementNode() {
+    std::cerr << "Warning: The stk::mesh::ElementNode type is deprecated and will soon be removed." << std::endl;
+  }
   ElementNode( const ElementNode & );
   ElementNode & operator = ( const ElementNode & );
 };

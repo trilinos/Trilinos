@@ -21,12 +21,12 @@
 #include "StkIoUtils.hpp"                          // for part_primary_entit...
 #include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker
 #include "stk_mesh/base/Bucket.hpp"                // for Bucket
-#include "stk_mesh/base/LegacyCoordinateSystems.hpp"     // for Cartesian
+#include "stk_mesh/base/CoordinateSystems.hpp"     // for Cartesian
 #include "stk_mesh/base/EntityKey.hpp"             // for EntityKey
 #include "stk_mesh/base/FEMHelpers.hpp"            // for declare_element_edge
 #include "stk_mesh/base/Field.hpp"                 // for Field
 #include "stk_mesh/base/SideSetEntry.hpp"          // for SideSet
-#include "stk_mesh/base/LegacyTopologyDimensions.hpp"    // for ElementNode
+#include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
 #include "stk_mesh/base/Types.hpp"                 // for EntityId, PartVector
 #include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"  // for connect_face_to_edges
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"     // for connect_edge_to_el...
@@ -64,7 +64,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   }
   else {
     auto & coord_field =
-        stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::legacy::Cartesian>>(meta,
+        stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta,
                                                                                          stk::topology::NODE_RANK,
                                                                                          meta.coordinate_field_name());
     stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
@@ -147,7 +147,7 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
             distribution_factors_field = &meta.declare_field<double>(side_rank, field_name);
           }
           else {
-            distribution_factors_field = &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::legacy::ElementNode>>(meta, side_rank, field_name);
+            distribution_factors_field = &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(meta, side_rank, field_name);
           }
           stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
           stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);

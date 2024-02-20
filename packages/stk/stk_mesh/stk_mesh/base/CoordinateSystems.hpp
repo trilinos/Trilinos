@@ -42,13 +42,15 @@
 #include <string>                       // for string
 
 #define DEPRECATED_SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ADT ) \
-  class STK_DEPRECATED ADT : public shards::ArrayDimTag { \
+  class ADT : public shards::ArrayDimTag { \
   public: \
     const char * name() const { static const char n[] = # ADT; return n; } \
     const ADT & tag() { static const ADT self ; return self ; } \
   private: \
   ~ADT() {} \
-  ADT() {} \
+  ADT() { \
+    std::cerr << "Warning: The stk::mesh::" #ADT " type is deprecated and will soon be removed." << std::endl; \
+  } \
     ADT( const ADT & ); \
     ADT & operator = ( const ADT & ); \
   };
@@ -76,7 +78,7 @@ DEPRECATED_SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( SimpleArrayTag )
  *
  *   A Cartesian coordinate has up to three dimensions in X, Y, Z order.
  */
-struct STK_DEPRECATED Cartesian3d : public shards::ArrayDimTag {
+struct Cartesian3d : public shards::ArrayDimTag {
 
   enum { Size = 3 };                    ///< default size
 
@@ -93,7 +95,9 @@ struct STK_DEPRECATED Cartesian3d : public shards::ArrayDimTag {
   }
 
 private:
-  Cartesian3d() {}
+  Cartesian3d() {
+    std::cerr << "Warning: The stk::mesh::Cartesian3d type is deprecated and will soon be removed." << std::endl;
+  }
   Cartesian3d( const Cartesian3d & );
   Cartesian3d & operator = ( const Cartesian3d & );
 };
@@ -103,7 +107,7 @@ private:
  *
  *   A Cartesian coordinate has up to two dimensions in X, Y order.
  */
-struct STK_DEPRECATED Cartesian2d: public shards::ArrayDimTag {
+struct Cartesian2d: public shards::ArrayDimTag {
 
   enum { Size = 2 };                    ///< default size
 
@@ -120,19 +124,21 @@ struct STK_DEPRECATED Cartesian2d: public shards::ArrayDimTag {
   }
 
 private:
-  Cartesian2d() {}
+  Cartesian2d() {
+    std::cerr << "Warning: The stk::mesh::Cartesian2d type is deprecated and will soon be removed." << std::endl;
+  }
   Cartesian2d( const Cartesian2d & );
   Cartesian2d & operator = ( const Cartesian2d & );
 };
 
-STK_DEPRECATED typedef Cartesian3d Cartesian;
+typedef Cartesian3d Cartesian;
 /**
  *   \brief Implement an shards::ArrayDimTag for Cylindrical coordinate dimensions.
  *
  *   A Cylindral coordinate has up to three dimensions in
  *   radius, angle, and longitudinal-distance order.
  */
-struct STK_DEPRECATED Cylindrical : public shards::ArrayDimTag {
+struct Cylindrical : public shards::ArrayDimTag {
 
   enum { Radius = 0 , R = 0 ,           ///< Identifiers for each dimension
          Angle = 1 ,  A = 1 ,
@@ -149,7 +155,9 @@ struct STK_DEPRECATED Cylindrical : public shards::ArrayDimTag {
   }
 
 private:
-  Cylindrical() {}
+  Cylindrical() {
+    std::cerr << "Warning: The stk::mesh::Cylindrical type is deprecated and will soon be removed." << std::endl;
+  }
   Cylindrical( const Cylindrical & );
   Cylindrical & operator = ( const Cylindrical & );
 };
@@ -160,7 +168,7 @@ private:
  * \todo REFACTOR  Where should FullTensor live, in the application,
  *                 in the toolkit or a common application header?
  */
-struct STK_DEPRECATED FullTensor36 : public shards::ArrayDimTag {
+struct FullTensor36 : public shards::ArrayDimTag {
 
   enum { Size = 9 };
 
@@ -190,17 +198,19 @@ struct STK_DEPRECATED FullTensor36 : public shards::ArrayDimTag {
   }
 
 private:
-  FullTensor36() {}
+  FullTensor36() {
+    std::cerr << "Warning: The stk::mesh::FullTensor36 type is deprecated and will soon be removed." << std::endl;
+  }
   FullTensor36( const FullTensor36 & );
   FullTensor36 & operator = ( const FullTensor36 & );
 };
 
-STK_DEPRECATED typedef FullTensor36 FullTensor;
+typedef FullTensor36 FullTensor;
 
 /**
  *  \brief Implement an shards::ArrayDimTag for FullTensor.
  */
-struct STK_DEPRECATED FullTensor22 : public shards::ArrayDimTag {
+struct FullTensor22 : public shards::ArrayDimTag {
 
   enum { Size = 4 };
 
@@ -218,7 +228,9 @@ struct STK_DEPRECATED FullTensor22 : public shards::ArrayDimTag {
   }
 
 private:
-  FullTensor22() {}
+  FullTensor22() {
+    std::cerr << "Warning: The stk::mesh::FullTensor22 type is deprecated and will soon be removed." << std::endl;
+  }
   FullTensor22( const FullTensor22 & );
   FullTensor22 & operator = ( const FullTensor22 & );
 };
@@ -231,7 +243,7 @@ private:
  * \todo REFACTOR  Where should SymmetricTensor live, in the application,
  *                 in the toolkit or a common application header?
  */
-struct STK_DEPRECATED SymmetricTensor33 : public shards::ArrayDimTag {
+struct SymmetricTensor33 : public shards::ArrayDimTag {
 
   enum { Size = 6 };
 
@@ -250,12 +262,14 @@ struct STK_DEPRECATED SymmetricTensor33 : public shards::ArrayDimTag {
   }
 
 private:
-  SymmetricTensor33() {}
+  SymmetricTensor33() {
+    std::cerr << "Warning: The stk::mesh::SymmetricTensor33 type is deprecated and will soon be removed." << std::endl;
+  }
   SymmetricTensor33( const SymmetricTensor33 & );
   SymmetricTensor33 & operator = ( const SymmetricTensor33 & );
 };
 
-STK_DEPRECATED typedef SymmetricTensor33 SymmetricTensor;
+typedef SymmetricTensor33 SymmetricTensor;
 
 /**
  *  \brief Implement an shards::ArrayDimTag for SymmetricTensor.
@@ -264,7 +278,7 @@ STK_DEPRECATED typedef SymmetricTensor33 SymmetricTensor;
  *  has the radius and height of the cylindrical coordinate
  *  system but with no theta coordinate.
  */
-struct STK_DEPRECATED SymmetricTensor31 : public shards::ArrayDimTag {
+struct SymmetricTensor31 : public shards::ArrayDimTag {
 
   enum { Size = 4 };
 
@@ -282,7 +296,9 @@ struct STK_DEPRECATED SymmetricTensor31 : public shards::ArrayDimTag {
   }
 
 private:
-  SymmetricTensor31() {}
+  SymmetricTensor31() {
+    std::cerr << "Warning: The stk::mesh::SymmetricTensor31 type is deprecated and will soon be removed." << std::endl;
+  }
   SymmetricTensor31( const SymmetricTensor31 & );
   SymmetricTensor31 & operator = ( const SymmetricTensor31 & );
 };
@@ -290,7 +306,7 @@ private:
 /**
  *  \brief Implement an shards::ArrayDimTag for SymmetricTensor.
  */
-struct STK_DEPRECATED SymmetricTensor21 : public shards::ArrayDimTag {
+struct SymmetricTensor21 : public shards::ArrayDimTag {
 
   enum { Size = 3 };
 
@@ -308,7 +324,9 @@ struct STK_DEPRECATED SymmetricTensor21 : public shards::ArrayDimTag {
   }
 
 private:
-  SymmetricTensor21() {}
+  SymmetricTensor21() {
+    std::cerr << "Warning: The stk::mesh::SymmetricTensor21 type is deprecated and will soon be removed." << std::endl;
+  }
   SymmetricTensor21( const SymmetricTensor21 & );
   SymmetricTensor21 & operator = ( const SymmetricTensor21 & );
 };
@@ -322,7 +340,7 @@ private:
  * forces the diagonals to be zero and only the three off-diagonal
  * elements are useful.
  */
-struct STK_DEPRECATED AsymmetricTensor03 : public shards::ArrayDimTag {
+struct AsymmetricTensor03 : public shards::ArrayDimTag {
 
   enum { Size = 3 };
 
@@ -341,17 +359,19 @@ struct STK_DEPRECATED AsymmetricTensor03 : public shards::ArrayDimTag {
   }
 
 private:
-  AsymmetricTensor03() {}
+  AsymmetricTensor03() {
+    std::cerr << "Warning: The stk::mesh::AsymmetricTensor03 type is deprecated and will soon be removed." << std::endl;
+  }
   AsymmetricTensor03( const AsymmetricTensor03 & );
   AsymmetricTensor03 & operator = ( const AsymmetricTensor03 & );
 };
 
-STK_DEPRECATED typedef AsymmetricTensor03 AsymmetricTensor;
+typedef AsymmetricTensor03 AsymmetricTensor;
 
 /**
  *  \brief Implement an shards::ArrayDimTag for Matrix.
  */
-struct STK_DEPRECATED Matrix22 : public shards::ArrayDimTag {
+struct Matrix22 : public shards::ArrayDimTag {
 
   enum { Size = 4 };
 
@@ -369,7 +389,9 @@ struct STK_DEPRECATED Matrix22 : public shards::ArrayDimTag {
   }
 
 private:
-  Matrix22() {}
+  Matrix22() {
+    std::cerr << "Warning: The stk::mesh::Matrix22 type is deprecated and will soon be removed." << std::endl;
+  }
   Matrix22( const Matrix22 & );
   Matrix22 & operator = ( const Matrix22 & );
 };
@@ -377,7 +399,7 @@ private:
 /**
  *  \brief Implement an shards::ArrayDimTag for Matrix.
  */
-struct STK_DEPRECATED Matrix33 : public shards::ArrayDimTag {
+struct Matrix33 : public shards::ArrayDimTag {
 
   enum { Size = 9 };
 
@@ -396,12 +418,14 @@ struct STK_DEPRECATED Matrix33 : public shards::ArrayDimTag {
   }
 
 private:
-  Matrix33() {}
+  Matrix33() {
+    std::cerr << "Warning: The stk::mesh::Matrix33 type is deprecated and will soon be removed." << std::endl;
+  }
   Matrix33( const Matrix33 & );
   Matrix33 & operator = ( const Matrix33 & );
 };
 
-STK_DEPRECATED typedef Matrix33 Matrix;
+typedef Matrix33 Matrix;
 
 //----------------------------------------------------------------------
 
