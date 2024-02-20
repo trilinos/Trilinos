@@ -46,9 +46,12 @@
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_LinearPartitioner.hpp"
 #include "Ifpack2_LinePartitioner.hpp"
+#include "Ifpack2_Zoltan2Partitioner_decl.hpp"
+#include "Ifpack2_Zoltan2Partitioner_def.hpp"
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
-#include <Ifpack2_Parameters.hpp>
+#include "Ifpack2_LocalFilter.hpp"
+#include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 namespace Ifpack2 {
@@ -141,6 +144,7 @@ getValidParameters () const
   validParams->set("schwarz: filter singletons", false);
   validParams->set("schwarz: overlap level", 0);
   validParams->set("partitioner: type", "greedy");
+  validParams->set("zoltan2: algorithm", "phg");
   validParams->set("partitioner: local parts", 1);
   validParams->set("partitioner: overlap", 0);
   validParams->set("partitioner: combine mode", "ZERO"); // use string mode for this
@@ -650,6 +654,22 @@ initialize ()
     } else if (PartitionerType_ == "user") {
       Partitioner_ =
         rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
+    } else if (PartitionerType_ == "zoltan2") {
+      #if defined(HAVE_IFPACK2_ZOLTAN2)
+      if (A_->getGraph ()->getComm ()->getSize () == 1) {
+        // Only one MPI, so call zoltan2 with global graph
+        Partitioner_ =
+          rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_->getGraph ()) );
+      } else {
+        // Form local matrix to get local graph for calling zoltan2
+        Teuchos::RCP<const row_matrix_type> A_local = rcp (new LocalFilter<row_matrix_type> (A_));
+        Partitioner_ =
+          rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_local->getGraph ()) );
+      }
+      #else
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Ifpack2::BlockRelaxation::initialize: Zoltan2 not enabled.");
+      #endif
     } else {
       // We should have checked for this in setParameters(), so it's a
       // logic_error, not an invalid_argument or runtime_error.

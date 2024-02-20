@@ -291,10 +291,28 @@ Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getGraph () const
 {
-  // FIXME (mfh 20 Nov 2013) This is not what the documentation says
-  // this method should do!  It should return the graph of the locally
-  // filtered matrix, not the original matrix's graph.
-  return A_->getGraph ();
+  if (local_graph_ == Teuchos::null) {
+    local_ordinal_type numRows = this->getLocalNumRows();
+    Teuchos::Array<size_t> entriesPerRow(numRows);
+    for(local_ordinal_type i = 0; i < numRows; i++) {
+      entriesPerRow[i] = this->getNumEntriesInLocalRow(i);
+    }
+    Teuchos::RCP<crs_graph_type> local_graph_nc =
+      Teuchos::rcp (new crs_graph_type (this->getRowMap (),
+                                        this->getColMap (),
+                                        entriesPerRow()));
+    // copy local indexes into local graph
+    nonconst_local_inds_host_view_type indices("indices",this->getLocalMaxNumRowEntries());
+    nonconst_values_host_view_type values("values",this->getLocalMaxNumRowEntries());
+    for(local_ordinal_type i = 0; i < numRows; i++) {
+      size_t numEntries = 0;
+      this->getLocalRowCopy(i, indices, values, numEntries); // get indices & values
+      local_graph_nc->insertLocalIndices (i, numEntries, indices.data());
+    }
+    local_graph_nc->fillComplete (this->getDomainMap (), this->getRangeMap ());
+    local_graph_ = Teuchos::rcp_const_cast<const crs_graph_type> (local_graph_nc);
+  }
+  return local_graph_;
 }
 
 
