@@ -2013,7 +2013,7 @@ private:
   RCP<const ValidatorType> prototypeValidator_;
 
   /** \brief Hidden default constructor. */
-  AbstractArrayValidator<ValidatorType, EntryType>();
+  AbstractArrayValidator();
 
   //@}
 
