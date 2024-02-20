@@ -189,9 +189,6 @@ void SegregatedAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOn
 
   RCP<Matrix> Ain = Get<RCP<Matrix>>(currentLevel, "A");
 
-  const ParameterList &pL = GetParameterList();
-  auto comm               = Ain->getRowMap()->getComm();
-
   // fetch maps from level
   RCP<const Map> dropMap1 = Teuchos::null;
   RCP<const Map> dropMap2 = Teuchos::null;
