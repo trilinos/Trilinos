@@ -39,7 +39,7 @@
 #include <memory>
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/LegacyCoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId
@@ -67,7 +67,7 @@ class QuadFixture
 {
 public:
   typedef double Scalar;
-  typedef Field<Scalar, legacy::Cartesian> CoordFieldType;
+  typedef Field<Scalar, Cartesian> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
@@ -181,7 +181,7 @@ class Quad9Fixture
 {
 public:
   typedef double Scalar;
-  typedef Field<Scalar, legacy::Cartesian> CoordFieldType;
+  typedef Field<Scalar, Cartesian> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted

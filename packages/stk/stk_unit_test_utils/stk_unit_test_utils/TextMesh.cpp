@@ -23,10 +23,10 @@
 #include <stk_mesh/base/Field.hpp>                   // for Field
 #include <stk_mesh/base/GetEntities.hpp>             // for get_entities
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include "stk_mesh/base/LegacyTopologyDimensions.hpp"      // for ElementNode
+#include "stk_mesh/base/TopologyDimensions.hpp"      // for ElementNode
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/CompositeRank.hpp"
-#include "stk_mesh/base/LegacyCoordinateSystems.hpp"       // for Cartesian
+#include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data
 #include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
@@ -93,7 +93,7 @@ private:
  }
 
  void declare_sideblock_distribution_factor_field(const SideBlockInfo& sideBlock,
-                                                  stk::mesh::Field<double, stk::mesh::legacy::ElementNode>* distributionFactorsField)
+                                                  stk::mesh::Field<double, stk::mesh::ElementNode>* distributionFactorsField)
  {
    stk::mesh::Part* sideBlockPart = m_meta.get_part(sideBlock.name);
 
@@ -114,9 +114,9 @@ private:
    }
  }
 
- stk::mesh::Field<double, stk::mesh::legacy::ElementNode>* declare_sideset_distribution_factor_field(const SidesetData& sidesetData)
+ stk::mesh::Field<double, stk::mesh::ElementNode>* declare_sideset_distribution_factor_field(const SidesetData& sidesetData)
  {
-   stk::mesh::Field<double, stk::mesh::legacy::ElementNode>* distributionFactorsField = nullptr;
+   stk::mesh::Field<double, stk::mesh::ElementNode>* distributionFactorsField = nullptr;
    stk::mesh::Part* sidesetPart = m_meta.get_part(sidesetData.name);
 
    SplitType splitType = sidesetData.get_split_type();
@@ -124,7 +124,7 @@ private:
      std::string fieldName = sidesetData.name + "_df";
 
      distributionFactorsField =
-         &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::legacy::ElementNode>>(m_meta, m_meta.side_rank(), fieldName);
+         &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(m_meta, m_meta.side_rank(), fieldName);
 
      stk::io::set_field_role(*distributionFactorsField, Ioss::Field::MESH);
      stk::io::set_distribution_factor_field(*sidesetPart, *distributionFactorsField);
@@ -165,7 +165,7 @@ private:
    }
    else {
      for (const SidesetData& sidesetData : m_data.sidesets.get_group_data()) {
-       stk::mesh::Field<double, stk::mesh::legacy::ElementNode>* distributionFactorsField =
+       stk::mesh::Field<double, stk::mesh::ElementNode>* distributionFactorsField =
            declare_sideset_distribution_factor_field(sidesetData);
        std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
 
@@ -345,7 +345,7 @@ private:
         declare_coordinate_field_with_type<stk::mesh::CoordinatesField>();
       }
       else if (m_data.spatialDim == 2) {
-        declare_coordinate_field_with_type<stk::mesh::Field<double, stk::mesh::legacy::Cartesian2d>>();
+        declare_coordinate_field_with_type<stk::mesh::Field<double, stk::mesh::Cartesian2d>>();
       }
     }
   }

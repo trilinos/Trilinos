@@ -46,7 +46,7 @@
 #include <unordered_map>
 #include <stk_mesh/base/BulkData.hpp>               // for BulkData
 #include <stk_mesh/base/Comm.hpp>                   // for comm_mesh_counts
-#include <stk_mesh/base/LegacyCoordinateSystems.hpp>      // for Cartesian, FullTe...
+#include <stk_mesh/base/CoordinateSystems.hpp>      // for Cartesian, FullTe...
 #include <stk_mesh/base/FEMHelpers.hpp>             // for get_side_entity_f...
 #include <stk_mesh/base/Field.hpp>                  // for Field
 #include <stk_mesh/base/FindRestriction.hpp>        // for find_restriction
@@ -622,8 +622,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           stk::mesh::put_field_on_mesh(field, part, nullptr);
           fieldPtr = &field;
         } else {
-          stk::mesh::Field<double, stk::mesh::legacy::Cartesian> & field =
-              stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::legacy::Cartesian>>(meta, entityRank, name);
+          stk::mesh::Field<double, stk::mesh::Cartesian> & field =
+              stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta, entityRank, name);
           stk::mesh::put_field_on_mesh(field, part, 1, nullptr);
           fieldPtr = &field;
         }
@@ -634,16 +634,16 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         fieldPtr = &field;
       }
       else if ((fieldType == "vector_2d") || (fieldType == "vector_3d")) {
-        fieldPtr = add_stk_field<stk::mesh::legacy::Cartesian>(meta, name, entityRank, part, numComponents);
+        fieldPtr = add_stk_field<stk::mesh::Cartesian>(meta, name, entityRank, part, numComponents);
       }
       else if (fieldType == "sym_tensor_33") {
-        fieldPtr = add_stk_field<stk::mesh::legacy::SymmetricTensor>(meta, name, entityRank, part, numComponents);
+        fieldPtr = add_stk_field<stk::mesh::SymmetricTensor>(meta, name, entityRank, part, numComponents);
       }
       else if (fieldType == "full_tensor_36") {
-        fieldPtr = add_stk_field<stk::mesh::legacy::FullTensor>(meta, name, entityRank, part, numComponents);
+        fieldPtr = add_stk_field<stk::mesh::FullTensor>(meta, name, entityRank, part, numComponents);
       }
       else if ((fieldType == "matrix_22") || (fieldType == "matrix_33")) {
-        fieldPtr = add_stk_field<stk::mesh::legacy::Matrix>(meta, name, entityRank, part, numComponents);
+        fieldPtr = add_stk_field<stk::mesh::Matrix>(meta, name, entityRank, part, numComponents);
       }
       else {
         fieldPtr = add_stk_field<shards::ArrayDimension>(meta, name, entityRank, part, numComponents);
@@ -1040,17 +1040,17 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         assign_generic_field_type(res, result);
       }
       else if ( 1 == legacyFieldArrayRank ) {
-        if ( tags[0] == & stk::mesh::legacy::Cartesian2d::tag() || tags[0] == & stk::mesh::legacy::Cartesian3d::tag()) {
-          if (firstDimension == stk::mesh::legacy::Cartesian2d::Size) {
+        if ( tags[0] == & stk::mesh::Cartesian2d::tag() || tags[0] == & stk::mesh::Cartesian3d::tag()) {
+          if (firstDimension == stk::mesh::Cartesian2d::Size) {
             result->name = vector_2d ;
             result->copies = scalarsPerEntity/firstDimension;
           }
-          else if (firstDimension == stk::mesh::legacy::Cartesian3d::Size) {
+          else if (firstDimension == stk::mesh::Cartesian3d::Size) {
             result->name = vector_3d ;
             result->copies = scalarsPerEntity/firstDimension;
           }
         }
-        else if ( tags[0] == & stk::mesh::legacy::FullTensor22::tag() || tags[0] == & stk::mesh::legacy::FullTensor36::tag()) {
+        else if ( tags[0] == & stk::mesh::FullTensor22::tag() || tags[0] == & stk::mesh::FullTensor36::tag()) {
           if ( 9 == scalarsPerEntity ) {
             result->name = full_tensor_36 ;
           }
@@ -1064,9 +1064,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             result->name = full_tensor_12 ;
           }
         }
-        else if (tags[0] == & stk::mesh::legacy::SymmetricTensor21::tag() ||
-                 tags[0] == & stk::mesh::legacy::SymmetricTensor31::tag() ||
-                 tags[0] == & stk::mesh::legacy::SymmetricTensor33::tag()) {
+        else if (tags[0] == & stk::mesh::SymmetricTensor21::tag() ||
+                 tags[0] == & stk::mesh::SymmetricTensor31::tag() ||
+                 tags[0] == & stk::mesh::SymmetricTensor33::tag()) {
           if ( 6 == scalarsPerEntity ) {
             result->name = sym_tensor_33 ;
           }
@@ -1077,7 +1077,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             result->name = sym_tensor_21 ;
           }
         }
-        else if ( tags[0] == & stk::mesh::legacy::Matrix22::tag() ||  tags[0] == & stk::mesh::legacy::Matrix33::tag()) {
+        else if ( tags[0] == & stk::mesh::Matrix22::tag() ||  tags[0] == & stk::mesh::Matrix33::tag()) {
           if (4 == scalarsPerEntity ) {
             result->name =  matrix_22;
           }
