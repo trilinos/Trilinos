@@ -58,6 +58,7 @@
 #include <MueLu_TestHelpers.hpp>
 #include <MueLu_Version.hpp>
 #include <MueLu_Utilities.hpp>
+#include "Xpetra_Access.hpp"
 
 // This file is intended to house all the tests for MueLu_Utilities.hpp.
 
@@ -77,44 +78,47 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, MatMatMult_EpetraVsTpetra, Scalar, 
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
   // Calculate result = (Op*Op)*X for Epetra
-  GO nx                   = 37 * comm->getSize();
-  GO ny                   = nx;
-  RCP<Matrix> Op          = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, ny, Xpetra::UseEpetra);
-  RCP<Matrix> OpOp        = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Op, false, *Op, false, out);
-  RCP<MultiVector> result = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  RCP<MultiVector> X      = MultiVectorFactory::Build(OpOp->getDomainMap(), 1);
+  GO nx                     = 37 * comm->getSize();
+  GO ny                     = nx;
+  RCP<Matrix> Op            = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, ny, Xpetra::UseEpetra);
+  RCP<Matrix> OpOp          = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Op, false, *Op, false, out);
+  RCP<MultiVector> result   = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
+  RCP<MultiVector> X_epetra = MultiVectorFactory::Build(OpOp->getDomainMap(), 1);
   Teuchos::Array<magnitude_type> xnorm(1);
-  X->setSeed(8675309);
-  X->randomize(true);
-  X->norm2(xnorm);
-  OpOp->apply(*X, *result, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
+  X_epetra->setSeed(8675309);
+  X_epetra->randomize(true);
+  X_epetra->norm2(xnorm);
+  OpOp->apply(*X_epetra, *result, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
   Teuchos::Array<magnitude_type> normEpetra(1);
   result->norm2(normEpetra);
 
   // aid debugging by calculating Op*(Op*X)
   RCP<MultiVector> workVec = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
   RCP<MultiVector> check1  = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  Op->apply(*X, *workVec, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
+  Op->apply(*X_epetra, *workVec, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
   Op->apply(*workVec, *check1, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
   Teuchos::Array<magnitude_type> normCheck1(1);
   check1->norm2(normCheck1);
 
   // Calculate result = (Op*Op)*X for Tpetra
-  Op     = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, ny, Xpetra::UseTpetra);
-  OpOp   = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Op, false, *Op, false, out);
-  result = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  X      = MultiVectorFactory::Build(OpOp->getDomainMap(), 1);
-  X->setSeed(8675309);
-  X->randomize(true);
-  X->norm2(xnorm);
-  OpOp->apply(*X, *result, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
+  Op                        = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, ny, Xpetra::UseTpetra);
+  OpOp                      = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Op, false, *Op, false, out);
+  result                    = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
+  RCP<MultiVector> X_tpetra = MultiVectorFactory::Build(OpOp->getDomainMap(), 1);
+  {
+    auto lcl_X_epetra = X_epetra->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto lcl_X_tpetra = X_tpetra->getHostLocalView(Xpetra::Access::OverwriteAll);
+    Kokkos::deep_copy(lcl_X_tpetra, lcl_X_epetra);
+  }
+  X_tpetra->norm2(xnorm);
+  OpOp->apply(*X_tpetra, *result, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
   Teuchos::Array<magnitude_type> normTpetra(1);
   result->norm2(normTpetra);
 
   // aid debugging by calculating Op*(Op*X)
   workVec                 = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
   RCP<MultiVector> check2 = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  Op->apply(*X, *workVec, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
+  Op->apply(*X_tpetra, *workVec, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
   Op->apply(*workVec, *check2, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
   Teuchos::Array<magnitude_type> normCheck2(1);
   check2->norm2(normCheck2);
