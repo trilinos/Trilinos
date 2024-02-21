@@ -54,6 +54,7 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ConfigDefs.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_VerboseObject.hpp>
 
 // Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -69,6 +70,10 @@
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
+
+  // The MMortarSurfaceCoupline_DofBased tests only work with real Scalar types,
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return EXIT_SUCCESS;
+
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
@@ -81,6 +86,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out     = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
+  auto numRanks = comm->getSize();
 
   GO numGlobalDofsPrimal = -GST::one();
   clp.setOption("nPrimalDofs", &numGlobalDofsPrimal, "total number of primal DOFs");
@@ -115,7 +121,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   const std::string matrixFileName           = probName + "_matrix.mm";
   const std::string rhsFileName              = probName + "_rhs.mm";
   const std::string nullspace1FileName       = probName + "_nullspace1.mm";
-  const std::string dualInterfaceMapFileName = probName + "_interface_dof_map.mm";
+  const std::string dualInterfaceMapFileName = probName + "_interface_dof_map_MPI" + std::to_string(numRanks) + ".mm";
 
   // Create maps for primal DOFs
   std::vector<size_t> stridingInfoPrimal;
@@ -149,30 +155,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // Read the nullspace vector of the (0,0)-block from file
   RCP<MultiVector> nullspace1 = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(nullspace1FileName, dofRowMapPrimal);
 
-  // Read the interface slave dof row map from file
+  // Read the primal interface dof row map from file
   TEUCHOS_ASSERT(!dualInterfaceMapFileName.empty());
-  RCP<const Map> primalInterfaceDofMapDofs = Xpetra::IO<SC, LO, GO, NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
-
-  // Distribute interface slave dof row map across all procs
-  RCP<const Map> primalInterfaceDofMap = Teuchos::null;
-  {
-    std::vector<int> interfaceGlobalDofsOnCurrentProc = std::vector<int>(primalInterfaceDofMapDofs->getGlobalNumElements());
-    std::vector<int> interfaceGlobalDofs              = std::vector<int>(primalInterfaceDofMapDofs->getGlobalNumElements());
-    if (comm->getRank() == 0) {
-      for (size_t i = 0; i < primalInterfaceDofMapDofs->getGlobalNumElements(); ++i) {
-        interfaceGlobalDofsOnCurrentProc[i] = primalInterfaceDofMapDofs->getLocalElementList()[i];
-      }
-    }
-    Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_MAX, interfaceGlobalDofs.size(),
-                            &interfaceGlobalDofsOnCurrentProc[0], &interfaceGlobalDofs[0]);
-
-    Array<GlobalOrdinal> primalInterfaceDofMapDofsOnCurProc;
-    for (size_t i = 0; i < interfaceGlobalDofs.size(); ++i) {
-      if (dofRowMapPrimal->isNodeGlobalElement((GlobalOrdinal)interfaceGlobalDofs[i]))
-        primalInterfaceDofMapDofsOnCurProc.push_back((GlobalOrdinal)interfaceGlobalDofs[i]);
-    }
-    primalInterfaceDofMap = MapFactory::Build(lib, primalInterfaceDofMapDofs->getGlobalNumElements(), primalInterfaceDofMapDofsOnCurProc, Teuchos::ScalarTraits<GO>::zero(), comm);
-  }
+  RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
 
   // Create the default nullspace vector of the (1,1)-block
   RCP<MultiVector> nullspace2 = MultiVectorFactory::Build(dofRowMapDual, 2, true);
