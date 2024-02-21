@@ -518,8 +518,8 @@ class Utilities<double, int, int, Xpetra::EpetraNode> : public UtilitiesBase<dou
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     throw Exceptions::RuntimeError("Op2TpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
 #else
-    RCP<const Matrix> mat                                                               = rcp_dynamic_cast<const Matrix>(Op);
-    RCP<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rmat = rcp_dynamic_cast<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Op);
+    RCP<const Matrix> mat                                                              = rcp_dynamic_cast<const Matrix>(Op);
+    RCP<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rmat = rcp_dynamic_cast<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
     if (!mat.is_null()) {
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(mat);
       if (crsOp == Teuchos::null)
@@ -552,8 +552,8 @@ class Utilities<double, int, int, Xpetra::EpetraNode> : public UtilitiesBase<dou
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     throw Exceptions::RuntimeError("Op2NonConstTpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
 #else
-    RCP<Matrix> mat                                                               = rcp_dynamic_cast<Matrix>(Op);
-    RCP<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rmat = rcp_dynamic_cast<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Op);
+    RCP<Matrix> mat                                                              = rcp_dynamic_cast<Matrix>(Op);
+    RCP<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rmat = rcp_dynamic_cast<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(Op);
     if (!mat.is_null()) {
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(mat);
       if (crsOp == Teuchos::null)
