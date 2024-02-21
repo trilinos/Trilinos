@@ -65,6 +65,12 @@ Tpetra
   - Reject unrecognized TPETRA_* environment variable. Misspelled or
     removed environment variables are no longer silently ignored.
 
+  - In order to allocate in shared host/device space (i.e.
+    CudaUVMSpace, HIPManagedSpace or SYCLSharedUSMSpace) by default,
+    please use the CMake options
+    KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE=ON
+    Tpetra_ALLOCATE_IN_SHARED_SPACE=ON
+
 
 ###############################################################################
 #                                                                             #
