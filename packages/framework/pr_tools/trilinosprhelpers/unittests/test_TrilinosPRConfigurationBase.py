@@ -368,7 +368,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         args = self.dummy_args_nightly_track()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
         expected_build_name = args.dashboard_build_name
         self.assertEqual(build_name, expected_build_name)
 
