@@ -67,6 +67,7 @@ class Test_parse_args(unittest.TestCase):
                                          target_branch_name='real_trash',
                                          pullrequest_build_name='Some_odd_compiler',
                                          genconfig_build_name='Some_odd_compiler_and_options',
+                                         dashboard_build_name='UNKNOWN',
                                          pullrequest_number='4242',
                                          jenkins_job_number='2424',
                                          source_dir='UNKNOWN',
@@ -121,6 +122,7 @@ class Test_parse_args(unittest.TestCase):
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
@@ -159,6 +161,8 @@ class Test_parse_args(unittest.TestCase):
                                         The Jenkins build number
 
                 Optional Arguments:
+                  --dashboard-build-name DASHBOARD_BUILD_NAME
+                                        The build name posted by ctest to a dashboard
                   --source-dir SOURCE_DIR
                                         Directory containing the source code to compile/test.
                   --build-dir BUILD_DIR
@@ -227,6 +231,7 @@ class Test_parse_args(unittest.TestCase):
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
