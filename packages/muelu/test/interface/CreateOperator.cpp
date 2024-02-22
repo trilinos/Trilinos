@@ -185,11 +185,11 @@ void run_sed(const std::string& pattern, const std::string& baseFile) {
 #ifdef __APPLE__
   sed_pref = sed_pref + "\"\" ";
 #endif
-
   int ret_val = 0;
-  (void)ret_val;  // suppress fscanf return value and unused variable warnings
-  ret_val = system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  ret_val     = system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret_val, 0);
   ret_val = system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret_val, 0);
 }
 
 bool compare_to_gold(int myRank, const std::string& baseFile) {
@@ -198,9 +198,10 @@ bool compare_to_gold(int myRank, const std::string& baseFile) {
     // Create a copy of outputs
     std::string cmd = "cp -f ";
     int ret_val     = 0;
-    (void)ret_val;  // suppress fscanf return value and unused variable warnings
-    ret_val = system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+    ret_val         = system((cmd + baseFile + ".gold " + baseFile + ".gold_filtered").c_str());
+    TEUCHOS_ASSERT_EQUALITY(ret_val, 0);
     ret_val = system((cmd + baseFile + ".out " + baseFile + ".out_filtered").c_str());
+    TEUCHOS_ASSERT_EQUALITY(ret_val, 0);
 
     // Tpetra produces different eigenvalues in Chebyshev due to using
     // std::rand() for generating random vectors, which may be initialized

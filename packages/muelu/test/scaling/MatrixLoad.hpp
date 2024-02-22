@@ -290,7 +290,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
         if (mueluList.sublist(smootherOrCoarse + ": params").sublist("subdomain solver parameters").get<std::string>("partitioner: type") == "user") {
           FILE* fp;
           int retVal;
-          int nBlks, nRows, nnzs, ch, row, col;
+          int nBlks, nRows, nnzs, row, col;
           int procId = comm->getRank();
           double val;
 
@@ -301,7 +301,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
           fp = fopen(&userBlkFileName[0], "r");
           TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + " file not found");
 
-          while ((ch = getc(fp) != '\n'))
+          while ((getc(fp) != '\n'))
             ;  // read first line
 
           retVal = fscanf(fp, "%d %d %d\n", &nBlks, &nRows, &nnzs);
@@ -367,7 +367,7 @@ void readUserBlks(const std::string& userBlkFileName, const std::string& smoothe
           fp = fopen(&userBlkFileName[0], "r");
           TEUCHOS_TEST_FOR_EXCEPTION(fp == NULL, std::runtime_error, userBlkFileName + " file not found");
 
-          while ((ch = getc(fp) != '\n'))
+          while ((getc(fp) != '\n'))
             ;
 
           retVal = fscanf(fp, "%d %d %d\n", &nBlks, &nRows, &nnzs);
