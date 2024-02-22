@@ -65,14 +65,14 @@ endif()
 
 # Optionally upload the config files
 # TODO: Note how this works / what it's doing in CMake-land.
-message(">>> Write `configure_command_file`:")
+message(">>> Write `configure_command_file` and `genconfig_build_name_file`:")
 if(skip_upload_config_files)
     message(">>> - SKIPPED")
 else()
     message(">>> - WRITTEN")
-    #message(">>> - configure_command_file : ${configure_command_file}")
-    #message(">>> - CTEST_CONFIGURE_COMMAND: ${CTEST_CONFIGURE_COMMAND}")
     file(WRITE ${configure_command_file} ${CTEST_CONFIGURE_COMMAND})
+    file(WRITE ${genconfig_build_name_file} $ENV{GENCONFIG_BUILD_NAME})
+
 endif()
 message(">>>")
 
