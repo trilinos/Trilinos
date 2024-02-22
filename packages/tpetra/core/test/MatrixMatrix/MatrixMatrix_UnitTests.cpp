@@ -44,6 +44,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Teuchos_Assert.hpp"
 #include "TpetraExt_TripleMatrixMultiply.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_Core.hpp"
@@ -435,6 +436,56 @@ add_test_results add_into_test(
 
   return toReturn;
 }
+
+
+template<class Matrix_t>
+add_test_results reuse_add_test(
+    const std::string& name,
+    RCP<Matrix_t > A,
+    RCP<Matrix_t > B,
+    bool AT,
+    bool BT,
+    RCP<Matrix_t > C,
+    RCP<const Comm<int> > comm)
+{
+  typedef typename Matrix_t::scalar_type SC;
+  typedef typename Matrix_t::local_ordinal_type LO;
+  typedef typename Matrix_t::global_ordinal_type GO;
+  typedef typename Matrix_t::node_type NT;
+  typedef Map<LO,GO,NT> Map_t;
+
+  add_test_results toReturn;
+  toReturn.correctNorm = C->getFrobeniusNorm ();
+
+  RCP<const Map_t > rowmap = AT ? A->getDomainMap() : A->getRowMap();
+  size_t estSize = A->getGlobalMaxNumRowEntries() + B->getGlobalMaxNumRowEntries();
+         // estSize is upper bound for A, B; estimate only for AT, BT.
+  RCP<Matrix_t> computedC = rcp( new Matrix_t(rowmap, estSize));
+
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
+  computedC->fillComplete(A->getDomainMap(), A->getRangeMap());
+
+  // Call Add a second time
+  Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
+
+  TEUCHOS_ASSERT(A->getDomainMap()->isSameAs(*computedC->getDomainMap()));
+  TEUCHOS_ASSERT(A->getRangeMap()->isSameAs(*computedC->getRangeMap()));
+
+  toReturn.computedNorm = computedC->getFrobeniusNorm ();
+  toReturn.epsilon = fabs(toReturn.correctNorm - toReturn.computedNorm);
+
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedC);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", C);
+#endif
+
+
+  return toReturn;
+}
+
 
 template<class Matrix_t>
 mult_test_results multiply_test_manualfc(
@@ -1190,6 +1241,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
       TEST_COMPARE(results.epsilon, <, epsilon);
       newOut << "Regular Add Test Results: " << endl;
+      newOut << "\tCorrect Norm: " << results.correctNorm << endl;
+      newOut << "\tComputed norm: " << results.computedNorm << endl;
+      newOut << "\tEpsilon: " << results.epsilon << endl;
+
+      if (verbose)
+        newOut << "Running 3-argument add reuse test (nonnull C on input) for "
+               << currentSystem.name() << endl;
+
+      results = reuse_add_test(name+"_add",A, B, AT, BT, C, comm);
+
+      TEST_COMPARE(results.epsilon, <, epsilon);
+      newOut << "Reuse Add Test Results: " << endl;
       newOut << "\tCorrect Norm: " << results.correctNorm << endl;
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
