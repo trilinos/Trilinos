@@ -2195,34 +2195,43 @@ const ModifiableLinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr
     // Build output operator
     RCP<Thyra::LinearOpBase<ST>> explicitOp;
     RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> explicitCrsOp;
-    if (destOp != Teuchos::null) {
+    if (!destOp.is_null()) {
       explicitOp = destOp;
-      try {  // try to reuse matrix sparsity with Add. If it fails, build new operator with add
-        RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
-            rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(destOp);
+      RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
+          rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(destOp);
+      if (!tOp.is_null())
         explicitCrsOp =
-            rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tOp->getTpetraOperator(), true);
-        Tpetra::MatrixMatrix::Add<ST, LO, GO, NT>(*tCrsOpl, transpl, scalarl, *tCrsOpr, transpr,
-                                                  scalarr, explicitCrsOp);
-      } catch (std::logic_error &e) {
-        RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-        *out << "*** THROWN EXCEPTION ***\n";
-        *out << e.what() << std::endl;
-        *out << "************************\n";
-        *out << "Teko: explicitAdd unable to reuse existing operator. Creating new operator.\n"
-             << std::endl;
+            rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tOp->getTpetraOperator());
+      bool needNewTpetraMatrix =
+          (explicitCrsOp.is_null()) || (tCrsOpl == explicitCrsOp) || (tCrsOpr == explicitCrsOp);
+      if (!needNewTpetraMatrix) {
+        try {
+          // try to reuse matrix sparsity with Add. If it fails, build new operator with add
+          Tpetra::MatrixMatrix::Add<ST, LO, GO, NT>(*tCrsOpl, transpl, scalarl, *tCrsOpr, transpr,
+                                                    scalarr, explicitCrsOp);
+        } catch (std::logic_error &e) {
+          RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+          *out << "*** THROWN EXCEPTION ***\n";
+          *out << e.what() << std::endl;
+          *out << "************************\n";
+          *out << "Teko: explicitAdd unable to reuse existing operator. Creating new operator.\n"
+               << std::endl;
+          needNewTpetraMatrix = true;
+        }
+      }
+      if (needNewTpetraMatrix)
+        // Do explicit matrix-matrix add
         explicitCrsOp = Tpetra::MatrixMatrix::add<ST, LO, GO, NT>(scalarl, transpl, *tCrsOpl,
                                                                   scalarr, transpr, *tCrsOpr);
-      }
     } else {
-      explicitOp    = rcp(new Thyra::TpetraLinearOp<ST, LO, GO, NT>());
+      explicitOp = rcp(new Thyra::TpetraLinearOp<ST, LO, GO, NT>());
+      // Do explicit matrix-matrix add
       explicitCrsOp = Tpetra::MatrixMatrix::add<ST, LO, GO, NT>(scalarl, transpl, *tCrsOpl, scalarr,
                                                                 transpr, *tCrsOpr);
     }
     RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tExplicitOp =
         rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(explicitOp);
 
-    // Do explicit matrix-matrix add
     tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getRangeMap()),
                             Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()),
                             explicitCrsOp);
