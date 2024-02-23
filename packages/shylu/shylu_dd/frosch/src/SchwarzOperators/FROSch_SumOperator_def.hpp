@@ -134,13 +134,13 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename SumOperator<SC,LO,GO,NO>::ConstXMapPtr SumOperator<SC,LO,GO,NO>::getDomainMap() const
+    const typename SumOperator<SC,LO,GO,NO>::ConstXMapPtr SumOperator<SC,LO,GO,NO>::getDomainMap() const
     {
         return OperatorVector_[0]->getDomainMap();
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename SumOperator<SC,LO,GO,NO>::ConstXMapPtr SumOperator<SC,LO,GO,NO>::getRangeMap() const
+    const typename SumOperator<SC,LO,GO,NO>::ConstXMapPtr SumOperator<SC,LO,GO,NO>::getRangeMap() const
     {
         return OperatorVector_[0]->getRangeMap();
     }

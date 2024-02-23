@@ -136,6 +136,7 @@ stk::mesh::Entity clone_element_side(stk::mesh::BulkData &bulk,
                                      stk::mesh::ConnectivityOrdinal ord,
                                      const stk::mesh::PartVector &parts);
 void remove_ghosts_from_remote_procs(stk::mesh::BulkData& bulk, EntityVector& recvGhostsToRemove);
+void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete);
 
 namespace impl {
 stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
@@ -163,7 +164,6 @@ struct SharingInfoLess
             return a.m_entity < b.m_entity;
     }
 };
-
 
 class BulkData {
 
@@ -687,11 +687,14 @@ public:
 #ifdef SIERRA_MIGRATION
   typedef int64_t FmwkId; //must be a signed type -- fmwk uses negative values sometimes
   inline FmwkId global_id(stk::mesh::Entity entity) const;
+  inline void set_global_id(stk::mesh::Entity entity, FmwkId id);
+  void initialize_global_ids();
+
   inline const RelationVector& aux_relations(Entity entity) const;
   inline RelationVector& aux_relations(Entity entity); // Mod Mark
-  inline void set_global_id(stk::mesh::Entity entity, FmwkId id);
   void reserve_relation(stk::mesh::Entity entity, const unsigned num); // Mod Mark
   void erase_and_clear_if_empty(stk::mesh::Entity entity, RelationIterator rel_itr); // Mod Mark
+  void initialize_aux_relations();
 
   inline RelationIterator internal_begin_relation(Entity entity, const Relation::RelationType relation_type) const;
   inline RelationIterator internal_end_relation(Entity entity, const Relation::RelationType relation_type) const;
@@ -723,6 +726,7 @@ public:
   //These connectivity getter methods are implemented by macros which are located further
   //down in this header. (Search for BEGIN_END_PAIR.)
 
+  inline ConnectedEntities get_connected_entities(Entity entity, EntityRank rank) const;
   inline Entity const* begin(Entity entity, EntityRank rank) const;
   inline Entity const* begin_nodes(Entity entity) const;
   inline Entity const* begin_edges(Entity entity) const;
@@ -865,6 +869,16 @@ public:
 
   unsigned get_initial_bucket_capacity() const { return m_bucket_repository.get_initial_bucket_capacity(); }
   unsigned get_maximum_bucket_capacity() const { return m_bucket_repository.get_maximum_bucket_capacity(); }
+
+  virtual bool does_entity_have_orphan_protection(stk::mesh::Entity entity) const
+  {
+      bool hasOrphanProtection = false;
+      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
+      {
+          hasOrphanProtection = true;
+      }
+      return hasOrphanProtection;
+  }
 
 protected: //functions
   BulkData(std::shared_ptr<MetaData> mesh_meta_data,
@@ -1293,16 +1307,6 @@ private:
       return isNode && isNotConnected && isCreatedState && isOwned;
   }
 
-  virtual bool does_entity_have_orphan_protection(stk::mesh::Entity entity) const
-  {
-      bool hasOrphanProtection = false;
-      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
-      {
-          hasOrphanProtection = true;
-      }
-      return hasOrphanProtection;
-  }
-
   // Only to be called from add_node_sharing
   void protect_orphaned_node(Entity entity)
   {
@@ -1464,6 +1468,7 @@ private:
                                                 const stk::mesh::PartVector &parts);
 
   friend void remove_ghosts_from_remote_procs(stk::mesh::BulkData& bulk, EntityVector& recvGhostsToRemove);
+  friend void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete);
 
   friend stk::mesh::Entity impl::connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
                                                    stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
@@ -1603,6 +1608,14 @@ BulkData::find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdinal ordin
       break;
   }
   return i;
+}
+
+inline ConnectedEntities
+BulkData::get_connected_entities(Entity entity, EntityRank rank) const
+{
+  STK_ThrowAssert(is_valid_connectivity(entity, rank));
+  const MeshIndex &mesh_idx = mesh_index(entity);
+  return mesh_idx.bucket->get_connected_entities(mesh_idx.bucket_ordinal, rank);
 }
 
 inline Entity const*
@@ -2419,13 +2432,6 @@ EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
 {
   const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
   return lhs_key < rhs ;
-}
-
-inline EntityLess&
-EntityLess::operator=(const EntityLess& rhs)
-{
-  m_mesh = rhs.m_mesh;
-  return *this;
 }
 
 

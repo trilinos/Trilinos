@@ -38,7 +38,7 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #endif
 
 #if defined(TACHO_ENABLE_ROCBLAS)
-#include "rocblas.h"
+#include "rocblas/rocblas.h"
 #endif
 
 namespace Tacho {

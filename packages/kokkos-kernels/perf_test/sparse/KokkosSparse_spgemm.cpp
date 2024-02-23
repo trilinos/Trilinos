@@ -158,7 +158,6 @@ void print_options() {
 int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
                  char** argv) {
   std::string algoStr;
-  bool printHelp;
   for (int i = 1; i < argc; ++i) {
     if (perf_test::check_arg_int(i, argc, argv, "--repeat", params.repeat)) {
       ++i;
@@ -276,18 +275,12 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
         return 1;
       }
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "-h", printHelp)) {
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--help", printHelp)) {
     } else {
       std::cerr << "Unrecognized command line argument #" << i << ": "
                 << argv[i] << std::endl;
       print_options();
       return 1;
     }
-  }
-  if (printHelp) {
-    print_options();
-    return 1;
   }
   return 0;
 }

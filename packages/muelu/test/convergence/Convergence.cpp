@@ -79,54 +79,55 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#include <BelosXpetraAdapter.hpp>  // => This header defines Belos::XpetraOp
+#include <BelosMueLuAdapter.hpp>   // => This header defines Belos::MueLuOp
 #endif
 
 #ifdef HAVE_MUELU_BELOS
 namespace Belos {
 
-  template<class SC, class MV, class OP>
-  class MyStatusTest : public StatusTestImpResNorm<SC, MV, OP> {
-  private:
-    typedef StatusTestImpResNorm<SC, MV, OP> Base;
-    typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType MagnitudeType;
+template <class SC, class MV, class OP>
+class MyStatusTest : public StatusTestImpResNorm<SC, MV, OP> {
+ private:
+  typedef StatusTestImpResNorm<SC, MV, OP> Base;
+  typedef Teuchos::ScalarTraits<SC> STS;
+  typedef typename STS::magnitudeType MagnitudeType;
 
-  public:
-    MyStatusTest(MagnitudeType tol) : Base(tol),
-                                      prevNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one()),
-                                      curNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one()) { }
+ public:
+  MyStatusTest(MagnitudeType tol)
+    : Base(tol)
+    , prevNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one())
+    , curNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one()) {}
 
-    StatusType checkStatus(Iteration<SC,MV,OP>* iSolver) {
-      // Get residual
-      std::vector<MagnitudeType> norms(1);
-      Teuchos::RCP<const MV> res = iSolver->getNativeResiduals(&norms);
-      MagnitudeType resNorm = norms[0];
+  StatusType checkStatus(Iteration<SC, MV, OP>* iSolver) {
+    // Get residual
+    std::vector<MagnitudeType> norms(1);
+    Teuchos::RCP<const MV> res = iSolver->getNativeResiduals(&norms);
+    MagnitudeType resNorm      = norms[0];
 
-      if (curNorm_ == -Teuchos::ScalarTraits<MagnitudeType>::one()) {
-        prevNorm_ = curNorm_ = resNorm;
-      } else {
-        prevNorm_ = curNorm_;
-        curNorm_  = resNorm;
-      }
-
-      return Base::checkStatus(iSolver);
+    if (curNorm_ == -Teuchos::ScalarTraits<MagnitudeType>::one()) {
+      prevNorm_ = curNorm_ = resNorm;
+    } else {
+      prevNorm_ = curNorm_;
+      curNorm_  = resNorm;
     }
 
-    double rate() const {
-      return Teuchos::as<double>(curNorm_/prevNorm_);
-    }
+    return Base::checkStatus(iSolver);
+  }
 
-  private:
-    MagnitudeType prevNorm_;
-    MagnitudeType curNorm_;
-  };
-}
+  double rate() const {
+    return Teuchos::as<double>(curNorm_ / prevNorm_);
+  }
+
+ private:
+  MagnitudeType prevNorm_;
+  MagnitudeType curNorm_;
+};
+}  // namespace Belos
 #endif
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int argc, char* argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -138,17 +139,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
   typedef typename STS::magnitudeType real_type;
-  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+  typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
 
   bool success = true;
   bool verbose = true;
   try {
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    int numProc = comm->getSize();
-    int myRank  = comm->getRank();
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    int numProc                         = comm->getSize();
+    int myRank                          = comm->getRank();
 
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Teuchos::FancyOStream& out = *fancy;
+    Teuchos::FancyOStream& out       = *fancy;
     out.setOutputToRootOnly(0);
 
     // =========================================================================
@@ -156,11 +157,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // =========================================================================
     Xpetra::Parameters xpetraParameters(clp);
 
-    switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
     const int numLists = 1;
@@ -170,7 +171,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     bool failed = false;
     for (int k = 0; k < numLists; k++) {
       const std::string& dirName = dirList[k];
-      std::string problemFile = dirName + "problem.xml";
+      std::string problemFile    = dirName + "problem.xml";
 
       Teuchos::ParameterList galeriParameters;
       Teuchos::updateParametersFromXmlFileAndBroadcast(problemFile, Teuchos::Ptr<Teuchos::ParameterList>(&galeriParameters), *comm);
@@ -180,9 +181,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // =========================================================================
       // Problem construction (copy-paste from Driver.cpp)
       // =========================================================================
-      RCP<Matrix>       A;
-      RCP<Map>          map;
-      RCP<MultiVector>  nullspace;
+      RCP<Matrix> A;
+      RCP<Map> map;
+      RCP<MultiVector> nullspace;
       RCP<RealValuedMultiVector> coordinates;
 
       // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
@@ -200,24 +201,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
       // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
       if (matrixType == "Laplace1D") {
-        map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriParameters);
+        map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("1D", map, galeriParameters);
 
       } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                  matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
-        map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriParameters);
+        map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("2D", map, galeriParameters);
 
       } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
-        map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriParameters);
+        map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double, LO, GO, Map, RealValuedMultiVector>("3D", map, galeriParameters);
       }
 
       // Expand map to do multiple DOF per node for block problems
       if (matrixType == "Elasticity2D")
-        map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
+        map = Xpetra::MapFactory<LO, GO, Node>::Build(map, 2);
       if (matrixType == "Elasticity3D")
-        map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
+        map = Xpetra::MapFactory<LO, GO, Node>::Build(map, 3);
 
 #if 0
       out << "========================================================\n" << xpetraParameters << galeriParameters;
@@ -227,8 +228,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           << "========================================================" << std::endl;
 #endif
 
-      RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriParameters);
+      RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixType, map, galeriParameters);
       A = Pr->BuildMatrix();
 
       if (matrixType == "Elasticity2D" ||
@@ -237,7 +238,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         A->SetFixedBlockSize((matrixType == "Elasticity2D") ? 2 : 3);
 
       } else {
-        nullspace = MultiVectorFactory::Build(map, 1);
+        nullspace                    = MultiVectorFactory::Build(map, 1);
         Teuchos::ArrayRCP<SC> nsData = nullspace->getDataNonConst(0);
         for (int i = 0; i < nsData.size(); i++)
           nsData[i] = one;
@@ -247,7 +248,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // Run different configurations
       // =========================================================================
       Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
-            (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
+                                                                                     (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
 
       RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
       RCP<MultiVector> B = MultiVectorFactory::Build(map, 1);
@@ -273,13 +274,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         // Reset (potentially) cached value of the estimate
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-        std::string    solveType = paramList.get<std::string>   ("solver", "standalone");
-        double         goldRate  = paramList.get<double>        ("convergence rate");
-        Teuchos::ParameterList& mueluList = paramList.sublist            ("MueLu");
+        std::string solveType             = paramList.get<std::string>("solver", "standalone");
+        double goldRate                   = paramList.get<double>("convergence rate");
+        Teuchos::ParameterList& mueluList = paramList.sublist("MueLu");
 
         TEUCHOS_TEST_FOR_EXCEPTION(solveType != "standalone" && solveType != "cg" && solveType != "gmres", MueLu::Exceptions::RuntimeError,
                                    "Unknown solver type \"" << solveType << "\"");
-        bool           isPrec    = !(solveType == "standalone");
+        bool isPrec = !(solveType == "standalone");
 
         if (!mueluList.isParameter("verbosity"))
           mueluList.set("verbosity", "none");
@@ -298,21 +299,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
           H = mueluFactory.CreateHierarchy();
 
-          H->GetLevel(0)->Set("A",           A);
-          H->GetLevel(0)->Set("Nullspace",   nullspace);
+          H->GetLevel(0)->Set("A", A);
+          H->GetLevel(0)->Set("Nullspace", nullspace);
           H->GetLevel(0)->Set("Coordinates", coordinates);
 
           mueluFactory.SetupHierarchy(*H);
 
         } catch (Teuchos::ExceptionBase& e) {
           std::string msg = e.what();
-          msg = msg.substr(msg.find_last_of('\n')+1);
+          msg             = msg.substr(msg.find_last_of('\n') + 1);
 
           out << "Caught exception: " << msg << std::endl;
 
           if (msg == "Zoltan interface is not available" ||
               msg == "Zoltan2 interface is not available") {
-
             if (myRank == 0)
               out << xmlFile << ": skipped (missing library)" << std::endl;
 
@@ -331,31 +331,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
           Teuchos::Array<typename STS::magnitudeType> norms(1);
           B->norm2(norms);
-          B->scale(one/norms[0]);
+          B->scale(one / norms[0]);
           X->putScalar(zero);
         }
 
-        const int    maxIts = 1000;
+        const int maxIts = 1000;
         typedef typename STS::magnitudeType MagnitudeType;
-        const MagnitudeType tol    = 1e-12;
+        const MagnitudeType tol = 1e-12;
 
         H->IsPreconditioner(isPrec);
         if (isPrec == false) {
-          MueLu::ConvergenceStatus ret = H->Iterate(*B, *X, std::pair<LO,MagnitudeType>(maxIts, tol));
+          MueLu::ConvergenceStatus ret = H->Iterate(*B, *X, std::pair<LO, MagnitudeType>(maxIts, tol));
 
           double rate = H->GetRate();
 
-          if (std::abs(rate-goldRate) < 0.02) {
-            out << xmlFile << ": passed (" <<
-                (ret == MueLu::ConvergenceStatus::Converged ? "converged, " : "unconverged, ") <<
-                "expected rate = " << goldRate << ", real rate = " << rate <<
-                (ret == MueLu::ConvergenceStatus::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
+          if (std::abs(rate - goldRate) < 0.02) {
+            out << xmlFile << ": passed (" << (ret == MueLu::ConvergenceStatus::Converged ? "converged, " : "unconverged, ") << "expected rate = " << goldRate << ", real rate = " << rate << (ret == MueLu::ConvergenceStatus::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
                 << ")" << std::endl;
           } else {
-            out << xmlFile << ": failed (" <<
-                (ret == MueLu::ConvergenceStatus::Converged ? "converged, " : "unconverged, ") <<
-                "expected rate = " << goldRate << ", real rate = " << rate <<
-                (ret == MueLu::ConvergenceStatus::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
+            out << xmlFile << ": failed (" << (ret == MueLu::ConvergenceStatus::Converged ? "converged, " : "unconverged, ") << "expected rate = " << goldRate << ", real rate = " << rate << (ret == MueLu::ConvergenceStatus::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
                 << ")" << std::endl;
             // ap: we need to understand what's going on with the convergence rate
             // At the moment, disable failure state, so that the test passes as long
@@ -366,15 +360,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         } else {
 #ifdef HAVE_MUELU_BELOS
           // Operator and Multivector type that will be used with Belos
-          typedef MultiVector          MV;
+          typedef MultiVector MV;
           typedef Belos::OperatorT<MV> OP;
 
           // Define Operator and Preconditioner
-          RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-          RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+          RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A));  // Turns a Xpetra::Matrix object into a Belos operator
+          RCP<OP> belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));   // Turns a MueLu::Hierarchy object into a Belos operator
 
           // Construct a Belos LinearProblem object
-          RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+          RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
           belosProblem->setRightPrec(belosPrec);
 
           bool set = belosProblem->setProblem();
@@ -385,14 +379,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
           // Belos parameter list
           Teuchos::ParameterList belosList;
-          belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-          belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
+          belosList.set("Maximum Iterations", maxIts);  // Maximum number of iterations allowed
+          belosList.set("Convergence Tolerance", tol);  // Relative convergence tolerance requested
 #if 1
-          belosList.set("Verbosity",             Belos::Errors + Belos::Warnings);
+          belosList.set("Verbosity", Belos::Errors + Belos::Warnings);
 #else
-          belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-          belosList.set("Output Frequency",      1);
-          belosList.set("Output Style",          Belos::Brief);
+          belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+          belosList.set("Output Frequency", 1);
+          belosList.set("Output Style", Belos::Brief);
 #endif
 
           // Belos custom test to store residuals
@@ -402,7 +396,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           if (solveType == "cg")
             solver = rcp(new Belos::PseudoBlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
           else if (solveType == "gmres")
-            solver = rcp(new Belos::BlockGmresSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+            solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
           RCP<Belos::MyStatusTest<SC, MV, OP> > status = rcp(new Belos::MyStatusTest<SC, MV, OP>(tol));
           solver->setDebugStatusTest(status);
 
@@ -413,17 +407,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
             double rate = status->rate();
 
-            if (std::abs(rate-goldRate) < 0.02) {
-              out << xmlFile << ": passed (" <<
-                  (ret == Belos::Converged ? "converged, " : "unconverged, ") <<
-                  "expected rate = " << goldRate << ", real rate = " << rate <<
-                  (ret == Belos::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
+            if (std::abs(rate - goldRate) < 0.02) {
+              out << xmlFile << ": passed (" << (ret == Belos::Converged ? "converged, " : "unconverged, ") << "expected rate = " << goldRate << ", real rate = " << rate << (ret == Belos::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
                   << ")" << std::endl;
             } else {
-              out << xmlFile << ": failed (" <<
-                  (ret == Belos::Converged ? "converged, " : "unconverged, ") <<
-                  "expected rate = " << goldRate << ", real rate = " << rate <<
-                  (ret == Belos::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
+              out << xmlFile << ": failed (" << (ret == Belos::Converged ? "converged, " : "unconverged, ") << "expected rate = " << goldRate << ", real rate = " << rate << (ret == Belos::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
                   << ")" << std::endl;
               // ap: we need to understand what's going on with the convergence rate
               // At the moment, disable failure state, so that the test passes as long
@@ -431,11 +419,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
               // failed = true;
             }
 
-          } catch(...) {
+          } catch (...) {
             out << xmlFile << ": failed (exception)" << std::endl;
             failed = true;
           }
-#endif //ifdef HAVE_MUELU_BELOS
+#endif  // ifdef HAVE_MUELU_BELOS
         }
       }
     }
@@ -445,23 +433,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-
-
 
 //- -- --------------------------------------------------------
 #define MUELU_AUTOMATIC_TEST_ETI_NAME main_
 #include "MueLu_Test_ETI.hpp"
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char* argv[]) {
   Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  Teuchos::FancyOStream& out = *fancy;
+  Teuchos::FancyOStream& out                = *fancy;
   out.setOutputToRootOnly(0);
 
-  bool status = Automatic_Test_ETI(argc,argv);
-  out << std::endl << "End Result: TEST " << (status ? "FAILED" : "PASSED") << std::endl;
+  bool status = Automatic_Test_ETI(argc, argv);
+  out << std::endl
+      << "End Result: TEST " << (status ? "FAILED" : "PASSED") << std::endl;
 
   return status;
 }

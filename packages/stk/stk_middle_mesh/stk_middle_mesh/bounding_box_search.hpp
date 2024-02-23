@@ -47,8 +47,11 @@
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/SearchMethod.hpp>
+#include "search_mesh_element_bounding_box_base.hpp"
 #include "search_mesh_element_bounding_box.hpp"
+#include "search_mesh_element_bounding_box_normal.hpp"
 #include "search_mesh_vertex.hpp"
+#include "bounding_box_search_opts.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -79,6 +82,8 @@ inline void inflate_bounding_box(stk::search::Box<T>& b, U const& mult_fact, U c
   }
   diag = std::sqrt(diag);
 
+  //TODO: this isn't quite right: moving the max corner *and* the min corner
+  //      by d results in a total change of 2d.
   const T d = mult_fact * diag + add_fact;
 
   for(int i = 0; i < 3; ++i) {
@@ -153,8 +158,8 @@ public :
                     const std::string &name,
                     stk::ParallelMachine pm,
                     const bool doParallelSearch=true,
-                    const double expansion_factor = 1.5,
-                    const double expansion_sum = 0.0,
+                    const BoundingBoxSearchOpts& searchOpts = BoundingBoxSearchOpts(),
+
                     const stk::search::SearchMethod search_method = stk::search::KDTREE);
   virtual ~BoundingBoxSearch(){};
   void coarse_search() ;
@@ -176,8 +181,7 @@ private :
 
   const std::string     m_name;
   const bool            m_doParallelSearch;
-  const double          m_expansion_factor;
-  const double          m_expansion_sum;
+  const BoundingBoxSearchOpts m_searchOpts;
   const stk::search::SearchMethod m_search_method;
   stk::ParallelMachine m_shared_comm;
 
@@ -213,19 +217,14 @@ template <typename SEARCH> BoundingBoxSearch<SEARCH>::BoundingBoxSearch
  const std::string        &name,
  stk::ParallelMachine pm,
  const bool doParallelSearch,
- const double expansion_factor,
- const double expansion_sum,
+ const BoundingBoxSearchOpts& searchOpts,
+
  const stk::search::SearchMethod search_method) :
       m_sendMesh(sendMesh), m_recvMesh(recvMesh), m_name(name), m_doParallelSearch(doParallelSearch), 
-      m_expansion_factor(expansion_factor),
-      m_expansion_sum(expansion_sum), m_search_method(search_method), m_shared_comm(pm)
+      m_searchOpts(searchOpts),
+      m_search_method(search_method),
+      m_shared_comm(pm)
   {
-    //In an mpmd program, there's no guarantee that the types specified for the entity keys are honored by each program,
-    //so for now, enforce that the types are 64bit for consistency during mpi comms
-    static_assert(8 == sizeof(typename SearchClass::EntityKeyA), "Size of SendMesh EntityKey needs to be 64 bit");
-    static_assert(8 == sizeof(typename SearchClass::EntityKeyB), "Size of RecvMesh EntityKey needs to be 64 bit");
-
-    STK_ThrowRequire(sendMesh || recvMesh);
   }
 
 template <class SEARCH> void BoundingBoxSearch<SEARCH>::delete_range_points_found
@@ -275,11 +274,8 @@ template <class SEARCH> void BoundingBoxSearch<SEARCH>::coarse_search()
   unsigned range_vector_not_empty = !range_vector.empty();
   stk::all_reduce(m_shared_comm, stk::ReduceSum<1>(&range_vector_not_empty));
 
-  // THIS IS DANGEROUS. The expansion factor passed in is ALWAYS used for an initial box expansion/padding,
-  // but will also trigger multiple coarse searches if it is ever changed to be > 1. If you never
-  // want it to do multiple coarse searches here, remove the option below.
   for(BoundingBoxA& i : domain_vector) {
-    impl::inflate_bounding_box(i.first, m_expansion_factor, m_expansion_sum);
+    impl::inflate_bounding_box(i.first, m_searchOpts.initialExpansionFactor, m_searchOpts.initialExpansionSum);
   }
 
   while(range_vector_not_empty) { // Keep going until all range points are processed.
@@ -302,7 +298,7 @@ template <class SEARCH> void BoundingBoxSearch<SEARCH>::coarse_search()
     range_vector_not_empty = !range_vector.empty();
     stk::all_reduce(m_shared_comm, stk::ReduceSum<1>(&range_vector_not_empty));
 
-    if(m_expansion_factor <= 1.0) {
+    if(m_searchOpts.repeatExpansionFactor <= 1.0) {
       if(range_vector_not_empty) {
         size_t range_vector_size = range_vector.size();
         size_t g_range_vector_size = stk::get_global_sum(m_shared_comm, range_vector_size);
@@ -316,10 +312,10 @@ template <class SEARCH> void BoundingBoxSearch<SEARCH>::coarse_search()
 
     if(range_vector_not_empty) {
       for(BoundingBoxB& i : range_vector) {
-        impl::inflate_bounding_box(i.first, m_expansion_factor, m_expansion_sum);
+        impl::inflate_bounding_box(i.first, m_searchOpts.repeatExpansionFactor, m_searchOpts.repeatExpansionSum);
       }
       for(BoundingBoxA& i : domain_vector) {
-        impl::inflate_bounding_box(i.first, m_expansion_factor, m_expansion_sum);
+        impl::inflate_bounding_box(i.first, m_searchOpts.repeatExpansionFactor, m_searchOpts.repeatExpansionSum);
       }
 
       size_t range_vector_size = range_vector.size();
@@ -340,11 +336,11 @@ template <class SEARCH> void BoundingBoxSearch<SEARCH>::coarse_search()
 
 
 using ElementToElementBoundingBoxSearch =
-    BoundingBoxSearch<BoundingBoxSearchType<mesh::impl::SearchMeshElementBoundingBox,
-                                            mesh::impl::SearchMeshElementBoundingBox>>;
+    BoundingBoxSearch<BoundingBoxSearchType<mesh::impl::SearchMeshElementBoundingBoxBase,
+                                            mesh::impl::SearchMeshElementBoundingBoxBase>>;
 
 using ElementToVertBoundingBoxSearch = 
-    BoundingBoxSearch<BoundingBoxSearchType<mesh::impl::SearchMeshElementBoundingBox,
+    BoundingBoxSearch<BoundingBoxSearchType<mesh::impl::SearchMeshElementBoundingBoxBase,
                                             mesh::impl::SearchMeshVertex>>;
 }
 }

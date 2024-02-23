@@ -27,6 +27,15 @@ class CalcSegment3 {
   //
   //  Find the closest point projection between point and the face.
   //
+  static bool is_projection_of_point_inside_segment(const Vec3d & p0, const Vec3d & p1, const Vec3d &queryPt)
+  {
+    Vec3d edge_dir(p1-p0);
+    REAL dotValA = Dot(edge_dir,(queryPt-p0));
+    if(dotValA < 0.0) return false;
+    REAL dotValB = Dot(edge_dir,(queryPt-p1));
+    if(dotValB > 0.0) return false;
+    return true;
+  }
   static REAL closest_parametric_location(const Vec3d & p0, const Vec3d & p1, const Vec3d &queryPt)
   {
     Vec3d edge_dir(p1-p0);

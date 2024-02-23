@@ -157,10 +157,14 @@ void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,
 
     const bool anythingToUnpack =
         stk::pack_and_communicate(comm, [&comm, &bulk, &distFact, &sides]() {
+           std::vector<int> sharedProcs;
             for (stk::mesh::Entity side : sides) {
                 STK_ThrowRequireMsg(bulk.is_valid(side),"communicate_shared_side_entity_fields, invalid side");
-                if (!bulk.bucket(side).owned()) {
-                    CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
+                sharedProcs.clear();
+                bulk.comm_shared_procs(side, sharedProcs);
+                for (int sharedProc : sharedProcs)
+                {
+                    CommBuffer & buffer = comm.send_buffer(sharedProc);
                     pack_distribution_factor(bulk, buffer, distFact, side);
                 }
             }

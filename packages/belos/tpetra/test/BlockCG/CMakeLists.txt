@@ -12,41 +12,46 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockCG_hb_test
   SOURCES test_bl_cg_hb.cpp
-  ARGS "--verbose"
   COMM serial mpi
-  )
+  ARGS
+    "--verbose"
+  STANDARD_PASS_OUTPUT
+)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_PseudoBlockCG_hb_test
   SOURCES test_pseudo_bl_cg_hb.cpp
   ARGS "--verbose"
   COMM serial mpi
-  )
+)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_PseudoBlockStochasticCG_hb_test
   SOURCES test_pseudo_stochastic_cg_hb.cpp
   ARGS
   COMM serial mpi
-  )
+)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
-ASSERT_DEFINED(Tpetra_INST_FLOAT)
-
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
-  IF (Tpetra_INST_FLOAT)
-  
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Tpetra_BlockCG_DoubleFloat_test
-      SOURCES test_bl_cg_hb_df.cpp
-      ARGS "--verbose"
-      COMM serial mpi
-      )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_pseudo_cg_hb
+    SOURCES test_pseudo_cg_hb.cpp 
+    COMM serial mpi
+    ARGS "--verbose --filename=bcsstk14.hb"
+    STANDARD_PASS_OUTPUT 
+  )
 
-  ENDIF()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_resolve_cg_hb
+    SOURCES test_resolve_cg_hb.cpp 
+    COMM serial mpi
+    ARGS "--verbose --filename=bcsstk14.hb"
+    STANDARD_PASS_OUTPUT 
+  )
 
+  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
   IF (Tpetra_INST_COMPLEX_DOUBLE)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -54,22 +59,21 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCES test_bl_cg_complex_hb.cpp
       ARGS "--verbose"
       COMM serial mpi
-      )
+    )
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_complex_hb_CopyFiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(
+      Tpetra_BlockCG_complex_hb_CopyFiles
       SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua
       EXEDEPS Tpetra_BlockCG_complex_hb_test
-      )
+    )
 
-  ENDIF ()
-
-ENDIF()
+  ENDIF()
+ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
 
 ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_hb_CopyFiles2
   SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb
   EXEDEPS Tpetra_BlockCG_hb_test
-  )
-
+)

@@ -452,6 +452,15 @@ namespace panzer {
     getCubaturePointsRef(const bool cache = true,
                          const bool force = false) const;
 
+    /**
+     * \brief Returns the IntegrationRule
+     *
+     * \return panzer::IntegrationRule
+     */
+    Teuchos::RCP<const panzer::IntegrationRule>
+    getIntegrationRule() const
+    {return int_rule;}
+
     // =====================================================================================================
 
   protected:

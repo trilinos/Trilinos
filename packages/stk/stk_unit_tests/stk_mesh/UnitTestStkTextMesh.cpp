@@ -65,7 +65,35 @@ TEST_F(TestTextMeshAura, sideBlockTopologyForConnectedHexes)
   }
 }
 
-TEST_F(TestTextMeshAura2d, surfaceToBlockMapping)
+TEST_F(TestTextMeshAura, surfaceToBlockMapping_noSplit)
+{
+  if (get_parallel_size() != 2) return;
+
+  std::string meshDesc =
+      "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+      "1,2,HEX_8,2,9,10,3,6,11,12,7,block_2\n"
+      "|sideset:name=left_surf;data=1,4";
+
+  setup_text_mesh(meshDesc);
+
+  verify_num_elements(2);
+  verify_num_sidesets(1);
+
+  const stk::mesh::Part* block_1 = get_meta().get_part("block_1");
+
+  EXPECT_TRUE(nullptr != block_1);
+
+  {
+    std::string sidesetName("left_surf");
+
+    stk::mesh::Part* sidesetPart = get_meta().get_part(sidesetName);
+    EXPECT_TRUE(nullptr != sidesetPart);
+    std::vector<const stk::mesh::Part*> goldParts{block_1};
+    EXPECT_EQ(goldParts, get_meta().get_blocks_touching_surface(sidesetPart));
+  }
+}
+
+TEST_F(TestTextMeshAura2d, surfaceToBlockMapping_splitByBlock)
 {
   if (get_parallel_size() != 1) return;
 

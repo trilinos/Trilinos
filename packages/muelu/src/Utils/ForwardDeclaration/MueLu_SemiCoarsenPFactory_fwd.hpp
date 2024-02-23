@@ -46,18 +46,13 @@
 #ifndef MUELU_SEMICOARSENPFACTORY_FWD_HPP
 #define MUELU_SEMICOARSENPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class SemiCoarsenPFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class SemiCoarsenPFactory;
 }
 
 #ifndef MUELU_SEMICOARSENPFACTORY_SHORT
 #define MUELU_SEMICOARSENPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_SEMICOARSENPFACTORY_FWD_HPP
+#endif  // MUELU_SEMICOARSENPFACTORY_FWD_HPP

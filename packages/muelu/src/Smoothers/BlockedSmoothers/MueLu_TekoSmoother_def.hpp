@@ -52,15 +52,14 @@
 #include "MueLu_TekoSmoother_decl.hpp"
 
 namespace MueLu {
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t TekoSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
-    // FIXME: This is a placeholder
-    return Teuchos::OrdinalTraits<size_t>::invalid();
-  }
-  
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t TekoSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmootherComplexity() const {
+  // FIXME: This is a placeholder
+  return Teuchos::OrdinalTraits<size_t>::invalid();
+}
 
-} // namespace MueLu
+}  // namespace MueLu
 
-#endif // HAVE_MUELU_TEKO
+#endif  // HAVE_MUELU_TEKO
 
 #endif /* MUELU_TEKOSMOOTHER_DEF_HPP_ */

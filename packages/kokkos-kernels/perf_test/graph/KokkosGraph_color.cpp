@@ -632,8 +632,8 @@ int main(int argc, char **argv) {
 #if defined(KOKKOS_ENABLE_HIP)
   if (params.use_hip) {
     KokkosKernels::Experiment::run_multi_mem_experiment<
-        size_type, idx, Kokkos::Experimental::HIP,
-        Kokkos::Experimental::HIPSpace, Kokkos::Experimental::HIPSpace>(params);
+        size_type, idx, Kokkos::HIP, Kokkos::HIPSpace, Kokkos::HIPSpace>(
+        params);
   }
 #endif
 

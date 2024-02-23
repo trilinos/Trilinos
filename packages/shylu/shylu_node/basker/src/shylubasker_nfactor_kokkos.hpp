@@ -44,10 +44,10 @@ namespace Basker
   template<class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int init_workspace(const Int b,
-		     BASKER_MATRIX &L,
-		     BASKER_MATRIX &U,
-		     INT_1DARRAY   WS,
-		     ENTRY_1DARRAY  X,
+                     BASKER_MATRIX &L,
+                     BASKER_MATRIX &U,
+                     INT_1DARRAY   WS,
+                     ENTRY_1DARRAY  X,
                      Int ws_size)
   {
 
@@ -71,9 +71,9 @@ namespace Basker
   template<class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int init_workspace(const Int b,
-		     BASKER_MATRIX &L,
-		     INT_1DARRAY &WS,
-		     ENTRY_1DARRAY &X)
+                     BASKER_MATRIX &L,
+                     INT_1DARRAY &WS,
+                     ENTRY_1DARRAY &X)
   {
     for(Int i=0; i < WS.size(); i++)
       { WS[i] = 0;}
@@ -102,8 +102,8 @@ namespace Basker
   template<class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int init_workspace(const Int b,
-		     INT_1DARRAY &WS,
-		     ENTRY_1DARRAY &X)
+                     INT_1DARRAY &WS,
+                     ENTRY_1DARRAY &X)
   {
     for(Int i=0; i < (WS.size()); i++)
       { WS[i] = 0;}
@@ -148,65 +148,65 @@ namespace Basker
       { 
         #ifdef BASKER_DEBUG_LOCAL_REACH
         printf("stack_offset: %d head: %d \n", stack_offset , head);
-        ASSERT(head > -1);
+        BASKER_ASSERT(head > -1);
         #endif
 
         j = ws[stack_offset + head];
         t = gperm[j];
         
         #ifdef BASKER_DEBUG_LOCAL_REACH
-	printf("----------DFS: %d %d -------------\n", j, t);
+        printf("----------DFS: %d %d -------------\n", j, t);
         #endif
 
         //t = L.lpinv[j];
         //t = gperm[j];
         //If not colored
         if(ws[j] == 0)
-	  {
-	    ws[j] = 1;  
+          {
+            ws[j] = 1;  
             //if not permuted
             //if(t != L.max_idx )
             if((t!=L.max_idx) && (t>=L.scol) && (t<(L.scol+L.ncol)))
-	      {
+              {
                 #ifdef BASKER_DEBUG_LOCAL_REACH
                 printf("reach.... j: %d t:%d L.scol %d \n", j, t, L.scol);
                 #endif
                 start = L.col_ptr[t-L.scol];
-	      }
+              }
             else
               {
                 #ifdef BASKER_DEBUG_LOCAL_REACH
                 printf("L.scol: %d  L.ncol: %d t: %d \n", L.scol, L.ncol,t);
                 #endif
               }
-	  }
-	else
-	  {
+          }
+        else
+          {
             start = ws[store_offset+j];
-	  }
-	done = 1;
-	
+          }
+        done = 1;
+        
         //if  permuted
         //if(t != L.max_idx)
         if((t!=L.max_idx) && (t>=L.scol) && (t<(L.scol+L.ncol)))
-	  {
-	    end = L.col_ptr[t+1-L.scol];
-	    for(i1 = start; i1 < end; i1++)
-	      {
+          {
+            end = L.col_ptr[t+1-L.scol];
+            for(i1 = start; i1 < end; i1++)
+              {
                 i = L.row_idx[i1];
-		if(ws[i] == 0)
-		  {
+                if(ws[i] == 0)
+                  {
                     head++;
                     ws[stack_offset + head] = i;
                     ws[store_offset + j] = i1+1;
-		    done = 0;
-		    break;
-		  }
-	      }
-	  }
-	if(done)
-	  {
-	    (*top)--;
+                    done = 0;
+                    break;
+                  }
+              }
+          }
+        if(done)
+          {
+            (*top)--;
 
             #ifdef BASKER_DEBUG_LOCAL_REACH
             printf("pattern_offset %d top %d \n", pattern_offset, *top);
@@ -214,11 +214,11 @@ namespace Basker
 
             ws[pattern_offset + *top] = j;
             ws[j] = 2;
-	    if(head == 0)
-	      { head = L.max_idx;}
-	    else
-	      {head--;}
-	  }
+            if(head == 0)
+              { head = L.max_idx;}
+            else
+              {head--;}
+          }
       }//end while 
     return 0;
   }//end local_reach
@@ -230,15 +230,15 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int back_solve(Int kid, Int k, Int top,
-		 Int brow, 
-		 Int xnnz, 
-		 Int ws_size,
-		 INT_1DARRAY ws,
-		 ENTRY_1DARRAY X,
-		 BASKER_MATRIX L,
-		 INT_1DARRAY   gperm, 
-		 const BASKER_STATS &stat
-		 )		
+                 Int brow, 
+                 Int xnnz, 
+                 Int ws_size,
+                 INT_1DARRAY ws,
+                 ENTRY_1DARRAY X,
+                 BASKER_MATRIX L,
+                 INT_1DARRAY   gperm, 
+                 const BASKER_STATS &stat
+                 )                
   {
     //Int color_offset = 0;
     Int pattern_offset = ws_size;
@@ -287,7 +287,7 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void print_factor(BASKER_MATRIX &L,
-		    BASKER_MATRIX &U)
+                    BASKER_MATRIX &U)
   {
     printf("L.nnz: %d  L.ncol: %d \n", L.nnz, L.ncol);
     Int k;
@@ -345,16 +345,16 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int rect_factor(Int b, Int lval, Int uval,
-		  Int bcol, Int brow,
-		  INT_1DARRAY ws,
-		  ENTRY_1DARRAY X,
-		  INT_1DARRAY gperm,
-		  BASKER_MATRIX A,
-		  BASKER_MATRIX L,
-		  BASKER_MATRIX U,
-		  Int malloc_option,
-		  BASKER_STATS const stats,
-		  int *einfo)
+                  Int bcol, Int brow,
+                  INT_1DARRAY ws,
+                  ENTRY_1DARRAY X,
+                  INT_1DARRAY gperm,
+                  BASKER_MATRIX A,
+                  BASKER_MATRIX L,
+                  BASKER_MATRIX U,
+                  Int malloc_option,
+                  BASKER_STATS const stats,
+                  int *einfo)
   {   
     Int kid = b;
 
@@ -395,25 +395,25 @@ namespace Basker
         {
           #ifdef BASKER_DEBUG_REC_FACTOR
           printf("\n----------------K=%d--------------\n", k);
-	  #endif
-	  value = 0.0;
-	  pivot = 0.0;
-	  maxindex = A.ncol;  
-	  lcnt = 0;
-	  ucnt = 0;
+          #endif
+          value = 0.0;
+          pivot = 0.0;
+          maxindex = A.ncol;  
+          lcnt = 0;
+          ucnt = 0;
 
           #ifdef BASKER_DEBUG_REC_FACTOR
-          ASSERT(top == ws_size);
+          BASKER_ASSERT(top == ws_size);
           //ASSERT entry workspace is clean
-          for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
+          for(i = 0 ; i < ws_size; i++){BASKER_ASSERT(X[i] == 0);}
           //ASSERT int workspace is clean
-	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
+          for(i = 0; i <  ws_size; i++){BASKER_ASSERT(ws[i] == 0 );}
           #endif
 
           //for each nnz in column
-	  for(i = A.col_ptr[k]; i < A.col_ptr[k+1]; i++)
-	    {
-	      j = A.row_idx[i];
+          for(i = A.col_ptr[k]; i < A.col_ptr[k+1]; i++)
+            {
+              j = A.row_idx[i];
               X[j] = A.val[i];
 
               #ifdef BASKER_DEBUG_REC_FACTOR
@@ -434,7 +434,7 @@ namespace Basker
                  local_reach<Int, Entry, Exe_Space>
                    (b, j, L, ws,gperm, &top,bcol, brow, 
                     ws_size);
-		}
+                }
 
                #ifdef BASKER_TIME_DETAIL
                stats.nfactor_domain_reach_time[kid] += timer_reach.seconds();
@@ -442,7 +442,7 @@ namespace Basker
 
 
           }//end for() each nnz in column
-	  xnnz = ws_size - top;
+          xnnz = ws_size - top;
 
           #ifdef BASKER_TIME_DETAIL
           //stats.nfactor_domain_reach_flop[kid] += xnnz;
@@ -600,7 +600,7 @@ namespace Basker
           U.col_ptr[k-bcol] = cu_utop;
           U.col_ptr[k+1-bcol] = unnz;
           cu_utop = unnz;
-	}//end for() over all columns
+        }//end for() over all columns
 
     L.nnz = lnnz;
     U.nnz = unnz;
@@ -723,15 +723,15 @@ namespace Basker
       rect_factor<Int, Entry,Exe_Space>
         (kid, 0, 0, 
          (L[b])[0].scol, (L[b])[0].srow, 
-	 WS[b],
-	 X[b],
+         WS[b],
+         X[b],
          gperm[0], 
          A,
-	 (L[b])[0], 
-	 (U[b])[U[b].size()-1], 
+         (L[b])[0], 
+         (U[b])[U[b].size()-1], 
           1, //malloc option 
          stats,
-	 &einfo); 
+         &einfo); 
    
            
       #ifdef BASKER_TIME_DETAIL
@@ -747,8 +747,8 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   Int populate_row_view(BASKER_MATRIX_VIEW &A,
-			Int k, 
-			Int prev = 0)
+                        Int k, 
+                        Int prev = 0)
   {
     A.init_offset(k, prev);
     return A.offset;
@@ -760,11 +760,11 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int populate_row_view(
-			BASKER_MATRIX_VIEW &A,
-			BASKER_MATRIX &L,
-			INT_1DARRAY   &gperm,
-			Int k, 
-			Int prev = 0)
+                        BASKER_MATRIX_VIEW &A,
+                        BASKER_MATRIX &L,
+                        INT_1DARRAY   &gperm,
+                        Int k, 
+                        Int prev = 0)
   {    
     A.init_perm(gperm);
     A.init_offset(k,prev);
@@ -777,16 +777,16 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int back_solve_atomic(Int kid, Int k, Int top,
-			Int brow,
-			Int xnnz,
-			Int ws_size,
-			INT_1DARRAY          ws,
-			ENTRY_1DARRAY        X,
-			BASKER_MATRIX        L,
-			INT_1DARRAY         gperm,
-			const BASKER_STATS  stats
-			)
-		
+                        Int brow,
+                        Int xnnz,
+                        Int ws_size,
+                        INT_1DARRAY          ws,
+                        ENTRY_1DARRAY        X,
+                        BASKER_MATRIX        L,
+                        INT_1DARRAY         gperm,
+                        const BASKER_STATS  stats
+                        )
+                
   {
     //Int color_offset = 0;
     Int pattern_offset = ws_size;
@@ -862,16 +862,16 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void column_tri_solve(Int kid, Int k, Int brow, Int ws_size,
-			INT_1DARRAY ws,
-			ENTRY_1DARRAY X,
-			INT_1DARRAY gperm,
-			BASKER_MATRIX_VIEW &A,
-			BASKER_MATRIX &L,
-			BASKER_MATRIX &U,
-			BASKER_MATRIX &C,
-			Int malloc_option,
-			const BASKER_STATS  stats,
-			int *enfo)
+                        INT_1DARRAY ws,
+                        ENTRY_1DARRAY X,
+                        INT_1DARRAY gperm,
+                        BASKER_MATRIX_VIEW &A,
+                        BASKER_MATRIX &L,
+                        BASKER_MATRIX &U,
+                        BASKER_MATRIX &C,
+                        Int malloc_option,
+                        const BASKER_STATS  stats,
+                        int *enfo)
   {
 
     #ifdef BASKER_TIME_NFACTOR
@@ -921,7 +921,7 @@ namespace Basker
 
     
     // #ifdef BASKER_DEBUG_COLUMN_TRISOLVE
-    ASSERT(top == ws_size);
+    BASKER_ASSERT(top == ws_size);
     //note that X[i] may not be zero because of sharing
     //for(Int i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
     //for(Int i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
@@ -931,7 +931,7 @@ namespace Basker
           {
             printf("---------------------------------------------ERROR--------------\n");
             printf("kid: %d k: %d  i: %d ws[i]=%d L.scol: %d \n", kid, k,  i, ws[i], L.scol);
-            ASSERT(ws[i] == 0);
+            BASKER_ASSERT(ws[i] == 0);
           }
       }
     
@@ -1156,11 +1156,11 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void move_A(int kid, int k, int prev, int l, int lvl,
-	      BASKER_MATRIX_VIEW  &A,
-	      const BASKER_MATRIX &C,
-	      BASKER_MATRIX &L,
-	      INT_1DARRAY &gperm,
-	      ENTRY_1DARRAY &X)
+              BASKER_MATRIX_VIEW  &A,
+              const BASKER_MATRIX &C,
+              BASKER_MATRIX &L,
+              INT_1DARRAY &gperm,
+              ENTRY_1DARRAY &X)
   {
     //populate row
     populate_row_view<Int, Entry, Exe_Space>
@@ -1553,15 +1553,15 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void move_A_new(int kid, int k, int prev, int l, int lvl,
-		  BASKER_MATRIX_VIEW A,
-		  const BASKER_MATRIX C,
-		  BASKER_MATRIX L,
-		  INT_1DARRAY gperm,
-		  ENTRY_1DARRAY X,
-		  INT_1DARRAY ws_one,
-		  Int ws_one_offset,
-		  INT_1DARRAY ws_two,
-		  Int ws_two_offset)
+                  BASKER_MATRIX_VIEW A,
+                  const BASKER_MATRIX C,
+                  BASKER_MATRIX L,
+                  INT_1DARRAY gperm,
+                  ENTRY_1DARRAY X,
+                  INT_1DARRAY ws_one,
+                  Int ws_one_offset,
+                  INT_1DARRAY ws_two,
+                  Int ws_two_offset)
   {
     Int nnz = 0;
     
@@ -1622,7 +1622,7 @@ namespace Basker
                 //Add right away to matrix
                 C.row_idx[nnz] = A_row;
                 C.val[nnz] = X[A_row];
-		X[A_row] = 0;
+                X[A_row] = 0;
                 C.union_bit[A_row] = false;
                 nnz++;
 
@@ -1705,16 +1705,16 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int col_factor(Int b, Int k, Int lval, Int uval,
-		 Int bcol, Int brow,
-		 INT_1DARRAY ws,
-		 ENTRY_1DARRAY X,
-		 INT_1DARRAY &gperm,
-		 BASKER_MATRIX_VIEW A,
-		 BASKER_MATRIX &L,
-		 BASKER_MATRIX &U,
-		 Int malloc_option,
-		 const BASKER_STATS stats,
-		 int *einfo)
+                 Int bcol, Int brow,
+                 INT_1DARRAY ws,
+                 ENTRY_1DARRAY X,
+                 INT_1DARRAY &gperm,
+                 BASKER_MATRIX_VIEW A,
+                 BASKER_MATRIX &L,
+                 BASKER_MATRIX &U,
+                 Int malloc_option,
+                 const BASKER_STATS stats,
+                 int *einfo)
   {
     Int i,j;
     INT_1DARRAY tptr, color, pattern, stack;
@@ -1751,21 +1751,21 @@ namespace Basker
   
         {
           #ifdef BASKER_DEBUG_COLUMN_FACTOR 
-	  cout << "-------------------------- k = " 
+          cout << "-------------------------- k = " 
                << k << " -----------------"
-	       << endl;
+               << endl;
            #endif
 
-	  value = 0.0;
-	  pivot = 0.0;
-	  maxindex = A.base->max_idx;  
-	  lcnt = 0;
-	  ucnt = 0;
+          value = 0.0;
+          pivot = 0.0;
+          maxindex = A.base->max_idx;  
+          lcnt = 0;
+          ucnt = 0;
 
           #ifdef BASKER_DEBUG_COLUMN_FACTOR
-          ASSERT(top == ws_size);
-          for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
-	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
+          BASKER_ASSERT(top == ws_size);
+          for(i = 0 ; i < ws_size; i++){BASKER_ASSERT(X[i] == 0);}
+          for(i = 0; i <  ws_size; i++){BASKER_ASSERT(ws[i] == 0 );}
           #endif
 
 
@@ -1780,14 +1780,14 @@ namespace Basker
           Kokkos::Timer timer_reach;
           #endif
 
-	  for(i = A.col_ptr(k); i < A.col_ptr(k+1); i++)
-	    {
+          for(i = A.col_ptr(k); i < A.col_ptr(k+1); i++)
+            {
               #ifdef BASKER_DEBUG_COLUMN_FACTOR
               A.good(i);
               #endif
             
-	      j = A.row_idx(i);
-	  
+              j = A.row_idx(i);
+          
               #ifdef BASKER_DEBUG_COLUMN_FACTOR
               printf("j: %d i: %d \n", j, i);
               #endif
@@ -1807,9 +1807,9 @@ namespace Basker
                  local_reach<Int, Entry, Exe_Space>
                    (b, j, L, ws, gperm, &top,bcol, brow, 
                     ws_size);
-		}
+                }
           }//end reachable (for i = A.col)
-	  xnnz = ws_size - top;
+          xnnz = ws_size - top;
 
           #ifdef BASKER_TIME_DETAIL
           stats.nfactor_sep_reach_time[b] += timer_reach.seconds();
@@ -1992,10 +1992,10 @@ namespace Basker
           printf("col_fact k: %d Unnz: %d   Lnnz: %d \n",
                  k, unnz, lnnz);
           #endif
-	}//over all columns (only 1 column)
+        }//over all columns (only 1 column)
 
     #ifdef BASKER_DEBUG_COLUMN_FACTOR
-	print_factor<Int,Entry,Exe_Space>(L,U);
+        print_factor<Int,Entry,Exe_Space>(L,U);
     #endif
    
     return 0;
@@ -2007,7 +2007,7 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void reduce_perm(BASKER_MATRIX P,
-		   BASKER_MATRIX C)
+                   BASKER_MATRIX C)
   {
 
     for(Int i = 0; i < P.lpinv.size(); i++)
@@ -2054,7 +2054,7 @@ namespace Basker
     {}
 
     local_extend_funct(MATRIX_VIEW_2DARRAY  _A, 
-		       MATRIX_2DARRAY _L, MATRIX_2DARRAY _U,  
+                       MATRIX_2DARRAY _L, MATRIX_2DARRAY _U,  
                        INT_2DARRAY _WS, ENTRY_2DARRAY _X, INT_2DARRAY _S, 
                        Int _lvl, Int _slvl, BASKER_TREE _tree, MATRIX_2DARRAY _C)
     {
@@ -2090,10 +2090,10 @@ namespace Basker
     }
 
     local_extend_funct(MATRIX_VIEW_2DARRAY  _A, 
-		       MATRIX_2DARRAY _L, MATRIX_2DARRAY _U,  
-		       INT_2DARRAY _WS, ENTRY_2DARRAY _X, INT_2DARRAY _S, 
-		       Int _lvl, Int _slvl, BASKER_TREE _tree, MATRIX_2DARRAY _C, 
-		       INT_2DARRAY _gperm, BASKER_STATS _stats)
+                       MATRIX_2DARRAY _L, MATRIX_2DARRAY _U,  
+                       INT_2DARRAY _WS, ENTRY_2DARRAY _X, INT_2DARRAY _S, 
+                       Int _lvl, Int _slvl, BASKER_TREE _tree, MATRIX_2DARRAY _C, 
+                       INT_2DARRAY _gperm, BASKER_STATS _stats)
     {
       A = _A;
       L = _L;
@@ -2244,12 +2244,12 @@ namespace Basker
 
 
                   #ifdef BASKER_DEBUG_EXTEND
-		  /*
+                  /*
                   printf("kid: %d  lvl: %d  l: %d L %d %d  U %d %d Lsize %d %d  Usize %d %d \n", 
                          kid, lvl, l, L_col, L_row, U_col, U_row,
                          LL.col_ptr.size(), LL.val.size(), 
                          LU.col_ptr.size(), LU.val.size());
-		  */
+                  */
                   #endif
 
                   
@@ -2375,7 +2375,7 @@ namespace Basker
                   BASKER_MATRIX      &LL = L[p_L_col][L_row];   
                   
 
-		  Int temp_temp_idx = kid+pow(2,l);
+                  Int temp_temp_idx = kid+pow(2,l);
                   Int ws_index = S[l][temp_temp_idx];
                   //printf("ws_two_index: %d \n" , ws_index);
 
@@ -2399,10 +2399,10 @@ namespace Basker
                     (kid, k, 0, l, lvl, 
                      UA, myC, LL, gperm[0],
                      x);
-		  
+                  
                   */
 
-		  /*
+                  /*
                      //Faster but need to work out bug
                   move_A_new<Int,Entry,Exe_Space>
                     (kid, k, 0, l, lvl,
@@ -2410,7 +2410,7 @@ namespace Basker
                      x, 
                      ws_one, ws_one_offset,
                      ws_two, ws_two_offset);
-		  */
+                  */
                   
                   #ifdef MOVE_A_SMALL
                   printf("move small called \n");
@@ -2541,7 +2541,7 @@ namespace Basker
                     {
                       //Note:changes ((Int) 0 -> kid)
                       col_factor<Int,Entry,Exe_Space>
-			( kid,  k, L_nnz_already, U_nnz_already,  
+                        ( kid,  k, L_nnz_already, U_nnz_already,  
                                   scol, LL.srow,
                                   ws,
                                   x, gperm[0],

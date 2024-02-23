@@ -210,12 +210,12 @@ int test_reciprocal_mv() {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, reciprocal_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_float");
-  test_reciprocal<float, float, TestExecSpace>();
+  test_reciprocal<float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, reciprocal_mv_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_mv_float");
-  test_reciprocal_mv<float, float, TestExecSpace>();
+  test_reciprocal_mv<float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -225,12 +225,12 @@ TEST_F(TestCategory, reciprocal_mv_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, reciprocal_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_double");
-  test_reciprocal<double, double, TestExecSpace>();
+  test_reciprocal<double, double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, reciprocal_mv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_mv_double");
-  test_reciprocal_mv<double, double, TestExecSpace>();
+  test_reciprocal_mv<double, double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -241,14 +241,14 @@ TEST_F(TestCategory, reciprocal_mv_double) {
 TEST_F(TestCategory, reciprocal_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_complex_double");
   test_reciprocal<Kokkos::complex<double>, Kokkos::complex<double>,
-                  TestExecSpace>();
+                  TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, reciprocal_mv_complex_double) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::reciprocal_mv_complex_double");
   test_reciprocal_mv<Kokkos::complex<double>, Kokkos::complex<double>,
-                     TestExecSpace>();
+                     TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -258,12 +258,12 @@ TEST_F(TestCategory, reciprocal_mv_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, reciprocal_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_int");
-  test_reciprocal<int, int, TestExecSpace>();
+  test_reciprocal<int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, reciprocal_mv_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::reciprocal_mv_int");
-  test_reciprocal_mv<int, int, TestExecSpace>();
+  test_reciprocal_mv<int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -271,10 +271,10 @@ TEST_F(TestCategory, reciprocal_mv_int) {
 /*
 #if !defined(KOKKOSKERNELS_ETI_ONLY) &&
 !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS) TEST_F( TestCategory,
-reciprocal_double_int ) { test_reciprocal<double,int,TestExecSpace> ();
+reciprocal_double_int ) { test_reciprocal<double,int,TestDevice> ();
 }
 TEST_F( TestCategory, reciprocal_double_mv_int ) {
-    test_reciprocal_mv<double,int,TestExecSpace> ();
+    test_reciprocal_mv<double,int,TestDevice> ();
 }
 #endif
 */

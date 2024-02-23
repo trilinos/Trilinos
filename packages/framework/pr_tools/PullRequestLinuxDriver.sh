@@ -107,7 +107,7 @@ sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReques
 
 if [[ ${on_kokkos_develop} == "1" ]]; then
     message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
-    "$SCRIPTPATH"/SetKokkosDevelop.sh
+    "${SCRIPTPATH}"/SetKokkosDevelop.sh
 else
     print_banner "Merge Source into Target"
     message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
@@ -199,9 +199,9 @@ test_cmd_options=(
     --pullrequest-gen-config-file=${GENCONFIG_CONFIG_FILE:?}
     --pullrequest-number=${PULLREQUESTNUM:?}
     --jenkins-job-number=${BUILD_NUMBER:?}
-    --req-mem-per-core=3.0
+    --req-mem-per-core=4.0
     --max-cores-allowed=${TRILINOS_MAX_CORES:=29}
-    --num-concurrent-tests=4
+    --num-concurrent-tests=16
     --test-mode=${mode}
     --workspace-dir=${WORKSPACE:?}
     --filename-packageenables=${WORKSPACE:?}/packageEnables.cmake
@@ -210,7 +210,13 @@ test_cmd_options=(
     --build-dir=${TRILINOS_BUILD_DIR:?}
     --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
+    --dashboard-build-name=${DASHBOARD_BUILD_NAME}
 )
+
+if [[ ${on_kokkos_develop} == "1" ]]
+then
+    test_cmd_options+=( "--extra-configure-args=\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\" ")
+fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
 then

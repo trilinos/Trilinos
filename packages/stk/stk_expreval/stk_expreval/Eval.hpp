@@ -123,7 +123,17 @@ public:
 
   Node *newNode(int op);
 
-  Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max());
+  Eval &bindVariable(const std::string &name, const double &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
+
+  Eval &bindVariable(const std::string &name, double &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
+
+  Eval &bindVariable(const std::string &name, const int &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
+
+  Eval &bindVariable(const std::string &name, int &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
 
   Eval &unbindVariable(const std::string &name);
 
@@ -147,7 +157,7 @@ public:
 
   bool undefinedFunction() const;
 
-  Variable::ArrayOffset getArrayOffsetType() {return m_arrayOffsetType;}
+  Variable::ArrayOffset getArrayOffsetType() const {return m_arrayOffsetType;}
 
   template <int RESULT_BUFFER_SIZE=DEFAULT_RESULT_BUFFER_SIZE>
   ParsedEval<RESULT_BUFFER_SIZE> &
@@ -162,6 +172,13 @@ public:
       m_parsedEval = new ParsedEval<RESULT_BUFFER_SIZE>(*this);
     }
     return *static_cast<ParsedEval<RESULT_BUFFER_SIZE>*>(m_parsedEval);
+  }
+
+  template <int RESULT_BUFFER_SIZE=DEFAULT_RESULT_BUFFER_SIZE>
+ const ParsedEval<RESULT_BUFFER_SIZE>
+  get_standalone_parsed_eval() const
+  {
+    return ParsedEval<RESULT_BUFFER_SIZE>(*this);
   }
 
   FunctionType get_function_type(const std::string& functionName) const;

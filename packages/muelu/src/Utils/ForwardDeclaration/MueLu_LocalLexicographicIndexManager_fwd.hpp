@@ -46,18 +46,13 @@
 #ifndef MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_FWD_HPP
 #define MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class LocalLexicographicIndexManager;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class LocalLexicographicIndexManager;
 }
 
 #ifndef MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_SHORT
 #define MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_SHORT
 #endif
 
-
-
-#endif // MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_FWD_HPP
+#endif  // MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_FWD_HPP

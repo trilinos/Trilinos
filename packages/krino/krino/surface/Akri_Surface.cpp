@@ -7,6 +7,7 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_Surface.hpp>
+#include <Akri_SurfaceIntersectionFromSignedDistance.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
@@ -28,6 +29,11 @@ void Surface::insert_into(BoundingBoxType & bbox) const
 bool Surface::does_intersect(const BoundingBoxType & bbox) const
 {
   ThrowRuntimeError("This surface with type (" << type() << ") has not implemented does_intersect().");
+}
+
+std::pair<int, double> Surface::compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double edgeCrossingTol) const
+{
+  return compute_surface_intersection_with_segment_from_signed_distance(*this, pt0, pt1, edgeCrossingTol);
 }
 
 } // namespace krino

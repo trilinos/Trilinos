@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ProjectionToolsDefHVOL.hpp
-    \brief  Header file for the Intrepid2::Experimental::ProjectionTools
+    \brief  Header file for the Intrepid2::ProjectionTools
             containing definitions for HVOL projections.
     \author Created by Mauro Perego
  */
@@ -55,37 +55,6 @@
 
 
 namespace Intrepid2 {
-
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-namespace Experimental {
-
-template<typename DeviceType>
-template<typename BasisType,
-typename ortValueType,       class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getHVolEvaluationPoints(typename BasisType::ScalarViewType ePoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  /*orts*/,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
-    const EvalPointsType ePointType) {
-   RealSpaceTools<DeviceType>::clone(ePoints, projStruct->getAllEvalPoints(ePointType));
-}
-
-template<typename DeviceType>
-template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
-typename funValsValueType, class ...funValsProperties,
-typename BasisType,
-typename ortValueType,class ...ortProperties>
-void
-ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
-    const typename BasisType::ScalarViewType targetEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
-      getHVolBasisCoeffs(basisCoeffs, targetAtTargetEPoints, orts, cellBasis, projStruct);
-}
-#endif
 
 template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
@@ -166,9 +135,7 @@ ProjectionTools<DeviceType>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsV
   ElemSystem cellSystem("cellSystem", true);
   cellSystem.solve(basisCoeffs, massMat, rhsMat, t_, w_, cellDofs, basisCardinality);
 }
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-}
-#endif
+
 } // Intrepid2 namespace
 
 #endif

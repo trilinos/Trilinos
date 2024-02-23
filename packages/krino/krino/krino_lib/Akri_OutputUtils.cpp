@@ -7,6 +7,7 @@
 
 #ifndef KRINO_KRINO_KRINO_LIB_AKRI_OUTPUTUTILS_CPP_
 #define KRINO_KRINO_KRINO_LIB_AKRI_OUTPUTUTILS_CPP_
+#include <Akri_DiagWriter.hpp>
 #include <Akri_OutputUtils.hpp>
 
 #include <string>
@@ -16,16 +17,25 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <Akri_Faceted_Surface.hpp>
 #include <Ioss_SubSystem.h>
+#include <Ioss_PropertyManager.h>
 
 namespace krino {
 
-void output_field_with_mesh(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose)
+static void enable_io_parts(const stk::mesh::PartVector & parts)
 {
+  for (auto * part : parts)
+    stk::io::put_io_part_attribute(*part);
+}
+
+void output_mesh_with_fields_and_properties(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, Ioss::PropertyManager &properties, stk::io::DatabasePurpose purpose)
+{
+  const stk::mesh::PartVector emptyIoParts = turn_off_output_for_empty_io_parts(mesh, outputSelector);
+
   stk::io::StkMeshIoBroker stkIo;
   stk::mesh::BulkData & workAroundNonConstMesh = const_cast<stk::mesh::BulkData &>(mesh);
   stkIo.set_bulk_data(workAroundNonConstMesh);
 
-  size_t outputFileIndex = stkIo.create_output_mesh(fileName, purpose);
+  size_t outputFileIndex = stkIo.create_output_mesh(fileName, purpose, properties);
 
   if (step > 0)
   {
@@ -38,14 +48,29 @@ void output_field_with_mesh(const stk::mesh::BulkData & mesh, const stk::mesh::P
     }
   }
 
-  stkIo.set_active_selector(activePart);
-  stkIo.set_subset_selector(outputFileIndex, activePart);
+  stkIo.set_active_selector(outputSelector);
+  stkIo.set_subset_selector(outputFileIndex, outputSelector);
 
   stkIo.write_output_mesh(outputFileIndex);
 
   stkIo.begin_output_step(outputFileIndex, time);
   stkIo.write_defined_output_fields(outputFileIndex);
   stkIo.end_output_step(outputFileIndex);
+
+  enable_io_parts(emptyIoParts);
+}
+
+void output_composed_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose)
+{
+  Ioss::PropertyManager properties;
+  properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
+  output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
+}
+
+void output_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose)
+{
+  Ioss::PropertyManager properties;
+  output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
 }
 
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex)
@@ -159,6 +184,27 @@ write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::
   }
 
   io.end_mode(Ioss::STATE_MODEL);
+}
+
+stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector)
+{
+  stk::mesh::PartVector emptyParts;
+  for (auto * part : mesh.mesh_meta_data().get_parts())
+  {
+    if (stk::io::is_part_io_part(*part))
+    {
+      uint64_t numEntities = stk::mesh::count_selected_entities(*part & outputSelector, mesh.buckets(part->primary_entity_rank()));
+      const uint64_t localNumEntities = numEntities;
+      stk::all_reduce_sum(mesh.parallel(), &localNumEntities, &numEntities, 1);
+      if(numEntities == 0)
+      {
+        krinolog << "Skipping output of empty part " << part->name() << stk::diag::dendl;
+        emptyParts.push_back(part);
+        stk::io::remove_io_part_attribute(*part);
+      }
+    }
+  }
+  return emptyParts;
 }
 
 }

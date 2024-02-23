@@ -786,6 +786,8 @@ namespace BaskerNS
     #endif
     // ------------------------
 
+    // i <= j: (i,j) (lowertri) and (j,i) (uppertri) are block index pairs of partitioned 2D blocks
+    // Note block structure is symmetric
     for(Int i=0; i < nblks; i++)
     {
       for(Int j=i; j != -flat.ncol; nnzblks++, j=(tree.treetab[j]))
@@ -794,7 +796,7 @@ namespace BaskerNS
         L_view_count[i] = L_view_count[i] + 1;
       }
     }
-   
+
     #ifdef BASKER_DEBUG_TREE
     printf("Make Hier View of size: %d %d \n", nblks, nnzblks);
     #endif    
@@ -840,7 +842,7 @@ namespace BaskerNS
     for(Int i=0; i < nblks; i++)
     {
       #ifdef MY_DEBUG
-      printf( " >> i = %d <<\n",i );
+      printf( "\n >> i = %d <<\n",i );
       #endif
       for(Int j=i; j != -flat.ncol; j=tree.treetab[j])
       {
@@ -1250,7 +1252,7 @@ namespace BaskerNS
       #endif
     }
 
-    if(btf_nblks > 1)
+    // Initialize C & B blocks
     {
       sort_matrix(BTF_C);
       permute_col(BTF_C, order_c_csym_array);
@@ -1325,12 +1327,9 @@ namespace BaskerNS
       #endif
     }
 
-    if(btf_nblks > 1)
+    if(Options.verbose_matrix_out == BASKER_TRUE)
     {
-      if(Options.verbose_matrix_out == BASKER_TRUE)
-      {
-        printMTX("C_Factor.mtx", BTF_C);
-      }
+      printMTX("C_Factor.mtx", BTF_C);
     }
 
     //If same pattern, permute using pivot, and reset

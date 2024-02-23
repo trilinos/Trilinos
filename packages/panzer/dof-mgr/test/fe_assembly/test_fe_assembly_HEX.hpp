@@ -100,7 +100,6 @@
 #include <random>
 #include <algorithm>
 
-#define Intrepid2_Experimental
 
 namespace Discretization {
 
@@ -241,11 +240,7 @@ int feAssemblyHex(int argc, char *argv[]) {
   using ots = Intrepid2::OrientationTools<DeviceSpaceType>;
   using rst = Intrepid2::RealSpaceTools<DeviceSpaceType>;
   using fst = Intrepid2::FunctionSpaceTools<DeviceSpaceType>;
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using li = Intrepid2::Experimental::LagrangianInterpolation<DeviceSpaceType>;
-#else
   using li = Intrepid2::LagrangianInterpolation<DeviceSpaceType>;
-#endif
 
   int errorFlag = 0;
 

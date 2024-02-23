@@ -25,6 +25,7 @@
 #ifdef ML_MPI
 #include <mpi.h>
 #define USR_COMM MPI_Comm
+#define USR_COMM_WORLD MPI_COMM_WORLD // CHECK: ALLOW MPI_COMM_WORLD
 #define USR_REQ  MPI_Request
 
 #define USR_ERRHANDLER MPI_Errhandler
@@ -56,9 +57,10 @@ typedef struct ml_DblLoc_struct {
 
 #endif /* ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER */
 
-#else
+#else /* ifdef ML_MPI */
 
 #define USR_COMM int
+#define USR_COMM_WORLD 0
 #define USR_REQ  int
 
 #define USR_ERRHANDLER int

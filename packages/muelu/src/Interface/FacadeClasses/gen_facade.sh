@@ -12,8 +12,8 @@ function createFiles {
   echo "The filekenner is " $filekenner
 
   # Facade class files
-  facade_decl=MueLu_Facade_${filekenner}_decl.hpp
-  facade_def=MueLu_Facade_${filekenner}_def.hpp
+  facade_decl=MueLu_Facade${filekenner}_decl.hpp
+  facade_def=MueLu_Facade${filekenner}_def.hpp
 
   # delete old facade class files
   rm -f ${facade_decl}
@@ -83,5 +83,5 @@ function createFiles {
 }
 
 # create facade files
-createFiles def_facade_Simple2x2.xml
-createFiles def_facade_BGS2x2.xml
+createFiles def_facadeSimple2x2.xml
+createFiles def_facadeBGS2x2.xml

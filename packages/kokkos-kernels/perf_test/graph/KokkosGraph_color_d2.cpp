@@ -708,8 +708,7 @@ int main(int argc, char* argv[]) {
   if (params.use_hip) {
     if (!use_multi_mem) {
       KokkosKernels::Experiment::experiment_driver<
-          kk_size_type, kk_lno_t, Kokkos::Experimental::HIP,
-          Kokkos::Experimental::HIPSpace>(params);
+          kk_size_type, kk_lno_t, Kokkos::HIP, Kokkos::HIPSpace>(params);
     }
   }
 #endif

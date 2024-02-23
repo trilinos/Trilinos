@@ -46,18 +46,13 @@
 #ifndef MUELU_TOGGLECOORDINATESTRANSFERFACTORY_FWD_HPP
 #define MUELU_TOGGLECOORDINATESTRANSFERFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ToggleCoordinatesTransferFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ToggleCoordinatesTransferFactory;
 }
 
 #ifndef MUELU_TOGGLECOORDINATESTRANSFERFACTORY_SHORT
 #define MUELU_TOGGLECOORDINATESTRANSFERFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_TOGGLECOORDINATESTRANSFERFACTORY_FWD_HPP
+#endif  // MUELU_TOGGLECOORDINATESTRANSFERFACTORY_FWD_HPP

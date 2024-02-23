@@ -61,11 +61,11 @@ Partition::Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
   , m_extPartitionKey(keyBegin, keyEnd)
   , m_size(0)
   , m_updated_since_sort(false)
+  , m_removeMode(FILL_HOLE_THEN_SORT)
+  , m_removedEntities()
 {
-  // Nada.
 }
 
-// Only the BucketRepository will delete a Partition.
 Partition::~Partition()
 {
   size_t num_bkts = m_buckets.size();
@@ -75,16 +75,42 @@ Partition::~Partition()
   }
 }
 
+void Partition::remove_internal(Bucket& bucket, unsigned bucketOrd)
+{
+  overwrite_from_end(bucket, bucketOrd);
+  remove_impl();
+}
+
 bool Partition::remove(Entity entity)
 {
   STK_ThrowAssert(belongs(m_mesh.bucket(entity)));
 
   Bucket &bucket   = m_mesh.bucket(entity);
   unsigned ordinal = m_mesh.bucket_ordinal(entity);
-  overwrite_from_end(bucket, ordinal);
 
-  remove_impl();
-  internal_check_invariants();
+  if (m_removeMode == TRACK_THEN_SLIDE) {
+    bool foundBucket = false;
+    for(unsigned myBktIdx=0; myBktIdx<m_buckets.size(); ++myBktIdx) {
+      if (m_buckets[myBktIdx]->bucket_id() == bucket.bucket_id()) {
+        const bool lastBucketLastEntity =
+          (myBktIdx==m_buckets.size()-1) && (ordinal==m_buckets[myBktIdx]->size()-1);
+        if (lastBucketLastEntity) {
+          remove_impl();
+        }
+        else {
+          m_removedEntities.push_back(FastMeshIndex{myBktIdx, ordinal});
+          m_buckets[myBktIdx]->m_entities[ordinal] = Entity(); //Partition is friend of Bucket!
+          m_updated_since_sort = true;
+        }
+        foundBucket = true;
+        break;
+      }
+    }
+    STK_ThrowRequireMsg(foundBucket, "Failed to find bucket in partition for entity that is being removed.");
+  }
+  else {
+    remove_internal(bucket, ordinal);
+  }
   return true;
 }
 
@@ -101,6 +127,7 @@ bool Partition::add(Entity entity)
   bucket->add_entity(entity);
   ++m_size;
 
+  m_removeMode = FILL_HOLE_THEN_SORT;
   m_updated_since_sort = true;
 
   internal_check_invariants();
@@ -150,16 +177,33 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
   // Copy the entity's data to the new bucket before removing the entity from its old bucket.
   dst_bucket->copy_entity(entity);
 
-  overwrite_from_end(*src_bucket, src_ordinal);
+  if (m_removeMode == TRACK_THEN_SLIDE) {
+    bool foundBucket = false;
+    for(unsigned myBktIdx=0; myBktIdx<m_buckets.size(); ++myBktIdx) {
+      if (m_buckets[myBktIdx]->bucket_id() == src_bucket->bucket_id()) {
+        const bool lastBucketLastEntity =
+          (myBktIdx==m_buckets.size()-1) && (src_ordinal==m_buckets[myBktIdx]->size()-1);
+        if (lastBucketLastEntity) {
+          remove_impl();
+        }
+        else {
+          m_removedEntities.push_back(FastMeshIndex{myBktIdx, src_ordinal});
+          m_buckets[myBktIdx]->m_entities[src_ordinal] = Entity(); //Partition is friend of Bucket!
+          m_updated_since_sort = true;
+        }
+        foundBucket = true;
+        break;
+      }
+    } 
+    STK_ThrowRequireMsg(foundBucket, "Failed to find bucket in partition for entity that is being removed.");
+  }
+  else {
+    overwrite_from_end(*src_bucket, src_ordinal);
+    remove_impl();
+  }
 
   dst_partition.m_updated_since_sort = true;
   dst_partition.m_size++;
-
-  remove_impl();
-
-  m_updated_since_sort = true;
-
-  internal_check_invariants();
   dst_partition.internal_check_invariants();
 
   return true;
@@ -176,8 +220,7 @@ void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
     // Copy last entity to spot being vacated.
     Entity e_swap = (*last)[ last->size() - 1 ];
     bucket.overwrite_entity(ordinal, e_swap );
-
-    // Entity field data has relocated.
+    m_updated_since_sort = true;
   }
 }
 
@@ -200,9 +243,10 @@ void Partition::remove_bucket(Bucket* bucket)
 
 void Partition::add_bucket(Bucket* bucket)
 {
-    m_size += bucket->size();
-    bucket->m_partition = this;
-    stk::util::insert_keep_sorted_and_unique(bucket, m_buckets);
+  clear_pending_removes_by_filling_from_end();
+  m_size += bucket->size();
+  bucket->m_partition = this;
+  stk::util::insert_keep_sorted_and_unique(bucket, m_buckets);
 }
 
 void Partition::remove_impl()
@@ -234,7 +278,6 @@ void Partition::remove_impl()
     }
   }
 
-  m_updated_since_sort = true;
   --m_size;
 
   internal_check_invariants();
@@ -249,8 +292,34 @@ void Partition::default_sort_if_needed(bool mustSortFacesByNodeIds)
 {
   if (!empty() && m_updated_since_sort)
   {
+    if (m_removeMode == FILL_HOLE_THEN_SORT) {
       sort(GlobalIdEntitySorter(mustSortFacesByNodeIds));
+    }
+    else {
+      finalize_pending_removes_by_sliding_memory();
+    }
   }
+}
+
+stk::mesh::FieldVector get_fields_for_bucket(const stk::mesh::BulkData& mesh,
+                                             const stk::mesh::Bucket& bkt)
+{
+  stk::mesh::FieldVector fields;
+
+  if(mesh.is_field_updating_active()) {
+    if(bkt.entity_rank() < stk::topology::NUM_RANKS) {
+      const stk::mesh::FieldVector& rankFields = mesh.mesh_meta_data().get_fields(bkt.entity_rank());
+      fields.reserve(rankFields.size());
+
+      for(unsigned ifield=0; ifield<rankFields.size(); ++ifield) {
+        if(field_bytes_per_entity(*rankFields[ifield], bkt)) {
+          fields.push_back(rankFields[ifield]);
+        }
+      }
+    }
+  }
+
+  return fields;
 }
 
 void Partition::sort(const EntitySorterBase& sorter)
@@ -303,18 +372,7 @@ void Partition::sort(const EntitySorterBase& sorter)
   Bucket* orig_vacancy_bucket = vacancy_bucket;
 
 
-  FieldVector reduced_fields;
-  if(m_mesh.is_field_updating_active()) {
-    if(buckets_begin != buckets_end && (*buckets_begin)->entity_rank() < stk::topology::NUM_RANKS) {
-      const FieldVector& rankFields = m_mesh.mesh_meta_data().get_fields((*buckets_begin)->entity_rank());
-      reduced_fields.reserve(rankFields.size());
-      for(unsigned ifield=0; ifield<rankFields.size(); ++ifield) {
-        if(field_bytes_per_entity(*rankFields[ifield], *(*buckets_begin))) {
-          reduced_fields.push_back(rankFields[ifield]);
-        }
-      }
-    }
-  }
+  FieldVector reduced_fields = get_fields_for_bucket(m_mesh, *vacancy_bucket);
 
   for (BucketVector::iterator bucket_itr = begin(); bucket_itr != buckets_end; ++bucket_itr)
   {
@@ -360,8 +418,127 @@ void Partition::sort(const EntitySorterBase& sorter)
   internal_check_invariants();
 }
 
+bool out_of_range(const stk::mesh::FastMeshIndex& fastMeshIndex, const stk::mesh::BucketVector& buckets)
+{
+  return fastMeshIndex.bucket_id >= buckets.size() ||
+         fastMeshIndex.bucket_ord >= buckets[fastMeshIndex.bucket_id]->size();
+}
+
+stk::mesh::Entity get_last_entity(const stk::mesh::BucketVector& buckets)
+{
+  const stk::mesh::Bucket* lastBucket = buckets.back();
+  const size_t size = lastBucket->size();
+  if (size == 0) return stk::mesh::Entity();
+  return (*lastBucket)[lastBucket->size()-1];
+}
+
+void Partition::clear_pending_removes_by_filling_from_end()
+{
+  if (m_removeMode == TRACK_THEN_SLIDE && !m_removedEntities.empty()) {
+    stk::util::sort_and_unique(m_removedEntities);
+    for(const FastMeshIndex& fastMeshIndex : m_removedEntities) {
+      while(!empty() && !m_mesh.is_valid(get_last_entity(m_buckets))) {
+        remove_impl();
+      }
+
+      if (empty()) { break; }
+
+      if (out_of_range(fastMeshIndex, m_buckets)) { continue; }
+
+      Bucket& bucket = *m_buckets[fastMeshIndex.bucket_id];
+      unsigned bucketOrd = fastMeshIndex.bucket_ord;
+      remove_internal(bucket, bucketOrd);
+    }
+
+    m_removedEntities.clear();
+  }
+  m_removeMode = FILL_HOLE_THEN_SORT;
+}
+
+void Partition::check_sorted(const std::string& prefixMsg)
+{
+  EntityLess entityLess(m_mesh);
+  Entity prevEnt = Entity();
+  unsigned prevBktId = 0;
+  unsigned prevBktOffset = 0;
+  for(const Bucket* bptr : m_buckets) {
+    unsigned offset = 0;
+    for(Entity ent : *bptr) {
+      if(m_mesh.is_valid(ent)){
+      if (m_mesh.is_valid(prevEnt)) {
+        STK_ThrowRequireMsg(entityLess(prevEnt, ent), "check_sorted "<<prefixMsg<<", m_buckets.size()="<<m_buckets.size()<<", found ent ID "<<m_mesh.identifier(ent)<<" at bktId "<<bptr->bucket_id()<<" offset "<<offset<<", after prevEnt ID "<<m_mesh.identifier(prevEnt)<<" at bktId "<<prevBktId<<" offset "<<prevBktOffset);
+      }
+      prevEnt = ent;
+      prevBktId = bptr->bucket_id();
+      prevBktOffset = offset++;
+      }
+    }
+  }
+}
+
+void Partition::finalize_pending_removes_by_sliding_memory()
+{
+  if (m_removeMode == TRACK_THEN_SLIDE && !m_removedEntities.empty()) {
+    stk::util::sort_and_unique(m_removedEntities);
+
+    std::vector<FastMeshIndex>::iterator rmEntIter = m_removedEntities.begin();
+    FastMeshIndex slotToFill = *rmEntIter;
+    unsigned bktIdx = slotToFill.bucket_id;
+    const bool lastBucket = bktIdx == m_buckets.size()-1;
+    unsigned bktOrd = slotToFill.bucket_ord+1 ;
+    bool lastEntity = bktOrd >= m_buckets[bktIdx]->size();
+    if (!lastBucket && lastEntity) {
+      ++bktIdx;
+      bktOrd = 0;
+      lastEntity = bktOrd >= m_buckets[bktIdx]->size();
+    }
+
+    FieldVector reduced_fields = get_fields_for_bucket(m_mesh, *m_buckets[bktIdx]);
+
+    while(bktIdx < m_buckets.size()) {
+      Bucket& bkt = *m_buckets[bktIdx];
+
+      while(bktOrd < bkt.size()) {
+        Entity entity = bkt[bktOrd];
+
+        if (m_mesh.is_valid(entity)) {
+          m_buckets[slotToFill.bucket_id]->overwrite_entity(slotToFill.bucket_ord, entity, &reduced_fields);
+
+          ++slotToFill.bucket_ord;
+          if (slotToFill.bucket_ord >= m_buckets[slotToFill.bucket_id]->size()) {
+            ++slotToFill.bucket_id;
+            slotToFill.bucket_ord = 0;
+          }
+        }
+        ++bktOrd;
+      }
+      ++bktIdx;
+      bktOrd = 0;
+    }
+
+    unsigned numRemoved = m_removedEntities.size();
+    for(unsigned i=0; i<numRemoved; ++i) {
+      remove_impl();
+    }
+    m_removedEntities.clear();
+  }
+
+  m_updated_since_sort = false;
+}
+
+void Partition::set_remove_mode(RemoveMode removeMode)
+{
+  if(m_removeMode!=removeMode && m_updated_since_sort) {
+    default_sort_if_needed();
+  }
+
+  m_removeMode = removeMode;
+}
+
 stk::mesh::Bucket *Partition::get_bucket_for_adds()
 {
+  clear_pending_removes_by_filling_from_end();
+
   if (no_buckets()) {
     std::vector<unsigned> partition_key = get_legacy_partition_id();
     partition_key[ partition_key[0] ] = 0;

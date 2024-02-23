@@ -48,6 +48,7 @@
 #include <Kokkos_Core.hpp>
 #include "Tpetra_Details_checkLaunchBlocking.hpp"
 #include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 
 namespace Tpetra {
 
@@ -246,6 +247,8 @@ namespace Tpetra {
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
       Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+
+      Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     }
     tpetraIsInitialized_ = true;
   }
@@ -269,6 +272,8 @@ namespace Tpetra {
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
       Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+
+      Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     }
     tpetraIsInitialized_ = true;
 
@@ -316,6 +321,8 @@ namespace Tpetra {
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
       Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+
+      Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     }
     tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;

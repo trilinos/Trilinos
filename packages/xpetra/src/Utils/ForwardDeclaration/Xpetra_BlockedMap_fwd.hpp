@@ -47,12 +47,12 @@
 #define XPETRA_BLOCKEDMAP_FWD_HPP
 
 namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class BlockedMap;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlockedMap;
 }
 
 #ifndef XPETRA_BLOCKEDMAP_SHORT
 #define XPETRA_BLOCKEDMAP_SHORT
 #endif
 
-#endif // XPETRA_BLOCKEDMAP_FWD_HPP
+#endif  // XPETRA_BLOCKEDMAP_FWD_HPP

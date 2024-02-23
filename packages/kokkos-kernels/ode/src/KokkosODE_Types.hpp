@@ -51,6 +51,25 @@ struct ODE_params {
         min_step_size(min_step_size_) {}
 };
 
+enum newton_solver_status : int {
+  NLS_SUCCESS    = 0,
+  MAX_ITER       = 1,
+  LIN_SOLVE_FAIL = 2
+};
+
+struct Newton_params {
+  int max_iters;
+  double abs_tol, rel_tol;
+
+  // Constructor that only specify the desired number of steps.
+  // In this case no adaptivity is provided, the time step will
+  // be constant such that dt = (tend - tstart) / num_steps;
+  KOKKOS_FUNCTION
+  Newton_params(const int max_iters_, const double abs_tol_,
+                const double rel_tol_)
+      : max_iters(max_iters_), abs_tol(abs_tol_), rel_tol(rel_tol_) {}
+};
+
 }  // namespace Experimental
 }  // namespace KokkosODE
 #endif  // KOKKOSODE_TYPES_HPP

@@ -237,13 +237,13 @@ add_test_results regular_add_test(
 /// \tparam Matrix_t A specialization of Tpetra::CrsMatrix.
 template<class Matrix_t>
 add_test_results
-null_add_test (const Matrix_t& A,
-               const Matrix_t& B,
-               const bool AT,
-               const bool BT,
-               const Matrix_t& C,
-               Teuchos::FancyOStream& out,
-               bool& success)
+null_add_test_1 (const Matrix_t& A,
+                 const Matrix_t& B,
+                 const bool AT,
+                 const bool BT,
+                 const Matrix_t& C,
+                 Teuchos::FancyOStream& out,
+                 bool& success)
 {
   typedef typename Matrix_t::scalar_type scalar_type;
   typedef typename Matrix_t::local_ordinal_type local_ordinal_type;
@@ -318,6 +318,94 @@ null_add_test (const Matrix_t& A,
   return toReturn;
 }
 
+/// \brief Test the three-argument (A, B, C) version of CrsMatrix Add,
+///   where the output argument C is null on input.
+///
+/// \tparam Matrix_t A specialization of Tpetra::CrsMatrix.
+template<class Matrix_t>
+add_test_results
+null_add_test_2 (const Matrix_t& A,
+                 const Matrix_t& B,
+                 const bool AT,
+                 const bool BT,
+                 const Matrix_t& C,
+                 Teuchos::FancyOStream& out,
+                 bool& success)
+{
+  typedef typename Matrix_t::scalar_type scalar_type;
+  typedef typename Matrix_t::local_ordinal_type local_ordinal_type;
+  typedef typename Matrix_t::global_ordinal_type global_ordinal_type;
+  typedef typename Matrix_t::node_type NT;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, NT> map_type;
+  typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, NT> export_type;
+  const scalar_type one = STS::one ();
+
+  RCP<const Comm<int> > comm = A.getMap ()->getComm ();
+  const int myRank = comm->getRank ();
+
+  out << "  Computing Frobenius norm of the expected result C" << endl;
+  add_test_results toReturn;
+  toReturn.correctNorm = C.getFrobeniusNorm ();
+
+  out << "  Calling 3-arg add" << endl;
+  RCP<const map_type> domainMap = BT ? B.getRangeMap () : B.getDomainMap ();
+  RCP<const map_type> rangeMap = BT ? B.getDomainMap () : B.getRangeMap ();
+  RCP<Matrix_t> C_computed;
+  // for each MPI process to catch any exception message
+  std::ostringstream errStrm;
+  int lclSuccess = 1;
+  int gblSuccess = 0; // output argument
+  try {
+    Tpetra::MatrixMatrix::Add (A, AT, one, B, BT, one, C_computed);
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << myRank << ": add threw an exception: "
+      << e.what () << endl;
+    lclSuccess = 0;
+  }
+  // MatrixMatrix::Add, with C_computed null on input, should not call fillComplete.
+  TEST_ASSERT(C_computed->isFillActive());
+  // Call fillComplete now so that we can compare against C.
+  C_computed->fillComplete(C.getDomainMap(), C.getRangeMap());
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    C_computed.is_null (), std::logic_error, "3-arg add returned null.");
+
+  RCP<Matrix_t> C_exported;
+  if (! C_computed->getRowMap ()->isSameAs (* (C.getRowMap ()))) {
+    // Export C_computed to C's row Map, so we can compare the two.
+    export_type exp (C_computed->getRowMap (), C.getRowMap ());
+    C_exported =
+      Tpetra::exportAndFillCompleteCrsMatrix<Matrix_t> (C_computed, exp,
+                                                             C.getDomainMap (),
+                                                             C.getRangeMap ());
+  } else {
+    C_exported = C_computed;
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! C_exported->getRowMap ()->isSameAs (* (C.getRowMap ())),
+    std::logic_error,
+    "Sorry, C_exported and C have different row Maps.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! C_exported->getDomainMap ()->isSameAs (* (C.getDomainMap ())),
+    std::logic_error,
+    "Sorry, C_exported and C have different domain Maps.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! C_exported->getRangeMap ()->isSameAs (* (C.getRangeMap ())),
+    std::logic_error,
+    "Sorry, C_exported and C have different range Maps.");
+
+  toReturn.computedNorm = C_exported->getFrobeniusNorm ();
+  toReturn.epsilon = STS::magnitude (toReturn.correctNorm - toReturn.computedNorm);
+  return toReturn;
+}
 
 template<class Matrix_t>
 add_test_results add_into_test(
@@ -1115,17 +1203,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
                << currentSystem.name() << endl;
 
       TEUCHOS_TEST_FOR_EXCEPTION(A.is_null (), std::logic_error,
-                                 "Before null_add_test: A is null");
+                                 "Before null_add_test_1: A is null");
       TEUCHOS_TEST_FOR_EXCEPTION(B.is_null (), std::logic_error,
-                                 "Before null_add_test: B is null");
+                                 "Before null_add_test_1: B is null");
       TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
-                                 "Before null_add_test: C is null");
+                                 "Before null_add_test_1: C is null");
 
-      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C,
+      results = null_add_test_1<Matrix_t> (*A, *B, AT, BT, *C,
                                          newOut, success);
 
       TEST_COMPARE(results.epsilon, <, epsilon);
-      newOut << "Null Add Test Results: " << endl;
+      newOut << "Null Add Test (1) Results: " << endl;
+      newOut << "\tCorrect Norm: " << results.correctNorm << endl;
+      newOut << "\tComputed norm: " << results.computedNorm << endl;
+      newOut << "\tEpsilon: " << results.epsilon << endl;
+
+      results = null_add_test_2<Matrix_t> (*A, *B, AT, BT, *C,
+                                         newOut, success);
+
+      TEST_COMPARE(results.epsilon, <, epsilon);
+      newOut << "Null Add Test (2) Results: " << endl;
       newOut << "\tCorrect Norm: " << results.correctNorm << endl;
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
@@ -2057,6 +2154,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addSorted(
                                 valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, 
                                 valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, 
+#if KOKKOSKERNELS_VERSION >= 40299
+                                nrows, // assumes square matrices
+#endif
                                 valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
 
   ExecSpace().fence();

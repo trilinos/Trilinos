@@ -159,6 +159,15 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUSPARSE_VERSION < 11600)
+  {
+    std::cerr
+        << "TEST SKIPPED: See "
+           "https://github.com/kokkos/kokkos-kernels/issues/1965 for details."
+        << std::endl;
+    return;
+  }
+#endif
   using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);

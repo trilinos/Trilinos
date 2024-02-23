@@ -123,7 +123,6 @@ int main(int argc, char* argv[])
 	      << totalTime(ftime, myTime()) << std::endl;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
-    mybasker.SolveTest();
     Int *lperm;
     Int *rperm;
     mybasker.GetPerm(&lperm,&rperm);
@@ -203,7 +202,6 @@ int main(int argc, char* argv[])
 	      << totalTime(ftime, myTime()) << std::endl;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
-    mybasker.SolveTest();
     Int *lperm;
     Int *rperm;
     mybasker.GetPerm(&lperm,&rperm);
@@ -286,7 +284,6 @@ int main(int argc, char* argv[])
 	      << totalTime(ftime, myTime()) << std::endl;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
-    mybasker.SolveTest();
     Int *lperm;
     Int *rperm;
     mybasker.GetPerm(&lperm,&rperm);

@@ -12,16 +12,14 @@
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 
-
 namespace Tempus_Unit_Test {
 
+using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
-using Teuchos::ParameterList;
 using Teuchos::sublist;
-
 
 // ************************************************************
 // ************************************************************
@@ -34,30 +32,29 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyConstant, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(tscs->getStrategyType() != "Constant");
   TEUCHOS_TEST_FOR_EXCEPT(tscs->getStepType() != "Constant");
   TEUCHOS_TEST_FOR_EXCEPT(tscs->getName() != "Constant");
-  TEST_FLOATING_EQUALITY (tscs->getConstantTimeStep(), 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(tscs->getConstantTimeStep(), 0.0, 1.0e-14);
 
   // Test the set functions.
-  tscs->setConstantTimeStep(0.989);  tscs->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!tscs->isInitialized());
+  tscs->setConstantTimeStep(0.989);
+  tscs->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!tscs->isInitialized());
 
-  TEST_FLOATING_EQUALITY (tscs->getConstantTimeStep(), 0.989, 1.0e-14);
-
+  TEST_FLOATING_EQUALITY(tscs->getConstantTimeStep(), 0.989, 1.0e-14);
 }
-
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(TimeStepControlStrategyConstant, Full_Construction)
 {
   auto tscs = rcp(new Tempus::TimeStepControlStrategyConstant<double>(
-    0.123, "Full_Construction_Test"));
+      0.123, "Full_Construction_Test"));
   TEUCHOS_TEST_FOR_EXCEPT(!tscs->isInitialized());
 
   TEUCHOS_TEST_FOR_EXCEPT(tscs->getStrategyType() != "Constant");
   TEUCHOS_TEST_FOR_EXCEPT(tscs->getStepType() != "Constant");
   TEUCHOS_TEST_FOR_EXCEPT(tscs->getName() != "Full_Construction_Test");
-  TEST_FLOATING_EQUALITY (tscs->getConstantTimeStep(), 0.123, 1.0e-14);
+  TEST_FLOATING_EQUALITY(tscs->getConstantTimeStep(), 0.123, 1.0e-14);
 }
-
 
 // ************************************************************
 // ************************************************************
@@ -71,9 +68,8 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyConstant, Create_Construction)
   auto tscsc = Tempus::createTimeStepControlStrategyConstant<double>(pl);
   TEUCHOS_TEST_FOR_EXCEPT(!tscsc->isInitialized());
 
-  TEST_FLOATING_EQUALITY (tscsc->getConstantTimeStep(), 0.02, 1.0e-14);
+  TEST_FLOATING_EQUALITY(tscsc->getConstantTimeStep(), 0.02, 1.0e-14);
 }
-
 
 // ************************************************************
 // ************************************************************
@@ -82,14 +78,15 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyConstant, setNextTimeStep)
   auto tscs = rcp(new Tempus::TimeStepControlStrategyConstant<double>());
   TEUCHOS_TEST_FOR_EXCEPT(!tscs->isInitialized());
 
-  double initTime  = 1.0;
-  int    initIndex = -100;
+  double initTime = 1.0;
+  int initIndex   = -100;
 
   // Setup the SolutionHistory --------------------------------
-  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  auto model    = rcp(new Tempus_Test::SinCosModel<double>());
   auto inArgsIC = model->getNominalValues();
-  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
-  auto icState = Tempus::createSolutionStateX<double>(icSolution);
+  auto icSolution =
+      rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
+  auto icState         = Tempus::createSolutionStateX<double>(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->addState(icState);
   solutionHistory->getCurrentState()->setTimeStep(0.9);
@@ -117,10 +114,9 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyConstant, setNextTimeStep)
   // ** Mock Timestep ** //
 
   auto workingState = solutionHistory->getWorkingState();
-  TEST_FLOATING_EQUALITY( workingState->getTimeStep(), 0.02, 1.0e-14);
-  TEST_FLOATING_EQUALITY( workingState->getTime(), 1.02, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getTimeStep(), 0.02, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getTime(), 1.02, 1.0e-14);
 }
-
 
 // ************************************************************
 // ************************************************************
@@ -130,15 +126,14 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyConstant, getValidParameters)
 
   auto pl = tscsc->getValidParameters();
 
-  TEST_COMPARE          ( pl->get<std::string>("Strategy Type"), ==,"Constant");
-  TEST_FLOATING_EQUALITY( pl->get<double>("Time Step"), 0.0, 1.0e-14);
+  TEST_COMPARE(pl->get<std::string>("Strategy Type"), ==, "Constant");
+  TEST_FLOATING_EQUALITY(pl->get<double>("Time Step"), 0.0, 1.0e-14);
 
-  { // Ensure that parameters are "used", excluding sublists.
+  {  // Ensure that parameters are "used", excluding sublists.
     std::ostringstream unusedParameters;
     pl->unused(unusedParameters);
-    TEST_COMPARE ( unusedParameters.str(), ==, "");
+    TEST_COMPARE(unusedParameters.str(), ==, "");
   }
 }
 
-
-} // namespace Tempus_Unit_Test
+}  // namespace Tempus_Unit_Test

@@ -44,6 +44,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedSerialGemm {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b, _c;
 
   ScalarType _alpha, _beta;
@@ -72,7 +73,7 @@ struct Functor_BatchedSerialGemm {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, ParamTagType> policy(0, _c.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _c.extent(0));
     Kokkos::parallel_for((name + "::GemmFunctor").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -80,6 +81,7 @@ struct Functor_BatchedSerialGemm {
 
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 struct Functor_BatchedSerialLU {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a;
 
   KOKKOS_INLINE_FUNCTION
@@ -100,7 +102,7 @@ struct Functor_BatchedSerialLU {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, _a.extent(0));
     Kokkos::parallel_for((name + "::LUFunctor").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -109,6 +111,7 @@ struct Functor_BatchedSerialLU {
 template <typename DeviceType, typename ViewType, typename TransType,
           typename AlgoTagType>
 struct Functor_TestBatchedSerialSolveLU {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a;
   ViewType _b;
 
@@ -130,7 +133,7 @@ struct Functor_TestBatchedSerialSolveLU {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, _a.extent(0));
     Kokkos::parallel_for((name + "::SolveLUFunctor").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }

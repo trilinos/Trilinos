@@ -114,11 +114,12 @@ class BsrSpmvV42NonTrans {
 
 template <typename Alpha, typename AMatrix, typename XVector, typename Beta,
           typename YVector>
-void apply_v42(const Alpha &alpha, const AMatrix &a, const XVector &x,
+void apply_v42(const typename AMatrix::execution_space &exec,
+               const Alpha &alpha, const AMatrix &a, const XVector &x,
                const Beta &beta, const YVector &y) {
-  using execution_space = typename YVector::execution_space;
+  using execution_space = typename AMatrix::execution_space;
 
-  Kokkos::RangePolicy<execution_space> policy(0, y.size());
+  Kokkos::RangePolicy<execution_space> policy(exec, 0, y.size());
   if constexpr (YVector::rank == 1) {
 // lbv - 07/26/2023:
 // with_unmanaged_t<...> required Kokkos 4.1.0,

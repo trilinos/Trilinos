@@ -12,7 +12,6 @@
 #include "Tempus_config.hpp"
 #include "Tempus_StepperNewmarkExplicitAFormModifierXBase.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default ModifierX for StepperNewmarkExplicitAForm.
@@ -23,41 +22,39 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperNewmarkExplicitAFormModifierXDefault
-  : virtual public Tempus::StepperNewmarkExplicitAFormModifierXBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperNewmarkExplicitAFormModifierXBase<Scalar> {
+ public:
   /// Constructor
-  StepperNewmarkExplicitAFormModifierXDefault(){}
+  StepperNewmarkExplicitAFormModifierXDefault() {}
 
   /// Destructor
-  virtual ~StepperNewmarkExplicitAFormModifierXDefault(){}
+  virtual ~StepperNewmarkExplicitAFormModifierXDefault() {}
 
   /// Modify solution based on the MODIFIER_TYPE.
-  virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
-    const Scalar /* time */, const Scalar /* dt */,
-    const typename StepperNewmarkExplicitAFormModifierXBase<Scalar>::MODIFIER_TYPE modType)
+  virtual void modify(Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
+                      const Scalar /* time */, const Scalar /* dt */,
+                      const typename StepperNewmarkExplicitAFormModifierXBase<
+                          Scalar>::MODIFIER_TYPE modType)
   {
-    switch(modType) {
+    switch (modType) {
       case StepperNewmarkExplicitAFormModifierXBase<Scalar>::X_BEGIN_STEP:
-      case StepperNewmarkExplicitAFormModifierXBase<Scalar>::X_BEFORE_EXPLICIT_EVAL:
-      case StepperNewmarkExplicitAFormModifierXBase<Scalar>::X_AFTER_EXPLICIT_EVAL:
-      case StepperNewmarkExplicitAFormModifierXBase<Scalar>::X_END_STEP:
-      {
+      case StepperNewmarkExplicitAFormModifierXBase<
+          Scalar>::X_BEFORE_EXPLICIT_EVAL:
+      case StepperNewmarkExplicitAFormModifierXBase<
+          Scalar>::X_AFTER_EXPLICIT_EVAL:
+      case StepperNewmarkExplicitAFormModifierXBase<Scalar>::X_END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown modifier type.\n");
+                                   "Error - unknown modifier type.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperNewmarkExplicitAFormModifierX_hpp
+#endif  // Tempus_StepperNewmarkExplicitAFormModifierX_hpp

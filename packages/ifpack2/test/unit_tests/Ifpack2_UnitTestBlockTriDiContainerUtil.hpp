@@ -171,6 +171,7 @@ struct BlockTriDiContainerTester {
       make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
       p.set<LO>("partitioner: local parts", parts.size());
       p.set("partitioner: parts", parts);
+      p.set("partitioner: subparts per part", 1);
       T->setParameters(p);
     }
     return T;
@@ -186,7 +187,7 @@ struct BlockTriDiContainerTester {
     Teuchos::Array<Teuchos::Array<LO> > parts;
     make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
     return Teuchos::rcp(new Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>(
-                          A, parts, overlap_comm, seq_method));
+                          A, parts, 1, overlap_comm, seq_method));
   }
 
   static Int

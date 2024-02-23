@@ -38,8 +38,8 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #endif
 
 #if defined(TACHO_ENABLE_ROCSOLVER)
-#include "rocblas.h"
-#include "rocsolver.h"
+#include "rocblas/rocblas.h"
+#include "rocsolver/rocsolver.h"
 #if (ROCSOLVER_VERSION_MAJOR >= 3) && (ROCSOLVER_VERSION_MINOR >= 16)
 #define TACHO_ENABLE_ROCSOLVER_SYTRF 
 #endif

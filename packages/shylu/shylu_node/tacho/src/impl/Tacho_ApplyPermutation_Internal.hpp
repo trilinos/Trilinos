@@ -47,7 +47,7 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Intern
         }
       }
     } else {
-      printf("Error: ApplyPermutation<Algo::Internal> A extent(0) does not match to P extent(0)\n");
+      Kokkos::printf("Error: ApplyPermutation<Algo::Internal> A extent(0) does not match to P extent(0)\n");
     }
     return 0;
   }
@@ -55,7 +55,7 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Intern
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeB>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ViewTypeA &A, const ViewTypeP &P,
                                            const ViewTypeB &B) {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+    KOKKOS_IF_ON_DEVICE((
     if (A.extent(0) == P.extent(0)) {
       if (A.span() > 0) {
         const ordinal_type m = A.extent(0), n = A.extent(1);
@@ -73,11 +73,9 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Intern
         }
       }
     } else {
-      printf("Error: ApplyPermutation<Algo::Internal> A extent(0) does not match to P extent(0)\n");
-    }
-#else
-    invoke(A, P, B);
-#endif
+      Kokkos::printf("Error: ApplyPermutation<Algo::Internal> A extent(0) does not match to P extent(0)\n");
+    }))
+    KOKKOS_IF_ON_HOST((invoke(A, P, B);))
     return 0;
   }
 };

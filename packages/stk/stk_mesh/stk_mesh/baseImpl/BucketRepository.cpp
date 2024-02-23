@@ -482,6 +482,24 @@ void BucketRepository::delete_bucket(Bucket * bucket)
     bucket->getPartition()->delete_bucket(bucket);
 }
 
+void BucketRepository::set_remove_mode_tracking()
+{
+  for(std::vector<Partition*>& partitionVector : m_partitions) {
+    for(Partition* partition : partitionVector) {
+      partition->set_remove_mode(Partition::TRACK_THEN_SLIDE);
+    }
+  }
+}
+
+void BucketRepository::set_remove_mode_fill_and_sort()
+{
+  for(std::vector<Partition*>& partitionVector : m_partitions) {
+    for(Partition* partition : partitionVector) {
+      partition->set_remove_mode(Partition::FILL_HOLE_THEN_SORT);
+    }
+  }
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

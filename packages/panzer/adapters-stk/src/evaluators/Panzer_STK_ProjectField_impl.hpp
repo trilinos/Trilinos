@@ -108,11 +108,7 @@ evaluateFields(typename Traits::EvalData workset)
   if (workset.num_cells<=0) return;
 
   // Perform local L2 projection
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using pts = Intrepid2::Experimental::ProjectionTools<PHX::Device>;
-#else
   using pts = Intrepid2::ProjectionTools<PHX::Device>;
-#endif
 
   size_t numCells = workset.num_cells;
   const auto cell_range = std::pair<int,int>(0,numCells);

@@ -46,8 +46,8 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Operator.hpp"
 #ifdef HAVE_MUELU_EPETRA
-#  include "Epetra_MultiVector.h"
-#  include "Epetra_Operator.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Operator.h"
 #endif
 #include "TpetraCore_ETIHelperMacros.h"
 
@@ -66,29 +66,27 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // call it LCL_CALL and not LCL_INST.  We are just using the macros to
 // invoke this class method over the set of enabled template
 // parameters.
-#define LCL_CALL( SC, LO, GO, NT ) \
+#define LCL_CALL(SC, LO, GO, NT)                                             \
   ::MueLu::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
-                                        Tpetra::Operator<SC, LO, GO, NT>, \
-                                        typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>::registerLinearSolverFactory ();
+                                        Tpetra::Operator<SC, LO, GO, NT>,    \
+                                        typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>::registerLinearSolverFactory();
 
 namespace MueLu {
 namespace Details {
 
-void
-registerLinearSolverFactory ()
-{
+void registerLinearSolverFactory() {
   // Fill in the body of the function with all the type-specific
   // run-time registration functions, for registering MueLu's
   // LinearSolverFactory with Tpetra objects.
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-      
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(LCL_CALL)
+
   // If Epetra is enabled in MueLu, also register MueLu's
   // LinearSolverFactory for Epetra objects.
 #ifdef HAVE_MUELU_EPETRA
   ::MueLu::Details::LinearSolverFactory<Epetra_MultiVector,
-    Epetra_Operator, double>::registerLinearSolverFactory ();
-#endif // HAVE_MUELU_EPETRA
+                                        Epetra_Operator, double>::registerLinearSolverFactory();
+#endif  // HAVE_MUELU_EPETRA
 }
 
-} // namespace Details
-} // namespace MueLu
+}  // namespace Details
+}  // namespace MueLu

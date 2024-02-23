@@ -131,18 +131,7 @@ TEST_F(RegularTetRefinement, meshAfter3LevelsOfUMR_have585Elements)
 {
   if(stk::parallel_machine_size(mComm) == 1)
   {
-    perform_iterations_of_uniform_refinement(3);
-
-    EXPECT_EQ(585u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
-  }
-}
-
-TEST_F(RegularTetRefinement, perceptRefinement_meshAfter3LevelsOfUMR_have585Elements)
-{
-  if(stk::parallel_machine_size(mComm) == 1)
-  {
-    setup_percept_refinement();
-    perform_iterations_of_percept_uniform_refinement(3);
+    perform_iterations_of_uniform_refinement_with_general_element_marker(3);
 
     EXPECT_EQ(585u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
   }
@@ -152,7 +141,7 @@ TEST_F(FourRightTetsRefinement, meshAfter2LevelsOfUMR_haveCorrectNumberOfElement
 {
   if(stk::parallel_machine_size(mComm) <= 4)
   {
-    perform_iterations_of_uniform_refinement(2);
+    perform_iterations_of_uniform_refinement_with_general_element_marker(2);
 
     const unsigned goldNumElems = 4 + 32 + 256;
     EXPECT_EQ(goldNumElems, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
@@ -165,20 +154,7 @@ TEST_F(FourRightTetsRefinement, meshAfter3LevelsOfUMR_have2340Elements)
 {
   if(stk::parallel_machine_size(mComm) <= 4)
   {
-    perform_iterations_of_uniform_refinement(3);
-
-    EXPECT_EQ(2340u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
-    const unsigned goldNumNodes = 6 + 13 + 66 + 404;
-    EXPECT_EQ(goldNumNodes, get_global_num_entities(mMesh, stk::topology::NODE_RANK));
-  }
-}
-
-TEST_F(FourRightTetsRefinement, perceptRefinment_meshAfter3LevelsOfUMR_have2340Elements)
-{
-  if(stk::parallel_machine_size(mComm) <= 4)
-  {
-    setup_percept_refinement();
-    perform_iterations_of_percept_uniform_refinement(3);
+    perform_iterations_of_uniform_refinement_with_general_element_marker(3);
 
     EXPECT_EQ(2340u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
     const unsigned goldNumNodes = 6 + 13 + 66 + 404;
@@ -190,7 +166,7 @@ TEST_F(RegularTetRefinement, meshAfter2LevelsOfUMR_haveExpectedQuality)
 {
   if(stk::parallel_machine_size(mComm) == 1)
   {
-    perform_iterations_of_uniform_refinement(2);
+    perform_iterations_of_uniform_refinement_with_general_element_marker(2);
 
     const double quality = compute_mesh_quality();
     const double goldQuality = 0.7;
@@ -217,9 +193,9 @@ TEST_F(RightTetSurroundedByEdgeTetsRefinement, checkAllPossibleRefinementsInPara
       if (iCaseId & (1<<iEdge))
         edgeElementsToRefine.push_back(iEdge);
 
-    test_refinement_of_given_elements(false, edgeElementsToRefine, goldNumElementsByCase[iCaseId], goldNumNodesByCase[iCaseId], goldQualityByCase[iCaseId]);
+    test_refinement_of_given_elements(edgeElementsToRefine, goldNumElementsByCase[iCaseId], goldNumNodesByCase[iCaseId], goldQualityByCase[iCaseId]);
 
-    unrefine_mesh(false);
+    unrefine_mesh();
   }
 }
 
@@ -234,13 +210,13 @@ TEST_F(RightTetSurroundedByFaceTetsRefinement, checkAllPossibleRefinementsInPara
       if (i & (1<<iFace))
         faceElementsToRefine.push_back(1+iFace);
 
-    refine_elements_with_given_indices(false, faceElementsToRefine);
+    refine_elements_with_given_indices(faceElementsToRefine);
 
     stk::mesh::create_all_sides(mMesh, mMesh.mesh_meta_data().universal_part(), stk::mesh::PartVector{}, false);
     EXPECT_TRUE(mBuilder.check_boundary_sides());
     EXPECT_TRUE(mBuilder.check_block_boundary_sides());
 
-    unrefine_mesh(false);
+    unrefine_mesh();
   }
 }
 
@@ -256,17 +232,17 @@ TEST_F(RightTetSurroundedByEdgeTetsRefinement, refineCenterElemAndThenChildOfCen
       elementsToRefine.assign({centerElem});
     }
 
-    refine_elements(false, elementsToRefine);
+    refine_elements(elementsToRefine);
 
     elementsToRefine.clear();
     if (mMesh.is_valid(centerElem) && mMesh.bucket(centerElem).owned())
     {
-      std::vector<stk::mesh::Entity> childElems = get_children(false, centerElem);
+      std::vector<stk::mesh::Entity> childElems = get_children(centerElem);
       ASSERT_EQ(8u, childElems.size());
       elementsToRefine.assign({childElems[7]});
     }
 
-    refine_elements(false, elementsToRefine);
+    refine_elements(elementsToRefine);
 
     EXPECT_FALSE(myRefinement.have_any_hanging_refined_nodes());
   }
@@ -283,7 +259,7 @@ TEST_F(RightTetSurroundedByEdgeTetsRefinement, afterEachOfSixRoundsOfRefinementO
 
     for (unsigned i=0; i<6; ++i)
     {
-      refine_elements_with_given_indices(false, {elementsToRefineByRefinementLevel[i]});
+      refine_elements_with_given_indices({elementsToRefineByRefinementLevel[i]});
 
       if (mMesh.is_valid(centerElem) && mMesh.bucket(centerElem).owned())
       {
@@ -293,18 +269,30 @@ TEST_F(RightTetSurroundedByEdgeTetsRefinement, afterEachOfSixRoundsOfRefinementO
   }
 }
 
-TEST_F(RightTetSurroundedByEdgeTetsRefinement, markedAnyTransitionElementForEveryEdgeConfiguration_parentElementGetsFullyRefined)
+TEST_F(RightTetSurroundedByFaceTetsRefinement, transitionElementsMarkedForUnrefinementButStillNeeded_didMakeAnyChangesIsFalse)
 {
-  const bool usePercept = false;
-  const int indexOfCentralElement = 0;
-  test_refinement_of_transition_element_leads_to_refinement_of_parent(usePercept, indexOfCentralElement);
+  if(stk::parallel_machine_size(mComm) <= 4)
+  {
+    refine_elements_with_given_indices({1,2,3,4});
+
+    clear_refinement_marker();
+    std::vector<stk::mesh::EntityId> baseElemIds = mBuilder.get_assigned_element_global_ids();
+    stk::mesh::Entity parentOfElemsToUnrefine = mMesh.get_entity(stk::topology::ELEMENT_RANK, baseElemIds[0]);
+    if (mMesh.is_valid(parentOfElemsToUnrefine) && mMesh.bucket(parentOfElemsToUnrefine).owned())
+    {
+      const std::vector<stk::mesh::Entity> elemsToUnrefine = myRefinement.get_children(parentOfElemsToUnrefine);
+      mark_elements_for_unrefinement(elemsToUnrefine);
+    }
+
+    const bool didSecondRefinementMakeAnyChanges = do_refinement();
+    EXPECT_FALSE(didSecondRefinementMakeAnyChanges);
+  }
 }
 
-TEST_F(RightTetSurroundedByEdgeTetsRefinement, DISABLED_BECAUSE_SLOW_percept_markedAnyTransitionElementForEveryEdgeConfiguration_parentElementGetsFullyRefined)
+TEST_F(RightTetSurroundedByEdgeTetsRefinement, markedAnyTransitionElementForEveryEdgeConfiguration_parentElementGetsFullyRefined)
 {
-  const bool usePercept = true;
   const int indexOfCentralElement = 0;
-  test_refinement_of_transition_element_leads_to_refinement_of_parent(usePercept, indexOfCentralElement);
+  test_refinement_of_transition_element_leads_to_refinement_of_parent(indexOfCentralElement);
 }
 
 TEST_F(UMRRegularTetRefinement, fuzzTest)
@@ -328,9 +316,9 @@ TEST_F(UMRRegularTetRefinement, fuzzTest)
     randomly_mark_elements(rand_gen);
 
     if (doWriteMesh)
-      refine_marked_elements(false, create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test", ++count));
     else
-      refine_marked_elements(false);
+      refine_marked_elements();
   }
 }
 
@@ -375,9 +363,9 @@ TEST_F(UMRRegularTetRefinement, fuzzTestWithCustomGhosting)
     randomly_mark_elements(rand_gen);
 
     if (doWriteMesh)
-      refine_marked_elements(false, create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test", ++count));
     else
-      refine_marked_elements(false);
+      refine_marked_elements();
   }
 }
 
@@ -390,6 +378,7 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
   // NP=4 Time:     7063 ms
   // NP=8 Time:     6447 ms
 
+  // As of 12/13/2022:
   // Percept times:
   // NP=1 Percept: 91221 ms
   // NP=2 Percept: 51785 ms
@@ -403,7 +392,6 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
     return;
 
   const bool doWriteMesh = false;
-  const bool usePercept = false;
 
   if (doWriteMesh)
     write_mesh("test.e");
@@ -416,9 +404,9 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
     mark_elements_spanning_x_equal_0();
 
     if (doWriteMesh)
-      refine_marked_elements(usePercept, create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test", ++count));
     else
-      refine_marked_elements(usePercept);
+      refine_marked_elements();
 
     const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
     EXPECT_EQ(goldNumElementsByRefinementLevel[i], numElements);
@@ -433,9 +421,9 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
     mark_all_elements_for_unrefinement();
 
     if (doWriteMesh)
-      refine_marked_elements(usePercept, create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test", ++count));
     else
-      refine_marked_elements(usePercept);
+      refine_marked_elements();
 
     const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
     EXPECT_EQ(goldNumElementsByUnrefinementLevel[i], numElements);
@@ -449,7 +437,7 @@ TEST_F(RegularTetRefinement, meshRefinedTwiceWithParentAndChildrenMovedToNewProc
 {
   if(stk::parallel_machine_size(mComm) > 1)
   {
-    perform_iterations_of_uniform_refinement(2);
+    perform_iterations_of_uniform_refinement_with_general_element_marker(2);
 
     move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor({1004, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057}, 1);
 
@@ -478,6 +466,110 @@ TEST_F(RegularTetRefinement, meshRefinedTwiceWithParentAndChildrenMovedToNewProc
   }
 }
 
+
+TEST_F(UMRRegularTetRefinement, refinementAndUnrefinementElementVariables)
+{
+  const std::vector<int> testActiveProcs{1,2,4,8};
+  const int parallelSize = stk::parallel_machine_size(mComm);
+  if (std::find(testActiveProcs.begin(), testActiveProcs.end(), parallelSize) == testActiveProcs.end())
+    return;
+  const bool doWriteMesh = false;
+  bool flip = false;
+  if (doWriteMesh)
+  {
+    mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
+    write_mesh("test.e");
+  }
+
+  int count = 0;
+  size_t numRefinements = 5;
+
+  for (size_t i=0; i<numRefinements; ++i)
+  {
+    mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
+    if (doWriteMesh)
+      refine_marked_elements(create_file_name("test", ++count));
+    else
+      refine_marked_elements();
+    const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    check_elem_field_values_spanning_z_equal_0(flip);
+
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "Refinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+  }
+  flip = true;
+  mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
+
+  for (size_t i=0; i<numRefinements; ++i)
+  {
+    mark_all_elements_for_unrefinement();
+
+    if (doWriteMesh)
+      refine_marked_elements(create_file_name("test", ++count));
+    else
+      refine_marked_elements();
+    const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    check_elem_field_values_spanning_z_equal_0(flip);
+
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "Unrefinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+  }
+}
+
+TEST_F(UMRRegularTetRefinement, refinePartiallyRefinedElementsWithElementVariableChange)
+{
+  const std::vector<int> testActiveProcs{1,2,4,8};
+  const int parallelSize = stk::parallel_machine_size(mComm);
+  if (std::find(testActiveProcs.begin(), testActiveProcs.end(), parallelSize) == testActiveProcs.end())
+    return;
+  const bool doWriteMesh = false;
+  bool flip = false;
+  if (doWriteMesh)
+  {
+    mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
+    write_mesh("test.e");
+  }
+
+  int count = 0;
+  size_t numRefinements = 4;
+
+  for (size_t i=0; i<numRefinements; ++i)
+  {
+    if (i == 2)
+      flip = true;
+
+    if (i == numRefinements-1)
+      mark_all_elements_for_refinement();
+    else  
+      mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
+    if (doWriteMesh)
+      refine_marked_elements(create_file_name("test", ++count));
+    else
+      refine_marked_elements();
+    const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    check_elem_field_values_spanning_z_equal_0(flip);
+
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "Refinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+  }
+  flip = true;
+  mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
+
+  for (size_t i=0; i<numRefinements; ++i)
+  {
+    mark_all_elements_for_unrefinement();
+
+    if (doWriteMesh)
+      refine_marked_elements(create_file_name("test", ++count));
+    else
+      refine_marked_elements();
+    const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    check_elem_field_values_spanning_z_equal_0(flip);
+
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "Unrefinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+  }
+}
 
 }
 

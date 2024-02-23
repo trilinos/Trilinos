@@ -87,135 +87,53 @@ std::shared_ptr<stk::middle_mesh::mesh::Mesh> make_annulus_mesh(const int nelemR
   return make_annulus_mesh(nelemR, nelemTheta, rIn, rOut, dtheta, comm, f2);
 }
 
-TEST(MiddleMeshQualityImproverTest, BoundarySnapperQuarterAnnulus)
+
+TEST(MiddleMeshQualityImprover, IncrementalBoundarySnapperAnnulusRotation)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
-  if (stk::middle_mesh::utils::impl::comm_size(comm) > 1)
-    GTEST_SKIP();
 
-  int numRuns = stk::unit_test_util::simple_fields::get_command_line_option<int>("-r", 50);
-  int numMeshes = stk::unit_test_util::simple_fields::get_command_line_option<int>("-m", 30);
+  const int NUM_RUNS  = 300;
+  const int NUM_ITERS = 1;
 
   stk::unit_test_util::BatchTimer batchTimer(comm);
   batchTimer.initialize_batch_timer();
-  for (int run = 0; run < numRuns; ++run) {
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+    std::cout << "run = " << run << std::endl;
+    auto mesh1 = make_annulus_mesh(10, 10, 0.5, 1.5, 0);
+    auto mesh2 = make_annulus_mesh(13, 13, 0.5, 1.5, pi/32);
+
     batchTimer.start_batch_timer();
-    for (int i = 0; i < numMeshes; ++i) {
-      stk::middle_mesh::mesh::impl::MeshSpec spec{5, 5, 0.5, 1.5, 0, pi/2};
-      stk::middle_mesh::mesh::impl::MeshSpec spec2{5+i, 5+i, 0.5, 1.5, 0, pi/2};
-
-      auto func = [&](const stk::middle_mesh::utils::Point& pt) {
-        double r     = pt.x;
-        double theta = pt.y;
-        double x = r * std::cos(theta);
-        double y = r * std::sin(theta);
-        double z = 0.0;
-        stk::middle_mesh::utils::Point pt2(x, y, z);
-        return pt2;
-      };
-
-      auto mesh1 = stk::middle_mesh::mesh::impl::create_mesh(spec, func);
-      auto mesh2 = stk::middle_mesh::mesh::impl::create_mesh(spec2, func);
-      stk::middle_mesh::mesh::impl::MeshBoundarySnapper snapper;
-      snapper.snap(mesh1, mesh2, comm);
-    }
+    auto bsnapper = stk::middle_mesh::mesh::impl::make_incremental_boundary_snapper(mesh1, mesh2, comm);
+    bsnapper->snap();
     batchTimer.stop_batch_timer();
   }
-  batchTimer.print_batch_timing(numRuns);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
-TEST(MiddleMeshQualityImproverTest, BoundarySnapperEllipsoid)
+TEST(MiddleMeshQualityImprover, IncrementalBoundarySnapperLargeElemCount)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
-  if (stk::middle_mesh::utils::impl::comm_size(comm) > 1)
-    GTEST_SKIP();
 
-  int numRuns = stk::unit_test_util::simple_fields::get_command_line_option<unsigned>("-r", 50);
-  int numMeshes = stk::unit_test_util::simple_fields::get_command_line_option<int>("-m", 30);
+  const int NUM_RUNS  = 3;
+  const int NUM_ITERS = 1;
 
   stk::unit_test_util::BatchTimer batchTimer(comm);
   batchTimer.initialize_batch_timer();
-  for (int run = 0; run < numRuns; ++run) {
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+
+    stk::middle_mesh::mesh::impl::MeshSpec spec{100, 100, 0, 1, 0, 1};
+    stk::middle_mesh::mesh::impl::MeshSpec spec2{10, 10, 0, 1, 0, 1};
+    auto func = [&](stk::middle_mesh::utils::Point const& pt) { return pt; };
+
+    auto mesh1 = create_mesh(spec, func);
+    auto mesh2 = create_mesh(spec2, func);
+
     batchTimer.start_batch_timer();
-    for (int i = 0; i < numMeshes; ++i) {
-      stk::middle_mesh::mesh::impl::MeshSpec spec{5, 5, -0.75, 0.75, -0.75, 0.75};
-      stk::middle_mesh::mesh::impl::MeshSpec spec2{5+i, 5+i, -0.75, 0.75, -0.75, 0.75};
-
-      auto func = [&](const stk::middle_mesh::utils::Point& pt) {
-        double x = pt.x;
-        double y = pt.y;
-        double zscale = 2;
-        double xprime = x * std::sqrt(std::max(1 - y * y / 2, 0.0));
-        double yprime = y * std::sqrt(std::max(1 - x * x / 2, 0.0));
-        double zprime = zscale * std::sqrt(std::max(1 - x * x - y * y, 0.0));
-        stk::middle_mesh::utils::Point pt2(xprime, yprime, zprime);
-        return pt2;
-      };
-
-      auto mesh1 = stk::middle_mesh::mesh::impl::create_mesh(spec, func);
-      auto mesh2 = stk::middle_mesh::mesh::impl::create_mesh(spec2, func);
-      stk::middle_mesh::mesh::impl::MeshBoundarySnapper snapper;
-      snapper.snap(mesh1, mesh2, comm);
-    }
+    auto bsnapper = stk::middle_mesh::mesh::impl::make_incremental_boundary_snapper(mesh1, mesh2, comm);
+    bsnapper->snap();
     batchTimer.stop_batch_timer();
   }
-  batchTimer.print_batch_timing(numRuns);
-}
-
-TEST(MiddleMeshQualityImproverTest, IncrementalBoundarySnapperAnnulusRotation)
-{
-  stk::ParallelMachine comm = MPI_COMM_WORLD;
-  if (stk::middle_mesh::utils::impl::comm_size(comm) > 1)
-    GTEST_SKIP();
-
-  unsigned numRuns = stk::unit_test_util::simple_fields::get_command_line_option<unsigned>("-r", 10);
-  int numMeshes = stk::unit_test_util::simple_fields::get_command_line_option<int>("-m", 10);
-
-  double dtheta = pi / (16 * numMeshes);
-
-  stk::unit_test_util::BatchTimer batchTimer(comm);
-  batchTimer.initialize_batch_timer();
-  for (unsigned run = 0; run < numRuns; ++run) {
-    batchTimer.start_batch_timer();
-    for (int i = 1; i < numMeshes; ++i) {
-      auto mesh1 = make_annulus_mesh(10, 10, 0.5, 1.5, 0);
-      auto mesh2 = make_annulus_mesh(13, 13, 0.5, 1.5, i * dtheta);
-
-      auto bsnapper = stk::middle_mesh::mesh::impl::make_incremental_boundary_snapper(mesh1, mesh2, comm);
-      bsnapper->snap();
-    }
-    batchTimer.stop_batch_timer();
-  }
-  batchTimer.print_batch_timing(numRuns);
-}
-
-TEST(MiddleMeshQualityImproverTest, IncrementalBoundarySnapperLargeElemCount)
-{
-  stk::ParallelMachine comm = MPI_COMM_WORLD;
-  if (stk::middle_mesh::utils::impl::comm_size(comm) > 1)
-    GTEST_SKIP();
-
-  unsigned numRuns = stk::unit_test_util::simple_fields::get_command_line_option<unsigned>("-r", 1);
-  int numMeshes = stk::unit_test_util::simple_fields::get_command_line_option<int>("-m", 5);
-
-  stk::unit_test_util::BatchTimer batchTimer(comm);
-  batchTimer.initialize_batch_timer();
-  for (unsigned run = 0; run < numRuns; ++run) {
-    batchTimer.start_batch_timer();
-    for (int i = 1; i < numMeshes; ++i) {
-      stk::middle_mesh::mesh::impl::MeshSpec spec{100, 100, 0, 1, 0, 1};
-      stk::middle_mesh::mesh::impl::MeshSpec spec2{10, 10, 0, 1, 0, 1};
-      auto func = [&](stk::middle_mesh::utils::Point const& pt) { return pt; };
-
-      auto mesh1 = create_mesh(spec, func);
-      auto mesh2 = create_mesh(spec2, func);
-
-      auto bsnapper = stk::middle_mesh::mesh::impl::make_incremental_boundary_snapper(mesh1, mesh2, comm);
-      bsnapper->snap();
-    }
-    batchTimer.stop_batch_timer();
-  }
-  batchTimer.print_batch_timing(numRuns);
+  batchTimer.print_batch_timing(NUM_ITERS);
 }
 
 }

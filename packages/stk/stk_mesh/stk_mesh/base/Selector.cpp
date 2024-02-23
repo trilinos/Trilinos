@@ -122,59 +122,6 @@ std::ostream& print_expr_impl(std::ostream & out, const MetaData* meta, Selector
   return out;
 }
 
-bool select_part_impl(Part const& part, SelectorNode const* root)
-{
-  const MetaData& meta = part.mesh_meta_data();
-  switch(root->m_type) {
-  case SelectorNodeType::UNION:
-    return select_part_impl(part, root->rhs()) || select_part_impl(part, root->lhs());
-  case SelectorNodeType::INTERSECTION:
-    return select_part_impl(part, root->rhs()) && select_part_impl(part, root->lhs());
-  case SelectorNodeType::DIFFERENCE:
-    return !select_part_impl(part, root->rhs()) && select_part_impl(part, root->lhs());
-  case SelectorNodeType::COMPLEMENT:
-    return !select_part_impl(part, root->unary());
-  case SelectorNodeType::PART:
-    return (root->part() != InvalidPartOrdinal) ? meta.get_part(root->part()).contains(part) : false;
-  case SelectorNodeType::PART_UNION:
-    {
-      for(Ordinal ord : root->m_partOrds) {
-        if (ord != InvalidPartOrdinal) {
-          if (meta.get_part(ord).contains(part)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-  case SelectorNodeType::PART_INTERSECTION:
-    {
-      for(Ordinal ord : root->m_partOrds) {
-        if (ord != InvalidPartOrdinal) {
-          if (!meta.get_part(ord).contains(part)) {
-            return false;
-          }
-        }
-      }
-      return true;
-    }
-  case SelectorNodeType::FIELD:
-    if(root->field() == NULL) {
-      return false;
-    } else  {
-      const FieldRestrictionVector& sel_rvec = root->field()->restrictions();
-      for(size_t irestrict=0; irestrict<sel_rvec.size(); ++irestrict) {
-        if(sel_rvec[irestrict].selector()(part)) {
-          return true;
-        }
-      }
-      return false;
-    }
-  default:
-    return false;
-  };
-}
-
 bool is_all_union_impl(const impl::SelectorNode* root)
 {
   switch(root->m_type) {
@@ -197,7 +144,8 @@ bool is_all_union_impl(const impl::SelectorNode* root)
   };
 }
 
-void gather_parts_impl(PartVector& parts, const MetaData* meta, SelectorNode const* root)
+template<typename PARTVECTOR>
+void gather_parts_impl(PARTVECTOR& parts, const MetaData* meta, SelectorNode const* root)
 {
   switch(root->m_type) {
   case SelectorNodeType::UNION:
@@ -384,6 +332,62 @@ bool bucket_ranked_member_all_impl(Bucket const& bucket, const OrdinalVector & p
 
 } // namespace
 
+bool Selector::select_part_impl(Part const& part, SelectorNode const* root) const
+{
+  switch(root->m_type) {
+  case SelectorNodeType::PART:
+      return (root->part() == part.mesh_meta_data_ordinal()) ? true : ((root->part() != InvalidPartOrdinal) ? m_meta->get_part(root->part()).contains(part) : false);
+  case SelectorNodeType::PART_UNION:
+    {
+      if(stk::mesh::contains_ordinal(root->m_partOrds.begin(), root->m_partOrds.end(), part.mesh_meta_data_ordinal()) ||
+         stk::mesh::contains_ordinal(root->m_subsetPartOrds.begin(), root->m_subsetPartOrds.end(), part.mesh_meta_data_ordinal())) {
+        return true;
+      }
+      for(Ordinal ord : root->m_partOrds) {
+        if (ord != InvalidPartOrdinal) {
+          if (m_meta->get_part(ord).contains(part)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  case SelectorNodeType::PART_INTERSECTION:
+    {
+      for(Ordinal ord : root->m_partOrds) {
+        if (ord != InvalidPartOrdinal) {
+          if (!m_meta->get_part(ord).contains(part)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+  case SelectorNodeType::UNION:
+    return select_part_impl(part, root->rhs()) || select_part_impl(part, root->lhs());
+  case SelectorNodeType::INTERSECTION:
+    return select_part_impl(part, root->rhs()) && select_part_impl(part, root->lhs());
+  case SelectorNodeType::DIFFERENCE:
+    return !select_part_impl(part, root->rhs()) && select_part_impl(part, root->lhs());
+  case SelectorNodeType::COMPLEMENT:
+    return !select_part_impl(part, root->unary());
+  case SelectorNodeType::FIELD:
+    if(root->field() == NULL) {
+      return false;
+    } else  {
+      const FieldRestrictionVector& sel_rvec = root->field()->restrictions();
+      for(size_t irestrict=0; irestrict<sel_rvec.size(); ++irestrict) {
+        if(sel_rvec[irestrict].selector()(part)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  default:
+    return false;
+  };
+}
+
 bool Selector::select_bucket_impl(Bucket const& bucket, SelectorNode const* root) const
 {
   switch(root->m_type) {
@@ -483,13 +487,29 @@ Selector::Selector(const FieldBase & field)
  , m_meta(&field.mesh_meta_data())
 {}
 
+Selector::Selector(SelectorNodeType::node_type selectorNodeType, const MetaData* metaPtr,
+                   const OrdinalVector& partOrdinals, const OrdinalVector& subsetPartOrdinals)
+ : m_expr(1, (partOrdinals.size()==1||(partOrdinals.size()>1&&partOrdinals[0]==0)?
+                                    impl::SelectorNode(&metaPtr->get_part(partOrdinals[0]))
+                                   :impl::SelectorNode(selectorNodeType, partOrdinals, subsetPartOrdinals))),
+   m_meta(metaPtr)
+{}
+
 bool Selector::operator()( const Part & part ) const
 {
+  STK_ThrowAssert(m_meta == nullptr || m_meta == &part.mesh_meta_data());
+  if (m_meta == nullptr) {
+    m_meta = &part.mesh_meta_data();
+  }
   return select_part_impl(part, &m_expr.back());
 }
 
 bool Selector::operator()( const Part * part ) const
 {
+  STK_ThrowAssert(m_meta == nullptr || m_meta == &part->mesh_meta_data());
+  if (m_meta == nullptr) {
+    m_meta = &part->mesh_meta_data();
+  }
   return select_part_impl(*part, &m_expr.back());
 }
 
@@ -546,10 +566,14 @@ bool Selector::operator<(const Selector& rhs) const
   return false;
 }
 
-void Selector::get_parts(PartVector& parts) const
+template<typename PARTVECTOR>
+void Selector::get_parts(PARTVECTOR& parts) const
 {
   gather_parts_impl(parts, m_meta, &m_expr.back());
 }
+
+template void Selector::get_parts(PartVector&) const;
+template void Selector::get_parts(ConstPartVector&) const;
 
 stk::mesh::Selector Selector::clone_for_different_mesh(const stk::mesh::MetaData &differentMeta) const
 {
@@ -623,6 +647,75 @@ bool Selector::is_all_unions() const
   return is_all_union_impl(&m_expr.back());
 }
 
+Selector& Selector::add_binary_op(SelectorNodeType::node_type type, const Selector& rhs)
+{
+  impl::SelectorNode& lhsNode = m_expr.back();
+  if (m_meta == nullptr && rhs.m_meta != nullptr) {
+    m_meta = rhs.m_meta;
+  }
+  const impl::SelectorNode& rhsNode = rhs.m_expr.back();
+  if (type == SelectorNodeType::INTERSECTION && rhs.m_expr.size() == 1 &&
+      (rhsNode.m_type == SelectorNodeType::PART || rhsNode.m_type == SelectorNodeType::PART_INTERSECTION) &&
+      (lhsNode.m_type == SelectorNodeType::PART || lhsNode.m_type == SelectorNodeType::PART_INTERSECTION)) {
+    if (lhsNode.m_type == SelectorNodeType::PART) {
+      lhsNode.m_partOrds.push_back(lhsNode.m_partOrd);
+      lhsNode.m_partOrd = InvalidPartOrdinal;
+    }
+    if (rhsNode.m_type == SelectorNodeType::PART) {
+      stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrd, lhsNode.m_partOrds);
+    }
+    if (rhsNode.m_type == SelectorNodeType::PART_INTERSECTION) {
+      stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrds, lhsNode.m_partOrds);
+    }
+    lhsNode.m_type = SelectorNodeType::PART_INTERSECTION;
+
+    return *this;
+  }
+
+  if (type == SelectorNodeType::UNION && rhs.m_expr.size() == 1 &&
+      (rhsNode.m_type == SelectorNodeType::PART || rhsNode.m_type == SelectorNodeType::PART_UNION) &&
+      (lhsNode.m_type == SelectorNodeType::PART || lhsNode.m_type == SelectorNodeType::PART_UNION)) {
+    bool modifiedLHS = false;
+    if (lhsNode.m_type == SelectorNodeType::PART && lhsNode.m_partOrd != InvalidPartOrdinal) {
+      lhsNode.m_partOrds.push_back(lhsNode.m_partOrd);
+      Part& part = m_meta->get_part(lhsNode.m_partOrd);
+      for(const Part* pptr : part.subsets()) {
+        lhsNode.m_subsetPartOrds.push_back(pptr->mesh_meta_data_ordinal());
+      }
+      lhsNode.m_partOrd = InvalidPartOrdinal;
+      modifiedLHS = true;
+    }
+    if (rhsNode.m_type == SelectorNodeType::PART && rhsNode.m_partOrd != InvalidPartOrdinal) {
+      stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrd, lhsNode.m_partOrds);
+      Part& part = m_meta->get_part(rhsNode.m_partOrd);
+      for(const Part* pptr : part.subsets()) {
+        lhsNode.m_subsetPartOrds.push_back(pptr->mesh_meta_data_ordinal());
+      }
+      modifiedLHS = true;
+    }
+    if (modifiedLHS) {
+      stk::util::sort_and_unique(lhsNode.m_partOrds);
+      stk::util::sort_and_unique(lhsNode.m_subsetPartOrds);
+    }
+    if (rhsNode.m_type == SelectorNodeType::PART_UNION) {
+      stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrds, lhsNode.m_partOrds);
+      stk::util::insert_keep_sorted_and_unique(rhsNode.m_subsetPartOrds, lhsNode.m_subsetPartOrds);
+    }
+    lhsNode.m_type = SelectorNodeType::PART_UNION;
+
+    return *this;
+  }
+
+  impl::SelectorNode root;   
+  root.m_type = type;        
+  root.left_offset = 1 + rhs.m_expr.size();
+
+  m_expr.insert(m_expr.end(), rhs.m_expr.begin(), rhs.m_expr.end());
+  m_expr.push_back(root);
+
+  return *this;
+}
+
 namespace
 {
 template <typename T> T * get_pointer(T *item) { return item; }
@@ -634,18 +727,71 @@ template <typename T> T & dereference_if_pointer(T &item) { return item; }
 template <typename VectorType>
 Selector selectUnion( const VectorType & union_vector )
 {
-  Selector selector;
-  bool foundFirstNonNullptr = false;
-  for(unsigned i=0; i<union_vector.size(); ++i) {
-    if (get_pointer(union_vector[i]) == nullptr) continue;
-    if (!foundFirstNonNullptr) {
-      selector = dereference_if_pointer(union_vector[i]);
-      foundFirstNonNullptr = true;
-      continue;
+  if constexpr(std::is_same_v<VectorType,PartVector> || std::is_same_v<VectorType,ConstPartVector>) {
+    OrdinalVector partOrdinals;
+    OrdinalVector subsetPartOrdinals;
+    const MetaData* metaPtr = nullptr;
+    for(const Part* part : union_vector) {
+      if (part == nullptr) continue;
+      if (metaPtr == nullptr) {
+        metaPtr = &part->mesh_meta_data();
+      }
+      partOrdinals.push_back(part->mesh_meta_data_ordinal());
+      for(const Part* subPart : part->subsets()) {
+        subsetPartOrdinals.push_back(subPart->mesh_meta_data_ordinal());
+      }
     }
-    selector |= dereference_if_pointer(union_vector[i]);
+
+    if (partOrdinals.empty()) {
+      return Selector();
+    }
+
+    stk::util::sort_and_unique(partOrdinals);
+    stk::util::sort_and_unique(subsetPartOrdinals);
+    Selector selector(SelectorNodeType::PART_UNION, metaPtr, partOrdinals, subsetPartOrdinals);
+//    if (partOrdinals.size() > 1) {
+//      Selector selectorOld;
+//      bool foundFirstNonNullptr = false;
+//      for(unsigned i=0; i<union_vector.size(); ++i) {
+//        if (get_pointer(union_vector[i]) == nullptr) continue;
+//        if (!foundFirstNonNullptr) {
+//          selectorOld = dereference_if_pointer(union_vector[i]);
+//          foundFirstNonNullptr = true;
+//          continue;
+//        }
+//        selectorOld |= dereference_if_pointer(union_vector[i]);
+//      }
+//      if (metaPtr!=nullptr && metaPtr->has_mesh()) {
+//        for(EntityRank rank : {stk::topology::NODE_RANK,stk::topology::FACE_RANK,stk::topology::ELEM_RANK}) {
+//          const BucketVector& bkts = selector.get_buckets(rank);
+//          const BucketVector& bktsOld = selectorOld.get_buckets(rank);
+//          STK_ThrowRequireMsg(bkts.size()==bktsOld.size(),"ERROR, selector: "<<selector<<" vs selectorOld: "<<selectorOld);
+//        }
+//      }
+//      return selectorOld;
+//      std::ostringstream os;
+//      os<<"\n"<<counter<<"{\nselector: "<<selector<<"\nselectorOld: "<<selectorOld<<"\n}\n"<<std::endl;
+//      std::cerr<<os.str();
+//    }
+    return selector;
   }
-  return selector;
+  else {
+    Selector selector;
+    bool foundFirstNonNullptr = false;
+    for(unsigned i=0; i<union_vector.size(); ++i) {
+      if (get_pointer(union_vector[i]) == nullptr) continue;
+      if (!foundFirstNonNullptr) {
+        selector = dereference_if_pointer(union_vector[i]);
+        foundFirstNonNullptr = true;
+        continue;
+      }
+      selector |= dereference_if_pointer(union_vector[i]);
+    }
+    return selector;
+  }
+  Selector shouldntGetHere;
+  STK_ThrowErrorMsg("Execution can't get to here, but some compilers need a return statement here...");
+  return shouldntGetHere;
 }
 template Selector selectUnion( const PartVector& union_part_vector);
 template Selector selectUnion( const ConstPartVector& union_part_vector);

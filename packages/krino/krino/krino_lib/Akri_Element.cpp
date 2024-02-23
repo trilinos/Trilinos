@@ -589,7 +589,9 @@ double
 Mesh_Element::interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
 {
   STK_ThrowRequire(get_cutter());
-  return get_cutter()->interface_crossing_position(interface, edgeNodeCoords);
+  const auto [crossingSign, position] = get_cutter()->interface_edge_crossing_sign_and_position(interface, edgeNodeCoords);
+  STK_ThrowRequireMsg(crossingSign!=0, "Request for interface_crossing_position on edge without crossing.");
+  return position;
 }
 
 static ElementIntersectionPointFilter build_element_intersection_filter(const NodeVec & nodes)
@@ -614,19 +616,12 @@ Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, const 
   get_cutter()->fill_tetrahedron_face_interior_intersections(faceNodeOwnerCoords, interface1, interface2, intersectionPointFilter, faceIntersectionPoints);
 }
 
-int
-Mesh_Element::interface_node_sign(const InterfaceID interface, const SubElementNode * node) const
-{
-  STK_ThrowRequire(get_cutter());
-  return get_cutter()->sign_at_position(interface, node->owner_coords(this));
-}
-
-double
-Mesh_Element::interface_crossing_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const
+std::pair<int, double>
+Mesh_Element::interface_edge_crossing_sign_and_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const
 {
   STK_ThrowRequire(get_cutter());
   std::array<stk::math::Vector3d,2> edgeNodeCoords{node1->owner_coords(this), node2->owner_coords(this)};
-  return get_cutter()->interface_crossing_position(interface, edgeNodeCoords);
+  return get_cutter()->interface_edge_crossing_sign_and_position(interface, edgeNodeCoords);
 }
 
 bool
@@ -645,6 +640,12 @@ int Mesh_Element::get_interface_index(const InterfaceID interface) const
   const auto iter = std::lower_bound(myCuttingInterfaces.begin(), myCuttingInterfaces.end(), interface);
   return std::distance(myCuttingInterfaces.begin(), iter);
 }
+
+int Mesh_Element::get_interface_sign_for_uncrossed_subelement(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodeCoords) const
+{
+   return get_cutter()->interface_sign_for_uncrossed_element(interface, elemNodeCoords);
+}
+
 
 bool
 Mesh_Element::triangulate(const CDMesh & mesh, const InterfaceGeometry & interfaceGeometry)

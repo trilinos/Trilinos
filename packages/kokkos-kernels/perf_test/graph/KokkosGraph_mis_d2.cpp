@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
 
 #if defined(KOKKOS_ENABLE_HIP)
   if (params.use_hip) {
-    run_mis2<Kokkos::Experimental::HIP>(params);
+    run_mis2<Kokkos::HIP>(params);
     run = true;
   }
 #endif

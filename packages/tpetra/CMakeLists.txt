@@ -24,7 +24,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
-SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.1.00")
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.2.1")
 
 
 # Option to allow developers to ignore incompatible Kokkos versions
@@ -339,6 +339,24 @@ ELSE () # NOT Tpetra_INST_SYCL
   ENDIF ()
 ENDIF () # Tpetra_INST_SYCL
 
+############################################################
+# Shared/Managed Memory Default Allocation
+############################################################
+# Normally we allocate Tpetra objects to the basic space by default,
+# but some apps might want to allocate memory to the "shared" host/device
+# space. This might be CudaUVMSpace, HIPManagedSpace or SYCLSharedUSMSpace.
+# These options allow us to do that sort of thing, changing
+# core/compat/Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ALLOCATE_IN_SHARED_SPACE
+  HAVE_TPETRA_SHARED_ALLOCS
+  "Have Tpetra allocate memory in shared/managed space by default"
+  OFF
+  )
+IF(Tpetra_ALLOCATE_IN_SHARED_SPACE)
+  MESSAGE(STATUS "- Tpetra: Allocating the shared/managed space by default.")
+ENDIF()
+
 
 ############################################################
 # Device-aware MPI Support
@@ -368,7 +386,7 @@ ENDIF () # Tpetra_INST_SYCL
 # safe, but possibly less performant assumption that MPI is not CUDA
 # aware.
 
-SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
+SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
 
 ASSERT_DEFINED (TPL_ENABLE_MPI)
 MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is GPU aware:")
@@ -511,7 +529,8 @@ ELSE ()
         MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT GPU aware. You can change this at configure time with the option Tpetra_ASSUME_GPU_AWARE_MPI=ON, and override the configure-time setting at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
       ENDIF ()
     ELSE ()
-      MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT GPU aware.  If you would like to change this, please set the CMake variable Tpetra_ASSUME_GPU_AWARE_MPI:BOOL=ON explicitly at configure time.  You can also override this at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
+      MESSAGE (STATUS "  - Search for \"ompi_info\" failed, unable to automatically detect whether MPI is GPU-aware.")
+      MESSAGE (STATUS "  - Whether MPI is GPU-aware may be specified at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
     ENDIF () # Tpetra_FOUND_OMPI_INFO_EXECUTABLE
   ENDIF () # Whether we are cross compiling
 ENDIF () # Whether we have CUDA and MPI
@@ -542,6 +561,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Tpetra_ASSUME_CUDA_AWARE_MPI})
 
 
+MESSAGE(STATUS "Tpetra: defaulting to Tpetra_ASSUME_GPU_AWARE_MPI: ${Tpetra_ASSUME_GPU_AWARE_MPI}")
 
 #
 # Check that users did not attempt to enable both the OpenMP and
@@ -586,6 +606,7 @@ MESSAGE(STATUS "  - OpenMP:  ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
 MESSAGE(STATUS "  - HIP:     ${HAVE_TPETRA_HIP}")
 MESSAGE(STATUS "  - SYCL:    ${HAVE_TPETRA_SYCL}")
+
 
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
@@ -931,11 +952,17 @@ IF (DEFINED HAVE_COMPLEX_BLAS  AND  HAVE_COMPLEX_BLAS)
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+    IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+      MESSAGE(WARNING "Trilinos_ENABLE_COMPLEX_DOUBLE=ON, but Tpetra_INST_DOUBLE=OFF. Disabling Scalar=std::complex<double> in Tpetra by default.")
+    ENDIF()
   ENDIF()
   IF (Tpetra_INST_FLOAT AND Trilinos_ENABLE_COMPLEX_FLOAT)
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+    IF (Trilinos_ENABLE_COMPLEX_FLOAT)
+      MESSAGE(WARNING "Trilinos_ENABLE_COMPLEX_FLOAT=ON, but Tpetra_INST_FLOAT=OFF. Disabling Scalar=std::complex<float> in Tpetra by default.")
+    ENDIF()
   ENDIF()
 ELSE()
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
@@ -964,6 +991,9 @@ ENDIF ()
 # case.
 IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Tpetra_INST_DOUBLE)
   MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>.  However, Tpetra_INST_DOUBLE is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
+ENDIF ()
+IF (Tpetra_INST_COMPLEX_FLOAT AND NOT Tpetra_INST_FLOAT)
+  MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>.  However, Tpetra_INST_FLOAT is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
 ENDIF ()
 
 # Tpetra requires that the BLAS work for Scalar, as long as Scalar is

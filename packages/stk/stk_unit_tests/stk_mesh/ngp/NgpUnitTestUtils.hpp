@@ -12,6 +12,7 @@
 #include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
+#include <stk_ngp_test/ngp_test.hpp>
 
 namespace ngp_unit_test_utils {
 

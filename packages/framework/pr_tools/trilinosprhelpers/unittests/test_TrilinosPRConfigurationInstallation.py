@@ -155,6 +155,7 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-8.3.0-installation-testing",
             genconfig_build_name="rhel7_sems-gnu-8.3.0-openmpi-1.10.1-openmp_release-debug_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_trilinos-pr",
+            dashboard_build_name="gnu-7.2.0-openmpi-1.10.1_release-debug_shared_openmp",
             pullrequest_cdash_track="Pull Request",
             jenkins_job_number=99,
             pullrequest_number='0000',
@@ -173,7 +174,8 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             num_concurrent_tests=-1,
             ccache_enable=False,
             dry_run = False,
-            use_explicit_cachefile = False
+            use_explicit_cachefile = False,
+            extra_configure_args = ""
         )
         return output
 

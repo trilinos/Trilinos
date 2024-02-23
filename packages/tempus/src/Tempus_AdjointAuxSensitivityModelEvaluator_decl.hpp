@@ -54,11 +54,11 @@ namespace Tempus {
  * in how they generate time-derivative terms.
  */
 template <typename Scalar>
-class AdjointAuxSensitivityModelEvaluator :
-    public Thyra::StateFuncModelEvaluatorBase<Scalar> {
-public:
-  typedef Thyra::VectorBase<Scalar>  Vector;
-  typedef Thyra::MultiVectorBase<Scalar>  MultiVector;
+class AdjointAuxSensitivityModelEvaluator
+  : public Thyra::StateFuncModelEvaluatorBase<Scalar> {
+ public:
+  typedef Thyra::VectorBase<Scalar> Vector;
+  typedef Thyra::MultiVectorBase<Scalar> MultiVector;
 
   //! Constructor
   /*!
@@ -80,26 +80,29 @@ public:
    * </ul>
    */
   AdjointAuxSensitivityModelEvaluator(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_model,
-    const Scalar& t_init,
-    const Scalar& t_final,
-    const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& adjoint_model,
+      const Scalar& t_init, const Scalar& t_final,
+      const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
 
   //! Get the underlying model 'f'
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
-  { return model_; }
+  {
+    return model_;
+  }
 
   //! Get the underlying adjoint model
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getAdjointModel() const
-  { return adjoint_model_; }
+  {
+    return adjoint_model_;
+  }
 
   //! Set the final time from the forward evaluation
   void setFinalTime(const Scalar t_final);
 
   //! Set solution history from forward evaluation
   void setForwardSolutionHistory(
-    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);
+      const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
@@ -125,8 +128,7 @@ public:
 
   static Teuchos::RCP<const Teuchos::ParameterList> getValidParameters();
 
-private:
-
+ private:
   typedef Thyra::DefaultProductVectorSpace<Scalar> DPVS;
   typedef Thyra::DefaultProductVector<Scalar> DPV;
   typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
@@ -135,9 +137,8 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
-
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
@@ -168,6 +169,6 @@ private:
   mutable Scalar t_interp_;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
 #endif

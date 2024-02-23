@@ -127,6 +127,7 @@ BasisValues2(const std::string & pre,
     , num_cells_(0)
     , num_evaluate_cells_(0)
     , is_uniform_(false)
+    , num_orientations_cells_(0)
 
 {
   // Default all lazy evaluated components to not-evaluated
@@ -160,6 +161,7 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
                const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                const int in_num_cells)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::evaluateValues(5 arg)",bv_ev_5);
 
   build_weighted = false;
 
@@ -225,6 +227,7 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
                bool use_node_coordinates,
                const int in_num_cells)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::evaluateValues(8 arg, uniform cub pts)",bv_ev_8u);
 
   // This is the base call that will add all the non-weighted versions
   evaluateValues(cub_points, jac, jac_det, jac_inv, in_num_cells);
@@ -278,6 +281,7 @@ evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
                bool use_node_coordinates,
                const int in_num_cells)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::evaluateValues(8 arg,nonuniform cub pts)",bv_ev_8nu);
 
   cell_node_coordinates_ = node_coordinates;
 
@@ -335,11 +339,11 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
                  const PHX::MDField<Scalar,Cell,IP> & jac_det,
                  const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::evaluateValuesCV(5 arg)",bv_ev_cv_5);
 
   PHX::MDField<Scalar,Cell,IP> weighted_measure;
   PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates;
   evaluateValues(cub_points,jac,jac_det,jac_inv,weighted_measure,node_coordinates,false,jac.extent(0));
-
 }
 
 template <typename Scalar>
@@ -352,6 +356,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
                  bool use_node_coordinates,
                  const int in_num_cells)
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::evaluateValuesCV(7 arg)",bv_ev_cv_7);
   PHX::MDField<Scalar,Cell,IP> weighted_measure;
   evaluateValues(cell_cub_points,jac,jac_det,jac_inv,weighted_measure,node_coordinates,use_node_coordinates,in_num_cells);
 }
@@ -375,6 +380,8 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
 {
   if (!intrepid_basis->requireOrientation())
     return;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::applyOrientations()",bv_ev_app_orts);
 
   // We only allow the orientations to be applied once
   TEUCHOS_ASSERT(not orientations_applied_);
@@ -622,7 +629,6 @@ setup(const Teuchos::RCP<const panzer::BasisIRLayout> & basis,
 
   // Reset internal data
   resetArrays();
-
 }
 
 template <typename Scalar>
@@ -650,7 +656,6 @@ setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> &  basis,
 
   // Reset internal data
   resetArrays();
-
 }
 
 template <typename Scalar>
@@ -680,6 +685,13 @@ BasisValues2<Scalar>::
 setCellNodeCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates)
 {
   cell_node_coordinates_ = node_coordinates;
+}
+
+template <typename Scalar>
+panzer::BasisDescriptor BasisValues2<Scalar>::getBasisDescriptor() const
+{
+  auto pure_basis = basis_layout->getBasis();
+  return {pure_basis->order(),pure_basis->type()};
 }
 
 template <typename Scalar>
@@ -771,6 +783,8 @@ getBasisCoordinatesRef(const bool cache,
   if(basis_coordinates_ref_evaluated_ and not force)
     return basis_coordinates_ref;
 
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getBasisCoordinatesRef()",bv_get_bc_ref);
+
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
   const int num_card  = basis_layout->cardinality();
@@ -796,6 +810,8 @@ getBasisValuesRef(const bool cache,
   // Check if array already exists
   if(basis_ref_scalar_evaluated_ and not force)
     return basis_ref_scalar;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getBasisValuesRef()",bv_get_bV_ref);
 
   // Reference quantities only exist for a uniform reference space
   TEUCHOS_ASSERT(hasUniformReferenceSpace());
@@ -830,6 +846,8 @@ getVectorBasisValuesRef(const bool cache,
   // Check if array already exists
   if(basis_ref_vector_evaluated_ and not force)
     return basis_ref_vector;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getVectorBasisValuesRef()",bv_get_vec_bv_ref);
 
   // Reference quantities only exist for a uniform reference space
   TEUCHOS_ASSERT(hasUniformReferenceSpace());
@@ -866,6 +884,8 @@ getGradBasisValuesRef(const bool cache,
   if(grad_basis_ref_evaluated_ and not force)
     return grad_basis_ref;
 
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getGradBasisValuesRef()",bv_get_grad_bv_ref);
+
   // Reference quantities only exist for a uniform reference space
   TEUCHOS_ASSERT(hasUniformReferenceSpace());
 
@@ -901,6 +921,8 @@ getCurl2DVectorBasisRef(const bool cache,
   if(curl_basis_ref_scalar_evaluated_ and not force)
     return curl_basis_ref_scalar;
 
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getCurl2DVectorBasisRef()",bv_get_curl2_bv_ref);
+
   // Reference quantities only exist for a uniform reference space
   TEUCHOS_ASSERT(hasUniformReferenceSpace());
   TEUCHOS_ASSERT(basis_layout->dimension() == 2);
@@ -935,6 +957,8 @@ getCurlVectorBasisRef(const bool cache,
   // Check if array already exists
   if(curl_basis_ref_vector_evaluated_ and not force)
     return curl_basis_ref_vector;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getCurlVectorBasisRef()",bv_get_curl_vec_bv_ref);
 
   // Reference quantities only exist for a uniform reference space
   TEUCHOS_ASSERT(hasUniformReferenceSpace());
@@ -972,6 +996,8 @@ getDivVectorBasisRef(const bool cache,
   if(div_basis_ref_evaluated_ and not force)
     return div_basis_ref;
 
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getDivVectorBasisRef()",bv_get_div_vec_bv_ref);
+
   // Reference quantities only exist for a uniform reference space
   TEUCHOS_ASSERT(hasUniformReferenceSpace());
 
@@ -1002,6 +1028,8 @@ BasisValues2<Scalar>::
 getBasisCoordinates(const bool cache,
                     const bool force) const
 {
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getBasisCoordinates()",bv_get_bc);
+
   // Check if array already exists
   if(basis_coordinates_evaluated_ and not force)
     return basis_coordinates;
@@ -1046,6 +1074,8 @@ getBasisValues(const bool weighted,
   } else
     if(basis_scalar_evaluated_ and not force)
       return basis_scalar;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getBasisValues()",bv_get_bv);
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
@@ -1179,7 +1209,6 @@ getBasisValues(const bool weighted,
     // should only be reached if non-weighted. This is a by-product of
     // the two construction paths in panzer. Unification should help
     // fix the logic.
-
     if(orientations_.size() > 0)
       applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_scalar.get_view(), orientations_, *intrepid_basis);
 
@@ -1205,6 +1234,8 @@ getVectorBasisValues(const bool weighted,
   } else
     if(basis_vector_evaluated_ and not force)
       return basis_vector;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getVectorBasisValues()",bv_get_vec_bv);
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
@@ -1389,6 +1420,8 @@ getGradBasisValues(const bool weighted,
     if(grad_basis_evaluated_ and not force)
       return grad_basis;
 
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getGradBasisValues()",bv_get_grad_bv);
+
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
   const int num_cells  = num_cells_;
@@ -1536,6 +1569,8 @@ getCurl2DVectorBasis(const bool weighted,
     if(curl_basis_scalar_evaluated_ and not force)
       return curl_basis_scalar;
 
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getCurl2DVectorBasis()",bv_get_curl2d_vec_bv);
+
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
   const int num_cells  = num_cells_;
@@ -1680,6 +1715,8 @@ getCurlVectorBasis(const bool weighted,
   } else
     if(curl_basis_vector_evaluated_ and not force)
       return curl_basis_vector;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getCurlVectorBasis()",bv_get_curl_vec_bv);
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
@@ -1828,6 +1865,8 @@ getDivVectorBasis(const bool weighted,
   } else
     if(div_basis_evaluated_ and not force)
       return div_basis;
+
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::basisValues2::getDevVectorBasis()",bv_get_div_vec_bv);
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 

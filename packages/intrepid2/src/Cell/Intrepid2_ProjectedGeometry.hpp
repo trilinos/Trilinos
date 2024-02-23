@@ -93,13 +93,8 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(projectedBasisNodes.extent_int(2) != spaceDim, std::invalid_argument, "projectedBasisNodes must have shape (C,F,D)");
       
       using ExecutionSpace = typename DeviceType::execution_space;
-#ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-      using ProjectionTools  = Experimental::ProjectionTools<DeviceType>; 
-      using ProjectionStruct = Experimental::ProjectionStruct<DeviceType,PointScalar>;
-#else
       using ProjectionTools  = ProjectionTools<DeviceType>; 
       using ProjectionStruct = ProjectionStruct<DeviceType,PointScalar>;
-#endif
       
       ProjectionStruct projectionStruct;
       ordinal_type targetQuadratureDegree(targetHGradBasis->getDegree()), targetDerivativeQuadratureDegree(targetHGradBasis->getDegree());

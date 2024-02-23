@@ -66,6 +66,9 @@ using Teuchos::rcp;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, Construct, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 {
+  if (!std::is_same<HYPRE_Real, Scalar>::value || !std::is_same<HYPRE_Int, GlobalOrdinal>::value)
+    return;
+
   global_size_t num_rows_per_proc = 10;
   const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   
@@ -80,6 +83,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, Construct, Scalar, LocalOrdinal,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, BoomerAMG, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 {
+  if (!std::is_same<HYPRE_Real, Scalar>::value || !std::is_same<HYPRE_Int, GlobalOrdinal>::value)
+    return;
+
   const GlobalOrdinal num_rows_per_proc = 1000;
   using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   const double tol = 1e-7;
@@ -124,6 +130,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, BoomerAMG, Scalar, LocalOrdinal,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, BoomerAMGNonContiguous, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 {
+  if (!std::is_same<HYPRE_Real, Scalar>::value || !std::is_same<HYPRE_Int, GlobalOrdinal>::value)
+    return;
+
   const GlobalOrdinal num_rows_per_proc = 1000;
   using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   const double tol = 1e-7;
@@ -171,6 +180,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, BoomerAMGNonContiguous, Scalar, 
 // Tests the hypre interface's ability to work with both a preconditioner and linear
 // solver via ApplyInverse
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+  if (!std::is_same<HYPRE_Real, Scalar>::value || !std::is_same<HYPRE_Int, GlobalOrdinal>::value)
+    return;
+
   using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   const double tol = 1E-7;
 
@@ -217,6 +229,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, Apply, Scalar, LocalOrdinal, Glo
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, DiagonalMatrixInOrder, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+  if (!std::is_same<HYPRE_Real, Scalar>::value || !std::is_same<HYPRE_Int, GlobalOrdinal>::value)
+    return;
+
   using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   const double tol = 1E-7;
 
@@ -270,6 +285,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, DiagonalMatrixInOrder, Scalar, L
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, DiagonalMatrixNonContiguous, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+  if (!std::is_same<HYPRE_Real, Scalar>::value || !std::is_same<HYPRE_Int, GlobalOrdinal>::value)
+    return;
+
   using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   const double tol = 1E-7;
 
@@ -339,6 +357,6 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
 // Test all enabled combinations of Scalar (SC), LocalOrdinal (LO),
 // and GlobalOrdinal (GO) types, where Scalar is real.
 
-IFPACK2_INSTANTIATE_SLGN_REAL( UNIT_TEST_GROUP_SC_LO_GO_NO )
+IFPACK2_INSTANTIATE_SLGN( UNIT_TEST_GROUP_SC_LO_GO_NO )
 
 } // namespace (anonymous)

@@ -14,23 +14,20 @@
 #include <string>
 #include "Tempus_PhysicsState.hpp"
 
-
 namespace Tempus_Test {
 
-template<class Scalar>
+template <class Scalar>
 /** \brief PhysicsStateCounter is a simple PhysicsState that counts steps.
  *
  */
-class PhysicsStateCounter
-  : virtual public Tempus::PhysicsState<Scalar>
-{
-public:
-
+class PhysicsStateCounter : virtual public Tempus::PhysicsState<Scalar> {
+ public:
   /// Constructor
-  PhysicsStateCounter(
-    std::string pN = "Tempus::PhysicsStateCounter", int pI = 0)
+  PhysicsStateCounter(std::string pN = "Tempus::PhysicsStateCounter",
+                      int pI         = 0)
     : Tempus::PhysicsState<Scalar>(pN), physicsCounter_(pI)
-  {}
+  {
+  }
 
   /// Destructor
   virtual ~PhysicsStateCounter() {}
@@ -38,18 +35,18 @@ public:
   /// Clone constructor
   virtual Teuchos::RCP<Tempus::PhysicsState<Scalar> > clone() const
   {
-    Teuchos::RCP<PhysicsStateCounter<Scalar> > pSC = Teuchos::rcp(
-      new PhysicsStateCounter<Scalar> (this->physicsName_,
-                                       this->physicsCounter_));
+    Teuchos::RCP<PhysicsStateCounter<Scalar> > pSC =
+        Teuchos::rcp(new PhysicsStateCounter<Scalar>(this->physicsName_,
+                                                     this->physicsCounter_));
     return pSC;
   }
 
-  //using Tempus::PhysicsState<Scalar>::copy;
+  // using Tempus::PhysicsState<Scalar>::copy;
   /// This is a deep copy
   virtual void copy(const Teuchos::RCP<const Tempus::PhysicsState<Scalar> >& pS)
   {
     Teuchos::RCP<const PhysicsStateCounter<Scalar> > pSC =
-      Teuchos::rcp_dynamic_cast<const PhysicsStateCounter<Scalar> >(pS);
+        Teuchos::rcp_dynamic_cast<const PhysicsStateCounter<Scalar> >(pS);
 
     this->physicsName_    = pSC->getName();
     this->physicsCounter_ = pSC->getCounter();
@@ -63,19 +60,17 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const
-    {
-      out << this->description() << "::describe" << std::endl
-          << "  physicsName      = " << this->physicsName_ << std::endl
-          << "  physicsCounter = " << physicsCounter_  << std::endl;
-    }
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    out << this->description() << "::describe" << std::endl
+        << "  physicsName      = " << this->physicsName_ << std::endl
+        << "  physicsCounter = " << physicsCounter_ << std::endl;
+  }
   //@}
 
-protected:
-
-  int physicsCounter_;    ///< Counter for steps
-
+ protected:
+  int physicsCounter_;  ///< Counter for steps
 };
-} // namespace Tempus_Test
-#endif // Tempus_PhysicsStateCounter_hpp
+}  // namespace Tempus_Test
+#endif  // Tempus_PhysicsStateCounter_hpp

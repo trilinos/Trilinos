@@ -54,26 +54,21 @@
 #include "Teko_Utilities.hpp"
 
 using Teuchos::RCP;
-using Teuchos::rcp_dynamic_cast;
 using Teuchos::rcp_const_cast;
+using Teuchos::rcp_dynamic_cast;
 
 namespace Teko {
 namespace NS {
 
-   // Staiblized constructor
-StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
-                                     const LinearOp & invBQBtmC,
-                                     const LinearOp & invD,
-                                     const LinearOp & invMass)
-   : invF_(invF), invBQBtmC_(invBQBtmC), invD_(invD), invMass_(invMass)
-{ }
+// Staiblized constructor
+StaticLSCStrategy::StaticLSCStrategy(const LinearOp& invF, const LinearOp& invBQBtmC,
+                                     const LinearOp& invD, const LinearOp& invMass)
+    : invF_(invF), invBQBtmC_(invBQBtmC), invD_(invD), invMass_(invMass) {}
 
-   // Stable constructor
-StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
-                                     const LinearOp & invBQBtmC,
-                                     const LinearOp & invMass)
-   : invF_(invF), invBQBtmC_(invBQBtmC), invD_(Teuchos::null), invMass_(invMass)
-{ }
+// Stable constructor
+StaticLSCStrategy::StaticLSCStrategy(const LinearOp& invF, const LinearOp& invBQBtmC,
+                                     const LinearOp& invMass)
+    : invF_(invF), invBQBtmC_(invBQBtmC), invD_(Teuchos::null), invMass_(invMass) {}
 
-} // end namespace NS
-} // end namespace Teko
+}  // end namespace NS
+}  // end namespace Teko

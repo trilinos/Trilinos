@@ -121,11 +121,7 @@ class GetCoeffsEvaluator
     DynRankView local_physEvalPoints;
     DynRankView local_refTargetAtEvalPoints, local_physTargetAtEvalPoints;
     ElemShape elemShape;
-  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-    Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
-  #else
     Intrepid2::ProjectionStruct<PHX::Device,double> projStruct;
-  #endif
     Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > it2basis;
   
 }; // end of class
@@ -202,11 +198,7 @@ evaluateFields(
 {
   using ct = Intrepid2::CellTools<PHX::Device>;
   using fst = Intrepid2::FunctionSpaceTools<PHX::Device>;
-  #ifdef HAVE_INTREPID2_EXPERIMENTAL_NAMESPACE
-  using pts = Intrepid2::Experimental::ProjectionTools<PHX::Device>;
-  #else
   using pts = Intrepid2::ProjectionTools<PHX::Device>;
-  #endif 
 
   // FYI, this all relies on a first-order mesh
   auto cellNodesAll = workset.getCellNodes();

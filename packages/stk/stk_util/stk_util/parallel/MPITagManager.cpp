@@ -1,6 +1,7 @@
 #include "stk_util/parallel/MPITagManager.hpp"
 #include "stk_util/parallel/CouplingVersions.hpp"
 #include <cassert>
+#include "Parallel.hpp"
 
 namespace stk {
 
@@ -17,7 +18,7 @@ MPITagManager::MPITagManager(int deletionGroupSize, int delayCount) :
 
   int flag;
   int* val;
-  MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &val, &flag);
+  MPI_Comm_get_attr(parallel_machine_world(), MPI_TAG_UB, &val, &flag);
   STK_ThrowRequireMsg(flag, "This MPI implementation is erroneous");
   STK_ThrowRequireMsg(*val >= m_tagMax, "MPI_TAG_UB must be at least " + std::to_string(m_tagMax));
   m_tagMax = util::get_common_coupling_version() >= 9 ? *val - 1 : *val;

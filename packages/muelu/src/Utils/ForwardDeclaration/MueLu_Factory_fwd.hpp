@@ -46,17 +46,12 @@
 #ifndef MUELU_FACTORY_FWD_HPP
 #define MUELU_FACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  class Factory;
+class Factory;
 }
 
 #ifndef MUELU_FACTORY_SHORT
 #define MUELU_FACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_FACTORY_FWD_HPP
+#endif  // MUELU_FACTORY_FWD_HPP

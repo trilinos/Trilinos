@@ -559,7 +559,7 @@ stk::mesh::FieldBase* add_stk_field(stk::mesh::MetaData& meta,
                                     size_t numComponents)
 {
   using StkField = stk::mesh::Field<double, ArrayTag>;
-  StkField& field = meta.declare_field<StkField>(entityRank, fieldName);
+  StkField& field = stk::mesh::legacy::declare_field<StkField>(meta, entityRank, fieldName);
   stk::mesh::put_field_on_mesh(field, part, numComponents, nullptr);
   return &field;
 }
@@ -618,18 +618,18 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
       if (fieldType == "scalar" || numComponents == 1) {
         if (!use_cartesian_for_scalar) {
-          stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entityRank, name);
+          stk::mesh::Field<double> & field = meta.declare_field<double>(entityRank, name);
           stk::mesh::put_field_on_mesh(field, part, nullptr);
           fieldPtr = &field;
         } else {
           stk::mesh::Field<double, stk::mesh::Cartesian> & field =
-              meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(entityRank, name);
+              stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta, entityRank, name);
           stk::mesh::put_field_on_mesh(field, part, 1, nullptr);
           fieldPtr = &field;
         }
       }
       else if (stk::string_starts_with(sierra::make_lower(fieldType), "real[")) {
-        stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entityRank, name);
+        stk::mesh::Field<double> & field = meta.declare_field<double>(entityRank, name);
         stk::mesh::put_field_on_mesh(field, part, numComponents, nullptr);
         fieldPtr = &field;
       }
@@ -1003,8 +1003,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
       const int scalarsPerEntity = res.num_scalars_per_entity();
       const int firstDimension = res.dimension();
-      const int legacyFieldArrayRank = meta.is_using_simple_fields() ? 0 : field->field_array_rank();
-      const shards::ArrayDimTag * const * const tags = meta.is_using_simple_fields() ? nullptr : field->dimension_tags();
+      const int legacyFieldArrayRank = meta.is_using_simple_fields() ? 0 : stk::mesh::legacy::field_array_rank(*field);
+      const shards::ArrayDimTag * const * const tags = meta.is_using_simple_fields() ? nullptr
+                                                                                     : stk::mesh::legacy::dimension_tags(*field);
 
       result->copies = 1;
 
@@ -1415,7 +1416,13 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     std::string map_stk_topology_to_ioss(stk::topology topo)
     {
-      Ioss::ElementTopology *iossTopo = Ioss::ElementTopology::factory(topo.name(), true);
+      std::string name = topo.name();
+
+      // FIXME SHELL SIDE TOPOLOGY
+      if (topo == stk::topology::SHELL_SIDE_BEAM_2) { name = "edge3d2"; }
+      if (topo == stk::topology::SHELL_SIDE_BEAM_3) { name = "edge3d3"; }
+
+      Ioss::ElementTopology *iossTopo = Ioss::ElementTopology::factory(name, true);
       return iossTopo != nullptr ? iossTopo->name() : "invalid";
     }
 
@@ -1985,8 +1992,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         {
             stk::mesh::FieldState stateIdentifier = static_cast<stk::mesh::FieldState>(state);
             bool fieldExists = field_state_exists_on_io_entity(name, field, stateIdentifier, ioEntity, multiStateSuffixes);
-            if (!fieldExists && !ignoreMissingFields) {
-                STKIORequire(fieldExists);
+            if (!ignoreMissingFields) {
+              const sierra::String s = multiStateSuffixes != nullptr ? (*multiStateSuffixes)[state] : std::to_string(state);
+              STK_ThrowRequireMsg(fieldExists, "Field " << field->name() << s << " does not exist in input database");
             }
             if (fieldExists) {
                 stk::mesh::FieldBase *statedField = field->field_state(stateIdentifier);

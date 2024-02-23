@@ -20,7 +20,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class EXEC_SPACE, class AT, class XT, class YT>
+template <class EXEC_SPACE, class XT, class YT, class AT>
 struct ger_tpl_spec_avail {
   enum : bool { value = false };
 };

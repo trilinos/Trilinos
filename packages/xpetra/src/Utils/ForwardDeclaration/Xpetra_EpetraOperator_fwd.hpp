@@ -49,14 +49,15 @@
 #include <Epetra_ConfigDefs.h>
 
 namespace Xpetra {
-  template<class GO> class EpetraOperatorT;
+template <class GO>
+class EpetraOperatorT;
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraOperatorT<int> EpetraOperator;
+typedef EpetraOperatorT<int> EpetraOperator;
 #endif
-}
+}  // namespace Xpetra
 
 #ifndef XPETRA_EPETRAOPERATOR_SHORT
 #define XPETRA_EPETRAOPERATOR_SHORT
 #endif
 
-#endif // XPETRA_EPETRAOPERATOR_FWD_HPP
+#endif  // XPETRA_EPETRAOPERATOR_FWD_HPP

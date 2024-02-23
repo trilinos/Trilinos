@@ -199,7 +199,7 @@ stk::mesh::Part* create_AA_mesh_with_sideset_and_field(stk::mesh::BulkData &bulk
     stk::mesh::PartVector parts = create_sideset_parts(meta, std::vector<std::string>{"surface_1"});
 
     const unsigned numberOfStates = 1;
-    stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, fieldName, numberOfStates);
+    stk::mesh::Field<double> & field = stk::mesh::legacy::declare_field<stk::mesh::Field<double>>(meta, stk::topology::NODE_RANK, fieldName, numberOfStates);
     const double initValue = 123;
     stk::mesh::put_field_on_mesh(field, meta.universal_part(), &initValue);
 
@@ -309,7 +309,7 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_field(stk::mesh::BulkData &bulk
     }
 
     const unsigned numberOfStates = 1;
-    stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, fieldName, numberOfStates);
+    stk::mesh::Field<double> & field = stk::mesh::legacy::declare_field<stk::mesh::Field<double>>(meta, stk::topology::NODE_RANK, fieldName, numberOfStates);
     const double initValue = 123;
     stk::mesh::put_field_on_mesh(field, meta.universal_part(), &initValue);
 
@@ -343,7 +343,7 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
     stk::mesh::Part* sidePart = parts[0];
     STK_ThrowRequire(nullptr != sidePart);
     const unsigned numberOfStates = 1;
-    stk::mesh::Field<double,shards::ArrayDimension> & ssField = meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension>>(stk::topology::FACE_RANK, fieldName, numberOfStates);
+    stk::mesh::Field<double,shards::ArrayDimension> & ssField = stk::mesh::legacy::declare_field<stk::mesh::Field<double,shards::ArrayDimension>>(meta, stk::topology::FACE_RANK, fieldName, numberOfStates);
     for (stk::mesh::Part* part : parts)
     {
       stk::io::set_distribution_factor_field(*part, ssField);

@@ -58,69 +58,62 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 
 namespace MueLu {
-  /*!
-    @class MHDRAPFactory
-    @brief Factory for building coarse matrices.
-  */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class MHDRAPFactory : public TwoLevelFactoryBase {
+/*!
+  @class MHDRAPFactory
+  @brief Factory for building coarse matrices.
+*/
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class MHDRAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_MHDRAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    MHDRAPFactory();
+  MHDRAPFactory();
 
-    virtual ~MHDRAPFactory() { }
+  virtual ~MHDRAPFactory() {}
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+  void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
-    void Build(Level &fineLevel, Level &coarseLevel) const;
-    //@}
+  //! @name Build methods.
+  //@{
+  void Build(Level &fineLevel, Level &coarseLevel) const;
+  //@}
 
-    //! @name Handling of user-defined transfer factories
-    //@{
+  //! @name Handling of user-defined transfer factories
+  //@{
 
-    //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
-    void SetImplicitTranspose(bool const &implicit) {
-      implicitTranspose_ = implicit;
-    }
+  //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
+  void SetImplicitTranspose(bool const &implicit) {
+    implicitTranspose_ = implicit;
+  }
 
+  //@}
 
+  //! @name internal print methods.
+  //    static std::string PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
 
+  static std::string PrintLoadBalancingInfo(const Matrix &Ac, const std::string &msgTag);
 
-    //@}
+ private:
+  //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
+  bool implicitTranspose_;
 
-    //! @name internal print methods.
-//    static std::string PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
+};  // class MHDRAPFactory
 
-    static std::string PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag);
-
-  private:
-
-
-    //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
-    bool implicitTranspose_;
-
-
-
-  }; //class MHDRAPFactory
-
-} //namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_MHDRAPFACTORY_SHORT
-#endif // MUELU_MHDRAPFACTORY_DECL_HPP
+#endif  // MUELU_MHDRAPFACTORY_DECL_HPP

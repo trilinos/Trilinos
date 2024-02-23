@@ -1079,7 +1079,7 @@ lowCommunicationMakeColMapAndReindex (
   Kokkos::View<int*, DT> PIDList_view("PIDList", NumRemoteColGIDs);
   auto PIDList_host = Kokkos::create_mirror_view(PIDList_view);
   
-  Kokkos::View<int*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
+  Kokkos::View<GO*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
   // For each index in RemoteGIDs_map that contains a GID, use "update" to indicate the number of GIDs "before" this GID
@@ -1322,7 +1322,7 @@ lowCommunicationMakeColMapAndReindex (
   
   Kokkos::View<int*, DT> PIDList_view("PIDList_d", NumRemoteColGIDs);
   
-  Kokkos::View<int*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
+  Kokkos::View<GO*, DT> RemoteGIDList_view("RemoteGIDList", NumRemoteColGIDs);
   auto RemoteGIDList_host = Kokkos::create_mirror_view(RemoteGIDList_view);
 
   // For each index in RemoteGIDs_map that contains a GID, use "update" to indicate the number of GIDs "before" this GID

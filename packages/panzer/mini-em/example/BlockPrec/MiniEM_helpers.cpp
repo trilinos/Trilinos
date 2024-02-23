@@ -142,8 +142,7 @@ namespace mini_em {
             if (dim == 2)
               updateParams("solverMueLu2D.xml", lin_solver_pl, comm, out);
 
-#ifdef KOKKOS_ENABLE_OPENMP
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosOpenMPWrapperNode).name()) {
+            if (panzer::TpetraNodeType::is_cpu && !panzer::TpetraNodeType::is_serial) {
               if (linAlgebra == linAlgTpetra)
                 updateParams("solverMueLuOpenMP.xml", lin_solver_pl, comm, out);
               else {
@@ -154,19 +153,8 @@ namespace mini_em {
                 throw;
               }
             }
-#endif
-#ifdef KOKKOS_ENABLE_CUDA
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name())
+            if (panzer::TpetraNodeType::is_gpu)
               updateParams("solverMueLuCuda.xml", lin_solver_pl, comm, out);
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-              updateParams("solverMueLuCuda.xml", lin_solver_pl, comm, out);
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name())
-              updateParams("solverMueLuRefMaxwellCuda.xml", lin_solver_pl, comm, out);
-#endif
           } else {
             updateParams("solverMueLuEpetra.xml", lin_solver_pl, comm, out);
 
@@ -177,16 +165,8 @@ namespace mini_em {
             RCP<Teuchos::ParameterList> lin_solver_pl_lo = lin_solver_pl;
             lin_solver_pl = rcp(new Teuchos::ParameterList("Linear Solver"));
             updateParams("solverMueLuHO.xml", lin_solver_pl, comm, out);
-#ifdef KOKKOS_ENABLE_CUDA
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name()) {
+            if (panzer::TpetraNodeType::is_gpu)
               updateParams("solverMueLuHOCuda.xml", lin_solver_pl, comm, out);
-            }
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-            if (typeid(panzer::TpetraNodeType).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name()) {
-              updateParams("solverMueLuHOCuda.xml", lin_solver_pl, comm, out);
-            }
-#endif
             {
               Teuchos::ParameterList& mueluList = lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").sublist("S_E Preconditioner").sublist("Preconditioner Types").sublist("MueLu");
               if (mueluList.isParameter("coarse: type") && mueluList.get<std::string>("coarse: type") == "RefMaxwell") {

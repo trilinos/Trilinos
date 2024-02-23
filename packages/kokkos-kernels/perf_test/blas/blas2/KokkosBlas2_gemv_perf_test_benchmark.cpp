@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
 
   if (params.use_hip) {
 #if defined(KOKKOS_ENABLE_HIP)
-    run<Kokkos::Experimental::HIP>(params);
+    run<Kokkos::HIP>(params);
 #else
     std::cout << "ERROR: HIP requested, but not available.\n";
     return 1;

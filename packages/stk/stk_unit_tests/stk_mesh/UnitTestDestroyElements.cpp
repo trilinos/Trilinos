@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_io/FillMesh.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include "stk_mesh/base/FEMHelpers.hpp"
@@ -228,6 +229,32 @@ TEST_F(TetMesh, DeleteOneElement_DontDeleteAnyOrphans)
         numValid++;
 
     EXPECT_EQ(4u, numValid);
+  }
+}
+
+TEST_F(TetMesh, DeleteElement_afterChangeParts)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    initialize_my_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), {}, false);
+
+    stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2)};
+
+    expect_valid(get_bulk(), elementToDestroy, __LINE__);
+
+    stk::mesh::Part* block1 = get_meta().get_part("block_TETRAHEDRON_4"); //huh?? why not 'block_1'?
+    ASSERT_TRUE(block1 != nullptr);
+    stk::mesh::PartVector empty;
+    stk::mesh::PartVector rmParts = {block1};
+
+    get_bulk().modification_begin();
+    get_bulk().change_entity_parts(elementToDestroy, empty, rmParts);
+    get_bulk().modification_end(stk::mesh::ModEndOptimizationFlag::MOD_END_NO_SORT);
+
+    stk::mesh::destroy_elements(get_bulk(), elementToDestroy);
+
+    expect_invalid(get_bulk(), elementToDestroy, __LINE__);
   }
 }
 
@@ -521,5 +548,153 @@ TEST_F(HexShellHex, testDeletionInDescendingOrder_Correct)
   }
 }
 
+TEST(DestroyElements, emptyAndDeleteBuckets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_initial_bucket_capacity(2);
+  builder.set_maximum_bucket_capacity(2);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+
+  stk::io::fill_mesh("generated:1x1x4", *bulkPtr);
+
+  stk::mesh::Selector all = bulkPtr->mesh_meta_data().universal_part();
+  {
+    stk::mesh::BucketVector elemBuckets = bulkPtr->get_buckets(stk::topology::ELEM_RANK, all);
+    EXPECT_EQ(2u, elemBuckets.size());
+    stk::mesh::BucketVector nodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, all);
+    EXPECT_EQ(10u, nodeBuckets.size());
+  }
+
+  stk::mesh::EntityVector elemsToDestroy = {
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 1),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 3)
+  };
+
+  stk::mesh::destroy_elements(*bulkPtr, elemsToDestroy);
+
+  {
+    stk::mesh::BucketVector elemBuckets = bulkPtr->get_buckets(stk::topology::ELEM_RANK, all);
+    EXPECT_EQ(1u, elemBuckets.size());
+    for(const stk::mesh::Bucket* bptr : elemBuckets) {
+      for(unsigned i=0; i<bptr->size(); ++i) {
+        stk::mesh::Entity ent = (*bptr)[i];
+        EXPECT_TRUE(bulkPtr->is_valid(ent))<<"elem bkt-id "<<bptr->bucket_id()<<", ord "<<i;
+      }
+    }
+    stk::mesh::BucketVector nodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, all);
+    EXPECT_EQ(8u, nodeBuckets.size());
+    for(const stk::mesh::Bucket* bptr : nodeBuckets) {
+      for(unsigned i=0; i<bptr->size(); ++i) {
+        stk::mesh::Entity ent = (*bptr)[i];
+        EXPECT_TRUE(bulkPtr->is_valid(ent))<<"node bkt-id "<<bptr->bucket_id()<<", ord "<<i;
+      }
+    }
+  }
+}
+
+TEST(DestroyElements, emptyAndDeleteBucketsOnBlockBoundary)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_initial_bucket_capacity(2);
+  builder.set_maximum_bucket_capacity(2);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+
+  stk::io::fill_mesh("generated:1x1x4", *bulkPtr);
+  stk::mesh::Part* block1 = bulkPtr->mesh_meta_data().get_part("block_1");
+  stk::mesh::Part& block2 = bulkPtr->mesh_meta_data().declare_part("block_2", stk::topology::ELEM_RANK);
+  stk::mesh::EntityVector elemsToMove = {
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 1),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 2)
+  };
+
+  bulkPtr->modification_begin();
+  bulkPtr->change_entity_parts(elemsToMove, stk::mesh::PartVector{&block2}, stk::mesh::PartVector{block1});
+  bulkPtr->modification_end();
+
+  stk::mesh::Selector all = bulkPtr->mesh_meta_data().universal_part();
+  {
+    stk::mesh::BucketVector elemBuckets = bulkPtr->get_buckets(stk::topology::ELEM_RANK, all);
+    EXPECT_EQ(2u, elemBuckets.size());
+    stk::mesh::BucketVector nodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, all);
+    EXPECT_EQ(10u, nodeBuckets.size());
+  }
+
+  stk::mesh::EntityVector elemsToDestroy = {
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 1),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 2),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 3)
+  };
+
+  stk::mesh::destroy_elements(*bulkPtr, elemsToDestroy);
+
+  {
+    stk::mesh::BucketVector elemBuckets = bulkPtr->get_buckets(stk::topology::ELEM_RANK, all);
+    EXPECT_EQ(1u, elemBuckets.size());
+    for(const stk::mesh::Bucket* bptr : elemBuckets) {
+      for(unsigned i=0; i<bptr->size(); ++i) {
+        stk::mesh::Entity ent = (*bptr)[i];
+        EXPECT_TRUE(bulkPtr->is_valid(ent))<<"elem bkt-id "<<bptr->bucket_id()<<", ord "<<i;
+      }
+    }
+    stk::mesh::BucketVector nodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, all);
+    EXPECT_EQ(4u, nodeBuckets.size());
+    for(const stk::mesh::Bucket* bptr : nodeBuckets) {
+      for(unsigned i=0; i<bptr->size(); ++i) {
+        stk::mesh::Entity ent = (*bptr)[i];
+        EXPECT_TRUE(bulkPtr->is_valid(ent))<<"node bkt-id "<<bptr->bucket_id()<<", ord "<<i;
+      }
+    }
+  }
+}
+
+TEST(DestroyElements, destroyAll)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_initial_bucket_capacity(2);
+  builder.set_maximum_bucket_capacity(2);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+
+  stk::io::fill_mesh("generated:1x1x4", *bulkPtr);
+  stk::mesh::Part* block1 = bulkPtr->mesh_meta_data().get_part("block_1");
+  stk::mesh::Part& block2 = bulkPtr->mesh_meta_data().declare_part("block_2", stk::topology::ELEM_RANK);
+  stk::mesh::EntityVector elemsToMove = {
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 1),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 2)
+  };
+
+  bulkPtr->modification_begin();
+  bulkPtr->change_entity_parts(elemsToMove, stk::mesh::PartVector{&block2}, stk::mesh::PartVector{block1});
+  bulkPtr->modification_end();
+
+  stk::mesh::Selector all = bulkPtr->mesh_meta_data().universal_part();
+  {
+    stk::mesh::BucketVector elemBuckets = bulkPtr->get_buckets(stk::topology::ELEM_RANK, all);
+    EXPECT_EQ(2u, elemBuckets.size());
+    stk::mesh::BucketVector nodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, all);
+    EXPECT_EQ(10u, nodeBuckets.size());
+  }
+
+  stk::mesh::EntityVector elemsToDestroy = {
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 1),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 2),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 3),
+    bulkPtr->get_entity(stk::topology::ELEM_RANK, 4)
+  };
+
+  stk::mesh::destroy_elements(*bulkPtr, elemsToDestroy);
+
+  {
+    stk::mesh::BucketVector elemBuckets = bulkPtr->get_buckets(stk::topology::ELEM_RANK, all);
+    EXPECT_EQ(0u, elemBuckets.size());
+    stk::mesh::BucketVector nodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, all);
+    EXPECT_EQ(0u, nodeBuckets.size());
+  }
+}
 
 }

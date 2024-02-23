@@ -193,7 +193,7 @@ std::vector<utils::Point> MeshGenerator::compute_vertex_coordinates(const MeshSp
 }
 
 template <typename Func>
-std::shared_ptr<Mesh> create_mesh(const MeshSpec& spec, Func func, MPI_Comm comm = MPI_COMM_WORLD,
+std::shared_ptr<Mesh> create_mesh(const MeshSpec& spec, Func func, MPI_Comm comm = parallel_machine_world(),
                                   const bool triangles = false, bool reverseXEdges = false)
 {
   assert(spec.numelX > 0);
@@ -206,7 +206,7 @@ std::shared_ptr<Mesh> create_mesh(const MeshSpec& spec, Func func, MPI_Comm comm
 // create a sphere with radius r_outer.  This function works by creating a quarter annulus
 // and then projecting the points up onto the surface of a sphere with radius r_outer.
 // r_inner gives the inner radius of the annulus
-std::shared_ptr<Mesh> create_eigth_sphere(int numelR, int numelTheta, double rInner, double rOuter);
+std::shared_ptr<Mesh> create_eigth_sphere(int numelR, int numelTheta, double rInner, double rOuter, MPI_Comm comm=MPI_COMM_WORLD, bool createTriangles=false); // CHECK: ALLOW MPI_COMM_WORLD
 
 } // namespace impl
 

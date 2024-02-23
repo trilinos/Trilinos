@@ -63,11 +63,11 @@
 
 namespace Intrepid2 {
 
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) 
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
 #define INTREPID2_COMPILE_DEVICE_CODE
 #endif
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
 #define INTREPID2_ENABLE_DEVICE
 #endif
 
@@ -83,16 +83,16 @@ namespace Intrepid2 {
 
 #define INTREPID2_TEST_FOR_WARNING(test, msg)                           \
   if (test) {                                                           \
-    printf("[Intrepid2] Warning in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
+    Kokkos::printf("[Intrepid2] Warning in file %s, line %d\n",__FILE__,__LINE__); \
+    Kokkos::printf("            Test that evaluated to true: %s\n", #test);     \
+    Kokkos::printf("            %s \n", msg);                                   \
   }
 
 #define INTREPID2_TEST_FOR_EXCEPTION(test, x, msg)                      \
   if (test) {                                                           \
-    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
+    Kokkos::printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    Kokkos::printf("            Test that evaluated to true: %s\n", #test);     \
+    Kokkos::printf("            %s \n", msg);                                   \
     throw x(msg);                                                       \
   }
 
@@ -109,18 +109,18 @@ namespace Intrepid2 {
 #else
 #define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg)          \
   if (test) {                                                           \
-    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
+    Kokkos::printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    Kokkos::printf("            Test that evaluated to true: %s\n", #test);     \
+    Kokkos::printf("            %s \n", msg);                                   \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 #endif
 #if defined(INTREPID2_ENABLE_DEBUG) || defined(NDEBUG) || 1
 #define INTREPID2_TEST_FOR_ABORT(test, msg)                             \
   if (test) {                                                           \
-    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
+    Kokkos::printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    Kokkos::printf("            Test that evaluated to true: %s\n", #test);     \
+    Kokkos::printf("            %s \n", msg);                                   \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 #else
@@ -130,17 +130,17 @@ namespace Intrepid2 {
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
   if (!(info) && (test)) {                                              \
-    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
+    Kokkos::printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    Kokkos::printf("            Test that evaluated to true: %s\n", #test);     \
+    Kokkos::printf("            %s \n", msg);                                   \
     info = true;                                                        \
   }
 #else  
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
   if (!(info) && (test)) {                                              \
-    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
+    Kokkos::printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    Kokkos::printf("            Test that evaluated to true: %s\n", #test);     \
+    Kokkos::printf("            %s \n", msg);                                   \
     info = true ;                                                       \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }

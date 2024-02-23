@@ -13,7 +13,7 @@
 #include "Tempus_IntegratorObserverNoOp_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorObserverNoOp)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorObserverNoOp)
 }
 
 #endif

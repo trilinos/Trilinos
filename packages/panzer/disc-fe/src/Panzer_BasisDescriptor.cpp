@@ -134,6 +134,13 @@ getPointDescriptor() const
   return pd;
 }
 
+bool operator==(const panzer::BasisDescriptor& left,
+                const panzer::BasisDescriptor& right)
+{
+  return ( (left.getType() == right.getType()) &&
+           (left.getOrder() == right.getOrder()) );
+}
+
 } // end namespace panzer
 
 std::size_t

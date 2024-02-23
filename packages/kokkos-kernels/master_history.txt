@@ -22,3 +22,5 @@ tag: 3.7.01     date: 12/01/2022  master: 04821ac3    release: 6cb632b6
 tag: 4.0.00     date: 02/23/2023  master: b4014bf2    release: a10dff20
 tag: 4.0.01     date: 04/26/2023  master: b9c1bab7    release: 8809e41c
 tag: 4.1.00     date: 06/20/2023  master: 1331baf1    release: 14ad220a
+tag: 4.2.00     date: 11/09/2023  master: 25a31f88    release: 912d3778
+tag: 4.2.01     date: 01/30/2024  master: f429f6ec    release: bcf9854b

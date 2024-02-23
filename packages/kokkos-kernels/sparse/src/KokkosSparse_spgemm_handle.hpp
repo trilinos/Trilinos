@@ -661,7 +661,7 @@ class SPGEMMHandle {
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace>::value) {
+    if (std::is_same<Kokkos::HIP, ExecutionSpace>::value) {
       this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
       std::cout << "HIP Execution Space, Default Algorithm: SPGEMM_KK"

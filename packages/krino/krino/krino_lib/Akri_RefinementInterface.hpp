@@ -58,56 +58,15 @@ public:
   virtual void fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const = 0;
   //Whether an entity is constrained or free to move in a rebalance
   virtual bool has_rebalance_constraint(const stk::mesh::Entity entity) const = 0;
+  virtual void update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const = 0;
   virtual unsigned get_num_children(const stk::mesh::Entity elem) const = 0;
   virtual int fully_refined_level(const stk::mesh::Entity elem) const = 0;
   virtual FieldRef get_marker_field() const = 0;
   virtual bool require_post_refinement_fixups() const = 0;
   virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const = 0;
 
-  virtual void do_refinement(const int debugLevel = 0) = 0;
+  virtual bool do_refinement(const int debugLevel = 0) = 0;
   virtual void do_uniform_refinement(const int numUniformRefinementLevels) = 0;
-};
-
-class PerceptRefinement : public RefinementInterface
-{
-public:
-  static PerceptRefinement & get(const stk::mesh::MetaData & meta);
-  static bool is_created(const stk::mesh::MetaData & meta);
-  static PerceptRefinement & create(stk::mesh::MetaData & meta);
-
-  virtual ~PerceptRefinement() {}
-
-  virtual bool is_child(const stk::mesh::Entity entity) const override;
-  virtual bool is_parent(const stk::mesh::Entity parent) const override;
-  virtual bool is_parent_side(const stk::mesh::Entity side) const override;
-  virtual bool is_transition(const stk::mesh::Entity parent) const override;
-  virtual stk::mesh::Part & parent_part() const override;
-  virtual stk::mesh::Part & child_part() const override;
-  virtual stk::mesh::Entity get_parent(const stk::mesh::Entity child) const override;
-  virtual std::pair<stk::mesh::EntityId,int> get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const override;
-  virtual unsigned get_num_children(const stk::mesh::Entity elem) const override;
-  virtual void fill_children(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children) const override;
-  virtual void fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const override;
-  virtual void fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const override;
-  virtual bool has_rebalance_constraint(const stk::mesh::Entity entity) const override;
-  virtual int fully_refined_level(const stk::mesh::Entity elem) const override;
-  virtual FieldRef get_marker_field() const override;
-  virtual bool require_post_refinement_fixups() const override { return true; };
-  virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const override;
-
-  virtual void do_refinement(const int debugLevel = 0) override;
-  virtual void do_uniform_refinement(const int numUniformRefinementLevels) override;
-
-  void set_adaptive_refinement_function(const std::function<void(const std::string &, int)> & adaptiveRefinement);
-  void set_uniform_refinement_function(const std::function<void(int)> & uniformRefinement);
-private:
-  PerceptRefinement(stk::mesh::MetaData & meta);
-  stk::mesh::MetaData & myMeta;
-  std::function<void(const std::string &, int)> myAdaptiveRefinement;
-  std::function<void(int)> myUniformRefinement;
-  FieldRef myRefinementLevelField;
-  FieldRef myTransitionElementField;
-  FieldRef myElementMarkerField;
 };
 
 class KrinoRefinement : public RefinementInterface
@@ -133,6 +92,7 @@ public:
   virtual void fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const override;
   virtual void fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const override;
   virtual bool has_rebalance_constraint(const stk::mesh::Entity entity) const override;
+  virtual void update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const override;
   virtual int fully_refined_level(const stk::mesh::Entity elem) const override;
   int partially_refined_level(const stk::mesh::Entity elem) const;
   virtual std::string locally_check_leaf_children_have_parents_on_same_proc() const override;
@@ -140,7 +100,7 @@ public:
   virtual FieldRef get_marker_field() const override;
   virtual bool require_post_refinement_fixups() const override { return false; };
 
-  virtual void do_refinement(const int debugLevel = 0) override;
+  virtual bool do_refinement(const int debugLevel = 0) override;
 
   virtual void do_uniform_refinement(const int numUniformRefinementLevels) override;
 

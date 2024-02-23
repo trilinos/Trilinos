@@ -241,6 +241,98 @@ class MeshRelationalDataScatterTester : public MeshRelationalDataScatterTesterBa
     }      
 };
 
+class MeshRelationalDataScatterTesterTri : public MeshRelationalDataScatterTesterBase
+{
+  protected:
+
+    void create_meshes() override
+    {
+      mesh::impl::MeshSpec spec1, spec2;
+      spec1.xmin = 0;   spec1.xmax = 1;
+      spec1.ymin = 0;   spec1.ymax = 1;
+      spec1.numelX = 2; spec1.numelY = 2;
+      
+      spec2.xmin = 0;   spec2.xmax = 1;
+      spec2.ymin = 0;   spec2.ymax = 1;
+      spec2.numelX = 3; spec2.numelY = 3;   
+
+      auto f = [](const utils::Point& pt) { return pt; };
+      if (m_comm1 != MPI_COMM_NULL)
+      {
+        m_mesh1 = create_mesh(spec1, f, m_comm1, true);
+      }   
+
+      if (m_comm2 != MPI_COMM_NULL)
+      {
+        m_mesh2 = create_mesh(spec2, f, m_comm2, true);
+      }            
+    }
+
+    std::shared_ptr<mesh::impl::MeshScatterSpec> create_scatter_spec1() override
+    {
+      int myrank = utils::impl::comm_rank(m_unionComm);
+      int commsize = utils::impl::comm_size(m_unionComm);
+      auto scatterSpec1 = std::make_shared<mesh::impl::MeshScatterSpec>(m_unionComm, m_mesh1);
+      if (m_mesh1)
+      {
+        if (commsize == 1)
+        {
+          for (auto el : m_mesh1->get_elements())
+            if (el)
+              scatterSpec1->add_destination(el, 0);
+        } else if (commsize == 2)
+        {
+          for (auto el : m_mesh1->get_elements())
+            if (el)
+              scatterSpec1->add_destination(el, 1);
+        } else
+        {
+          for (auto el : m_mesh1->get_elements())
+            if (el)
+            {
+              scatterSpec1->add_destination(el, 2);
+              if (myrank == 1)
+                scatterSpec1->add_destination(el, 3);
+            }
+        }
+      }
+
+      return scatterSpec1;
+    }
+
+    std::shared_ptr<mesh::impl::MeshScatterSpec> create_scatter_spec2() override
+    {
+      int myrank = utils::impl::comm_rank(m_unionComm);
+      int commsize = utils::impl::comm_size(m_unionComm);
+      auto scatterSpec2 = std::make_shared<mesh::impl::MeshScatterSpec>(m_unionComm, m_mesh2);
+      if (m_mesh2)
+      {
+        if (commsize == 1)
+        {
+          for (auto el : m_mesh2->get_elements())
+            if (el)
+              scatterSpec2->add_destination(el, 0);
+        } else if (commsize == 2)
+        {
+          for (auto el : m_mesh2->get_elements())
+            if (el)
+              scatterSpec2->add_destination(el, 0);          
+        } else
+        {
+          for (auto el : m_mesh2->get_elements())
+            if (el)
+            {
+              scatterSpec2->add_destination(el, myrank - 2);
+              if (mesh::compute_centroid(el).x > 1.0/3 && mesh::compute_centroid(el).x < 2.0/3)
+                scatterSpec2->add_destination(el, 1);
+            }          
+        }
+      }
+
+      return scatterSpec2;
+    }      
+};
+
 mesh::MeshEntityPtr find_entity(std::shared_ptr<mesh::Mesh> mesh, int dim, const utils::Point& centroid, double tol)
 {
   double minDist = std::numeric_limits<double>::max();
@@ -383,6 +475,84 @@ TEST_F(MeshRelationalDataScatterTester, Mesh2Verts)
     EXPECT_EQ(meshRelationalDataOutput->fakeVertsToVertsIn.size(), numFakeVertsExpected);
   }
 }
+
+TEST_F(MeshRelationalDataScatterTesterTri, Mesh2Verts)
+{
+  if (m_mesh2)
+  {
+    auto& verts2ToFakeVerts  = *(m_meshRelationalDataInput->verts2ToFakeVerts);
+    auto& verts2ClassOnMesh1 = *(m_meshRelationalDataInput->verts2ClassOnMesh1);
+
+    for (auto& vert : m_mesh2->get_vertices())
+      if (vert)
+      {
+        verts2ToFakeVerts(vert, 0, 0) = m_vertGenerator.get_vert(vert->get_point_orig(0));
+
+        for (auto& el : m_mesh1ScatteredToMesh2->get_elements())
+          if (el)
+          {
+            mesh::MeshEntityPtr el2 = vert->get_up(0)->get_up(0);
+            predicates::impl::PointRecord record = m_pointClassifierOrigin->classify(el, el2, vert->get_point_orig(0));
+            if (record.type != predicates::impl::PointClassification::Exterior)
+            {
+              verts2ClassOnMesh1(vert, 0, 0) = record;   
+            }           
+          }
+      }
+  }
+
+  std::shared_ptr<nonconformal4::impl::MeshRelationalData> meshRelationalDataOutput = m_meshRelationalDataScatter->scatter();
+
+  if (m_mesh2ScatteredToMesh1)
+  {
+    std::set<int> fakeVertIds;
+    auto& verts2ToFakeVerts = *(meshRelationalDataOutput->verts2ToFakeVerts);
+    auto& verts2ClassOnMesh1 = *(meshRelationalDataOutput->verts2ClassOnMesh1);
+
+    int minFakeVertId = std::numeric_limits<int>::max();
+    int maxFakeVertId = std::numeric_limits<int>::min();
+    int nverts = 0;    
+    for (auto& vert : m_mesh2ScatteredToMesh1->get_vertices())
+    {
+      if (vert)
+      {
+        nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
+        utils::Point pt = vert->get_point_orig(0);
+
+        EXPECT_EQ(fakeVertIds.count(fv.id), 0u);
+        fakeVertIds.insert(fv.id);
+
+        double dist = std::sqrt(dot(fv.pt - pt, fv.pt - pt));
+        EXPECT_NEAR(dist, 0, 1e-13);
+
+        minFakeVertId = std::min(minFakeVertId, fv.id);
+        maxFakeVertId = std::max(maxFakeVertId, fv.id);
+        nverts++;
+
+        predicates::impl::PointRecord& record = verts2ClassOnMesh1(vert, 0, 0);
+        if (record.el)
+        {       
+          mesh::MeshEntityPtr el2 = vert->get_up(0)->get_up(0);
+          predicates::impl::PointRecord recordLocal = m_pointClassifierDest->classify(record.el, el2, vert->get_point_orig(0));
+
+          EXPECT_EQ(record.type, recordLocal.type);
+          EXPECT_EQ(record.el, recordLocal.el);
+          EXPECT_EQ(record.id, recordLocal.id);
+          EXPECT_EQ(m_pointClassifierDest->compute_xyz_coords(record), m_pointClassifierDest->compute_xyz_coords(recordLocal));
+        }
+
+      }
+    }
+
+    EXPECT_EQ(fakeVertIds.size(), size_t(mesh::count_valid(m_mesh2ScatteredToMesh1->get_vertices())));
+    EXPECT_EQ(maxFakeVertId - minFakeVertId + 1, nverts);
+
+    size_t numFakeVertsExpected = mesh::count_valid(m_mesh2ScatteredToMesh1->get_vertices()) +
+                                  mesh::count_valid(m_mesh1->get_vertices());
+    EXPECT_EQ(meshRelationalDataOutput->fakeVertsToVertsIn.size(), numFakeVertsExpected);
+  }
+}
+
 
 TEST_F(MeshRelationalDataScatterTester, Mesh2ClassificationNearBoundary)
 {

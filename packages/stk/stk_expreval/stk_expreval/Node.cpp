@@ -185,7 +185,9 @@ Node::eval()
   }
   case OPCODE_ASSIGN: {
     if (m_left) {
-      m_data.variable.variable->getArrayValue(m_left->getResult(),  m_owner->getArrayOffsetType()) = m_right->getResult();
+      m_data.variable.variable->assignArrayValue(m_left->getResult(),
+                                                 m_owner->getArrayOffsetType(),
+                                                 m_right->getResult());
     }
     else {
       *m_data.variable.variable = m_right->getResult();

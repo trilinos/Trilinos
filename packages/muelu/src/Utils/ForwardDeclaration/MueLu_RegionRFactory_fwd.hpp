@@ -46,18 +46,13 @@
 #ifndef MUELU_REGIONRFACTORY_FWD_HPP
 #define MUELU_REGIONRFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class RegionRFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class RegionRFactory;
 }
 
 #ifndef MUELU_REGIONRFACTORY_SHORT
 #define MUELU_REGIONRFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_REGIONRFACTORY_FWD_HPP
+#endif  // MUELU_REGIONRFACTORY_FWD_HPP

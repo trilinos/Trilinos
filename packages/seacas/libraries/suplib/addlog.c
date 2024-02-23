@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,56 +46,54 @@ void addlog(char *name, int len)
   if (access_dir != NULL) {
     char filename[LEN];
     snprintf(filename, LEN, "%s/etc/audit.log", access_dir);
-    if (0 == access(filename, W_OK)) {
-      FILE *audit = fopen(filename, "a");
-      if (audit != NULL) {
-        char *codename = strrchr(name, '/');
+    FILE *audit = fopen(filename, "a");
+    if (audit != NULL) {
+      char *codename = strrchr(name, '/');
 
-        const char *username = getlogin();
-        if (username == NULL) {
-          username = getenv("LOGNAME");
-        }
-        if (username == NULL) {
-          username = "UNKNOWN";
-        }
-
-        if (codename == NULL) {
-          codename = name;
-        }
-        else {
-          codename++;
-        }
-        char       time_string[LEN];
-        time_t     calendar_time = time(NULL);
-        struct tm *local_time    = localtime(&calendar_time);
-        strftime(time_string, LEN, "%a %b %d %H:%M:%S %Z %Y", local_time);
-
-        int        ticks_per_second;
-        struct tms time_buf;
-        times(&time_buf);
-        ticks_per_second = sysconf(_SC_CLK_TCK);
-        double u_time    = (double)(time_buf.tms_utime + time_buf.tms_cutime) / ticks_per_second;
-        double s_time    = (double)(time_buf.tms_stime + time_buf.tms_cstime) / ticks_per_second;
-
-        struct utsname sys_info;
-        uname(&sys_info);
-
-        char log_string[LEN];
-        for (size_t i = 0; i < strlen(codename); i++) {
-          if (!isalnum(codename[i]) && codename[i] != '.' && codename[i] != '-' &&
-              codename[i] != '_') {
-            codename[i] = '\0';
-            break;
-          }
-        }
-        snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs 0:00.00 0.0%% 0+0k 0+0io 0pf+0w %s\n",
-                 codename, username, time_string, u_time, s_time, sys_info.nodename) < 0
-            ? abort()
-            : (void)0;
-
-        fprintf(audit, "%s", log_string);
-        fclose(audit);
+      const char *username = getlogin();
+      if (username == NULL) {
+        username = getenv("LOGNAME");
       }
+      if (username == NULL) {
+        username = "UNKNOWN";
+      }
+
+      if (codename == NULL) {
+        codename = name;
+      }
+      else {
+        codename++;
+      }
+      char       time_string[LEN];
+      time_t     calendar_time = time(NULL);
+      struct tm *local_time    = localtime(&calendar_time);
+      strftime(time_string, LEN, "%a %b %d %H:%M:%S %Z %Y", local_time);
+
+      int        ticks_per_second;
+      struct tms time_buf;
+      times(&time_buf);
+      ticks_per_second = sysconf(_SC_CLK_TCK);
+      double u_time    = (double)(time_buf.tms_utime + time_buf.tms_cutime) / ticks_per_second;
+      double s_time    = (double)(time_buf.tms_stime + time_buf.tms_cstime) / ticks_per_second;
+
+      struct utsname sys_info;
+      uname(&sys_info);
+
+      char log_string[LEN];
+      for (size_t i = 0; i < strlen(codename); i++) {
+        if (!isalnum(codename[i]) && codename[i] != '.' && codename[i] != '-' &&
+            codename[i] != '_') {
+          codename[i] = '\0';
+          break;
+        }
+      }
+      snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs 0:00.00 0.0%% 0+0k 0+0io 0pf+0w %s\n",
+               codename, username, time_string, u_time, s_time, sys_info.nodename) < 0
+          ? abort()
+          : (void)0;
+
+      fprintf(audit, "%s", log_string);
+      fclose(audit);
     }
   }
 #else

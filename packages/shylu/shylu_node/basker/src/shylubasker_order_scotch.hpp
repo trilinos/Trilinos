@@ -358,13 +358,14 @@ namespace BaskerNS
 
             if (level_k < num_levels) {
               Int num_leaves_k = pow(2.0, (double)(level_k));       // number of leaves at this level
+              //printf(" num_leaves(%d) = %d\n",level_k,num_leaves_k );
               for (Int leaf_id = 0; leaf_id < num_leaves_k; leaf_id++) {
                 Int dom_id = 2 * leaf_id + first_leaf1;
                 Int dom_id1 = dom_id;     // id of left-child after bisection
                 Int dom_id2 = dom_id + 1; // id of right-child after bisection
                 Int sep_id = (dom_id1)/2; // id of this domain before bisection (becomes separator after bisection)
 
-                //printf( " + %d: %d,%d(%d,%d) -> %d(%d)\n",level_k, post_iorder(dom_id1),post_iorder(dom_id2),dom_id1,dom_id2,post_iorder(sep_id),sep_id );
+                //printf( " + level=%d: post(%d)=%d,post(%d)=%d -> post(%d)=%d\n",level_k, dom_id1,post_iorder(dom_id1),dom_id2,post_iorder(dom_id2),sep_id,post_iorder(sep_id) );
                 dom_id1 = post_iorder(dom_id1);  // id of left-child after bisection
                 dom_id2 = post_iorder(dom_id2);  // id of right-child after bisection
                 sep_id  = post_iorder(sep_id);   // id of this domain before bisection (becomes separator after bisection)
@@ -401,11 +402,12 @@ namespace BaskerNS
         {
           // -------------------------------------------------- //
           for (; level <= last_level; level++) {
+            //printf( "\n ================== (level = %d) =========================\n",level );
             Int num_leaves = pow(2.0, (double)(level));       // number of leaves at this level
             Int first_sep  = pow(2.0, (double)(level)) - 1;   // id of the first leaf at this level
             Int first_leaf = pow(2.0, (double)(1+level)) - 1; // id of the first new leaf at the next level
+            //printf( "  num_leaves = %d, first_sep = %d, first_leaf = %d\n",num_leaves,first_sep,first_leaf );
 
-            //printf( "\n ===========================================\n" );
             for (Int leaf_id = 0; leaf_id < num_leaves; leaf_id++) {
               // extract k-th interoior
               Int dom_id = 2 * leaf_id + first_leaf;
@@ -417,7 +419,7 @@ namespace BaskerNS
               // trying to figure out which block comes right before me
               Int sep_left_sibling = 0;
               if (sep_id == first_sep) {
-                // this iis the first leaf
+                // this is the first leaf
                 sep_left_sibling = 0;
               } else if (leaf_id%2 == 1) {
                 // this is right-child, so assign to left-sibling
@@ -432,14 +434,17 @@ namespace BaskerNS
               }
               //printf( "  -> level = %d, sep_left_sibling = %d (sep_id = %d, first_sep = %d)\n",level,sep_left_sibling,sep_id,first_sep );
 
-              // post order
-              dom_id1 = post_iorder(dom_id1);
-              dom_id2 = post_iorder(dom_id2);
-              sep_id  = post_iorder(sep_id);
-              //printf( "  -> level = %d, dom_id1 = %d, dom_id2 = %d, sep_id = %d\n",level,dom_id1,dom_id2,sep_id );
-              //printf( "  -> level = %d, rantab[%d] = %d, rangtab[%d] = %d, rangtab[%d] = %d\n",level,dom_id1,sg.rangtab[dom_id1],dom_id2,sg.rangtab[dom_id2],sep_id,sg.rangtab[sep_id] );
-              //printf( "  -> level = %d, dom = %d -> %d (nrow = %d)\n",level,dom_id,sep_id,M.nrow );
-
+              if (level < num_levels) 
+              {
+                // post order
+                //printf( " * level = %d, dom_id1 = %d, dom_id2 = %d, sep_id = %d\n",level,dom_id1,dom_id2,sep_id );
+                dom_id1 = post_iorder(dom_id1);
+                dom_id2 = post_iorder(dom_id2);
+                //printf( "  -> level = %d, dom_id1 = %d, dom_id2 = %d, sep_id = %d\n",level,dom_id1,dom_id2,sep_id );
+                //printf( "  -> level = %d, rantab[%d] = %d, rangtab[%d] = %d, rangtab[%d] = %d\n",level,dom_id1,sg.rangtab[dom_id1],dom_id2,sg.rangtab[dom_id2],sep_id,sg.rangtab[sep_id] );
+                //printf( "  -> level = %d, dom = %d -> %d (nrow = %d)\n",level,dom_id,sep_id,M.nrow );
+              }
+              sep_id = post_iorder(sep_id);
               Int frow = sg.rangtab[sep_left_sibling];
               Int metis_offset_k = frow + metis_offset;
               //printf( "frow = rangtab[%d] = %d\n",sep_left_sibling,frow );
@@ -470,7 +475,7 @@ namespace BaskerNS
                 }
               }
 
-              //printf( " metis_size = %d, n = %d\n",metis_size_k,M.nrow );
+              //printf( " metis_size = %d (sizeof = %d), n = %d (sizeof = %d)\n",metis_size_k,sizeof(idx_t),M.nrow,sizeof(Int) );
               /*printf( " Ke = [\n" );
               for(Int i = metis_offset; i < M.nrow; i++)
               {
@@ -860,7 +865,7 @@ namespace BaskerNS
           {
             if(M.row_idx(k) != i)
             {
-              ASSERT(sptr < M.nnz);
+              BASKER_ASSERT(sptr < M.nnz);
               sg.Ai[sptr++] = M.row_idx(k);
               sj++;
             }

@@ -35,15 +35,11 @@
 #ifndef  STK_MIDDLE_MESH_PARALLEL_SEARCH_HPP
 #define  STK_MIDDLE_MESH_PARALLEL_SEARCH_HPP
 
+#include "search_mesh_element_bounding_box_base.hpp"
 #include "mesh.hpp"
-#include "create_mesh.hpp"
-#include "mesh_io.hpp"
-#include "predicates/point_classifier_normal_wrapper.hpp"
-//#include "bounding_box_search.hpp"
+#include "field.hpp"
 #include <stk_search/CoarseSearch.hpp>
 #include "stk_search/Box.hpp"
-//#include "stk_transfer/GeometricTransfer.hpp"
-#include "stk_util/util/SortAndUnique.hpp"
 
 #include <limits>
 #include <map>
@@ -54,72 +50,23 @@ namespace mesh {
 namespace impl {
 
 
-class SearchMeshElementBoundingBox {
+class SearchMeshElementBoundingBox : public SearchMeshElementBoundingBoxBase {
  public:
-  using Entity        = mesh::MeshEntity;
-  using EntityKey     = int64_t;
-
-  using EntityProc    = stk::search::IdentProc<EntityKey, unsigned>;
-  using EntityProcVec = std::vector<EntityProc>;
-  using Box           = stk::search::Box<double>;
-  using BoundingBox   = std::pair<Box, EntityProc>;
 
   SearchMeshElementBoundingBox(std::shared_ptr<mesh::Mesh> inputMesh, MPI_Comm unionComm)
     : m_mesh(inputMesh)
     , m_unionComm(unionComm)
     {}
 
-  //MPI_Comm get_comm() const {return m_mesh->get_comm(); }
+  void fill_bounding_boxes(std::vector<BoundingBox>& boundingBoxes) const override;
 
-  void fill_bounding_boxes(std::vector<BoundingBox>& boundingBoxes) const
-  {
-    int proc;
-    MPI_Comm_rank(m_unionComm, &proc);
-    auto entities = m_mesh->get_elements();
-
-    stk::search::Point<double> minCorner, maxCorner;
-
-    for(auto entity : entities) {
-      fill_bounding_box(entity, minCorner, maxCorner);
-      EntityProc entityProc(entity->get_id(), proc);
-
-      BoundingBox boundingBox(Box(minCorner, maxCorner), entityProc);
-      boundingBoxes.push_back(boundingBox);
-    }
-
-    std::sort(boundingBoxes.begin(), boundingBoxes.end(),
-              [](const BoundingBox& a, const BoundingBox& b) { return a.second.id() < b.second.id(); });
-  };
-
-  std::shared_ptr<mesh::Mesh> get_mesh() const { return m_mesh; }
+  std::shared_ptr<mesh::Mesh> get_mesh() const override { return m_mesh; }
 
  private:
   using Point         = stk::search::Point<double>;
 
   void fill_bounding_box(mesh::MeshEntityPtr element, stk::search::Point<double>& minCorner,
-                         stk::search::Point<double>& maxCorner) const
-  {
-    for(unsigned j = 0; j < 3u; ++j) {
-      minCorner[j] = std::numeric_limits<double>::max();
-      maxCorner[j] = -std::numeric_limits<double>::max();
-    }
-
-    int numEdges = element->count_down();
-    for(auto i = 0; i < numEdges; ++i) {
-      auto edge = element->get_down(i);
-
-      int numNodes = edge->count_down();
-      for(auto j = 0; j < numNodes; ++j) {
-        auto node = edge->get_down(j);
-        auto nodeCoords = node->get_point_orig(0);
-
-        for(unsigned k = 0; k < 3u; ++k) {
-          minCorner[k] = std::min(minCorner[k], nodeCoords[k]);
-          maxCorner[k] = std::max(maxCorner[k], nodeCoords[k]);
-        }
-      }
-    }
-  }
+                         stk::search::Point<double>& maxCorner) const;
 
   std::shared_ptr<mesh::Mesh> m_mesh;
   MPI_Comm m_unionComm;

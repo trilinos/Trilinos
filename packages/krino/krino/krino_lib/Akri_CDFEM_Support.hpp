@@ -48,6 +48,15 @@ enum Edge_Degeneracy_Handling
   MAX_EDGE_DEGENERACY_HANDLING_TYPE
 };
 
+enum Resnap_Method
+{
+  RESNAP_AFTER_USING_ALE_TO_UNSNAP=0,
+  RESNAP_AFTER_USING_INTERPOLATION_TO_UNSNAP,
+  RESNAP_USING_INTERPOLATION,
+  RESNAP_USING_INTERFACE_ON_PREVIOUS_SNAPPED_MESH,
+  MAX_RESNAP_METHOD
+};
+
 enum Simplex_Generation_Method
 {
   CUT_QUADS_BY_GLOBAL_IDENTIFIER=0,
@@ -77,6 +86,7 @@ public:
   static void use_constrained_edge_interpolation() { the_edge_interpolation_model = CONSTRAINED_LINEAR; }
   static Edge_Interpolation_Model get_edge_interpolation_model() { return the_edge_interpolation_model; }
   static std::string cdfem_mesh_displacements_field_name() { return "CDFEM_MESH_DISPLACEMENTS"; }
+  static std::string cdfem_snap_displacements_field_name() { return "CDFEM_SNAP_DISPLACEMENTS"; }
 
   static bool is_active(const stk::mesh::MetaData & meta);
 
@@ -96,6 +106,7 @@ public:
   void create_parts();
 
   void register_cdfem_mesh_displacements_field();
+  void register_cdfem_snap_displacements_field();
   void register_parent_node_ids_field();
 
   void setup_fields();
@@ -164,7 +175,7 @@ public:
   bool use_facets_instead_of_levelset_fields() const { return myFlagUseFacetsInsteadOfLsFields; }
 
   Edge_Degeneracy_Handling get_cdfem_edge_degeneracy_handling() const { return my_cdfem_edge_degeneracy_handling; }
-  void set_cdfem_edge_degeneracy_handling( const Edge_Degeneracy_Handling type ) { my_cdfem_edge_degeneracy_handling = type; }
+  void set_cdfem_edge_degeneracy_handling( const Edge_Degeneracy_Handling type );
 
   stk::diag::Timer & get_timer_cdfem() const { return my_timer_cdfem; }
 
@@ -181,8 +192,8 @@ public:
   void set_use_hierarchical_dofs(bool flag) { my_flag_use_hierarchical_dofs = flag; }
   bool get_constrain_CDFEM_to_XFEM_space() const { return my_flag_constrain_CDFEM_to_XFEM_space; }
   void set_constrain_CDFEM_to_XFEM_space(bool flag) { my_flag_constrain_CDFEM_to_XFEM_space = flag; }
-  void set_use_interpolation_to_unsnap_mesh(bool flag) { myFlagUseInterpolationToUnsnapMesh = flag; }
-  bool get_use_interpolation_to_unsnap_mesh() const { return myFlagUseInterpolationToUnsnapMesh; }
+  void set_resnap_method(Resnap_Method resnapMethod) { myResnapMethod = resnapMethod; }
+  Resnap_Method get_resnap_method() const { return myResnapMethod; }
   void set_perform_volume_correction_after_levelset_solve(bool flag) { myFlagPerformVolumeCorrectionAfterLsSolve = flag; }
   bool get_perform_volume_correction_after_levelset_solve() const { return myFlagPerformVolumeCorrectionAfterLsSolve; }
 
@@ -253,7 +264,7 @@ private:
   bool my_flag_use_nonconformal_element_size;
   bool myFlagUseFacetsInsteadOfLsFields{false};
   bool myFlagUseVelocityToEvaluateInterfaceCFL;
-  bool myFlagUseInterpolationToUnsnapMesh{false};
+  Resnap_Method myResnapMethod{RESNAP_AFTER_USING_ALE_TO_UNSNAP};
   bool myFlagPerformVolumeCorrectionAfterLsSolve{false};
   bool myFlagIsTransient{false};
   mutable stk::diag::Timer my_timer_cdfem;

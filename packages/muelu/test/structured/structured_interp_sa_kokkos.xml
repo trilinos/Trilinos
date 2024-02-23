@@ -44,7 +44,7 @@
     </ParameterList>
 
     <ParameterList name="mySaPFact">
-      <Parameter name="factory"                             type="string" value="SaPFactory_kokkos"/>
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="sa: damping factor"                  type="double" value="1.333"/>
     </ParameterList>
@@ -57,7 +57,7 @@
     </ParameterList>
 
     <ParameterList name="myNullspaceFact">
-      <Parameter name="factory"                             type="string" value="NullspaceFactory_kokkos"/>
+      <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
       <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
       <Parameter name="CoarseMap"                           type="string" value="myCoarseMapFact"/>
     </ParameterList>

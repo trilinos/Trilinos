@@ -35,12 +35,10 @@ namespace Tempus {
  *  in takeStep are documented in each of the RK Algorithm sections:
  *  StepperExplicitRK, StepperDIRK and StepperIMEX_RK.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperRKModifierXBase
-  : virtual public Tempus::StepperRKAppAction<Scalar>
-{
-private:
-
+  : virtual public Tempus::StepperRKAppAction<Scalar> {
+ private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -55,88 +53,78 @@ private:
    *  function.
    */
   void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperRKBase<Scalar> > stepper,
-    const typename StepperRKAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperRKBase<Scalar> > stepper,
+      const typename StepperRKAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
     using Teuchos::RCP;
 
-    MODIFIER_TYPE modType = X_BEGIN_STEP;
-    const int stageNumber = stepper->getStageNumber();
-    Teuchos::SerialDenseVector<int,Scalar> c = stepper->getTableau()->c();
-    RCP<SolutionState<Scalar> > workingState = sh->getWorkingState();
-    const Scalar dt = workingState->getTimeStep();
-    Scalar time = sh->getCurrentState()->getTime();
-    if (stageNumber >= 0) time += c(stageNumber)*dt;
+    MODIFIER_TYPE modType                     = X_BEGIN_STEP;
+    const int stageNumber                     = stepper->getStageNumber();
+    Teuchos::SerialDenseVector<int, Scalar> c = stepper->getTableau()->c();
+    RCP<SolutionState<Scalar> > workingState  = sh->getWorkingState();
+    const Scalar dt                           = workingState->getTimeStep();
+    Scalar time                               = sh->getCurrentState()->getTime();
+    if (stageNumber >= 0) time += c(stageNumber) * dt;
     RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
 
-    switch(actLoc) {
-      case StepperRKAppAction<Scalar>::BEGIN_STEP:
-      {
+    switch (actLoc) {
+      case StepperRKAppAction<Scalar>::BEGIN_STEP: {
         modType = X_BEGIN_STEP;
         break;
       }
-      case StepperRKAppAction<Scalar>::BEGIN_STAGE:
-      {
+      case StepperRKAppAction<Scalar>::BEGIN_STAGE: {
         modType = X_BEGIN_STAGE;
         break;
       }
-      case StepperRKAppAction<Scalar>::BEFORE_SOLVE:
-      {
+      case StepperRKAppAction<Scalar>::BEFORE_SOLVE: {
         modType = X_BEFORE_SOLVE;
         break;
       }
-      case StepperRKAppAction<Scalar>::AFTER_SOLVE:
-      {
+      case StepperRKAppAction<Scalar>::AFTER_SOLVE: {
         modType = X_AFTER_SOLVE;
         break;
       }
-      case StepperRKAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
-      {
+      case StepperRKAppAction<Scalar>::BEFORE_EXPLICIT_EVAL: {
         modType = X_BEFORE_EXPLICIT_EVAL;
         break;
       }
-      case StepperRKAppAction<Scalar>::END_STAGE:
-      {
+      case StepperRKAppAction<Scalar>::END_STAGE: {
         modType = X_END_STAGE;
         break;
       }
-      case StepperRKAppAction<Scalar>::END_STEP:
-      {
+      case StepperRKAppAction<Scalar>::END_STEP: {
         modType = X_END_STEP;
-        time = workingState->getTime();
+        time    = workingState->getTime();
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
 
     this->modify(x, time, dt, stageNumber, modType);
   }
 
-public:
-
+ public:
   /// Indicates the location of application action (see algorithm).
   enum MODIFIER_TYPE {
-    X_BEGIN_STEP,           ///< Modify \f$x\f$ at the beginning of the step.
-    X_BEGIN_STAGE,          ///< Modify \f$x\f$ at the beginning of the stage.
-    X_BEFORE_SOLVE,         ///< Modify \f$x\f$ before the implicit solve.
-    X_AFTER_SOLVE,          ///< Modify \f$x\f$ after the implicit solve.
-    X_BEFORE_EXPLICIT_EVAL, ///< Modify \f$x\f$ before the explicit evaluation.
-    X_END_STAGE,            ///< Modify \f$x\f$ at the end of the stage.
-    X_END_STEP              ///< Modify \f$x\f$ at the end of the step.
+    X_BEGIN_STEP,            ///< Modify \f$x\f$ at the beginning of the step.
+    X_BEGIN_STAGE,           ///< Modify \f$x\f$ at the beginning of the stage.
+    X_BEFORE_SOLVE,          ///< Modify \f$x\f$ before the implicit solve.
+    X_AFTER_SOLVE,           ///< Modify \f$x\f$ after the implicit solve.
+    X_BEFORE_EXPLICIT_EVAL,  ///< Modify \f$x\f$ before the explicit evaluation.
+    X_END_STAGE,             ///< Modify \f$x\f$ at the end of the stage.
+    X_END_STEP               ///< Modify \f$x\f$ at the end of the step.
   };
 
   /// Modify solution based on the MODIFIER_TYPE.
-  virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
-    const Scalar /* time */, const Scalar /* dt */,
-    const int /* stageNumber */,
-    const MODIFIER_TYPE modType) = 0;
-
+  virtual void modify(Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
+                      const Scalar /* time */, const Scalar /* dt */,
+                      const int /* stageNumber */,
+                      const MODIFIER_TYPE modType) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperRKModifierXBase_hpp
+#endif  // Tempus_StepperRKModifierXBase_hpp

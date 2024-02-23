@@ -54,18 +54,18 @@
 // types that Epetra might be compiled for.
 namespace Kokkos {
 namespace Compat {
-  class KokkosSerialWrapperNode {
-  public:
-    KokkosSerialWrapperNode(Teuchos::ParameterList &pl) {}
-    KokkosSerialWrapperNode() {}
-  };
+class KokkosSerialWrapperNode {
+ public:
+  KokkosSerialWrapperNode(Teuchos::ParameterList &pl) {}
+  KokkosSerialWrapperNode() {}
+};
 
-  class KokkosOpenMPWrapperNode {
-  public:
-    KokkosOpenMPWrapperNode(Teuchos::ParameterList &pl) {}
-    KokkosOpenMPWrapperNode() {}
-  };
-} // end of Compat namespace
-} // end of Kokkos namespace
+class KokkosOpenMPWrapperNode {
+ public:
+  KokkosOpenMPWrapperNode(Teuchos::ParameterList &pl) {}
+  KokkosOpenMPWrapperNode() {}
+};
+}  // namespace Compat
+}  // namespace Kokkos
 
 #endif

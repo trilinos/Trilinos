@@ -67,6 +67,7 @@ class Test_parse_args(unittest.TestCase):
                                          target_branch_name='real_trash',
                                          pullrequest_build_name='Some_odd_compiler',
                                          genconfig_build_name='Some_odd_compiler_and_options',
+                                         dashboard_build_name='UNKNOWN',
                                          pullrequest_number='4242',
                                          jenkins_job_number='2424',
                                          source_dir='UNKNOWN',
@@ -85,7 +86,8 @@ class Test_parse_args(unittest.TestCase):
                                          num_concurrent_tests=-1,
                                          ccache_enable=False,
                                          dry_run=False,
-                                         use_explicit_cachefile=False)
+                                         use_explicit_cachefile=False,
+                                         extra_configure_args="")
 
         self.default_stdout = dedent('''\
                 | - [R] source-repo-url             : /dev/null/source_repo
@@ -120,6 +122,7 @@ class Test_parse_args(unittest.TestCase):
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
@@ -134,6 +137,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
                                    [--enable-ccache] [--dry-run]
+                                   [--extra-configure-args EXTRA_CONFIGURE_ARGS]
 
                 Parse the repo and build information
 
@@ -157,6 +161,8 @@ class Test_parse_args(unittest.TestCase):
                                         The Jenkins build number
 
                 Optional Arguments:
+                  --dashboard-build-name DASHBOARD_BUILD_NAME
+                                        The build name posted by ctest to a dashboard
                   --source-dir SOURCE_DIR
                                         Directory containing the source code to compile/test.
                   --build-dir BUILD_DIR
@@ -213,6 +219,9 @@ class Test_parse_args(unittest.TestCase):
                                         Default = False
                   --dry-run             Enable dry-run mode. Script will run but not execute
                                         the build steps. Default = False
+                  --extra-configure-args EXTRA_CONFIGURE_ARGS
+                                        Extra arguments that will be passed to CMake for
+                                        configuring Trilinos.
                 ''')
 
         self.usage_output = dedent('''\
@@ -222,6 +231,7 @@ class Test_parse_args(unittest.TestCase):
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
@@ -235,7 +245,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run]
+                                   [--enable-ccache] [--dry-run] [--extra-configure-args EXTRA_CONFIGURE_ARGS]
                 programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
                 ''')
 

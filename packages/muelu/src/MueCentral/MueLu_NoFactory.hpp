@@ -46,67 +46,65 @@
 #ifndef MUELU_NOFACTORY_HPP
 #define MUELU_NOFACTORY_HPP
 
-#include <algorithm>                    // for swap
-#include "Teuchos_RCPDecl.hpp"          // for RCP
-#include "Teuchos_RCP.hpp"              // for RCP::RCP<T>, RCP::operator=, etc
-#include "MueLu_config.hpp"             // for HAVE_MUELU_DEBUG
+#include <algorithm>            // for swap
+#include "Teuchos_RCPDecl.hpp"  // for RCP
+#include "Teuchos_RCP.hpp"      // for RCP::RCP<T>, RCP::operator=, etc
+#include "MueLu_config.hpp"     // for HAVE_MUELU_DEBUG
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FactoryBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
 
-  /*!
-    @class NoFactory class.
-    @brief NoFactory that is used for data stored in level class for that no generating factory is available/necessary.
+/*!
+  @class NoFactory class.
+  @brief NoFactory that is used for data stored in level class for that no generating factory is available/necessary.
 
-    This should be used as the "generating" factory for user-data.  Uses Singleton pattern.
-  */
-  class NoFactory : public FactoryBase {
+  This should be used as the "generating" factory for user-data.  Uses Singleton pattern.
+*/
+class NoFactory : public FactoryBase {
+  //! Constructor.
+  NoFactory() {}
 
-    //! Constructor.
-    NoFactory() { }
+ public:
+  //! Destructor.
+  virtual ~NoFactory() {}
 
-  public:
+  //! Implementation of FactoryBase interface
+  //@{
 
-    //! Destructor.
-    virtual ~NoFactory() { }
+  //!
+  void CallBuild(Level& requestedLevel) const;
 
-    //! Implementation of FactoryBase interface
-    //@{
+  //!
+  void CallDeclareInput(Level& /* requestedLevel */) const {}
 
-    //!
-    void CallBuild(Level& requestedLevel) const;
+  //@}
 
-    //!
-    void CallDeclareInput(Level& /* requestedLevel */) const { }
+  //! Static Get() functions
+  //@{
 
-    //@}
+  //!
+  static const RCP<const NoFactory> getRCP() {
+    if (noFactory_.is_null())
+      noFactory_ = rcp(new NoFactory());
 
-    //! Static Get() functions
-    //@{
+    return noFactory_;
+  }
 
-    //!
-    static const RCP<const NoFactory> getRCP() {
-      if (noFactory_.is_null())
-        noFactory_ = rcp(new NoFactory());
+  //!
+  static const NoFactory* get();
 
-      return noFactory_;
-    }
-
-    //!
-    static const NoFactory* get();
-
-    //@}
+  //@}
 #ifdef HAVE_MUELU_DEBUG
-    void ResetDebugData() const { }
+  void ResetDebugData() const {}
 #endif
 
-  private:
-    static RCP<const NoFactory> noFactory_; // static NoFactory instance for user defined "factories"
+ private:
+  static RCP<const NoFactory> noFactory_;  // static NoFactory instance for user defined "factories"
 
-  }; // class NoFactory
+};  // class NoFactory
 
-} // namespace MueLu
+}  // namespace MueLu
 
-#endif // MUELU_NOFACTORY_HPP
+#endif  // MUELU_NOFACTORY_HPP

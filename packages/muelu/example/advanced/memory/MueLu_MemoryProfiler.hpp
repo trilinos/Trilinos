@@ -54,5 +54,4 @@ void PrintMemoryUsage(const std::string& description = "Memory Usage:", const st
 void MemoryUsageStart(const std::string& autoLogPrefix = "memorylog-");
 void MemoryUsageStop();
 
-#endif // MUELU_MEMORY_PROFILER_HPP
-
+#endif  // MUELU_MEMORY_PROFILER_HPP

@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -74,11 +74,15 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 #include <vector>
-
+#include "Teko_StratimikosFactory.hpp"
 #include "Teko_Utilities.hpp"
 #include "Teko_TpetraHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+
+#include "Teuchos_AbstractFactoryStd.hpp"
+
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 namespace Teko {
 namespace Test {
@@ -86,240 +90,261 @@ namespace Test {
 using namespace Teuchos;
 using namespace Thyra;
 
-void tBlockJacobiPreconditionerFactory_tpetra::initializeTest()
-{
-   const Epetra_Comm & comm_epetra = *GetComm();
-   const RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+void tBlockJacobiPreconditionerFactory_tpetra::initializeTest() {
+  const Epetra_Comm& comm_epetra                   = *GetComm();
+  const RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
 
-   tolerance_ = 1.0e-14;
+  tolerance_ = 1.0e-14;
 
-   int nx = 39; // essentially random values
-   int ny = 53;
+  int nx = 39;  // essentially random values
+  int ny = 53;
 
-   // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm_epetra,false);
-   FGallery.Set("nx",nx);
-   FGallery.Set("ny",ny);
-   Epetra_CrsMatrix & epetraF = FGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraF = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraF),comm_tpetra);
-   F_ = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraF->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraF->getRangeMap()),tpetraF);
+  // create some big blocks to play with
+  Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d", comm_epetra, false);
+  FGallery.Set("nx", nx);
+  FGallery.Set("ny", ny);
+  Epetra_CrsMatrix& epetraF = FGallery.GetMatrixRef();
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraF =
+      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraF), comm_tpetra);
+  F_ = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getDomainMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getRangeMap()), tpetraF);
 
-   Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d",comm_epetra,false);
-   CGallery.Set("nx",nx);
-   CGallery.Set("ny",ny);
-   Epetra_CrsMatrix & epetraC = CGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraC = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraC),comm_tpetra);
-   C_ = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraC->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraC->getRangeMap()),tpetraC);
+  Trilinos_Util::CrsMatrixGallery CGallery("laplace_2d", comm_epetra, false);
+  CGallery.Set("nx", nx);
+  CGallery.Set("ny", ny);
+  Epetra_CrsMatrix& epetraC = CGallery.GetMatrixRef();
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraC =
+      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraC), comm_tpetra);
+  C_ = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraC->getDomainMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraC->getRangeMap()), tpetraC);
 
-   Trilinos_Util::CrsMatrixGallery BGallery("diag",comm_epetra,false);
-   BGallery.Set("nx",nx*ny);
-   BGallery.Set("a",5.0);
-   Epetra_CrsMatrix & epetraB = BGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraB = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraB),comm_tpetra);
-   B_ = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraB->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraB->getRangeMap()),tpetraB);
+  Trilinos_Util::CrsMatrixGallery BGallery("diag", comm_epetra, false);
+  BGallery.Set("nx", nx * ny);
+  BGallery.Set("a", 5.0);
+  Epetra_CrsMatrix& epetraB = BGallery.GetMatrixRef();
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraB =
+      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraB), comm_tpetra);
+  B_ = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraB->getDomainMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraB->getRangeMap()), tpetraB);
 
-   Trilinos_Util::CrsMatrixGallery BtGallery("diag",comm_epetra,false);
-   BtGallery.Set("nx",nx*ny);
-   BtGallery.Set("a",3.0);
-   Epetra_CrsMatrix & epetraBt = BtGallery.GetMatrixRef();
-   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tpetraBt = Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraBt),comm_tpetra);
-   Bt_ = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraBt->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(tpetraBt->getRangeMap()),tpetraBt);
+  Trilinos_Util::CrsMatrixGallery BtGallery("diag", comm_epetra, false);
+  BtGallery.Set("nx", nx * ny);
+  BtGallery.Set("a", 3.0);
+  Epetra_CrsMatrix& epetraBt = BtGallery.GetMatrixRef();
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraBt =
+      Teko::TpetraHelpers::epetraCrsMatrixToTpetra(rcpFromRef(epetraBt), comm_tpetra);
+  Bt_ = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraBt->getDomainMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraBt->getRangeMap()), tpetraBt);
 
-   // build some inverse operators
-   RCP<Tpetra::Vector<ST,LO,GO,NT> > dF = rcp(new Tpetra::Vector<ST,LO,GO,NT>(tpetraF->getRangeMap()));
-   RCP<Tpetra::Vector<ST,LO,GO,NT> > dC = rcp(new Tpetra::Vector<ST,LO,GO,NT>(tpetraC->getRangeMap()));
+  // build some inverse operators
+  RCP<Tpetra::Vector<ST, LO, GO, NT> > dF =
+      rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetraF->getRangeMap()));
+  RCP<Tpetra::Vector<ST, LO, GO, NT> > dC =
+      rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetraC->getRangeMap()));
 
-   tpetraF->getLocalDiagCopy(*dF); 
-   dF->reciprocal(*dF);
+  tpetraF->getLocalDiagCopy(*dF);
+  dF->reciprocal(*dF);
 
-   tpetraC->getLocalDiagCopy(*dC); 
-   dC->reciprocal(*dC);
+  tpetraC->getLocalDiagCopy(*dC);
+  dC->reciprocal(*dC);
 
-   invF_ = Teko::TpetraHelpers::thyraDiagOp(dF,*tpetraF->getRowMap(),"inv(diag(F))");
-   invC_ = Teko::TpetraHelpers::thyraDiagOp(dC,*tpetraC->getRowMap(),"inv(diag(C))");
+  invF_ = Teko::TpetraHelpers::thyraDiagOp(dF, *tpetraF->getRowMap(), "inv(diag(F))");
+  invC_ = Teko::TpetraHelpers::thyraDiagOp(dC, *tpetraC->getRowMap(), "inv(diag(C))");
 }
 
-int tBlockJacobiPreconditionerFactory_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
-{
-   bool allTests = true;
-   bool status;
-   int failcount = 0;
+int tBlockJacobiPreconditionerFactory_tpetra::runTest(int verbosity, std::ostream& stdstrm,
+                                                      std::ostream& failstrm, int& totalrun) {
+  bool allTests = true;
+  bool status;
+  int failcount = 0;
 
-   failstrm << "tBlockJacobiPreconditionerFactory_tpetra";
+  failstrm << "tBlockJacobiPreconditionerFactory_tpetra";
 
-   status = test_createPrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+  status = test_createPrec(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"createPrec\" ... PASSED", "   \"createPrec\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   status = test_initializePrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+  status = test_initializePrec(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"initializePrec\" ... PASSED", "   \"initializePrec\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   status = test_uninitializePrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+  status = test_uninitializePrec(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"uninitializePrec\" ... PASSED",
+                "   \"uninitializePrec\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   status = test_isCompatible(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"isCompatible\" ... PASSED","   \"isCompatible\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+  status = test_isCompatible(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"isCompatible\" ... PASSED", "   \"isCompatible\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   status = allTests;
-   if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tBlockJacobiPreconditionedFactory...PASSED","tBlockJacobiPreconditionedFactory...FAILED");
-   }
-   else {// Normal Operatoring Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tBlockJacobiPreconditionedFactory...FAILED");
-   }
+  status = test_iterativeSolves(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"iterativeSolves\" ... PASSED",
+                "   \"iterativeSolves\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   return failcount;
+  status = allTests;
+  if (verbosity >= 10) {
+    Teko_TEST_MSG(failstrm, 0, "tBlockJacobiPreconditionedFactory...PASSED",
+                  "tBlockJacobiPreconditionedFactory...FAILED");
+  } else {  // Normal Operatoring Procedures (NOP)
+    Teko_TEST_MSG(failstrm, 0, "...PASSED", "tBlockJacobiPreconditionedFactory...FAILED");
+  }
+
+  return failcount;
 }
 
-bool tBlockJacobiPreconditionerFactory_tpetra::test_createPrec(int verbosity,std::ostream & os)
-{
-   RCP<JacobiPreconditionerFactory> fact = rcp(new JacobiPreconditionerFactory(invF_,invC_));
+bool tBlockJacobiPreconditionerFactory_tpetra::test_createPrec(int verbosity, std::ostream& os) {
+  RCP<JacobiPreconditionerFactory> fact = rcp(new JacobiPreconditionerFactory(invF_, invC_));
 
-   try {
-      // preconditioner factory should return a DefaultPreconditionerBase
-      rcp_dynamic_cast<DefaultPreconditioner<double> >(fact->createPrec(),true);
-   }
-   catch(std::exception & e) {
-      // if the dynamic cast fails...so does the test
-      os << std::endl << "   test_createPrec: dynamic cast to \"DefaultPreconditioner\" FAILED" << std::endl;
-      os << "   Descriptive exception \"" << e.what() << "\""<< std::endl;
+  try {
+    // preconditioner factory should return a DefaultPreconditionerBase
+    rcp_dynamic_cast<DefaultPreconditioner<double> >(fact->createPrec(), true);
+  } catch (std::exception& e) {
+    // if the dynamic cast fails...so does the test
+    os << std::endl
+       << "   test_createPrec: dynamic cast to \"DefaultPreconditioner\" FAILED" << std::endl;
+    os << "   Descriptive exception \"" << e.what() << "\"" << std::endl;
 
-      return false;
-   }
+    return false;
+  }
 
-   fact = rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_,invC_))));
+  fact = rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_, invC_))));
 
-   try {
-      // preconditioner factory should return a DefaultPreconditionerBase
-      rcp_dynamic_cast<DefaultPreconditioner<double> >(fact->createPrec(),true);
-   }
-   catch(std::exception & e) {
-      // if the dynamic cast fails...so does the test
-      os << std::endl << "   test_createPrec: dynamic cast to \"DefaultPreconditioner\" FAILED" << std::endl;
-      os << "   Descriptive exception \"" << e.what() << "\""<< std::endl;
+  try {
+    // preconditioner factory should return a DefaultPreconditionerBase
+    rcp_dynamic_cast<DefaultPreconditioner<double> >(fact->createPrec(), true);
+  } catch (std::exception& e) {
+    // if the dynamic cast fails...so does the test
+    os << std::endl
+       << "   test_createPrec: dynamic cast to \"DefaultPreconditioner\" FAILED" << std::endl;
+    os << "   Descriptive exception \"" << e.what() << "\"" << std::endl;
 
-      return false;
-   }
+    return false;
+  }
 
-
-   return true;
+  return true;
 }
 
-bool tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec(int verbosity,std::ostream & os)
-{
-   using Thyra::zero;
+bool tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec(int verbosity,
+                                                                   std::ostream& os) {
+  using Thyra::zero;
 
-   bool status = false;
-   bool allPassed = true;
+  bool status    = false;
+  bool allPassed = true;
 
-   std::string constrType[3] = {
-       std::string("Static"),
-       std::string("2x2 Static Strategy"),
-       std::string("3x3 Static Strategy") };
+  std::string constrType[3] = {std::string("Static"), std::string("2x2 Static Strategy"),
+                               std::string("3x3 Static Strategy")};
 
-   // three by three bloock diagonal 
-   std::vector<RCP<const Thyra::LinearOpBase<ST> > > invD;
-   invD.push_back(invF_); invD.push_back(invC_); invD.push_back(invF_);
+  // three by three bloock diagonal
+  std::vector<RCP<const Thyra::LinearOpBase<ST> > > invD;
+  invD.push_back(invF_);
+  invD.push_back(invC_);
+  invD.push_back(invF_);
 
-   // allocate new linear operator
-   const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > blkOp
-        = Thyra::defaultBlockedLinearOp<ST>();
-   blkOp->beginBlockFill(3,3);
-   blkOp->setBlock(0,0,F_);  blkOp->setBlock(0,1,Bt_);
-   blkOp->setBlock(1,0,B_);  blkOp->setBlock(1,1,C_);  blkOp->setBlock(1,2,B_);
-   blkOp->setBlock(2,1,Bt_); blkOp->setBlock(2,2,F_);
-   blkOp->endBlockFill();
+  // allocate new linear operator
+  const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > blkOp = Thyra::defaultBlockedLinearOp<ST>();
+  blkOp->beginBlockFill(3, 3);
+  blkOp->setBlock(0, 0, F_);
+  blkOp->setBlock(0, 1, Bt_);
+  blkOp->setBlock(1, 0, B_);
+  blkOp->setBlock(1, 1, C_);
+  blkOp->setBlock(1, 2, B_);
+  blkOp->setBlock(2, 1, Bt_);
+  blkOp->setBlock(2, 2, F_);
+  blkOp->endBlockFill();
 
-   const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > invBlkOp
-        = Thyra::defaultBlockedLinearOp<ST>();
-   invBlkOp->beginBlockFill(3,3);
-   invBlkOp->setBlock(0,0,invF_);  
-   invBlkOp->setBlock(1,1,invC_);
-   invBlkOp->setBlock(2,2,invF_);
-   invBlkOp->endBlockFill();
+  const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > invBlkOp =
+      Thyra::defaultBlockedLinearOp<ST>();
+  invBlkOp->beginBlockFill(3, 3);
+  invBlkOp->setBlock(0, 0, invF_);
+  invBlkOp->setBlock(1, 1, invC_);
+  invBlkOp->setBlock(2, 2, invF_);
+  invBlkOp->endBlockFill();
 
-   // build factory array
-   RCP<JacobiPreconditionerFactory> fact_array[3] 
-         = { rcp(new JacobiPreconditionerFactory(invF_,invC_)),
-             rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_,invC_)))),
-             rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD)))) };
+  // build factory array
+  RCP<JacobiPreconditionerFactory> fact_array[3] = {
+      rcp(new JacobiPreconditionerFactory(invF_, invC_)),
+      rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_, invC_)))),
+      rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD))))};
 
-   RCP<const Thyra::LinearOpBase<double> > A[3] = { 
-       block2x2(F_,Bt_,B_,C_),
-       block2x2(F_,Bt_,B_,C_), 
-       blkOp };
+  RCP<const Thyra::LinearOpBase<double> > A[3] = {block2x2(F_, Bt_, B_, C_),
+                                                  block2x2(F_, Bt_, B_, C_), blkOp};
 
-   // this is what the factory should build
-   RCP<const Thyra::LinearOpBase<double> > invA[3] = { 
-       block2x2(invF_,zero(Bt_->range(),Bt_->domain()),zero(B_->range(),B_->domain()),invC_),
-       block2x2(invF_,zero(Bt_->range(),Bt_->domain()),zero(B_->range(),B_->domain()),invC_),
-       invBlkOp };
+  // this is what the factory should build
+  RCP<const Thyra::LinearOpBase<double> > invA[3] = {
+      block2x2(invF_, zero(Bt_->range(), Bt_->domain()), zero(B_->range(), B_->domain()), invC_),
+      block2x2(invF_, zero(Bt_->range(), Bt_->domain()), zero(B_->range(), B_->domain()), invC_),
+      invBlkOp};
 
-   // test both constructors
-   for(int i=0;i<3;i++) {
-      RCP<const Thyra::LinearOpBase<double> > op;
+  // test both constructors
+  for (int i = 0; i < 3; i++) {
+    RCP<const Thyra::LinearOpBase<double> > op;
 
-      RCP<Thyra::PreconditionerFactoryBase<double> > fact = fact_array[i];
-      RCP<Thyra::PreconditionerBase<double> > prec = fact->createPrec();
+    RCP<Thyra::PreconditionerFactoryBase<double> > fact = fact_array[i];
+    RCP<Thyra::PreconditionerBase<double> > prec        = fact->createPrec();
 
-      // initialize the preconditioner
-      fact->initializePrec(Thyra::defaultLinearOpSource(A[i]), &*prec);
+    // initialize the preconditioner
+    fact->initializePrec(Thyra::defaultLinearOpSource(A[i]), &*prec);
 
-      op = prec->getRightPrecOp();
-      TEST_EQUALITY(op,Teuchos::null,
-            std::endl << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
-            << "using \"" << constrType[i] << "\" constructor " << toString(status) 
-            << ": Preconditioner \"getRightPrecOp\" is not null (it should be!)");
+    op = prec->getRightPrecOp();
+    TEST_EQUALITY(op, Teuchos::null,
+                  std::endl
+                      << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
+                      << "using \"" << constrType[i] << "\" constructor " << toString(status)
+                      << ": Preconditioner \"getRightPrecOp\" is not null (it should be!)");
 
-      op = prec->getLeftPrecOp();
-      TEST_EQUALITY(op,Teuchos::null,
-            std::endl << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
-            << "using \"" << constrType[i] << "\" constructor " << toString(status) 
-            << ": Preconditioner \"getLeftPrecOp\" is not null (it should be!)");
+    op = prec->getLeftPrecOp();
+    TEST_EQUALITY(op, Teuchos::null,
+                  std::endl
+                      << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
+                      << "using \"" << constrType[i] << "\" constructor " << toString(status)
+                      << ": Preconditioner \"getLeftPrecOp\" is not null (it should be!)");
 
-      op = prec->getUnspecifiedPrecOp();
-      TEST_NOT_EQUAL(op,Teuchos::null,
-            std::endl << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
-            << "using \"" << constrType[i] << "\" constructor " << toString(status) 
-            << ": Preconditioner \"getUnspecifiedPrecOp\" is null (it should not be!)");
+    op = prec->getUnspecifiedPrecOp();
+    TEST_NOT_EQUAL(op, Teuchos::null,
+                   std::endl
+                       << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
+                       << "using \"" << constrType[i] << "\" constructor " << toString(status)
+                       << ": Preconditioner \"getUnspecifiedPrecOp\" is null (it should not be!)");
 
-     LinearOpTester<double> tester;
-     tester.show_all_tests(true);
-     std::stringstream ss;
-     Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
-     const bool result = tester.compare( *invA[i], *op, Teuchos::ptrFromRef(fos) );
-     TEST_ASSERT(result,
-            std::endl << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
-            << ": Comparing factory generated operator to correct operator");
-     if(not result || verbosity>=10) 
-        os << ss.str(); 
-   }
+    LinearOpTester<double> tester;
+    tester.show_all_tests(true);
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*invA[i], *op, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tBlockJacobiPreconditionerFactory_tpetra::test_initializePrec "
+                            << ": Comparing factory generated operator to correct operator");
+    if (not result || verbosity >= 10) os << ss.str();
+  }
 
-   return allPassed;
+  return allPassed;
 }
 
-bool tBlockJacobiPreconditionerFactory_tpetra::test_uninitializePrec(int verbosity,std::ostream & os)
-{
-   return true;
+bool tBlockJacobiPreconditionerFactory_tpetra::test_uninitializePrec(int verbosity,
+                                                                     std::ostream& os) {
+  return true;
 }
 
-bool tBlockJacobiPreconditionerFactory_tpetra::test_isCompatible(int verbosity,std::ostream & os)
-{
+bool tBlockJacobiPreconditionerFactory_tpetra::test_isCompatible(int verbosity, std::ostream& os) {
   // bool status = false;
-   bool allPassed = true;
+  bool allPassed = true;
 
-   // with the "new" PreconditionerFactory this test is now meaningless.
+  // with the "new" PreconditionerFactory this test is now meaningless.
 #if 0
    {
       // three by three bloock diagonal 
@@ -396,8 +421,58 @@ bool tBlockJacobiPreconditionerFactory_tpetra::test_isCompatible(int verbosity,s
    }
 #endif
 
-   return allPassed;
+  return allPassed;
 }
 
-} // end namespace Test
-} // end namespace Teko
+bool tBlockJacobiPreconditionerFactory_tpetra::test_iterativeSolves(int verbosity,
+                                                                    std::ostream& os) {
+  using Thyra::zero;
+
+  bool status    = false;
+  bool allPassed = true;
+
+  // allocate new linear operator
+  const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > blkOp = Thyra::defaultBlockedLinearOp<ST>();
+  blkOp->beginBlockFill(3, 3);
+  blkOp->setBlock(0, 0, F_);
+  blkOp->setBlock(0, 1, Bt_);
+  blkOp->setBlock(1, 0, B_);
+  blkOp->setBlock(1, 1, C_);
+  blkOp->setBlock(1, 2, B_);
+  blkOp->setBlock(2, 1, Bt_);
+  blkOp->setBlock(2, 2, F_);
+  blkOp->endBlockFill();
+
+  // build stratimikos factory, adding Teko's version
+  Stratimikos::DefaultLinearSolverBuilder stratFactory;
+  stratFactory.setPreconditioningStrategyFactory(
+      Teuchos::abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,
+                                  Teko::StratimikosFactory>(),
+      "Teko");
+  RCP<ParameterList> params = Teuchos::rcp(new ParameterList(*stratFactory.getValidParameters()));
+  ParameterList& tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
+  tekoList.set("Write Block Operator", false);
+  tekoList.set("Test Block Operator", false);
+  tekoList.set("Strided Blocking", "1 1");
+  tekoList.set("Inverse Type", "BGS");
+  ParameterList& ifl = tekoList.sublist("Inverse Factory Library");
+  ifl.sublist("BGS").set("Type", "Block Gauss-Seidel");
+  ifl.sublist("BGS").set("Inverse Type", "Belos");
+  ifl.sublist("BGS").set("Preconditioner Type", "Ifpack2");
+
+  RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("BGS");
+
+  Teko::ModifiableLinearOp inv = Teko::buildInverse(*invFact, blkOp);
+  TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+
+  if (!inv.is_null()) {
+    Teko::rebuildInverse(*invFact, blkOp, inv);
+    TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+  }
+
+  return allPassed;
+}
+
+}  // end namespace Test
+}  // end namespace Teko

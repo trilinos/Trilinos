@@ -57,10 +57,21 @@ namespace mesh {
  */
 class ElementNode : public shards::ArrayDimTag {
 public:
-  const char * name() const ;
-  static const ElementNode & tag(); ///< \brief Singleton
+
+  const char * name() const {
+    static const char n[] = "ElementNode";
+    return n;
+  }
+
+  static const ElementNode & tag() {
+    static const ElementNode self;
+    return self;
+  }
+
 private:
-  ElementNode() {}
+  ElementNode() {
+    std::cerr << "Warning: The stk::mesh::ElementNode type is deprecated and will soon be removed." << std::endl;
+  }
   ElementNode( const ElementNode & );
   ElementNode & operator = ( const ElementNode & );
 };
@@ -69,7 +80,7 @@ private:
  *  \brief  An element Field defining an array of values, one value per
  *          node of the element.
  */
-typedef Field<double,ElementNode> ElementNodeField ;
+STK_DEPRECATED typedef Field<double,ElementNode> ElementNodeField ;
 
 /** \ingroup stk_mesh_relation_stencil
  *  \brief  A Field defining an array of pointers
@@ -79,11 +90,12 @@ typedef Field<double,ElementNode> ElementNodeField ;
 /** \ingroup stk_mesh_relation_stencil
  *  \brief  Declare an element-node field.
  */
+STK_DEPRECATED
 inline
 ElementNodeField &
 declare_element_node_field( MetaData & md , const std::string & s )
 {
-  ElementNodeField & f = md.declare_field< ElementNodeField >( stk::topology::ELEMENT_RANK, s, 1 /* 1 state */ );
+  ElementNodeField & f = stk::mesh::legacy::declare_field< ElementNodeField >(md, stk::topology::ELEMENT_RANK, s, 1 /* 1 state */ );
 
   return f ;
 }

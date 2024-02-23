@@ -203,7 +203,7 @@ using Teuchos::RCP;
  *
  *  The remainder of 03_Intro_SolutionState.cpp is regression testing, etc.
  *
- *  \subsection example-02_Next Links
+ *  \subsection example-03_Next Links
  *
  *  - Back to: \ref tutorials
  *  - Previous: \ref example-02
