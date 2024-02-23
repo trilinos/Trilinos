@@ -269,10 +269,10 @@ void BilinearConstraint<Real>::getTraceSample(Vector<Real> &g, const std::vector
   traceSampler_->get(g,param);
 }
 
-template<typename Real>
-void BilinearConstraint<Real>::sumAll(Real *in, Real *out, int size) const {
-  factors_->sumAll(in,out,size);
-}
+// template<typename Real>
+// void BilinearConstraint<Real>::sumAll(Real *in, Real *out, int size) const {
+//   factors_->sumAll(in,out,size);
+// }
 
 template<typename Real>
 Real BilinearConstraint<Real>::logDeterminant(const Vector<Real> &z) {

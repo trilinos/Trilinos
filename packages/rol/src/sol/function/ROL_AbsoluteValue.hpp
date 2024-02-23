@@ -46,6 +46,7 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_PositiveFunction.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 

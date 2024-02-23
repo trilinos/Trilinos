@@ -140,7 +140,7 @@ template<typename Real>
 Ptr<const Vector<Real>> FletcherObjectiveBase<Real>::getGradient(const Vector<Real>& x) {
   // TODO: Figure out reasonable tolerance
   Real tol = static_cast<Real>(1e-12);
-  gradient(*xdual_, x, tol);
+  this->gradient(*xdual_, x, tol);
   return xdual_;
 }
 

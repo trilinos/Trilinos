@@ -46,6 +46,7 @@
 #define ROL_SCALARTRAITS_HPP
 
 #include <limits>
+#include <complex>
 
 
 namespace ROL {
