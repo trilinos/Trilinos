@@ -49,21 +49,11 @@
 
 namespace Amesos2 {
 
-  template <class S, class LO, class GO, class N>
+  template <class S, class LO, class GO, class NO>
   LO get_mp_vector_size(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, N> >& A = Teuchos::null,
-    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& X = Teuchos::null,
-    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& B = Teuchos::null)
-  {
-    // Without KokkosRefactor, can only do static
-    return S::static_size;
-  }
-
-  template <class S, class LO, class GO, class D>
-  LO get_mp_vector_size(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
-    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
-    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, NO > >& A = Teuchos::null,
+    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, NO > >& X = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, NO > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
       return Kokkos::dimension_scalar(A->getLocalValuesDevice(Tpetra::Access::ReadOnly));
