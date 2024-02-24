@@ -236,7 +236,7 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
 
             RCP<const Import> newImporter;
             {
-              SubFactoryMonitor(*this, "Import construction", coarseLevel);
+              SubFactoryMonitor subM2(*this, "Import construction", coarseLevel);
               newImporter = ImportFactory::Build(importer->getTargetMap(), rebalancedP->getColMap());
             }
             rebalancedP2->replaceDomainMapAndImporter(importer->getTargetMap(), newImporter);

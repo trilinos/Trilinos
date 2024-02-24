@@ -112,10 +112,10 @@ namespace FROSch {
                            SC beta=ScalarTraits<SC>::zero()) const = 0;
 
         //! Get domain map
-        virtual ConstXMapPtr getDomainMap() const;
+        virtual const ConstXMapPtr getDomainMap() const;
 
         //! Get range map
-        virtual ConstXMapPtr getRangeMap() const;
+        virtual const ConstXMapPtr getRangeMap() const;
 
         //! Get #IsInitialized_
         bool isInitialized() const;

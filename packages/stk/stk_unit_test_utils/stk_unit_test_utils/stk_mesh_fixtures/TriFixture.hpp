@@ -42,7 +42,7 @@
 #include <memory>
 #include <stddef.h>                     // for size_t, NULL
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/LegacyCoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
@@ -69,7 +69,7 @@ class TriFixtureImpl
 {
  public:
   typedef double                   Scalar;
-  typedef Field<Scalar, legacy::Cartesian> CoordFieldType;
+  typedef Field<Scalar, Cartesian> CoordFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted

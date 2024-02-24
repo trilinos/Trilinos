@@ -89,7 +89,7 @@ public:
   */
   Chi2Divergence(ROL::ParameterList &parlist) : FDivergence<Real>(parlist) {}
 
-  Real Fprimal(Real x, int deriv = 0) {
+  Real Fprimal(Real x, int deriv = 0) const {
     Real zero(0), one(1), half(0.5), val(0);
     if (deriv==0) {
       val = (x < zero) ? ROL_INF<Real>() : half*(x-one)*(x-one);
@@ -107,7 +107,7 @@ public:
     return val;
   }
 
-  Real Fdual(Real x, int deriv = 0) {
+  Real Fdual(Real x, int deriv = 0) const {
     Real zero(0), one(1), half(0.5), val(0);
     if (deriv==0) {
       val = (x < -one) ? -half : (half*x + one)*x;

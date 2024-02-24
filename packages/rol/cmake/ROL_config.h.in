@@ -51,3 +51,6 @@
 
 /* Define for performance timer support. */
 #cmakedefine ROL_TIMERS
+
+/* Define for python interface support. */
+#cmakedefine ENABLE_PYBIND11_PYROL

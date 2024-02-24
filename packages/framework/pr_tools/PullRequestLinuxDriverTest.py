@@ -109,6 +109,13 @@ def parse_args():
                           help='The Jenkins build number',
                           required=True)
 
+    optional.add_argument('--dashboard-build-name',
+                          dest="dashboard_build_name",
+                          action='store',
+                          default="UNKNOWN",
+                          help='The build name posted by ctest to a dashboard',
+                          required=False)
+
     optional.add_argument('--source-dir',
                           dest="source_dir",
                           action='store',
@@ -280,6 +287,7 @@ def parse_args():
     print("| - [O] test-mode                   : {test_mode}".format(**vars(arguments)))
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
     print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
+    print("| - [O] dashboard_build_name        : {dashboard_build_name}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 

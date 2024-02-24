@@ -49,6 +49,8 @@
 #ifndef ROL_TRUSTREGIONTYPES_HPP
 #define ROL_TRUSTREGIONTYPES_HPP
 
+#include "ROL_Types.hpp"
+
 namespace ROL {
 
   /** \enum   ROL::ETrustRegion

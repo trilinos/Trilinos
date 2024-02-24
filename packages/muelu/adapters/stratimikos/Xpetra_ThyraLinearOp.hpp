@@ -90,12 +90,12 @@ class XpetraThyraLinearOp : public Xpetra::Operator<Scalar, LocalOrdinal, Global
   //@}
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getDomainMap() const {
+  const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getDomainMap() const {
     throw Exceptions::RuntimeError("Interface not supported");
   }
 
   // //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getRangeMap() const {
+  const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getRangeMap() const {
     throw Exceptions::RuntimeError("Interface not supported");
   }
 
@@ -171,12 +171,12 @@ class XpetraThyraLinearOp<double, LocalOrdinal, GlobalOrdinal, Node> : public Xp
   //@}
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getDomainMap() const {
+  const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getDomainMap() const {
     return A_->getDomainMap();
   }
 
   // //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getRangeMap() const {
+  const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getRangeMap() const {
     return A_->getRangeMap();
   }
 

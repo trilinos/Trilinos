@@ -150,13 +150,13 @@ namespace FROSch {
 
 
     template <class SC,class LO,class GO,class NO>
-    typename MultiplicativeOperator<SC,LO,GO,NO>::ConstXMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getDomainMap() const
+    const typename MultiplicativeOperator<SC,LO,GO,NO>::ConstXMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getDomainMap() const
     {
         return OperatorVector_[0]->getDomainMap();
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename MultiplicativeOperator<SC,LO,GO,NO>::ConstXMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getRangeMap() const
+    const typename MultiplicativeOperator<SC,LO,GO,NO>::ConstXMapPtr MultiplicativeOperator<SC,LO,GO,NO>::getRangeMap() const
     {
         return OperatorVector_[0]->getRangeMap();
     }

@@ -200,8 +200,8 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
   if ((crsOp != NULL) && (rowMap->lib() == Xpetra::UseTpetra)) {
     using local_vector_type = typename Vector::dual_view_type::t_dev_um;
-    using execution_space   = typename local_vector_type::execution_space;
-    Kokkos::View<size_t*, execution_space> offsets("offsets", rowMap->getLocalNumElements());
+    using device_type       = typename CrsGraph::device_type;
+    Kokkos::View<size_t*, device_type> offsets("offsets", rowMap->getLocalNumElements());
     crsOp->getCrsGraph()->getLocalDiagOffsets(offsets);
     crsOp->getCrsMatrix()->getLocalDiagCopy(*diag, offsets);
   } else {
@@ -1012,6 +1012,9 @@ DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
     Kokkos::deep_copy(boundaryNodes2, boundaryNodes);
     return boundaryNodes2;
   }
+  // CAG: No idea why this is needed to avoid "warning: missing return statement at end of non-void function"
+  Kokkos::View<bool*, memory_space> dummy("dummy", 0);
+  return dummy;
 }
 
 template <class SC, class LO, class GO, class NO>

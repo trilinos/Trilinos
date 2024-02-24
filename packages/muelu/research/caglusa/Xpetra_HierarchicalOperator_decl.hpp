@@ -37,12 +37,12 @@ class HierarchicalOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalO
                        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap() const {
+  const Teuchos::RCP<const map_type> getDomainMap() const {
     return toXpetra(op_->getDomainMap());
   }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap() const {
+  const Teuchos::RCP<const map_type> getRangeMap() const {
     return toXpetra(op_->getRangeMap());
   }
 

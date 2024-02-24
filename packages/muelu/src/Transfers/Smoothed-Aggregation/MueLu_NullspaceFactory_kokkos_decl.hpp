@@ -46,15 +46,7 @@
 #ifndef MUELU_NULLSPACEFACTORY_KOKKOS_DECL_HPP
 #define MUELU_NULLSPACEFACTORY_KOKKOS_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-
-#include "Xpetra_MultiVector_fwd.hpp"
-
 #include "MueLu_NullspaceFactory.hpp"
-#include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
-
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLu {
 

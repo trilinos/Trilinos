@@ -41,6 +41,10 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_VECTOR_H
+#include "ROL_Vector.hpp"
+#else
+
 #ifndef ROL_ELEMENTWISE_FUNCTION_H
 #define ROL_ELEMENTWISE_FUNCTION_H
 
@@ -131,4 +135,5 @@ void applyBinaryInPlace(ROL::Vector<Real> &x, const ROL::Vector<Real> &y, Func f
 #include <ROL_UnaryFunctions.hpp>
 #include <ROL_BinaryFunctions.hpp>
 
+#endif
 #endif

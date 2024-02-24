@@ -176,7 +176,7 @@ namespace panzer {
           vertices(connMgr.getConnectivity(lid),numVerticesPerCell);
 
         // This function call expects a view for the vertices, not the nodes
-        orts[lid] = Intrepid2::Orientation::getOrientation(cellTopo, vertices);
+        orts[c] = Intrepid2::Orientation::getOrientation(cellTopo, vertices);
       }
     }
   }

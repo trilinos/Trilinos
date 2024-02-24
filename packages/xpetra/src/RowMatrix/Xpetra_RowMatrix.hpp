@@ -54,6 +54,7 @@
 #include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
+#include "Xpetra_Operator.hpp"
 #include "Xpetra_Vector.hpp"
 
 namespace Xpetra {
@@ -62,7 +63,7 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-class RowMatrix {
+class RowMatrix : virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
  public:
   typedef Scalar scalar_type;
   typedef LocalOrdinal local_ordinal_type;

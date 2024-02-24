@@ -129,9 +129,9 @@ namespace FROSch {
                            SC alpha=ScalarTraits<SC>::one(),
                            SC beta=ScalarTraits<SC>::zero()) const = 0;
 
-        virtual ConstXMapPtr getDomainMap() const = 0;
+        virtual const ConstXMapPtr getDomainMap() const = 0;
 
-        virtual ConstXMapPtr getRangeMap() const = 0;
+        virtual const ConstXMapPtr getRangeMap() const = 0;
 
         virtual void describe(FancyOStream &out,
                               const EVerbosityLevel verbLevel=Describable::verbLevel_default) const = 0;

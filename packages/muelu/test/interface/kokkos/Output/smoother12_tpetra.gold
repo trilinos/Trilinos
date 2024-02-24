@@ -8,7 +8,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -40,7 +40,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -72,7 +72,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -104,7 +104,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
 
 Level 4
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -136,7 +136,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
 
 Level 5
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]

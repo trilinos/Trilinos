@@ -1,0 +1,76 @@
+##!/bin/sh
+
+# This script builds an SDist from the ROL repository. It's meant to be copied
+# to and then run from the directory containing the ROL repository.
+
+
+# - Users of this script should check that the variables below are defined 
+#   properly.
+##############################################################################
+TRILINOS_VERSION="14.5"
+REPO_NAME="ROL-Trilinos"
+
+LLVM_PREFIX=$(spack location -i llvm)
+LLVM_VERSION=$(echo ${LLVM_PREFIX} | awk -F[\-\-] '{print $5}')
+GCC_PREFIX=$(spack location -i gcc)
+##############################################################################
+
+## Other prerequisites: 
+
+# * Binder (after the changes on its smart_holder branch)
+if [ ! command -v binder &> /dev/null ]
+then
+  echo "Binder not available!"
+fi
+
+# * pybind11 built from its smart_holder branch.
+# * pipx
+
+##
+
+cp ./${REPO_NAME}/packages/rol/pyrol/pyproject.toml ./${REPO_NAME}/pyproject.toml
+
+## Step 1: Use CMake to create a build directory.
+[ -d build ] && rm -rf build
+cmake -G Ninja \
+-D CMAKE_BUILD_TYPE:STRING=RELEASE \
+-D Trilinos_ENABLE_CPACK_PACKAGING=ON \
+-D Trilinos_CPACK_SOURCE_GENERATOR="TGZ" \
+-D BUILD_SHARED_LIBS:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Trilinos_ENABLE_Fortran:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_ROL:BOOL=ON \
+-D ROL_ENABLE_PYROL:BOOL=ON \
+-D ROL_ENABLE_TESTS:BOOL=OFF \
+-D ROL_ENABLE_EXAMPLES:BOOL=OFF \
+-D PYROL_ENABLE_BINDER:BOOL=ON \
+-D PYROL_ENABLE_BINDER_UPDATE:BOOL=ON \
+-D PyROL_BINDER_clang_include_dirs:PATH="${LLVM_PREFIX}/include" \
+-D PyROL_BINDER_LibClang_include_dir:PATH="${LLVM_PREFIX}/lib/clang/${LLVM_VERSION}/include" \
+-D PyROL_BINDER_GCC_TOOLCHAIN:PATH="${GCC_PREFIX}" \
+-D CPACK_SOURCE_IGNORE_FILES="/packages/rol/example;/packages/rol/test;/packages/rol/tutorial;/packages/teuchos/core/test;/packages/teuchos/core/example;/packages/teuchos/numerics/test;/packages/teuchos/numerics/example;/packages/teuchos/parameterlist/test;/packages/teuchos/parameterlist/example;/packages/teuchos/parser/test;/packages/teuchos/parser/example;/packages/teuchos/remainder/test;/packages/teuchos/remainder/example;/packages/teuchos/comm/test;/packages/teuchos/comm/example" \
+-D CMAKE_INSTALL_PREFIX:PATH=install \
+./${REPO_NAME} -B./build
+
+## Step 2: Run Binder.
+make -C build
+
+## Step 3: Create the reduced tarball.
+make package_source -C build
+TARBALL_NAME="trilinos-${TRILINOS_VERSION}-Source"
+
+## Step 4: Unpack the reduced tarball.
+[ -d ${TARBALL_NAME} ] && rm -rf ${TARBALL_NAME}
+tar -zxf "build/${TARBALL_NAME}.tar.gz"
+mv ${TARBALL_NAME} pyrol 
+
+## Step 5: Create an SDist from the tarball.
+python -m pipx run build --sdist pyrol
+cp -r pyrol/dist/* .
+
+## Step 6: Clean up.
+rm -rf build
+rm -rf ${REPO_NAME}/packages/rol/pyrol/binder
+rm -rf pyrol

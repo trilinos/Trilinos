@@ -76,6 +76,10 @@ void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
+
+  // The MeshTyingBlocked_NodeBased tests only work with real Scalar types,
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return EXIT_SUCCESS;
+
   using SparseMatrixType    = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_mvector_type = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_map_type     = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;

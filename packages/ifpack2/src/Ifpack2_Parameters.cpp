@@ -170,6 +170,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // params.get("relaxation: damping factor", 1.0); // already set
   // params.get("relaxation: zero starting solution", true); // already set
   params.set("partitioner: type", "greedy");
+  params.set("zoltan2: algorithm", "phg");
   params.set("partitioner: local parts", 1);
   params.set("partitioner: overlap", 0);
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
