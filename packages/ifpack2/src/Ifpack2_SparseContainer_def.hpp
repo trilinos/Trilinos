@@ -90,6 +90,9 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
   // objects.  We do this first to save memory.  (In an RCP
   // assignment, the right-hand side and left-hand side coexist before
   // the left-hand side's reference count gets updated.)
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::initialize");
+  Teuchos::TimeMonitor timeMon (*timer);
 
   //Will create the diagonal blocks and their inverses
   //in extract()
@@ -114,6 +117,10 @@ void SparseContainer<MatrixType,InverseType>::initialize ()
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::compute ()
 {
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::compute");
+  Teuchos::TimeMonitor timeMon (*timer);
+
   this->IsComputed_ = false;
   if (!this->isInitialized ()) {
     this->initialize ();
@@ -188,6 +195,10 @@ apply (ConstHostView X,
   // to convert X and Y to the Tpetra::MultiVector specialization that
   // InverseType wants.  This class' X_ and Y_ internal fields are of
   // the right type for InverseType, so we can use those as targets.
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::apply");
+  Teuchos::TimeMonitor timeMon (*timer);
+
 
   // Tpetra::MultiVector specialization corresponding to InverseType.
   Details::MultiVectorLocalGatherScatter<mv_type, inverse_mv_type> mvgs;
@@ -664,6 +675,10 @@ extractGraph ()
   //offset - blockOffsets_[b]: gives the column within block b.
   //
   //This provides the block and col within a block in O(1).
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::extractGraph");
+  Teuchos::TimeMonitor timeMon (*timer);
+
   Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
   if(this->scalarsPerRow_ > 1)
   {
@@ -818,6 +833,10 @@ extractValues ()
   //offset - blockOffsets_[b]: gives the column within block b.
   //
   //This provides the block and col within a block in O(1).
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::SparseContainer::extractValues");
+  Teuchos::TimeMonitor timeMon (*timer);
+
   Teuchos::Array<InverseGlobalOrdinal> indicesToInsert;
   Teuchos::Array<InverseScalar> valuesToInsert;
   if(this->scalarsPerRow_ > 1)
