@@ -346,6 +346,7 @@ template<class MatrixType>
 void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
 {
   using Teuchos::getIntegralValue;
+  using Teuchos::getStringValue;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   typedef scalar_type ST; // just to make code below shorter
@@ -362,6 +363,9 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
 
   const Details::RelaxationType precType =
     getIntegralValue<Details::RelaxationType> (pl, "relaxation: type");
+  const std::string precTypeStr = getStringValue<Details::RelaxationType>(pl, "relaxation: type");
+  // We only access "relaxation: type" using strings in the rest of the code
+  pl.set<std::string>("relaxation: type", precTypeStr);
   const int numSweeps = pl.get<int> ("relaxation: sweeps");
   const ST dampingFactor = pl.get<ST> ("relaxation: damping factor");
   const bool zeroStartSol = pl.get<bool> ("relaxation: zero starting solution");
