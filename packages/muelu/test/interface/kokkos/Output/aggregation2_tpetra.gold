@@ -4,7 +4,7 @@ Level 0
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
-  relaxation: type = 2
+  relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
   relaxation: damping factor = 1
   relaxation: zero starting solution = 1   [default]
@@ -74,7 +74,7 @@ Level 1
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
-  relaxation: type = 2
+  relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
   relaxation: damping factor = 1
   relaxation: zero starting solution = 1   [default]

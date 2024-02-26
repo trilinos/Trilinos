@@ -3,7 +3,7 @@ Clearing old data (if any)
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
  timer for apply = 0
@@ -36,7 +36,7 @@ matrixmatrix: kernel params ->
  [empty list]
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
  timer for apply = 0
@@ -69,7 +69,7 @@ matrixmatrix: kernel params ->
  [empty list]
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
  timer for apply = 0

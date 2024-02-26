@@ -168,7 +168,7 @@ matrixmatrix: kernel params ->
 Max coarse size (<= 128) achieved
 Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
 smoother -> 
- relaxation: type = 1   [unused]
+ relaxation: type = Gauss-Seidel   [unused]
  relaxation: sweeps = 25   [unused]
  relaxation: damping factor = 0.6   [unused]
 

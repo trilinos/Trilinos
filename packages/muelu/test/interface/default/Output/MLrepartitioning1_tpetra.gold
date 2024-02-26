@@ -3,7 +3,7 @@ Clearing old data (if any)
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  timer for apply = 0
@@ -60,7 +60,7 @@ type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  timer for apply = 0
@@ -117,7 +117,7 @@ type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  timer for apply = 0
@@ -174,7 +174,7 @@ type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  timer for apply = 0
@@ -231,7 +231,7 @@ type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
- relaxation: type = 2
+ relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
  timer for apply = 0

@@ -307,7 +307,7 @@ keep smoother data = 0   [default]
 PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 smoother -> 
- relaxation: type = 1   [unused]
+ relaxation: type = Gauss-Seidel   [unused]
  relaxation: sweeps = 25   [unused]
  relaxation: damping factor = 0.6   [unused]
  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
