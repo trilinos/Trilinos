@@ -1,7 +1,7 @@
 
 ###############################################################################
 #                                                                             #
-# Trilinos Release 15.1 Release Notes                               TBD, 2024 #
+# Trilinos Release 15.1.0 Release Notes                     February 26, 2024 #
 #                                                                             #
 ###############################################################################
 
@@ -10,6 +10,11 @@ Amesos2
   - The interface to SuperLU_DIST now also works for the CUDA-enabled
     variant of the library.
     https://github.com/trilinos/Trilinos/pull/12524
+
+
+Framework
+
+  - Began using semantic versioning for Trilinos with 15.1.0 release.
 
 
 Ifpack2
