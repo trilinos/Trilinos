@@ -93,91 +93,16 @@ namespace Stokhos {
   // If flat_domain_map and/or flat_range_map are null, they will be computed,
   // otherwise they will be used as-is.
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node > >
   create_flat_mp_graph(
-    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& graph,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& flat_domain_map,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& flat_range_map,
+    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node >& graph,
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_domain_map,
+    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node > >& flat_range_map,
     const LocalOrdinal block_size) {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-    typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
-
-    // Build domain map if necessary
-    if (flat_domain_map == Teuchos::null)
-      flat_domain_map = create_flat_map(*(graph.getDomainMap()), block_size);
-
-    // Build range map if necessary
-    if (flat_range_map == Teuchos::null)
-      flat_range_map = create_flat_map(*(graph.getRangeMap()), block_size);
-
-    // Build column map
-    RCP<const Map> flat_col_map =
-      create_flat_map(*(graph.getColMap()), block_size);
-
-    // Build row map if necessary
-    // Check if range_map == row_map, then we can use flat_range_map
-    // as the flattened row map
-    RCP<const Map> flat_row_map;
-    if (graph.getRangeMap() == graph.getRowMap())
-      flat_row_map = flat_range_map;
-    else
-      flat_row_map = create_flat_map(*(graph.getRowMap()), block_size);
-
-    // Build flattened row offsets and column indices
-    auto row_offsets = graph.getLocalRowPtrsHost();
-    auto col_indices = graph.getLocalIndicesHost();
-    const size_t num_row = graph.getLocalNumRows();
-    const size_t num_col_indices = col_indices.size();
-    ArrayRCP<size_t> flat_row_offsets(num_row*block_size+1);
-    ArrayRCP<LocalOrdinal> flat_col_indices(num_col_indices * block_size);
-    for (size_t row=0; row<num_row; ++row) {
-      const size_t row_beg = row_offsets[row];
-      const size_t row_end = row_offsets[row+1];
-      const size_t num_col = row_end - row_beg;
-      for (LocalOrdinal j=0; j<block_size; ++j) {
-        const size_t flat_row = row*block_size + j;
-        const size_t flat_row_beg = row_beg*block_size + j*num_col;
-        flat_row_offsets[flat_row] = flat_row_beg;
-        for (size_t entry=0; entry<num_col; ++entry) {
-          const LocalOrdinal col = col_indices[row_beg+entry];
-          const LocalOrdinal flat_col = col*block_size + j;
-          flat_col_indices[flat_row_beg+entry] = flat_col;
-        }
-      }
-    }
-    flat_row_offsets[num_row*block_size] = num_col_indices*block_size;
-
-    // Build flattened graph
-    RCP<Graph> flat_graph =
-      rcp(new Graph(flat_row_map, flat_col_map,
-                    flat_row_offsets, flat_col_indices));
-    flat_graph->fillComplete(flat_domain_map, flat_range_map);
-
-    return flat_graph;
-  }
-
-
-  // Create a flattened graph for a graph from a matrix with the
-  // MP::Vector scalar type (each block is an identity matrix)
-  // If flat_domain_map and/or flat_range_map are null, they will be computed,
-  // otherwise they will be used as-is.
-  template <typename LocalOrdinal, typename GlobalOrdinal, typename Device>
-  Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
-                                 Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >
-  create_flat_mp_graph(
-    const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >& graph,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_domain_map,
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > >& flat_range_map,
-    const LocalOrdinal block_size) {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
     typedef typename Graph::local_graph_device_type::row_map_type::non_const_type RowPtrs;

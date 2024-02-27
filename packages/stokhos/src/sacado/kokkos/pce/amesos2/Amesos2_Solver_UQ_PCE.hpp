@@ -49,12 +49,12 @@
 
 namespace Amesos2 {
 
-  template <class S, class LO, class GO, class D>
+  template <class S, class LO, class GO, class NO>
   typename Sacado::UQ::PCE<S>::cijk_type
   get_pce_cijk(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
-    const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
-    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, NO > >& A = Teuchos::null,
+    const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, NO > >& X = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, NO > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
       return Kokkos::cijk(A->getLocalValuesDevice(Tpetra::Access::ReadOnly));
@@ -75,22 +75,21 @@ namespace Amesos2 {
   /// these matrices and vectors into ones with a standard (e.g., double)
   /// scalar type.
   template <class Storage, class LocalOrdinal, class GlobalOrdinal,
-            class Device, template<class,class> class ConcreteSolver>
+            class Node, template<class,class> class ConcreteSolver>
   class PCESolverAdapter :
     public Solver< Tpetra::CrsMatrix<Sacado::UQ::PCE<Storage>,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >,
+                                     Node >,
                    Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
                                        LocalOrdinal,
                                        GlobalOrdinal,
-                                       Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> >
+                                       Node >
                    >
   {
   public:
 
     typedef Sacado::UQ::PCE<Storage> Scalar;
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
 
@@ -509,13 +508,12 @@ namespace Amesos2 {
   // Sacado::UQ::PCE where we create PCESolverAdapter wrapping
   // each solver
   template < template <class,class> class ConcreteSolver,
-             class ST, class LO, class GO, class D >
+             class ST, class LO, class GO, class NO >
   struct create_solver_with_supported_type<
     ConcreteSolver,
-    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> >,
-    Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > > {
+    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,NO >,
+    Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,NO > > {
     typedef Sacado::UQ::PCE<ST> SC;
-    typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> NO;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;
     static Teuchos::RCP<Solver<Matrix,Vector> >
@@ -532,7 +530,7 @@ namespace Amesos2 {
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 
       // If our assertion did not fail, then create and return a new solver
-      return Teuchos::rcp( new PCESolverAdapter<ST,LO,GO,D,ConcreteSolver>(A, X, B) );
+      return Teuchos::rcp( new PCESolverAdapter<ST,LO,GO,NO,ConcreteSolver>(A, X, B) );
     }
   };
 
