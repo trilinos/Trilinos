@@ -22,7 +22,7 @@ public:
   ConstrainedRedistance()
       : logfile(),
         my_ls(LevelSet::build(mMesh.mesh_meta_data(), "LS", sierra::Diag::sierraTimer())),
-        myRefinement(mMesh.mesh_meta_data(), &this->get_aux_meta().active_part())
+        myRefinement(mMesh.mesh_meta_data(), &this->get_aux_meta().active_part(), sierra::Diag::sierraTimer())
   {
     my_ls.setup(); // registers field and sets field refs on the object
 
@@ -40,11 +40,11 @@ public:
     for (auto && bucket :
         mMesh.get_buckets(stk::topology::ELEMENT_RANK, mMesh.mesh_meta_data().locally_owned_part()))
     {
-      const int markerValue =
-          myRefinement.is_parent(*bucket) ? Refinement::NOTHING : Refinement::REFINE;
+      const auto markerValue =
+          myRefinement.is_parent(*bucket) ? Refinement::RefinementMarker::NOTHING : Refinement::RefinementMarker::REFINE;
       auto * elemMarker = field_data<int>(myElementMarkerField, *bucket);
       for (size_t i = 0; i < bucket->size(); ++i)
-        elemMarker[i] = markerValue;
+        elemMarker[i] = static_cast<int>(markerValue);
     }
   }
 

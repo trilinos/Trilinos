@@ -47,12 +47,17 @@ stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta)
   return blockParts;
 }
 
-static double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity)
+double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity)
 {
   STK_ThrowRequireMsg(field.valid(), "Invalid field: " << field.name());
   double * fieldData = field_data<double>(field, entity);
   STK_ThrowRequireMsg(nullptr != fieldData, "Field: " << field.name() << " not present on " << debug_entity_1line(mesh, entity));
   return fieldData;
+}
+
+double & get_scalar_field(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity)
+{
+  return *get_field_data(mesh, field, entity);
 }
 
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity)
@@ -500,10 +505,10 @@ void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh,
   });
 }
 
-void unpack_shared_entities(const stk::mesh::BulkData & mesh,
-    std::vector<stk::mesh::Entity> & sharedEntities,
+std::vector<stk::mesh::Entity> unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh,
     stk::CommSparse &commSparse)
 {
+  std::vector<stk::mesh::Entity> entities;
   stk::unpack_communications(commSparse, [&](int procId)
   {
     stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
@@ -514,9 +519,10 @@ void unpack_shared_entities(const stk::mesh::BulkData & mesh,
       commSparse.recv_buffer(procId).unpack(entityKey);
       stk::mesh::Entity entity = mesh.get_entity(entityKey);
       STK_ThrowAssert(mesh.is_valid(entity));
-      sharedEntities.push_back(entity);
+      entities.push_back(entity);
     }
   });
+  return entities;
 }
 
 static
@@ -526,8 +532,7 @@ void append_shared_entities_to_owned_ones(const stk::mesh::BulkData & mesh,
   stk::CommSparse commSparse(mesh.parallel());
   pack_entities_for_sharing_procs(mesh, entities, commSparse);
 
-  std::vector<stk::mesh::Entity> sharedEntities;
-  unpack_shared_entities(mesh, sharedEntities, commSparse);
+  const std::vector<stk::mesh::Entity> sharedEntities = unpack_entities_from_other_procs(mesh, commSparse);
   entities.insert(entities.end(), sharedEntities.begin(), sharedEntities.end());
 }
 
@@ -2635,6 +2640,82 @@ void communicate_owned_entities_to_ghosting_procs(const stk::mesh::BulkData & me
   stk::CommSparse commSparse(mesh.parallel());
   pack_owned_entities_for_ghosting_procs(mesh, entities, commSparse);
   unpack_ghosted_entities_from_owners(mesh, entities, commSparse);
+}
+
+template<typename NODE_CONTAINER>
+void pack_shared_nodes_for_sharing_procs(const stk::mesh::BulkData & mesh,
+    const NODE_CONTAINER & nodes,
+    stk::CommSparse &commSparse)
+{
+  std::vector<int> nodeSharedProcs;
+  stk::pack_and_communicate(commSparse,[&]()
+  {
+    for (auto node : nodes)
+    {
+      if (mesh.bucket(node).shared())
+      {
+        mesh.comm_shared_procs(node, nodeSharedProcs);
+        for (int procId : nodeSharedProcs)
+          commSparse.send_buffer(procId).pack(mesh.identifier(node));
+      }
+    }
+  });
+}
+
+static
+void unpack_shared_nodes(const stk::mesh::BulkData & mesh,
+    std::set<stk::mesh::Entity> & nodes,
+    stk::CommSparse &commSparse)
+{
+  stk::unpack_communications(commSparse, [&](int procId)
+  {
+    stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
+
+    while ( buffer.remaining() )
+    {
+      stk::mesh::EntityId nodeId;
+      commSparse.recv_buffer(procId).unpack(nodeId);
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
+      STK_ThrowRequire(mesh.is_valid(node));
+      nodes.insert(node);
+    }
+  });
+}
+
+static
+void unpack_shared_nodes(const stk::mesh::BulkData & mesh,
+    std::vector<stk::mesh::Entity> & nodes,
+    stk::CommSparse &commSparse)
+{
+  stk::unpack_communications(commSparse, [&](int procId)
+  {
+    stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
+
+    while ( buffer.remaining() )
+    {
+      stk::mesh::EntityId nodeId;
+      commSparse.recv_buffer(procId).unpack(nodeId);
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
+      STK_ThrowRequire(mesh.is_valid(node));
+      nodes.push_back(node);
+    }
+  });
+}
+
+void communicate_shared_nodes_to_sharing_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & nodes)
+{
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_shared_nodes_for_sharing_procs(mesh, nodes, commSparse);
+  unpack_shared_nodes(mesh, nodes, commSparse);
+}
+
+void communicate_shared_nodes_to_sharing_procs_and_sort_and_unique(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & nodes)
+{
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_shared_nodes_for_sharing_procs(mesh, nodes, commSparse);
+  unpack_shared_nodes(mesh, nodes, commSparse);
+
+  stk::util::sort_and_unique(nodes, stk::mesh::EntityLess(mesh));
 }
 
 } // namespace krino

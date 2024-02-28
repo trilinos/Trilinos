@@ -26,7 +26,8 @@ std::unique_ptr<InterfaceGeometry> create_bounding_surface_geometry(Surface_Mana
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport);
 
-std::unique_ptr<InterfaceGeometry> create_levelset_geometry(const stk::mesh::Part & activePart,
+std::unique_ptr<InterfaceGeometry> create_levelset_geometry(const int dim,
+    const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);

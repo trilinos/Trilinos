@@ -36,7 +36,7 @@ static void decompose_mesh_to_conform_to_levelsets(stk::mesh::BulkData & mesh, c
   krino::CDFEM_Support & cdfemSupport = krino::CDFEM_Support::get(meta);
   krino::Phase_Support & phaseSupport = krino::Phase_Support::get(meta);
 
-  std::unique_ptr<krino::InterfaceGeometry> interfaceGeometry = krino::create_levelset_geometry(auxMeta.active_part(), cdfemSupport, phaseSupport, lsFields);
+  std::unique_ptr<krino::InterfaceGeometry> interfaceGeometry = krino::create_levelset_geometry(meta.spatial_dimension(), auxMeta.active_part(), cdfemSupport, phaseSupport, lsFields);
   auxMeta.clear_force_64bit_flag();
   krino::CDMesh::decompose_mesh(mesh, *interfaceGeometry);
 }
