@@ -168,7 +168,6 @@ namespace Zoltan2 {
       Z2_FORWARD_EXCEPTIONS
 
         sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
-      this->env_->convertStringToInt(*sphynxParams_.get());
 
       int nparts = -1;
       const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");

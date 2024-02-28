@@ -598,14 +598,6 @@ public:
    *                     StringToIntegral parameters have been converted
    *                     to integer values or bool values.
    *
-   *    Given a parameter list, this function converts all of the entries that
-   *    have valiator of type StringToIntegralParameterEntryValidator<int>
-   *    from their string value to their int value.
-   *    Also StringToIntegralParameterEntryValidator<bool> to bool
-   *
-   */
-
-  static void convertStringToInt(Teuchos::ParameterList &params);
 
 private:
 

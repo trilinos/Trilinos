@@ -281,7 +281,6 @@ int main(int narg, char *arg[])
   try{
     Zoltan2::createValidatorList(myParams, validParameters);
     myParams.validateParametersAndSetDefaults(validParameters);
-    Zoltan2::Environment::convertStringToInt(myParams);
   }
   catch(std::exception &e){
     std::cerr << "Validate parameters generated an error:" << std::endl;
