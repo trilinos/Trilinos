@@ -77,11 +77,16 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const unsigned vector_size = is_hip ? 64 : 1;
+  const unsigned team_size = is_hip ? 128 / vector_size : 1;
+#else
+  const unsigned vector_size = 1;
+  const unsigned team_size = 1;
+#endif
 
   const int m = A.extent(0);
   const int n = A.extent(1);
@@ -113,11 +118,16 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const unsigned vector_size = is_hip ? 64 : 1;
+  const unsigned team_size = is_hip ? 128 / vector_size : 1;
+#else
+  const unsigned vector_size = 1;
+  const unsigned team_size = 1;
+#endif
 
   const int m = A.extent(0);
   const int n = A.extent(1);
@@ -278,14 +288,16 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
 
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
-
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL)
   const int FadStride = is_cuda ? 32 : 1;
+#elif defined(KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const int FadStride = is_hip ? 64 : 1;
+#else
+  const int FadStride 1;
+#endif
 #if defined(SACADO_ALIGN_SFAD)
   const int N = Sacado::StaticSize<FadType>::value;
   const int Nalign = ((N+FadStride-1)/FadStride)*FadStride;
@@ -332,7 +344,15 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
 
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
   const size_t concurrency = execution_space().concurrency();
+
+#if defined (KOKKOS_ENABLE_CUDA)
   const size_t warp_dim = is_cuda ? 32 : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const size_t warp_dim = is_hip ? 64 : 1;
+#else
+  const size_t warp_dim = 1;
+#endif
+
   const size_t block_size = pa*sizeof(double);
   const size_t nkernels = concurrency / warp_dim;
   const size_t mem_pool_size =
@@ -593,6 +613,10 @@ int main(int argc, char* argv[]) {
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+    bool hip = 0;
+    clp.setOption("hip", "no-hip", &cuda, "Whether to run HIP");
+#endif
     int numa = 0;
     clp.setOption("numa", &numa,
                   "Number of NUMA domains to use (set to 0 to use all NUMAs");
@@ -667,6 +691,13 @@ int main(int argc, char* argv[]) {
     if (cuda) {
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Cuda>(
         m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"Cuda");
+    }
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+    if (hip) {
+      do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::HIP>(
+        m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"HIP");
     }
 #endif
 
