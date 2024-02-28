@@ -575,14 +575,14 @@ static bool does_any_node_have_field(const FieldRef field, const std::vector<con
 }
 
 ProlongationFacetPointData::ProlongationFacetPointData(const CDMesh & mesh,
-    const FacetDistanceQuery & facetDistanceQuery,
+    const FacetDistanceQuery<Facet> & facetDistanceQuery,
     const std::vector<const ProlongationNodeData *> & facetNodes)
 {
   interpolate_to_point(mesh.stk_meta(), facetDistanceQuery, facetNodes);
 }
 
 void ProlongationFacetPointData::interpolate_to_point(const stk::mesh::MetaData & meta,
-    const FacetDistanceQuery & facetDistanceQuery,
+    const FacetDistanceQuery<Facet> & facetDistanceQuery,
     const std::vector<const ProlongationNodeData *> & facetNodes)
 {
   const stk::math::Vector3d node_wts = facetDistanceQuery.closest_point_weights();
@@ -871,7 +871,7 @@ void ProlongationFacet::build_and_append_edge_facets(ProlongFacetVec & facetVec)
   }
 }
 
-std::unique_ptr<ProlongationFacetPointData> ProlongationFacet::get_prolongation_point_data(const FacetDistanceQuery & dist_query) const
+std::unique_ptr<ProlongationFacetPointData> ProlongationFacet::get_prolongation_point_data(const FacetDistanceQuery<Facet> & dist_query) const
 {
   STK_ThrowAssert(&dist_query.facet() == my_facet.get());
   return std::make_unique<ProlongationFacetPointData>(my_mesh, dist_query, my_prolong_nodes);

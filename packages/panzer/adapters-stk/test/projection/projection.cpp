@@ -61,6 +61,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
+#include "Panzer_IntrepidOrientation.hpp"
 #include "Panzer_L2Projection.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
@@ -152,7 +153,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   using LO = int;
   using GO = panzer::GlobalOrdinal;
   timer->start("ConnManager ctor");
-  const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
+  const RCP<panzer_stk::STKConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
@@ -243,6 +244,66 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   panzer::L2Projection projectionFactory;
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
+
+  
+
+
+
+  // Ignore the workset factory and set the basis directly
+  bool ignoreWorksetFactory = true;
+  std::map<std::string,Teuchos::RCP<panzer::BasisValues2<double>>> map_basis_values;
+  if (ignoreWorksetFactory) {
+
+    // Get the orientations for all element blocks
+    std::map<std::string,std::vector<Intrepid2::Orientation>> orientations;
+    panzer::buildIntrepidOrientations(eBlockNames,*connManager,orientations);
+
+    std::vector<shards::CellTopology> topologies;
+    connManager->getElementBlockTopologies(topologies);
+
+    for (size_t i=0; i <  eBlockNames.size(); ++i) {
+
+      const auto& eblock = eBlockNames[i];
+      const auto& topo = topologies[i];
+ 
+      // Get nodal coordinates for integration rules
+      std::vector<std::size_t> lids;
+      panzer::Intrepid2FieldPattern coord_fp(hgradBasis);
+      Kokkos::DynRankView<double,PHX::Device> nodal_coords_kokkos;
+      connManager->getDofCoords(eblock,coord_fp,lids,nodal_coords_kokkos);
+
+      // This is ugly. Need to fix connManager interface for layouts (fad vs non-fad).
+      PHX::MDField<double,panzer::Cell,panzer::BASIS,panzer::Dim> nodal_coords("nodal_coords","<Cell,BASIS,Dim>",
+                                                                               nodal_coords_kokkos.extent(0),
+                                                                               nodal_coords_kokkos.extent(1),
+                                                                               nodal_coords_kokkos.extent(2));
+      Kokkos::deep_copy(nodal_coords.get_view(),nodal_coords_kokkos);
+
+      // Build IV
+      Teuchos::RCP<shards::CellTopology> rcp_topo = Teuchos::rcp(new shards::CellTopology(topo.getCellTopologyData()));
+      Teuchos::RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(integrationDescriptor,rcp_topo,static_cast<int>(nodal_coords_kokkos.extent(0))));
+      Teuchos::RCP<panzer::IntegrationValues2<double>> iv = Teuchos::rcp(new panzer::IntegrationValues2<double>);
+      iv->setup(ir,nodal_coords);
+
+      // Build BV
+      Teuchos::RCP<panzer::BasisValues2<double>> bv = Teuchos::rcp(new panzer::BasisValues2<double>);
+      Teuchos::RCP<panzer::BasisIRLayout> birl = Teuchos::rcp(new panzer::BasisIRLayout(hgradBD.getType(),hgradBD.getOrder(),*ir));
+      bv->setupUniform(birl,
+                       iv->getUniformCubaturePointsRef(true),
+                       iv->getJacobian(true),
+                       iv->getJacobianDeterminant(true),
+                       iv->getJacobianInverse(true));
+      bv->setOrientations(orientations[eblock]);
+      bv->setWeightedMeasure(iv->getWeightedMeasure(true));
+      bv->setCellNodeCoordinates(nodal_coords);
+      map_basis_values[eblock] = bv;
+    }
+    projectionFactory.useBasisValues(map_basis_values);
+  }
+
+
+
+
 
   TEST_ASSERT(nonnull(projectionFactory.getTargetGlobalIndexer()));
 

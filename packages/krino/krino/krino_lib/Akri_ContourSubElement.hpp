@@ -64,10 +64,10 @@ public:
 		       sierra::ArrayContainer<double,NINT> & determinants,
 		       int index = 0 );
 
-  int build_facets( Faceted_Surface & facets );
+  int build_facets( FacetedSurfaceBase & facets );
 
   // default implementation
-  virtual int side_facets( Faceted_Surface & facets, int side ) const;
+  virtual int side_facets( FacetedSurfaceBase & facets, int side ) const;
   virtual double side_area( int side ) const;
 
   stk::topology topology() const { return get_master_element().get_topology(); }
@@ -228,7 +228,7 @@ public:
                     const int subelement_sign = 0 );
   virtual ~ContourSubElement_Tri_3() {}
 
-  virtual int side_facets( Faceted_Surface & facets, int side ) const override;
+  virtual int side_facets( FacetedSurfaceBase & facets, int side ) const override;
   double side_area( int side ) const override;
 
 private:
@@ -295,7 +295,7 @@ public:
                     const int subelement_sign = 0 );
   virtual ~ContourSubElement_Tet_4() {}
 
-  virtual int side_facets( Faceted_Surface & facets, int side ) const override;
+  virtual int side_facets( FacetedSurfaceBase & facets, int side ) const override;
   virtual double side_area( int side ) const override;
 
 private:

@@ -557,6 +557,12 @@ void TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalDiagCop
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalDiagCopy(Vector &diag, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const {
+  XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
+  mtx_->getLocalDiagCopy(*(toTpetra(diag)), offsets);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceDiag(const Vector &diag) {
   XPETRA_MONITOR("TpetraCrsMatrix::replaceDiag");
   Tpetra::replaceDiagonalCrsMatrix(*mtx_, *(toTpetra(diag)));

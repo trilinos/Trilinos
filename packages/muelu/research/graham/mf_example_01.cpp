@@ -268,10 +268,10 @@ class TridiagonalOperator : public Xpetra::Operator<Scalar, LocalOrdinal, Global
   }
 
   //! Returns the Xpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap() const { return opMap_; }
+  const Teuchos::RCP<const map_type> getDomainMap() const { return opMap_; }
 
   //! Returns the Xpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap() const { return opMap_; }
+  const Teuchos::RCP<const map_type> getRangeMap() const { return opMap_; }
 
   //! Indicates whether this operator supports applying the adjoint operator.
   bool hasTransposeApply() const { return true; }
@@ -405,10 +405,10 @@ class MFProlongatorOperator : public Xpetra::Operator<Scalar, LocalOrdinal, Glob
   }
 
   //! Returns the Xpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap() const { return domainMap_; }
+  const Teuchos::RCP<const map_type> getDomainMap() const { return domainMap_; }
 
   //! Returns the Xpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap() const { return rangeMap_; }
+  const Teuchos::RCP<const map_type> getRangeMap() const { return rangeMap_; }
 
   //! Indicates whether this operator supports applying the adjoint operator.
   bool hasTransposeApply() const { return true; }

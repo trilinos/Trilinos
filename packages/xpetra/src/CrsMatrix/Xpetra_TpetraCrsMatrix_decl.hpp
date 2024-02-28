@@ -377,6 +377,9 @@ class TpetraCrsMatrix
   //! Get a copy of the diagonal entries owned by this node, with local row indices.
   void getLocalDiagCopy(Vector &diag, const Teuchos::ArrayView<const size_t> &offsets) const;
 
+  //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+  void getLocalDiagCopy(Vector &diag, const Kokkos::View<const size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const;
+
   //! Replace the diagonal entries of the matrix
   void replaceDiag(const Vector &diag);
 

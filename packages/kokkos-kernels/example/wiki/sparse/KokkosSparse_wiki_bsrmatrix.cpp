@@ -15,6 +15,7 @@
 //@HEADER
 
 #include <sstream>
+#include <iostream>
 
 #include "Kokkos_Core.hpp"
 

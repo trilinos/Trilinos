@@ -303,6 +303,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, ConstrainRowOptimalScalarPDE, Scal
   P                         = Xpetra::IO<SC, LO, GO, NO>::Read("TestMatrices/SaP_constrainTest_P.mat", lib, comm);
 
   RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
+  Teuchos::ParameterList Pparams;
+  Pparams.set("use kokkos refactor", true);
+  sapFactory->SetParameterList(Pparams);
   sapFactory->optimalSatisfyPConstraintsForScalarPDEs(P);
 
   // check that row sums are all one by checking the norm of the vector

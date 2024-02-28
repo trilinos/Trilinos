@@ -383,6 +383,11 @@ typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type T
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getLocalDiagOffsets(const Kokkos::View<size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const {
+  getTpetra_CrsGraph()->getLocalDiagOffsets(offsets);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::computeGlobalConstants() {
   // mfh 07 May 2018: See GitHub Issue #2565.
   graph_->computeGlobalConstants();
@@ -1095,6 +1100,11 @@ class TpetraCrsGraph<int, long long, EpetraNode>
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
     TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
+  }
+
+  void getLocalDiagOffsets(const Kokkos::View<size_t *, typename Node::device_type, Kokkos::MemoryUnmanaged> &offsets) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                               "Epetra does not support getLocalDiagOffsets!");
   }
 
   typename local_graph_type::HostMirror getLocalGraphHost() const {

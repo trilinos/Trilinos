@@ -9,7 +9,7 @@ smoother ->
  timer for apply = 0
 
 Level 1
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -22,7 +22,7 @@ BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -32,7 +32,7 @@ sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 sa: damping factor = 1.333
 sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
@@ -50,7 +50,7 @@ smoother ->
  timer for apply = 0
 
 Level 2
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -63,7 +63,7 @@ BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -73,7 +73,7 @@ sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 sa: damping factor = 1.333
 sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
@@ -91,7 +91,7 @@ smoother ->
  timer for apply = 0
 
 Level 3
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -104,7 +104,7 @@ BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -114,7 +114,7 @@ sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 sa: damping factor = 1.333
 sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
@@ -132,7 +132,7 @@ smoother ->
  timer for apply = 0
 
 Level 4
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -145,7 +145,7 @@ BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -155,7 +155,7 @@ sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 sa: damping factor = 1.333
 sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 

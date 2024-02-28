@@ -78,12 +78,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   return AmatMultiphysics_->getDomainMap();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
   return AmatMultiphysics_->getRangeMap();
 }
 

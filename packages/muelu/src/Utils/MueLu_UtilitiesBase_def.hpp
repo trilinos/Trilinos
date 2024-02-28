@@ -197,7 +197,16 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   const auto rowMap = A.getRowMap();
   auto diag         = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, true);
 
-  A.getLocalDiagCopy(*diag);
+  const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
+  if ((crsOp != NULL) && (rowMap->lib() == Xpetra::UseTpetra)) {
+    using local_vector_type = typename Vector::dual_view_type::t_dev_um;
+    using device_type       = typename CrsGraph::device_type;
+    Kokkos::View<size_t*, device_type> offsets("offsets", rowMap->getLocalNumElements());
+    crsOp->getCrsGraph()->getLocalDiagOffsets(offsets);
+    crsOp->getCrsMatrix()->getLocalDiagCopy(*diag, offsets);
+  } else {
+    A.getLocalDiagCopy(*diag);
+  }
 
   return diag;
 }
@@ -621,24 +630,10 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixOverlappedDiagonal(const Matrix& A) {
-  // FIXME_KOKKOS
   RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
-  RCP<Vector> localDiag = VectorFactory::Build(rowMap);
-
-  const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
-  if ((crsOp != NULL) && (rowMap->lib() == Xpetra::UseTpetra)) {
-    Teuchos::ArrayRCP<size_t> offsets;
-    crsOp->getLocalDiagOffsets(offsets);
-    crsOp->getLocalDiagCopy(*localDiag, offsets());
-  } else {
-    auto localDiagVals  = localDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
-    const auto diagVals = GetMatrixDiagonal(A)->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    Kokkos::deep_copy(localDiagVals, diagVals);
-  }
-
-  RCP<Vector> diagonal = VectorFactory::Build(colMap);
-  RCP<const Import> importer;
-  importer = A.getCrsGraph()->getImporter();
+  RCP<Vector> localDiag      = GetMatrixDiagonal(A);
+  RCP<Vector> diagonal       = VectorFactory::Build(colMap);
+  RCP<const Import> importer = A.getCrsGraph()->getImporter();
   if (importer == Teuchos::null) {
     importer = ImportFactory::Build(rowMap, colMap);
   }
@@ -1017,6 +1012,9 @@ DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
     Kokkos::deep_copy(boundaryNodes2, boundaryNodes);
     return boundaryNodes2;
   }
+  // CAG: No idea why this is needed to avoid "warning: missing return statement at end of non-void function"
+  Kokkos::View<bool*, memory_space> dummy("dummy", 0);
+  return dummy;
 }
 
 template <class SC, class LO, class GO, class NO>

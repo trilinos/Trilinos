@@ -49,6 +49,9 @@
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
+
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
 #include "MueLu_SaPFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -56,14 +59,13 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
 /*!
   @class SaPFactory class.
-  @ingroup MueLuTransferClasses
   @brief Factory for building Smoothed Aggregation prolongators.
+  @ingroup MueLuTransferClasses
 
   ## Input/output of SaPFactory ##
 
@@ -88,14 +90,19 @@ namespace MueLu {
   ----------|--------------|------------
   | P       | SaPFactory   | Smoothed prolongator
 
-
 */
-
 template <class Scalar        = DefaultScalar,
           class LocalOrdinal  = DefaultLocalOrdinal,
           class GlobalOrdinal = DefaultGlobalOrdinal,
           class Node          = DefaultNode>
 class SaPFactory : public PFactory {
+ public:
+  typedef LocalOrdinal local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef typename Node::execution_space execution_space;
+  typedef Node node_type;
+
+ private:
 #undef MUELU_SAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -118,7 +125,7 @@ class SaPFactory : public PFactory {
   //! Input
   //@{
 
-  void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
   //@}
 
@@ -131,26 +138,22 @@ class SaPFactory : public PFactory {
     Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
     //FIXME what does the return code mean (unclear in MueMat)?
     */
-  void Build(Level &fineLevel, Level &coarseLevel) const;
+  void Build(Level& fineLevel, Level& coarseLevel) const;
 
-  void BuildP(Level &fineLevel, Level &coarseLevel) const;  // Build()
+  void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
-  /*!
-    @brief Enforce constraints on prolongator
+  void SatisfyPConstraintsNonKokkos(RCP<Matrix> A, RCP<Matrix>& P) const;
 
-    Modifies the prolongator so that all entries lie between 0 and 1. It also
-    ensures that the row sum is between 0 and 1. This option only makes
-    sense in the SA constext if the tentative prolgonator does not use
-    the QR factorization.
-    */
-  void SatisfyPConstraints(RCP<Matrix> A, RCP<Matrix> &P) const;
-  void optimalSatisfyPConstraintsForScalarPDEs(RCP<Matrix> &P) const;
+  void optimalSatisfyPConstraintsForScalarPDEsNonKokkos(RCP<Matrix>& P) const;
 
-  bool constrainRow(Scalar *orig, LocalOrdinal nEntries, Scalar leftBound, Scalar rghtBound, Scalar rsumTarget, Scalar *fixedUnsorted, Scalar *scalarData) const;
+  void SatisfyPConstraints(RCP<Matrix> A, RCP<Matrix>& P) const;
+
+  void optimalSatisfyPConstraintsForScalarPDEs(RCP<Matrix>& P) const;
+
+  bool constrainRow(Scalar* orig, LocalOrdinal nEntries, Scalar leftBound, Scalar rghtBound, Scalar rsumTarget, Scalar* fixedUnsorted, Scalar* scalarData) const;
 
   //@}
-
-};  // class SaPFactory
+};
 
 }  // namespace MueLu
 

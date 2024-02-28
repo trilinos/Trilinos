@@ -53,10 +53,8 @@
 #include <Teuchos_Describable.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Map.hpp"
-#include "Xpetra_RowGraph.hpp"
 #include "Xpetra_Vector.hpp"
 
-#include "Xpetra_TpetraConfigDefs.hpp"
 #include "Xpetra_TpetraMap.hpp"
 
 #include "Tpetra_RowMatrix.hpp"
@@ -71,13 +69,13 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraRowMatrix
-  : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  : virtual public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
  public:
   //! @name Destructor Method
   //@{
 
   //! Destructor.
-  virtual ~TpetraRowMatrix() {}
+  virtual ~TpetraRowMatrix() = default;
 
   //@}
 
@@ -182,19 +180,36 @@ class TpetraRowMatrix
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView<LocalOrdinal> &Indices, const Teuchos::ArrayView<Scalar> &Values, size_t &NumEntries) const {
     XPETRA_MONITOR("TpetraRowMatrix::getLocalRowCopy");
-    mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
+    typename Tpetra::RowGraph<LocalOrdinal, GlobalOrdinal, Node>::nonconst_local_inds_host_view_type indices("indices", Indices.size());
+    typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::nonconst_values_host_view_type values("values", Values.size());
+
+    mtx_->getLocalRowCopy(LocalRow, indices, values, NumEntries);
+    for (size_t i = 0; i < NumEntries; ++i) {
+      Indices[i] = indices(i);
+      Values[i]  = values(i);
+    }
   }
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const {
     XPETRA_MONITOR("TpetraRowMatrix::getGlobalRowView");
-    mtx_->getGlobalRowView(GlobalRow, indices, values);
+    typename Tpetra::RowGraph<LocalOrdinal, GlobalOrdinal, Node>::global_inds_host_view_type k_indices;
+    typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type k_values;
+
+    mtx_->getGlobalRowView(GlobalRow, k_indices, k_values);
+    indices = ArrayView<const GlobalOrdinal>(k_indices.data(), k_indices.extent(0));
+    values  = ArrayView<const Scalar>(reinterpret_cast<const Scalar *>(k_values.data()), k_values.extent(0));
   }
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const {
     XPETRA_MONITOR("TpetraRowMatrix::getLocalRowView");
-    mtx_->getLocalRowView(LocalRow, indices, values);
+    typename Tpetra::RowGraph<LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type k_indices;
+    typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type k_values;
+
+    mtx_->getLocalRowView(LocalRow, k_indices, k_values);
+    indices = ArrayView<const LocalOrdinal>(k_indices.data(), k_indices.extent(0));
+    values  = ArrayView<const Scalar>(reinterpret_cast<const Scalar *>(k_values.data()), k_values.extent(0));
   }
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices.
@@ -238,9 +253,14 @@ class TpetraRowMatrix
   //! @name Xpetra specific
   //@{
 
+  TpetraRowMatrix() = default;
+
   //! TpetraCrsMatrix constructor to wrap a Tpetra::CrsMatrix object
   TpetraRowMatrix(const Teuchos::RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx)
     : mtx_(mtx) {}
+
+  //! Set the underlying Tpetra matrix
+  void setTpetra_RowMatrix(const Teuchos::RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) { mtx_ = mtx; }
 
   //! Get the underlying Tpetra matrix
   RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_RowMatrix() const { return mtx_; }

@@ -210,6 +210,7 @@ test_cmd_options=(
     --build-dir=${TRILINOS_BUILD_DIR:?}
     --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
+    --dashboard-build-name=${DASHBOARD_BUILD_NAME}
 )
 
 if [[ ${on_kokkos_develop} == "1" ]]

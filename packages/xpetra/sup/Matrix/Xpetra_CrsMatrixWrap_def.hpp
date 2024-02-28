@@ -358,12 +358,12 @@ void CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Multi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
+const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   return matrixData_->getDomainMap();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
+const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
   return matrixData_->getRangeMap();
 }
 

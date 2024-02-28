@@ -115,7 +115,7 @@ public:
   // Compute F(param)^T c
   void evaluate(Vector<Real> &F, const std::vector<Real> &param) const;
 
-  void sumAll(Real *in, Real *out, int size) const;
+  // void sumAll(Real *in, Real *out, int size) const;
 
   int numFactors() const;
 

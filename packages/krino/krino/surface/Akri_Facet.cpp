@@ -17,23 +17,18 @@ namespace krino{
 //
 //--------------------------------------------------------------------------------
 
-std::unique_ptr<Facet>
-Facet::unpack_from_buffer( stk::CommBuffer & b )
+static void unpack_vector3d_from_buffer( stk::CommBuffer & b, stk::math::Vector3d & coords )
 {
-  std::unique_ptr<Facet> facet;
+  b.unpack(coords[0]);
+  b.unpack(coords[1]);
+  b.unpack(coords[2]);
+}
 
-  int dim = 0;
-  b.unpack(dim);
-
-  STK_ThrowRequire(dim == 2 || dim == 3);
-
-  if (dim == 3)
-    facet = Facet3d::unpack_from_buffer(b);
-  else
-    facet = Facet2d::unpack_from_buffer(b);
-
-  STK_ThrowRequire(facet);
-  return facet;
+static void unpack_vector2d_from_buffer( stk::CommBuffer & b, stk::math::Vector3d & coords )
+{
+  b.unpack(coords[0]);
+  b.unpack(coords[1]);
+  coords[2] = 0.;
 }
 
 //--------------------------------------------------------------------------------
@@ -41,68 +36,37 @@ Facet::unpack_from_buffer( stk::CommBuffer & b )
 void
 Facet2d::pack_into_buffer(stk::CommBuffer & b) const
 {
-  const int dim = 2;
-  b.pack(dim);
   for (int n = 0; n < 2; ++n )
   {
-    const stk::math::Vector3d & pt = facet_vertex(n);
-    b.pack(pt[0]);
-    b.pack(pt[1]);
+    b.pack(myCoords[n][0]);
+    b.pack(myCoords[n][1]);
   }
 }
 
-std::unique_ptr<Facet2d>
-Facet2d::unpack_from_buffer( stk::CommBuffer & b  )
+void
+Facet2d::unpack_facet_data_from_buffer( stk::CommBuffer & b, std::array<stk::math::Vector3d,2> & facetCoords)
 {
-  std::unique_ptr<Facet2d> facet;
-
-  double vx, vy;
-  b.unpack(vx);
-  b.unpack(vy);
-  stk::math::Vector3d x0( vx, vy, 0.0 );
-  b.unpack(vx);
-  b.unpack(vy);
-  stk::math::Vector3d x1( vx, vy, 0.0 );
-
-  facet = std::make_unique<Facet2d>( x0, x1 );
-  return facet;
+  unpack_vector2d_from_buffer(b, facetCoords[0]);
+  unpack_vector2d_from_buffer(b, facetCoords[1]);
 }
 
 void
 Facet3d::pack_into_buffer(stk::CommBuffer & b) const
 {
-  const int dim = 3;
-  b.pack(dim);
   for (int n = 0; n < 3; ++n )
   {
-    const stk::math::Vector3d & pt = facet_vertex(n);
-    b.pack(pt[0]);
-    b.pack(pt[1]);
-    b.pack(pt[2]);
+    b.pack(myCoords[n][0]);
+    b.pack(myCoords[n][1]);
+    b.pack(myCoords[n][2]);
   }
 }
 
-std::unique_ptr<Facet3d>
-Facet3d::unpack_from_buffer( stk::CommBuffer & b  )
+void
+Facet3d::unpack_facet_data_from_buffer( stk::CommBuffer & b, std::array<stk::math::Vector3d,3> & facetCoords)
 {
-  std::unique_ptr<Facet3d> facet;
-
-  double vx, vy, vz;
-  b.unpack(vx);
-  b.unpack(vy);
-  b.unpack(vz);
-  stk::math::Vector3d x0( vx, vy, vz );
-  b.unpack(vx);
-  b.unpack(vy);
-  b.unpack(vz);
-  stk::math::Vector3d x1( vx, vy, vz );
-  b.unpack(vx);
-  b.unpack(vy);
-  b.unpack(vz);
-  stk::math::Vector3d x2( vx, vy, vz );
-
-  facet = std::make_unique<Facet3d>( x0, x1, x2 );
-  return facet;
+  unpack_vector3d_from_buffer(b, facetCoords[0]);
+  unpack_vector3d_from_buffer(b, facetCoords[1]);
+  unpack_vector3d_from_buffer(b, facetCoords[2]);
 }
 
 std::ostream & Facet3d::put( std::ostream & os ) const
@@ -159,22 +123,9 @@ Facet3d::Facet3d( const stk::math::Vector3d & pt0,
 {
 }
 
-Facet3d::Facet3d( const double * pt0,
-    const double * pt1,
-    const double * pt2)
-    : myCoords{stk::math::Vector3d(pt0), stk::math::Vector3d(pt1), stk::math::Vector3d(pt2)}
-{
-}
-
 Facet2d::Facet2d( const stk::math::Vector3d & pt0,
     const stk::math::Vector3d & pt1  )
     : myCoords{pt0, pt1}
-{
-}
-
-Facet2d::Facet2d( const double * pt0,
-    const double * pt1  )
-    : myCoords{stk::math::Vector3d(pt0,2), stk::math::Vector3d(pt1,2)}
 {
 }
 

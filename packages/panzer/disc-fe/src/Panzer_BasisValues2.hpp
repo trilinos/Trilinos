@@ -384,6 +384,9 @@ namespace panzer {
     hasUniformReferenceSpace() const
     {return is_uniform_;}
 
+    /// Return the basis descriptor
+    panzer::BasisDescriptor getBasisDescriptor() const;
+
     /// Get the extended dimensions used by sacado AD allocations
     const std::vector<PHX::index_size_type> &
     getExtendedDimensions() const

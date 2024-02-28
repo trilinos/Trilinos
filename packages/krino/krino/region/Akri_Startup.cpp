@@ -266,7 +266,8 @@ void Startup::handle_exception(const char * what, const bool is_parsing)
   std::cout << std::flush;
   std::cerr << std::flush;
 
-  std::abort();
+  const int errorCode{-1};
+  MPI_Abort(stk::EnvData::parallel_comm(), errorCode);
 }
 
 void Startup::report_handler(const char * message, int type)

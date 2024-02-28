@@ -142,13 +142,13 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstXMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getDomainMap() const
+    const typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstXMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getDomainMap() const
     {
         return K_->getDomainMap();
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstXMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getRangeMap() const
+    const typename OneLevelPreconditioner<SC,LO,GO,NO>::ConstXMapPtr OneLevelPreconditioner<SC,LO,GO,NO>::getRangeMap() const
     {
         return K_->getRangeMap();
     }

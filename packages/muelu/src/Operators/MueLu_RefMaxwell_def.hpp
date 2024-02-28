@@ -74,7 +74,6 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
-#include "MueLu_SaPFactory_kokkos.hpp"
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 
@@ -122,12 +121,12 @@ Matrix2CrsMatrix(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   return SM_Matrix_->getDomainMap();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
   return SM_Matrix_->getRangeMap();
 }
 
@@ -1752,14 +1751,12 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildNodalProlongato
     if (useKokkos_) {
       dropFact       = rcp(new CoalesceDropFactory_kokkos());
       TentativePFact = rcp(new TentativePFactory_kokkos());
-      if (algo == "sa")
-        SaPFact = rcp(new SaPFactory_kokkos());
     } else {
       dropFact       = rcp(new CoalesceDropFactory());
       TentativePFact = rcp(new TentativePFactory());
-      if (algo == "sa")
-        SaPFact = rcp(new SaPFactory());
     }
+    if (algo == "sa")
+      SaPFact = rcp(new SaPFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
     double dropTol           = parameterList_.get<double>("aggregation: drop tol");

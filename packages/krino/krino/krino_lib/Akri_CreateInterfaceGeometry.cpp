@@ -29,7 +29,7 @@ std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::Me
   if (manager.get_bounding_surfaces().size() > 0)
     return create_bounding_surface_geometry(manager, activePart, cdfemSupport, phaseSupport);
 
-  return create_levelset_geometry(activePart, cdfemSupport, phaseSupport, Phase_Support::get_levelset_fields(meta));
+  return create_levelset_geometry(meta.spatial_dimension(), activePart, cdfemSupport, phaseSupport, Phase_Support::get_levelset_fields(meta));
 }
 
 std::unique_ptr<InterfaceGeometry> create_bounding_surface_geometry(Surface_Manager & manager,
@@ -43,7 +43,8 @@ std::unique_ptr<InterfaceGeometry> create_bounding_surface_geometry(Surface_Mana
   return geom;
 }
 
-std::unique_ptr<InterfaceGeometry> create_levelset_geometry(const stk::mesh::Part & activePart,
+std::unique_ptr<InterfaceGeometry> create_levelset_geometry(const int dim,
+    const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields)
@@ -53,7 +54,7 @@ std::unique_ptr<InterfaceGeometry> create_levelset_geometry(const stk::mesh::Par
        (RESNAP_USING_INTERFACE_ON_PREVIOUS_SNAPPED_MESH == cdfemSupport.get_resnap_method() ||
         RESNAP_USING_INTERPOLATION == cdfemSupport.get_resnap_method()));
   if (facetsRequested && !phaseSupport.has_one_levelset_per_phase())
-    return std::make_unique<LevelSetSurfaceInterfaceGeometry>(activePart, cdfemSupport, phaseSupport, LSFields);
+    return std::make_unique<LevelSetSurfaceInterfaceGeometry>(dim, activePart, cdfemSupport, phaseSupport, LSFields);
   return std::make_unique<LevelSetInterfaceGeometry>(activePart, cdfemSupport, phaseSupport, LSFields);
 }
 

@@ -251,6 +251,10 @@ public:
     return ROL::PartitionedVector<Real>::create(x, Nt_);
   }
 
+  size_type getStateRank() const { return rankState_; } 
+  size_type getAdjointRank() const { return rankAdjoint_; } 
+  size_type getStateSensitivityRank() const { return rankStateSens_; } 
+
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     if (useSketch_) {
       stateSketch_->reset(true);

@@ -20,7 +20,7 @@ smoother ->
  timer for apply = 0
 
 Level 2
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -52,7 +52,7 @@ smoother ->
  timer for apply = 0
 
 Level 3
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -65,7 +65,7 @@ BuildAggregatesDeterministic (Phase 2a (secondary))
 BuildAggregatesDeterministic (Phase 2b (expansion))
 BuildAggregatesDeterministic (Phase 3 (cleanup))
 aggregation: deterministic = 1   [unused]
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -89,7 +89,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 4
 Operator complexity = 1.36
-Smoother complexity = 1.61
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows   nnz    nnz/row  c ratio  procs

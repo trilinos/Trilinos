@@ -237,7 +237,7 @@ static bool is_any_element_marked(FieldRef elementMarkerField, const std::vector
   for(const auto & elem : elems)
   {
     auto * elemMarker = field_data<int>(elementMarkerField, elem);
-    if (elemMarker && *elemMarker == Refinement::REFINE)
+    if (elemMarker && *elemMarker == static_cast<int>(Refinement::RefinementMarker::REFINE))
       return true;
   }
   return false;
@@ -246,7 +246,7 @@ static bool is_any_element_marked(FieldRef elementMarkerField, const std::vector
 static bool is_element_marked_for_unrefinement(FieldRef elementMarkerField, const stk::mesh::Entity elem)
 {
   auto * elemMarker = field_data<int>(elementMarkerField, elem);
-  if (elemMarker && *elemMarker == Refinement::COARSEN)
+  if (elemMarker && *elemMarker == static_cast<int>(Refinement::RefinementMarker::COARSEN))
     return true;
   return false;
 }
@@ -361,7 +361,7 @@ void TransitionElementEdgeMarker::locally_mark_edges_of_marked_non_transition_el
     {
       const stk::mesh::Entity elem = bucket[i];
 
-      if (elemMarker[i*markerFieldLength] == Refinement::REFINE && !is_transition(elem))
+      if (elemMarker[i*markerFieldLength] == static_cast<int>(Refinement::RefinementMarker::REFINE) && !is_transition(elem))
       {
         fill_entity_edges(myMesh, elem, edgesToRefineForElement);
         for (auto && edgeToRefineForElement : edgesToRefineForElement)
@@ -454,8 +454,7 @@ static void communicate_to_get_sorted_edges_nodes_that_will_be_removed_by_unrefi
   stk::CommSparse commSparse(mesh.parallel());
 
   pack_entities_for_sharing_procs(mesh, sharedEdgeNodesThatMustBeKept, commSparse);
-  std::vector<stk::mesh::Entity> sharedEdgeNodesThatMustBeKeptFromOtherProcs;
-  unpack_shared_entities(mesh, sharedEdgeNodesThatMustBeKeptFromOtherProcs, commSparse);
+  std::vector<stk::mesh::Entity> sharedEdgeNodesThatMustBeKeptFromOtherProcs = unpack_entities_from_other_procs(mesh, commSparse);
   stk::util::remove_intersection_from_first(ownedOrSharedEdgeNodesThatMayBeUnrefined, sharedEdgeNodesThatMustBeKeptFromOtherProcs);
 }
 

@@ -11,7 +11,6 @@
 #endif
 
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
-#include "Panzer_IntrepidOrientation.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"

@@ -1169,9 +1169,8 @@ void Add(
     }
   }
   if(CwasFillComplete) {
-    // This version of fillComplete will reuse the domain
-    // and range maps from the previous fillComplete.
-    C->fillComplete();
+    C->fillComplete(C->getDomainMap (),
+                    C->getRangeMap ());
   }
 }
 

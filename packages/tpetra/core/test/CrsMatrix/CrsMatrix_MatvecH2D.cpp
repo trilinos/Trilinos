@@ -174,8 +174,14 @@ namespace {
       TEST_EQUALITY(DeepCopyCounter::get_count_different_space(),0);
     }
     else {
-      // If there are multiple ranks w/o GPU-aware MPI, we currently have 3 copies per iter
-      TEST_EQUALITY(DeepCopyCounter::get_count_different_space(),3*iter_num);
+      // If there are multiple ranks w/o GPU-aware MPI, we currently have 1 copy per iter if the memory space
+      // is a shared memory space, and 3 copies otherwise.
+#ifdef KOKKOS_HAS_SHARED_SPACE
+      constexpr size_t num_copies_per_iter = std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 1 : 3;
+#else
+      constexpr size_t num_copies_per_iter = 3;
+#endif
+      TEST_EQUALITY(DeepCopyCounter::get_count_different_space(), num_copies_per_iter * iter_num);
     }
       
 

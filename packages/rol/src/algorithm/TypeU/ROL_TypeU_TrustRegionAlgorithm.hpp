@@ -118,7 +118,7 @@ public:
 
   void writeName( std::ostream& os ) const override;
   
-  void writeOutput( std::ostream& os, bool print_header = false ) const override;
+  void writeOutput( std::ostream& os, const bool print_header = false ) const override;
 
 private:
 

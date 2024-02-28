@@ -21,12 +21,12 @@ class RefinementInterface;
 
 stk::mesh::Selector cdfem_do_not_refine_or_unrefine_selector(const CDFEM_Support & cdfem_support);
 
-enum Refinement_Marker
-  {
-    COARSEN = -1,
-    NOTHING = 0,
-    REFINE = 1
-  };
+enum class Refinement_Marker
+{
+  COARSEN = -1,
+  NOTHING = 0,
+  REFINE = 1
+};
 
 void
 perform_multilevel_adaptivity(RefinementInterface & refinement,

@@ -62,8 +62,8 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class Operator : virtual public Teuchos::Describable {
-  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> mv_type;
 
  public:
   virtual ~Operator() {}
@@ -87,10 +87,10 @@ class Operator : virtual public Teuchos::Describable {
   //@{
 
   //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
-  virtual Teuchos::RCP<const Map> getDomainMap() const = 0;
+  virtual const Teuchos::RCP<const map_type> getDomainMap() const = 0;
 
   //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
-  virtual Teuchos::RCP<const Map> getRangeMap() const = 0;
+  virtual const Teuchos::RCP<const map_type> getRangeMap() const = 0;
 
   //! \brief Computes the operator-multivector application.
   /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -99,7 +99,7 @@ class Operator : virtual public Teuchos::Describable {
       - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
    */
   virtual void
-  apply(const MultiVector& X, MultiVector& Y,
+  apply(const mv_type& X, mv_type& Y,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
         Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
         Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
@@ -114,12 +114,12 @@ class Operator : virtual public Teuchos::Describable {
 
   //@}
 
-  virtual void removeEmptyProcessesInPlace(const RCP<const Map>& /* newMap */) {}
+  virtual void removeEmptyProcessesInPlace(const RCP<const map_type>& /* newMap */) {}
 
   //! Compute a residual R = B - (*this) * X
-  virtual void residual(const MultiVector& X,
-                        const MultiVector& B,
-                        MultiVector& R) const = 0;
+  virtual void residual(const mv_type& X,
+                        const mv_type& B,
+                        mv_type& R) const = 0;
 };
 
 }  // namespace Xpetra

@@ -129,10 +129,10 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
   virtual ~MultiPhys() {}
 
   //! Returns the Xpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Map> getDomainMap() const;
+  const Teuchos::RCP<const Map> getDomainMap() const;
 
   //! Returns the Xpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Map> getRangeMap() const;
+  const Teuchos::RCP<const Map> getRangeMap() const;
 
   //! Set parameters
   void setParameters(Teuchos::ParameterList& list);

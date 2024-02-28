@@ -154,7 +154,7 @@ public:
 
   /** \brief Print iterate status.
   */
-  virtual void writeOutput( std::ostream& os, bool write_header = false ) const;
+  virtual void writeOutput( std::ostream& os, const bool write_header = false ) const;
 
   virtual void writeExitStatus( std::ostream& os ) const;
 

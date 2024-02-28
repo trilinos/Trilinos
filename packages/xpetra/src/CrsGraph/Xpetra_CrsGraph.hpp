@@ -242,6 +242,9 @@ class CrsGraph
   virtual typename local_graph_type::HostMirror getLocalGraphHost() const = 0;
   virtual local_graph_type getLocalGraphDevice() const                    = 0;
 
+  //! Get offsets of the diagonal entries in the matrix.
+  virtual void getLocalDiagOffsets(const Kokkos::View<size_t *, device_type, Kokkos::MemoryUnmanaged> &offsets) const = 0;
+
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

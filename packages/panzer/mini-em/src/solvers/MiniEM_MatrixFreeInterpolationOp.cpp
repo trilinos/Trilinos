@@ -1,7 +1,6 @@
 #include "MiniEM_MatrixFreeInterpolationOp.hpp"
 #include <Tpetra_Operator.hpp>
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
-#include "Panzer_IntrepidOrientation.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"

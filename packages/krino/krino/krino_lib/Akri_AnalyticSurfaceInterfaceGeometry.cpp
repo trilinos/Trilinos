@@ -165,8 +165,6 @@ static void append_surface_edge_intersection_points(const stk::mesh::BulkData & 
   }
 }
 
-
-
 FieldRef AnalyticSurfaceInterfaceGeometry::get_coordinates_field(const stk::mesh::BulkData & mesh) const
 {
   FieldRef coordsField = myCdfemSupport.get_coords_field();

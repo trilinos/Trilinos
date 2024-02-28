@@ -5,12 +5,14 @@
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Selector; } }
+namespace stk { namespace mesh { class Entity; } }
 
 namespace krino {
 
 class FieldRef;
 
 BoundingBox compute_nodal_bbox( const stk::mesh::BulkData & mesh, const stk::mesh::Selector & selector, const FieldRef coordsField );
+BoundingBox compute_nodal_bbox( const stk::mesh::BulkData & mesh, const FieldRef coordsField, const std::vector<stk::mesh::Entity> & nodes );
 
 }
 
