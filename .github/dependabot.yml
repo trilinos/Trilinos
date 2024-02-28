@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /cmake/tribits/doc/sphinx
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /packages/kokkos-kernels/docs
+    schedule:
+      interval: daily
