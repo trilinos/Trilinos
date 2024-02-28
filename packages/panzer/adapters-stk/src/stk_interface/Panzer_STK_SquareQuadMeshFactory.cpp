@@ -238,12 +238,9 @@ Teuchos::RCP<const Teuchos::ParameterList> SquareQuadMeshFactory::getValidParame
       // default to false for backward compatibility
       defaultParams->set<bool>("Create Edge Blocks",false,"Create edge blocks in the mesh");
 
-      Teuchos::setStringToIntegralParameter<int>(
-        "Offset mesh GIDs above 32-bit int limit",
-        "OFF",
+      defaultParams->set<std::string>("Offset mesh GIDs above 32-bit int limit", "OFF",
         "If 64-bit GIDs are supported, the mesh element and node global indices will start at a value greater than 32-bit limit.",
-        Teuchos::tuple<std::string>("OFF", "ON"),
-        defaultParams.get());
+        rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("OFF", "ON"))));
 
       Teuchos::ParameterList & bcs = defaultParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
