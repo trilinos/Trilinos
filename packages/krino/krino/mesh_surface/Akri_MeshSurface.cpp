@@ -68,7 +68,7 @@ void Parallel_Facet_File_Reader::get_batch_size(const int local_num_facets, int 
 }
 
 Faceted_Surface_From_File::Faceted_Surface_From_File(const std::string & surface_name, const stk::diag::Timer &parent_timer)
-: Faceted_Surface(surface_name),
+: Faceted_Surface<Facet3d>(),
   my_timer("Facet File Reader", parent_timer),
   my_built_local_facets(false)
 {
@@ -202,8 +202,7 @@ void FACSurface::read_facets(const int batch_size, const int num_facets, const s
       p1 = p2;
       p2 = tmp;
     }
-    std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( points[p1], points[p2], points[p3] );
-    add( std::move(facet) );
+    emplace_back_3d( points[p1], points[p2], points[p3] );
   }
 }
 
@@ -346,8 +345,7 @@ void PLYSurface::read_facets(const int batch_size, const std::vector<stk::math::
       p1 = p2;
       p2 = tmp;
     }
-    std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( points[p1], points[p2], points[p3] );
-    add( std::move(facet) );
+    emplace_back_3d( points[p1], points[p2], points[p3] );
   }
 }
 
@@ -367,20 +365,14 @@ STLSurface::STLSurface(const std::string & surface_name,
   my_reader.close_file();
 }
 
-static std::unique_ptr<Facet> build_facet(const std::array<stk::math::Vector3d,3> & pts, const int sign)
+static void flip_facet_with_negative_sign(std::array<stk::math::Vector3d,3> & pts, const int sign)
 {
-  unsigned p0 = 0;
-  unsigned p1 = 1;
-  unsigned p2 = 2;
   if (sign == -1)
   {
-    // permute to flip normal direction
-    p1 = 2;
-    p2 = 1;
+    std::swap(pts[1][0], pts[2][0]);
+    std::swap(pts[1][1], pts[2][1]);
+    std::swap(pts[1][2], pts[2][2]);
   }
-
-  std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( pts[p0], pts[p1], pts[p2] );
-  return facet;
 }
 
 static bool is_finite_normal(const stk::math::Vector3d normal)
@@ -397,7 +389,7 @@ static bool is_finite_normal(const stk::math::Vector3d normal)
   return finiteFlag;
 }
 
-static std::unique_ptr<Facet> read_ascii_facet(std::ifstream & input, const stk::math::Vector3d & scale, const int sign)
+void read_ascii_facet(std::ifstream & input, const stk::math::Vector3d & scale, const int sign, std::array<stk::math::Vector3d,3> & facetPts, bool & isFacetValid)
 {
   std::string symbol, nx, ny, nz;
   double X, Y, Z;
@@ -415,13 +407,12 @@ static std::unique_ptr<Facet> read_ascii_facet(std::ifstream & input, const stk:
   STK_ThrowRequire(symbol.compare("loop") == 0);
 
   // Read in the vertices
-  std::array<stk::math::Vector3d,3> pts;
   for (int i=0; i<3; i++) {
     input >> symbol;
     STK_ThrowRequire(symbol.compare("vertex") == 0);
     input >> X >> Y >> Z;
 
-    pts[i] = stk::math::Vector3d(X*scale[0], Y*scale[1], Z*scale[2]);
+    facetPts[i] = stk::math::Vector3d(X*scale[0], Y*scale[1], Z*scale[2]);
   }
 
   // Read in the "endloop" and "endfacet" lines
@@ -430,15 +421,8 @@ static std::unique_ptr<Facet> read_ascii_facet(std::ifstream & input, const stk:
   input >> symbol;
   STK_ThrowRequire(symbol.compare("endfacet") == 0);
 
-  std::unique_ptr<Facet> facet;
-  if (is_finite_normal(normal))
-  {
-    facet = build_facet(pts, sign);
-    if (facet->degenerate())
-      facet.reset();
-  }
-
-  return facet;
+  isFacetValid = is_finite_normal(normal) && !Facet3d::is_degenerate(facetPts);
+  flip_facet_with_negative_sign(facetPts, sign);
 }
 
 static bool read_start_of_next_ascii_facet(std::ifstream & input)
@@ -464,12 +448,11 @@ static stk::math::Vector3d read_binary_vector(std::ifstream& input)
   return stk::math::Vector3d(x, y, z);
 }
 
-static std::unique_ptr<Facet> read_binary_facet(std::ifstream & input, const stk::math::Vector3d & scale, const int sign)
+static void read_binary_facet(std::ifstream & input, const stk::math::Vector3d & scale, const int sign, std::array<stk::math::Vector3d,3> & facetPts, bool & isFacetValid)
 {
   const stk::math::Vector3d normal = read_binary_vector(input);
 
-  std::array<stk::math::Vector3d,3> pts;
-  for (auto && pt : pts)
+  for (auto && pt : facetPts)
   {
     const stk::math::Vector3d vec = read_binary_vector(input);
     pt = stk::math::Vector3d(vec[0]*scale[0], vec[1]*scale[1], vec[2]*scale[2]);
@@ -478,15 +461,8 @@ static std::unique_ptr<Facet> read_binary_facet(std::ifstream & input, const stk
   char dummy[2];
   input.read(dummy, 2);
 
-  std::unique_ptr<Facet> facet;
-  if (is_finite_normal(normal))
-  {
-    facet = build_facet(pts, sign);
-    if (facet->degenerate())
-      facet.reset();
-  }
-
-  return facet;
+  isFacetValid = is_finite_normal(normal) && !Facet3d::is_degenerate(facetPts);
+  flip_facet_with_negative_sign(facetPts, sign);
 }
 
 BoundingBox
@@ -603,14 +579,17 @@ unsigned STLSurface::read_ascii_facets(const unsigned max_batch_size)
 {
   std::ifstream & input = my_reader.input();
 
+  bool isFacetValid = false;
+  std::array<stk::math::Vector3d,3> facetPts;
+
   unsigned count = 0;
   bool done = false;
   while (!done)
   {
-    std::unique_ptr<Facet> facet = read_ascii_facet(input, my_scale, my_dist_sign);
-    if (facet)
+    read_ascii_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
+    if (isFacetValid)
     {
-      add(std::move(facet));
+      emplace_back_3d(facetPts[0], facetPts[1], facetPts[2]);
       ++count;
     }
     done = (!read_start_of_next_ascii_facet(input) || count >= max_batch_size);
@@ -622,14 +601,17 @@ unsigned STLSurface::read_binary_facets(const unsigned maxBatchSize, unsigned & 
 {
   std::ifstream & input = my_reader.input();
 
+  bool isFacetValid = false;
+  std::array<stk::math::Vector3d,3> facetPts;
+
   unsigned count = 0;
   bool done = numRemainingInFile == 0;
   while (!done)
   {
-    std::unique_ptr<Facet> facet = read_binary_facet(input, my_scale, my_dist_sign);
-    if (facet)
+    read_binary_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
+    if (isFacetValid)
     {
-      add(std::move(facet));
+      emplace_back_3d(facetPts[0], facetPts[1], facetPts[2]);
       ++count;
     }
     done = (--numRemainingInFile == 0 || count >= maxBatchSize);
@@ -642,14 +624,20 @@ BoundingBox STLSurface::get_ascii_facet_bounding_box()
 {
   std::ifstream & input = my_reader.input();
 
+  bool isFacetValid = false;
+  std::array<stk::math::Vector3d,3> facetPts;
+
   BoundingBox bbox;
 
   bool done = false;
   while (!done)
   {
-    std::unique_ptr<Facet> facet = read_ascii_facet(input, my_scale, my_dist_sign);
-    if (facet)
-      facet->insert_into(bbox);
+    read_ascii_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
+    if (isFacetValid)
+    {
+      const Facet3d facet(facetPts[0], facetPts[1], facetPts[2]);
+      facet.insert_into(bbox);
+    }
     done = !read_start_of_next_ascii_facet(input);
   }
   return bbox;
@@ -659,13 +647,19 @@ BoundingBox STLSurface::get_binary_facet_bounding_box(const unsigned numFacets)
 {
   std::ifstream & input = my_reader.input();
 
+  bool isFacetValid = false;
+  std::array<stk::math::Vector3d,3> facetPts;
+
   BoundingBox bbox;
 
   for (unsigned count=0; count<numFacets; ++count)
   {
-    std::unique_ptr<Facet> facet = read_binary_facet(input, my_scale, my_dist_sign);
-    if (facet)
-      facet->insert_into(bbox);
+    read_binary_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
+    if (isFacetValid)
+    {
+      const Facet3d facet(facetPts[0], facetPts[1], facetPts[2]);
+      facet.insert_into(bbox);
+    }
   }
   return bbox;
 }
@@ -827,8 +821,7 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
             p2 = 1;
           }
 
-          std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( pt[p0], pt[p1], pt[p2] );
-          add( std::move(facet) );
+          emplace_back_3d( pt[p0], pt[p1], pt[p2] );
         }
       }
       parallel_distribute_facets(current_batch_size, proc_bboxes);
@@ -836,11 +829,22 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
   }
 }
 
-MeshSurface::MeshSurface(const stk::mesh::MetaData & meta,
+std::unique_ptr<FacetedSurfaceBase> build_mesh_surface(const stk::mesh::MetaData & meta,
+    const stk::mesh::Field<double>& coordsField,
+    const stk::mesh::Selector & surfaceSelector,
+    const int sign)
+{
+  if (meta.spatial_dimension() == 2)
+    return std::make_unique<MeshSurface<Facet2d>>(meta, coordsField, surfaceSelector, sign);
+  return std::make_unique<MeshSurface<Facet3d>>(meta, coordsField, surfaceSelector, sign);
+}
+
+template <class FACET>
+MeshSurface<FACET>::MeshSurface(const stk::mesh::MetaData & meta,
               const stk::mesh::Field<double>& coord_ref,
               const stk::mesh::Selector & surface_selector,
               const int sign)
-  : Faceted_Surface("Mesh surface"),
+  : Faceted_Surface<FACET>(),
     my_sign(sign),
     my_mesh_meta(meta),
     my_coord_ref(coord_ref),
@@ -848,8 +852,8 @@ MeshSurface::MeshSurface(const stk::mesh::MetaData & meta,
 {
 }
 
-void
-MeshSurface::build_local_facets(const BoundingBox & proc_bbox)
+template <class FACET>
+void MeshSurface<FACET>::build_local_facets(const BoundingBox & proc_bbox)
 {
   /* %TRACE[ON]% */ Trace trace__("krino::MeshSurface::build_local_facets()"); /* %TRACE% */
   const stk::mesh::BulkData & mesh = my_mesh_meta.mesh_bulk_data();
@@ -862,7 +866,7 @@ MeshSurface::build_local_facets(const BoundingBox & proc_bbox)
 
   stk::mesh::BucketVector const& buckets = mesh.get_buckets( my_mesh_meta.side_rank(), active_locally_owned_part_selector);
 
-  clear();
+  Faceted_Surface<FACET>::clear();
 
   stk::mesh::BucketVector::const_iterator ib = buckets.begin();
   stk::mesh::BucketVector::const_iterator ib_end = buckets.end();
@@ -909,8 +913,8 @@ MeshSurface::build_local_facets(const BoundingBox & proc_bbox)
   }
 }
 
-void
-MeshSurface::add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1)
+template <class FACET>
+void MeshSurface<FACET>::add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1)
 {
   STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
   stk::math::Vector3d pt[2];
@@ -938,8 +942,8 @@ MeshSurface::add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side
   add_facet2d(pt[0], pt[1]);
 }
 
-void
-MeshSurface::add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2)
+template <class FACET>
+void MeshSurface<FACET>::add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2)
 {
   STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
   stk::math::Vector3d pt[3];
@@ -961,8 +965,8 @@ MeshSurface::add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side
   add_facet3d(pt[0], pt[1], pt[2]);
 }
 
-void
-MeshSurface::add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2, unsigned p3)
+template <class FACET>
+void MeshSurface<FACET>::add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2, unsigned p3)
 {
   STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
   stk::math::Vector3d pt[5];
@@ -1005,22 +1009,22 @@ MeshSurface::add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side,
   }
 }
 
-void
-MeshSurface::add_facet2d(stk::math::Vector3d & p0, stk::math::Vector3d & p1)
+template <class FACET>
+void MeshSurface<FACET>::add_facet2d(stk::math::Vector3d & p0, stk::math::Vector3d & p1)
 {
   STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
-
-  std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( p0, p1 );
-  add( std::move(facet) );
+  Faceted_Surface<FACET>::emplace_back_2d( p0, p1 );
 }
 
-void
-MeshSurface::add_facet3d(stk::math::Vector3d & p0, stk::math::Vector3d & p1, stk::math::Vector3d & p2)
+template <class FACET>
+void MeshSurface<FACET>::add_facet3d(stk::math::Vector3d & p0, stk::math::Vector3d & p1, stk::math::Vector3d & p2)
 {
   STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
-
-  std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( p0, p1, p2 );
-  add( std::move(facet) );
+  Faceted_Surface<FACET>::emplace_back_3d( p0, p1, p2 );
 }
+
+// Explicit template instantiation
+template class MeshSurface<Facet3d>;
+template class MeshSurface<Facet2d>;
 
 } // namespace krino

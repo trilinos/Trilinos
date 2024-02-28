@@ -24,14 +24,14 @@ namespace krino {
 void clear_refinement_marker(const RefinementInterface & refinement)
 {
   FieldRef markerField = refinement.get_marker_field();
-  stk::mesh::field_fill(static_cast<int>(Refinement::NOTHING), markerField, stk::mesh::selectField(markerField));
+  stk::mesh::field_fill(static_cast<int>(Refinement::RefinementMarker::NOTHING), markerField, stk::mesh::selectField(markerField));
 }
 
 void mark_selected_elements_for_refinement(const RefinementInterface & refinement, const stk::mesh::Selector & selector)
 {
   FieldRef markerField = refinement.get_marker_field();
   clear_refinement_marker(refinement);
-  stk::mesh::field_fill(static_cast<int>(Refinement::REFINE), markerField, selector);
+  stk::mesh::field_fill(static_cast<int>(Refinement::RefinementMarker::REFINE), markerField, selector);
 }
 
 void mark_selected_elements_for_refinement(const RefinementInterface & refinement, const int current_refinement_level, const int max_refinement_levels, const stk::mesh::Selector & selector)
@@ -50,7 +50,7 @@ void mark_elements_for_refinement(const RefinementInterface & refinement, const 
   for (auto && elem : elemsToRefine)
   {
     int * elemMarker = field_data<int>(markerField, elem);
-    *elemMarker = Refinement::REFINE;
+    *elemMarker = static_cast<int>(Refinement::RefinementMarker::REFINE);
   }
 }
 
@@ -131,7 +131,9 @@ void mark_based_on_indicator_field(const stk::mesh::BulkData & mesh,
     const int size = bucket.size();
     for(int i=0; i < size; ++i)
     {
-      markerData[i] = indicatorData[i] > threshold_val ? Refinement::REFINE : Refinement::NOTHING;
+      markerData[i] = indicatorData[i] > threshold_val 
+        ? static_cast<int>(Refinement::RefinementMarker::REFINE)
+        : static_cast<int>(Refinement::RefinementMarker::NOTHING);
     }
   }
 }
@@ -189,17 +191,27 @@ KrinoRefinement::get(const stk::mesh::MetaData & meta)
 }
 
 KrinoRefinement &
-KrinoRefinement::create(stk::mesh::MetaData & meta)
+KrinoRefinement::create(stk::mesh::MetaData & meta, stk::diag::Timer & timer)
 {
   KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
   STK_ThrowRequireMsg(nullptr == refinement, "KrinoRefinement::create should be called only once per MetaData.");
   if (nullptr == refinement)
   {
     AuxMetaData & auxMeta = AuxMetaData::get(meta);
-    refinement = new KrinoRefinement(meta, &auxMeta.active_part(), false/*auxMeta.get_force_64bit_flag()*/, auxMeta.get_assert_32bit_flag());
+    refinement = new KrinoRefinement(meta,
+        &auxMeta.active_part(),
+        false /*auxMeta.get_force_64bit_flag()*/,
+        auxMeta.get_assert_32bit_flag(),
+        timer);
     meta.declare_attribute_with_delete<KrinoRefinement>(refinement);
   }
   return *refinement;
+}
+
+KrinoRefinement &
+KrinoRefinement::create(stk::mesh::MetaData & meta)
+{
+  return KrinoRefinement::create(meta, sierra::Diag::sierraTimer());
 }
 
 bool
@@ -224,9 +236,14 @@ KrinoRefinement::register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::Meta
   }
 }
 
-KrinoRefinement::KrinoRefinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit) :
-    myMeta(meta),
-    myRefinement(meta, activePart, force64Bit, assert32Bit)
+KrinoRefinement::KrinoRefinement(stk::mesh::MetaData & meta,
+    stk::mesh::Part * activePart,
+    const bool force64Bit,
+    const bool assert32Bit,
+    stk::diag::Timer & parent_timer)
+    : myMeta(meta),
+     myRefinementTimer("Refinement", parent_timer),
+     myRefinement(meta, activePart, force64Bit, assert32Bit, myRefinementTimer)
 {
   myElementMarkerField = meta.declare_field<int>(stk::topology::ELEMENT_RANK, "REFINEMENT_ELEMENT_MARKER", 1);
   stk::mesh::put_field_on_mesh(myElementMarkerField.field(), meta.universal_part(), 1, 1, nullptr);
@@ -378,9 +395,9 @@ std::pair<unsigned,unsigned> KrinoRefinement::get_marked_element_counts() const
 
     for (int i = 0; i < length; ++i)
     {
-      if (marker[i] == Refinement::COARSEN)
+      if (marker[i] == static_cast<int>(Refinement::RefinementMarker::COARSEN))
         ++numUnrefine;
-      else if (marker[i] == Refinement::REFINE)
+      else if (marker[i] == static_cast<int>(Refinement::RefinementMarker::REFINE))
         ++numRefine;
     }
   }
@@ -408,8 +425,11 @@ bool KrinoRefinement::do_refinement(const int debugLevel)
   krinolog << "Adapt: before refine, mesh has  " << counts[0] << " nodes, " << counts[1]
            << " edges, " << counts[2] << " faces, " << counts[3] << " elements" << stk::diag::dendl;
 
-  const bool didMakeAnyChanges = myRefinement.do_refinement(get_marker());
-
+  bool didMakeAnyChanges = false;
+  {
+    stk::diag::TimeBlock timer_(myRefinementTimer);
+    didMakeAnyChanges = myRefinement.do_refinement(get_marker());
+  }
   stk::mesh::comm_mesh_counts(mesh, counts);
 
   krinolog << "Adapt: after refine, mesh has  " << counts[0] << " nodes, " << counts[1]

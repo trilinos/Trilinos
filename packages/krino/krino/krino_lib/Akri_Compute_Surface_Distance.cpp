@@ -33,7 +33,7 @@ Compute_Surface_Distance::calculate(
 }
 
 static void compute_distance_to_facets(const stk::mesh::BulkData & mesh,
-    const MeshSurface & facet_list,
+    const FacetedSurfaceBase & facets,
     const stk::mesh::Field<double>& coordinates,
     const stk::mesh::Field<double>& distance,
     const stk::mesh::Selector & volume_selector,
@@ -53,18 +53,18 @@ static void compute_distance_to_facets(const stk::mesh::BulkData & mesh,
       STK_ThrowAssert(&(dist[n]) != NULL);
 
       const stk::math::Vector3d xvec(coord+n*spatial_dimension, spatial_dimension);
-      dist[n] = facet_list.point_unsigned_distance(xvec, narrowBandSize, farFieldValue);
+      dist[n] = facets.point_unsigned_distance(xvec, narrowBandSize, farFieldValue);
     }
   }
 }
 
-void print_facet_info(const MeshSurface & facet_list, stk::ParallelMachine parallel)
+void print_facet_info(const FacetedSurfaceBase & facets, stk::ParallelMachine parallel)
 {
   constexpr int vec_size = 3;
   std::array <unsigned,vec_size> local_sizes, global_min, global_max;
-  local_sizes[0] = facet_list.storage_size();
-  local_sizes[1] = facet_list.size();
-  local_sizes[2] = facet_list.size()+facet_list.nonlocal_size();
+  local_sizes[0] = facets.storage_size();
+  local_sizes[1] = facets.size();
+  local_sizes[2] = facets.size()+facets.nonlocal_size();
 
   stk::all_reduce_min( parallel, local_sizes.data(), global_min.data(), vec_size );
   stk::all_reduce_max( parallel, local_sizes.data(), global_max.data(), vec_size );
@@ -75,7 +75,6 @@ void print_facet_info(const MeshSurface & facet_list, stk::ParallelMachine paral
   krinolog << "   Memory usage (mb):  min=" << global_min[0]/(1024.0*1024.0) << ", max=" << global_max[0]/(1024.0*1024.0) << stk::diag::dendl;
 }
 
-
 void
 Compute_Surface_Distance::calculate(
   const stk::mesh::BulkData & mesh,
@@ -83,7 +82,7 @@ Compute_Surface_Distance::calculate(
   const stk::mesh::Field<double>& coordinates,
   const stk::mesh::Field<double>& distance,
   const stk::mesh::Selector & volume_selector,
-  const stk::mesh::Selector & surface_selector,
+  const stk::mesh::Selector & surfaceSelector,
   const double narrowBandSize,
   const double farFieldValue)
 { /* %TRACE[ON]% */ Trace trace__("krino::Compute_Surface_Distance::compute_surface_distance(void)"); /* %TRACE% */
@@ -91,14 +90,15 @@ Compute_Surface_Distance::calculate(
   stk::diag::Timer timer( "Compute Surface Distance", parent_timer );
   stk::diag::TimeBlock timer_(timer);
 
-  MeshSurface facet_list(mesh.mesh_meta_data(), coordinates, surface_selector, +1);
+  std::unique_ptr<FacetedSurfaceBase> facets = build_mesh_surface(mesh.mesh_meta_data(), coordinates, surfaceSelector, +1);
+
   FieldRef coordsField(coordinates);
   const BoundingBox nodeBbox = compute_nodal_bbox(mesh, volume_selector & stk::mesh::selectField(distance), coordsField);
-  facet_list.prepare_to_compute(0.0, nodeBbox, narrowBandSize); // Setup including communication of facets that are within this processors narrow band
+  facets->prepare_to_compute(0.0, nodeBbox, narrowBandSize); // Setup including communication of facets that are within this processors narrow band
 
-  print_facet_info(facet_list, mesh.parallel());
+  print_facet_info(*facets, mesh.parallel());
 
-  compute_distance_to_facets(mesh, facet_list, coordinates, distance, volume_selector, narrowBandSize, farFieldValue);
+  compute_distance_to_facets(mesh, *facets, coordinates, distance, volume_selector, narrowBandSize, farFieldValue);
 }
 
 } // namespace krino

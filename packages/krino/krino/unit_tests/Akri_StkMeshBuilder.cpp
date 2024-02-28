@@ -22,6 +22,12 @@ StkMeshBuilder<TOPO>::StkMeshBuilder(stk::mesh::BulkData & mesh, const stk::Para
 }
 
 template<stk::topology::topology_t TOPO>
+const stk::mesh::FieldBase & StkMeshBuilder<TOPO>::get_coordinates_field() const
+{
+  return *mMesh.mesh_meta_data().coordinate_field();
+}
+
+template<stk::topology::topology_t TOPO>
 void StkMeshBuilder<TOPO>::declare_coordinates()
 {
   stk::mesh::Field<double> & coordsField = mMesh.mesh_meta_data().template declare_field<double>(

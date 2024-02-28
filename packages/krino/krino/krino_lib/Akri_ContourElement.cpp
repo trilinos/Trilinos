@@ -527,7 +527,7 @@ ContourElement::dump_subelement_details() const
   }
 
 void
-ContourElement::build_subelement_facets( Faceted_Surface & facets )
+ContourElement::build_subelement_facets( FacetedSurfaceBase & facets )
 {
   if (my_sign == 0)
   {

@@ -442,7 +442,7 @@ protected:
     IntersectionPointFromNodalLevelsetInterfaceGeometry geometry;
     geometry.set_nodal_levelset(mMesh, get_assigned_node_global_ids(), nodeLSValues);
     NodeToCapturedDomainsMap nodesToCapturedDomains;
-    return build_all_intersection_points(mMesh, geometry, nodesToCapturedDomains);
+    return build_all_intersection_points(mMesh, mMesh.mesh_meta_data().universal_part(), geometry, nodesToCapturedDomains);
   }
 
   std::vector<size_t> get_allowed_snap_indices(const std::vector<IntersectionPoint> & intersectionPoints, const stk::mesh::Entity snapNode)

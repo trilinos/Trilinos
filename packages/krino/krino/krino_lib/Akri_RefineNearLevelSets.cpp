@@ -40,7 +40,7 @@ void refine_elements_that_intersect_distance_interval_from_levelsets(stk::mesh::
   const CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
   const Phase_Support & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());
   const auto lsFields = build_levelset_fields(stkLevelSetFields);
-  const LevelSetSurfaceInterfaceGeometry interfaceGeom(activePart, cdfemSupport, phaseSupport, lsFields);
+  const LevelSetSurfaceInterfaceGeometry interfaceGeom(mesh.mesh_meta_data().spatial_dimension(), activePart, cdfemSupport, phaseSupport, lsFields);
 
   const int numRefinementSteps = 2*refinementSupport.get_interface_maximum_refinement_level(); // Make sure refinement completes so that elements touching interval are fully refined
 

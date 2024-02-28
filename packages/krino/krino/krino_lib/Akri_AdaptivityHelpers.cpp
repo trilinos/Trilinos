@@ -41,14 +41,14 @@ void filter_refinement_marker(const RefinementInterface & refinement, const stk:
     if (do_not_refine_or_unrefine_selector(*bucketPtr))
     {
       for (int i = 0; i < size; ++i)
-        if (markers[i] == Refinement_Marker::REFINE || markers[i] == Refinement_Marker::COARSEN)
-          markers[i] = Refinement_Marker::NOTHING;
+        if (markers[i] == static_cast<int>(Refinement_Marker::REFINE) || markers[i] == static_cast<int>(Refinement_Marker::COARSEN))
+          markers[i] = static_cast<int>(Refinement_Marker::NOTHING);
     }
     else if (bucketPtr->member(parentPart))
     {
       for (int i = 0; i < size; ++i)
-        if (markers[i] == Refinement_Marker::REFINE)
-          markers[i] = Refinement_Marker::NOTHING;
+        if (markers[i] == static_cast<int>(Refinement_Marker::REFINE))
+          markers[i] = static_cast<int>(Refinement_Marker::NOTHING);
     }
   }
 }
@@ -84,7 +84,7 @@ void perform_multilevel_adaptivity(RefinementInterface & refinement,
       int * markers = field_data<int>(elem_marker, *b_ptr);
       for (size_t i = 0; i < b_ptr->size(); ++i)
       {
-        if (markers[i] == Refinement_Marker::REFINE) ++num_marked_refine;
+        if (markers[i] == static_cast<int>(Refinement_Marker::REFINE)) ++num_marked_refine;
       }
     }
 

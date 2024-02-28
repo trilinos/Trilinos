@@ -11,6 +11,7 @@
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Akri_FieldRef.hpp>
 #include <Akri_AdaptivityHelpers.hpp>
 #include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_MeshInputOptions.hpp>

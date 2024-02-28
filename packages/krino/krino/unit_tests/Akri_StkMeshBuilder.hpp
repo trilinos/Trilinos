@@ -66,6 +66,7 @@ public:
     stk::mesh::Entity get_side_with_nodes(const std::vector<stk::mesh::Entity> &nodesOfSide) const;
     void create_block_parts(const std::vector<unsigned> &elementBlockIDs);
     stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const;
+    const stk::mesh::FieldBase & get_coordinates_field() const;
     const stk::mesh::PartVector & get_block_parts() const { return mBlockParts; }
     void write_mesh(const std::string & fileName);
 

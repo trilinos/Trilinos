@@ -8,6 +8,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_math/StkVector.hpp>
 #include "Akri_NodeRefiner.hpp"
+#include "stk_util/diag/Timer.hpp"
 
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { class topology; }
@@ -20,15 +21,60 @@ class EdgeMarkerInterface;
 class Refinement
 {
 public:
-  enum RefinementMarker
+  enum class RefinementMarker
   {
     COARSEN = -1,
     NOTHING = 0,
     REFINE = 1
   };
-  Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit);
-  Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart);
-  Refinement(stk::mesh::MetaData & meta);
+
+  struct RefineElementsTimers
+  {
+    RefineElementsTimers(stk::diag::Timer & parent_timer)
+        : rootTimer("Refine Elements", parent_timer),
+        checkLeafChildren("Check Leaf Children", rootTimer),
+        findEdgesToRefine("Find Edges to Refine", rootTimer),
+        createRefinedEdges("Create Refined Edges", rootTimer),
+        elminateHangingNodes("Eliminate Hanging Nodes", rootTimer),
+        prolongNodes("Prolong Edge Nodes", rootTimer)
+        {};
+
+    mutable stk::diag::Timer rootTimer;
+    mutable stk::diag::Timer checkLeafChildren;
+    mutable stk::diag::Timer findEdgesToRefine;
+    mutable stk::diag::Timer createRefinedEdges;
+    mutable stk::diag::Timer elminateHangingNodes;
+    mutable stk::diag::Timer prolongNodes;
+  };
+
+  struct UnrefineElementsTimers
+  {
+    UnrefineElementsTimers(stk::diag::Timer & parent_timer)
+        : rootTimer("Unrefine Elements", parent_timer),
+        checkLeafChildren("Check Leaf Children", rootTimer),
+        restrictElementFields("Restrict Element Fields", rootTimer),
+        fillElements("Fill elements", rootTimer),
+        meshMod("Mesh Modification", rootTimer),
+        elminateHangingNodes("Eliminate Hanging Nodes", rootTimer),
+        fixFaceEdgeOwnership("Fix ownership and mark", rootTimer)
+        {};
+
+    mutable stk::diag::Timer rootTimer;
+    mutable stk::diag::Timer checkLeafChildren;
+    mutable stk::diag::Timer restrictElementFields;
+    mutable stk::diag::Timer fillElements;
+    mutable stk::diag::Timer meshMod;
+    mutable stk::diag::Timer elminateHangingNodes;
+    mutable stk::diag::Timer fixFaceEdgeOwnership;
+  };
+
+  Refinement(stk::mesh::MetaData & meta,
+      stk::mesh::Part * activePart,
+      const bool force64Bit,
+      const bool assert32Bit,
+      stk::diag::Timer & parentTimer);
+  Refinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart,stk::diag::Timer & parentTimer);
+  Refinement(stk::mesh::MetaData & meta, stk::diag::Timer & parentTimer);
   Refinement ( const Refinement & ) = delete;
   Refinement & operator= ( const Refinement & ) = delete;
 
@@ -100,7 +146,9 @@ private:
   bool locally_have_any_hanging_refined_nodes() const;
   void create_refined_nodes_elements_and_sides(const EdgeMarkerInterface & edgeMarker);
   void create_another_layer_of_refined_elements_and_sides_to_eliminate_hanging_nodes(const EdgeMarkerInterface & edgeMarker);
-  bool do_unrefinement(const EdgeMarkerInterface & edgeMarker);
+  bool unrefine_elements(const EdgeMarkerInterface & edgeMarker);
+  bool refine_elements(const EdgeMarkerInterface & edgeMarker);
+  void finalize();
   void mark_already_refined_edges();
   void destroy_custom_ghostings();
 
@@ -144,6 +192,10 @@ private:
   stk::mesh::Field<uint64_t> * myChildElementIds8Field{nullptr};
   stk::mesh::Field<uint64_t> * myRefinedEdgeNodeParentIdsField{nullptr};
   stk::mesh::Field<int> * myOriginatingProcForParentElementField{nullptr};
+
+  mutable RefineElementsTimers refineTimer;
+  mutable UnrefineElementsTimers unrefineTimer;
+  mutable stk::diag::Timer myFixPartsandOwnersTimer;  
 };
 
 } // namespace krino

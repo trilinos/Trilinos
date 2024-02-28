@@ -257,7 +257,7 @@ public:
           if(std::fabs(coords[meta->spatial_dimension()-1]-1.) <= 1e-6)
           {
             int * elemMarker = field_data<int>(refinement.get_marker_field(), elem);
-            *elemMarker = Refinement::REFINE;
+            *elemMarker = static_cast<int>(Refinement::RefinementMarker::REFINE);
           }
         }
       }
@@ -519,7 +519,7 @@ TEST_F(ParallelRebalanceForAdaptivityFixture3D, ParentChildRebalanceRules)
         EXPECT_TRUE(parent != stk::mesh::Entity());
         EXPECT_TRUE(refinement.is_parent(parent));
         int * elemMarker = field_data<int>(markerField, elem);
-        *elemMarker = Refinement::COARSEN;
+        *elemMarker = static_cast<int>(Refinement::RefinementMarker::COARSEN);
       }
     }
     refinement.do_refinement();

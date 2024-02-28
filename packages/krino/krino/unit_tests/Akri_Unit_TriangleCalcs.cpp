@@ -10,7 +10,7 @@
 #include <stk_math/StkVector.hpp>
 #include <Akri_UnitTestUtils.hpp>
 #include <Akri_FacetedSurfaceCalcs.hpp>
-
+#include <Akri_Facet.hpp>
 
 namespace
 {

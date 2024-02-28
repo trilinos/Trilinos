@@ -40,11 +40,11 @@ namespace {
 
     if (refine_level >= interface_max_refine_level )
     {
-      marker = Refinement_Marker::NOTHING;
+      marker = static_cast<int>(Refinement_Marker::NOTHING);
     }
     else
     {
-      marker = Refinement_Marker::REFINE;
+      marker = static_cast<int>(Refinement_Marker::REFINE);
     }
   }
 }
@@ -232,7 +232,7 @@ mark_nearest_node_on_cut_edges(const stk::mesh::BulkData& mesh,
 
 int determine_refinement_marker(const bool isElementIndicated, const int refinementIterCount, const int interfaceMinRefineLevel, const int elementRefineLevel)
 {
-  int marker = Refinement_Marker::NOTHING;
+  auto marker = Refinement_Marker::NOTHING;
   const int targetRefineLevel = isElementIndicated ? interfaceMinRefineLevel : 0;
   if (elementRefineLevel < targetRefineLevel)
   {
@@ -246,7 +246,7 @@ int determine_refinement_marker(const bool isElementIndicated, const int refinem
     // with refinement
     marker = Refinement_Marker::COARSEN;
   }
-  return marker;
+  return static_cast<int>(marker);
 }
 
 void

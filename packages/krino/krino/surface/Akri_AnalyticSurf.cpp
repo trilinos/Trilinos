@@ -255,7 +255,7 @@ Ellipsoid::point_signed_distance(const stk::math::Vector3d &x) const
   return mySign*(mySemiAxesNorm*std::sqrt(dx*dx+dy*dy+dz*dz)-mySemiAxesNorm);
 }
 
-Plane::Plane(const double normal[3],
+Plane::Plane(const stk::math::Vector3d & normal,
     const double offset,
     const double multiplier)
     : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),

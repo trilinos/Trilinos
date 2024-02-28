@@ -76,14 +76,17 @@ std::string debug_output(const stk::mesh::BulkData & mesh, const IntersectionPoi
 IntersectionPointFilter keep_all_intersection_points_filter();
 
 std::vector<IntersectionPoint> build_all_intersection_points(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & geometry,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains);
 
 std::vector<IntersectionPoint> build_uncaptured_intersection_points(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & geometry,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains);
 
 std::vector<size_t> update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
+  const stk::mesh::Selector & elementSelector,
   const InterfaceGeometry & geometry,
   const std::vector<stk::mesh::Entity> & iterationSortedSnapNodes,
   const NodeToCapturedDomainsMap & nodesToCapturedDomains,

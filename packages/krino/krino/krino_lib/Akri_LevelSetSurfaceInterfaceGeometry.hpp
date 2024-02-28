@@ -14,7 +14,8 @@ class Phase_Support;
 class LevelSetSurfaceInterfaceGeometry : public AnalyticSurfaceInterfaceGeometry {
 
 public:
-  LevelSetSurfaceInterfaceGeometry(const stk::mesh::Part & activePart,
+  LevelSetSurfaceInterfaceGeometry(const int dim,
+    const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);
@@ -31,7 +32,6 @@ public:
 
   // Methods that use levelset directly and not facetted levelset surface, because they need the analog, not discrete version
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
-  virtual std::vector<stk::mesh::Entity> get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const override;
 
 private:
   std::vector<stk::mesh::Selector> get_levelset_element_selectors() const;
@@ -40,7 +40,7 @@ private:
 
   std::vector<LS_Field> myLSFields;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
-  mutable std::vector<Faceted_Surface> myLSSurfaces;
+  mutable std::vector<std::unique_ptr<FacetedSurfaceBase>> myLSSurfaces;
   mutable size_t myLastMeshSyncCount{0};
   mutable bool myDoUpdateFacetsWhenMeshChanges{true};
 };
