@@ -179,7 +179,7 @@ do_time_fad_hierarchical_dfad(const size_t m, const size_t n, const size_t p,
   const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
   const size_t warp_dim = is_hip ? 64 : 1;
 #else
-  const size_t warp_dim 1;
+  const size_t warp_dim = 1;
 #endif
 
   const size_t concurrency = execution_space().concurrency();

@@ -51,8 +51,8 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   const unsigned vector_size = is_hip ? 64 : 1;
   const unsigned team_size = is_hip ? 128 / vector_size : 1;
 #else
-  const unsigned vector_size 1;
-  const unsigned team_size 1;
+  const unsigned vector_size = 1;
+  const unsigned team_size = 1;
 #endif
 
   const int m = A.extent(0);
