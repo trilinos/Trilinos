@@ -2338,6 +2338,36 @@ const LinearOp explicitTranspose(const LinearOp &op) {
   }
 }
 
+const LinearOp explicitScale(double scalar, const LinearOp &op) {
+  if (Teko::TpetraHelpers::isTpetraLinearOp(op)) {
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
+        rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(op, true);
+    RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>> tCrsOp =
+        rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT>>(tOp->getConstTpetraOperator(),
+                                                                  true);
+    auto crsOpNew = rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(*tCrsOp, Teuchos::Copy));
+    crsOpNew->scale(scalar);
+    return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+        Thyra::createVectorSpace<ST, LO, GO, NT>(crsOpNew->getRangeMap()),
+        Thyra::createVectorSpace<ST, LO, GO, NT>(crsOpNew->getDomainMap()), crsOpNew);
+  } else {
+#ifdef TEKO_HAVE_EPETRA
+    RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op, true);
+    RCP<const Epetra_CrsMatrix> eCrsOp =
+        rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
+    Teuchos::RCP<Epetra_CrsMatrix> crsMat = Teuchos::rcp(new Epetra_CrsMatrix(*eCrsOp));
+
+    crsMat->Scale(scalar);
+
+    return Thyra::epetraLinearOp(crsMat);
+#else
+    throw std::logic_error(
+        "explicitScale is trying to use Epetra "
+        "code, but TEKO_HAVE_EPETRA is disabled!");
+#endif
+  }
+}
+
 double frobeniusNorm(const LinearOp &op_in) {
   LinearOp op;
   double scalar = 1.0;

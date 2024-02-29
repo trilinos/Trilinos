@@ -14,6 +14,7 @@
 #include "Panzer_String_Utilities.hpp"
 
 #include "MiniEM_Utils.hpp"
+#include <stdexcept>
 
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
@@ -206,7 +207,12 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
    // Hcurl mass matrix, unit weight
    Teko::LinearOp M1 = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_EDGE_1"));
    // Hcurl mass matrix, dt/mu weight
-   Teko::LinearOp Ms = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE_1"));
+   Teko::LinearOp Ms;
+   try {
+     Ms = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE 1"));
+   } catch (std::runtime_error&) {
+     Ms = M1;
+   }
 
    describeAndWriteMatrix("S_E",*S_E,debug,dump);
    describeAndWriteMatrix("M0",*M0,debug,dump);

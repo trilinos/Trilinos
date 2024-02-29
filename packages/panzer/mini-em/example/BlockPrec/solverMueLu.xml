@@ -36,6 +36,7 @@
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>
           <Parameter name="Use discrete curl" type="bool" value="true"/>
+          <Parameter name="Simplify Faraday" type="bool" value="false"/>
 
           <ParameterList name="Q_B Solve">
             <Parameter name="Type" type="string" value="Belos"/>
