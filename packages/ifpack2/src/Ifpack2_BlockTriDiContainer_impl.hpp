@@ -930,12 +930,15 @@ namespace Ifpack2 {
 
       typedef std::pair<local_ordinal_type,local_ordinal_type> size_idx_pair_type;
       std::vector<size_idx_pair_type> partsz(nparts);
-      for (local_ordinal_type i=0;i<nparts;++i)
-        partsz[i] = size_idx_pair_type(partitions[i].size(), i);
-      std::sort(partsz.begin(), partsz.end(),
-                [] (const size_idx_pair_type& x, const size_idx_pair_type& y) {
-                  return x.first > y.first;
-                });
+
+      if (!jacobi) {
+        for (local_ordinal_type i=0;i<nparts;++i)
+          partsz[i] = size_idx_pair_type(partitions[i].size(), i);
+        std::sort(partsz.begin(), partsz.end(),
+                  [] (const size_idx_pair_type& x, const size_idx_pair_type& y) {
+                    return x.first > y.first;
+                  });
+      }
 
       local_ordinal_type n_subparts_per_part;
       if (n_subparts_per_part_in == -1) {
