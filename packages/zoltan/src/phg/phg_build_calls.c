@@ -651,7 +651,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
         ew_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, myEWs.size);
         myEWs.wgt = (float *)ZOLTAN_MALLOC(myEWs.size * cnt);
 
-        if (!myEWs.edgeGID || !ew_lids || !myEWs.wgt){
+        if (!myEWs.edgeGID || !myEWs.wgt){
           MEMORY_ERROR;
         }
 
