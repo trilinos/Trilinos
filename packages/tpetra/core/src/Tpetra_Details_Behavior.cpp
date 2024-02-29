@@ -40,6 +40,7 @@
 */
 // clang-format on
 #include <algorithm> // std::transform
+#include <array>
 #include <cctype>    // std::toupper
 #include <cstdlib>   // std::getenv
 #include <functional>
