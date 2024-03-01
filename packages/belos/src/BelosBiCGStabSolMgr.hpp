@@ -782,6 +782,15 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
                                "Belos::BiCGStabSolMgr::solve(): Invalid return from BiCGStabIter::iterate().");
           }
         }
+        catch (const StatusTestNaNError& e) {
+          // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          achievedTol_ = MT::one();
+          Teuchos::RCP<MV> X = problem_->getLHS();
+          MVT::MvInit( *X, SCT::zero() );
+          printer_->stream(Warnings) << "Belos::BiCGStabSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+          return Unconverged; 
+        }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught std::exception in BiCGStabIter::iterate() at iteration "
                                    << bicgstab_iter->getNumIters() << std::endl

@@ -493,7 +493,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
         } else {
           // Throw an std::exception if a NaN is found.
           status_ = Failed;
-          TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestGenResSubNorm::checkStatus(): NaN has been detected.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestNaNError,"StatusTestGenResSubNorm::checkStatus(): NaN has been detected.");
         }
       }
     }

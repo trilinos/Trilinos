@@ -1142,6 +1142,15 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             break;
           }
         }
+        catch (const StatusTestNaNError& e) {
+          // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          achievedTol_ = MT::one();
+          Teuchos::RCP<MV> X = problem_->getLHS();
+          MVT::MvInit( *X, SCT::zero() );
+          printer_->stream(Warnings) << "Belos::BlockGmresSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+          return Unconverged;
+        }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                    << block_gmres_iter->getNumIters() << std::endl
