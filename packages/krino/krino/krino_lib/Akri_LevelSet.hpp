@@ -81,7 +81,7 @@ public:
     const FieldRef  & field_ref,
     double * field);
 
-  static void build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, Faceted_Surface & facets);
+  static void build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, FacetedSurfaceBase & facets);
   double compute_average_edge_length() const;
 
   void build_facets_locally(const stk::mesh::Selector & selector);
@@ -152,8 +152,8 @@ public:
   void set_redistance_method( const Redistance_Method type ) { my_redistance_method = type; }
   void set_time_of_arrival_element_speed_field_name( const std::string & time_of_arrival_speed_field_name) { my_time_of_arrival_element_speed_field_name = time_of_arrival_speed_field_name; }
   void set_time_of_arrival_block_speed(const std::string & blockName, const double blockSpeed);
-  Faceted_Surface & get_facets() { return *facets; }
-  const Faceted_Surface & get_facets() const { return *facets; }
+  FacetedSurfaceBase & get_facets() { return *facets; }
+  const FacetedSurfaceBase & get_facets() const { return *facets; }
 
   void narrow_band_multiplier( double multiplier ) { my_narrow_band_multiplier = multiplier; }
   const double & narrow_band_size() const { return my_narrow_band_size; }
@@ -202,6 +202,7 @@ public:
   void redistance(const stk::mesh::Selector & selector);
   void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
   void interface_conforming_redistance();
+  void fast_marching_interface_conforming_redistance_using_existing_facets();
 
   std::pair<double,double> get_conserved_negative_volume_and_time() const;
   void set_conserved_negative_volume_and_time(const double vol, const double time);
@@ -233,8 +234,9 @@ private:
   LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, const stk::diag::Timer & parent_timer);
   void sync_all_fields_to_host();
   void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector);
+  void redistance_nodes_using_existing_facets(const std::vector<stk::mesh::Entity> & nodesToRedistance);
   void append_facets_from_side(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side);
-  void build_interface_conforming_facets(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideBlockSelector);
+  void build_interface_conforming_facets();
 
   stk::mesh::MetaData & my_meta;
   AuxMetaData & my_aux_meta;
@@ -283,10 +285,10 @@ private:
   std::unique_ptr<IC_Alg> my_IC_alg;
 
   // vector of previous facets
-  std::unique_ptr<Faceted_Surface> facets_old;
+  std::unique_ptr<FacetedSurfaceBase> facets_old;
 
     // vector of current facets
-  std::unique_ptr<Faceted_Surface> facets;
+  std::unique_ptr<FacetedSurfaceBase> facets;
 
   stk::math::Vector3d my_extension_velocity;
   const double epsilon;

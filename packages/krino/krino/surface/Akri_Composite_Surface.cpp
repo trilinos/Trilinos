@@ -39,7 +39,8 @@ Composite_Surface::prepare_to_compute(const double time, const BoundingBox & poi
     for ( auto&& surface : my_subsurfaces )
     {
       // keep nearby or moving surfaces
-      if (FACETED_SURFACE == surface->type() ||
+      if (FACETED_SURFACE_2D == surface->type() ||
+          FACETED_SURFACE_3D == surface->type() ||
           nullptr != surface->get_transformation() ||
           surface->does_intersect(point_bbox))
       {

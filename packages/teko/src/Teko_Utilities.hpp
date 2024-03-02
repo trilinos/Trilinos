@@ -762,6 +762,10 @@ const ModifiableLinearOp explicitSum(const LinearOp &opl, const ModifiableLinear
  */
 const LinearOp explicitTranspose(const LinearOp &op);
 
+/** Explicitely scale a linear operator.
+ */
+const LinearOp explicitScale(double scalar, const LinearOp &op);
+
 /** Rturn the frobenius norm of a linear operator
  */
 double frobeniusNorm(const LinearOp &op);

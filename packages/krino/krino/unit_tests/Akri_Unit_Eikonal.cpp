@@ -45,6 +45,22 @@ void expect_tetrahedron_eikonal_solution(const std::array<stk::math::Vector3d,4>
   EXPECT_NEAR(gold, resultCase, 1.e-8);
 }
 
+void expect_tetrahedron_distance_and_extension_speed(const std::array<stk::math::Vector3d,4> & x, const std::array<double,3> & d, const std::array<double,3> & extSpeed, const double goldDist, const double goldExtSpeed)
+{
+  const int sign = 1;
+  const auto [nodeDist, nodeSpeed] = eikonal_solve_tetrahedron_for_distance_and_extension_speed(x, d, extSpeed, sign, farDistance);
+  EXPECT_NEAR(goldDist, nodeDist, 1.e-8);
+  EXPECT_NEAR(goldExtSpeed, nodeSpeed, 1.e-8);
+}
+
+void expect_triangle_distance_and_extension_speed(const std::array<stk::math::Vector3d,3> & x, const std::array<double,2> & d, const std::array<double,2> & extSpeed, const double goldDist, const double goldExtSpeed)
+{
+  const int sign = 1;
+  const auto [nodeDist, nodeSpeed] = eikonal_solve_triangle_for_distance_and_extension_speed(x, d, extSpeed, sign, farDistance);
+  EXPECT_NEAR(goldDist, nodeDist, 1.e-8);
+  EXPECT_NEAR(goldExtSpeed, nodeSpeed, 1.e-8);
+}
+
 void expect_tetrahedron_distance(const std::array<stk::math::Vector3d,4> & x, const std::array<double,3> & d, const double gold)
 {
   const double speed = 1.0;
@@ -140,6 +156,17 @@ TEST(Eikonal_Calc, regularTet_nbrsAllNearZero_resultIsTetHeight)
   expect_tetrahedron_distance(get_regular_tetrahedron_coordinates(), distance, gold);
 }
 
+TEST(Eikonal_Calc, regularTet_nbrsAllZero_distanceIsHeightAndExtensionFromFaceCentroid)
+{
+  const std::array<double,3> distance{{0.,0.,0.}};
+  const std::array<double,3> extSpeed{{0.,1.,2.}};
+
+  const double edgeLen = get_regular_tetrahedron_edge_length();
+  const double goldDist = std::sqrt(2./3.)*edgeLen;
+  const double goldExtSpeed = (extSpeed[0]+extSpeed[1]+extSpeed[2])/3.;
+  expect_tetrahedron_distance_and_extension_speed(get_regular_tetrahedron_coordinates(), distance, extSpeed, goldDist, goldExtSpeed);
+}
+
 TEST(Eikonal_Calc, regularTet_gradienAlong0to3_resultIsEdgeLength)
 {
   const std::array<stk::math::Vector3d,4> coords = get_regular_tetrahedron_coordinates();
@@ -150,12 +177,34 @@ TEST(Eikonal_Calc, regularTet_gradienAlong0to3_resultIsEdgeLength)
   expect_tetrahedron_distance(coords, distance, gold);
 }
 
+TEST(Eikonal_Calc, regularTet_gradienAlong0to3_distanceIsEdgeLengthAndExtensionFromNode0)
+{
+  const std::array<stk::math::Vector3d,4> coords = get_regular_tetrahedron_coordinates();
+  const double edgeLen = get_regular_tetrahedron_edge_length();
+  const std::array<double,3> distance{{0.,Dot(coords[1]-coords[0],coords[3]-coords[0])/edgeLen,Dot(coords[2]-coords[0],coords[3]-coords[0])/edgeLen}};
+  const std::array<double,3> extSpeed{{1.,2.,3.}};
+
+  const double goldDist = edgeLen;
+  const double goldExtSpeed = extSpeed[0];
+  expect_tetrahedron_distance_and_extension_speed(get_regular_tetrahedron_coordinates(), distance, extSpeed, goldDist, goldExtSpeed);
+}
+
 TEST(Eikonal_Calc, regularTri_nbrsAllZero_resultIsTriHeight)
 {
   const std::array<double,2> distance{{0.,0.}};
 
   const double gold = 0.5*std::sqrt(3.0)*get_regular_triangle_edge_length();
   expect_triangle_distance(get_regular_triangle_coordinates(), distance, gold);
+}
+
+TEST(Eikonal_Calc, regularTri_nbrsAllZero_distanceIsHeightAndExtensionFromEdgeMidpt)
+{
+  const std::array<double,2> distance{{0.,0.}};
+  const std::array<double,2> extSpeed{{0.,1.}};
+
+  const double goldDist = 0.5*std::sqrt(3.0)*get_regular_triangle_edge_length();
+  const double goldExtSpeed = (extSpeed[0]+extSpeed[1])/2.;
+  expect_triangle_distance_and_extension_speed(get_regular_triangle_coordinates(), distance, extSpeed, goldDist, goldExtSpeed);
 }
 
 TEST(Eikonal_Calc, regularTri_gradienAlong0to2_resultIsEdgeLength)
@@ -166,6 +215,18 @@ TEST(Eikonal_Calc, regularTri_gradienAlong0to2_resultIsEdgeLength)
 
   const double gold = edgeLen;
   expect_triangle_distance(coords, distance, gold);
+}
+
+TEST(Eikonal_Calc, regularTri_gradienAlong0to2_distanceIsEdgeLengthAndExtensionFromNode0)
+{
+  const std::array<stk::math::Vector3d,3> coords = get_regular_triangle_coordinates();
+  const double edgeLen = get_regular_triangle_edge_length();
+  const std::array<double,2> distance{{0.,Dot(coords[1]-coords[0],coords[2]-coords[0])/edgeLen}};
+  const std::array<double,2> extSpeed{{1.,2.}};
+
+  const double goldDist = edgeLen;
+  const double goldExtSpeed = extSpeed[0];
+  expect_triangle_distance_and_extension_speed(coords, distance, extSpeed, goldDist, goldExtSpeed);
 }
 
 TEST(Eikonal_Calc, rightTriangleWithOneNeighborNodeAsClosestPointAndOtherNbrOnLongerEdge_resultIsDistanceFromClosestPoint)
@@ -199,6 +260,29 @@ TEST(Eikonal_Calc, regularTriangle_withFrontEmanatingFromOutsideBase_resultIsEdg
   }
 }
 
+TEST(Eikonal_Calc, regularTriangle_withFrontEmanatingFromOutsideBase_distanceIsEdgeLengthAndExtensionFromNearestNode)
+{
+  const std::array<stk::math::Vector3d,3> coords = get_regular_triangle_coordinates();
+  const double goldDist = 1.0;
+  const std::array<double,2> extSpeed{{1.,2.}};
+
+  {
+    const std::array<double,2> distance{{0., 0.9}};
+    expect_triangle_distance_and_extension_speed(coords, distance, extSpeed, goldDist, extSpeed[0]);
+  }
+
+  {
+    const std::array<double,2> distance{{0.9, 0.}};
+    expect_triangle_distance_and_extension_speed(coords, distance, extSpeed, goldDist, extSpeed[1]);
+  }
+
+  // detJ = 0 case
+  {
+    const std::array<double,2> distance{{0., 1.}};
+    expect_triangle_distance_and_extension_speed(coords, distance, extSpeed, goldDist, extSpeed[0]);
+  }
+}
+
 TEST(Eikonal_Calc, rightTetrahedronWithOneNeighborNodeAsClosestPointAndAnotherNbrOnLongerEdge_resultIsDistanceFromClosestPoint)
 {
   const std::array<stk::math::Vector3d,4> coords{{ {0.,0.,0.}, {2.,0.,0.}, {0.,1.,0.}, {0.,0.,1.} }};
@@ -225,7 +309,6 @@ TEST(Eikonal_Calc, rightTetrahedron_nbrsAllZeroAndUnitSpeed_resultIsDistance)
   const double gold = get_right_tetrahedron_edge_length()/speed;
   expect_tetrahedron_eikonal_solution(get_right_tetrahedron_coordinates(), distance, speed, gold);
 }
-
 
 TEST(Eikonal_Calc, rightTetrahedron_nbrsAllZeroAndNonUnitSpeed_resultIsTimeOfArrival)
 {
@@ -351,6 +434,29 @@ TEST(Eikonal_Calc, regularTetrahedron_withFrontEmanatingFromOutsideBase_resultIs
   {
     const std::array<double,3> distance{{0.6*edgeLen, 0.6*edgeLen, 0.}};
     expect_tetrahedron_distance(coords, distance, gold);
+  }
+}
+
+TEST(Eikonal_Calc, regularTetrahedron_withFrontEmanatingFromOutsideBase_distanceIsEdgeLengthAndExtensionFromNearestNode)
+{
+  const std::array<stk::math::Vector3d,4> coords = get_regular_tetrahedron_coordinates();
+  const double edgeLen = get_regular_tetrahedron_edge_length();
+  const double goldDist = edgeLen;
+  const std::array<double,3> extSpeed{{1.,2.,3.}};
+
+  {
+    const std::array<double,3> distance{{0., 0.6*edgeLen, 0.6*edgeLen}};
+    expect_tetrahedron_distance_and_extension_speed(coords, distance, extSpeed, goldDist, extSpeed[0]);
+  }
+
+  {
+    const std::array<double,3> distance{{0.6*edgeLen, 0., 0.6*edgeLen}};
+    expect_tetrahedron_distance_and_extension_speed(coords, distance, extSpeed, goldDist, extSpeed[1]);
+  }
+
+  {
+    const std::array<double,3> distance{{0.6*edgeLen, 0.6*edgeLen, 0.}};
+    expect_tetrahedron_distance_and_extension_speed(coords, distance, extSpeed, goldDist, extSpeed[2]);
   }
 }
 

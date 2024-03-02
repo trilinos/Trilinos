@@ -19,6 +19,7 @@ class InterfaceGeometry;
 class Phase_Support;
 
 void snap_to_node(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & interfaceGeometry,
     const CDFEM_Snapper & snapper,
     NodeToCapturedDomainsMap & nodesToCapturedDomains);

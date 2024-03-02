@@ -1,7 +1,7 @@
 
 ###############################################################################
 #                                                                             #
-# Trilinos Release 15.1 Release Notes                               TBD, 2024 #
+# Trilinos Release 15.1.0 Release Notes                     February 26, 2024 #
 #                                                                             #
 ###############################################################################
 
@@ -9,33 +9,45 @@ Amesos2
 
   - The interface to SuperLU_DIST now also works for the CUDA-enabled
     variant of the library.
+    https://github.com/trilinos/Trilinos/pull/12524
+
+
+Framework
+
+  - Began using semantic versioning for Trilinos with 15.1.0 release.
 
 
 Ifpack2
 
   - BlockRelaxation can now generate blocks using a Zoltan2.
+    https://github.com/trilinos/Trilinos/pull/12728
 
 
 Kokkos & Kokkos Kernels
 
   - Inclusion of version 4.2.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/12707
 
 
 MueLu
 
   - The reformulated Maxwell solver (RefMaxwell) was generalized to
     also work for grad-div / Darcy flow problems.
+    https://github.com/trilinos/Trilinos/pull/12142
 
   - In an effort to consolidate the old non-Kokkos code path with the
     newer Kokkos code path, the following factories were deprecated
     and should be removed from input decks: NullspaceFactory_kokkos,
     SaPFactory_kokkos, UncoupledAggregationFactory_kokkos.
+    https://github.com/trilinos/Trilinos/pull/12720
+    https://github.com/trilinos/Trilinos/pull/12740
 
 
 Panzer
 
   - MiniEM can now also assemble and solve Darcy problems using first
     or higher order mixed finite elements.
+    https://github.com/trilinos/Trilinos/pull/12142
 
 
 PyTrilinos2
@@ -43,33 +55,39 @@ PyTrilinos2
   - New package that auto-generates Python interfaces for Trilinos
     packages. Currently, most of Tpetra is exposed. We are planning on
     adding other packages.
+    https://github.com/trilinos/Trilinos/pull/12332
 
 
 ROL
 
   - An auto-generated Python interface was added. A standalone Python
     package can be downloaded from rol.sandia.gov
+    https://github.com/trilinos/Trilinos/pull/12770
 
 
 Teko
 
   - Block Jacobi and Gauss-Seidel methods allow now to specify
     preconditioners for the iterative solves of the diagonal blocks.
+    https://github.com/trilinos/Trilinos/pull/12675
 
 
 Tpetra
 
   - Tpetra will now assume by default that the MPI library is GPU
     aware, unless automatic detection or the user indicates otherwise.
+    https://github.com/trilinos/Trilinos/pull/12517
 
   - Reject unrecognized TPETRA_* environment variable. Misspelled or
     removed environment variables are no longer silently ignored.
+    https://github.com/trilinos/Trilinos/pull/12722
 
   - In order to allocate in shared host/device space (i.e.
     CudaUVMSpace, HIPManagedSpace or SYCLSharedUSMSpace) by default,
     please use the CMake options
     KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE=ON
     Tpetra_ALLOCATE_IN_SHARED_SPACE=ON
+    https://github.com/trilinos/Trilinos/pull/12622
 
 
 ###############################################################################

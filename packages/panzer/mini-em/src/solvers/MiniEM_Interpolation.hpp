@@ -22,14 +22,14 @@
 #include "MiniEM_MatrixFreeInterpolationOp.cpp"
 
 
-Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
                                   const std::string& lo_basis_name,
                                   const std::string& ho_basis_name,
                                   Intrepid2::EOperator op=Intrepid2::OPERATOR_VALUE,
                                   size_t worksetSize=1000);
 
 void addInterpolationToRequestHandler(const std::string& name,
-                                      const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                                      const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
                                       const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                                       const std::string& lo_basis_name,
                                       const std::string& ho_basis_name,
@@ -56,7 +56,7 @@ private:
 public:
 
   InterpolationRequestCallback(const std::string& name,
-                               const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                               const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
                                const std::string& lo_basis_name,
                                const std::string& ho_basis_name,
                                Intrepid2::EOperator op=Intrepid2::OPERATOR_VALUE,

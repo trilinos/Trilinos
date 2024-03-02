@@ -78,7 +78,8 @@ FullOccupancyKernelLaunch(Kernel kernel) {
 //
 // This implementation uses the underlying 2-D view directly.
 // Currently only works for statically sized MP::Vector
-template <typename MatrixStorage,
+template <typename MatrixMemorySpace,
+          typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
@@ -89,7 +90,7 @@ template <typename MatrixStorage,
           typename Update>
 class MPMultiply< KokkosSparse::CrsMatrix<const Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
-                                    Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>,
+                                    Kokkos::Device<Kokkos::Cuda, MatrixMemorySpace>,
                                     MatrixMemory,
                                     MatrixSize>,
                   Kokkos::View< const Sacado::MP::Vector<InputStorage>*,
@@ -106,7 +107,7 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space> Device;
+  typedef Kokkos::Device<Kokkos::Cuda, MatrixMemorySpace> Device;
   typedef typename Device::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 
@@ -325,7 +326,8 @@ private:
 //
 // This implementation uses the underlying 2-D view directly.
 // Currently only works for statically sized MP::Vector
-template <typename MatrixStorage,
+template <typename MatrixMemorySpace,
+          typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
@@ -336,7 +338,7 @@ template <typename MatrixStorage,
           typename Update>
 class MPMultiply< KokkosSparse::CrsMatrix<const Sacado::MP::Vector<MatrixStorage>,
                                     MatrixOrdinal,
-                                    Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space>,
+                                    Kokkos::Device<Kokkos::Cuda, MatrixMemorySpace>,
                                     MatrixMemory,
                                     MatrixSize>,
                   Kokkos::View< const Sacado::MP::Vector<InputStorage>**,
@@ -353,7 +355,7 @@ public:
   typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
   typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef Kokkos::Device<Kokkos::Cuda, typename Kokkos::Cuda::memory_space> Device;
+  typedef Kokkos::Device<Kokkos::Cuda, MatrixMemorySpace> Device;
   typedef typename Device::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
 

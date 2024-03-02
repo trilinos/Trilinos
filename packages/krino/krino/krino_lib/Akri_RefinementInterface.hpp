@@ -11,10 +11,12 @@
 
 #include <Akri_FieldRef.hpp>
 #include "Akri_Refinement.hpp"
+#include "stk_util/diag/Timer.hpp"
 
 namespace stk { namespace mesh { class Entity; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace diag { class Timer; } }
 
 namespace krino {
 
@@ -74,6 +76,7 @@ class KrinoRefinement : public RefinementInterface
 public:
   static KrinoRefinement & get(const stk::mesh::MetaData & meta);
   static KrinoRefinement & create(stk::mesh::MetaData & meta);
+  static KrinoRefinement & create(stk::mesh::MetaData & meta, stk::diag::Timer & timer);
   static bool is_created(const stk::mesh::MetaData & meta);
   static void register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::MetaData & meta);
 
@@ -108,14 +111,15 @@ public:
   void set_marker_field(const std::string & markerFieldName);
 
 private:
-  KrinoRefinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit);
+  KrinoRefinement(stk::mesh::MetaData & meta, stk::mesh::Part * activePart, const bool force64Bit, const bool assert32Bit, stk::diag::Timer & parent_timer);
   std::pair<unsigned,unsigned> get_marked_element_counts() const;
   TransitionElementEdgeMarker & setup_marker() const;
   TransitionElementEdgeMarker & get_marker() const;
   stk::mesh::MetaData & myMeta;
-  Refinement myRefinement;
   FieldRef myElementMarkerField;
   mutable std::unique_ptr<TransitionElementEdgeMarker> myMarker;
+  mutable stk::diag::Timer myRefinementTimer;
+  Refinement myRefinement;
 };
 
 void check_leaf_children_have_parents_on_same_proc(const stk::ParallelMachine comm, const RefinementInterface & refinement);

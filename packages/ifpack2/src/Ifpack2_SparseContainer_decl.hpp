@@ -172,7 +172,7 @@ private:
   using inverse_mv_type = Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
   using InverseCrs = Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
   using InverseMap = typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
-
+  using InverseGraph = typename InverseCrs::crs_graph_type;
   using typename Container<MatrixType>::HostView;
   using typename Container<MatrixType>::ConstHostView;
   using HostViewInverse = typename inverse_mv_type::dual_view_type::t_host;
@@ -287,6 +287,8 @@ private:
 
   //! Extract the submatrices identified by the local indices set by the constructor.
   void extract ();
+  void extractGraph ();
+  void extractValues ();
 
   /// \brief Post-permutation, post-view version of apply().
   ///

@@ -24,7 +24,8 @@ namespace stk { namespace mesh { class Selector; } }
 
 namespace krino {
 
-class MeshSurface : public Faceted_Surface {
+template <class FACET>
+class MeshSurface : public Faceted_Surface<FACET> {
 public:
   MeshSurface(const stk::mesh::MetaData & meta,
               const stk::mesh::Field<double>& coord_ref,
@@ -48,6 +49,11 @@ private:
   const stk::mesh::Selector my_surface_selector;
 };
 
+std::unique_ptr<FacetedSurfaceBase> build_mesh_surface(const stk::mesh::MetaData & meta,
+    const stk::mesh::Field<double>& coordsField,
+    const stk::mesh::Selector & surfaceSelector,
+    const int sign);
+
 class Parallel_Facet_File_Reader {
 public:
   Parallel_Facet_File_Reader(const std::string & in_filename) : my_filename(in_filename) {}
@@ -66,7 +72,7 @@ private:
   std::ifstream my_input;
 };
 
-class Faceted_Surface_From_File : public Faceted_Surface {
+class Faceted_Surface_From_File : public Faceted_Surface<Facet3d> {
 public:
   Faceted_Surface_From_File(const std::string & surface_name, const stk::diag::Timer &parent_timer);
   virtual ~Faceted_Surface_From_File() {}

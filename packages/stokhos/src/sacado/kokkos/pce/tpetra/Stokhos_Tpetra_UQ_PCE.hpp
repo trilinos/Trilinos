@@ -127,9 +127,9 @@ struct DeviceForNode2 {
 #endif // defined(KOKKOS_ENABLE_SERIAL)
 };
 
-template <typename Device>
-struct DeviceForNode2< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > {
-  typedef Device type;
+template <typename ExecSpace, typename MemSpace>
+struct DeviceForNode2< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> > {
+  typedef typename Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>::device_type type;
 };
 
 }

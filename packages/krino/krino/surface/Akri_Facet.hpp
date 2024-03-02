@@ -25,9 +25,6 @@ namespace krino {
 class Facet;
 class Transformation;
 
-typedef std::vector< Facet * > FacetVec;
-typedef std::vector< std::unique_ptr<Facet> > FacetOwningVec;
-
 class Facet {
 public:
   Facet() {}
@@ -38,10 +35,6 @@ public:
 
   virtual std::ostream & put( std::ostream& os ) const = 0;
   friend std::ostream & operator << ( std::ostream &os , const Facet &f ) { return f.put(os); }
-
-  // methods for off-processor communication
-  static std::unique_ptr<Facet> unpack_from_buffer( stk::CommBuffer & b ); // static method that builds facet from data in buffer for off-processor communication
-  virtual void pack_into_buffer(stk::CommBuffer & b) const = 0; // pack into buffer for off-processor communication
 
   static stk::math::Vector3d get_centroid(const Facet * facet) { return facet->centroid(); }
   static void insert_into_bounding_box(const Facet * facet, BoundingBox & bbox) { return facet->insert_into(bbox); }
@@ -76,19 +69,23 @@ public:
   Facet3d() = delete;
   virtual ~Facet3d() {}
 
+  static constexpr int DIM=3;
   typedef CalcTriangle3<double> Calc;
+  static bool is_degenerate(const std::array<stk::math::Vector3d,3> & coords) { return Calc::normal_dir(coords).zero_length(); }
+  static stk::math::Vector3d get_centroid(const Facet3d * facet) { return facet->centroid(); }
+  static void insert_into_bounding_box(const Facet3d * facet, BoundingBox & bbox) { return facet->insert_into(bbox); }
 
   virtual size_t storage_size() const override { return sizeof(Facet3d); }
   virtual std::ostream & put( std::ostream& os ) const override;
 
-  static std::unique_ptr<Facet3d> unpack_from_buffer( stk::CommBuffer & b ); // static method that builds facet from data in buffer for off-processor communication
-  virtual void pack_into_buffer(stk::CommBuffer & b) const override;
+  static void unpack_facet_data_from_buffer( stk::CommBuffer & b, std::array<stk::math::Vector3d,3> & facetCoords);
+  virtual void pack_into_buffer(stk::CommBuffer & b) const;
 
   virtual const stk::math::Vector3d & facet_vertex(const int i) const override { return myCoords[i]; }
   virtual stk::math::Vector3d & facet_vertex(const int i) override { return myCoords[i]; }
   virtual double facet_area() const override { return Calc::area(myCoords); }
   virtual stk::math::Vector3d facet_normal() const override { return Calc::normal(myCoords); }
-  virtual bool degenerate() const override { return Calc::normal_dir(myCoords).zero_length(); }
+  virtual bool degenerate() const override { return is_degenerate(myCoords); }
   virtual double point_distance_squared( const stk::math::Vector3d & x ) const override
     { return Calc::distance_squared( myCoords, x ); }
   virtual void closest_point( const stk::math::Vector3d & queryPt, stk::math::Vector3d & closestPt, stk::math::Vector2d & paramAtClosestPt ) const override
@@ -116,13 +113,16 @@ public:
   Facet2d() = delete;
   virtual ~Facet2d() {}
 
+  static constexpr int DIM=2;
   typedef CalcSegment3<double> Calc;
+  static stk::math::Vector3d get_centroid(const Facet2d * facet) { return facet->centroid(); }
+  static void insert_into_bounding_box(const Facet2d * facet, BoundingBox & bbox) { return facet->insert_into(bbox); }
 
   virtual size_t storage_size() const override { return sizeof(Facet2d); }
   virtual std::ostream & put( std::ostream& os ) const override;
 
-  static std::unique_ptr<Facet2d> unpack_from_buffer( stk::CommBuffer & b ); // static method that builds facet from data in buffer for off-processor communication
-  virtual void pack_into_buffer(stk::CommBuffer & b) const override;
+  static void unpack_facet_data_from_buffer( stk::CommBuffer & b, std::array<stk::math::Vector3d,2> & facetCoords);
+  virtual void pack_into_buffer(stk::CommBuffer & b) const;
 
   virtual const stk::math::Vector3d & facet_vertex(const int i) const override { return myCoords[i]; }
   virtual stk::math::Vector3d & facet_vertex(const int i) override { return myCoords[i]; }
@@ -148,24 +148,25 @@ private:
   std::array<stk::math::Vector3d,2> myCoords;
 };
 
+template <class FACET>
 class FacetDistanceQuery {
 public:
   FacetDistanceQuery() : myFacet(nullptr), mySqrDistance(0.0) {}
-  FacetDistanceQuery(const Facet & facet, const stk::math::Vector3d & queryPt) : myFacet(&facet)
+  FacetDistanceQuery(const FACET & facet, const stk::math::Vector3d & queryPt) : myFacet(&facet)
   {
     myFacet->closest_point(queryPt, myClosestPt, myParamCoords);
     mySqrDistance = (queryPt-myClosestPt).length_squared();
   }
 
   bool empty() const { return myFacet == nullptr; }
-  const Facet & facet() const { return *myFacet; }
+  const FACET & facet() const { return *myFacet; }
   double distance_squared() const { return mySqrDistance; }
   const stk::math::Vector3d & closest_point() const { return myClosestPt; }
   double signed_distance(const stk::math::Vector3d & queryPt) const { return std::sqrt(mySqrDistance)*myFacet->point_distance_sign(queryPt); }
   stk::math::Vector3d closest_point_weights() const { return myFacet->weights(myParamCoords); }
 
 private:
-  const Facet* myFacet;
+  const FACET* myFacet;
   stk::math::Vector3d myClosestPt;
   double mySqrDistance;
   stk::math::Vector2d myParamCoords;

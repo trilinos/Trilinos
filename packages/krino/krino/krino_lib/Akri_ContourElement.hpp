@@ -74,7 +74,7 @@ public:
   void dump_subelement_structure( void ) const;
   void dump_subelement_details( void ) const;
 
-  void build_subelement_facets( Faceted_Surface & facets );
+  void build_subelement_facets( FacetedSurfaceBase & facets );
 
   int gather_intg_pts( const int intg_pt_sign,
 		       sierra::ArrayContainer<double,DIM,NINT> & intg_pt_locations,

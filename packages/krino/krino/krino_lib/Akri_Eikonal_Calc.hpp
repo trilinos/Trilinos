@@ -40,7 +40,7 @@ double eikonal_solve_triangle(const std::array<stk::math::Vector3d,3> & x,
     const double speed);
 
 double eikonal_solve_tetrahedron(const std::array<stk::math::Vector3d,4> & x,
-    const std::array<double,3> & d,
+    const std::array<double,3> & dSigned,
     const int sign,
     const double far,
     const double speed);
@@ -49,6 +49,28 @@ double eikonal_solve_tetrahedron(const std::array<stk::math::Vector3d,4> & x,
     const std::array<double,3> & d,
     const double far,
     const double speed);
+
+std::pair<double,double> eikonal_solve_triangle_for_distance_and_extension_speed(const std::array<stk::math::Vector3d,3> & x,
+    const std::array<double,2> & d,
+    const std::array<double,2> & extSpeed,
+    const double far);
+
+std::pair<double,double> eikonal_solve_triangle_for_distance_and_extension_speed(const std::array<stk::math::Vector3d,3> & x,
+    const std::array<double,2> & dSigned,
+    const std::array<double,2> & extSpeed,
+    const int sign,
+    const double far);
+
+std::pair<double,double> eikonal_solve_tetrahedron_for_distance_and_extension_speed(const std::array<stk::math::Vector3d,4> & x,
+    const std::array<double,3> & d,
+    const std::array<double,3> & extSpeed,
+    const double far);
+
+std::pair<double,double> eikonal_solve_tetrahedron_for_distance_and_extension_speed(const std::array<stk::math::Vector3d,4> & x,
+    const std::array<double,3> & dSigned,
+    const std::array<double,3> & extSpeed,
+    const int sign,
+    const double far);
 
 
 std::array<int,3> get_oriented_nodes_triangle(const int nodeToUpdate);

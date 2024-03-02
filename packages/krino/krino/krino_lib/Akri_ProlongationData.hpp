@@ -113,9 +113,9 @@ protected:
 
 class ProlongationFacetPointData : public ProlongationPointData {
 public:
-  ProlongationFacetPointData(const CDMesh & mesh, const FacetDistanceQuery & facetDistanceQuery, const std::vector<const ProlongationNodeData *> & facetNodes);
+  ProlongationFacetPointData(const CDMesh & mesh, const FacetDistanceQuery<Facet> & facetDistanceQuery, const std::vector<const ProlongationNodeData *> & facetNodes);
 private:
-  void interpolate_to_point(const stk::mesh::MetaData & meta, const FacetDistanceQuery & facetDistanceQuery, const std::vector<const ProlongationNodeData *> & facetNodes);
+  void interpolate_to_point(const stk::mesh::MetaData & meta, const FacetDistanceQuery<Facet> & facetDistanceQuery, const std::vector<const ProlongationNodeData *> & facetNodes);
   std::vector<int> myFieldStorageIndices;
 };
 
@@ -203,7 +203,7 @@ public:
 
   Facet * get_facet() const { return my_facet.get(); }
   std::vector<unsigned> compute_common_fields() const;
-  std::unique_ptr<ProlongationFacetPointData> get_prolongation_point_data(const FacetDistanceQuery & dist_query) const;
+  std::unique_ptr<ProlongationFacetPointData> get_prolongation_point_data(const FacetDistanceQuery<Facet> & dist_query) const;
   const std::vector<const ProlongationNodeData *> & get_prolongation_nodes() const { return my_prolong_nodes; }
   bool communicate_me(const BoundingBox & proc_target_bbox) const;
   static void insert_into_bounding_box(const ProlongationFacet * prolongFacet, BoundingBox & bbox) { return prolongFacet->get_facet()->insert_into(bbox); }
@@ -225,7 +225,7 @@ private:
 class ProlongationQuery {
 public:
   ProlongationQuery() = default;
-  ProlongationQuery(const ProlongationFacet & facet, const FacetDistanceQuery & distQuery) { myProlongFacetPointData = facet.get_prolongation_point_data(distQuery); }
+  ProlongationQuery(const ProlongationFacet & facet, const FacetDistanceQuery<Facet> & distQuery) { myProlongFacetPointData = facet.get_prolongation_point_data(distQuery); }
   ProlongationQuery(const ProlongationNodeData * prolongNodeData) : myProlongNodeData(prolongNodeData) {}
   const ProlongationPointData * get_prolongation_point_data() const { return myProlongFacetPointData ? get_facet_point_data() : myProlongNodeData; }
 private:

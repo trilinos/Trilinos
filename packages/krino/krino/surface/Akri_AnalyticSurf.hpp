@@ -108,7 +108,9 @@ private:
 
 class Plane: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
-  Plane(const double normal[3],
+  Plane(const stk::math::Vector3d & normal,
+    const double offset) : Plane(normal, offset, 1.) {}
+  Plane(const stk::math::Vector3d & normal,
     const double offset,
     const double multiplier);
 

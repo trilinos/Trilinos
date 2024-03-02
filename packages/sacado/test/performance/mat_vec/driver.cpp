@@ -306,6 +306,10 @@ int main(int argc, char* argv[]) {
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+    bool hip = 0;
+    clp.setOption("hip", "no-hip", &hip, "Whether to run HIP");
+#endif
     bool print_config = false;
     clp.setOption("print-config", "no-print-config", &print_config,
                   "Whether to print Kokkos device configuration");
@@ -374,6 +378,13 @@ int main(int argc, char* argv[]) {
     if (cuda) {
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Cuda>(
         m,n,p,nloop,value,analytic,sfad,slfad,dfad,flat,hierarchical,check,layout,"Cuda");
+    }
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+    if (hip) {
+      do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::HIP>(
+        m,n,p,nloop,value,analytic,sfad,slfad,dfad,flat,hierarchical,check,layout,"HIP");
     }
 #endif
 
