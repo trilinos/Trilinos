@@ -630,7 +630,7 @@ checkStatus (Iteration<ScalarType,MV,OP>* iSolver)
         // tolerance is NaN; we assume the former.  We also mark the
         // test as failed, in case you want to catch the exception.
         status_ = Failed;
-        TEUCHOS_TEST_FOR_EXCEPTION(true, StatusTestError, "Belos::"
+        TEUCHOS_TEST_FOR_EXCEPTION(true, StatusTestNaNError, "Belos::"
           "StatusTestImpResNorm::checkStatus(): One or more of the current "
           "implicit residual norms is NaN.");
       }

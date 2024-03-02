@@ -744,6 +744,15 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
               "to the Belos developers.");
           }
         }
+        catch (const StatusTestNaNError& e) {
+          // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          achievedTol_ = MT::one();
+          Teuchos::RCP<MV> X = problem_->getLHS();
+          MVT::MvInit( *X, SCT::zero() );
+          printer_->stream(Warnings) << "Belos::FixedPointSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+          return Unconverged;
+        }
         catch (const std::exception &e) {
           std::ostream& err = printer_->stream (Errors);
           err << "Error! Caught std::exception in FixedPointIteration::iterate() at "

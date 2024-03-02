@@ -63,7 +63,7 @@
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 #include "Thyra_BelosTpetrasSolverAdapter.hpp"
 #endif
 
@@ -109,7 +109,7 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::BiCGStab_name = "BiCGSt
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::FixedPoint_name = "Fixed Point";
 
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmres_name = "TPETRA GMRES";
 template<class Scalar>
@@ -419,7 +419,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "TFQMR",
         "BiCGStab",
         "Fixed Point"
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
         ,"TPETRA GMRES",
         "TPETRA GMRES PIPELINE",
         "TPETRA GMRES SINGLE REDUCE",
@@ -471,7 +471,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
 
         "Fixed point iteration"
 
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
         ,"Native Tpetra implementation of GMRES",
 
         "Native Tpetra implementation of pipeline GMRES",
@@ -493,7 +493,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         SOLVER_TYPE_TFQMR,
         SOLVER_TYPE_BICGSTAB,
         SOLVER_TYPE_FIXEDPOINT
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
         ,SOLVER_TYPE_TPETRA_GMRES,
         SOLVER_TYPE_TPETRA_GMRES_PIPELINE,
         SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE,
@@ -583,7 +583,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
     {
       Thyra::BelosTpetraGmres<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(TpetraGmres_name).setParameters(
@@ -1007,7 +1007,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       break;
     }
-#ifdef HAVE_BELOS_TPETRA
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
     case SOLVER_TYPE_TPETRA_GMRES:
     {
       // Get the PL
