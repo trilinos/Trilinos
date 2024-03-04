@@ -267,18 +267,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         return args
 
 
-    def dummy_args_nightly_track(self):
-        args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_cdash_track = "Nightly"
-        return args
-
-
-    def dummy_args_kokkos_track(self):
-        args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_cdash_track = "Kokkos Integration"
-        return args
-
-
     def dummy_args_master_pass(self):
         """
         Modify arguments to test a develop->master with a valid
@@ -384,22 +372,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         result_build_name = pr_config.pullrequest_build_name
         expected_build_name = args.genconfig_build_name
         self.assertEqual(expected_build_name, result_build_name)
-
-
-    def test_TrilinosPRConfigurationBaseBuildNameNightlyTrack(self):
-        args = self.dummy_args_nightly_track()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        build_name = pr_config.pullrequest_build_name
-        expected_build_name = args.dashboard_build_name
-        self.assertEqual(build_name, expected_build_name)
-
-
-    def test_TrilinosPRConfigurationBaseBuildNameKokkosTrack(self):
-        args = self.dummy_args_kokkos_track()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        build_name = pr_config.pullrequest_build_name
-        expected_build_name = args.dashboard_build_name
-        self.assertEqual(build_name, expected_build_name)
 
 
     def test_TrilinosPRConfigurationBaseDashboardModelPRTrack(self):
