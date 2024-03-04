@@ -363,11 +363,27 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
 
     def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
         args = self.dummy_args_non_pr_track()
+
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
         build_name = pr_config.pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
-        expected_build_name = args.genconfig_build_name
+        expected_build_name = args.dashboard_build_name
         self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseBuildNameDefaultDashboardName(self):
+        """
+        Test the build name output when dashboard_build_name contains
+        the default Jenkins parameter value, '__UNKNOWN__'.
+        """
+        args = self.dummy_args_non_pr_track()
+        args.dashboard_build_name = "__UNKNOWN__"
+
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        result_build_name = pr_config.pullrequest_build_name
+        expected_build_name = args.genconfig_build_name
+        self.assertEqual(expected_build_name, result_build_name)
 
 
     def test_TrilinosPRConfigurationBaseBuildNameNightlyTrack(self):

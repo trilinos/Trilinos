@@ -481,11 +481,11 @@ class TrilinosPRConfigurationBase(object):
         Generate the build name string to report back to CDash.
 
         PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
+
         """
         if self.arg_pullrequest_cdash_track == "Pull Request":
             output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
-        elif self.arg_pullrequest_cdash_track == "Nightly" or \
-             self.arg_pullrequest_cdash_track == "Kokkos Integration":
+        elif self.arg_dashboard_build_name != "__UNKNOWN__":
             output = self.arg_dashboard_build_name
         else:
             output = self.arg_pr_genconfig_job_name            
