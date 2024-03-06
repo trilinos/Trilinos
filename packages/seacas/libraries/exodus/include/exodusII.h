@@ -472,6 +472,13 @@ typedef struct ex_var_params
 /** @} */
 
 #ifndef EXODUS_EXPORT
+#if defined(_WIN32) && defined(exodus_shared_EXPORTS)
+#define EXODUS_EXPORT __declspec(dllexport)
+#endif
+#endif /* EXODUS_EXPORT */
+
+
+#ifndef EXODUS_EXPORT
 #define EXODUS_EXPORT extern
 #endif /* EXODUS_EXPORT */
 

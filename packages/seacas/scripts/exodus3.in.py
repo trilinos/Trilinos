@@ -156,16 +156,23 @@ class ex_options(Enum):
     EX_NULLVERBOSE = 8
 
 
-ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
-if os.uname()[0] == 'Darwin':
-    EXODUS_SO = f"{ACCESS}/@SEACAS_LIBDIR@/libexodus.dylib"
+if os.name ==  'nt':
+    so_prefix = ''
+    so_suffix = 'dll'
 else:
-    EXODUS_SO = f"{ACCESS}/@SEACAS_LIBDIR@/libexodus.so"
+    if os.uname()[0] == 'Darwin':
+        so_prefix = 'lib'
+        so_suffix = 'dylib'
+    else:
+        so_prefix = 'lib'
+        so_suffix = 'so'
 pip_path = os.path.dirname(__file__)
-pip_so_path = os.path.join(pip_path, "libexodus.so")
+pip_so_path = os.path.join(pip_path, f"{so_prefix}exodus.{so_suffix}")
 try:
     EXODUS_LIB = ctypes.cdll.LoadLibrary(pip_so_path)
 except Exception:
+    ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
+    EXODUS_SO = f"{ACCESS}/@SEACAS_LIBDIR@/{so_prefix}exodus.{so_suffix}"
     EXODUS_LIB = ctypes.cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default
