@@ -502,6 +502,10 @@ The following parameters are used in the ILU($k$) method:
      these streams can run concurrently, the total time can be faster. When
      this option is not set (i.e. not using stream), the entire sub-domain is
      used instead.}
+\ccc{fact: kspiluk reordering in streams}
+    {bool}
+    {\false}
+    {Whether RCM reordering is applied to diagonal blocks in streams.}
 % All overlap-related code was removed by M. Hoemmen in
 %
 % commit 162f64572fbf93e2cac73e3034d76a3db918a494

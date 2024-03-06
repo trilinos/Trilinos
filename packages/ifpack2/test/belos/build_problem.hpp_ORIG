@@ -189,8 +189,7 @@ build_problem (Teuchos::ParameterList& test_params,
 
   if (b == Teuchos::null) {
     bool rhs_unit = false;
-    //int rhs_option = 2; // ORIG
-    int rhs_option = 3;
+    int rhs_option = 2;
     b = Teuchos::rcp (new TMV (rowmap, 1));
     if (rhs_option == 0) {
       // random B
@@ -203,7 +202,6 @@ build_problem (Teuchos::ParameterList& test_params,
         // b = A * random
         x->randomize ();
       } else {
-        if (comm->getRank() == 0) std::cout << "x is set to ones and b = A * ones!!!" << std::endl;
         // b = A * ones
         x->putScalar (STS::one ());
       }
