@@ -647,6 +647,8 @@ protected:
   bool isKokkosKernelsStream_;
   int num_streams_;
   std::vector<execution_space> exec_space_instances_;
+  bool hasStreamReordered_;
+  std::vector<typename lno_nonzero_view_t::non_const_type> perm_v_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with

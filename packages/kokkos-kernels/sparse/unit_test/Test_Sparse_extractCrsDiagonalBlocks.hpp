@@ -15,6 +15,8 @@
 //@HEADER
 
 #include "KokkosSparse_Utils.hpp"
+#include "KokkosSparse_spmv.hpp"
+#include "KokkosBlas1_nrm2.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
@@ -31,6 +33,7 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
 
   crsMat_t A;
   std::vector<crsMat_t> DiagBlks(nblocks);
+  std::vector<crsMat_t> DiagBlks_rcm(nblocks);
 
   if (nrows != 0) {
     // Generate test matrix
@@ -84,6 +87,10 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(A,
                                                                       DiagBlks);
 
+  auto perm =
+      KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(
+          A, DiagBlks_rcm, true);
+
   // Checking
   lno_t numRows = 0;
   lno_t numCols = 0;
@@ -125,6 +132,40 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
       col_start += DiagBlks[i].numCols();
     }
     EXPECT_TRUE(flag);
+
+    // Checking RCM
+    if (!perm.empty()) {
+      scalar_t one  = scalar_t(1.0);
+      scalar_t zero = scalar_t(0.0);
+      scalar_t mone = scalar_t(-1.0);
+      for (int i = 0; i < nblocks; i++) {
+        ValuesType In("In", DiagBlks[i].numRows());
+        ValuesType Out("Out", DiagBlks[i].numRows());
+
+        ValuesType_hm h_Out     = Kokkos::create_mirror_view(Out);
+        ValuesType_hm h_Out_tmp = Kokkos::create_mirror(Out);
+
+        Kokkos::deep_copy(In, one);
+
+        auto h_perm =
+            Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm[i]);
+
+        KokkosSparse::spmv("N", one, DiagBlks_rcm[i], In, zero, Out);
+
+        Kokkos::deep_copy(h_Out_tmp, Out);
+        for (lno_t ii = 0; ii < static_cast<lno_t>(DiagBlks[i].numRows());
+             ii++) {
+          lno_t rcm_ii = h_perm(ii);
+          h_Out(ii)    = h_Out_tmp(rcm_ii);
+        }
+        Kokkos::deep_copy(Out, h_Out);
+
+        KokkosSparse::spmv("N", one, DiagBlks[i], In, mone, Out);
+
+        double nrm_val = KokkosBlas::nrm2(Out);
+        EXPECT_LE(nrm_val, 1e-9);
+      }
+    }
   }
 }
 }  // namespace Test
@@ -136,9 +177,9 @@ void test_extract_diagonal_blocks() {
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
         0, s);
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        12, s);
+        153, s);
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        123, s);
+        1553, s);
   }
 }
 
