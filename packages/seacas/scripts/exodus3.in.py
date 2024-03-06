@@ -156,7 +156,7 @@ class ex_options(Enum):
     EX_NULLVERBOSE = 8
 
 
-if os.name ==  'nt':
+if os.name == 'nt':
     so_prefix = ''
     so_suffix = 'dll'
 else:
