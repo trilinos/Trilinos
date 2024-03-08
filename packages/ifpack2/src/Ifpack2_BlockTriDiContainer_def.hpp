@@ -187,7 +187,7 @@ namespace Ifpack2 {
     const bool useSeqMethod = false;
     const bool overlapCommAndComp = false;
     initInternal(matrix, importer, overlapCommAndComp, useSeqMethod);
-    n_subparts_per_part_ = 1;
+    n_subparts_per_part_ = -1;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
   }
 

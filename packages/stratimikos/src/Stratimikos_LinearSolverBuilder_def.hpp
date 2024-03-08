@@ -66,7 +66,7 @@
 #ifdef HAVE_STRATIMIKOS_IFPACK
 #  include "Thyra_IfpackPreconditionerFactory.hpp"
 #endif
-#ifdef HAVE_STRATIMIKOS_IFPACK2
+#if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 #  include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #  include "Tpetra_CrsMatrix.hpp"
 #endif
@@ -541,7 +541,7 @@ void LinearSolverBuilder<Scalar>::initializeDefaults()
     );
 #endif
 
-#ifdef HAVE_STRATIMIKOS_IFPACK2
+#if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
   setPreconditioningStrategyFactory(
     abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
     Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),
@@ -624,7 +624,7 @@ void LinearSolverBuilder<double>::initializeDefaults()
     );
 #endif
 
-#ifdef HAVE_STRATIMIKOS_IFPACK2
+#if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
   setPreconditioningStrategyFactory(
     abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
     Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),

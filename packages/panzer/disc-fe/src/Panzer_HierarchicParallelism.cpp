@@ -56,6 +56,9 @@ namespace panzer {
 #if defined(KOKKOS_ENABLE_CUDA)
     fad_vector_size_ = 32;
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    fad_vector_size_ = 64;
+#endif
 #endif
   }
 

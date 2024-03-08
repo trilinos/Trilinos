@@ -41,5 +41,9 @@ struct Perf {
 
 const int SFadSize  = 8;
 const int SLFadSize = SFadSize;
+#if defined (KOKKOS_ENABLE_HIP)
+const int HierSFadSize  = 64;
+#else
 const int HierSFadSize  = 32;
+#endif
 const int HierSLFadSize = HierSFadSize;

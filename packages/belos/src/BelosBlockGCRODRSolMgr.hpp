@@ -1964,7 +1964,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
           tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
         else{
           tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
-          printer_->stream(Warnings) << "Belos::BlockGmresSolMgr::solve():  Warning! Requested Krylov subspace dimension is larger than operator dimension!"
+          printer_->stream(Warnings) << "Belos::BlockGCRODRSolMgr::solve():  Warning! Requested Krylov subspace dimension is larger than operator dimension!"
                                      << std::endl << "The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
           primeList.set("Num Blocks",Teuchos::as<int>(tmpNumBlocks));
         }
@@ -2019,7 +2019,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
           if ( expConvTest_->getLOADetected() ) {
             // we don't have convergence
             loaDetected_ = true;
-            printer_->stream(Warnings) << "Belos::BlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
+            printer_->stream(Warnings) << "Belos::BlockGCRODRSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
           }
         }
         // *******************************************
@@ -2054,6 +2054,15 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
             isConverged = false;
         }
       } // end catch (const GmresIterationOrthoFailure &e)
+      catch (const StatusTestNaNError& e) {
+        // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+        achievedTol_ = MT::one();
+        Teuchos::RCP<MV> X = problem_->getLHS();
+        MVT::MvInit( *X, SCT::zero() );
+        printer_->stream(Warnings) << "Belos::BlockGCRODRSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+        return Unconverged;
+      }
       catch (const std::exception &e) {
         printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                  << block_gmres_iter->getNumIters() << std::endl

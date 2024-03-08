@@ -46,6 +46,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_ILUT_calore1_mm.xml 
   test_Jacobi_calore1_mm.xml 
   test_Jacobi_calore1_mm_constGraph.xml 
+  test_BlockRelaxationAmesos2_calore1_mm.xml
   test_BlockRelaxationZoltan2_calore1_mm.xml
   test_GS_calore1_mm.xml
   test_MTGS_calore1_mm.xml
@@ -946,6 +947,17 @@ TRIBITS_ADD_TEST(
   tif_belos
   NAME BlockRelaxation_Zoltan2_belos
   ARGS "--xml_file=test_BlockRelaxationZoltan2_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Amesos2)
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME BlockRelaxation_Amesos2_belos
+  ARGS "--xml_file=test_BlockRelaxationAmesos2_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT

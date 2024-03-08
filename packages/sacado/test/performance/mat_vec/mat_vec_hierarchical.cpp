@@ -44,11 +44,16 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const unsigned vector_size = is_hip ? 64 : 1;
+  const unsigned team_size = is_hip ? 128 / vector_size : 1;
+#else
+  const unsigned vector_size = 1;
+  const unsigned team_size = 1;
+#endif
 
   const int m = A.extent(0);
   const int n = A.extent(1);
@@ -104,11 +109,14 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
+  const int FadStride = is_cuda ? 32 : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const int FadStride = is_hip ? 64 : 1;
 #else
-  const bool is_cuda = false;
+  const int FadStride = 1;
 #endif
 
-  const int FadStride = is_cuda ? 32 : 1;
 #if defined(SACADO_ALIGN_SFAD)
   const int N = Sacado::StaticSize<FadType>::value;
   const int Nalign = ((N+FadStride-1)/FadStride)*FadStride;
@@ -187,4 +195,8 @@ INST_FUNC_DEV(Kokkos::Threads)
 
 #ifdef KOKKOS_ENABLE_CUDA
 INST_FUNC_DEV(Kokkos::Cuda)
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+INST_FUNC_DEV(Kokkos::HIP)
 #endif

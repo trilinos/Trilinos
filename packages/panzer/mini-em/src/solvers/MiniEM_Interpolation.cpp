@@ -1,7 +1,75 @@
 #include "MiniEM_Interpolation.hpp"
 
 
-Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                   typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol) {
+  using crs_matrix   = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using row_ptr_type = typename crs_matrix::local_graph_device_type::row_map_type::non_const_type;
+  using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
+  using vals_type    = typename crs_matrix::local_matrix_device_type::values_type;
+
+  using ATS = Kokkos::ArithTraits<Scalar>;
+  using impl_SC  = typename ATS::val_type;
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+
+  auto lclA = A->getLocalMatrixDevice();
+
+  auto rowptr = row_ptr_type("rowptr", lclA.numRows() + 1);
+
+  Kokkos::parallel_for(
+      "removeSmallEntries::rowptr1",
+      Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
+      KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+        auto row = lclA.row(rlid);
+        for (LocalOrdinal k = 0; k < row.length; ++k) {
+          if (impl_ATS::magnitude(row.value(k)) > tol) {
+            rowptr(rlid + 1) += 1;
+          }
+        }
+      });
+  LocalOrdinal nnz;
+  Kokkos::parallel_scan(
+      "removeSmallEntries::rowptr2",
+      Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
+      KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
+        partial_nnz += rowptr(rlid + 1);
+        if (is_final)
+          rowptr(rlid + 1) = partial_nnz;
+      },
+      nnz);
+
+  auto idx  = col_idx_type("idx", nnz);
+  auto vals = vals_type("vals", nnz);
+
+  Kokkos::parallel_for(
+      "removeSmallEntries::indicesValues",
+      Kokkos::RangePolicy<LocalOrdinal>(0, lclA.numRows()),
+      KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+        auto row = lclA.row(rlid);
+        auto I   = rowptr(rlid);
+        for (LocalOrdinal k = 0; k < row.length; ++k) {
+          if (impl_ATS::magnitude(row.value(k)) > tol) {
+            idx(I)  = row.colidx(k);
+            vals(I) = row.value(k);
+            I += 1;
+          }
+        }
+      });
+  Kokkos::fence();
+
+  auto newA = Teuchos::rcp(new crs_matrix(A->getRowMap(), A->getColMap(), rowptr, idx, vals));
+  newA->fillComplete(A->getDomainMap(),
+                     A->getRangeMap());
+  return newA;
+}
+
+
+Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
                                   const std::string& lo_basis_name,
                                   const std::string& ho_basis_name,
                                   Intrepid2::EOperator op,
@@ -11,23 +79,24 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
-  typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef panzer::GlobalOrdinal GlobalOrdinal;
+  using Scalar = double;
+  using LocalOrdinal = int;
+  using GlobalOrdinal = panzer::GlobalOrdinal;
 
   using STS = Teuchos::ScalarTraits<Scalar>;
+  using KAT = Kokkos::ArithTraits<Scalar>;
   using OT  = Teuchos::OrdinalTraits<GlobalOrdinal>;
 
-  typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinal,GlobalOrdinal> tpetraBlockedLinObjFactory;
+  using tpetraBlockedLinObjFactory = typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits, Scalar, LocalOrdinal, GlobalOrdinal>;
 #ifdef PANZER_HAVE_EPETRA_STACK
-  typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinal> epetraBlockedLinObjFactory;
+  using epetraBlockedLinObjFactory = typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits, LocalOrdinal>;
 #endif
-  typedef panzer::GlobalIndexer UGI;
-  typedef PHX::Device DeviceSpace;
-  typedef Kokkos::HostSpace HostSpace;
-  typedef Intrepid2::OrientationTools<DeviceSpace> ots;
-  typedef Intrepid2::LagrangianInterpolation<DeviceSpace> li;
-  typedef Kokkos::DynRankView<double,DeviceSpace> DynRankDeviceView;
+  using UGI = panzer::GlobalIndexer;
+  using DeviceSpace = PHX::Device;
+  using HostSpace = Kokkos::HostSpace;
+  using ots = Intrepid2::OrientationTools<DeviceSpace>;
+  using li = Intrepid2::LagrangianInterpolation<DeviceSpace>;
+  using DynRankDeviceView = Kokkos::DynRankView<double, DeviceSpace>;
 
   // must be able to cast to a block linear object factory
   RCP<const tpetraBlockedLinObjFactory > tblof = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory);
@@ -35,12 +104,13 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   RCP<const epetraBlockedLinObjFactory > eblof = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
 #endif
 
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> tp_matrix;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> tp_map;
+  using tp_graph = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal>;
+  using tp_matrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>;
+  using tp_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal>;
 #ifdef PANZER_HAVE_EPETRA_STACK
-  typedef typename panzer::BlockedEpetraLinearObjContainer ep_linObjContainer;
-  typedef Epetra_CrsMatrix ep_matrix;
-  typedef Epetra_Map ep_map;
+  using ep_linObjContainer = panzer::BlockedEpetraLinearObjContainer;
+  using ep_matrix = Epetra_CrsMatrix;
+  using ep_map = Epetra_Map;
 #endif
 
   RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
@@ -79,29 +149,89 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
   // Create the global interp matrix.
   // The operator maps from LO (domain) to HO (range)
-  RCP<const tp_map> tp_rangemap, tp_domainmap, tp_rowmap, tp_colmap;
+  RCP<const tp_map> tp_rangemap;
+  RCP<const tp_map> tp_domainmap;
+  RCP<const tp_map> tp_rowmap;
+  RCP<const tp_map> tp_colmap;
   RCP<tp_matrix> tp_interp_matrix;
+  typename tp_matrix::local_matrix_device_type lcl_tp_interp_matrix;
 #ifdef PANZER_HAVE_EPETRA_STACK
-  RCP<const ep_map> ep_rangemap, ep_domainmap, ep_rowmap, ep_colmap;
+  RCP<const ep_map> ep_rangemap;
+  RCP<const ep_map> ep_domainmap;
+  RCP<const ep_map> ep_rowmap;
+  RCP<const ep_map> ep_colmap;
   RCP<ep_matrix> ep_interp_matrix;
 #endif
 
+  auto hoElementLIDs_d = ho_ugi->getLIDs();
+  auto loElementLIDs_d = lo_ugi->getLIDs();
+
   RCP<Thyra::LinearOpBase<Scalar> > thyra_interp;
+  LocalOrdinal minLocalIndex = 0;
+  LocalOrdinal maxLocalIndex = 0;
   if (tblof != Teuchos::null) {
     // build maps
     std::vector<GlobalOrdinal> gids;
     ho_ugi->getOwnedIndices(gids);
-    tp_rowmap = rcp(new tp_map(OT::invalid(), gids.data(), gids.size(), OT::zero(), ho_ugi->getComm()));
+    tp_rowmap = rcp(new tp_map(OT::invalid(), gids.data(), static_cast<LocalOrdinal>(gids.size()), OT::zero(), ho_ugi->getComm()));
     tp_rangemap = tp_rowmap;
     lo_ugi->getOwnedIndices(gids);
-    tp_domainmap = rcp(new tp_map(OT::invalid(), gids.data(), gids.size(), OT::zero(), lo_ugi->getComm()));
+    tp_domainmap = rcp(new tp_map(OT::invalid(), gids.data(), static_cast<LocalOrdinal>(gids.size()), OT::zero(), lo_ugi->getComm()));
     lo_ugi->getOwnedAndGhostedIndices(gids);
-    tp_colmap = rcp(new tp_map(OT::invalid(), gids.data(), gids.size(), OT::zero(), lo_ugi->getComm()));
+    tp_colmap = rcp(new tp_map(OT::invalid(), gids.data(), static_cast<LocalOrdinal>(gids.size()), OT::zero(), lo_ugi->getComm()));
+
+    minLocalIndex = tp_rowmap->getMinLocalIndex();
+    maxLocalIndex = tp_rowmap->getMaxLocalIndex();
 
     // estimate number of entries per row
     // This is an upper bound, as we are counting dofs that are on shared nodes, edges, faces more than once.
-    Kokkos::View<size_t*,HostSpace> numEntriesPerRow("numEntriesPerRow", tp_rowmap->getLocalNumElements());
+    using dv = Kokkos::DualView<size_t*, typename tp_graph::device_type>;
+    dv numEntriesPerRow("numEntriesPerRow", tp_rowmap->getLocalNumElements());
     {
+      auto numEntriesPerRow_d = numEntriesPerRow.view_device();
+
+      // loop over element blocks
+      std::vector<std::string> elementBlockIds;
+      blockedDOFMngr->getElementBlockIds(elementBlockIds);
+      for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
+
+        // loop over elements
+        std::vector<int> elementIds = ho_ugi->getElementBlock(elementBlockIds[blockIter]);
+        Kokkos::View<int *, HostSpace> elementIds_h(elementIds.data(), elementIds.size());
+        Kokkos::View<int *, DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
+        Kokkos::deep_copy(elementIds_d, elementIds_h);
+        maxNumElementsPerBlock = std::max(maxNumElementsPerBlock, elementIds.size());
+
+        Kokkos::parallel_for("MiniEM_Interpolation::numEntriesPerRow",
+                             Kokkos::RangePolicy<size_t, typename tp_matrix::node_type::execution_space>(0, elementIds.size()),
+                             KOKKOS_LAMBDA(const size_t elemIter) {
+                               auto elemId = elementIds_d(elemIter);
+
+                               // get IDs for HO dofs
+                               auto hoLIDs_d = Kokkos::subview(hoElementLIDs_d, elemId, Kokkos::ALL());
+
+                               // loop over HO LIDs
+                               for(size_t hoIter = 0; hoIter < hoCardinality; ++hoIter) {
+                                 const LocalOrdinal ho_row = hoLIDs_d(hoIter);
+                                 const bool isOwned = ((minLocalIndex <= ho_row) && (ho_row <= maxLocalIndex));
+                                 if (isOwned)
+				   Kokkos::atomic_add(&numEntriesPerRow_d(ho_row), loCardinality);
+                               } //end HO LID loop
+                             });
+      } // blocks loop
+      numEntriesPerRow.template modify<typename dv::t_dev>();
+      numEntriesPerRow.template sync<typename dv::t_host>();
+    }
+
+    // Set up graph
+    auto tp_interp_graph = rcp(new tp_graph(tp_rowmap, tp_colmap, numEntriesPerRow));
+
+    { // This runs on host
+      Kokkos::View<LocalOrdinal**, HostSpace> hoElementLIDs_h("hoElementLIDs_h", hoElementLIDs_d.extent(0), hoCardinality);
+      Kokkos::View<LocalOrdinal**, HostSpace> loElementLIDs_h("loElementLIDs_h", loElementLIDs_d.extent(0), loCardinality);
+      Kokkos::deep_copy(hoElementLIDs_h, hoElementLIDs_d);
+      Kokkos::deep_copy(loElementLIDs_h, loElementLIDs_d);
+
       // loop over element blocks
       std::vector<std::string> elementBlockIds;
       blockedDOFMngr->getElementBlockIds(elementBlockIds);
@@ -114,28 +244,28 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
           auto elemId = elementIds[elemIter];
 
           // get IDs for HO dofs
-          auto hoLIDs_d = ho_ugi->getElementLIDs(elemId);
-          Kokkos::deep_copy(hoLIDs_h, hoLIDs_d);
-
-          // TODO: do counting on device
+          auto hoLIDs_h = Kokkos::subview(hoElementLIDs_h, elemId, Kokkos::ALL());
+          auto loLIDs_h = Kokkos::subview(loElementLIDs_h, elemId, Kokkos::ALL());
 
           // loop over HO LIDs
-          for(size_t hoIter = 0; hoIter < hoLIDs_h.size(); ++hoIter) {
+          for(size_t hoIter = 0; hoIter < hoCardinality; ++hoIter) {
             const LocalOrdinal ho_row = hoLIDs_h(hoIter);
-            const bool isOwned = tp_rowmap->isNodeLocalElement(ho_row);
-            if (isOwned)
-              numEntriesPerRow(ho_row) += loCardinality;
+            const bool isOwned = ((minLocalIndex <= ho_row) && (ho_row <= maxLocalIndex));
+            if (isOwned) {
+              Teuchos::ArrayView<LocalOrdinal> loLIDs_av = Teuchos::ArrayView<LocalOrdinal>(loLIDs_h.data(), loLIDs_h.extent_int(0));
+              tp_interp_graph->insertLocalIndices(ho_row, loLIDs_av);
+            }
           } //end HO LID loop
         } // elements loop
       } // blocks loop
     }
 
-    Teuchos::ArrayView<size_t> nEPR = Teuchos::ArrayView<size_t>(numEntriesPerRow.data(), numEntriesPerRow.extent(0));
-    tp_interp_matrix = rcp(new tp_matrix(tp_rowmap,tp_colmap,nEPR));
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
+    pl->set("Optimize Storage", true);
+    tp_interp_graph->fillComplete(tp_domainmap, tp_rangemap, pl);
 
-    thyra_interp = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_rangemap),
-                                                                                                          Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap),
-                                                                                                          tp_interp_matrix);
+    tp_interp_matrix = rcp(new tp_matrix(tp_interp_graph));
+    lcl_tp_interp_matrix = tp_interp_matrix->getLocalMatrixDevice();
   }
 #ifdef PANZER_HAVE_EPETRA_STACK
   else if (eblof != Teuchos::null) {
@@ -169,7 +299,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     // TODO: Fix this.
     size_t nnzPerRowEstimate = 25*loCardinality;
 
-    ep_interp_matrix = rcp(new ep_matrix(Copy, *ep_rowmap, *ep_colmap, nnzPerRowEstimate, /*StaticProfile=*/true));
+    ep_interp_matrix = rcp(new ep_matrix(Copy, *ep_rowmap, *ep_colmap, static_cast<int>(nnzPerRowEstimate), /*StaticProfile=*/true));
 
     RCP<const Thyra::LinearOpBase<double> > th_ep_interp = Thyra::epetraLinearOp(ep_interp_matrix,
                                                                                  Thyra::NOTRANS,
@@ -187,9 +317,9 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   std::vector<shards::CellTopology> topologies;
   conn->getElementBlockTopologies(topologies);
   shards::CellTopology topology = topologies[0];
-  int dim = topology.getDimension();
+  int dim = static_cast<int>(topology.getDimension());
   // num vertices in an element
-  const int numElemVertices = topology.getVertexCount();
+  const int numElemVertices = static_cast<int>(topology.getVertexCount());
 
   // set up a node only conn manager
   auto node_basis = panzer::createIntrepid2Basis<DeviceSpace,Scalar,Scalar>("HGrad",1,topology);
@@ -205,12 +335,11 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   // allocate some views
   int numCells;
   if (maxNumElementsPerBlock > 0)
-    numCells = std::min(maxNumElementsPerBlock, worksetSize);
+    numCells = static_cast<int>(std::min(maxNumElementsPerBlock, worksetSize));
   else
-    numCells = worksetSize;
+    numCells = static_cast<int>(worksetSize);
   DynRankDeviceView             ho_dofCoords_d("ho_dofCoords_d", hoCardinality, dim);
   DynRankDeviceView             basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
-  DynRankDeviceView::HostMirror basisCoeffsLIOriented_h = Kokkos::create_mirror_view(basisCoeffsLIOriented_d);
   typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  numCells);
   typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes_h("elemNodes_h", numCells, numElemVertices);
   typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>             elemNodes_d("elemNodes_d", numCells, numElemVertices);
@@ -222,7 +351,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
   {
     // Let Intrepid2 give us the correctly dimensioned view, then build one with +1 ranks and extent(0) == numCells
-    auto temp = lo_basis->allocateOutputView(hoCardinality, op);
+    auto temp = lo_basis->allocateOutputView(static_cast<int>(hoCardinality), op);
 
     // These view have dimensions
     //  numCells, numFields=loCardinality, numPoints=hoCardinality, (spatialDim)
@@ -239,9 +368,6 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   int fieldRank = Intrepid2::getFieldRank(ho_basis->getFunctionSpace());
   TEUCHOS_ASSERT((fieldRank == 0) || (fieldRank == 1));
 
-  Kokkos::View<LocalOrdinal*,HostSpace> indices_h("indices", loCardinality);
-  Kokkos::View<Scalar*,      HostSpace> values_h ("values",  loCardinality);
-
   auto entryFilterTol = 100*Teuchos::ScalarTraits<typename STS::magnitudeType>::eps();
 
   // loop over element blocks
@@ -251,6 +377,10 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
     // loop over element worksets
     std::vector<int> elementIds = ho_ugi->getElementBlock(elementBlockIds[blockIter]);
+    Kokkos::View<int *, HostSpace> elementIds_h(elementIds.data(), elementIds.size());
+    Kokkos::View<int *, DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
+    Kokkos::deep_copy(elementIds_d, elementIds_h);
+
     for(std::size_t elemIter = 0; elemIter < elementIds.size(); elemIter += numCells) {
 
       // get element orientations
@@ -286,69 +416,91 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
                            Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
                            ho_basis.get(), elemOrts_d);
 
-      Kokkos::deep_copy(basisCoeffsLIOriented_h, basisCoeffsLIOriented_d);
+      int endCellRange =
+          std::min(numCells, Teuchos::as<int>(elementIds.size()) -
+                                 Teuchos::as<int>(elemIter));
 
-      for (int cellNo = 0; cellNo < numCells; cellNo++) {
-        if (elemIter+cellNo >= elementIds.size())
-          continue;
-        auto elemId = elementIds[elemIter+cellNo];
-
-        // get IDs for HO and LO dofs
-        auto hoLIDs_d = ho_ugi->getElementLIDs(elemId);
-        auto loLIDs_d = lo_ugi->getElementLIDs(elemId);
-        Kokkos::deep_copy(hoLIDs_h, hoLIDs_d);
-        Kokkos::deep_copy(loLIDs_h, loLIDs_d);
-
-        // TODO: do filtering and insert on device
-
-        // loop over HO LIDs
-        for(size_t hoIter = 0; hoIter < hoLIDs_h.size(); ++hoIter) {
-          LocalOrdinal ho_row = hoLIDs_h(hoIter);
-          bool isOwned;
 #ifdef PANZER_HAVE_EPETRA_STACK
-          if (tblof != Teuchos::null)
-            isOwned = tp_rowmap->isNodeLocalElement(ho_row);
-          else
-            isOwned = ep_rowmap->MyLID(ho_row);
-#else
-          isOwned = tp_rowmap->isNodeLocalElement(ho_row);
-#endif
+      if (tblof.is_null()) { // Epetra fill
 
-          if (isOwned) {
-            // filter entries for zeros
-            size_t rowNNZ = 0;
-            for(size_t loIter = 0; loIter < loCardinality; loIter++) {
-              Scalar val = basisCoeffsLIOriented_h(cellNo, hoIter, loIter);
-              if (STS::magnitude(val) > entryFilterTol) {
-                indices_h(rowNNZ) = loLIDs_h(loIter);
-                values_h(rowNNZ) = val;
-                rowNNZ += 1;
+	Kokkos::View<LocalOrdinal*,DeviceSpace> indices_d("indices", loCardinality);
+	Kokkos::View<Scalar*,      DeviceSpace> values_d ("values",  loCardinality);
+
+	
+        for (int cellNo = 0; cellNo < endCellRange; cellNo++) {
+          auto elemId = elementIds_d(elemIter+cellNo);
+
+          // get IDs for HO and LO dofs
+          auto hoLIDs_d = Kokkos::subview(hoElementLIDs_d, elemId, Kokkos::ALL());
+          auto loLIDs_d = Kokkos::subview(loElementLIDs_d, elemId, Kokkos::ALL());
+
+          // loop over HO LIDs
+          for(size_t hoIter = 0; hoIter < hoCardinality; ++hoIter) {
+            const LocalOrdinal ho_row = hoLIDs_d(hoIter);
+            const bool isOwned = ep_rowmap->MyLID(ho_row);
+            if (isOwned) {
+              // filter entries for zeros
+              LocalOrdinal rowNNZ = 0;
+              for(size_t loIter = 0; loIter < loCardinality; loIter++) {
+                Scalar val = basisCoeffsLIOriented_d(cellNo, hoIter, loIter);
+                if (KAT::magnitude(val) > entryFilterTol) {
+                  indices_d(rowNNZ) = loLIDs_d(loIter);
+                  values_d(rowNNZ) = val;
+                  ++rowNNZ;
+                }
               }
-            }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-            if (tblof != Teuchos::null)
-              tp_interp_matrix->insertLocalValues(ho_row, rowNNZ, values_h.data(), indices_h.data(), Tpetra::INSERT);
-            else {
-              int ret = ep_interp_matrix->ReplaceMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+              int ret = ep_interp_matrix->ReplaceMyValues(ho_row, rowNNZ, values_d.data(), indices_d.data());
               if (ret != 0) {
-                ret = ep_interp_matrix->InsertMyValues(ho_row, rowNNZ, values_h.data(), indices_h.data());
+                ret = ep_interp_matrix->InsertMyValues(ho_row, rowNNZ, values_d.data(), indices_d.data());
                 TEUCHOS_ASSERT(ret == 0);
               }
-            }
-#else
-            tp_interp_matrix->insertLocalValues(ho_row, rowNNZ, values_h.data(), indices_h.data(), Tpetra::INSERT);
+            } //end if owned
+          } // end HO LID loop
+        } //end workset loop
+      } // Epetra fill
+      else
 #endif
-          } //end if owned
-        } //end HO LID loop
-      } //end workset loop
+      { // Tpetra fill
+        Kokkos::parallel_for(
+                             "MiniEM_Interpolation::worksetLoop",
+                             Kokkos::RangePolicy<int, typename tp_matrix::node_type::execution_space>(0, endCellRange),
+                             KOKKOS_LAMBDA(const int cellNo) {
+                               auto elemId = elementIds_d(elemIter+cellNo);
+
+                               // get IDs for HO and LO dofs
+                               auto hoLIDs_d = Kokkos::subview(hoElementLIDs_d, elemId, Kokkos::ALL());
+                               auto loLIDs_d = Kokkos::subview(loElementLIDs_d, elemId, Kokkos::ALL());
+
+                               // loop over HO LIDs
+                               for(size_t hoIter = 0; hoIter < hoCardinality; ++hoIter) {
+                                 const LocalOrdinal ho_row = hoLIDs_d(hoIter);
+                                 const bool isOwned = ((minLocalIndex <= ho_row) && (ho_row <= maxLocalIndex));
+                                 if (isOwned) {
+                                   // filter entries for zeros
+                                   for(size_t loIter = 0; loIter < loCardinality; loIter++) {
+                                     Scalar val = basisCoeffsLIOriented_d(cellNo, hoIter, loIter);
+                                     if (KAT::magnitude(val) > entryFilterTol)
+				       lcl_tp_interp_matrix.replaceValues(ho_row, &(loLIDs_d(loIter)), 1, &val, /*is_sorted=*/false, /*force_atomic=*/true);
+                                   } //end if owned
+                                 } // isOwned
+                               } // end HO LID loop
+                             }); //end workset loop
+      } // Tpetra fill
     } //end element loop
   } //end element block loop
-
 
   if (tblof != Teuchos::null) {
     tp_interp_matrix->fillComplete(tp_domainmap, tp_rangemap);
 
+    if (op != Intrepid2::OPERATOR_VALUE) {
+      // Discrete gradient, curl, etc actually live on edges, faces, etc, so we have a lot of zeros in the matrix.
+      tp_interp_matrix = removeSmallEntries(tp_interp_matrix, entryFilterTol);
+    }
+
+    thyra_interp = Thyra::tpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,typename tp_matrix::node_type>(Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_rangemap),
+                                                                                                          Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap),
+                                                                                                          tp_interp_matrix);
 #if 0
     // compare the sparse matrix version and the matrix-free apply
     auto mfOp = rcp(new mini_em::MatrixFreeInterpolationOp<Scalar,LocalOrdinal,GlobalOrdinal>("test", linObjFactory, lo_basis_name, ho_basis_name, op, worksetSize));
@@ -410,7 +562,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 }
 
 void addInterpolationToRequestHandler(const std::string& name,
-                                      const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                                      const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
                                       const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                                       const std::string& lo_basis_name,
                                       const std::string& ho_basis_name,
@@ -427,7 +579,7 @@ void addInterpolationToRequestHandler(const std::string& name,
 
 InterpolationRequestCallback::
 InterpolationRequestCallback(const std::string& name,
-                             const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory,
+                             const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
                              const std::string& lo_basis_name,
                              const std::string& ho_basis_name,
                              Intrepid2::EOperator op,
@@ -448,10 +600,10 @@ build() {
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: assemble ") + name_));
     interp_ = buildInterpolation(linObjFactory_, lo_basis_name_, ho_basis_name_, op_, worksetSize_);
   } else {
-    typedef double Scalar;
-    typedef int LocalOrdinal;
-    typedef panzer::GlobalOrdinal GlobalOrdinal;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> tp_matrix;
+    using Scalar = double;
+    using LocalOrdinal = int;
+    using GlobalOrdinal = panzer::GlobalOrdinal;
+    using tp_matrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>;
 
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free setup ") + name_));
     auto mfOp = rcp(new mini_em::MatrixFreeInterpolationOp<Scalar,LocalOrdinal,GlobalOrdinal>(name_, linObjFactory_, lo_basis_name_, ho_basis_name_, op_, worksetSize_));
