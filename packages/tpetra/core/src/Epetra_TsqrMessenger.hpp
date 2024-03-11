@@ -57,7 +57,11 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
-#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
+#if !defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#error This file is deprecated due to Epetra removal and will be removed
+#endif
+
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE) && defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 // Include Epetra's MPI wrappers.
 #include <Epetra_Comm.h>
@@ -80,11 +84,13 @@ namespace TSQR {
     /// object.  Otherwise, return a Teuchos::SerialComm instance.  It
     /// should be one of these two things, but if it's not, this
     /// function throws std::invalid_argument.
+    TPETRA_DEPRECATED_MSG("epetra removal")
     Teuchos::RCP<const Teuchos::Comm<int> >
     extractTeuchosComm (const Teuchos::RCP<const Epetra_Comm>& epetraComm);
 
     //! Wrap the given Epetra_Comm in an object that TSQR understands.
     template<class Datum>
+    TPETRA_DEPRECATED_MSG("epetra removal")
     Teuchos::RCP<TSQR::MessengerBase<Datum> >
     makeTsqrMessenger (const Teuchos::RCP<const Epetra_Comm>& pComm)
     {
@@ -98,7 +104,7 @@ namespace TSQR {
   } // namespace Epetra
 } // namespace TSQR
 
-#endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
+#endif // defined(TPETRA_ENABLE_DEPRECATED_CODE) && defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 #endif // EPETRA_TSQRMESSENGER_HPP
 
