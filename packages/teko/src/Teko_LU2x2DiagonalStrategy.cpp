@@ -181,7 +181,12 @@ void LU2x2DiagonalStrategy::initializeFromParameterList(const Teuchos::Parameter
                                                         const InverseLibrary& invLib) {
   Teko_DEBUG_SCOPE("LU2x2DiagonalStrategy::initializeFromParameterList", 10);
 
-  std::string invStr = "Amesos", invA00Str = "", invSStr = "";
+  std::string invStr = "", invA00Str = "", invSStr = "";
+#if defined(Teko_ENABLE_Amesos)
+  invStr = "Amesos";
+#elif defined(Teko_ENABLE_Amesos2)
+  invStr = "Amesos2";
+#endif
 
   // "parse" the parameter list
   if (pl.isParameter("Inverse Type")) invStr = pl.get<std::string>("Inverse Type");
