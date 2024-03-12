@@ -598,6 +598,7 @@ public:
    *                     StringToIntegral parameters have been converted
    *                     to integer values or bool values.
    *
+   */
 
 private:
 
