@@ -69,11 +69,21 @@
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_Exceptions.hpp"
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/CrsMatrix/Xpetra_EpetraCrsMatrix.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/CrsMatrix/Xpetra_EpetraCrsMatrix.hpp is deprecated."
+#endif
+
+
+
 namespace Xpetra {
 
 // general implementation: empty stub
 template <class EpetraGlobalOrdinal, class Node>
-class EpetraCrsMatrixT
+class XPETRA_DEPRECATED EpetraCrsMatrixT
   : public CrsMatrix<double, int, EpetraGlobalOrdinal, Node> {
   typedef EpetraGlobalOrdinal GlobalOrdinal;
   typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type Scalar;

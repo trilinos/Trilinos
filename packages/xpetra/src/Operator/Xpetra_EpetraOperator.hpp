@@ -59,10 +59,19 @@
 
 #include "Xpetra_Utils.hpp"
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/Operator/Xpetra_EpetraOperator.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/Operator/Xpetra_EpetraOperator.hpp is deprecated."
+#endif
+
+
 namespace Xpetra {
 
 template <class EpetraGlobalOrdinal, class Node>
-class EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal, Node> {
+class XPETRA_DEPRECATED EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal, Node> {
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef EpetraGlobalOrdinal GlobalOrdinal;
