@@ -60,18 +60,27 @@
 
 #include <Epetra_Vector.h>
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/Vector/Xpetra_EpetraVector.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/Vector/Xpetra_EpetraVector.hpp is deprecated."
+#endif
+
+
 namespace Xpetra {
 
 // TODO: move that elsewhere
 template <class GlobalOrdinal, class Node>
-Epetra_Vector &toEpetra(Vector<double, int, GlobalOrdinal, Node> &);
+XPETRA_DEPRECATED Epetra_Vector &toEpetra(Vector<double, int, GlobalOrdinal, Node> &);
 
 template <class GlobalOrdinal, class Node>
-const Epetra_Vector &toEpetra(const Vector<double, int, GlobalOrdinal, Node> &);
+XPETRA_DEPRECATED const Epetra_Vector &toEpetra(const Vector<double, int, GlobalOrdinal, Node> &);
 //
 
 template <class EpetraGlobalOrdinal, class Node>
-class EpetraVectorT
+class XPETRA_DEPRECATED EpetraVectorT
   : public virtual Vector<double, int, EpetraGlobalOrdinal, Node>,
     public EpetraMultiVectorT<EpetraGlobalOrdinal, Node> {
   typedef double Scalar;

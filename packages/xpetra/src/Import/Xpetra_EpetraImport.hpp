@@ -56,14 +56,23 @@
 
 #include "Epetra_Import.h"
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/Import/Xpetra_EpetraImport.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/Import/Xpetra_EpetraImport.hpp is deprecated."
+#endif
+
+
 namespace Xpetra {
 
 template <class GlobalOrdinal, class Node>
-RCP<const Import<int, GlobalOrdinal, Node> > toXpetra(const Epetra_Import *import);
+XPETRA_DEPRECATED RCP<const Import<int, GlobalOrdinal, Node> > toXpetra(const Epetra_Import *import);
 //
 
 template <class EpetraGlobalOrdinal, class Node>
-class EpetraImportT
+class XPETRA_DEPRECATED EpetraImportT
   : public Import<int, EpetraGlobalOrdinal, Node> {
   typedef int LocalOrdinal;
   typedef EpetraGlobalOrdinal GlobalOrdinal;

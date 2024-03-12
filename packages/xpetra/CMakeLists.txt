@@ -60,6 +60,7 @@ ENDIF()
 
 # If Epetra is enabled, does it provide 64-bit global indices?
 IF(${PACKAGE_NAME}_ENABLE_Epetra)
+  MESSAGE(WARNING "Epetra support in Xpetra is deprecated")
 
   # Set default value of whether Xpetra should allow for 32 bit Epetra data structures or not.
   IF(Trilinos_NO_32BIT_GLOBAL_INDICES)
