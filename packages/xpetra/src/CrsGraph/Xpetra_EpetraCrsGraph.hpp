@@ -68,7 +68,6 @@
 #error "The header file Trilinos/packages/xpetra/src/CrsGraph/Xpetra_EpetraCrsGraph.hpp is deprecated."
 #endif
 
-
 namespace Xpetra {
 
 // TODO: move that elsewhere

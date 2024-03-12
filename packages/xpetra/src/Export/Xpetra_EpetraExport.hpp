@@ -62,8 +62,6 @@
 #error "The header file Trilinos/packages/xpetra/src/Export/Xpetra_EpetraExport.hpp is deprecated."
 #endif
 
-
-
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
 namespace Xpetra {

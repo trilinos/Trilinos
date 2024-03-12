@@ -65,7 +65,6 @@
 #error "The header file Trilinos/packages/xpetra/src/Vector/Xpetra_EpetraIntVector.hpp is deprecated."
 #endif
 
-
 namespace Xpetra {
 
 // TODO: move that elsewhere

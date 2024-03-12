@@ -64,7 +64,6 @@
 #error "The header file Trilinos/packages/xpetra/src/Import/Xpetra_EpetraImport.hpp is deprecated."
 #endif
 
-
 namespace Xpetra {
 
 template <class GlobalOrdinal, class Node>
