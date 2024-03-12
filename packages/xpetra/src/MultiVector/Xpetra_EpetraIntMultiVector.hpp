@@ -56,7 +56,6 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #include "Epetra_IntMultiVector.h"
 
-
 #if defined(XPETRA_ENABLE_DEPRECATED_CODE)
 #ifdef __GNUC__
 #warning "The header file Trilinos/packages/xpetra/src/MultiVector/Xpetra_EpetraIntMultiVector.hpp is deprecated."
@@ -64,7 +63,6 @@
 #else
 #error "The header file Trilinos/packages/xpetra/src/MultiVector/Xpetra_EpetraIntMultiVector.hpp is deprecated."
 #endif
-
 
 namespace Xpetra {
 

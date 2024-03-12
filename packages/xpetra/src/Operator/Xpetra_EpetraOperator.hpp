@@ -67,7 +67,6 @@
 #error "The header file Trilinos/packages/xpetra/src/Operator/Xpetra_EpetraOperator.hpp is deprecated."
 #endif
 
-
 namespace Xpetra {
 
 template <class EpetraGlobalOrdinal, class Node>

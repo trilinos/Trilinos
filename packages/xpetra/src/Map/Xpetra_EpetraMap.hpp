@@ -67,7 +67,6 @@
 #error "The header file Trilinos/packages/xpetra/src/Map/Xpetra_EpetraMap.hpp is deprecated."
 #endif
 
-
 namespace Xpetra {
 
 // TODO: move that elsewhere

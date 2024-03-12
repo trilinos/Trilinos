@@ -77,8 +77,6 @@
 #error "The header file Trilinos/packages/xpetra/src/CrsMatrix/Xpetra_EpetraCrsMatrix.hpp is deprecated."
 #endif
 
-
-
 namespace Xpetra {
 
 // general implementation: empty stub
