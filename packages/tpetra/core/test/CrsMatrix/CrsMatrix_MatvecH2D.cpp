@@ -120,7 +120,6 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
 
     // This code is left in in case people want to debug future issues using the Kokkos profiling 
     // hooks in Tpetra
