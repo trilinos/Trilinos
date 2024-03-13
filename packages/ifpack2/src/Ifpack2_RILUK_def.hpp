@@ -1237,7 +1237,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             stream_begin = stream_end;
           }
         }
-
+        Kokkos::fence(); // Make sure X is completely reordered
         if (mode == Teuchos::NO_TRANS) { // Solve L (U Y) = X for Y.
           // Solve L Y = X for Y.
           L_solver_->apply (ReorderedX, Y, mode);
