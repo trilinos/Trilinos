@@ -533,6 +533,9 @@ template <
 #if KOKKOSKERNELS_VERSION >= 40199
           typename ExecutionSpace,
 #endif
+#if KOKKOSKERNELS_VERSION >= 40299
+          typename Handle,
+#endif
           typename AlphaType,
           typename BetaType,
           typename MatrixType,
@@ -544,9 +547,8 @@ typename std::enable_if<
   Kokkos::is_view_mp_vector< Kokkos::View< InputType, InputP... > >::value &&
   Kokkos::is_view_mp_vector< Kokkos::View< OutputType, OutputP... > >::value
 #if KOKKOSKERNELS_VERSION >= 40299
-  // TODO what is an alternative compile-time option to determine the rank?
-  // Is rank appropriate here, or is additional checking based on specialize trait needed?
-  && (Kokkos::View< OutputType, OutputP... >().rank() == 1)
+  && KokkosSparse::is_crs_matrix_v<MatrixType>
+  && (Kokkos::View< OutputType, OutputP... >::rank() == 1)
 #endif
   >::type
 spmv(
@@ -556,7 +558,7 @@ spmv(
 #if KOKKOSKERNELS_VERSION < 40299
   KokkosKernels::Experimental::Controls,
 #else
-  KokkosSparse::SPMVHandle<ExecutionSpace, MatrixType,  Kokkos::View< InputType, InputP... >, Kokkos::View< OutputType, OutputP... >>* handle,
+  Handle* handle,
 #endif
   const char mode[],
   const AlphaType& a,
@@ -567,9 +569,8 @@ spmv(
 #if KOKKOSKERNELS_VERSION < 40299
   , const RANK_ONE
 #endif
-  )
+)
 {
-  std::cout << "  STOKHOS MPVEC SPMV R1" << std::endl;
   typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
   typedef Kokkos::View< InputType, InputP... > InputVectorType;
   using input_vector_type = const_type_t<InputVectorType>;
@@ -643,6 +644,9 @@ template <
 #if KOKKOSKERNELS_VERSION >= 40199
           typename ExecutionSpace,
 #endif
+#if KOKKOSKERNELS_VERSION >= 40299
+          typename Handle,
+#endif
           typename AlphaType,
           typename BetaType,
           typename MatrixType,
@@ -654,9 +658,8 @@ typename std::enable_if<
   Kokkos::is_view_mp_vector< Kokkos::View< InputType, InputP... > >::value &&
   Kokkos::is_view_mp_vector< Kokkos::View< OutputType, OutputP... > >::value
 #if KOKKOSKERNELS_VERSION >= 40299
-  // TODO what is an alternative compile-time option to determine the rank?
-  // Is rank appropriate here, or is additional checking based on specialize trait needed?
-  && (Kokkos::View< OutputType, OutputP... >().rank() == 2)
+  && KokkosSparse::is_crs_matrix_v<MatrixType>
+  && (Kokkos::View< OutputType, OutputP... >::rank() == 2)
 #endif
   >::type
 spmv(
@@ -666,7 +669,7 @@ spmv(
 #if KOKKOSKERNELS_VERSION < 40299
   KokkosKernels::Experimental::Controls,
 #else
-  KokkosSparse::SPMVHandle<ExecutionSpace, MatrixType,  Kokkos::View< InputType, InputP... >, Kokkos::View< OutputType, OutputP... >>* handle,
+  Handle* handle,
 #endif
   const char mode[],
   const AlphaType& a,
@@ -679,7 +682,6 @@ spmv(
 #endif
   )
 {
-  std::cout << "  STOKHOS MPVEC SPMV R2" << std::endl;
 #if KOKKOSKERNELS_VERSION >= 40199
   if(space != ExecutionSpace()) {
     Kokkos::Impl::raise_error(
