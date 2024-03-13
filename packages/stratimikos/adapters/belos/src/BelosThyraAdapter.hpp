@@ -290,17 +290,24 @@ namespace Belos {
 
       const int m = B.numRows();
       const int n = B.numCols();
-      auto vs = A.domain();
-      // Create a view of the B object!
-      Teuchos::RCP< const TMVB >
-        B_thyra = vs->createCachedMembersView(
-          RTOpPack::ConstSubMultiVectorView<ScalarType>(
-            0, m, 0, n,
-            arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
-            )
-          );
-      // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
-      Thyra::apply<ScalarType>(A, Thyra::NOTRANS, *B_thyra, Teuchos::outArg(mv), alpha, beta);
+      // Check if B is 1-by-1, in which case we can just call MvAddMv()
+      if ((m == 1) && (n == 1)) {
+        using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::inoutArg;
+        const ScalarType alphaNew = alpha * B(0, 0);
+        Thyra::linear_combination<ScalarType>(tuple(alphaNew)(), tuple(ptrInArg(A))(), beta, inoutArg(mv));
+      } else {
+        // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
+        auto vs = A.domain();
+        // Create a view of the B object!
+        Teuchos::RCP< const TMVB >
+          B_thyra = vs->createCachedMembersView(
+            RTOpPack::ConstSubMultiVectorView<ScalarType>(
+              0, m, 0, n,
+              arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
+              )
+            );
+        Thyra::apply<ScalarType>(A, Thyra::NOTRANS, *B_thyra, Teuchos::outArg(mv), alpha, beta);
+      }
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.

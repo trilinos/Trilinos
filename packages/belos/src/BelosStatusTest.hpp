@@ -73,6 +73,9 @@ namespace Belos {
   class StatusTestError : public BelosError 
   {public: StatusTestError(const std::string& what_arg) : BelosError(what_arg) {}};
 
+  class StatusTestNaNError : public StatusTestError
+  {public: StatusTestNaNError(const std::string& what_arg) : StatusTestError(what_arg) {}};
+
   //@}
 
 template <class ScalarType, class MV, class OP>

@@ -185,9 +185,8 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
     // estimate number of entries per row
     // This is an upper bound, as we are counting dofs that are on shared nodes, edges, faces more than once.
-    // Kokkos::View<size_t*,HostSpace> numEntriesPerRow("numEntriesPerRow", tp_rowmap->getLocalNumElements());
-    Kokkos::DualView<size_t*, DeviceSpace> numEntriesPerRow("numEntriesPerRow", tp_rowmap->getLocalNumElements());
-
+    using dv = Kokkos::DualView<size_t*, typename tp_graph::device_type>;
+    dv numEntriesPerRow("numEntriesPerRow", tp_rowmap->getLocalNumElements());
     {
       auto numEntriesPerRow_d = numEntriesPerRow.view_device();
 
@@ -220,8 +219,8 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
                                } //end HO LID loop
                              });
       } // blocks loop
-      numEntriesPerRow.template modify<DeviceSpace>();
-      numEntriesPerRow.template sync<HostSpace>();
+      numEntriesPerRow.template modify<typename dv::t_dev>();
+      numEntriesPerRow.template sync<typename dv::t_host>();
     }
 
     // Set up graph

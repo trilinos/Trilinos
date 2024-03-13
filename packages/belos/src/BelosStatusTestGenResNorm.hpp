@@ -571,7 +571,7 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
       } else {
         // Throw an std::exception if a NaN is found.
         status_ = Failed;
-        TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestGenResNorm::checkStatus(): NaN has been detected.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestNaNError,"StatusTestGenResNorm::checkStatus(): NaN has been detected.");
       }
     }
   }
