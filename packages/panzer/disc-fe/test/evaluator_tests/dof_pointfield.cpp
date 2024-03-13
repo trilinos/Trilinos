@@ -216,11 +216,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   //////////////////////////////////////////////////////////
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  // FieldArray & coords = workset->cell_vertex_coordinates;
-  // coords.resize(numCells,numVerts,dim);
   MDFieldArrayFactory af("",true);
-  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
-  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
+  workset->cell_node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_node_coordinates;
   Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) {
       coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
       coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;

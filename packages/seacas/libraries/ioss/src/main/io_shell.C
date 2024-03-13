@@ -35,7 +35,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "6.1 (2021/09/09)";
+  std::string version = "6.2 (2023/05/12)";
 
   bool mem_stats = false;
 
@@ -47,6 +47,9 @@ namespace {
   {
     Ioss::MeshCopyOptions options{};
     options.selected_times    = interFace.selected_times;
+    options.rel_tolerance     = interFace.rel_tolerance;
+    options.abs_tolerance     = interFace.abs_tolerance;
+    options.tol_floor         = interFace.tol_floor;
     options.verbose           = !interFace.quiet;
     options.output_summary    = true;
     options.memory_statistics = interFace.memory_statistics;
@@ -106,8 +109,10 @@ int main(int argc, char *argv[])
     if (interFace.compare) {
       fmt::print(stderr,
                  "Input 1:   '{}', Type: {}\n"
-                 "Input 2:   '{}', Type: {}\n\n",
-                 in_file, interFace.inFiletype, out_file, interFace.outFiletype);
+                 "Input 2:   '{}', Type: {}\n"
+                 "\tTolerances: Absolute = {}, Relative = {}, Floor = {}\n\n",
+                 in_file, interFace.inFiletype, out_file, interFace.outFiletype,
+                 interFace.abs_tolerance, interFace.rel_tolerance, interFace.tol_floor);
     }
     else {
       fmt::print(stderr,
@@ -635,6 +640,10 @@ namespace {
 
     if (interFace.debug) {
       properties.add(Ioss::Property("LOGGING", 1));
+    }
+
+    if (interFace.detect_nans) {
+      properties.add(Ioss::Property("NAN_DETECTION", 1));
     }
 
     if (interFace.memory_statistics) {

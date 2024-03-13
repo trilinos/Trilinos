@@ -7,8 +7,10 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_SnapInfo.hpp>
+
+#include <Akri_MeshHelpers.hpp>
 #include <Akri_QualityMetric.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <vector>
 #include <iostream>

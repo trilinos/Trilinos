@@ -1,3 +1,4 @@
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -8,6 +9,7 @@
 // Define typedefs and macros for testing over all template parameter
 // combinations.
 #include "Ifpack2_ETIHelperMacros.h"
+#include <type_traits>
 
 // FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
 #if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
@@ -128,7 +130,7 @@ namespace {
   testSolver (Teuchos::FancyOStream& out,
               bool& success,
               Tpetra::MultiVector<SC, LO, GO, NT>& X,
-              const Teuchos::RCP<const Tpetra::CrsMatrix<SC, LO, GO, NT> >& A,
+              const Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NT> >& A,
               const Tpetra::MultiVector<SC, LO, GO, NT>& B,
               const Tpetra::MultiVector<SC, LO, GO, NT>& X_exact,
               const std::string& solverName)
@@ -163,10 +165,15 @@ namespace {
     }
 
     out << "Set matrix" << endl;
+    // Set all matrix entries to nan.
+    A->setAllToScalar(STS::nan());
     solver->setMatrix (A);
 
-    out << "Compute symbolic and numeric factorization" << endl;
+    out << "Compute symbolic factorization" << endl;
     solver->symbolic ();
+    // Set all matrix entries to one, so that A is the identity matrix.
+    A->setAllToScalar(STS::one());
+    out << "Compute numeric factorization" << endl;
     solver->numeric ();
 
     out << "Apply solver to \"solve\" AX=B for X.  Ifpack2 only promises "
@@ -174,6 +181,32 @@ namespace {
       "that solve() doesn't throw." << endl;
     X.putScalar (STS::zero ());
     solver->solve (X, B);
+
+    // Set all matrix entries to 2, so that A is a scaled identity matrix.
+    RCP<MV> X2 = rcp (new MV (X.getMap (), X.getNumVectors()));
+    A->setAllToScalar(STS::one() + STS::one());
+    out << "Recompute numeric factorization" << endl;
+    solver->numeric ();
+
+    out << "Apply solver to \"solve\" (2*A)X=B for X.  Ifpack2 only promises "
+      "preconditioning, so we don't expect to get X right.  Mainly we check "
+      "that solve() doesn't throw." << endl;
+    X2->putScalar (STS::zero ());
+    solver->solve (*X2, B);
+
+    // We aasume that the preconditioner is linear in A and compare the two resulting vectors.
+    Kokkos::View<typename MV::mag_type *, Kokkos::HostSpace> normsX   ("normsX", X.getNumVectors());
+    Kokkos::View<typename MV::mag_type *, Kokkos::HostSpace> normsX2  ("normsX2", X.getNumVectors());
+    Kokkos::View<typename MV::mag_type *, Kokkos::HostSpace> normsDiff("normsDiff", X.getNumVectors());
+    X.norm2(normsX);
+    X2->norm2(normsX2);
+    // X2 := 2*X2 - X
+    X2->update(-STS::one(), X, STS::one()+STS::one());
+    X2->norm2(normsDiff);
+    for (size_t k = 0; k<X.getNumVectors(); k++) {
+      out << "normsX[" << k << "] = " << normsX(k) << ", normsX2[" << k << "] = " << normsX2(k) << ", normsDiff[" << k << "] = " << normsDiff(k) << std::endl;
+      TEUCHOS_ASSERT_INEQUALITY(normsDiff(k), <, 100 * STS::eps());
+    }
   }
 
   //
@@ -209,11 +242,32 @@ namespace {
 
     // FIXME (mfh 26 Jul 2015) Need to test more solvers.  In
     // particular, it's important to test AdditiveSchwarz.
-    const int numSolvers = 5;
-    const char* solverNames[5] = {"DIAGONAL", "RELAXATION", "CHEBYSHEV",
-                                  "ILUT", "RILUK"};
+    const std::vector<std::string> solverNames = {
+      "CHEBYSHEV",
+      "DENSE",
+      "AMESOS2"
+      "DIAGONAL",
+      "ILUT",
+      "RELAXATION",
+      "RILUK",
+      "MDF",
+      "RBILUK",
+      "FAST_IC",
+      "FAST_ILU",
+      "FAST_ILU_B",
+      "FAST_ILDL",
+      "BLOCK RELAXATION",
+      // "DATABASE SCHWARZ",  // Skipping because it fails
+      "SPARSE_BLOCK_RELAXATION"
+      "TRIDI_RELAXATION",
+      "BANDED_RELAXATION",
+      // "IDENTITY", // Skipping because it does not depend at all on A.
+      "LOCAL SPARSE TRIANGULAR SOLVER",
+      // "HIPTMAIR", // Skipping because it needs auxiliary matrix
+      "HYPRE",
+    };
     int numSolversTested = 0;
-    for (int k = 0; k < numSolvers; ++k) {
+    for (size_t k = 0; k < solverNames.size(); ++k) {
       const std::string solverName (solverNames[k]);
 
       // Use Ifpack2's factory to tell us whether the factory supports
@@ -226,13 +280,14 @@ namespace {
       catch (...) {
         skip = true;
       }
+      skip |= (solverName == "MDF" && !std::is_arithmetic_v<SC>); // skip complex types in mdf for now
       if (! skip) {
         testSolver<SC, LO, GO, NT> (out, success, *X, A, *B, *X_exact, solverName);
         ++numSolversTested;
       }
     }
 
-    out << "Tested " << numSolversTested << " solver(s) of " << numSolvers
+    out << "Tested " << numSolversTested << " solver(s) of " << solverNames.size()
         << endl;
     if (numSolversTested == 0) {
       out << "*** ERROR: Tested no solvers for template parameters"

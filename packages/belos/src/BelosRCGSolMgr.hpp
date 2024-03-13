@@ -69,7 +69,7 @@
 \ingroup belos_solver_framework
 \author Michael Parks and Heidi Thornquist
 
-\section Belos_GCRODR_summary Summary
+\section Belos_RCGSol_summary Summary
 
 This class implements the GCRODR (Recycling GMRES) iterative linear
 solver.  This solver is suited for solving sequences of related linear
@@ -1747,6 +1747,15 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
           }
+        }
+        catch (const StatusTestNaNError& e) {
+          // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          achievedTol_ = MT::one();
+          Teuchos::RCP<MV> X = problem_->getLHS();
+          MVT::MvInit( *X, SCT::zero() );
+          printer_->stream(Warnings) << "Belos::RCGSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+          return Unconverged;
         }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught std::exception in RCGIter::iterate() at iteration "

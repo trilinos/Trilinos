@@ -57,62 +57,47 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
-
 namespace MueLu {
 
+/*!
+  @class ReorderBlockAFactory class.
+  @brief Factory for building a reordered (nested) block operator
 
-  /*!
-    @class ReorderBlockAFactory class.
-    @brief Factory for building a reordered (nested) block operator
+  Example
+  \code
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = ...;
+  bOp->fillComplete();
 
-    Example
-    \code
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = ...;
-    bOp->fillComplete();
+  TODO
+  \endcode
+*/
 
-    TODO
-    \endcode
-  */
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ReorderBlockAFactory : public SingleLevelFactoryBase {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class ReorderBlockAFactory : public SingleLevelFactoryBase {
 #undef MUELU_REORDERBLOCKAFACTORY_SHORT
-    #include "MueLu_UseShortNames.hpp"
+#include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! Input
+  //@{
 
-    //! Constructor.
-    ReorderBlockAFactory() { }
+  RCP<const ParameterList> GetValidParameterList() const;
 
-    //! Destructor.
-    virtual ~ReorderBlockAFactory() { }
-    //@}
+  void DeclareInput(Level &currentLevel) const;
 
-    //! Input
-    //@{
+  //@}
 
-    RCP<const ParameterList> GetValidParameterList() const;
+  //@{
+  //! @name Build methods.
 
-    void DeclareInput(Level &currentLevel) const;
+  /*! @brief Build an object with this factory.
+   */
+  void Build(Level &currentLevel) const;
 
-    //@}
+  //@}
+};  // class ReorderBlockAFactory
 
-    //@{
-    //! @name Build methods.
-
-    /*! @brief Build an object with this factory.
-     */
-    void Build(Level & currentLevel) const;
-
-    //@}
-
-  private:
-
-  }; // class ReorderBlockAFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_REORDERBLOCKAFACTORY_SHORT
 #endif /* MUELU_REORDERBLOCKAFACTORY_DECL_HPP_ */

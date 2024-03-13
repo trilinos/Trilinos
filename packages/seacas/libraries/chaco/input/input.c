@@ -1,29 +1,30 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
+#include "prototypes.h"
 #include <stdio.h> // for printf, scanf, NULL, fopen, etc
 
 void input_queries(FILE **fin,           /* input file */
                    FILE **fingeom,       /* geometry input file (for inertial method) */
                    FILE **finassign,     /* assignment input file (if just simulating) */
-                   char * inname,        /* name of graph input file */
-                   char * geomname,      /* name of geometry input file */
-                   char * inassignname,  /* name of assignment input file */
-                   char * outassignname, /* name of assignment output file */
-                   char * outfilename,   /* name of file for outputting run results */
-                   int *  architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
-                   int *  ndims_tot,     /* target number of hypercube dimensions */
+                   char  *inname,        /* name of graph input file */
+                   char  *geomname,      /* name of geometry input file */
+                   char  *inassignname,  /* name of assignment input file */
+                   char  *outassignname, /* name of assignment output file */
+                   char  *outfilename,   /* name of file for outputting run results */
+                   int   *architecture,  /* 0=> hypercube, d=> d-dimensional mesh */
+                   int   *ndims_tot,     /* target number of hypercube dimensions */
                    int    mesh_dims[3],  /* mesh dimensions */
-                   int *  global_method, /* what global partitioning strategy to use? */
-                   int *  local_method,  /* what local refinement strategy to use? */
-                   int *  rqi_flag,      /* should I use multilevel eigensolver? */
-                   int *  vmax,          /* if so, how far should I coarsen? */
-                   int *  ndims          /* number of divisions at each stage */
+                   int   *global_method, /* what global partitioning strategy to use? */
+                   int   *local_method,  /* what local refinement strategy to use? */
+                   int   *rqi_flag,      /* should I use multilevel eigensolver? */
+                   int   *vmax,          /* if so, how far should I coarsen? */
+                   int   *ndims          /* number of divisions at each stage */
 )
 {
   extern int SEQUENCE;      /* sequence instead of partition graph? */
@@ -35,8 +36,6 @@ void input_queries(FILE **fin,           /* input file */
   extern int MATCH_TYPE;    /* max-matching routine to call */
   int        eigensolver;   /* which kind of eigensolver to use */
   int        nprocs;        /* number of processors being divided into */
-
-  int input_int();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering input_queries>\n");

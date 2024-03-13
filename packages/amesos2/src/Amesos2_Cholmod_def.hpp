@@ -500,48 +500,31 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
     if(use_cholmod_int_type_) {
       int nnz_ret = 0;
-      if ( is_contiguous_ == true ) {
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_int_type_array,
-            host_size_int_type_array>::do_get(this->matrixA_.ptr(),
-              host_nzvals_view_, host_rows_int_view_,
-              host_col_ptr_int_view_, nnz_ret, ROOTED,
-              ARBITRARY,
-              this->rowIndexBase_);
-      }
-      else {
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_int_type_array,
-            host_size_int_type_array>::do_get(this->matrixA_.ptr(),
-              host_nzvals_view_, host_rows_int_view_,
-              host_col_ptr_int_view_, nnz_ret, CONTIGUOUS_AND_ROOTED,
-              ARBITRARY,
-              this->rowIndexBase_);
-      }
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_int_type_array,
+          host_size_int_type_array>::do_get(this->matrixA_.ptr(),
+            host_nzvals_view_, host_rows_int_view_,
+            host_col_ptr_int_view_, nnz_ret,
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+
       TEUCHOS_TEST_FOR_EXCEPTION(nnz_ret != Teuchos::as<long>(this->globalNumNonZeros_),
                std::runtime_error,
                "Did not get the expected number of non-zero vals");
     }
     else {
       long nnz_ret = 0;
-      if ( is_contiguous_ == true ) {
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_long_type_array,
-            host_size_long_type_array>::do_get(this->matrixA_.ptr(),
-              host_nzvals_view_, host_rows_long_view_,
-              host_col_ptr_long_view_, nnz_ret, ROOTED,
-              ARBITRARY,
-              this->rowIndexBase_);
-      }
-      else {
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_long_type_array,
-            host_size_long_type_array>::do_get(this->matrixA_.ptr(),
-              host_nzvals_view_, host_rows_long_view_,
-              host_col_ptr_long_view_, nnz_ret, CONTIGUOUS_AND_ROOTED,
-              ARBITRARY,
-              this->rowIndexBase_);
-      }
+
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_long_type_array,
+          host_size_long_type_array>::do_get(this->matrixA_.ptr(),
+            host_nzvals_view_, host_rows_long_view_,
+            host_col_ptr_long_view_, nnz_ret,
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+
       TEUCHOS_TEST_FOR_EXCEPTION(nnz_ret != Teuchos::as<long>(this->globalNumNonZeros_),
                std::runtime_error,
                "Did not get the expected number of non-zero vals");

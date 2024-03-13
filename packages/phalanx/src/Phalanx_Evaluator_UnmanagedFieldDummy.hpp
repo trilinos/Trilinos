@@ -56,12 +56,11 @@ namespace PHX {
 template<typename EvalT, typename Traits, typename FieldT>
 class UnmanagedFieldDummy : public PHX::EvaluatorWithBaseImpl<Traits>,
                             public PHX::EvaluatorDerived<EvalT, Traits>  {
-  
 public:
   UnmanagedFieldDummy(const FieldT& f)
   {
-    this->addEvaluatedField(f);
-    this->setName("UnmanageFieldDummy");
+    this->addEvaluatedField(f.fieldTag());
+    this->setName("UnmanagedFieldDummy");
   }
   void evaluateFields(typename Traits::EvalData /* workset */) override {}
 };

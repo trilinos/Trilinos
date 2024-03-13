@@ -241,8 +241,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     }
   }
   else {
-    fmt::print(Ioss::WarnOut(), "{} '{}'. Unknown input field '{}'", static_cast<int>(type()), name(),
-               field.get_name());
+    fmt::print(Ioss::WarnOut(), "{} '{}'. Unknown input field '{}'", static_cast<int>(type()),
+               name(), field.get_name());
     return -4;
   }
   return num_to_get;

@@ -236,8 +236,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     using Layout     = typename AMatrixValueView::array_layout;
     using EXSP       = typename AMatrixValueView::execution_space;
 
-    using MagnitudeType =
-        typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
+    using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
 
     using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
     using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;

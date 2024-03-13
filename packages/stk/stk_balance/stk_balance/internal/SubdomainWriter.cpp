@@ -100,13 +100,14 @@ SubdomainWriter::add_global_variables()
 {
   std::vector<std::string> globalVariableNames;
   m_inputBroker.get_global_variable_names(globalVariableNames);
-  Teuchos::RCP<Ioss::Region> rcpRegion;
-  rcpRegion.reset(m_outRegion, false);
+  
+  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto pointerWeWontDelete){});
 
   for (const std::string& globalVariableName : globalVariableNames) {
     size_t length = m_inputBroker.get_global_variable_length(globalVariableName);
-    stk::io::internal_add_global(rcpRegion, globalVariableName, length, Ioss::Field::DOUBLE);
+    stk::io::impl::add_global(region, globalVariableName, length, Ioss::Field::DOUBLE);
   }
+  
 }
 
 void
@@ -128,13 +129,12 @@ SubdomainWriter::write_global_variables(int step)
   std::vector<std::string> globalVariableNames;
   m_inputBroker.get_global_variable_names(globalVariableNames);
 
-  Teuchos::RCP<Ioss::Region> rcpRegion;
-  rcpRegion.reset(m_outRegion, false);
+  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto pointerWeWontDelete){});
 
   std::vector<double> globalVariable;
   for (const std::string& globalVariableName : globalVariableNames) {
     m_inputBroker.get_global(globalVariableName, globalVariable);
-    stk::io::internal_write_global(rcpRegion, globalVariableName, globalVariable);
+    stk::io::impl::write_global(region, globalVariableName, globalVariable);
   }
 
   m_outRegion->end_state(step);

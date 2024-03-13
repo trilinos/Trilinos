@@ -4,8 +4,8 @@
 #include "incremental_mesh_boundary_snapper.hpp"
 #include "mesh_snapper.hpp"
 #include <stdexcept>
-// #include "nonconformal_interface_impl3.hpp"
 #include "nonconformal4.hpp"
+#include "stk_util/parallel/Parallel.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -26,7 +26,7 @@ create_nonconformal_standard(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<
     IncrementalBoundarySnapperOpts snapperOpts;
     snapperOpts.qualityImproverOpts = {opts.nlayers, opts.maxDeltaX, opts.itermax, opts.delta};
 
-    auto fixer = mesh::impl::make_incremental_boundary_snapper(mesh1, mesh2, snapperOpts);
+    auto fixer = mesh::impl::make_incremental_boundary_snapper(mesh1, mesh2, parallel_machine_world(), snapperOpts);
 
     fixer->snap();
     if (fixer->get_mesh1_quality_improver()->count_invalid_points() > 0 ||

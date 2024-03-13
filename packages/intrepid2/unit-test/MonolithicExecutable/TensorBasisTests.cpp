@@ -126,7 +126,7 @@ namespace
     for (int opOrder=1; opOrder <= 10; opOrder++)
     {
       const int dkCardinality = getDkCardinality<spaceDim>(opOrder);
-      Kokkos::Array<int,spaceDim> entries;
+      Kokkos::Array<int,spaceDim> entries = {};
       for (int dkEnum=0; dkEnum<dkCardinality; dkEnum++)
       {
         // fill entries using getDkEnumerationInverse:

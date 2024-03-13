@@ -104,7 +104,8 @@ check_getCoeffMatrix_HDIV(const subcellBasisType& subcellBasis,
       cellBaseKey != shards::Triangle<>::key &&
       cellBaseKey != shards::Hexahedron<>::key &&
       cellBaseKey != shards::Wedge<>::key &&
-      cellBaseKey != shards::Tetrahedron<>::key,
+      cellBaseKey != shards::Tetrahedron<>::key &&
+      cellBaseKey != shards::Pyramid<>::key,
       std::logic_error,
       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
       "cellBasis must have quad, triangle, hexhedron or tetrahedron topology.");
@@ -175,7 +176,8 @@ getCoeffMatrix_HDIV(OutputViewType &output,
                     const subcellBasisHostType& subcellBasis,
                     const cellBasisHostType& cellBasis,
                     const ordinal_type subcellId,
-                    const ordinal_type subcellOrt) {
+                    const ordinal_type subcellOrt,
+                    const bool inverse) {
   
 #ifdef HAVE_INTREPID2_DEBUG
   Debug::check_getCoeffMatrix_HDIV(subcellBasis,cellBasis,subcellId,subcellOrt);
@@ -248,7 +250,9 @@ getCoeffMatrix_HDIV(OutputViewType &output,
   // construct Psi and Phi  matrices.  LAPACK wants left layout
   Kokkos::DynRankView<value_type,Kokkos::LayoutLeft,host_device_type>
     PsiMat("PsiMat", ndofSubcell, ndofSubcell),
-    PhiMat("PhiMat", ndofSubcell, ndofSubcell);
+    PhiMat("PhiMat", ndofSubcell, ndofSubcell),
+    RefMat,
+    OrtMat;
 
   auto cellTagToOrdinal = cellBasis.getAllDofOrdinal();
   auto subcellTagToOrdinal = subcellBasis.getAllDofOrdinal();
@@ -263,8 +267,8 @@ getCoeffMatrix_HDIV(OutputViewType &output,
     }
   }
 
-  auto RefMat = PsiMat;
-  auto OrtMat = PhiMat;
+  RefMat = inverse ? PhiMat : PsiMat;
+  OrtMat = inverse ? PsiMat : PhiMat;
 
   // solve the system
   {
@@ -273,11 +277,11 @@ getCoeffMatrix_HDIV(OutputViewType &output,
     Kokkos::DynRankView<ordinal_type,host_device_type> pivVec("pivVec", ndofSubcell);
 
     lapack.GESV(ndofSubcell, ndofSubcell,
-        PsiMat.data(),
-        PsiMat.stride_1(),
+        RefMat.data(),
+        RefMat.stride_1(),
         pivVec.data(),
-        PhiMat.data(),
-        PhiMat.stride_1(),
+        OrtMat.data(),
+        OrtMat.stride_1(),
         &info);
 
     if (info) {
@@ -293,16 +297,16 @@ getCoeffMatrix_HDIV(OutputViewType &output,
     // transpose and clean up numerical noise (for permutation matrices)
     const double eps = tolerence();
     for (ordinal_type i=0;i<ndofSubcell;++i) {
-      auto intmatii = std::round(PhiMat(i,i));
-      PhiMat(i,i) = (std::abs(PhiMat(i,i) - intmatii) < eps) ? intmatii : PhiMat(i,i);
+      auto intmatii = std::round(OrtMat(i,i));
+      OrtMat(i,i) = (std::abs(OrtMat(i,i) - intmatii) < eps) ? intmatii : OrtMat(i,i);
       for (ordinal_type j=i+1;j<ndofSubcell;++j) {
-        auto matij = PhiMat(i,j);
+        auto matij = OrtMat(i,j);
 
-        auto intmatji = std::round(PhiMat(j,i));
-        PhiMat(i,j) = (std::abs(PhiMat(j,i) - intmatji) < eps) ? intmatji : PhiMat(j,i);
+        auto intmatji = std::round(OrtMat(j,i));
+        OrtMat(i,j) = (std::abs(OrtMat(j,i) - intmatji) < eps) ? intmatji : OrtMat(j,i);
 
         auto intmatij = std::round(matij);
-        PhiMat(j,i) = (std::abs(matij - intmatij) < eps) ? intmatij : matij;
+        OrtMat(j,i) = (std::abs(matij - intmatij) < eps) ? intmatij : matij;
       }
     }
 
@@ -312,7 +316,7 @@ getCoeffMatrix_HDIV(OutputViewType &output,
       std::cout  << "|";
       for (ordinal_type i=0;i<ndofSubcell;++i) {
         for (ordinal_type j=0;j<ndofSubcell;++j) {
-          std::cout << PhiMat(i,j) << " ";
+          std::cout << OrtMat(i,j) << " ";
         }
         std::cout  << "| ";
       }
@@ -326,7 +330,7 @@ getCoeffMatrix_HDIV(OutputViewType &output,
     // move the data to original device memory
     const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofSubcell);
     auto suboutput = Kokkos::subview(output, range, range);
-    auto tmp = Kokkos::create_mirror_view_and_copy(typename OutputViewType::device_type::memory_space(), PhiMat);
+    auto tmp = Kokkos::create_mirror_view_and_copy(typename OutputViewType::device_type::memory_space(), OrtMat);
     Kokkos::deep_copy(suboutput, tmp);
   }
 }

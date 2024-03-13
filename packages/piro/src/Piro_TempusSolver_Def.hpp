@@ -228,6 +228,16 @@ void Piro::TempusSolver<Scalar>::initialize(
     const bool lump_mass_matrix = tempusPL->get("Lump Mass Matrix", false);
     const bool invert_mass_matrix = tempusPL->get("Invert Mass Matrix", true);
     const bool constant_mass_matrix = tempusPL->get("Constant Mass Matrix", false);
+    if (stepperType == "Newmark Implicit a-Form" ||
+        stepperType == "Newmark Implicit d-Form") 
+    {
+      //Get Newmark Parameters.  If not specifying 'Scheme Name', make it 'User Defined'.
+      //This is needed for Newmark parameters to be properly read in / set in Tempus.
+      auto newmarkBetaParams = sublist(stepperPL,"Newmark Parameters", true);
+      if (!newmarkBetaParams->isParameter("Scheme Name")) {
+	newmarkBetaParams->set<std::string>("Scheme Name", "User Defined"); 
+      }
+    }
     if (
       stepperType == "Forward Euler" ||
       stepperType == "RK Forward Euler" ||
@@ -548,7 +558,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     modelInArgs.set_p(l, p_in);
   }
   //Set time to be final time at which the solve occurs (< t_final_ in the case we don't make it to t_final_).
-  //IKT: get final time from solutionHistory workingSpace, which is different than how it is done in Piro::RythmosSolver class.
+  //IKT: get final time from solutionHistory workingSpace.
   //IKT, 11/1/16, FIXME? workingState pointer is null right now, so the following
   //code is commented out for now.  Use t_final_ and soln_dt in set_t instead for now.
   /*RCP<Tempus::SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();

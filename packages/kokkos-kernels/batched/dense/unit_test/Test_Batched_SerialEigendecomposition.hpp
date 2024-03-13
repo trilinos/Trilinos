@@ -34,6 +34,7 @@ namespace Test {
            typename ViewRank2Type,
            typename WorkViewType>
   struct Functor_TestBatchedSerialEigendecomposition {
+    using execution_space = typename DeviceType::execution_space;
     ViewRank3Type _A;
     ViewRank2Type _Er, _Ei;
     ViewRank3Type _UL, _UR;
@@ -70,7 +71,7 @@ namespace Test {
 >::value ? "::ComplexFloat" : std::is_same<value_type,Kokkos::complex<double>
 >::value ? "::ComplexDouble" : "::UnknownValueType" ); std::string name =
 name_region + name_value_type; Kokkos::Profiling::pushRegion( name.c_str() );
-      Kokkos::RangePolicy<DeviceType> policy(0, _A.extent(0));
+      Kokkos::RangePolicy<execution_space> policy(0, _A.extent(0));
       Kokkos::parallel_for(name.c_str(), policy, *this);
       Kokkos::Profiling::popRegion();
     }

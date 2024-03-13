@@ -9,9 +9,9 @@
 #ifndef Akri_Fast_Marching_h
 #define Akri_Fast_Marching_h
 
-#include <Akri_LevelSet.hpp>
 #include <Akri_FieldRef.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
+#include <stk_util/diag/Timer.hpp>
 
 namespace krino {
 
@@ -27,14 +27,14 @@ class Fast_Marching_Node
 public:
   Fast_Marching_Node()
   : my_node(), my_status(STATUS_UNUSED), my_signed_dist(std::numeric_limits<double>::max()), my_on_neg_side(false) {}
-  Fast_Marching_Node(stk::mesh::Entity in_node, Enum_Fast_Marching_Node_Status in_status, double in_dist, int in_sign, Vector3d in_coords)
+  Fast_Marching_Node(stk::mesh::Entity in_node, Enum_Fast_Marching_Node_Status in_status, double in_dist, int in_sign, stk::math::Vector3d in_coords)
   : my_node(in_node), my_status(in_status), my_signed_dist(in_dist), my_on_neg_side(in_sign<0), my_coords(in_coords) {}
 
   int sign() const { return (my_on_neg_side ? (-1) : 1); }
   void set_sign(const int in_sign) { my_on_neg_side = (in_sign<0); }
   stk::mesh::Entity node() const { return my_node; }
   Enum_Fast_Marching_Node_Status status() const { return my_status; }
-  const Vector3d & coords() const { return my_coords; }
+  const stk::math::Vector3d & coords() const { return my_coords; }
   double signed_dist() const { return my_signed_dist; }
   void set_signed_dist(double dist) { my_signed_dist = dist; }
   void set_status(Enum_Fast_Marching_Node_Status status) { my_status = status; }
@@ -44,7 +44,7 @@ private:
   Enum_Fast_Marching_Node_Status my_status;
   double my_signed_dist;
   bool my_on_neg_side;
-  Vector3d my_coords;
+  stk::math::Vector3d my_coords;
 };
 
 class Fast_Marching_Node_Less
@@ -65,9 +65,15 @@ private:
 
 class Fast_Marching {
 public:
-  Fast_Marching(LevelSet & ls, const stk::mesh::Selector & selector, stk::diag::Timer & parent_timer);
+  Fast_Marching(const stk::mesh::BulkData & mesh,
+      const stk::mesh::Selector & activeElementSelector,
+      const FieldRef& coordinates,
+      const FieldRef& distance,
+      const std::function<double(ParallelErrorMessage& err, stk::mesh::Entity)> & get_interface_speed,
+      stk::diag::Timer & parentTimer);
 
   void redistance();
+  void redistance(const std::vector<stk::mesh::Entity> & initialNodes);
   void initialize(ParallelErrorMessage& err);
   void update_neighbors(Fast_Marching_Node & accepted_node, ParallelErrorMessage & err);
   void update_node(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed);
@@ -82,14 +88,26 @@ public:
   void update_trial_node(Fast_Marching_Node & add_trial_node, const double dist);
   Fast_Marching_Node * get_fm_node(stk::mesh::Entity node);
 
-  const AuxMetaData& aux_meta() const { return my_ls.aux_meta(); }
-  AuxMetaData& aux_meta() { return my_ls.aux_meta(); }
-  const stk::mesh::BulkData& mesh() const { return my_ls.mesh(); }
-  stk::mesh::BulkData& mesh() { return my_ls.mesh(); }
 private:
-  LevelSet & my_ls;
-  stk::mesh::Selector my_selector;
-  stk::diag::Timer my_timer;
+  void initialize_algorithm();
+  void initialize_nodes_of_crossed_elements();
+  void initialize_given_nodes(const std::vector<stk::mesh::Entity> & initialNodes);
+  void propagate_distance_to_convergence();
+
+  void initialize_node(const stk::mesh::Entity node);
+  double & get_node_distance(const stk::mesh::Entity node);
+  double get_node_distance(const stk::mesh::Entity node) const;
+  double get_element_interface_speed(ParallelErrorMessage& err, const stk::mesh::Entity elem) const;
+  stk::mesh::Selector selected_with_field_not_ghost_selector() const;
+  stk::mesh::Selector selected_with_field_selector() const;
+
+  const stk::mesh::BulkData & myMesh;
+  stk::mesh::Selector mySelector;
+  const FieldRef myCoordinates;
+  const FieldRef myDistance;
+  const std::function<double(ParallelErrorMessage& err, stk::mesh::Entity)> my_get_interface_speed;
+  stk::diag::Timer myTimer;
+
   std::vector<Fast_Marching_Node> fm_nodes;
   Fast_Marching_Node_Less my_fm_node_less;
   std::set<Fast_Marching_Node*, Fast_Marching_Node_Less> trial_nodes; //set sorted by distance, then by id to break "ties"

@@ -8,6 +8,7 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include "pamgen_global_comm.h"
 #endif
 /*****************************************************************************/
 void  Conform_Boundary_IDS(long long ** comm_entities,
@@ -42,13 +43,13 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
   for(unsigned i = 0; i < nncm ;i ++){
     int size = entity_counts[i];
     int proc = proc_ids[i];
-    MPI_Irecv(receive_buffer[i],size, MPI_LONG_LONG_INT, proc, 1, MPI_COMM_WORLD, req + i);
+    MPI_Irecv(receive_buffer[i],size, MPI_LONG_LONG_INT, proc, 1, PAMGEN_NEVADA::get_global_comm(), req + i);
   }
 
   for(unsigned i = 0; i < nncm ;i ++){
     int size = entity_counts[i];
     int proc = proc_ids[i];
-    MPI_Send(send_buffer[i], size, MPI_LONG_LONG_INT, proc, 1,MPI_COMM_WORLD);
+    MPI_Send(send_buffer[i], size, MPI_LONG_LONG_INT, proc, 1, PAMGEN_NEVADA::get_global_comm());
   }
 
   for(unsigned i = 0; i < nncm ;i ++){
@@ -113,7 +114,7 @@ void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity 
     int size = topo_entities[i].size();
     if(size > 0){
       int proc = proc_ids[i];
-      MPI_Irecv(receive_buffer[i],size, MPI_LONG_LONG_INT, proc, 1, MPI_COMM_WORLD, req + i);
+      MPI_Irecv(receive_buffer[i],size, MPI_LONG_LONG_INT, proc, 1, PAMGEN_NEVADA::get_global_comm(), req + i);
     }
   }
 
@@ -121,7 +122,7 @@ void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity 
     int size = topo_entities[i].size();
     if(size > 0){
       int proc = proc_ids[i];
-      MPI_Send(send_buffer[i], size, MPI_LONG_LONG_INT, proc, 1,MPI_COMM_WORLD);
+      MPI_Send(send_buffer[i], size, MPI_LONG_LONG_INT, proc, 1, PAMGEN_NEVADA::get_global_comm());
     }
   }
 
@@ -180,7 +181,7 @@ void calc_global_node_ids(long long * globalNodeIds,
   MPI_Scan(&num_unique_nodes,&start_id,1,
       MPI_LONG_LONG_INT,
       MPI_SUM,
-      MPI_COMM_WORLD);
+      PAMGEN_NEVADA::get_global_comm());
   start_id -= num_unique_nodes;
 #endif
 
@@ -302,7 +303,7 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
   MPI_Scan(&owned_entities,&start_id,1,
       MPI_LONG_LONG_INT,
       MPI_SUM,
-      MPI_COMM_WORLD);
+      PAMGEN_NEVADA::get_global_comm());
   start_id -= owned_entities;
 #endif
 

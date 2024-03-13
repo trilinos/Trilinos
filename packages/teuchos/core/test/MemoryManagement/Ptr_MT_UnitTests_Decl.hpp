@@ -121,7 +121,7 @@ static void share_ptr_to_threads(Ptr<int> shared_ptr, int theTestValue,
       ++cycle;
     }
   }
-  catch(DanglingReferenceError) {
+  catch(DanglingReferenceError&) {
     // we got the dangling error as expected
     index_tracker.danglingReference = cycle;
   }

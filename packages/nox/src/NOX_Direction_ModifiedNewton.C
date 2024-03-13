@@ -192,7 +192,7 @@ void NOX::Direction::ModifiedNewton::throwError(const std::string& functionName,
 {
   if (utils->isPrintType(NOX::Utils::Error))
     utils->err() << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 #endif // WITH_PRERELEASE

@@ -59,15 +59,15 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   std::vector<std::string> element_blocks;
 
   std::vector<std::size_t> local_cell_ids;
-  Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
+  Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates;
 
-  getIdsAndVertices(mesh, eBlock, local_cell_ids, cell_vertex_coordinates);
+  getIdsAndNodes(mesh, eBlock, local_cell_ids, cell_node_coordinates);
 
   // only build workset if there are elements to worry about
   // this may be processor dependent, so an element block
   // may not have elements and thus no contribution
   // on this processor
-  return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_vertex_coordinates);
+  return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_node_coordinates);
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
@@ -166,11 +166,11 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
       if(itr->second.size()==0)
         continue;
 
-      Kokkos::DynRankView<double,PHX::Device> vertices;
-      mesh.getElementVertices(itr->second,eBlock,vertices);
+      Kokkos::DynRankView<double,PHX::Device> nodes;
+      mesh.getElementNodes(itr->second,eBlock,nodes);
   
       Teuchos::RCP<std::vector<panzer::Workset> > current
-         = panzer::buildWorksets(needs, eBlock, itr->second, vertices);
+         = panzer::buildWorksets(needs, eBlock, itr->second, nodes);
 
       // correct worksets so the sides are correct
       for(std::size_t w=0;w<current->size();w++) {
@@ -269,13 +269,13 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
     local_cell_ids_b.push_back(mesh.elementLocalId(element_b));
   }
 
-  Kokkos::DynRankView<double,PHX::Device> vertex_coordinates_a, vertex_coordinates_b;
-  mesh.getElementVertices(local_cell_ids_a,blockid_a,vertex_coordinates_a);
-  mesh.getElementVertices(local_cell_ids_b,blockid_b,vertex_coordinates_b);
+  Kokkos::DynRankView<double,PHX::Device> node_coordinates_a, node_coordinates_b;
+  mesh.getElementNodes(local_cell_ids_a,blockid_a,node_coordinates_a);
+  mesh.getElementNodes(local_cell_ids_b,blockid_b,node_coordinates_b);
 
   // worksets to be returned
-  return buildBCWorkset(needs_a,blockid_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
-                        needs_b,blockid_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b);
+  return buildBCWorkset(needs_a,blockid_a, local_cell_ids_a, local_side_ids_a, node_coordinates_a,
+                        needs_b,blockid_b, local_cell_ids_b, local_side_ids_b, node_coordinates_b);
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
@@ -346,10 +346,10 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
       Teuchos::RCP<const shards::CellTopology> topo 
          = mesh.getCellTopology(eblockID);
 
-      Kokkos::DynRankView<double,PHX::Device> vertices;
-      mesh.getElementVertices(local_cell_ids,eblockID,vertices);
+      Kokkos::DynRankView<double,PHX::Device> nodes;
+      mesh.getElementNodes(local_cell_ids,eblockID,nodes);
   
-      return panzer::buildBCWorkset(needs, eblockID, local_cell_ids, local_side_ids, vertices);
+      return panzer::buildBCWorkset(needs, eblockID, local_cell_ids, local_side_ids, nodes);
   }
   
   return Teuchos::null;

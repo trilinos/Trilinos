@@ -20,6 +20,7 @@
 namespace {
   size_t internal_get_size(Ioss::Field::BasicType type, size_t count,
                            const Ioss::VariableType *storage);
+  size_t internal_get_basic_size(Ioss::Field::BasicType type);
 
   void error_message(const Ioss::Field &field, Ioss::Field::BasicType requested_type)
   {
@@ -104,7 +105,7 @@ Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type,
 
 int Ioss::Field::get_component_count(Ioss::Field::InOut in_out) const
 {
-  auto *storage = (in_out == InOut::INPUT) ? raw_storage() : transformed_storage();
+  const auto *storage = (in_out == InOut::INPUT) ? raw_storage() : transformed_storage();
   return storage->component_count();
 }
 
@@ -114,7 +115,7 @@ std::string Ioss::Field::get_component_name(int component_index, InOut in_out, c
   if (suffix_separator == 1) {
     suffix_separator = suffix != 1 ? suffix : '_';
   }
-  auto *storage = (in_out == InOut::INPUT) ? raw_storage() : transformed_storage();
+  const auto *storage = (in_out == InOut::INPUT) ? raw_storage() : transformed_storage();
   return storage->label_name(get_name(), component_index, suffix_separator,
                              get_suffices_uppercase());
 }
@@ -162,7 +163,7 @@ void Ioss::Field::check_type(BasicType the_type) const
   }
 }
 
-Ioss::Field &Ioss::Field::set_zero_copy_enabled(bool true_false)
+const Ioss::Field &Ioss::Field::set_zero_copy_enabled(bool true_false) const
 {
   if (has_transform()) {
     std::ostringstream errmsg;
@@ -200,7 +201,7 @@ size_t Ioss::Field::get_size() const
 
     new_this->transCount_   = rawCount_;
     new_this->transStorage_ = rawStorage_;
-    for (auto &my_transform : transforms_) {
+    for (const auto &my_transform : transforms_) {
       new_this->transCount_   = my_transform->output_count(transCount_);
       new_this->transStorage_ = my_transform->output_storage(transStorage_);
       size_t size             = internal_get_size(type_, transCount_, transStorage_);
@@ -210,6 +211,12 @@ size_t Ioss::Field::get_size() const
     }
   }
   return size_;
+}
+
+size_t Ioss::Field::get_basic_size() const
+{
+  // Calculate size of the low-level data type
+  return internal_get_basic_size(type_);
 }
 
 bool Ioss::Field::add_transform(Transform *my_transform)
@@ -263,7 +270,7 @@ bool Ioss::Field::transform(void *data)
 
 bool Ioss::Field::equal_(const Ioss::Field &rhs, bool quiet) const
 {
-  if (Ioss::Utils::str_equal(this->name_, rhs.name_) == false) {
+  if (!Ioss::Utils::str_equal(this->name_, rhs.name_)) {
     if (!quiet) {
       fmt::print(Ioss::OUTPUT(), "\n\tFIELD name mismatch ({} v. {})", this->name_, rhs.name_);
     }
@@ -368,8 +375,7 @@ std::string Ioss::Field::role_string(Ioss::Field::RoleType role)
 }
 
 namespace {
-  size_t internal_get_size(Ioss::Field::BasicType type, size_t count,
-                           const Ioss::VariableType *storage)
+  size_t internal_get_basic_size(Ioss::Field::BasicType type)
   {
     // Calculate size of the low-level data type
     size_t basic_size = 0;
@@ -382,6 +388,16 @@ namespace {
     case Ioss::Field::CHARACTER: basic_size = sizeof(char); break;
     case Ioss::Field::INVALID: basic_size = 0; break;
     }
+
+    return basic_size;
+  }
+
+  size_t internal_get_size(Ioss::Field::BasicType type, size_t count,
+                           const Ioss::VariableType *storage)
+  {
+    // Calculate size of the low-level data type
+    size_t basic_size = internal_get_basic_size(type);
+
     // Calculate size of the storage type
     size_t storage_size = storage->component_count();
 

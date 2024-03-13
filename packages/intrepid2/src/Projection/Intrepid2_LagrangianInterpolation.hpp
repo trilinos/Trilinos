@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_LagrangianInterpolation.hpp
-    \brief  Header file for the Intrepid2::Experimental::LagrangianInterpolation class.
+    \brief  Header file for the Intrepid2::LagrangianInterpolation class.
     \author Created by Mauro Perego
  */
 #ifndef __INTREPID2_LAGRANGIANINTERPOLATION_HPP__
@@ -103,9 +103,7 @@
 
 namespace Intrepid2 {
 
-namespace Experimental {
-
-/** \class  Intrepid2::Experimental::LagrangianInterpolation
+/** \class  Intrepid2::LagrangianInterpolation and LagrangianTools classes
     \brief  A class providing static members to perform Lagrangian interpolation on a finite element.
 
 
@@ -121,50 +119,16 @@ namespace Experimental {
     \f]
     where \f$\beta_i\f$ are referred to as <var><b>dofCoeffs</b></var>, and \f$\mathbf x_i\f$ are the coordinates of the basis nodes.
 
-    In order to perform the interpolation, call the member <var><b>getDofCoordsAndCoeffs
-    </b></var> that returns a set of points \f$\{\mathbf x_i\}\f$ and DOF coefficients \f$\{\beta_i\}\f$,
-    evaluate the \f$f\f$ at \f$\{\mathbf x_i\}\f$ and then obtain the basis coefficients \f$\alpha_i^f\f$ by calling
-    the function <var><b>getBasisCoeffs</b></var>.
+    In order to perform the interpolation, evaluate the function \f$f\f$ at the set of points \f$\{\mathbf x_i\}\f$ computed using the basis method <var><b>getDoCoords</b></var>
+    and then obtain the basis coefficients \f$\alpha_i^f\f$ by calling the function <var><b>getBasisCoeffs</b></var>.
 
-    \remark The interpolation is performed at the oriented reference element. Therefore, the function \f$f\f$,
+    \remark The interpolation is performed at the reference element. Therefore, the function \f$f\f$,
             which is contravariant, needs to mapped to the reference space, using the inverse operation of a pullback, before calling <var><b>getBasisCoeffs</b></var>.
-
-    \todo  The implementation is mostly serial and needs to be improved for performance portability
  */
 
 template<typename DeviceType>
 class LagrangianInterpolation {
 public:
-
-
-  /** \brief  Computes the points and coefficients associated with the basis DOFs for the reference oriented element.
-
-      \code
-      C  - num. cells
-      F  - num. fields
-      D  - spatial dimension
-      \endcode
-
-      \param  dofCoords        [out] - rank-3 view (C,F,D), that will contain coordinates associated with the basis DOFs.
-      \param  dofCoeffs        [out] - variable rank view that will contain coefficients associated with the basis DOFs.
-      \param  cellBasis        [in]  - pointer to the basis for the interpolation
-      \param  basisPointType   [in]  - enum of the point type
-                                       functions or for the target function
-      \param  cellOrientations [in]  - rank-1 view (C) containing the Orientation objects at each cell
-
-      \remark the output views need to be pre-allocated. <var><b>dofCoeffs</b></var> has rank 2, (C,F) for scalar basis and  3,
-              (C,F,D) for vector basis.
-   */
-  template<typename BasisType,
-  class ...coordsProperties, class ...coeffsProperties,
-  typename ortValueType, class ...ortProperties>
-  static void
-  getDofCoordsAndCoeffs(
-      Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
-      Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
-      const BasisType* cellBasis,
-      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations
-  );
 
   /** \brief  Computes the basis weights of the function interpolation.
 
@@ -175,27 +139,93 @@ public:
       \endcode
 
       \param  basisCoeffs         [out] - rank-2 view (C,F) that will contain the basis coefficients of the interpolation.
-      \param  functionAtDofCoords [in]  - variable rank view that contains the function evaluated at DOF coordinates.
-      \param  dofCoeffs           [in]  - variable rank view that contains coefficients associated with the basis DOFs.
+      \param  functionAtDofCoords [in]  - variable rank view that contains the function evaluated at reference DOF coordinates.
+      \param  cellBasis           [in]  - pointer to the basis for the interpolation
+      \param  cellOrientations    [in]  - rank-1 view (C) containing the Orientation objects at each cell
 
       \remark The output views need to be pre-allocated. <var><b>dofCoeffs</b></var> and <var><b>functionAtDofCoords</b></var> have
               rank 2, (C,F) for scalar basis and  3, (C,F,D) for vector basis.
-              <var><b>functValsAtDofCoords</b></var> contains the function evaluated at the dofCoords and contravariantly transformed
-              to the reference eleemnt.
-              <var><b>dofCoeffs</b></var> are as returned by <var><b>getDofCoordsAndCoeffs</b></var>.
+              <var><b>functValsAtDofCoords</b></var> contains the function evaluated at the reference <var><b>dofCoords</b></var> and contravariantly transformed
+              to the reference element. The reference <var><b>dofCoords</b></var> are obtained with the method cellBasis->getDofCoords(...), NOT with the getOrientedDofCoords() method
    */
   template<typename basisCoeffsViewType,
   typename funcViewType,
-  typename dofCoeffViewType>
+  typename BasisType,
+  typename ortViewType>
   static void
   getBasisCoeffs(basisCoeffsViewType basisCoeffs,
       const funcViewType functionAtDofCoords,
-      const dofCoeffViewType dofCoeffs);
+      const BasisType* cellBasis,
+      const ortViewType orts);
+  };
+
+/** \class  Intrepid2::LagrangianTools
+  \brief  A class providing tools for Lagrangian elements as static members.
+
+  Lagrangian orthonormal DOFs are defined as
+  \f[
+  L_i(f) := f(\mathbf x_i) \cdot \beta_i, \quad L_i(\phi_j) = \delta_{ij},
+  \f]
+  where \f$\beta_i\f$ are referred to as <var><b>dofCoeffs</b></var>, and \f$\mathbf x_i\f$ as the <var><b>dofCoords</b></var>.
+
+  This class provides tools to compute <var><b>dofCoords</b></var> and <var><b>dofCoeffs</b></var> for the <b>oriented</b> reference element.
+*/
+
+template<typename DeviceType>
+class LagrangianTools {
+public:
+
+  /** \brief  Computes the coordinates associated with the basis DOFs for the reference oriented element
+
+      \code
+      C  - num. cells
+      F  - num. fields
+      D  - spatial dimension
+      \endcode
+
+      \param  dofCoords        [out] - rank-3 view (C,F,D), that will contain coordinates associated with the basis DOFs.
+      \param  cellBasis        [in]  - pointer to the basis for the interpolation
+      \param  cellOrientations [in]  - rank-1 view (C) containing the Orientation objects at each cell
+
+      \remark the output views need to be pre-allocated.
+   */
+  template<typename BasisType,
+  class ...coordsProperties,
+  typename ortValueType, class ...ortProperties>
+  static void
+  getOrientedDofCoords(
+      Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
+      const BasisType* cellBasis,
+      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations
+  );
+
+      /** \brief  Computes the coefficients associated with the basis DOFs for the reference oriented element
+
+      \code
+      C  - num. cells
+      F  - num. fields
+      D  - spatial dimension
+      \endcode
+
+      \param  dofCoeffs        [out] - variable rank view that will contain coefficients associated with the basis DOFs.
+      \param  cellBasis        [in]  - pointer to the basis for the interpolation
+      \param  cellOrientations [in]  - rank-1 view (C) containing the Orientation objects at each cell
+
+      \remark the output views need to be pre-allocated. <var><b>dofCoeffs</b></var> has rank 2, (C,F) for scalar basis and  3,
+              (C,F,D) for vector basis.
+   */
+  template<typename BasisType,
+  class ...coeffsProperties,
+  typename ortValueType, class ...ortProperties>
+  static void
+  getOrientedDofCoeffs(
+      Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
+      const BasisType* cellBasis,
+      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations
+  );
 };
 
-}
-}
-
+} // Intrepid2 namespace
 
 // include templated function definitions
 #include "Intrepid2_LagrangianInterpolationDef.hpp"

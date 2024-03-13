@@ -65,8 +65,8 @@ int build_elem_dd(MESH_INFO_PTR mesh)
 int maxelems;
 
   MPI_Allreduce(&(mesh->num_elems), &maxelems, 1, MPI_INT, MPI_MAX,
-                MPI_COMM_WORLD);
-  if (Zoltan_DD_Create(&(mesh->dd), MPI_COMM_WORLD, 1, 0, 0, maxelems, 0) != 0){
+                zoltan_get_global_comm());
+  if (Zoltan_DD_Create(&(mesh->dd), zoltan_get_global_comm(), 1, 0, 0, maxelems, 0) != 0){
     Gen_Error(0, "fatal:  NULL returned from Zoltan_DD_Create()\n");
     return 0;
   }

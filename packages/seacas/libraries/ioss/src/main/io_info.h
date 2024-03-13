@@ -61,6 +61,7 @@ namespace Ioss {
   IO_INFO_LIB_EXPORT void io_info_group_info(Info::Interface &interFace);
 
   // for external calls
-  IO_INFO_LIB_EXPORT void io_info_set_db_properties(const Info::Interface &interFace, Ioss::DatabaseIO *dbi);
+  IO_INFO_LIB_EXPORT void io_info_set_db_properties(const Info::Interface &interFace,
+                                                    Ioss::DatabaseIO      *dbi);
   IO_INFO_LIB_EXPORT void io_info_file_info(const Info::Interface &interFace, Ioss::Region &region);
 } // namespace Ioss

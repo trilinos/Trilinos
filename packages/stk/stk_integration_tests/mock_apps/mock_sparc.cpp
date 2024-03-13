@@ -4,7 +4,6 @@
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
-#include <stk_coupling/Version.hpp>
 #include <stk_transfer/ReducedDependencyGeometricTransfer.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
@@ -15,7 +14,7 @@
 #include "SparcMesh.hpp"
 #include "MockMeshUtils.hpp"
 #include "SparcSendAdapter.hpp"
-#include "EmptyRecvAdapter.hpp"
+#include "SparcRecvAdapter.hpp"
 #include "SendInterpolate.hpp"
 #include <iostream>
 #include <sstream>
@@ -23,7 +22,7 @@
 class MockSparc
 {
   using SendTransfer = stk::transfer::ReducedDependencyGeometricTransfer<
-                                 mock::SendInterpolate<mock::SparcSendAdapter, mock::EmptyRecvAdapter>>;
+                                 mock::SendInterpolate<mock::SparcSendAdapter, mock::SparcRecvAdapter>>;
 
 public:
   MockSparc()
@@ -72,7 +71,7 @@ public:
     stk::util::impl::set_error_on_reset(false);
     m_splitComms = stk::coupling::SplitComms(commWorld, color);
     m_splitComms.set_free_comms_in_destructor(true);
-    stk::util::impl::set_coupling_version(coupling_version_override);
+    stk::util::impl::set_coupling_version(commWorld, coupling_version_override);
     MPI_Comm splitComm = m_splitComms.get_split_comm();
     int myAppRank = stk::parallel_machine_rank(splitComm);
     m_iAmRootRank = myAppRank == 0;
@@ -216,8 +215,8 @@ public:
     m_mesh->set_sparc_field_values(m_sendFieldName1, 4.4);
     std::shared_ptr<mock::SparcSendAdapter> sendAdapter1 =
        std::make_shared<mock::SparcSendAdapter>(m_splitComms.get_parent_comm(), *m_mesh, m_sendFieldName1);
-    std::shared_ptr<mock::EmptyRecvAdapter> recvAdapter;
-    m_sendTransfer1.reset(new SendTransfer(sendAdapter1, recvAdapter, "MockSparcSendTransfer1", m_splitComms.get_parent_comm()));
+    std::shared_ptr<mock::SparcRecvAdapter> nullRecvAdapter;
+    m_sendTransfer1.reset(new SendTransfer(sendAdapter1, nullRecvAdapter, "MockSparcSendTransfer1", m_splitComms.get_parent_comm()));
     m_sendTransfer1->coarse_search();
     m_sendTransfer1->communication();
     m_sendTransfer1->local_search();
@@ -226,7 +225,7 @@ public:
       m_mesh->set_sparc_field_values(m_sendFieldName2, 8.8);
       std::shared_ptr<mock::SparcSendAdapter> sendAdapter2 =
         std::make_shared<mock::SparcSendAdapter>(m_splitComms.get_parent_comm(), *m_mesh, m_sendFieldName2);
-      m_sendTransfer2.reset(new SendTransfer(sendAdapter2, recvAdapter, "MockSparcSendTransfer2", m_splitComms.get_parent_comm()));
+      m_sendTransfer2.reset(new SendTransfer(sendAdapter2, nullRecvAdapter, "MockSparcSendTransfer2", m_splitComms.get_parent_comm()));
 
       m_sendTransfer2->coarse_search();
       m_sendTransfer2->communication();

@@ -282,12 +282,47 @@ public:
   /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY</tt> environment variable.
   static bool timeKokkosDeepCopy();
   
+  /// \brief Adds verbose output to Kokkos deep_copy timers
+  /// by appending source and destination.
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE1</tt> environment variable.
+  static bool timeKokkosDeepCopyVerbose1();
+
+  
+  /// \brief Adds verbose output to Kokkos deep_copy timers
+  /// by appending source, destination, and size.
+  /// This is especially useful for identifying host/device data transfers
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE2</tt> environment variable.
+  static bool timeKokkosDeepCopyVerbose2();
+
+  /// \brief Add Teuchos timers for all host calls to Kokkos::fence().
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_FENCE</tt> environment variable.
+  static bool timeKokkosFence();  
+
+  /// \brief Add Teuchos timers for all host calls to Kokkos::parallel_for(), 
+  /// Kokkos::parallel_reduce() and Kokkos::parallel_scan().
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_TIME_KOKKOS_FUNCTIONS</tt> environment variable.
+  static bool timeKokkosFunctions();  
+
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_SPACE_ID_WARN_LIMIT</tt> environment variable.
   static size_t spacesIdWarnLimit();
+
+  /// \brief Search the environment for TPETRA_ variables and reject unrecognized ones
+  static void reject_unrecognized_env_vars();
 };
+
+
 
 } // namespace Details
 } // namespace Tpetra

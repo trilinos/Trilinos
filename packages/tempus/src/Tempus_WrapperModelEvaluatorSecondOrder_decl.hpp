@@ -14,7 +14,6 @@
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Thyra_VectorBase.hpp"
 
-
 //#define VERBOSE_DEBUG_OUTPUT
 
 namespace Tempus {
@@ -31,16 +30,15 @@ namespace Tempus {
  */
 template <typename Scalar>
 class WrapperModelEvaluatorSecondOrder
- : public Tempus::WrapperModelEvaluator<Scalar>
-{
-public:
-  typedef Thyra::VectorBase<Scalar>  Vector;
+  : public Tempus::WrapperModelEvaluator<Scalar> {
+ public:
+  typedef Thyra::VectorBase<Scalar> Vector;
 
   /// Constructor
   WrapperModelEvaluatorSecondOrder(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel, const std::string schemeName)
-    : appModel_(appModel),
-      out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &appModel,
+      const std::string schemeName)
+    : appModel_(appModel), out_(Teuchos::VerboseObjectBase::getDefaultOStream())
   {
 #ifdef VERBOSE_DEBUG_OUTPUT
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -53,15 +51,17 @@ public:
       schemeType_ = NEWMARK_IMPLICIT_DFORM;
     }
     else {
-       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-       "Error: WrapperModelEvaluatorSecondOrder called with unsopported schemeName = " << schemeName
-       <<"!  Supported schemeNames are: 'Newmark Implicit a-Form' and 'HHT-Alpha'.\n");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          "Error: WrapperModelEvaluatorSecondOrder called with unsopported "
+              << "schemeName = " << schemeName
+              << "!  Supported schemeNames are: 'Newmark Implicit a-Form' and "
+              << "'HHT-Alpha'.\n");
     }
   }
 
   /// Set the underlying application ModelEvaluator
-  void setAppModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
+  void setAppModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &me)
   {
 #ifdef VERBOSE_DEBUG_OUTPUT
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -86,116 +86,116 @@ public:
 #ifdef VERBOSE_DEBUG_OUTPUT
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-    v_pred_ = v_pred; d_pred_ = d_pred;
-    delta_t_ = delta_t; t_ = t; beta_ = beta; gamma_ = gamma;
+    v_pred_  = v_pred;
+    d_pred_  = d_pred;
+    delta_t_ = delta_t;
+    t_       = t;
+    beta_    = beta;
+    gamma_   = gamma;
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
   //@{
-    Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const
-    {
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const
+  {
 #ifdef VERBOSE_DEBUG_OUTPUT
-     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      return appModel_->create_W_op();
-    }
+    return appModel_->create_W_op();
+  }
 
-    Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-    get_W_factory() const
-    {
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+  get_W_factory() const
+  {
 #ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      return appModel_->get_W_factory();
-    }
+    return appModel_->get_W_factory();
+  }
 
-    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const
-    {
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const
+  {
 #ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      return appModel_->get_f_space();
-    }
+    return appModel_->get_f_space();
+  }
 
-    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int p) const
-    {
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int p) const
+  {
 #ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      return appModel_->get_p_space(p);
-    }
+    return appModel_->get_p_space(p);
+  }
 
-    Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
-    {
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
+  {
 #ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      return appModel_->get_p_names(p);
-    }
+    return appModel_->get_p_names(p);
+  }
 
-    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
-    {
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const
+  {
 #ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      return appModel_->get_x_space();
-    }
+    return appModel_->get_x_space();
+  }
 
-    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const
-    { return appModel_->get_g_space(i); }
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const
+  {
+    return appModel_->get_g_space(i);
+  }
 
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
-    {
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
+  {
 #ifdef VERBOSE_DEBUG_OUTPUT
-      *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+    *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      return appModel_->getNominalValues();
-    }
+    return appModel_->getNominalValues();
+  }
 
-    /// Set InArgs the wrapper ModelEvalutor.
-    virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
-    { wrapperInArgs_.setArgs(inArgs); }
+  /// Get InArgs the wrapper ModelEvalutor.
+  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
+  {
+    return wrapperInArgs_;
+  }
 
-    /// Get InArgs the wrapper ModelEvalutor.
-    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
-    { return wrapperInArgs_; }
+  /// Get OutArgs the wrapper ModelEvalutor.
+  virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
+  {
+    return wrapperOutArgs_;
+  }
 
-    /// Set OutArgs the wrapper ModelEvalutor.
-    virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
-    { wrapperOutArgs_.setArgs(outArgs); }
+  /// Set parameters for application implicit ModelEvaluator solve.
+  virtual void setForSolve(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > &x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > &xDot, const Scalar time,
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> > &p,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > &y = Teuchos::null,
+      const int index                                   = -1 /* index and y are for IMEX_RK_Partition */)
+  {
+  }
 
-    /// Get OutArgs the wrapper ModelEvalutor.
-    virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
-    { return wrapperOutArgs_; }
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
-    /// Set parameters for application implicit ModelEvaluator solve.
-    virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
-      Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs,
-      EVALUATION_TYPE /* evaluationType */ = SOLVE_FOR_X)
-    {
-      timeDer_ = timeDer;
-      wrapperInArgs_.setArgs(inArgs);
-      wrapperOutArgs_.setArgs(outArgs);
-    }
-
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
-
-    void evalModelImpl(
-              const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
-              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+  void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
 
-  enum SCHEME_TYPE {NEWMARK_IMPLICIT_AFORM, NEWMARK_IMPLICIT_DFORM};
+  enum SCHEME_TYPE { NEWMARK_IMPLICIT_AFORM,
+                     NEWMARK_IMPLICIT_DFORM };
 
-private:
-
+ private:
   /// Default constructor - not allowed
   WrapperModelEvaluatorSecondOrder();
 
-private:
-
+ private:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
   Scalar t_;
   Scalar gamma_;
@@ -206,12 +206,11 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   SCHEME_TYPE schemeType_;
 
-  Teuchos::RCP<TimeDerivative<Scalar> >              timeDer_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>          wrapperInArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperOutArgs_;
-
+  Teuchos::RCP<TimeDerivative<Scalar> > timeDer_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> wrapperInArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> wrapperOutArgs_;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_WrapperModelEvaluatorSecondOrder_hpp
+#endif  // Tempus_WrapperModelEvaluatorSecondOrder_hpp

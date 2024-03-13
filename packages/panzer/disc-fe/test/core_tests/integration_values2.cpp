@@ -74,9 +74,9 @@ namespace panzer {
     
     panzer::MDFieldArrayFactory af("prefix_",true);
 
-    const int num_vertices = int_rule->topology->getNodeCount();
+    const int num_nodes = int_rule->topology->getNodeCount();
     PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
-        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
+        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_nodes, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
@@ -136,9 +136,9 @@ namespace panzer {
     RCP<IntegrationRule> int_rule_side =
       rcp(new IntegrationRule(cell_data, cv_type));
 
-    const int num_vertices = int_rule_vol->topology->getNodeCount();
+    const int num_nodes = int_rule_vol->topology->getNodeCount();
     PHX::MDField<double,Cell,NODE,Dim> node_coordinates
-        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
+        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_nodes, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
@@ -210,9 +210,9 @@ namespace panzer {
 
     panzer::MDFieldArrayFactory af("prefix_",true);
 
-    const int num_vertices = int_rule_bc->topology->getNodeCount();
+    const int num_nodes = int_rule_bc->topology->getNodeCount();
     PHX::MDField<double,Cell,NODE,Dim> node_coordinates
-        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
+        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_nodes, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
@@ -303,7 +303,7 @@ namespace panzer {
       local_cells_host(0) = 0;
       local_cells_host(1) = 1;
       Kokkos::deep_copy(mesh.local_cells,local_cells_host);
-      mesh.cell_vertices = PHX::View<double***>("cell_vertices",2,4,2);
+      mesh.cell_nodes = PHX::View<double***>("cell_nodes",2,4,2);
 
       PHX::View<double**> coordinates("coordinates",6,2);
       auto coordinates_host = Kokkos::create_mirror_view(coordinates);
@@ -315,8 +315,8 @@ namespace panzer {
       coordinates_host(5,0) = 4.; coordinates_host(5,1) = 1.;
       Kokkos::deep_copy(coordinates,coordinates_host);
 
-      auto cell_vertices_host = Kokkos::create_mirror_view(mesh.cell_vertices);
-#define SET_NC(cell,node,vertex) cell_vertices_host(cell,node,0) = coordinates_host(vertex,0); cell_vertices_host(cell,node,1) = coordinates_host(vertex,1);
+      auto cell_nodes_host = Kokkos::create_mirror_view(mesh.cell_nodes);
+#define SET_NC(cell,node,vertex) cell_nodes_host(cell,node,0) = coordinates_host(vertex,0); cell_nodes_host(cell,node,1) = coordinates_host(vertex,1);
       SET_NC(0,0, 0);
       SET_NC(0,1, 3);
       SET_NC(0,2, 4);
@@ -326,7 +326,7 @@ namespace panzer {
       SET_NC(1,2, 5);
       SET_NC(1,3, 2);
 #undef SET_NC
-      Kokkos::deep_copy(mesh.cell_vertices,cell_vertices_host);
+      Kokkos::deep_copy(mesh.cell_nodes,cell_nodes_host);
 
       mesh.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",6);
       auto face_to_cells_host = Kokkos::create_mirror_view(mesh.face_to_cells);
@@ -363,11 +363,11 @@ namespace panzer {
     auto node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("node_coordinates",2,4,2);
     {
       auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_static_view());
-      auto cell_vertices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),mesh.cell_vertices);
-      for(int i=0; i<mesh.cell_vertices.extent_int(0); ++i)
-        for(int j=0; j<mesh.cell_vertices.extent_int(1); ++j)
-          for(int k=0; k<mesh.cell_vertices.extent_int(2); ++k)
-            node_coordinates_host(i,j,k) = cell_vertices_host(i,j,k);
+      auto cell_nodes_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),mesh.cell_nodes);
+      for(int i=0; i<mesh.cell_nodes.extent_int(0); ++i)
+        for(int j=0; j<mesh.cell_nodes.extent_int(1); ++j)
+          for(int k=0; k<mesh.cell_nodes.extent_int(2); ++k)
+            node_coordinates_host(i,j,k) = cell_nodes_host(i,j,k);
       Kokkos::deep_copy(node_coordinates.get_static_view(),node_coordinates_host);
     }
 

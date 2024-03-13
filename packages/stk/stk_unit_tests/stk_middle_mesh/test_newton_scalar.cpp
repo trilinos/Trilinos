@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "newton_scalar.hpp"
+#include "stk_middle_mesh/newton_scalar.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

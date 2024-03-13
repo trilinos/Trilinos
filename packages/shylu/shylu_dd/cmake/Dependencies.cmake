@@ -3,7 +3,8 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #
   # New ShyLU subpackages:
   FROSch                frosch            PT       REQUIRED
-  Core                  core              EX       OPTIONAL
+  #Core                  core              EX       OPTIONAL
+  Core                  core              PT       REQUIRED
   Common                common            ST       OPTIONAL
   )
 

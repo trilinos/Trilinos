@@ -13,7 +13,7 @@
 #include "Tempus_StepperFactory_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperFactory)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperFactory)
 }
 
 #endif

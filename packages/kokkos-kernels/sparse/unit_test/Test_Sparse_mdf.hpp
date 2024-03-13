@@ -16,8 +16,8 @@
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
-
 #include "KokkosSparse_mdf.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 namespace Test {
 
@@ -192,9 +192,6 @@ void test_mdf() {
     test_mdf<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
   }
 
-#define NO_TEST_COMPLEX
-
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
 #undef KOKKOSKERNELS_EXECUTE_TEST
-#undef NO_TEST_COMPLEX

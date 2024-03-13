@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -55,12 +54,15 @@
 #include "Intrepid2_HierarchicalBasis_HCURL_TET.hpp"
 #include "Intrepid2_HierarchicalBasis_HDIV_TRI.hpp"
 #include "Intrepid2_HierarchicalBasis_HDIV_TET.hpp"
+#include "Intrepid2_HierarchicalBasis_HDIV_PYR.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TRI.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TET.hpp"
+#include "Intrepid2_IntegratedLegendreBasis_HGRAD_PYR.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_TRI.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_TET.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_PYR.hpp"
 
 namespace Intrepid2 {
   
@@ -102,6 +104,21 @@ namespace Intrepid2 {
     using HDIV  = HierarchicalBasis_HDIV_TET<DeviceType,OutputScalar,PointScalar>;
     using HVOL  = LegendreBasis_HVOL_TET<DeviceType,OutputScalar,PointScalar>;
   };
+
+
+  template<typename DeviceType,
+           typename OutputScalar = double,
+           typename PointScalar  = double,
+           bool defineVertexFunctions = true>
+  class HierarchicalPyramidBasisFamily
+  {
+  public:
+    // we will fill these in as we implement them
+    using HGRAD = IntegratedLegendreBasis_HGRAD_PYR<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
+    using HCURL = void;
+    using HDIV  = HierarchicalBasis_HDIV_PYR<DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = LegendreBasis_HVOL_PYR<DeviceType,OutputScalar,PointScalar>;
+  };
   
   /** \class Intrepid2::HierarchicalBasisFamily
       \brief A family of hierarchical basis functions, constructed in a way that follows work by Fuentes et al.
@@ -129,7 +146,8 @@ namespace Intrepid2 {
   using HierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar,true>,
                                                       LegendreBasis_HVOL_LINE<DeviceType,OutputScalar,PointScalar>,
                                                       HierarchicalTriangleBasisFamily<DeviceType,OutputScalar,PointScalar>,
-                                                      HierarchicalTetrahedronBasisFamily<DeviceType,OutputScalar,PointScalar>
+                                                      HierarchicalTetrahedronBasisFamily<DeviceType,OutputScalar,PointScalar>,
+                                                      HierarchicalPyramidBasisFamily<DeviceType,OutputScalar,PointScalar>
                                                       >;
   
   /** \class Intrepid2::HierarchicalBasisFamily
@@ -146,7 +164,8 @@ namespace Intrepid2 {
   using DGHierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar,false>,
                                                         LegendreBasis_HVOL_LINE<DeviceType,OutputScalar,PointScalar>,
                                                         HierarchicalTriangleBasisFamily<DeviceType,OutputScalar,PointScalar,false>,
-                                                        HierarchicalTetrahedronBasisFamily<DeviceType,OutputScalar,PointScalar,false>
+                                                        HierarchicalTetrahedronBasisFamily<DeviceType,OutputScalar,PointScalar,false>,
+                                                        HierarchicalPyramidBasisFamily<DeviceType,OutputScalar,PointScalar,false>
                                                       >;
   
 }

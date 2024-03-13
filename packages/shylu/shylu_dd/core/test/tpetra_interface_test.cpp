@@ -155,8 +155,7 @@ int main(int argc, char** argv)
     }
 
 
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
-
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE)
   ShyLU::PartitionInterface<Matrix_t, Vector_t> partI3(A.get(), pLUList.get());
   partI3.partition();
 

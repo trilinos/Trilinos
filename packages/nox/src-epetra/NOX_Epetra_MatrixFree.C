@@ -118,7 +118,7 @@ int MatrixFree::SetUseTranspose(bool use_transpose)
   if (use_transpose == true) {
     utils.out() << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
      << "unavailable in Matrix-Free mode!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   return (-1);
 }
@@ -170,9 +170,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if ( Teuchos::is_null(fmPtr) )
       fmPtr = Teuchos::rcp(new NOX::Epetra::Vector(fo));
 
-  double scaleFactor = 1.0;
-  if ( diffType == Backward )
-  scaleFactor = -1.0;
+  const double scaleFactor = (diffType == Backward ? -1.0 : 1.0);
 
   if (computeEta) {
     if (useNewPerturbation) {
@@ -190,10 +188,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     eta = userEta;
 
   // Compute the perturbed RHS
-  perturbX = currentX;
-  Y = X;
-  Y.Scale(eta);
-  perturbX.update(1.0,nevY,1.0);
+  perturbX.update(1.0,currentX,eta*scaleFactor,nevX,0.0);
 
   if (!useGroupForComputeF)
       interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(),
@@ -206,8 +201,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
 
   if ( diffType == Centered ) {
-    Y.Scale(-2.0);
-    perturbX.update(scaleFactor,nevY,1.0);
+    perturbX.update(-2.0*eta*scaleFactor,nevX,1.0);
     if (!useGroupForComputeF)
       interface->computeF(perturbX.getEpetraVector(), fmPtr->getEpetraVector(),
               NOX::Epetra::Interface::Required::MF_Res);
@@ -226,7 +220,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
   else {
     nevY.update(1.0, fp, -1.0, *fmPtr, 0.0);
-    nevY.scale( 1.0/(2.0 * eta) );
+    nevY.scale( 1.0/(2.0 * eta * scaleFactor) );
   }
 
   return 0;
@@ -236,7 +230,7 @@ int MatrixFree::ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVect
 {
   utils.out() << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
        << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
   TEUCHOS_UNREACHABLE_RETURN(-1);
 }
 
@@ -244,7 +238,7 @@ double MatrixFree::NormInf() const
 {
   utils.out() << "ERROR: NOX::Epetra::MatrixFree::NormInf() - Not Available for "
        << "Matrix-Free mode!" << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
   TEUCHOS_UNREACHABLE_RETURN(1.0);
 }
 

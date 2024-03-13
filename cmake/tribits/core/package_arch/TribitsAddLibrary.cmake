@@ -271,7 +271,7 @@ include(TribitsSetAndIncDirs)
 # ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
 # ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix`_).
 # However, this install target will not get created if
-# `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE`` and
+# `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FALSE`` and
 # ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
 # target will get added.  Also, this install target will *not* get added if
 # ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
@@ -280,7 +280,7 @@ include(TribitsSetAndIncDirs)
 # added using ``install(FILES <h0> <h1> ...)``, but only if ``TESTONLY`` and
 # ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  Also, the install
 # target for the headers will not get added if
-# `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE``.  If this
+# `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FALSE``.  If this
 # install target is added, then the headers get installed into the flat
 # directory ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/`` (default is
 # ``${CMAKE_INSTALL_PREFIX}/include/``, see `Setting the install prefix`_).

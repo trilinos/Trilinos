@@ -252,15 +252,6 @@ namespace Tpetra {
     //! Legacy typedef that will go away at some point.
     using node_type = Node;
 
-    //! The hash will be CudaSpace, not CudaUVMSpace
-#ifdef KOKKOS_ENABLE_CUDA
-    using no_uvm_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
-      Kokkos::CudaSpace, memory_space>::type;
-    using no_uvm_device_type = Kokkos::Device<execution_space, no_uvm_memory_space>;
-#else
-    using no_uvm_device_type = device_type;
-#endif
-
     /// \brief Type of the "local" Map.
     ///
     /// \warning This object's interface is not yet fixed.  We provide
@@ -765,6 +756,9 @@ namespace Tpetra {
                          Kokkos::LayoutLeft,
                          Kokkos::HostSpace> global_indices_array_type;
 
+    typedef Kokkos::View<const global_ordinal_type*,
+                         device_type> global_indices_array_device_type;
+    
   public:
     /// \brief Return a view of the global indices owned by this process.
     ///
@@ -786,6 +780,10 @@ namespace Tpetra {
     /// calling this if the calling process owns a very large number
     /// of global indices.
     global_indices_array_type getMyGlobalIndices () const;
+
+    /// \brief Return a view of the global indices owned by this process on the Map's device.
+    global_indices_array_device_type getMyGlobalIndicesDevice () const;
+
 
     /// \brief Return a NONOWNING view of the global indices owned by
     ///   this process.
@@ -1128,6 +1126,9 @@ namespace Tpetra {
       const global_ordinal_type indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 
+    /// \brief Push the device data to host, if needed
+    void lazyPushToHost() const;
+
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
@@ -1229,7 +1230,7 @@ namespace Tpetra {
     /// the nondefault layout.
     mutable Kokkos::View<const global_ordinal_type*,
                          Kokkos::LayoutLeft,
-                         no_uvm_device_type> lgMap_;
+                         device_type> lgMap_;
 
     /// \brief Host View of lgMap_.
     ///
@@ -1246,7 +1247,7 @@ namespace Tpetra {
 
     //! Type of a mapping from global IDs to local IDs.
     typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type,
-      local_ordinal_type, no_uvm_device_type> global_to_local_table_type;
+      local_ordinal_type, device_type> global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
     ///
@@ -1272,7 +1273,7 @@ namespace Tpetra {
     /// Used by getLocalElement() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).
-    global_to_local_table_host_type glMapHost_;
+    mutable global_to_local_table_host_type glMapHost_;
 
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.

@@ -76,8 +76,6 @@ SyncInfo SyncInfo::exchange(const SplitComms & splitComms, int otherColor) const
       }
     });
 
-    comm.communicate();
-
     if (localRank != 0)
     {
       recvInfo.unpack(comm.recv_buffer());

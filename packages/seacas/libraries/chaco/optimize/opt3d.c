@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -61,10 +61,6 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
   int        total;            /* total number of iterations */
   int        ntries, maxtries; /* number of local minimizations */
   int        i, j;             /* loop counter */
-  double     func3d(), constraint();
-  double     drandom(void);
-  void       grad3d(), hess3d(), gradcon(), hesscon(), kramer3(), ch_eigenvec3();
-  void       ch_evals3();
 
   /* Set parameters. */
   best[0] = best[1] = best[2] = 0.0;

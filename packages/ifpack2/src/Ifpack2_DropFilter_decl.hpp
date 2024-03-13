@@ -164,6 +164,9 @@ public:
 
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   virtual size_t getLocalMaxNumRowEntries() const;
+  
+  //! The number of degrees of freedom per mesh point.
+  virtual LocalOrdinal getBlockSize () const;
 
   //! \brief Indicates whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;

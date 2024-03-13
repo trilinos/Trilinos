@@ -40,6 +40,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHDIV(Intrepid2
   using namespace std;
   // dimensions of the returned view are (C,F,F)
   auto fs = FUNCTION_SPACE_HDIV;
+  
+  Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
+  geometry.orientations(orientations, 0, -1);
 
   shards::CellTopology cellTopo = geometry.cellTopology();
   
@@ -68,9 +71,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHDIV(Intrepid2
   ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints, spaceDim );
   ScalarView<Scalar,DeviceType> basisDivValues("basis div values", numFields, numPoints);
 
+  ScalarView<Scalar,DeviceType> unorientedTransformedDivValues("unoriented transformed div values", worksetSize, numFields, numPoints);
   ScalarView<Scalar,DeviceType> transformedDivValues("transformed div values", worksetSize, numFields, numPoints);
   ScalarView<Scalar,DeviceType> transformedWeightedDivValues("transformed weighted div values", worksetSize, numFields, numPoints);
   
+  ScalarView<Scalar,DeviceType> unorientedTransformedBasisValues("unoriented transformed basis values", worksetSize, numFields, numPoints, spaceDim);
   ScalarView<Scalar,DeviceType> transformedBasisValues("transformed basis values", worksetSize, numFields, numPoints, spaceDim);
   ScalarView<Scalar,DeviceType> transformedWeightedBasisValues("transformed weighted basis values", worksetSize, numFields, numPoints, spaceDim);
   
@@ -111,17 +116,20 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHDIV(Intrepid2
     
     std::pair<int,int> cellRange = {startCell, startCell+numCellsInWorkset};
     auto cellWorkset = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
+    auto orientationsWorkset = Kokkos::subview(orientations, cellRange);
     
     if (numCellsInWorkset != worksetSize)
     {
-      Kokkos::resize(jacobian,                      numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianInverse,               numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianDeterminant,           numCellsInWorkset, numPoints);
-      Kokkos::resize(cellMeasures,                  numCellsInWorkset, numPoints);
-      Kokkos::resize(transformedBasisValues,        numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(transformedDivValues,          numCellsInWorkset, numFields, numPoints);
-      Kokkos::resize(transformedWeightedBasisValues,numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(transformedWeightedDivValues,  numCellsInWorkset, numFields, numPoints);
+      Kokkos::resize(jacobian,                         numCellsInWorkset, numPoints, spaceDim, spaceDim);
+      Kokkos::resize(jacobianInverse,                  numCellsInWorkset, numPoints, spaceDim, spaceDim);
+      Kokkos::resize(jacobianDeterminant,              numCellsInWorkset, numPoints);
+      Kokkos::resize(cellMeasures,                     numCellsInWorkset, numPoints);
+      Kokkos::resize(unorientedTransformedDivValues,   numCellsInWorkset, numFields, numPoints);
+      Kokkos::resize(unorientedTransformedBasisValues, numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(transformedBasisValues,           numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(transformedDivValues,             numCellsInWorkset, numFields, numPoints);
+      Kokkos::resize(transformedWeightedBasisValues,   numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(transformedWeightedDivValues,     numCellsInWorkset, numFields, numPoints);
     }
     jacobianAndCellMeasureTimer->start();
     CellTools::setJacobian(jacobian, cubaturePoints, cellWorkset, cellTopo); // accounted for outside loop, as numCells * flopsPerJacobianPerCell.
@@ -134,7 +142,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHDIV(Intrepid2
         
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
-    FunctionSpaceTools::HDIVtransformDIV(transformedDivValues, jacobianDeterminant, basisDivValues);
+    FunctionSpaceTools::HDIVtransformDIV(unorientedTransformedDivValues, jacobianDeterminant, basisDivValues);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(transformedDivValues, unorientedTransformedDivValues,
+                                                           orientationsWorkset, basis.get());
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
     FunctionSpaceTools::multiplyMeasure(transformedWeightedDivValues, cellMeasures, transformedDivValues);
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim); // multiply each entry of transformedDivValues: one flop for each.
@@ -144,7 +154,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHDIV(Intrepid2
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedDivValues, transformedWeightedDivValues);
     ExecutionSpace().fence();
     
-    FunctionSpaceTools::HDIVtransformVALUE(transformedBasisValues, jacobian, jacobianDeterminant, basisValues);
+    FunctionSpaceTools::HDIVtransformVALUE(unorientedTransformedBasisValues, jacobian, jacobianDeterminant, basisValues);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(transformedBasisValues, unorientedTransformedBasisValues,
+                                                           orientationsWorkset, basis.get());
     FunctionSpaceTools::multiplyMeasure(transformedWeightedBasisValues, cellMeasures, transformedBasisValues);
     bool sumInto = true; // add the (value,value) integral to the (div,div) that we've already integrated
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedBasisValues, transformedWeightedBasisValues, sumInto);

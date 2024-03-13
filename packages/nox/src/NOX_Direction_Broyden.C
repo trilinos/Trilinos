@@ -390,5 +390,5 @@ void NOX::Direction::Broyden::throwError(const std::string& functionName, const 
 {
     if (utils->isPrintType(NOX::Utils::Error))
       utils->err() << "NOX::Direction::Broyden::" << functionName << " - " << errorMsg << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
 }

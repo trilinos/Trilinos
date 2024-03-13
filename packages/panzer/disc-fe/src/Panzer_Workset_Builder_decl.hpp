@@ -62,7 +62,7 @@ namespace panzer {
   buildWorksets(const WorksetNeeds & needs,
                 const std::string & elementBlock,
                 const std::vector<std::size_t>& local_cell_ids,
-                const ArrayT& vertex_coordinates);
+                const ArrayT& node_coordinates);
 
   template<typename ArrayT>
   Teuchos::RCP<std::map<unsigned,Workset> >
@@ -70,7 +70,7 @@ namespace panzer {
                  const std::string & elementBlock,
                  const std::vector<std::size_t>& local_cell_ids,
                  const std::vector<std::size_t>& local_side_ids,
-                 const ArrayT& vertex_coordinates,
+                 const ArrayT& node_coordinates,
                  const bool populate_value_arrays = true);
 
   template<typename ArrayT>
@@ -79,12 +79,12 @@ namespace panzer {
                  const std::string & blockid_a,
                  const std::vector<std::size_t>& local_cell_ids_a,
                  const std::vector<std::size_t>& local_side_ids_a,
-                 const ArrayT& vertex_coordinates_a,
+                 const ArrayT& node_coordinates_a,
                  const panzer::WorksetNeeds & needs_b,
                  const std::string & blockid_b,
                  const std::vector<std::size_t>& local_cell_ids_b,
                  const std::vector<std::size_t>& local_side_ids_b,
-                 const ArrayT& vertex_coordinates_b);
+                 const ArrayT& node_coordinates_b);
 
   /** This routine supports construction of worksets that are
     * more DG like. The elements are assumed to shared an
@@ -96,14 +96,14 @@ namespace panzer {
   Teuchos::RCP<std::vector<Workset> > 
   buildEdgeWorksets(const WorksetNeeds & needs_a,
                    const std::string & eblock_a,
-                    const std::vector<std::size_t>& local_cell_ids_a,
+                   const std::vector<std::size_t>& local_cell_ids_a,
                    const std::vector<std::size_t>& local_side_ids_a,
-                   const ArrayT& vertex_coordinates_a,
+                   const ArrayT& node_coordinates_a,
                    const WorksetNeeds & needs_b,
                    const std::string & eblock_b,
                    const std::vector<std::size_t>& local_cell_ids_b,
                    const std::vector<std::size_t>& local_side_ids_b,
-                   const ArrayT& vertex_coordinates_b);
+                   const ArrayT& node_coordinates_b);
 
   template<typename ArrayT>
   std::vector<Workset>::iterator
@@ -112,12 +112,12 @@ namespace panzer {
                     const std::string & eblock_a,
                     const std::vector<std::size_t>& local_cell_ids_a,
                     const std::vector<std::size_t>& local_side_ids_a,
-                    const ArrayT& vertex_coordinates_a,
+                    const ArrayT& node_coordinates_a,
                     const WorksetNeeds & needs_b,
                     const std::string & eblock_b,
                     const std::vector<std::size_t>& local_cell_ids_b,
                     const std::vector<std::size_t>& local_side_ids_b,
-                    const ArrayT& vertex_coordinates_b,
+                    const ArrayT& node_coordinates_b,
                     std::vector<Workset>::iterator beg);
 
   /** Populate basis values and integration values data structures in
@@ -131,7 +131,7 @@ namespace panzer {
     * \param[in] pb        Physics block that contains the integration rules
     *                      and basis functions
     * \param[in,out] details Object to be populated already containing the
-    *                        vertex coordinates for the cells.
+    *                        node coordinates for the cells.
     *
     * \note This function is primarily for internal use. A user should not
     *       call it directly.

@@ -24,6 +24,7 @@ try:
 except ImportError:  # pragma nocover
     import unittest.mock as mock
 
+import re
 
 from argparse import Namespace
 
@@ -48,7 +49,6 @@ class Test_parse_args(unittest.TestCase):
                                                                    'dev',
                                                                    'null',
                                                                    'source_repo'),
-                                                      '--source-branch-name', 'foobar',
                                                       '--target-repo-url',
                                                       os.path.join(os.path.sep,
                                                                    'dev',
@@ -63,11 +63,11 @@ class Test_parse_args(unittest.TestCase):
                                                       '--jenkins-job-number', '2424'])
 
         self.default_options = Namespace(source_repo_url='/dev/null/source_repo',
-                                         source_branch_name='foobar',
                                          target_repo_url='/dev/null/target_repo',
                                          target_branch_name='real_trash',
                                          pullrequest_build_name='Some_odd_compiler',
                                          genconfig_build_name='Some_odd_compiler_and_options',
+                                         dashboard_build_name='UNKNOWN',
                                          pullrequest_number='4242',
                                          jenkins_job_number='2424',
                                          source_dir='UNKNOWN',
@@ -85,11 +85,12 @@ class Test_parse_args(unittest.TestCase):
                                          max_cores_allowed=12,
                                          num_concurrent_tests=-1,
                                          ccache_enable=False,
-                                         dry_run=False)
+                                         dry_run=False,
+                                         use_explicit_cachefile=False,
+                                         extra_configure_args="")
 
         self.default_stdout = dedent('''\
                 | - [R] source-repo-url             : /dev/null/source_repo
-                | - [R] source-branch-name          : foobar
                 | - [R] target_repo_url             : /dev/null/target_repo
                 | - [R] target_branch_name          : real_trash
                 | - [R] pullrequest-build-name      : Some_odd_compiler
@@ -115,15 +116,15 @@ class Test_parse_args(unittest.TestCase):
                 ''')
 
         self.help_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --source-branch-name
-                                   SOURCE_BRANCH_NAME --target-repo-url TARGET_REPO_URL
-                                   --target-branch-name TARGET_BRANCH_NAME
+                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url
+                                   TARGET_REPO_URL --target-branch-name TARGET_BRANCH_NAME
                                    --pullrequest-build-name PULLREQUEST_BUILD_NAME
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
@@ -136,6 +137,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
                                    [--enable-ccache] [--dry-run]
+                                   [--extra-configure-args EXTRA_CONFIGURE_ARGS]
 
                 Parse the repo and build information
 
@@ -145,8 +147,6 @@ class Test_parse_args(unittest.TestCase):
                 Required Arguments:
                   --source-repo-url SOURCE_REPO_URL
                                         Repo with the new changes
-                  --source-branch-name SOURCE_BRANCH_NAME
-                                        Branch with the new changes
                   --target-repo-url TARGET_REPO_URL
                                         Repo to merge into
                   --target-branch-name TARGET_BRANCH_NAME
@@ -161,10 +161,14 @@ class Test_parse_args(unittest.TestCase):
                                         The Jenkins build number
 
                 Optional Arguments:
+                  --dashboard-build-name DASHBOARD_BUILD_NAME
+                                        The build name posted by ctest to a dashboard
                   --source-dir SOURCE_DIR
                                         Directory containing the source code to compile/test.
                   --build-dir BUILD_DIR
                                         Path to the build directory.
+                  --use-explicit-cachefile
+                                        Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.
                   --ctest-driver CTEST_DRIVER
                                         Location of the CTest driver script to load via `-S`.
                   --ctest-drop-site CTEST_DROP_SITE
@@ -215,18 +219,21 @@ class Test_parse_args(unittest.TestCase):
                                         Default = False
                   --dry-run             Enable dry-run mode. Script will run but not execute
                                         the build steps. Default = False
+                  --extra-configure-args EXTRA_CONFIGURE_ARGS
+                                        Extra arguments that will be passed to CMake for
+                                        configuring Trilinos.
                 ''')
 
         self.usage_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --source-branch-name
-                                   SOURCE_BRANCH_NAME --target-repo-url TARGET_REPO_URL
+                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url TARGET_REPO_URL
                                    --target-branch-name TARGET_BRANCH_NAME
                                    --pullrequest-build-name PULLREQUEST_BUILD_NAME
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
                                    --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--ctest-driver CTEST_DRIVER]
+                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
                                    [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
@@ -238,8 +245,8 @@ class Test_parse_args(unittest.TestCase):
                                    [--req-mem-per-core REQ_MEM_PER_CORE]
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run]
-                programName: error: the following arguments are required: --source-repo-url, --source-branch-name, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
+                                   [--enable-ccache] [--dry-run] [--extra-configure-args EXTRA_CONFIGURE_ARGS]
+                programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
                 ''')
 
         self.m_cwd = mock.patch('PullRequestLinuxDriverTest.os.getcwd',
@@ -308,7 +315,7 @@ class Test_parse_args(unittest.TestCase):
         with mock.patch.object(sys, 'argv', ['programName', '--usage']), self.assertRaises(SystemExit), self.stderrRedirect as m_stderr:
             PullRequestLinuxDriverTest.parse_args()
 
-        self.assertIn(self.usage_output, m_stderr.getvalue())
+        self.assertEqual(re.sub("\s+", " ", self.usage_output, flags=re.DOTALL), re.sub("\s+", " ", m_stderr.getvalue(), flags=re.DOTALL))
         return
 
 

@@ -63,19 +63,31 @@ function tril_genconfig_clone_or_update_repo() {
 }
 
 # Clone or update the repos
-
-tril_genconfig_clone_or_update_repo \
-  git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
-  GenConfig  has-submodules ${genconfig_sha1}
+if [[ "$ini_file_option" == "--container" ]] ; then
+  echo "In a container it is assumed that GenConfig is already in the container at /GenConfig"
+else
+  #Clone GenConfig from gitlab-ex
+  tril_genconfig_clone_or_update_repo \
+    git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
+    GenConfig  has-submodules ${genconfig_sha1}
+fi
 
 if [[ "$ini_file_option" == "--srn" ]] ; then
+  #Clone srn-ini-files from cee-gitlab
   tril_genconfig_clone_or_update_repo \
     git@cee-gitlab.sandia.gov:trilinos-project/srn-ini-files.git \
     srn-ini-files
+  
 elif [[ "$ini_file_option" == "--son" ]] ; then
+  #Clone son-ini-files from gitlab-ex
   tril_genconfig_clone_or_update_repo \
     git@gitlab-ex.sandia.gov:trilinos-project/son-ini-files.git \
     son-ini-files
+  
+elif [[ "$ini_file_option" == "--container" ]] ; then
+  #Copy Genconfig into place from /GenConfig
+  cp -R /GenConfig ${script_dir}
+    
 elif [[ "$ini_file_option" != "" ]] ; then
   echo "ERROR: Option '${ini_file_option}' not allowed! Must select '--son', '--srn' or ''."
   exit 1
@@ -84,25 +96,27 @@ fi
 # Set up symlinks to the desired *.ini files
 echo
 cd ${script_dir}/GenConfig/deps/LoadEnv/ini_files
+relative_path_to_script_dir="../../../.."
 if [[ -d ${script_dir}/srn-ini-files ]] && [[ "$ini_file_option" == "--srn" ]]; then
     echo "STATUS: Link files from srn-ini-files"
-    ln -sf ${script_dir}/srn-ini-files/trilinos/framework/environment-specs.ini
-    ln -sf ${script_dir}/srn-ini-files/trilinos/framework/supported-systems.ini
+    ln -sf ${relative_path_to_script_dir}/srn-ini-files/trilinos/framework/environment-specs.ini
+    ln -sf ${relative_path_to_script_dir}/srn-ini-files/trilinos/framework/supported-systems.ini
 elif [[ -d ${script_dir}/son-ini-files ]] && [[ "$ini_file_option" == "--son" ]]; then
     echo "STATUS: Link files from son-ini-files"
-    ln -sf ${script_dir}/son-ini-files/trilinos/framework/environment-specs.ini
-    ln -sf ${script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
+    ln -sf ${relative_path_to_script_dir}/son-ini-files/trilinos/framework/environment-specs.ini
+    ln -sf ${relative_path_to_script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
 else
     echo "STATUS: Link files from ini-files"
-    [ -e ${script_dir}/ini-files/environment-specs.ini ] && ln -sf ${script_dir}/ini-files/environment-specs.ini
-    [ -e ${script_dir}/ini-files/supported-systems.ini ] && ln -sf ${script_dir}/ini-files/supported-systems.ini
+    [ -e ${relative_path_to_script_dir}/ini-files/environment-specs.ini ] && ln -sf ${relative_path_to_script_dir}/ini-files/environment-specs.ini
+    [ -e ${relative_path_to_script_dir}/ini-files/supported-systems.ini ] && ln -sf ${relative_path_to_script_dir}/ini-files/supported-systems.ini
 fi
-ln -sf ${script_dir}/ini-files/supported-envs.ini
+ln -sf ${relative_path_to_script_dir}/ini-files/supported-envs.ini
 cd - > /dev/null
 
 cd ${script_dir}/GenConfig/ini_files
-ln -sf ${script_dir}/ini-files/config-specs.ini
-ln -sf ${script_dir}/ini-files/supported-config-flags.ini
+relative_path_to_script_dir="../.."
+ln -sf ${relative_path_to_script_dir}/ini-files/config-specs.ini
+ln -sf ${relative_path_to_script_dir}/ini-files/supported-config-flags.ini
 
 # Print summary of ini file settings
 cd ${script_dir}

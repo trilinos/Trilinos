@@ -51,7 +51,7 @@
 #include <Teuchos_ConfigDefs.hpp>
 
 // Tpetra
-#include <Tpetra_KokkosCompat_DefaultNode.hpp> // default template parameter of many MueLu classes
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>  // default template parameter of many MueLu classes
 
 // Memory management
 #include <Teuchos_Array.hpp>
@@ -83,33 +83,33 @@
 //! Namespace for MueLu classes and methods
 namespace MueLu {
 
-  // import Teuchos memory management classes into MueLu
-  using Teuchos::arcp;
-  using Teuchos::arcpFromArrayView;
-  using Teuchos::arcp_reinterpret_cast;
-  using Teuchos::Array;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::null;
-  using Teuchos::ParameterList;
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-  using Teuchos::rcp_const_cast;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcpFromRef;
-  using Teuchos::rcp_implicit_cast;
-  using Teuchos::rcp_static_cast;
+// import Teuchos memory management classes into MueLu
+using Teuchos::arcp;
+using Teuchos::arcp_reinterpret_cast;
+using Teuchos::arcpFromArrayView;
+using Teuchos::Array;
+using Teuchos::ArrayRCP;
+using Teuchos::ArrayView;
+using Teuchos::as;
+using Teuchos::null;
+using Teuchos::ParameterList;
+using Teuchos::rcp;
+using Teuchos::RCP;
+using Teuchos::rcp_const_cast;
+using Teuchos::rcp_dynamic_cast;
+using Teuchos::rcp_implicit_cast;
+using Teuchos::rcp_static_cast;
+using Teuchos::rcpFromRef;
 
-  // verbose levels
-  using Teuchos::VERB_DEFAULT;
-  using Teuchos::VERB_NONE;
-  using Teuchos::VERB_LOW;
-  using Teuchos::VERB_MEDIUM;
-  using Teuchos::VERB_HIGH;
-  using Teuchos::VERB_EXTREME;
+// verbose levels
+using Teuchos::VERB_DEFAULT;
+using Teuchos::VERB_EXTREME;
+using Teuchos::VERB_HIGH;
+using Teuchos::VERB_LOW;
+using Teuchos::VERB_MEDIUM;
+using Teuchos::VERB_NONE;
 
-}
+}  // namespace MueLu
 
 // This include file defines macros to avoid warnings under CUDA.  See github issue #1133.
 #include "Teuchos_CompilerCodeTweakMacros.hpp"

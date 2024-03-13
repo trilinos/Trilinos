@@ -4,6 +4,7 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
@@ -17,11 +18,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -38,6 +39,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 5
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
@@ -51,11 +53,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -72,6 +74,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 4
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3
@@ -85,11 +88,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -106,6 +109,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99461
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 4
@@ -119,11 +123,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -140,6 +144,7 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99194
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 5
@@ -153,11 +158,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -182,7 +187,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 6
 Operator complexity = 1.50
-Smoother complexity = 1.99
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

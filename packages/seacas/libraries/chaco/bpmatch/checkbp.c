@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,9 +14,9 @@
 
 /* Confirm that the bipartite match algorithm did the right thing. */
 void checkbp(struct vtx_data **graph, /* graph data structure for vertex weights */
-             double **         xvecs, /* values to partition */
-             int *             sets,  /* set assignments returned */
-             double *          dists, /* distances that separate sets */
+             double          **xvecs, /* values to partition */
+             int              *sets,  /* set assignments returned */
+             double           *dists, /* distances that separate sets */
              int               nvtxs, /* number of vertices */
              int               ndims  /* number of dimensions for division */
 )
@@ -31,7 +31,6 @@ void checkbp(struct vtx_data **graph, /* graph data structure for vertex weights
   int    nsets;              /* number of sets */
   int    bestset = -1;       /* set vtx should be assigned to */
   int    i, j, k;            /* loop counter */
-  void   checkpnt();
 
   nsets = 1 << ndims;
 

@@ -1762,7 +1762,7 @@ protected:
       Kokkos::Cuda, Kokkos::CudaSpace>;
 #elif defined(KOKKOS_ENABLE_HIP)
     using node_t = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
-      Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
+      Kokkos::HIP, Kokkos::HIPSpace>;
 #else
   using node_t = typename Adapter::node_t;
 #endif

@@ -4,17 +4,16 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include "fmt/chrono.h"
+#include <fmt/chrono.h>
 #include <time_stamp.h>
 
 std::string time_stamp(const std::string &format)
 {
-  if (format == "") {
+  if (format.empty()) {
     return std::string("");
   }
 
-  time_t      calendar_time = std::time(nullptr);
-  struct tm  *local_time    = std::localtime(&calendar_time);
-  std::string time_string   = fmt::format(fmt::runtime(format), *local_time);
+  std::time_t t           = std::time(nullptr);
+  std::string time_string = fmt::format(fmt::runtime(format), fmt::localtime(t));
   return time_string;
 }

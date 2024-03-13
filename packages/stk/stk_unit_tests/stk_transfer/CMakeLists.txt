@@ -32,32 +32,35 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_transfer)
-
 FILE(GLOB SOURCES *.cpp)
 
-IF(NOT STK_ENABLE_STKMiddle_mesh)
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestConservativeTransfer.cpp")
-ENDIF()
+if(NOT STK_ENABLE_STKMiddle_mesh)
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestConservativeTransfer.cpp")
+endif()
 
-TRIBITS_ADD_EXECUTABLE(
-    stk_transfer_utest
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE(stk_transfer_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
-    )
+  )
 
-TRIBITS_ADD_TEST(
-    stk_transfer_utest
-    ARGS "--gtest_filter=StkMeshHowTo.useCopyTransfer"
+  TRIBITS_ADD_TEST(stk_transfer_utest
+    ARGS "--gtest_filter=GeomXferImpl.coarseSearchImpl_emptyDomain"
     COMM serial mpi
     NUM_MPI_PROCS 2
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
     NOEXEPREFIX
   )
+else()
+  add_executable(stk_transfer_utest ${SOURCES})
+  target_link_libraries(stk_transfer_utest stk_transfer)
+  target_link_libraries(stk_transfer_utest stk_unit_test_utils)
+  target_link_libraries(stk_transfer_utest stk_util_parallel)
+  target_link_libraries(stk_transfer_utest stk_unit_main)
+
+  add_test("stk_transfer_utest" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_transfer_utest --gtest_filter=GeomXferImpl.coarseSearchImpl_emptyDomain")
+endif()
 

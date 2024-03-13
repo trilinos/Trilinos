@@ -49,13 +49,13 @@
 #ifndef SACADO_TRAITS_HPP
 #define SACADO_TRAITS_HPP
 
+#include <string>
+#include <type_traits>
+
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_dummy_arg.hpp"
 #include "Sacado_mpl_enable_if.hpp"
 #include "Sacado_mpl_disable_if.hpp"
-#include "Sacado_mpl_is_convertible.hpp"
-#include "Sacado_mpl_is_same.hpp"
-#include <string>
 
 #ifdef HAVE_SACADO_COMPLEX
 #include <complex>
@@ -115,8 +115,8 @@ namespace Sacado {
   //! Specialization of %Promote when A is convertible to B but not vice-versa
   template <typename A, typename B>
   struct Promote< A, B,
-                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
-                                            !mpl::is_convertible<B,A>::value &&
+                  typename mpl::enable_if_c< std::is_convertible<A,B>::value &&
+                                            !std::is_convertible<B,A>::value &&
                                             !OverrideDefaultPromote<A>::value &&
                                             !OverrideDefaultPromote<B>::value
                                            >::type > {
@@ -126,8 +126,8 @@ namespace Sacado {
   //! Specialization of %Promote when B is convertible to A but not vice-versa
   template <typename A, typename B>
   struct Promote< A, B,
-                  typename mpl::enable_if_c< mpl::is_convertible<B,A>::value &&
-                                            !mpl::is_convertible<A,B>::value &&
+                  typename mpl::enable_if_c< std::is_convertible<B,A>::value &&
+                                            !std::is_convertible<A,B>::value &&
                                             !OverrideDefaultPromote<A>::value &&
                                             !OverrideDefaultPromote<B>::value
                                            >::type > {
@@ -140,9 +140,9 @@ namespace Sacado {
   */
   template <typename A, typename B>
   struct Promote< A, B,
-                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
-                                             mpl::is_convertible<B,A>::value &&
-                                             !mpl::is_same<A,B>::value &&
+                  typename mpl::enable_if_c< std::is_convertible<A,B>::value &&
+                                             std::is_convertible<B,A>::value &&
+                                             !std::is_same<A,B>::value &&
                                              ( IsExpr<A>::value ||
                                                IsExpr<B>::value ) >::type >
   {
@@ -158,10 +158,10 @@ namespace Sacado {
    */
   template <typename A, typename B>
   struct Promote< A, B,
-                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
-                                             !mpl::is_convertible<B,A>::value &&
+                  typename mpl::enable_if_c< !std::is_convertible<A,B>::value &&
+                                             !std::is_convertible<B,A>::value &&
                                              IsExpr<A>::value &&
-                                             mpl::is_convertible< B, typename BaseExprType< typename A::value_type >::type >::value
+                                             std::is_convertible< B, typename BaseExprType< typename A::value_type >::type >::value
                                              >::type >
   {
     typedef typename BaseExprType<A>::type type;
@@ -174,10 +174,10 @@ namespace Sacado {
    */
   template <typename A, typename B>
   struct Promote< A, B,
-                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
-                                             !mpl::is_convertible<B,A>::value &&
+                  typename mpl::enable_if_c< !std::is_convertible<A,B>::value &&
+                                             !std::is_convertible<B,A>::value &&
                                              IsExpr<B>::value &&
-                                              mpl::is_convertible< A, typename BaseExprType< typename B::value_type >::type >::value
+                                              std::is_convertible< A, typename BaseExprType< typename B::value_type >::type >::value
                                              >::type >
   {
     typedef typename BaseExprType<B>::type type;
@@ -190,11 +190,11 @@ namespace Sacado {
    */
   template <typename A, typename B>
   struct Promote< A, B,
-                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
-                                             !mpl::is_convertible<B,A>::value &&
+                  typename mpl::enable_if_c< !std::is_convertible<A,B>::value &&
+                                             !std::is_convertible<B,A>::value &&
                                              IsExpr<A>::value &&
                                              IsExpr<B>::value &&
-                                             mpl::is_same< typename BaseExprType< typename A::value_type >::type,
+                                             std::is_same< typename BaseExprType< typename A::value_type >::type,
                                                            typename BaseExprType< typename B::value_type >::type >::value
                                              >::type >
   {

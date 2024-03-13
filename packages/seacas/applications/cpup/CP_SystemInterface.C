@@ -189,6 +189,12 @@ void Cpup::SystemInterface::enroll_options()
                   "0");
 
 #endif
+  options_.enroll(
+      "minimize_open_files", GetLongOption::NoValue,
+      "Keep only one input file open at a time.\n"
+      "\t\tUsed when number of files exceeds the maximum number of open files on a system.",
+      nullptr);
+
   options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
                   nullptr);
 
@@ -315,6 +321,8 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
   omitSidesets_ = options_.retrieve("omit_sidesets") != nullptr;
 #endif
 
+  minimizeOpenFiles_ = options_.retrieve("minimize_open_files") != nullptr;
+
   if (options_.retrieve("copyright") != nullptr) {
     if (myRank_ == 0) {
       fmt::print("{}", copyright("2010-2022"));
@@ -433,7 +441,7 @@ void Cpup::SystemInterface::dump(std::ostream & /*unused*/) const {}
 
 std::string Cpup::SystemInterface::output_suffix() const
 {
-  if (outExtension_ == "") {
+  if (outExtension_.empty()) {
     return inExtension_;
   }
   return outExtension_;

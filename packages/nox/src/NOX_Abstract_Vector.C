@@ -66,7 +66,7 @@ NOX::Abstract::Vector::createMultiVector(
   if (numVecs < 0) {
     std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
      << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   const NOX::Abstract::Vector** tmp =
@@ -90,7 +90,7 @@ NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
   if (numVecs <= 0) {
     std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
      << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return Teuchos::rcp(new NOX::MultiVector(*this, numVecs, type));

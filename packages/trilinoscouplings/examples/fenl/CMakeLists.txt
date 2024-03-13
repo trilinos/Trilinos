@@ -1,4 +1,4 @@
-IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
+IF (TrilinosCouplings_ENABLE_Tpetra)
 
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -52,7 +52,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
           fenl_ensemble
           NAME "fenl_ensemble_8x8x8_belos_muelu"
           COMM serial mpi
-          NUM_MPI_PROCS 4
+          #NUM_MPI_PROCS 4
           ARGS "--fixture=8x8x8 --belos --muelu --ensemble=${Stokhos_ETI_Default_Ensemble_Size} --print-its --unit-test --test-mean=2.0599472 --test-std-dev=8.9771555e-3"
           PASS_REGULAR_EXPRESSION "Test Passed"
           )
@@ -73,7 +73,7 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
           fenl_pce
           NAME "fenl_pce_8x8x8_belos_muelu_mean_based"
           COMM serial mpi
-          NUM_MPI_PROCS 4
+          #NUM_MPI_PROCS 4
           ARGS "--fixture=8x8x8 --belos --muelu --mean-based --print-its --unit-test --test-mean=2.0599472 --test-std-dev=8.9771555e-3"
           PASS_REGULAR_EXPRESSION "Test Passed"
           )

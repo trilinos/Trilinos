@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   Ioss::StorageInitializer initialize_storage;
 
   std::string input_file = std::string(argv[argc - 1]);
-  if (input_file == "") {
+  if (input_file.empty()) {
     std::cerr << "Error: No input file specified\n";
     return (EXIT_FAILURE);
   }

@@ -101,9 +101,9 @@ struct DeviceForNode {
 /// \brief Partial specialization of DeviceForNode, for new Kokkos
 ///   "wrapper" Node types.
 /// \tparam Device (New) Kokkos execution space type.
-template <typename Device>
-struct DeviceForNode< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Device> > {
-  typedef Device type;
+template <typename ExecSpace, typename MemSpace>
+struct DeviceForNode< Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> > {
+  typedef typename Tpetra::KokkosCompat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>::device_type type;
 };
 #endif
 

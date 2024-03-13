@@ -227,15 +227,6 @@ std::ostream & output_stacktrace(std::ostream & os);
 #define STRINGIZE2(x) #x
 #define LINE_STRING STRINGIZE(__LINE__)
 
-#define DEPRECATED_PREFIX(FUNCTION_NAME) "DEPRECATED_" #FUNCTION_NAME
-
-#define WARN_DEPRECATED(FUNCTION_NAME)                                                         \
-{                                                                                              \
-  struct [[deprecated("Please switch to STK_" #FUNCTION_NAME " instead of " #FUNCTION_NAME)]]  \
-  DEPRECATED_##FUNCTION_NAME {};                                                               \
-  DEPRECATED_##FUNCTION_NAME ();                                                               \
-}
-
 // The do-while is necessary to prevent usage of this macro from changing
 // program semantics (e.g. dangling-else problem). The obvious implementation:
 // if (expr) ; else throw ...
@@ -244,21 +235,6 @@ std::ostream & output_stacktrace(std::ostream & os);
 //   STK_ThrowRequire(foo);
 // The compiler does not know whether the else statement that the macro inserts
 // applies to the "if (something) " or the "if (expr)".
-#define ThrowGenericCond(expr, message, handler)                             \
-  WARN_DEPRECATED(ThrowGenericCond)                                          \
-  do {                                                                       \
-    if ( !(expr) ) {                                                         \
-      std::ostringstream stk_util_internal_throw_require_oss;                \
-      stk_util_internal_throw_require_oss << message;                        \
-      std::ostringstream stk_util_internal_throw_require_loc_oss;            \
-      stk_util_internal_throw_require_loc_oss <<                             \
-        stk::source_relative_path(STK_STR_TRACE) << "\n";                    \
-      stk::output_stacktrace(stk_util_internal_throw_require_loc_oss); \
-      stk::handler( #expr,                                                   \
-                    stk_util_internal_throw_require_loc_oss.str(),           \
-                    stk_util_internal_throw_require_oss );                   \
-    }                                                                        \
-  } while (false)
 
 namespace stk::impl
 {
@@ -356,20 +332,6 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 // This generic macro is for unconditional throws. We pass "" as the expr
 // string, the handler should be smart enough to realize that this means there
 // was not expression checked, AKA, this throw was unconditional.
-#define ThrowGeneric(message, handler)                                     \
-  WARN_DEPRECATED(ThrowGeneric)                                            \
-  do {                                                                     \
-    std::ostringstream stk_util_internal_throw_require_oss;                \
-    stk_util_internal_throw_require_oss << message;                        \
-    std::ostringstream stk_util_internal_throw_require_loc_oss;            \
-    stk_util_internal_throw_require_loc_oss <<                             \
-      stk::source_relative_path(STK_STR_TRACE) << "\n";                    \
-    stk::output_stacktrace(stk_util_internal_throw_require_loc_oss); \
-    stk::handler( "",                                                      \
-                  stk_util_internal_throw_require_loc_oss.str(),           \
-                  stk_util_internal_throw_require_oss );                   \
-} while (false)
-
 #define STK_ThrowGeneric(message, handler)                                 \
   do {                                                                     \
     std::ostringstream stk_util_internal_throw_require_oss;                \
@@ -436,74 +398,41 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 // 2) Check method argument foo is not NULL
 //   STK_ThrowInvalidArgMsgIf(foo != NULL, "Arg foo is NULL");
 
-#define ThrowRequireWithSierraHelpMsg(expr)                                                                  \
-  do {                                                                                                       \
-    WARN_DEPRECATED(ThrowRequireWithSierraHelpMsg);                                                          \
-    STK_ThrowGenericCond(expr, "Program error. Contact sierra-help@sandia.gov for support.", handle_assert); \
-  } while (false)
-
 #define STK_ThrowRequireWithSierraHelpMsg(expr) STK_ThrowGenericCond(expr, "Program error. Contact sierra-help@sandia.gov for support.", handle_assert)
-#define ThrowRequireMsg(expr,message) do { WARN_DEPRECATED(ThrowRequireMsg); STK_ThrowGenericCond(expr, message, handle_assert); } while(false)
 #define STK_ThrowRequireMsg(expr, message) STK_ThrowGenericCond(expr, message, handle_assert)
-#define ThrowRequire(expr) do { WARN_DEPRECATED(ThrowRequire); STK_ThrowRequireMsg(expr, ""); } while(false)
 #define STK_ThrowRequire(expr) STK_ThrowRequireMsg(expr, "")
 
 #ifndef __HIP_DEVICE_COMPILE__
 
 #ifdef NDEBUG
-#  define ThrowAssert(expr)  do { WARN_DEPRECATED(ThrowAssert);              (static_cast<void>(0)); } while(false)
 #  define STK_ThrowAssert(expr)                                              (static_cast<void>(0))
-#  define ThrowAssertMsg(expr,message) do { WARN_DEPRECATED(ThrowAssertMsg); (static_cast<void>(0)); } while(false)
 #  define STK_ThrowAssertMsg(expr,message)                                   (static_cast<void>(0))
 #else 
-#  define ThrowAssert(expr)  do { WARN_DEPRECATED(ThrowAssert);              STK_ThrowRequire(expr); } while(false)
 #  define STK_ThrowAssert(expr)                                              STK_ThrowRequire(expr)
-#  define ThrowAssertMsg(expr,message) do { WARN_DEPRECATED(ThrowAssertMsg); STK_ThrowRequireMsg(expr,message); } while(false)
 #  define STK_ThrowAssertMsg(expr,message)                                   STK_ThrowRequireMsg(expr,message)
 #endif
 
-#define ThrowErrorMsgIf(expr, message) do { WARN_DEPRECATED(ThrowErrorMsgIf); STK_ThrowGenericCond( !(expr), message, handle_error); } while(false)
 #define STK_ThrowErrorMsgIf(expr, message)                              STK_ThrowGenericCond( !(expr), message, handle_error)
-#define ThrowErrorIf(expr)  do { WARN_DEPRECATED(ThrowErrorIf);         STK_ThrowErrorMsgIf(expr, ""); } while(false)
 #define STK_ThrowErrorIf(expr)                                          STK_ThrowErrorMsgIf(expr, "")
-#define ThrowErrorMsg(message)  do { WARN_DEPRECATED(ThrowErrorMsg);    STK_ThrowGeneric( message, handle_error ); } while(false)
 #define STK_ThrowErrorMsg(message)                                      STK_ThrowGeneric( message, handle_error )
 
-#define ThrowInvalidArgMsgIf(expr, message)  do { WARN_DEPRECATED(ThrowInvliadArgMsgIf); STK_ThrowGenericCond( !(expr), message, handle_invalid_arg); } while(false)
 #define STK_ThrowInvalidArgMsgIf(expr, message)                                    STK_ThrowGenericCond( !(expr), message, handle_invalid_arg)
-#define ThrowInvalidArgIf(expr)  do { WARN_DEPRECATED(ThrowInvliadArgIf);          STK_ThrowInvalidArgMsgIf(expr, ""); } while(false)
 #define STK_ThrowInvalidArgIf(expr)                                                STK_ThrowInvalidArgMsgIf(expr, "")
 
 #else
 // FIXME: unsupported indirect call to function on HIP-Clang
-#define ThrowAssert(expr) do { WARN_DEPRECATED(ThrowAssert); } while(false)
 #define STK_ThrowAssert(expr)
-#define ThrowAssertMsg(expr,message) do { WARN_DEPRECATED(ThrowAssertMsg); } while(false)
 #define STK_ThrowAssertMsg(expr,message)
 
-#define ThrowErrorMsgIf(expr, message) do { WARN_DEPRECATED(ThrowErrorMsgIf); } while(false)
 #define STK_ThrowErrorMsgIf(expr, message)
-#define ThrowErrorIf(expr) do { WARN_DEPRECATED(ThrowErrorIf); } while(false)
 #define STK_ThrowErrorIf(expr)
-#define ThrowErrorMsg(message) do { WARN_DEPRECATED(ThrowErrorMsg); } while(false)
 #define STK_ThrowErrorMsg(message)
 
-#define ThrowInvalidArgMsgIf(expr, message) do { WARN_DEPRECATED(ThrowInvliadArgMsgIf); } while(false)
 #define STK_ThrowInvalidArgMsgIf(expr, message)
-#define ThrowInvalidArgIf(expr) do { WARN_DEPRECATED(ThrowInvliadArgIf); } while(false)
 #define STK_ThrowInvalidArgIf(expr)
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
-#define NGP_ThrowRequireMsg(expr, message)                   \
-  do {                                                       \
-    WARN_DEPRECATED(NGP_ThrowRequireMsg)                     \
-    const bool __stk_expr_res = bool(expr);                  \
-    if (!__stk_expr_res) {                                   \
-      ThrowMsgDevice(message ": " __FILE__ ":" LINE_STRING); \
-    }                                                        \
-  } while (false);
-
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowRequireMsg(expr, message)               \
   do {                                                       \
     const bool __stk_expr_res = bool(expr);                  \
@@ -512,15 +441,6 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
     }                                                        \
   } while (false);
 #else
-#define NGP_ThrowRequireMsg(expr, message)                         \
-  do {                                                             \
-    WARN_DEPRECATED(NGP_ThrowRequireMsg)                           \
-    const bool __stk_expr_res = bool(expr);                        \
-    if (!__stk_expr_res) {                                         \
-      ThrowMsgHost(__stk_expr_res, #expr, message, STK_STR_TRACE); \
-    }                                                              \
-  } while (false);
-
 #define STK_NGP_ThrowRequireMsg(expr, message)                     \
   do {                                                             \
     const bool __stk_expr_res = bool(expr);                        \
@@ -530,16 +450,7 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
   } while (false);
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
-#define NGP_ThrowRequire(expr)                                  \
-  do {                                                          \
-    WARN_DEPRECATED(NGP_ThrowRequire)                           \
-    const bool __stk_expr_res = bool(expr);                     \
-    if (!__stk_expr_res) {                                      \
-      ThrowMsgDevice("(" #expr "): " __FILE__ ":" LINE_STRING); \
-    }                                                           \
-  } while (false);
-
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowRequire(expr)                              \
   do {                                                          \
     const bool __stk_expr_res = bool(expr);                     \
@@ -548,15 +459,6 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
     }                                                           \
   } while (false);
 #else
-#define NGP_ThrowRequire(expr)                         \
-  do {                                                 \
-    WARN_DEPRECATED(NGP_ThrowRequire)                  \
-    const bool __stk_expr_res = bool(expr);            \
-    if (!__stk_expr_res) {                             \
-      ThrowHost(__stk_expr_res, #expr, STK_STR_TRACE); \
-    }                                                  \
-  } while (false);
-
 #define STK_NGP_ThrowRequire(expr)                     \
   do {                                                 \
     const bool __stk_expr_res = bool(expr);            \
@@ -567,30 +469,16 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 #endif
 
 #ifdef NDEBUG
-#  define NGP_ThrowAssert(expr) do { WARN_DEPRECATED(NGP_ThrowAssert);               (static_cast<void>(0)); } while(false)
 #  define STK_NGP_ThrowAssert(expr)                                                  (static_cast<void>(0))
-#  define NGP_ThrowAssertMsg(expr,message) do { WARN_DEPRECATED(NGP_ThrowAssertMsg); (static_cast<void>(0)); } while(false)
 #  define STK_NGP_ThrowAssertMsg(expr,message)                                       (static_cast<void>(0))
 #else
-#  define NGP_ThrowAssert(expr) do { WARN_DEPRECATED(NGP_ThrowAssert);               STK_NGP_ThrowRequire(expr); } while(false)
 #  define STK_NGP_ThrowAssert(expr)                                                  STK_NGP_ThrowRequire(expr)
-#  define NGP_ThrowAssertMsg(expr,message) do { WARN_DEPRECATED(NGP_ThrowAssertMsg); STK_NGP_ThrowRequireMsg(expr, message); } while(false)
 #  define STK_NGP_ThrowAssertMsg(expr,message)                                       STK_NGP_ThrowRequireMsg(expr, message)
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
-#define NGP_ThrowErrorMsgIf(expr, message) do { WARN_DEPRECATED(NGP_ThrowErrorMsgIf); STK_NGP_ThrowRequireMsg(!(expr), message); } while(false)
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowErrorMsgIf(expr, message)                                        STK_NGP_ThrowRequireMsg(!(expr), message);
 #else
-#define NGP_ThrowErrorMsgIf(expr, message)                                  \
-  do {                                                                      \
-    WARN_DEPRECATED(NGP_ThrowErrorMsgIf)                                    \
-    const bool __stk_expr_res = bool(expr);                                 \
-    if (__stk_expr_res) {                                                   \
-      ThrowMsgHost(__stk_expr_res, "!(" #expr ")", message, STK_STR_TRACE); \
-    }                                                                       \
-  } while (false);
-
 #define STK_NGP_ThrowErrorMsgIf(expr, message)                              \
   do {                                                                      \
     const bool __stk_expr_res = bool(expr);                                 \
@@ -600,19 +488,9 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
   } while (false);
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
-#define NGP_ThrowErrorIf(expr) do { WARN_DEPRECATED(NGP_ThrowErrorIf); STK_NGP_ThrowRequireMsg(!(expr), "!(" #expr ")"); } while(false)
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowErrorIf(expr)                                     STK_NGP_ThrowRequireMsg(!(expr), "!(" #expr ")");
 #else
-#define NGP_ThrowErrorIf(expr)                                  \
-  do {                                                          \
-    WARN_DEPRECATED(NGP_ThrowErrorIf)                           \
-    const bool __stk_expr_res = bool(expr);                     \
-    if (__stk_expr_res) {                                       \
-      ThrowHost(__stk_expr_res, "!(" #expr ")", STK_STR_TRACE); \
-    }                                                           \
-  } while (false);
-
 #define STK_NGP_ThrowErrorIf(expr)                              \
   do {                                                          \
     const bool __stk_expr_res = bool(expr);                     \
@@ -622,11 +500,9 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
   } while (false);
 #endif
 
-#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__))
-#define NGP_ThrowErrorMsg(message) do { WARN_DEPRECATED(NGP_ThrowErrorMsg); ThrowErrorMsgDevice(message ": " __FILE__ ":" LINE_STRING); } while(false)
+#if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowErrorMsg(message)                                      ThrowErrorMsgDevice(message ": " __FILE__ ":" LINE_STRING);
 #else
-#define NGP_ThrowErrorMsg(message) do { WARN_DEPRECATED(NGP_ThrowErrorMsg); ThrowErrorMsgHost(message, STK_STR_TRACE); } while(false)
 #define STK_NGP_ThrowErrorMsg(message)                                      ThrowErrorMsgHost(message, STK_STR_TRACE);
 #endif
 

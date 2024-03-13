@@ -114,12 +114,12 @@ void NOX::Solver::AndersonAcceleration::init()
   if (storeParam < 0) {
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
       << "Storage parameter must be non-negative" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   if ((mixParam < -1.0) || (mixParam == 0) || (mixParam > 1.0)) {
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
       << "Mixing parameter must be in [-1,0)U(0,1]" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   orthoFrequency = paramsPtr->sublist("Anderson Parameters").get<int>("Reorthogonalization Frequency");
   precond = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Precondition");
@@ -218,7 +218,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     if (rtype != NOX::Abstract::Group::Ok) {
       utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
               << "Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Test the initial guess

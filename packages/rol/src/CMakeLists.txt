@@ -153,6 +153,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeE
                     ${DIR}/TypeG
                     ${DIR}/TypeU
+										${DIR}/TypeP
                     ${DIR}/TypeB/pqn
                     ${DIR}/TypeG/augmentedlagrangian/
                     ${DIR}/TypeG/fletcher
@@ -168,6 +169,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/TypeE/*.hpp
                     ${DIR}/TypeG/*.hpp
                     ${DIR}/TypeU/*.hpp
+										${DIR}/TypeP/*.hpp
                     ${DIR}/TypeB/pqn/*.hpp
                     ${DIR}/TypeG/augmentedlagrangian/*.hpp
                     ${DIR}/TypeG/fletcher/*.hpp

@@ -57,7 +57,8 @@ namespace Intrepid2 {
   DefaultCubatureFactory::
   create( unsigned topologyKey,
           const std::vector<ordinal_type> &degree,
-          const EPolyType                  polytype ) {
+          const EPolyType                  polytype,
+          const bool                       symmetric ) {
 
     // Create generic cubature.
     Teuchos::RCP<Cubature<DT,PT,WT> > r_val;
@@ -75,7 +76,10 @@ namespace Intrepid2 {
     case shards::Triangle<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      r_val = Teuchos::rcp(new CubatureDirectTriDefault<DT,PT,WT>(degree[0]));
+      if(symmetric || (degree[0] > 20)) {
+        r_val = Teuchos::rcp(new CubatureDirectTriSymmetric<DT,PT,WT>(degree[0])); }
+      else                              
+        r_val = Teuchos::rcp(new CubatureDirectTriDefault<DT,PT,WT>(degree[0]));
       break;
     }
     case shards::Quadrilateral<>::key: 
@@ -96,7 +100,11 @@ namespace Intrepid2 {
     case shards::Tetrahedron<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-      r_val = Teuchos::rcp(new CubatureDirectTetDefault<DT,PT,WT>(degree[0]));
+      if(symmetric) {
+        r_val = Teuchos::rcp(new CubatureDirectTetSymmetric<DT,PT,WT>(degree[0]));
+      } else {
+        r_val = Teuchos::rcp(new CubatureDirectTetDefault<DT,PT,WT>(degree[0]));
+      }
       break;
     }
     case shards::Hexahedron<>::key: {
@@ -123,9 +131,16 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 2, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.")
         {
-          const auto xy_tri = CubatureDirectTriDefault<DT,PT,WT>(degree[0]);
-          const auto z_line = CubatureDirectLineGauss<DT,PT,WT>(degree[1]);
-          r_val = Teuchos::rcp(new CubatureTensor<DT,PT,WT>( xy_tri, z_line ));
+          if(symmetric || (degree[0] > 20)) {
+            const auto xy_tri = CubatureDirectTriSymmetric<DT,PT,WT>(degree[0]);
+            const auto z_line = CubatureDirectLineGauss<DT,PT,WT>(degree[1]);
+            r_val = Teuchos::rcp(new CubatureTensor<DT,PT,WT>( xy_tri, z_line ));
+          }
+          else {
+            const auto xy_tri = CubatureDirectTriDefault<DT,PT,WT>(degree[0]);
+            const auto z_line = CubatureDirectLineGauss<DT,PT,WT>(degree[1]);
+            r_val = Teuchos::rcp(new CubatureTensor<DT,PT,WT>( xy_tri, z_line ));
+          }
         }
       break;
     }
@@ -162,8 +177,9 @@ namespace Intrepid2 {
   DefaultCubatureFactory::
   create( const shards::CellTopology       cellTopology,
           const std::vector<ordinal_type> &degree,
-          const EPolyType                  polytype) {
-       return create<DT,PT,WT>(cellTopology.getBaseKey(), degree, polytype);
+          const EPolyType                  polytype,
+          const bool                       symmetric ) {
+       return create<DT,PT,WT>(cellTopology.getBaseKey(), degree, polytype, symmetric);
   }
 
 
@@ -172,10 +188,11 @@ namespace Intrepid2 {
   DefaultCubatureFactory::
   create( unsigned topologyKey,
           const ordinal_type         degree,
-          const EPolyType            polytype ) {
+          const EPolyType            polytype,
+          const bool                 symmetric ) {
     // uniform order for 3 axes
     const std::vector<ordinal_type> degreeArray(3, degree);
-    return create<DT,PT,WT>(topologyKey, degreeArray, polytype);
+    return create<DT,PT,WT>(topologyKey, degreeArray, polytype, symmetric);
   }
 
   template<typename DT, typename PT, typename WT>
@@ -183,10 +200,11 @@ namespace Intrepid2 {
   DefaultCubatureFactory::
   create( const shards::CellTopology cellTopology,
           const ordinal_type         degree,
-          const EPolyType            polytype ) {
+          const EPolyType            polytype,
+          const bool                 symmetric ) {
     // uniform order for 3 axes
     const std::vector<ordinal_type> degreeArray(3, degree);
-    return create<DT,PT,WT>(cellTopology.getBaseKey(), degreeArray, polytype);
+    return create<DT,PT,WT>(cellTopology.getBaseKey(), degreeArray, polytype, symmetric);
   }
 
 

@@ -8,6 +8,7 @@
 #include "intersection_common.hpp"
 #include "quad_to_triangles.hpp"
 #include "triangle_coord_utils.hpp"
+#include "average_normal_field.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -29,10 +30,11 @@ class PointClassifierNormalWrapper
         const PointClassifierNormalWrapperTolerances& tolerances = PointClassifierNormalWrapperTolerances())
       : m_normalClassifier(tolerances.normalInterpolationTolerances)
       , m_mesh(mesh)
+      , m_normalField(AveragedNormalField(mesh).get_field())
       , m_tolerances(tolerances)
-    {
-      compute_averaged_normal_vectors(mesh);
-    }
+    {}
+
+    QuadToTriangles& get_quad_to_triangles() { return m_quadToTriangles; }
 
     // src_face must be a face on the mesh that was passed to the constructor
     PointRecord classify(mesh::MeshEntityPtr destFace, mesh::MeshEntityPtr srcFace, const utils::Point& pt);
@@ -63,7 +65,7 @@ class PointClassifierNormalWrapper
 
     PointRecord create_vert_record(mesh::MeshEntityPtr el, int vertId);
 
-    PointRecord create_edge_record(mesh::MeshEntityPtr el, int edgeId, double edgeXi);
+    PointRecord create_edge_record(mesh::MeshEntityPtr el, int edgeId, double edgeXiOnReferenceEl);
 
     PointRecord classify_onto(const PointRecord& record, mesh::MeshEntityPtr el);
 
@@ -79,8 +81,6 @@ class PointClassifierNormalWrapper
     utils::Point compute_triangle_xi_coords(std::array<mesh::MeshEntityPtr, 3>& verts, const utils::Point& pt);
 
     utils::Point compute_triangle_xi_coords(std::array<utils::Point, 3>& verts, const utils::Point& pt);
-
-    void compute_averaged_normal_vectors(std::shared_ptr<mesh::Mesh> mesh);
 
     bool is_entity_on_mesh(mesh::MeshEntityPtr entity);
 

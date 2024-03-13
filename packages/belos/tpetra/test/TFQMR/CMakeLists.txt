@@ -1,15 +1,31 @@
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_tfqmr_diag
+  SOURCES test_tfqmr_diag.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+)
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
-    
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_tfqmr_hb
     SOURCES test_tfqmr_hb.cpp 
     COMM serial mpi
     ARGS
-      "--verbose --filename=orsirr1_scaled.hb"
+      "--verbose --not-pseudo --filename=orsirr1_scaled.hb"
+      "--verbose --not-pseudo --explicit --filename=orsirr1_scaled.hb"
+      "--verbose --not-pseudo --recursive --filename=orsirr1_scaled.hb"
+    STANDARD_PASS_OUTPUT 
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_pseudo_tfqmr_hb
+    SOURCES test_tfqmr_hb.cpp 
+    COMM serial mpi
+    ARGS
       "--verbose --pseudo --filename=orsirr1_scaled.hb"
-      "--verbose --explicit --filename=orsirr1_scaled.hb"
-      "--verbose --recursive --filename=orsirr1_scaled.hb"
     STANDARD_PASS_OUTPUT 
   )
 

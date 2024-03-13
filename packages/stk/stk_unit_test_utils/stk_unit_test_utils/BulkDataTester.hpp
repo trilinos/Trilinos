@@ -93,7 +93,7 @@ public:
                    MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
                    bool _add_fmwk_data,
-                   stk::mesh::FieldDataManager *field_data_manager,
+                   std::unique_ptr<stk::mesh::FieldDataManager> field_data_manager = std::unique_ptr<stk::mesh::FieldDataManager>(),
                    unsigned initial_bucket_capacity = stk::mesh::get_default_initial_bucket_capacity(),
                    unsigned maximum_bucket_capacity = stk::mesh::get_default_maximum_bucket_capacity())
       : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
@@ -102,7 +102,7 @@ public:
 #ifdef SIERRA_MIGRATION
                             _add_fmwk_data,
 #endif
-                            field_data_manager,
+                            std::move(field_data_manager),
                             initial_bucket_capacity,
                             maximum_bucket_capacity)
     {

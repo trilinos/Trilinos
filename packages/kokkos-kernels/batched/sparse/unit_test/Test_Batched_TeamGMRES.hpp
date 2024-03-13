@@ -32,6 +32,7 @@ namespace TeamGMRES {
 template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType, typename KrylovHandleType>
 struct Functor_TestBatchedTeamGMRES {
+  using execution_space = typename DeviceType::execution_space;
   const ValuesViewType _D;
   const IntView _r;
   const IntView _c;
@@ -91,8 +92,8 @@ struct Functor_TestBatchedTeamGMRES {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::TeamPolicy<DeviceType> policy(_D.extent(0) / _N_team,
-                                          Kokkos::AUTO(), Kokkos::AUTO());
+    Kokkos::TeamPolicy<execution_space> policy(_D.extent(0) / _N_team,
+                                               Kokkos::AUTO(), Kokkos::AUTO());
 
     const int N                 = _D.extent(0);
     const int n                 = _X.extent(1);
@@ -133,7 +134,7 @@ template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType>
 void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   typedef typename ValuesViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   const int nnz = (BlkSize - 2) * 3 + 2 * 2;
 
@@ -149,9 +150,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   using Layout     = typename ValuesViewType::array_layout;
   using EXSP       = typename ValuesViewType::execution_space;
 
-  using MagnitudeType =
-      typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
-  using NormViewType = Kokkos::View<MagnitudeType *, Layout, EXSP>;
+  using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using NormViewType  = Kokkos::View<MagnitudeType *, Layout, EXSP>;
 
   using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
   using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;

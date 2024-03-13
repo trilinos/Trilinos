@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -11,29 +11,26 @@
 #include "structs.h" // for vtx_data
 
 void mapper(struct vtx_data **graph,        /* data structure with vertex weights */
-            double **         xvecs,        /* continuous indicator vectors */
+            double          **xvecs,        /* continuous indicator vectors */
             int               nvtxs,        /* number of vtxs in graph */
-            int *             active,       /* space for nmyvals ints */
-            int *             sets,         /* returned processor assignment for my vtxs */
+            int              *active,       /* space for nmyvals ints */
+            int              *sets,         /* returned processor assignment for my vtxs */
             int               ndims,        /* number of dimensions being divided into */
             int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
             int               nsets,        /* number of sets to divide into */
             int               mediantype,   /* type of eigenvector partitioning to use */
-            double *          goal,         /* desired set sizes */
+            double           *goal,         /* desired set sizes */
             int               vwgt_max      /* largest vertex weight */
 )
 {
   double temp_goal[2]; /* combined set goals if using option 1. */
   double wbelow;       /* weight of vertices with negative values */
   double wabove;       /* weight of vertices with positive values */
-  int *  temp_sets;    /* sets vertices get assigned to */
+  int   *temp_sets;    /* sets vertices get assigned to */
   int    vweight;      /* weight of a vertex */
   int    using_vwgts;  /* are vertex weights being used? */
   int    bits;         /* bits for assigning set numbers */
   int    i, j;         /* loop counters */
-
-  void median(), rec_median_k(), rec_median_1(), median_assign();
-  void map2d(), map3d();
 
   /* NOTE: THIS EXPECTS XVECS, NOT YVECS! */
 

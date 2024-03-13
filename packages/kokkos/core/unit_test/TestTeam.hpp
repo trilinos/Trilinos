@@ -69,10 +69,9 @@ struct TestTeamPolicy {
         member.team_rank() + member.team_size() * member.league_rank();
 
     if (tid != m_flags(member.team_rank(), member.league_rank())) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "TestTeamPolicy member(%d,%d) error %d != %d\n", member.league_rank(),
-          member.team_rank(), tid,
-          m_flags(member.team_rank(), member.league_rank()));
+      Kokkos::printf("TestTeamPolicy member(%d,%d) error %d != %d\n",
+                     member.league_rank(), member.team_rank(), tid,
+                     m_flags(member.team_rank(), member.league_rank()));
     }
   }
 
@@ -391,7 +390,7 @@ class ScanTeamFunctor {
     ind.team_reduce(Kokkos::Max<int64_t>(m));
 
     if (m != ind.league_rank() + (ind.team_size() - 1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "ScanTeamFunctor[%i.%i of %i.%i] reduce_max_answer(%li) != "
           "reduce_max(%li)\n",
           static_cast<int>(ind.league_rank()),
@@ -413,7 +412,7 @@ class ScanTeamFunctor {
         ind.team_scan(ind.league_rank() + 1 + ind.team_rank() + 1);
 
     if (answer != result || answer != result2) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "ScanTeamFunctor[%i.%i of %i.%i] answer(%li) != scan_first(%li) or "
           "scan_second(%li)\n",
           static_cast<int>(ind.league_rank()),
@@ -515,7 +514,7 @@ struct SharedTeamFunctor {
 
     if ((shared_A.data() == nullptr && SHARED_COUNT > 0) ||
         (shared_B.data() == nullptr && SHARED_COUNT > 0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "member( %i/%i , %i/%i ) Failed to allocate shared memory of size "
           "%lu\n",
           static_cast<int>(ind.league_rank()),
@@ -644,9 +643,8 @@ struct TestLambdaSharedTeam {
 
           if ((shared_A.data() == nullptr && SHARED_COUNT > 0) ||
               (shared_B.data() == nullptr && SHARED_COUNT > 0)) {
-            KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-                "Failed to allocate shared memory of size %lu\n",
-                static_cast<unsigned long>(SHARED_COUNT));
+            Kokkos::printf("Failed to allocate shared memory of size %lu\n",
+                           static_cast<unsigned long>(SHARED_COUNT));
 
             ++update;  // Failure to allocate is an error.
           } else {
@@ -712,9 +710,8 @@ struct ScratchTeamFunctor {
     if ((scratch_ptr.data() == nullptr) ||
         (scratch_A.data() == nullptr && SHARED_TEAM_COUNT > 0) ||
         (scratch_B.data() == nullptr && SHARED_THREAD_COUNT > 0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "Failed to allocate shared memory of size %lu\n",
-          static_cast<unsigned long>(SHARED_TEAM_COUNT));
+      Kokkos::printf("Failed to allocate shared memory of size %lu\n",
+                     static_cast<unsigned long>(SHARED_TEAM_COUNT));
 
       ++update;  // Failure to allocate is an error.
     } else {
@@ -1582,7 +1579,7 @@ struct TestScratchAlignment {
     Kokkos::fence();
     int minimal_scratch_allocation_failed = 0;
     Kokkos::deep_copy(minimal_scratch_allocation_failed, flag);
-    ASSERT_TRUE(minimal_scratch_allocation_failed == 0);
+    ASSERT_EQ(minimal_scratch_allocation_failed, 0);
   }
 
   // test alignment of successive allocations
@@ -1615,10 +1612,9 @@ struct TestScratchAlignment {
             flag() = 1;
 
           // Now request aligned memory such that the allocation after
-          // for scratch_ptr2 would be unaligned if it doesn't pad
-          // correct.
-          // Depending on whether scratch_ptr3 is 4 or 8 byte aligned
-          // we need to request different amount of memory.
+          // scratch_ptr2 would be unaligned if it doesn't pad correctly.
+          // Depending on scratch_ptr3 being 4 or 8 byte aligned
+          // we need to request a different amount of memory.
           if ((scratch_ptr3 + 12) % 8 == 4)
             scratch_ptr1 = reinterpret_cast<intptr_t>(
                 team.team_shmem().get_shmem_aligned(24, 4));
@@ -1631,26 +1627,27 @@ struct TestScratchAlignment {
           scratch_ptr3 = reinterpret_cast<intptr_t>(
               team.team_shmem().get_shmem_aligned(8, 4));
 
-          // note the difference between scratch_ptr2 and scratch_ptr1
-          // is 4 bytes larger than what we requested in either of the
-          // two cases.
+          // The difference between scratch_ptr2 and scratch_ptr1 should be 4
+          // bytes larger than what we requested in either case.
           if (((scratch_ptr2 - scratch_ptr1) != 28) &&
               ((scratch_ptr2 - scratch_ptr1) != 16))
             flag() = 1;
-          // check that there wasn't unnneccessary padding happening
-          // i.e. scratch_ptr2 was allocated with a 32 byte request
-          // and since scratch_ptr3 is then already aligned it difference
-          // should match that
+          // Check that there wasn't unneccessary padding happening. Since
+          // scratch_ptr2 was allocated with a 32 byte request and scratch_ptr3
+          // is then already aligned, its difference should match 32 bytes.
           if ((scratch_ptr3 - scratch_ptr2) != 32) flag() = 1;
+
           // check actually alignment of ptrs is as requested
-          if (((scratch_ptr1 % 4) != 0) || ((scratch_ptr2 % 8) != 0) ||
-              ((scratch_ptr3 % 4) != 0))
+          // cast to int here to avoid failure with icpx in mixed integer type
+          // comparison
+          if ((int(scratch_ptr1 % 4) != 0) || (int(scratch_ptr2 % 8) != 0) ||
+              (int(scratch_ptr3 % 4) != 0))
             flag() = 1;
         });
     Kokkos::fence();
     int raw_get_shmem_alignment_failed = 0;
     Kokkos::deep_copy(raw_get_shmem_alignment_failed, flag);
-    ASSERT_TRUE(raw_get_shmem_alignment_failed == 0);
+    ASSERT_EQ(raw_get_shmem_alignment_failed, 0);
   }
 };
 
@@ -1724,7 +1721,7 @@ struct TestRepeatedTeamReduce {
   KOKKOS_FUNCTION void operator()(const int i, int &bad) const {
     if (v(i) != v(0) + i) {
       ++bad;
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("Failing at %d!\n", i);
+      Kokkos::printf("Failing at %d!\n", i);
     }
   }
 

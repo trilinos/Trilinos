@@ -165,6 +165,11 @@ public:
   //! The level of overlap used to construct this graph.
   int getLevelOverlap () const { return LevelOverlap_; }
 
+  //! Returns the original graph given
+  Teuchos::RCP<const GraphType> getA_Graph () const {
+    return Graph_;
+  }
+
   //! Returns the graph of lower triangle of the ILU(k) graph as a Tpetra::CrsGraph.
   Teuchos::RCP<crs_graph_type> getL_Graph () const {
     return L_Graph_;

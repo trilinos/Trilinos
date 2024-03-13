@@ -6,8 +6,8 @@
 #include <string>                                         // for string, etc
 #include <vector>                                         // for vector
 #include "stk_mesh/base/Types.hpp"                        // for EntityRank, etc
+#include "stk_mesh/base/ExodusTranslator.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
-
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -17,8 +17,6 @@ namespace stk { namespace mesh { struct SideSet; } }
 
 namespace stk {
 namespace mesh {
-
-const stk::mesh::Part* get_element_block_selector_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
 void reconstruct_sideset(stk::mesh::BulkData& bulkData, const stk::mesh::Part& surfacePart);
 

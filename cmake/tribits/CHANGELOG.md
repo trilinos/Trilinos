@@ -2,6 +2,43 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2023-06-22:
+
+* **Added:** Packages are now determined to be missing if their dependencies
+  file `<packageDir>/cmake/Dependencies.cmake` is missing.  If the package
+  directory `<packageDir>` exists but the dependencies file is missing, the
+  package is determined to be missing but a warning is printed.  (This expands
+  behavior to gracefully deal with a situation where a package source
+  directory is only partially removed, such as with `git rm -r <packageDir>`,
+  but the base directory still exists.  Therefore, this allows the project to
+  gracefully configure with the package being considered missing and avoids a
+  fatal error in this case.)
+
+## 2023-06-02:
+
+* **Added/Deprecated:** External packages/TPLs can now be (and should be)
+  listed in the `[TEST|LIB]_[REQUIRED|OPTIONAL]_PACKAGES` arguments/lists in
+  the macro `tribits_package_define_dependencies()` and the
+  `[TEST|LIB]_[REQUIRED|OPTIONAL]_TPLS` arguments/lists are deprecated (but
+  with no deprecation warning yet).  This makes it easier to write
+  `<packageDir>/cmake/Dependencies.cmake` files for packages where the set of
+  internal and external upstream dependent packages is dynamic and changes
+  depending on the TriBITS project where these package are configured under.
+  (And conceptually, a downstream package should not care if an upstream
+  dependent package is pulled in as an external package or built as an
+  internal package.)
+
+## 2023-05-03:
+
+* **Added:** Added support for non-fully TriBITS-compatible external packages.
+  Now, a `<Package>Config.cmake` file need not define
+  `<UpstreamPkg>::all_libs` targets for all of its upstream dependencies.  The
+  updated macro `tribits_process_enabled_tpls()` will find any missing
+  upstream external packages/TPLs as needed (see updated documentation in the
+  section "TriBITS-Compliant External Packages" in the "TriBITS Users Guide"
+  and the section "Processing of external packages/TPLs and TriBITS-compliant
+  external packages" in the "TriBITS Maintainers Guide").
+
 ## 2023-02-24:
 
 * **Changed:** Upgraded minimum required CMake version from 3.17 to 3.23.
@@ -214,9 +251,9 @@ ChangeLog for TriBITS
   macro `tribits_extpkg_define_dependencies()` that sets
   `<tplName>_LIB_ALL_DEPENDENCIES`.  Now `<tplName>_LIB_ENABLED_DEPENDENCIES`
   is automatically set from `<tplName>_LIB_ALL_DEPENDENCIES` based on what
-  TPLs are actaully enabled.  This avoids the problem described below from
+  TPLs are actually enabled.  This avoids the problem described below from
   directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without reguard to
-  what TPLs are actaully enabled.  This maintains backward compatibility for
+  what TPLs are actually enabled.  This maintains backward compatibility for
   existing configure scripts where an upstream TPL may not be enabled in some
   strange configure scripts (see
   [TriBITSPub/TriBITS#494](https://github.com/TriBITSPub/TriBITS/issues/494)).

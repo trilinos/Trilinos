@@ -273,7 +273,7 @@ void NOX::Direction::QuasiNewton::throwError(const std::string& functionName,
   if (utils->isPrintType(Utils::Error))
     utils->err() << "NOX::Direction::QuasiNewton::" << functionName
          << " - " << errorMsg << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 

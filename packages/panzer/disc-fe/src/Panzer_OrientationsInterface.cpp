@@ -98,7 +98,7 @@ buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 
     topology = elementBlockTopologies.at(0);
   }
-  const int num_nodes_per_cell = topology.getVertexCount();
+  const int num_nodes_per_cell = topology.getNodeCount();
 
   // Create Tpetra multivectors for storing global node ids
   auto owned_nodes_vector = Teuchos::rcp(new MVector(owned_cell_map,num_nodes_per_cell));
@@ -107,6 +107,7 @@ buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
   // Make sure the conn is setup for a nodal connectivity
   panzer::NodalFieldPattern pattern(topology);
   conn.buildConnectivity(pattern);
+  // TODO BWR see the note in IntrepidOrientation which muses on using the base topology (or at least the VERTICES, as requested by the intrepid call)
 
   const int num_owned_cells = owned_cells.extent(0);
   const int num_ghost_cells = ghost_cells.extent(0);

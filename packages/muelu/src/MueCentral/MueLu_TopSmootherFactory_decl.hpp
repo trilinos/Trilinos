@@ -20,33 +20,31 @@
 //#include "MueLu_Hierarchy_fwd.hpp"
 //#include "MueLu_HierarchyManager_fwd.hpp"
 
-
 namespace MueLu {
 
-  template<class Scalar = DefaultScalar,
-           class LocalOrdinal = DefaultLocalOrdinal,
-           class GlobalOrdinal = DefaultGlobalOrdinal,
-           class Node = DefaultNode>
-  class TopSmootherFactory : public SingleLevelFactoryBase { //TODO: inherit from SmootherFactoryBase ?
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class TopSmootherFactory : public SingleLevelFactoryBase {  // TODO: inherit from SmootherFactoryBase ?
 #undef MUELU_TOPSMOOTHERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string& varName);
 
-    TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string& varName);
+  virtual ~TopSmootherFactory();
 
-    virtual ~TopSmootherFactory();
+  void DeclareInput(Level& level) const;
 
-    void DeclareInput(Level & level) const;
+  void Build(Level& level) const;
 
-    void Build(Level & level) const;
+ private:
+  RCP<const FactoryBase> preSmootherFact_;
+  RCP<const FactoryBase> postSmootherFact_;
+};
 
-  private:
-    RCP<const FactoryBase> preSmootherFact_;
-    RCP<const FactoryBase> postSmootherFact_;
-  };
-
-}
+}  // namespace MueLu
 
 #define MUELU_TOPSMOOTHERFACTORY_SHORT
 #endif /* PACKAGES_MUELU_SRC_MUECENTRAL_MUELU_TOPSMOOTHERFACTORY_DECL_HPP_ */

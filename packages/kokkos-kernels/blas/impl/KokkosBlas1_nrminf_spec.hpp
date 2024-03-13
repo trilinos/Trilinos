@@ -29,7 +29,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class RMV, class XMV, int rank = XMV::rank>
+template <class execution_space, class RMV, class XMV, int rank = XMV::rank>
 struct nrminf_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -47,6 +47,7 @@ struct nrminf_eti_spec_avail {
                                           MEM_SPACE)                           \
   template <>                                                                  \
   struct nrminf_eti_spec_avail<                                                \
+      EXEC_SPACE,                                                              \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
@@ -69,6 +70,7 @@ struct nrminf_eti_spec_avail {
                                              MEM_SPACE)                  \
   template <>                                                            \
   struct nrminf_eti_spec_avail<                                          \
+      EXEC_SPACE,                                                        \
       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<    \
                        SCALAR>::mag_type*,                               \
                    LAYOUT,                                               \
@@ -91,20 +93,23 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class RMV, class XMV, int rank = XMV::rank,
-          bool tpl_spec_avail = nrminf_tpl_spec_avail<RMV, XMV>::value,
-          bool eti_spec_avail = nrminf_eti_spec_avail<RMV, XMV>::value>
+template <class execution_space, class RMV, class XMV, int rank = XMV::rank,
+          bool tpl_spec_avail =
+              nrminf_tpl_spec_avail<execution_space, RMV, XMV>::value,
+          bool eti_spec_avail =
+              nrminf_eti_spec_avail<execution_space, RMV, XMV>::value>
 struct NrmInf {
-  static void nrminf(const RMV& R, const XMV& X);
+  static void nrminf(const execution_space& space, const RMV& R, const XMV& X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of NrmInf for single vectors (1-D Views).
-template <class RMV, class XMV>
-struct NrmInf<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class RMV, class XMV>
+struct NrmInf<execution_space, RMV, XMV, 1, false,
+              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
-  static void nrminf(const RMV& R, const XMV& X) {
+  static void nrminf(const execution_space& space, const RMV& R, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "NrmInf<1-D>: RMV is not a Kokkos::View.");
@@ -132,20 +137,21 @@ struct NrmInf<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     const size_type numRows = X.extent(0);
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
-      V_NrmInf_Invoke<RMV, XMV, int>(R, X);
+      V_NrmInf_Invoke<execution_space, RMV, XMV, int>(space, R, X);
     } else {
       typedef std::int64_t index_type;
-      V_NrmInf_Invoke<RMV, XMV, index_type>(R, X);
+      V_NrmInf_Invoke<execution_space, RMV, XMV, index_type>(space, R, X);
     }
     Kokkos::Profiling::popRegion();
   }
 };
 
-template <class RV, class XMV>
-struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class RV, class XMV>
+struct NrmInf<execution_space, RV, XMV, 2, false,
+              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
-  static void nrminf(const RV& R, const XMV& X) {
+  static void nrminf(const execution_space& space, const RV& R, const XMV& X) {
     static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "NrmInf<2-D>: RV is not a Kokkos::View.");
@@ -175,10 +181,10 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     const size_type numCols = X.extent(1);
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
-      MV_NrmInf_Invoke<RV, XMV, int>(R, X);
+      MV_NrmInf_Invoke<execution_space, RV, XMV, int>(space, R, X);
     } else {
       typedef std::int64_t index_type;
-      MV_NrmInf_Invoke<RV, XMV, index_type>(R, X);
+      MV_NrmInf_Invoke<execution_space, RV, XMV, index_type>(space, R, X);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -198,6 +204,7 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_NRMINF_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,           \
                                          MEM_SPACE)                            \
   extern template struct NrmInf<                                               \
+      EXEC_SPACE,                                                              \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
@@ -215,6 +222,7 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_NRMINF_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,           \
                                          MEM_SPACE)                            \
   template struct NrmInf<                                                      \
+      EXEC_SPACE,                                                              \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
@@ -234,6 +242,7 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, \
                                             MEM_SPACE)                  \
   extern template struct NrmInf<                                        \
+      EXEC_SPACE,                                                       \
       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<   \
                        SCALAR>::mag_type*,                              \
                    LAYOUT,                                              \
@@ -253,6 +262,7 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, \
                                             MEM_SPACE)                  \
   template struct NrmInf<                                               \
+      EXEC_SPACE,                                                       \
       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<   \
                        SCALAR>::mag_type*,                              \
                    LAYOUT,                                              \
@@ -265,7 +275,5 @@ struct NrmInf<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       2, false, true>;
 
 #include <KokkosBlas1_nrminf_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_nrminf_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_nrminf_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_NRMINF_SPEC_HPP_

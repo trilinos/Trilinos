@@ -111,7 +111,7 @@ stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
 IossBlockMembership get_block_memberships(stk::io::StkMeshIoBroker& stkIo)
 {
     IossBlockMembership blockMemberships;
-    const Ioss::Region & io_region = *stkIo.get_input_io_region();
+    const Ioss::Region & io_region = *stkIo.get_input_ioss_region();
     for(auto sideset : io_region.get_sidesets())
     {
         std::vector<std::string> sideBlockNames;
@@ -159,35 +159,47 @@ void throw_if_any_elem_block_has_invalid_topology(const stk::mesh::MetaData& met
   }
 }
 
+stk::mesh::FieldVector get_fields_with_role(const stk::mesh::MetaData &meta, const Ioss::Field::RoleType role)
+{
+  stk::mesh::FieldVector fields;
+
+  for(stk::mesh::FieldBase *field : meta.get_fields())
+  {
+    const Ioss::Field::RoleType *fieldRole = stk::io::get_field_role(*field);
+    if(fieldRole != nullptr && *fieldRole == role) {
+      fields.push_back(field);
+    }
+  }
+
+  return fields;
+}
+
 stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta)
 {
-    stk::mesh::FieldVector fields;
+  return get_fields_with_role(meta, Ioss::Field::TRANSIENT);
+}
 
-    for(stk::mesh::FieldBase *field : meta.get_fields())
+stk::mesh::FieldVector get_fields_with_role(const stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank,
+                                            const Ioss::Field::RoleType role)
+{
+  stk::mesh::FieldVector fields;
+
+  for(stk::mesh::FieldBase *field : meta.get_fields())
+  {
+    if(field->entity_rank() == rank)
     {
-        const Ioss::Field::RoleType *fieldRole = stk::io::get_field_role(*field);
-        if(fieldRole != nullptr && *fieldRole == Ioss::Field::TRANSIENT)
-            fields.push_back(field);
+      const Ioss::Field::RoleType *fieldRole = stk::io::get_field_role(*field);
+      if(fieldRole != nullptr && *fieldRole == role)
+        fields.push_back(field);
     }
+  }
 
-    return fields;
+  return fields;
 }
 
 stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank)
 {
-    stk::mesh::FieldVector fields;
-
-    for(stk::mesh::FieldBase *field : meta.get_fields())
-    {
-        if(field->entity_rank() == rank)
-        {
-            const Ioss::Field::RoleType *fieldRole = stk::io::get_field_role(*field);
-            if(fieldRole != nullptr && *fieldRole == Ioss::Field::TRANSIENT)
-                fields.push_back(field);
-        }
-    }
-
-    return fields;
+  return get_fields_with_role(meta, rank, Ioss::Field::TRANSIENT);
 }
 
 

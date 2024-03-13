@@ -47,7 +47,8 @@
 
 #include <Kokkos_Core.hpp>
 #include "Tpetra_Details_checkLaunchBlocking.hpp"
-#include "Tpetra_Details_DeepCopyTeuchosTimerInjection.hpp"
+#include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 
 namespace Tpetra {
 
@@ -242,8 +243,12 @@ namespace Tpetra {
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
 
-      // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+      // Add Kokkos calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+      Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+
+      Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     }
     tpetraIsInitialized_ = true;
   }
@@ -263,8 +268,12 @@ namespace Tpetra {
 #endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
 
-      // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+      // Add Kokkos::deep calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+      Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+
+      Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     }
     tpetraIsInitialized_ = true;
 
@@ -308,8 +317,12 @@ namespace Tpetra {
       const int myRank = comm->getRank ();
       initKokkosIfNeeded (argc, argv, myRank);
 
-      // Add Kokkos::deep_copy() to the TimeMonitor if the environment says so
+      // Add Kokkos calls to the TimeMonitor if the environment says so
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+      Tpetra::Details::AddKokkosFenceToTimeMonitor();
+      Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+
+      Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     }
     tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;

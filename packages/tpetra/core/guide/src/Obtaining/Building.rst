@@ -104,7 +104,6 @@ For all templated types, the CMake options have the pattern: ``Tpetra_INST_<TYPE
 
    Concerning (2), some of the types can only be enabled if certain requirements are fulfilled.
 
-Tpetra also keeps a list of the Kokkos Device types (specializations of ``Kokkos::Device``) over which it does instantiations and/or tests.  This is the ``Tpetra_ETI_DEVICES`` CMake variable.  Eventually, we will deprecate and remove the above ``Node`` instantiation list, and just use the list of enabled Devices.  We use devices rather than execution spaces, because a ``Kokkos::Device`` is an (execution space, memory space) pair.  This means that it is more general.  For example, ``Device<Cuda, CudaSpace> != Device<Cuda, CudaUVMSpace>``, yet some users may want both represented.  The particular use case is ``Device<OpenMP, $MEM_SPACE>`` where ``$MEM_SPACE`` could be either ``HostSpace`` or the ``HBM`` (high-bandwidth memory) memory space.
 
 Kokkos Execution Space Types
 ----------------------------
@@ -123,5 +122,5 @@ The best option for building Tpetra is to enable the execution space type at the
 
 - Enabling CUDA (by using NVCC and ``nvcc_wrapper``) makes CUDA Tpetra's default execution space.
 - Enabling OpenMP (``Trilinos_ENABLE_OpenMP:BOOL=ON``), but not enabling CUDA, makes OpenMP Tpetra's default execution space.
-- The Pthreads (``Kokkos::Threads``) back-end is a special case; it does not get enabled by default. This avoids surprises, because Trilinos enables its Pthreads TPL by default as long as it can detect it. Users may set the CMake option ``Kokkos_ENABLE_Pthread:BOOL=ON`` to enable use of Pthreads in Tpetra, and to make it default.
+- The Pthreads (``Kokkos::Threads``) back-end is a special case; it does not get enabled by default. This avoids surprises, because Trilinos enables its Pthreads TPL by default as long as it can detect it. Users may set the CMake option ``Kokkos_ENABLE_THREADS:BOOL=ON`` to enable use of Pthreads in Tpetra, and to make it default.
 

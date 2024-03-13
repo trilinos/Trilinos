@@ -25,7 +25,7 @@ except ImportError:                                                             
 
 
 
-def get_launch_env(build_name : str, system : str):
+def get_launch_env(system : str):
   """
   Gets the launch environment based on the detected system.
   This is an early environment that's required for running the driver.
@@ -34,8 +34,6 @@ def get_launch_env(build_name : str, system : str):
       str: The environment used to launch the driver.
   """
   env = ""
-  if "_rdc" in build_name:
-      env += " TRILINOS_MAX_CORES=96"
 
   if env == "":
       return ""
@@ -43,7 +41,7 @@ def get_launch_env(build_name : str, system : str):
       return "env" + env + " "
 
 
-def get_launch_cmd(build_name : str, system : str):
+def get_launch_cmd(system : str):
   """
   Gets the launch command based on the detected system.
 
@@ -68,7 +66,7 @@ def get_driver_args(system : str):
 def main(argv):
   """
   This python script determines what system it is running on and then launches
-  the trilinos driver script appropriatly.
+  the trilinos driver script appropriately.
 
   The script returns 0 upon success and non-zero otherwise.
   """
@@ -81,6 +79,10 @@ def main(argv):
   parser.add_argument('--supported-systems', required=False,
                       default='./LoadEnv/ini_files/supported-systems.ini',
                       help='The INI file containing supported systems')
+  parser.add_argument('--in-container', default=False, action="store_true",
+                      help="Build is happening in a container")
+  parser.add_argument("--kokkos-develop", default=False, action="store_true",
+                       help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
   args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
@@ -91,8 +93,8 @@ def main(argv):
 
   ds = DetermineSystem(args.build_name, args.supported_systems)
 
-  launch_env = get_launch_env(args.build_name, ds.system_name)
-  launch_cmd = get_launch_cmd(args.build_name, ds.system_name)
+  launch_env = get_launch_env(ds.system_name)
+  launch_cmd = get_launch_cmd(ds.system_name)
   driver_args = get_driver_args(ds.system_name)
 
   # Specify, and override the driver script for ATDM ATS2 builds. Note that
@@ -102,6 +104,15 @@ def main(argv):
       args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxCudaVortexDriver.sh"
 
   cmd = launch_env + launch_cmd + args.driver + driver_args
+
+  if args.build_name.startswith("rhel8"):
+    cmd += " --on_rhel8"
+
+  if args.in_container:
+     cmd += " --no-bootstrap"
+
+  if args.kokkos_develop:
+     cmd += " --kokkos-develop"
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 

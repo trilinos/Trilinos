@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#include "create_mesh.hpp"
-#include "field.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/field.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 
 namespace stk {
 namespace middle_mesh {

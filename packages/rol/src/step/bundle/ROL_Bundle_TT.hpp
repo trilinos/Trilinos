@@ -433,11 +433,11 @@ private:
           dependent_--;
           // get the last row of L
           lj_.size(newind-1); // initialize to zeros;
-          Real ljz1_ = zero;
+          Real ljz1__ = zero;
           Real ljTz2 = zero;
           for (unsigned ii=0;ii<newind-1;ii++){
             lj_[ii] = L_(newind,ii);
-            ljz1_ += lj_[ii]*z1_[ii];
+            ljz1__ += lj_[ii]*z1_[ii];
             ljTz2 += lj_[ii]*z2_[ii];
           }
           deltaLj_ = std::sqrt(deltaLj_);

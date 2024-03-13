@@ -59,30 +59,33 @@
 
 namespace ADR {
 
-  namespace Xpetra {
+namespace Xpetra {
 
-    using Teuchos::RCP;
+using Teuchos::RCP;
 
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-    RCP<Problem<Map,Matrix,MultiVector> > BuildProblem(const std::string &MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
-      RCP<Problem<Map,Matrix,MultiVector> > P;
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+RCP<Problem<Map, Matrix, MultiVector> > BuildProblem(const std::string& MatrixType, const RCP<const Map>& map, Teuchos::ParameterList& list) {
+  RCP<Problem<Map, Matrix, MultiVector> > P;
 
-      if      (MatrixType == "ADR1D")    P.reset(new ADR1DProblem   <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
-      else if (MatrixType == "ADR2D")    P.reset(new ADR2DProblem   <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
-      else if (MatrixType == "ADR3D")    P.reset(new ADR3DProblem   <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
- 
-      else
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                   "`MatrixType' has incorrect value (" << MatrixType << ") in input to function CreateCrsMatrix()."
-                                   << "Check the documentation for a list of valid choices");
+  if (MatrixType == "ADR1D")
+    P.reset(new ADR1DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
+  else if (MatrixType == "ADR2D")
+    P.reset(new ADR2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
+  else if (MatrixType == "ADR3D")
+    P.reset(new ADR3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>(list, map));
 
-      P->setObjectLabel(MatrixType);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "`MatrixType' has incorrect value (" << MatrixType << ") in input to function CreateCrsMatrix()."
+                                                                    << "Check the documentation for a list of valid choices");
 
-      return P;
-    }
+  P->setObjectLabel(MatrixType);
 
-  } // namespace Xpetra
+  return P;
+}
 
-} // namespace ADR
+}  // namespace Xpetra
 
-#endif //ifndef ADRPROBLEMFACTORY_HPP
+}  // namespace ADR
+
+#endif  // ifndef ADRPROBLEMFACTORY_HPP

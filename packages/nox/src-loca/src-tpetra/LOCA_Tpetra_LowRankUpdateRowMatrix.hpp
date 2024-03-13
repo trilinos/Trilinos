@@ -70,6 +70,7 @@ namespace LOCA {
       //***************************************
       // Derived from Tpetra::RowMatrix interface
       //***************************************
+      virtual local_ordinal_type getBlockSize () const override;
       virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
       virtual Teuchos::RCP<const NOX::TMap> getRowMap() const override;
       virtual Teuchos::RCP<const NOX::TMap> getColMap() const override;

@@ -45,10 +45,10 @@
     \brief Test interpolation and projection capabilities for Hexaedral elements
 
     The test considers two hexahedra in the physical space sharing a common face. 
-    In order to test significant configurations, we consider 6 mappings of the reference hexahedron
+    In order to test significant configurations, we consider 6 rotations of the reference hexahedron
     to the first (physical) hexahedron, so that the common face is mapped from all the 6 faces
     of the reference hexahedron.
-    Then, for each of the mappings, the global ids of the vertices of the common face are permuted.
+    Then, for each of the mappings, the global ids of the vertices of the common face are permuted (8 permutations).
 
     The test considers HGRAD, HCURL, HDIV and HVOL, of different degree, and for each of them checks that
     the Lagrangian interpolation, the interpolation-based projection, and the L2 projection, reproduce the
@@ -82,8 +82,6 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"
 
-
-#define Intrepid2_Experimental
 
 //this allows to reduce cost of the tests.
 //undefine when debugging/developing
@@ -151,7 +149,7 @@ int InterpolationProjectionHex(const bool verbose) {
   pickTest = true;
   /* initialize random seed: */
   std::srand (std::time(NULL));
-  int configuration = std::rand() % 24;
+  int configuration = std::rand() % 48;
   elemPermutation = configuration % 6;
   sharedSidePermutation = configuration/6;
   *outStream << "Randomly picked configuration (cellTopo premutation, shared face permutation): (" << elemPermutation << ", " <<sharedSidePermutation << ")" << std::endl;
@@ -213,13 +211,15 @@ int InterpolationProjectionHex(const bool verbose) {
     }
   };
 
-  typedef std::array<ordinal_type,2> edgeType;
-  typedef std::array<ordinal_type,4> faceType;
-  typedef CellTools<DeviceType> ct;
-  typedef OrientationTools<DeviceType> ots;
-  typedef Experimental::ProjectionTools<DeviceType> pts;
-  typedef FunctionSpaceTools<DeviceType> fst;
-  typedef Experimental::LagrangianInterpolation<DeviceType> li;
+  using edgeType = std::array<ordinal_type,2>;
+  using faceType = std::array<ordinal_type,4>;
+  using ct = CellTools<DeviceType>;
+  using ots = OrientationTools<DeviceType>;
+  using fst = FunctionSpaceTools<DeviceType>;
+  using pts = ProjectionTools<DeviceType>;
+  using li = LagrangianInterpolation<DeviceType>;
+  using ProjStruct = ProjectionStruct<DeviceType,ValueType>;
+  using lt = LagrangianTools<DeviceType>;
   using  basisType = Basis<DeviceType,ValueType,ValueType>;
 
   constexpr ordinal_type dim = 3;
@@ -248,6 +248,9 @@ int InterpolationProjectionHex(const bool verbose) {
   shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Hexahedron<8> >());
   ordinal_type numNodesPerElem = cellTopo.getNodeCount();
 
+  using faceShape = shards::Quadrilateral<4>;
+  const CellTopologyData * const faceTopoData = shards::getCellTopologyData<faceShape >();
+
   *outStream
   << "===============================================================================\n"
   << "|                                                                             |\n"
@@ -260,14 +263,17 @@ int InterpolationProjectionHex(const bool verbose) {
 
     //reordering of nodes to explore different orientations
 
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
-
-    int sharedSideCount = 0;
-    do {
-      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+    for(int sharedSideCount = 0; sharedSideCount<faceShape::permutation_count; sharedSideCount++) {
+      if((sharedSideCount != sharedSidePermutation) && pickTest)
         continue;
 
+      ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
       ordinal_type orderback[numTotalVertexes];
+      
+      for ( unsigned i = 0; i < faceShape::node_count; ++i ) {
+        reorder[common_face[i]] = common_face[faceTopoData->permutation[sharedSideCount].node[i]];
+      }
+
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
@@ -377,61 +383,59 @@ int InterpolationProjectionHex(const bool verbose) {
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
-            DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
-            DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
+            DynRankView ConstructWithLabel(dofCoords, basisCardinality, dim);
             DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
             DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
             DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, elemOrts);
-
+              basisPtr->getDofCoords(dofCoords);
               //Compute physical Dof Coordinates
-              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoords, numNodesPerElem, basisCardinality);
+              Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> linearBasis;
+              linearBasis.getValues(linearBasisValuesAtDofCoords,dofCoords);
+
               Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
               KOKKOS_LAMBDA (const int &i) {
                 Fun fun;
-                auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
                 for(ordinal_type j=0; j<basisCardinality; ++j){
-                  auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
-                  Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
                   for(ordinal_type k=0; k<numNodesPerElem; ++k)
                     for(ordinal_type d=0; d<dim; ++d)
-                      physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+                      physDofCoords(i,j,d) += physVertexes(i,k,d)*linearBasisValuesAtDofCoords(k,j);
 
                   funAtDofCoords(i,j) += fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2));
                 }
               });
 
-              li::getBasisCoeffs(basisCoeffsLI, funAtDofCoords, dofCoeffsPhys);
+              li::getBasisCoeffs(basisCoeffsLI, funAtDofCoords, basisPtr, elemOrts);
               Kokkos::fence();
             }
 
             //Testing Kronecker property of basis functions
             {
+              DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+              DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
+              lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+              lt::getOrientedDofCoeffs(dofCoeffsPhys, basisPtr, elemOrts);
+              DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
+              DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
               for(ordinal_type i=0; i<numCells; ++i) {
-                DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
-                DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-                DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
                 auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                 auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
                 basisPtr->getValues(outView, inView);
+              }
 
-                // modify basis values to account for orientations
-                ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                    basisValuesAtDofCoords,
-                    elemOrts,
-                    basisPtr);
+              // modify basis values to account for orientations
+              ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                  basisValuesAtDofCoords,
+                  elemOrts,
+                  basisPtr);
 
-                // transform basis values
-                fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
-                    basisValuesAtDofCoordsOriented);
-
-
-                auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), transformedBasisValuesAtDofCoordsOriented);
-                auto hostDofCoeffsPhys = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffsPhys);
-                ExecSpaceType().fence();
+              auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
+              auto hostDofCoeffsPhys = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffsPhys);
+              ExecSpaceType().fence();
+              for(ordinal_type i=0; i<numCells; ++i) {
                 for(ordinal_type k=0; k<basisCardinality; ++k) {
                   for(ordinal_type j=0; j<basisCardinality; ++j){
                     ValueType dofValue = hostBasisValues(i,k,j) * hostDofCoeffsPhys(i,j);
@@ -503,14 +507,13 @@ int InterpolationProjectionHex(const bool verbose) {
             //check that fun values at reference points coincide with those computed using basis functions
             DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
             DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-            DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
+            DynRankView basisValuesAtDofCoords("inValues", basisCardinality, basisCardinality);
 
-            for (ordinal_type ic = 0; ic < numCells; ++ic)
-              basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+            basisPtr->getValues(basisValuesAtDofCoords, dofCoords);
 
             // modify basis values to account for orientations
             ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                basisValuesAtDofCoordsCells,
+                basisValuesAtDofCoords,
                 elemOrts,
                 basisPtr);
 
@@ -553,28 +556,19 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createHGradProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-              DynRankView ConstructWithLabel(evaluationGradPoints, numCells, numGradPoints, dim);
-
-
-              pts::getHGradEvaluationPoints(evaluationPoints,
-                  evaluationGradPoints,
-                  elemOrts,
-                  basisPtr,
-                  &projStruct);
-
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              auto evaluationGradPoints = projStruct.getAllDerivEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0), numGradPoints = evaluationGradPoints.extent(0);
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
               DynRankView ConstructWithLabel(targetGradAtEvalPoints, numCells, numGradPoints, dim);
 
               DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints);
+              basisPtr->getValues(hgradBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
                   hgradBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -582,9 +576,8 @@ int InterpolationProjectionHex(const bool verbose) {
 
               DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPoints, numCells, basisCardinality , numGradPoints, dim);
               if(numGradPoints>0) {
-                DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numGradPoints, dim);
-                for(int ic=0; ic<numCells; ic++)
-                  basisPtr->getValues(Kokkos::subview(gradOfHGradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationGradPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_GRAD);
+                DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPointsNonOriented, basisCardinality , numGradPoints, dim);
+                basisPtr->getValues(gradOfHGradBasisAtEvaluationPointsNonOriented,evaluationGradPoints, OPERATOR_GRAD);
                 ots::modifyBasisByOrientation(gradOfHGradBasisAtEvaluationPoints,
                     gradOfHGradBasisAtEvaluationPointsNonOriented,
                     elemOrts,
@@ -608,8 +601,6 @@ int InterpolationProjectionHex(const bool verbose) {
               pts::getHGradBasisCoeffs(basisCoeffsHGrad,
                   targetAtEvalPoints,
                   targetGradAtEvalPoints,
-                  evaluationPoints,
-                  evaluationGradPoints,
                   elemOrts,
                   basisPtr,
                   &projStruct);
@@ -638,23 +629,17 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-              pts::getL2EvaluationPoints(evaluationPoints,
-                  elemOrts,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0);
 
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
               DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints);
+              basisPtr->getValues(hgradBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
                   hgradBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -671,7 +656,6 @@ int InterpolationProjectionHex(const bool verbose) {
 
               pts::getL2BasisCoeffs(basisCoeffsL2,
                   targetAtEvalPoints,
-                  evaluationPoints,
                   elemOrts,
                   basisPtr,
                   &projStruct);
@@ -699,22 +683,17 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-              pts::getL2DGEvaluationPoints(evaluationPoints,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0);
 
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
               DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints);
+              basisPtr->getValues(hgradBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
                   hgradBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -757,7 +736,7 @@ int InterpolationProjectionHex(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } //reorder vertices of common face
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -778,13 +757,17 @@ int InterpolationProjectionHex(const bool verbose) {
 
   try {
 
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
-
-    int sharedSideCount = 0;
-    do {
-      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+    for(int sharedSideCount = 0; sharedSideCount<faceShape::permutation_count; sharedSideCount++) {
+      if((sharedSideCount != sharedSidePermutation) && pickTest)
         continue;
+
+      ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
       ordinal_type orderback[numTotalVertexes];
+      
+      for ( unsigned i = 0; i < faceShape::node_count; ++i ) {
+        reorder[common_face[i]] = common_face[faceTopoData->permutation[sharedSideCount].node[i]];
+      }
+
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
@@ -896,33 +879,32 @@ int InterpolationProjectionHex(const bool verbose) {
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
-            DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(dofCoords, basisCardinality, dim);
             DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
             DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality, dim);
-            DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
             DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
+              basisPtr->getDofCoords(dofCoords);
 
               //Compute physical Dof Coordinates
 
               DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
-              ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+              ct::setJacobian(jacobian, dofCoords, physVertexes, cellTopo);
 
-              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+              Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> linearBasis;
+              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoords, numNodesPerElem, basisCardinality);
+              linearBasis.getValues(linearBasisValuesAtDofCoords, dofCoords);
+
               DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality, dim);
               Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
               KOKKOS_LAMBDA (const int &i) {
                 FunCurl fun;
-                auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
                 for(ordinal_type j=0; j<basisCardinality; ++j){
-                  auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
-                  Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
                   for(ordinal_type k=0; k<numNodesPerElem; ++k)
                     for(ordinal_type d=0; d<dim; ++d)
-                      physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+                      physDofCoords(i,j,d) += physVertexes(i,k,d)*linearBasisValuesAtDofCoords(k,j);
 
                   for(ordinal_type k=0; k<dim; ++k)
                     funAtDofCoords(i,j,k) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2), k);
@@ -932,27 +914,33 @@ int InterpolationProjectionHex(const bool verbose) {
                 }
               });
 
-              li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffs);
+              li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, basisPtr, elemOrts);
             }
 
 
             //Testing Kronecker property of basis functions
             {
+              DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+              DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
+              lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+              lt::getOrientedDofCoeffs(dofCoeffs, basisPtr, elemOrts);
+              DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
+              DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
               for(ordinal_type i=0; i<numCells; ++i) {
-                DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
-                DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
                 auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                 auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                 basisPtr->getValues(outView, inView);
+              }
 
-                // modify basis values to account for orientations
-                ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                    basisValuesAtDofCoords,
-                    elemOrts,
-                    basisPtr);
+              // modify basis values to account for orientations
+              ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                  basisValuesAtDofCoords,
+                  elemOrts,
+                  basisPtr);
 
-                auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
-                auto hostDofCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffs);
+              auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
+              auto hostDofCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffs);
+              for(ordinal_type i=0; i<numCells; ++i) {
                 for(ordinal_type k=0; k<basisCardinality; ++k) {
                   for(ordinal_type j=0; j<basisCardinality; ++j){
                     ValueType dofValue=0;
@@ -1025,21 +1013,20 @@ int InterpolationProjectionHex(const bool verbose) {
             //check that fun values at reference points coincide with those computed using basis functions
             DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
             DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-            DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
+            DynRankView basisValuesAtDofCoords("inValues", basisCardinality, basisCardinality, dim);
 
-            for (ordinal_type ic = 0; ic < numCells; ++ic)
-              basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+            basisPtr->getValues(basisValuesAtDofCoords, dofCoords);            
 
             // modify basis values to account for orientations
             ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                basisValuesAtDofCoordsCells,
+                basisValuesAtDofCoords,
                 elemOrts,
                 basisPtr);
 
             // transform basis values
             DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
             DynRankView ConstructWithLabel(jacobianAtDofCoords_inv, numCells, basisCardinality, dim, dim);
-            ct::setJacobian(jacobianAtDofCoords, dofCoordsOriented, physVertexes, cellTopo);
+            ct::setJacobian(jacobianAtDofCoords, dofCoords, physVertexes, cellTopo);
             ct::setJacobianInv (jacobianAtDofCoords_inv, jacobianAtDofCoords);
             fst::HCURLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
                 jacobianAtDofCoords_inv,
@@ -1083,27 +1070,20 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createHCurlProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-              DynRankView ConstructWithLabel(evaluationCurlPoints, numCells, numCurlPoints, dim);
-
-              pts::getHCurlEvaluationPoints(evaluationPoints,
-                  evaluationCurlPoints,
-                  elemOrts,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              auto evaluationCurlPoints = projStruct.getAllDerivEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0), numCurlPoints = evaluationCurlPoints.extent(0);
 
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
               DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numCells, numCurlPoints, dim);
 
               DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints, dim);
+              basisPtr->getValues(hcurlBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
                   hcurlBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -1111,9 +1091,8 @@ int InterpolationProjectionHex(const bool verbose) {
 
               DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPoints, numCells, basisCardinality , numCurlPoints, dim);
               if(numCurlPoints>0) {
-                DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numCurlPoints, dim);
-                for(int ic=0; ic<numCells; ic++)
-                  basisPtr->getValues(Kokkos::subview(curlOfHCurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationCurlPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_CURL);
+                DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPointsNonOriented, basisCardinality , numCurlPoints, dim);
+                basisPtr->getValues(curlOfHCurlBasisAtEvaluationPointsNonOriented, evaluationCurlPoints, OPERATOR_CURL);
                 ots::modifyBasisByOrientation(curlOfHCurlBasisAtEvaluationPoints,
                     curlOfHCurlBasisAtEvaluationPointsNonOriented,
                     elemOrts,
@@ -1138,8 +1117,6 @@ int InterpolationProjectionHex(const bool verbose) {
               pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
                   targetAtEvalPoints,
                   targetCurlAtEvalPoints,
-                  evaluationPoints,
-                  evaluationCurlPoints,
                   elemOrts,
                   basisPtr,
                   &projStruct);
@@ -1168,24 +1145,18 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-              pts::getL2EvaluationPoints(evaluationPoints,
-                  elemOrts,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0);
 
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
 
               DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints, dim);
+              basisPtr->getValues(hcurlBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
                   hcurlBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -1202,7 +1173,6 @@ int InterpolationProjectionHex(const bool verbose) {
 
               pts::getL2BasisCoeffs(basisCoeffsL2,
                   targetAtEvalPoints,
-                  evaluationPoints,
                   elemOrts,
                   basisPtr,
                   &projStruct);
@@ -1230,23 +1200,19 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-              pts::getL2DGEvaluationPoints(evaluationPoints,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0);
 
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
 
               DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints, dim);
+              basisPtr->getValues(hcurlBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
+
               ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
                   hcurlBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -1289,7 +1255,7 @@ int InterpolationProjectionHex(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    }  //reorder vertices of common face
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1309,13 +1275,17 @@ int InterpolationProjectionHex(const bool verbose) {
 
   try {
 
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
-
-    int sharedSideCount = 0;
-    do {
-      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+    for(int sharedSideCount = 0; sharedSideCount<faceShape::permutation_count; sharedSideCount++) {
+      if((sharedSideCount != sharedSidePermutation) && pickTest)
         continue;
+
+      ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
       ordinal_type orderback[numTotalVertexes];
+      
+      for ( unsigned i = 0; i < faceShape::node_count; ++i ) {
+        reorder[common_face[i]] = common_face[faceTopoData->permutation[sharedSideCount].node[i]];
+      }
+
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
@@ -1413,38 +1383,37 @@ int InterpolationProjectionHex(const bool verbose) {
 
             //compute DofCoords Oriented
 
-            DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
-            DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(dofCoords, basisCardinality, dim);
             DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
             DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality, dim);
             DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
 
             //compute Lagrangian Interpolation of fun
             {
-
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
+              basisPtr->getDofCoords(dofCoords);
+              
 
               //need to transform dofCoeff to physical space (they transform as normals)
               DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
               DynRankView ConstructWithLabel(jacobian_inv, numCells, basisCardinality, dim, dim);
               DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-              ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+              ct::setJacobian(jacobian, dofCoords, physVertexes, cellTopo);
               ct::setJacobianInv (jacobian_inv, jacobian);
               ct::setJacobianDet (jacobian_det, jacobian);
               
               //Compute physical Dof Coordinates
-              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numNodesPerElem, basisCardinality);
+              Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> linearBasis;
+              linearBasis.getValues(linearBasisValuesAtDofCoord,dofCoords);
+
               DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality, dim);
               Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
               KOKKOS_LAMBDA (const int &i) {
                 FunDiv fun;
-                auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
                 for(ordinal_type j=0; j<basisCardinality; ++j){
-                  auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
-                  Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
                   for(ordinal_type k=0; k<numNodesPerElem; ++k)
                     for(ordinal_type d=0; d<dim; ++d)
-                      physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+                      physDofCoords(i,j,d) += physVertexes(i,k,d)*linearBasisValuesAtDofCoord(k,j);
 
                   for(ordinal_type k=0; k<dim; ++k)
                     funAtDofCoords(i,j,k) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2), k);
@@ -1454,31 +1423,37 @@ int InterpolationProjectionHex(const bool verbose) {
                 }
               });
 
-              li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffs);
+              li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, basisPtr, elemOrts);
             }
 
             //Testing Kronecker property of basis functions
             {
+              DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+              DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
+              lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+              lt::getOrientedDofCoeffs(dofCoeffs, basisPtr, elemOrts);
+              DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
+              DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
               for(ordinal_type i=0; i<numCells; ++i) {
-                DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
-                DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
                 auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                 auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                 basisPtr->getValues(outView, inView);
+              }
 
-                // modify basis values to account for orientations
-                ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                    basisValuesAtDofCoords,
-                    elemOrts,
-                    basisPtr);
+              // modify basis values to account for orientations
+              ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                  basisValuesAtDofCoords,
+                  elemOrts,
+                  basisPtr);
 
-                DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
-                DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-                ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
-                ct::setJacobianDet (jacobian_det, jacobian);
+              DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
+              DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
+              ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+              ct::setJacobianDet (jacobian_det, jacobian);
 
-                auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
-                auto hostDofCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffs);
+              auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
+              auto hostDofCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffs);
+              for(ordinal_type i=0; i<numCells; ++i) {
                 for(ordinal_type k=0; k<basisCardinality; ++k) {
                   for(ordinal_type j=0; j<basisCardinality; ++j){
                     ValueType dofValue=0;
@@ -1527,21 +1502,20 @@ int InterpolationProjectionHex(const bool verbose) {
             //check that fun values at reference points coincide with those computed using basis functions
             DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
             DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-            DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
+            DynRankView basisValuesAtDofCoords("inValues", basisCardinality, basisCardinality, dim);
 
-            for (ordinal_type ic = 0; ic < numCells; ++ic)
-              basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+            basisPtr->getValues(basisValuesAtDofCoords, dofCoords);
 
             // modify basis values to account for orientations
             ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                basisValuesAtDofCoordsCells,
+                basisValuesAtDofCoords,
                 elemOrts,
                 basisPtr);
 
             // transform basis values
             DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
             DynRankView ConstructWithLabel(jacobianAtDofCoords_det, numCells, basisCardinality);
-            ct::setJacobian(jacobianAtDofCoords, dofCoordsOriented, physVertexes, cellTopo);
+            ct::setJacobian(jacobianAtDofCoords, dofCoords, physVertexes, cellTopo);
             ct::setJacobianDet (jacobianAtDofCoords_det, jacobianAtDofCoords);
             fst::HDIVtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
                 jacobianAtDofCoords,
@@ -1585,27 +1559,19 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createHDivProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-              DynRankView ConstructWithLabel(evaluationDivPoints, numCells, numDivPoints, dim);
-
-              pts::getHDivEvaluationPoints(evaluationPoints,
-                  evaluationDivPoints,
-                  elemOrts,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              auto evaluationDivPoints = projStruct.getAllDerivEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0), numDivPoints = evaluationDivPoints.extent(0);
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
               DynRankView ConstructWithLabel(targetDivAtEvalPoints, numCells, numDivPoints);
 
               DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-              for(ordinal_type ic=0; ic<numCells; ++ic)
-                basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints, dim);
+              basisPtr->getValues(hdivBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
                   hdivBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -1613,9 +1579,8 @@ int InterpolationProjectionHex(const bool verbose) {
 
               DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPoints, numCells, basisCardinality , numDivPoints);
               if(numDivPoints>0) {
-                DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numDivPoints);
-                for(ordinal_type ic=0; ic<numCells; ++ic)
-                  basisPtr->getValues(Kokkos::subview(divOfHDivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationDivPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_DIV);
+                DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPointsNonOriented, basisCardinality , numDivPoints);
+                basisPtr->getValues(divOfHDivBasisAtEvaluationPointsNonOriented, evaluationDivPoints, OPERATOR_DIV);
                 ots::modifyBasisByOrientation(divOfHDivBasisAtEvaluationPoints,
                     divOfHDivBasisAtEvaluationPointsNonOriented,
                     elemOrts,
@@ -1638,8 +1603,6 @@ int InterpolationProjectionHex(const bool verbose) {
               pts::getHDivBasisCoeffs(basisCoeffsHDiv,
                   targetAtEvalPoints,
                   targetDivAtEvalPoints,
-                  evaluationPoints,
-                  evaluationDivPoints,
                   elemOrts,
                   basisPtr,
                   &projStruct);
@@ -1668,24 +1631,17 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-              pts::getL2EvaluationPoints(evaluationPoints,
-                  elemOrts,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0);
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
 
               DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-              for(ordinal_type ic=0; ic<numCells; ++ic)
-                basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints, dim);
+              basisPtr->getValues(hdivBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
                   hdivBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -1702,7 +1658,6 @@ int InterpolationProjectionHex(const bool verbose) {
 
               pts::getL2BasisCoeffs(basisCoeffsL2,
                   targetAtEvalPoints,
-                  evaluationPoints,
                   elemOrts,
                   basisPtr,
                   &projStruct);
@@ -1731,23 +1686,17 @@ int InterpolationProjectionHex(const bool verbose) {
             {
               ordinal_type targetCubDegree(basisPtr->getDegree());
 
-              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              ProjStruct projStruct;
               projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
-              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-
-              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-              pts::getL2DGEvaluationPoints(evaluationPoints,
-                  basisPtr,
-                  &projStruct);
+              auto evaluationPoints = projStruct.getAllEvalPoints();
+              ordinal_type numPoints = evaluationPoints.extent(0);
 
               DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
 
               DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-              for(ordinal_type ic=0; ic<numCells; ++ic)
-                basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints, dim);
+              basisPtr->getValues(hdivBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
               ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
                   hdivBasisAtEvaluationPointsNonOriented,
                   elemOrts,
@@ -1791,7 +1740,7 @@ int InterpolationProjectionHex(const bool verbose) {
           }
         }
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    }  //reorder vertices of common face
 
   } catch (std::exception &err) {
     std::cout << " Exeption\n";
@@ -1860,61 +1809,66 @@ int InterpolationProjectionHex(const bool verbose) {
         ordinal_type basisCardinality = basisPtr->getCardinality();
 
         //compute DofCoords Oriented
-        DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
-        DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
+        DynRankView ConstructWithLabel(dofCoords, basisCardinality, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
         DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
 
         //compute Lagrangian Interpolation of fun
         {
-          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
+          basisPtr->getDofCoords(dofCoords);
 
           //need to transform dofCoeff to physical space (they transform as normals)
           DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-          ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+          ct::setJacobian(jacobian, dofCoords, physVertexes, cellTopo);
           ct::setJacobianDet (jacobian_det, jacobian);
 
           //Compute physical Dof Coordinates
-          DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+          DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numNodesPerElem, basisCardinality);
+          Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> linearBasis;
+          linearBasis.getValues(linearBasisValuesAtDofCoord, dofCoords);
+
           DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality);
           Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
           KOKKOS_LAMBDA (const int &i) {
             Fun fun;
-            auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
             for(ordinal_type j=0; j<basisCardinality; ++j){
-              auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
-              Impl::Basis_HGRAD_HEX_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
               for(ordinal_type k=0; k<numNodesPerElem; ++k)
                 for(ordinal_type d=0; d<dim; ++d)
-                  physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+                  physDofCoords(i,j,d) += physVertexes(i,k,d)*linearBasisValuesAtDofCoord(k,j);
 
               funAtDofCoords(i,j) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2));
               fwdFunAtDofCoords(i,j) = jacobian_det(i,j)*funAtDofCoords(i,j);
             }
           });
 
-          li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffsPhys);
+          li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, basisPtr, elemOrts);
         }
 
         //Testing Kronecker property of basis functions
         {
+          DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+          DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
+          lt::getOrientedDofCoords(dofCoordsOriented, basisPtr, elemOrts);
+          lt::getOrientedDofCoeffs(dofCoeffsPhys, basisPtr, elemOrts);
+          DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
+          DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
           for(ordinal_type i=0; i<numCells; ++i) {
-            DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
-            DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
             auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
             auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
             basisPtr->getValues(outView, inView);
+          }
 
-            // modify basis values to account for orientations
-            ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                basisValuesAtDofCoords,
-                elemOrts,
-                basisPtr);
+          // modify basis values to account for orientations
+          ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+              basisValuesAtDofCoords,
+              elemOrts,
+              basisPtr);
 
-            auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
-            auto hostDofCoeffsPhys = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffsPhys);
+          auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
+          auto hostDofCoeffsPhys = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffsPhys);
+          for(ordinal_type i=0; i<numCells; ++i) {
             for(ordinal_type k=0; k<basisCardinality; ++k) {
               for(ordinal_type j=0; j<basisCardinality; ++j){
                 ValueType dofValue = hostBasisValues(i,k,j) * hostDofCoeffsPhys(i,j);
@@ -1936,21 +1890,20 @@ int InterpolationProjectionHex(const bool verbose) {
         //check that fun values at reference points coincide with those computed using basis functions
         DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
         DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-        DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
+        DynRankView basisValuesAtDofCoords("inValues", basisCardinality, basisCardinality);
 
-        for (ordinal_type ic = 0; ic < numCells; ++ic)
-          basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+        basisPtr->getValues(basisValuesAtDofCoords, dofCoords);
 
         // modify basis values to account for orientations
         ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-            basisValuesAtDofCoordsCells,
+            basisValuesAtDofCoords,
             elemOrts,
             basisPtr);
 
         // transform basis values
         DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
         DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-        ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+        ct::setJacobian(jacobian, dofCoords, physVertexes, cellTopo);
         ct::setJacobianDet (jacobian_det, jacobian);
         fst::HVOLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
             jacobian_det,
@@ -1992,25 +1945,17 @@ int InterpolationProjectionHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createHVolProjectionStruct(basisPtr, targetCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-
-          pts::getHVolEvaluationPoints(evaluationPoints,
-              elemOrts,
-              basisPtr,
-              &projStruct);
-
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
 
           DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-          for(int ic=0; ic<numCells; ic++)
-            basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints);
+          basisPtr->getValues(hvolBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
           ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
               hvolBasisAtEvaluationPointsNonOriented,
               elemOrts,
@@ -2026,7 +1971,6 @@ int InterpolationProjectionHex(const bool verbose) {
 
           pts::getHVolBasisCoeffs(basisCoeffsHVol,
               targetAtEvalPoints,
-              evaluationPoints,
               elemOrts,
               basisPtr,
               &projStruct);
@@ -2056,25 +2000,18 @@ int InterpolationProjectionHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-
-          pts::getL2EvaluationPoints(evaluationPoints,
-              elemOrts,
-              basisPtr,
-              &projStruct);
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0);
 
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
 
           DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-          for(int ic=0; ic<numCells; ic++)
-            basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints);
+          basisPtr->getValues(hvolBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
           ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
               hvolBasisAtEvaluationPointsNonOriented,
               elemOrts,
@@ -2090,7 +2027,6 @@ int InterpolationProjectionHex(const bool verbose) {
 
           pts::getL2BasisCoeffs(basisCoeffsL2,
               targetAtEvalPoints,
-              evaluationPoints,
               elemOrts,
               basisPtr,
               &projStruct);
@@ -2118,24 +2054,17 @@ int InterpolationProjectionHex(const bool verbose) {
         {
           ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          ProjStruct projStruct;
           projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
 
-          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-
-          pts::getL2DGEvaluationPoints(evaluationPoints,
-              basisPtr,
-              &projStruct);
-
+          auto evaluationPoints = projStruct.getAllEvalPoints();
+          ordinal_type numPoints = evaluationPoints.extent(0);
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
 
           DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-          for(int ic=0; ic<numCells; ic++)
-            basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, basisCardinality , numPoints);
+          basisPtr->getValues(hvolBasisAtEvaluationPointsNonOriented, evaluationPoints, OPERATOR_VALUE);
           ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
               hvolBasisAtEvaluationPointsNonOriented,
               elemOrts,

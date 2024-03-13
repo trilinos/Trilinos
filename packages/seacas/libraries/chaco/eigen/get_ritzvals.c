@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,26 +29,17 @@ int get_ritzvals(double *alpha,         /* vector of Lanczos scalars */
                  double  bis_safety     /* bisection tolerance function divisor */
 )
 {
-  extern int DEBUG_EVECS;              /* debug flag for eigen computation */
-  extern int WARNING_EVECS;            /* warning flag for eigen computation */
-  int        nvals_left;               /* numb. evals to find on left end of spectrum */
-  int        nvals_right;              /* numb. evals to find on right end of spectrum */
-  double     bisection_tol;            /* width of interval bisection should converge to */
-  int        pred_steps;               /* predicts # of required bisection steps per eval */
-  int        tot_pred_steps;           /* predicts total # of required bisection steps */
-  double    *ritz_sav = NULL;          /* copy of ritzvals for debugging */
-  int        bisect_flag;              /* return status of bisect() */
-  int        ql_flag;                  /* return status of ql() */
-  int        local_debug;              /* whether to check bisection results with ql */
-  int        bisect();                 /* locates eigvals using bisection on Sturm seq. */
-  int        ql();                     /* computes eigenvalues of T using eispack algorithm */
-  void       shell_sort();             /* sorts vector of eigenvalues */
-  double    *mkvec(int nl, int nh);    /* to allocate a vector */
-  void       frvec(double *v, int nl); /* free vector */
-  void       cpvec();                  /* vector copy */
-  void       bail();                   /* our exit routine */
-  void       strout(char *msg);        /* string out to screen and output file */
-
+  extern int DEBUG_EVECS;     /* debug flag for eigen computation */
+  extern int WARNING_EVECS;   /* warning flag for eigen computation */
+  int        nvals_left;      /* numb. evals to find on left end of spectrum */
+  int        nvals_right;     /* numb. evals to find on right end of spectrum */
+  double     bisection_tol;   /* width of interval bisection should converge to */
+  int        pred_steps;      /* predicts # of required bisection steps per eval */
+  int        tot_pred_steps;  /* predicts total # of required bisection steps */
+  double    *ritz_sav = NULL; /* copy of ritzvals for debugging */
+  int        bisect_flag;     /* return status of bisect() */
+  int        ql_flag;         /* return status of ql() */
+  int        local_debug;     /* whether to check bisection results with ql */
   /* Determine number of ritzvals to find on left and right ends */
   nvals_left  = max(d, left_goodlim);
   nvals_right = min(j - nvals_left, right_goodlim);

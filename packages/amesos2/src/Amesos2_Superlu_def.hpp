@@ -993,24 +993,14 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Row and column maps have different indexbase ");
 
-    if ( is_contiguous_ == true ) {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
-          host_size_type_array>::do_get(this->matrixA_.ptr(),
-            host_nzvals_view_, host_rows_view_,
-            host_col_ptr_view_, nnz_ret, ROOTED,
-            ARBITRARY,
-            this->rowIndexBase_);
-    }
-    else {
-      Util::get_ccs_helper_kokkos_view<
-        MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
-          host_size_type_array>::do_get(this->matrixA_.ptr(),
-            host_nzvals_view_, host_rows_view_,
-            host_col_ptr_view_, nnz_ret, CONTIGUOUS_AND_ROOTED,
-            ARBITRARY,
-            this->rowIndexBase_);
-    }
+    Util::get_ccs_helper_kokkos_view<
+      MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,
+        host_size_type_array>::do_get(this->matrixA_.ptr(),
+          host_nzvals_view_, host_rows_view_,
+          host_col_ptr_view_, nnz_ret,
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          ARBITRARY,
+          this->rowIndexBase_);
   }
 
   // Get the SLU data type for this type of matrix

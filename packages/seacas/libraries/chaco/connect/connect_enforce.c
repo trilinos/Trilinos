@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -17,36 +17,36 @@
 void connect_enforce(struct vtx_data **graph,       /* data structure for graph */
                      int               nvtxs,       /* number of vertices in full graph */
                      int               using_ewgts, /* are edge weights being used? */
-                     int *             assignment,  /* set number of each vtx (length n) */
-                     double *          goal,        /* desired sizes for each set */
+                     int              *assignment,  /* set number of each vtx (length n) */
+                     double           *goal,        /* desired sizes for each set */
                      int               nsets_tot,   /* total number sets created */
-                     int *             total_move,  /* total number of vertices moved */
-                     int *             max_move     /* largest connected component moved */
+                     int              *total_move,  /* total number of vertices moved */
+                     int              *max_move     /* largest connected component moved */
 )
 {
   struct vtx_data **subgraph;           /* data structure for domain graph */
   int               subnvtxs;           /* number of vertices in a domain */
   int               subnedges;          /* number of edges in a domain */
-  struct heap *     heap;               /* data structure for sorting set sizes */
-  int *             heap_map;           /* pointers from sets to heap locations */
-  int *             list_ptrs;          /* header of vtx list for each domain */
-  int *             setlists;           /* linked list of vtxs for each domain */
-  int *             vtxlist;            /* space for breadth first search list */
-  int *             comp_lists;         /* list of vtxs in each connected comp */
-  int *             clist_ptrs;         /* pointers to heads of comp_lists */
-  int *             subsets;            /* list of active domains (all of them) */
-  int *             subsets2;           /* list of active domains (all of them) */
-  double *          set_size;           /* weighted sizes of different partitions */
+  struct heap      *heap;               /* data structure for sorting set sizes */
+  int              *heap_map;           /* pointers from sets to heap locations */
+  int              *list_ptrs;          /* header of vtx list for each domain */
+  int              *setlists;           /* linked list of vtxs for each domain */
+  int              *vtxlist;            /* space for breadth first search list */
+  int              *comp_lists;         /* list of vtxs in each connected comp */
+  int              *clist_ptrs;         /* pointers to heads of comp_lists */
+  int              *subsets;            /* list of active domains (all of them) */
+  int              *subsets2;           /* list of active domains (all of them) */
+  double           *set_size;           /* weighted sizes of different partitions */
   double            size;               /* size of subset being moved to new domain */
-  int *             bndy_list;          /* list of domains adjacent to component */
-  double *          bndy_size;          /* size of these boundaries */
-  double *          comp_size;          /* sizes of different connected components */
+  int              *bndy_list;          /* list of domains adjacent to component */
+  double           *bndy_size;          /* size of these boundaries */
+  double           *comp_size;          /* sizes of different connected components */
   double            comp_size_max;      /* size of largest connected component */
   int               comp_max_index = 0; /* which component is largest? */
-  int *             glob2loc;           /* global to domain renumbering */
-  int *             loc2glob;           /* domain to global renumbering */
-  int *             degree;             /* number of neighbors of a vertex */
-  int *             comp_flag;          /* component number for each vtx */
+  int              *glob2loc;           /* global to domain renumbering */
+  int              *loc2glob;           /* domain to global renumbering */
+  int              *degree;             /* number of neighbors of a vertex */
+  int              *comp_flag;          /* component number for each vtx */
   double            ewgt;               /* edge weight */
   int               nbndy;              /* number of sets adjecent to component */
   int               domain;             /* which subdomain I'm working on */
@@ -58,10 +58,6 @@ void connect_enforce(struct vtx_data **graph,       /* data structure for graph 
   int               vtx;                /* vertex in a connected component */
   int               set;                /* set a neighboring vertex is in */
   int               i, j, k, l;         /* loop counters */
-  double            heap_extract_max();
-  int               make_maps(), find_comps();
-  void              make_setlists(), make_subgraph(), remake_graph();
-  void              heap_build(), heap_update_val();
 
   change     = 0;
   max_change = 0;

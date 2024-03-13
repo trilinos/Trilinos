@@ -122,7 +122,7 @@ private:
 ///
 /// \warning This is an implementation detail of Teuchos.
 ///   Users should never call this function directly.
-MPI_Op setMpiReductionOp (const MpiReductionOpBase& reductOp);
+TEUCHOSCOMM_LIB_DLL_EXPORT MPI_Op setMpiReductionOp (const MpiReductionOpBase& reductOp);
 
 } // namespace Details
 } // namespace Teuchos

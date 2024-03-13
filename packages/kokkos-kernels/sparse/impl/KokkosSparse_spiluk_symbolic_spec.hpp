@@ -100,7 +100,7 @@ struct SPILUK_SYMBOLIC {
       const typename KernelHandle::const_nnz_lno_t &fill_lev,
       const ARowMapType &A_row_map, const AEntriesType &A_entries,
       LRowMapType &L_row_map, LEntriesType &L_entries, URowMapType &U_row_map,
-      UEntriesType &U_entries);
+      UEntriesType &U_entries, int nstreams = 1);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -117,11 +117,12 @@ struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
       const typename KernelHandle::const_nnz_lno_t &fill_lev,
       const ARowMapType &A_row_map, const AEntriesType &A_entries,
       LRowMapType &L_row_map, LEntriesType &L_entries, URowMapType &U_row_map,
-      UEntriesType &U_entries) {
+      UEntriesType &U_entries, int nstreams = 1) {
     auto spiluk_handle = handle->get_spiluk_handle();
 
     Experimental::iluk_symbolic(*spiluk_handle, fill_lev, A_row_map, A_entries,
-                                L_row_map, L_entries, U_row_map, U_entries);
+                                L_row_map, L_entries, U_row_map, U_entries,
+                                nstreams);
     spiluk_handle->set_symbolic_complete();
   }
 };
@@ -203,6 +204,5 @@ struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
       false, true>;
 
 #include <KokkosSparse_spiluk_symbolic_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spiluk_symbolic_eti_spec_decl.hpp>
 
 #endif

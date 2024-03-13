@@ -26,7 +26,6 @@
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_MeshHelpers.hpp>
 #include <Akri_RefinementInterface.hpp>
-#include <Akri_AdaptivityInterface.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_math/StkVector.hpp>
@@ -36,11 +35,11 @@ namespace rebalance_utils {
 
 namespace {
 
-RefinementInterface & build_refinement(stk::mesh::MetaData & meta, const bool usePercept = false)
+RefinementInterface & build_refinement(stk::mesh::MetaData & meta)
 {
   meta.enable_late_fields();
 
-  RefinementInterface & refinement = create_refinement(meta, usePercept, sierra::Diag::sierraTimer());
+  RefinementInterface & refinement = KrinoRefinement::create(meta);
 
   meta.disable_late_fields();
 
@@ -152,9 +151,9 @@ protected:
 class RebalanceForAdaptivityFixture : public FixtureWithBlockAndFields
 {
 public:
-  RebalanceForAdaptivityFixture(bool usePercept = false, MPI_Comm comm = MPI_COMM_SELF) : 
+  RebalanceForAdaptivityFixture(MPI_Comm comm = MPI_COMM_SELF) :
     FixtureWithBlockAndFields(comm),
-    refinement(build_refinement(fixture.meta_data(), usePercept)) {}
+    refinement(build_refinement(fixture.meta_data())) {}
 protected:
   stk::mesh::Entity parent_elem() const { return mesh.get_entity(stk::topology::ELEMENT_RANK, 1); }
   stk::mesh::EntityVector all_child_elems() const { stk::mesh::EntityVector allChildElems; fill_all_children(refinement, parent_elem(), allChildElems); return allChildElems; }
@@ -218,20 +217,12 @@ protected:
   stk::balance::DecompositionChangeList change_list{fixture.bulk_data(), {}};
 };
 
-class RebalanceForAdaptivityFixtureForPercept : public RebalanceForAdaptivityFixture
-{
-public:
-  RebalanceForAdaptivityFixtureForPercept() : RebalanceForAdaptivityFixture(true) {}
-private:
-};
-
 class ParallelRebalanceForAdaptivityFixture3D : public ::testing::Test
 {
 public:
   ParallelRebalanceForAdaptivityFixture3D() :
     bulk(stk::mesh::MeshBuilder(MPI_COMM_WORLD)
       .set_spatial_dimension(3)
-      .set_entity_rank_names(entity_rank_names_with_ft())
       .create()),
     meta(bulk->mesh_meta_data_ptr()),
     load_field(meta->declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights")),
@@ -266,7 +257,7 @@ public:
           if(std::fabs(coords[meta->spatial_dimension()-1]-1.) <= 1e-6)
           {
             int * elemMarker = field_data<int>(refinement.get_marker_field(), elem);
-            *elemMarker = Refinement::REFINE;
+            *elemMarker = static_cast<int>(Refinement::RefinementMarker::REFINE);
           }
         }
       }
@@ -528,7 +519,7 @@ TEST_F(ParallelRebalanceForAdaptivityFixture3D, ParentChildRebalanceRules)
         EXPECT_TRUE(parent != stk::mesh::Entity());
         EXPECT_TRUE(refinement.is_parent(parent));
         int * elemMarker = field_data<int>(markerField, elem);
-        *elemMarker = Refinement::COARSEN;
+        *elemMarker = static_cast<int>(Refinement::RefinementMarker::COARSEN);
       }
     }
     refinement.do_refinement();
@@ -578,101 +569,6 @@ TEST_F(ParallelRebalanceForAdaptivityFixture3D, EffectiveLoadBalance)
 
   EXPECT_LT(elem_max/elem_min, 1.2);
 }
-
-// FIXME: Temporary version of tests for percept
-#if 1
-TEST_F(RebalanceForAdaptivityFixtureForPercept, OneLevel)
-{
-  build_one_level_adapted_single_tri_mesh(mesh, refinement);
-
-  const stk::mesh::EntityVector childElems = all_child_elems();
-
-  const int destProc = 2;
-  change_list.set_entity_destination(parent_elem(), destProc);
-
-  test_all_elems_have_no_destination(childElems);
-
-  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
-
-  test_all_entities_have_destination(childElems, destProc);
-}
-
-TEST_F(RebalanceForAdaptivityFixtureForPercept, OneLevelChildMovedWithoutParent)
-{
-  build_one_level_adapted_single_tri_mesh(mesh, refinement);
-
-  const stk::mesh::EntityVector childElems = all_child_elems();
-
-  test_all_elems_have_no_destination(childElems);
-
-  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
-
-  test_all_elems_have_no_destination(childElems);
-}
-
-TEST_F(RebalanceForAdaptivityFixtureForPercept, TwoLevels)
-{
-  build_two_level_adapted_single_tri_mesh(mesh, refinement);
-
-  const stk::mesh::EntityVector allChildElems = all_child_elems();
-  ASSERT_EQ(14u, allChildElems.size());
-
-  const int destProc = 2;
-  change_list.set_entity_destination(parent_elem(), destProc);
-
-  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
-
-  test_all_entities_have_destination(allChildElems, destProc);
-  test_all_family_tree_entities_have_destination(destProc);
-}
-
-TEST_F(RebalanceForAdaptivityFixtureForPercept, TwoLevelsFirstLevelChildInitialDifferentProc)
-{
-  build_two_level_adapted_single_tri_mesh(mesh, refinement);
-
-  const stk::mesh::EntityVector allChildElems = all_child_elems();
-  ASSERT_EQ(14u, allChildElems.size());
-
-  const int destProc = 2;
-  change_list.set_entity_destination(parent_elem(), destProc);
-  change_list.set_entity_destination(allChildElems[2], 5);
-
-  impl::update_rebalance_for_adaptivity(change_list, refinement, mesh);
-
-  test_all_entities_have_destination(allChildElems, destProc);
-  test_all_family_tree_entities_have_destination(destProc);
-}
-
-TEST_F(RebalanceForAdaptivityFixtureForPercept, AccumulateAdaptivityChildWeightsTwoLevelAdaptedTri)
-{
-  build_two_level_adapted_single_tri_mesh(mesh, refinement);
-
-  set_weight_for_elem(parent_elem(), 10.);
-
-  const stk::mesh::EntityVector allChildElems = all_child_elems();
-  ASSERT_EQ(14u, allChildElems.size());
-  const stk::mesh::EntityVector allButLastChildElems(allChildElems.begin(), allChildElems.begin()+13);
-
-  for (auto childElem : allButLastChildElems)
-    set_weight_for_elem(childElem, 1.);
-
-  impl::accumulate_adaptivity_child_weights_to_parents(mesh, refinement, weights_field());
-
-  test_elements_have_weight(allButLastChildElems, 0.);
-  test_element_has_weight(parent_elem(), 23.);
-}
-
-TEST_F(RebalanceForAdaptivityFixtureForPercept, AccumulateAdaptivityChildWeightsUnadaptedElement)
-{
-  build_two_level_adapted_single_tri_mesh(mesh, refinement);
-
-  set_weight_for_elem(parent_elem(), 10.);
-
-  impl::accumulate_adaptivity_child_weights_to_parents(mesh, refinement, weights_field());
-
-  test_element_has_weight(parent_elem(), 10.);
-}
-#endif
 
 TEST(Rebalance, MultipleWeightFields)
 {

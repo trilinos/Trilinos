@@ -14,25 +14,35 @@ class Phase_Support;
 class LevelSetSurfaceInterfaceGeometry : public AnalyticSurfaceInterfaceGeometry {
 
 public:
-  LevelSetSurfaceInterfaceGeometry(const stk::mesh::Part & activePart,
+  LevelSetSurfaceInterfaceGeometry(const int dim,
+    const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);
 
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
+  virtual bool might_have_interior_or_face_intersections() const override { return mySurfaceIdentifiers.size() > 1; }
+  virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
+  virtual void set_do_update_geometry_when_mesh_changes(const bool flag) const override { myDoUpdateFacetsWhenMeshChanges = flag; }
+
+  // Methods that use levelset directly and not facetted levelset surface, because they need the analog, not discrete version
+  virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
 
 private:
+  std::vector<stk::mesh::Selector> get_levelset_element_selectors() const;
   void build_levelset_facets_if_needed(const stk::mesh::BulkData & mesh) const;
   void build_levelset_facets(const stk::mesh::BulkData & mesh) const;
 
   std::vector<LS_Field> myLSFields;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
-  mutable std::vector<Faceted_Surface> myLSSurfaces;
+  mutable std::vector<std::unique_ptr<FacetedSurfaceBase>> myLSSurfaces;
   mutable size_t myLastMeshSyncCount{0};
+  mutable bool myDoUpdateFacetsWhenMeshChanges{true};
 };
 
 }

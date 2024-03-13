@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,15 +12,14 @@
 double compute_mesh_edata(struct refine_edata *edata,        /* desire data for current edge */
                           struct refine_vdata *vdata,        /* data for all vertices */
                           int                  mesh_dims[3], /* dimensions of processor mesh */
-                          struct vtx_data **   comm_graph,   /* communication graph */
-                          int *                node2vtx      /* maps mesh nodes to graph vertices */
+                          struct vtx_data    **comm_graph,   /* communication graph */
+                          int                 *node2vtx      /* maps mesh nodes to graph vertices */
 )
 {
   double desire;     /* edge's interest in flipping */
   float  ewgt;       /* edge weight */
   int    vtx1, vtx2; /* vertices on either side of wire */
   int    off;        /* index into vdata */
-  int    is_an_edge();
 
   vtx1 = node2vtx[edata->node1];
   vtx2 = node2vtx[edata->node2];

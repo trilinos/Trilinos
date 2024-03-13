@@ -239,13 +239,13 @@ template <typename Entry, typename Int>
 void KLU_lsolve
 (
     /* inputs, not modified: */
-    Int n,
-    Int Lip [ ],
-    Int Llen [ ],
-    Unit LU [ ],
-    Int nrhs,
+    const Int n,
+    const Int *Lip,
+    const Int *Llen,
+    Unit *LU,
+    const Int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
-    Entry X [ ]
+    Entry *X
 )
 {
     Entry x [4], lik ;
@@ -327,6 +327,9 @@ void KLU_lsolve
             }
             break ;
 
+        default:
+            throw std::domain_error("More than 4 right-hand sides is not supported.");
+
     }
 }
 
@@ -344,8 +347,8 @@ void KLU_usolve
 (
     /* inputs, not modified: */
     Int n,
-    Int Uip [ ],
-    Int Ulen [ ],
+    const Int Uip [ ],
+    const Int Ulen [ ],
     Unit LU [ ],
     Entry Udiag [ ],
     Int nrhs,
@@ -478,8 +481,8 @@ void KLU_ltsolve
 (
     /* inputs, not modified: */
     Int n,
-    Int Lip [ ],
-    Int Llen [ ],
+    const Int Lip [ ],
+    const Int Llen [ ],
     Unit LU [ ],
     Int nrhs,
 #ifdef COMPLEX
@@ -631,11 +634,11 @@ template <typename Entry, typename Int>
 void KLU_utsolve
 (
     /* inputs, not modified: */
-    Int n,
-    Int Uip [ ],
-    Int Ulen [ ],
+    const Int n,
+    const Int Uip [ ],
+    const Int Ulen [ ],
     Unit LU [ ],
-    Entry Udiag [ ],
+    const Entry Udiag [ ],
     Int nrhs,
 #ifdef COMPLEX
     Int conj_solve,

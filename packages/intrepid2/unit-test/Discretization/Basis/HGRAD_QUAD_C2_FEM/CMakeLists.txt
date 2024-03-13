@@ -18,7 +18,10 @@ LIST(LENGTH Intrepid2_TEST_ETI_VALUETYPE_NAME ETI_VALUETYPE_COUNT)
 MATH(EXPR ETI_VALUETYPE_COUNT "${ETI_VALUETYPE_COUNT}-1")
 
 # Host test
-SET(Intrepid2_TEST_ETI_FILE "test_01")
+SET(Intrepid2_TEST_ETI_FILE "")
+LIST(APPEND Intrepid2_TEST_ETI_FILE 
+  "test_01"
+  "test_01_Serendipity")
 
 SET(Intrepid2_TEST_ETI_DEVICE_NAME "")
 SET(Intrepid2_TEST_ETI_DEVICE "")
@@ -36,7 +39,7 @@ IF(Kokkos_ENABLE_CUDA)
 ENDIF()
 IF(Kokkos_ENABLE_HIP)
   LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
-  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+  LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::HIP,Kokkos::HIPSpace>")
 ENDIF()
 
 LIST(LENGTH Intrepid2_TEST_ETI_DEVICE_NAME ETI_DEVICE_COUNT)

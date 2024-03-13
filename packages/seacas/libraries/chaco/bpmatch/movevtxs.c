@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,9 +13,35 @@
 /* Enact a single move from largest (smallest) set in such a way
    that some small (large) set gets bigger. */
 
-int         N_VTX_CHECKS; /* number of considered moves */
-int         N_VTX_MOVES;  /* number of actual moves */
-static void nextmove(), undo_coupling(), couple();
+int         N_VTX_CHECKS;                         /* number of considered moves */
+int         N_VTX_MOVES;                          /* number of actual moves */
+static void nextmove(int     nvtxs,               /* number of vertices in graph */
+                     int     nsets,               /* how many sets am I dividing into? */
+                     double *vals[][MAXSETS],     /* values in sorted lists */
+                     int    *indices[][MAXSETS],  /* indices that define order in sorted lists */
+                     int     startvtx[][MAXSETS], /* index values corresponding to splitter */
+                     double *dist,                /* distances defining splitter */
+                     int    *sets,                /* set assignment for each vertex */
+                     int     toobig,              /* is bad set too big or too small? */
+                     int    *active,              /* flags sets trying to change size */
+                     int    *next_vtx,            /* vertex selected to move next */
+                     int    *next_to,             /* set vertex should be moved to */
+                     double *next_delta           /* size of change in distances */
+);
+
+static void undo_coupling(struct vtx_data **graph, /* data structure with vertex weights */
+                          int              *sets,  /* sets each vertex is in */
+                          int               nsets, /* number of sets being divided into */
+                          int from, int to,        /* set final vertex moved from and to */
+                          int     toobig,          /* are we shrinking or enlarging a set? */
+                          int     badset,          /* the set number being shrunk or enlarged */
+                          double *size             /* sizes of the different sets */
+);
+
+static void couple(int nsets,        /* number of sets being divided into */
+                   int from, int to, /* sets to be coupled */
+                   int vtx           /* vertex that they share */
+);
 
 void movevtxs(struct vtx_data **graph,               /* data structure with vertex weights */
               int               nvtxs,               /* number of vertices in graph */

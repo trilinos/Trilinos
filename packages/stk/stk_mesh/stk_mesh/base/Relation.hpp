@@ -271,17 +271,6 @@ inline
 RelationIdentifier Relation::relation_ordinal() const
 { return static_cast<unsigned>( m_raw_relation.value & id_mask ); }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after October 2022
-//----------------------------------------------------------------------
-/** \brief  Query which mesh entities have a relation
- *          to all of the input mesh entities.
- */
-STK_DEPRECATED void get_entities_through_relations(
-  const BulkData& mesh,
-  const std::vector<Entity> & entities ,
-        std::vector<Entity> & entities_related );
-#endif
-
 /** \brief  Fill a vector with mesh entities of the given rank,
  *          that are related (connected) to all of
  *          the input mesh entities.

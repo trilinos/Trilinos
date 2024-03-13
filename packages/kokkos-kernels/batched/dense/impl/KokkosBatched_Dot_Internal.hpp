@@ -19,6 +19,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBlas1_team_dot.hpp"
 
 namespace KokkosBatched {
 
@@ -162,6 +163,7 @@ struct TeamVectorDotInternal {
 ///
 /// Serial Impl
 /// ===========
+
 template <>
 struct SerialDot<Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
@@ -175,28 +177,44 @@ struct SerialDot<Trans::Transpose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
+          "Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(1) != dot.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Second dimension of X and alpha do not match: "
           "X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Second dimension of X and alpha do not match: "
+          "X: "
+          "%d x %d, dot: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#endif
       return 1;
     }
 #endif
@@ -221,27 +239,42 @@ struct SerialDot<Trans::NoTranspose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
+          "Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(0) != dot.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
+          "%d x %d, dot: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#endif
       return 1;
     }
 #endif
@@ -256,6 +289,7 @@ struct SerialDot<Trans::NoTranspose> {
 ///
 /// Team Impl
 /// ===============
+
 template <typename MemberType>
 struct TeamDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
@@ -270,31 +304,55 @@ struct TeamDot<MemberType, Trans::Transpose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
+          "Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(1) != dot.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Second dimension of X and alpha do not match: "
           "X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Second dimension of X and alpha do not match: "
+          "X: "
+          "%d x %d, dot: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#endif
       return 1;
     }
 #endif
+
+    if (X.extent(1) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, Kokkos::ALL, 0),
+          Kokkos::subview(Y, Kokkos::ALL, 0));
+      return 0;
+    }
+
     return TeamDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(
@@ -317,30 +375,53 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
+          "Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(0) != dot.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
+          "%d x %d, dot: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#endif
       return 1;
     }
 #endif
+
+    if (X.extent(0) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, 0, Kokkos::ALL),
+          Kokkos::subview(Y, 0, Kokkos::ALL));
+      return 0;
+    }
+
     return TeamDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(
@@ -352,6 +433,7 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
 ///
 /// TeamVector Impl
 /// ===============
+
 template <typename MemberType>
 struct TeamVectorDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
@@ -366,31 +448,55 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
+          "Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(1) != dot.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Second dimension of X and alpha do not match: "
           "X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Second dimension of X and alpha do not match: "
+          "X: "
+          "%d x %d, dot: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#endif
       return 1;
     }
 #endif
+
+    if (X.extent(1) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, Kokkos::ALL, 0),
+          Kokkos::subview(Y, Kokkos::ALL, 0));
+      return 0;
+    }
+
     return TeamVectorDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(
@@ -413,30 +519,53 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
           (int)Y.extent(1));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
+          "Y: %d x %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
+          (int)Y.extent(1));
+#endif
       return 1;
     }
     if (X.extent(0) != dot.extent(0)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#else
+      Kokkos::printf(
+          "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
+          "%d x %d, dot: %d\n",
+          (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
+#endif
       return 1;
     }
 #endif
+
+    if (X.extent(0) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, 0, Kokkos::ALL),
+          Kokkos::subview(Y, 0, Kokkos::ALL));
+      return 0;
+    }
+
     return TeamVectorDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(

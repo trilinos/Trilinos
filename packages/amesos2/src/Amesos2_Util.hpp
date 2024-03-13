@@ -89,9 +89,6 @@ namespace Amesos2 {
     using Teuchos::RCP;
     using Teuchos::ArrayView;
 
-    using Meta::is_same;
-    using Meta::if_then_else;
-
     /**
      * \brief Gets a Tpetra::Map described by the EDistribution.
      *
@@ -336,9 +333,9 @@ namespace Amesos2 {
       {
         typedef typename M::global_size_t mat_gs_t;
         typedef typename KV_GS::value_type view_gs_t;
-        if_then_else<is_same<view_gs_t,mat_gs_t>::value,
+        std::conditional_t<std::is_same_v<view_gs_t,mat_gs_t>,
           same_gs_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op>,
-          diff_gs_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op> >::type::do_get(mat, nzvals, indices,
+          diff_gs_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op> >::do_get(mat, nzvals, indices,
                                                                                 pointers, nnz, map,
                                                                                 distribution, ordering);
       }
@@ -367,9 +364,9 @@ namespace Amesos2 {
 
         typedef typename KV_GO::value_type view_go_t;
         typedef typename KV_GS::value_type view_gs_t;
-        if_then_else<is_same<view_gs_t,mat_gs_t>::value,
+        std::conditional_t<std::is_same_v<view_gs_t,mat_gs_t>,
           same_gs_helper_kokkos_view<M, KV_S, KV_TMP, KV_GS, Op>,
-          diff_gs_helper_kokkos_view<M, KV_S, KV_TMP, KV_GS, Op> >::type::do_get(mat, nzvals, indices_tmp,
+          diff_gs_helper_kokkos_view<M, KV_S, KV_TMP, KV_GS, Op> >::do_get(mat, nzvals, indices_tmp,
                                                                                  pointers, nnz, map,
                                                                                  distribution, ordering);
         for (i = 0; i < size; ++i){
@@ -395,9 +392,9 @@ namespace Amesos2 {
       {
         typedef typename M::global_ordinal_t mat_go_t;
         typedef typename KV_GO::value_type view_go_t;
-        if_then_else<is_same<view_go_t,mat_go_t>::value,
+        std::conditional_t<std::is_same_v<view_go_t, mat_go_t>,
           same_go_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op>,
-          diff_go_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op> >::type::do_get(mat, nzvals, indices,
+          diff_go_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op> >::do_get(mat, nzvals, indices,
                                                                                 pointers, nnz, map,
                                                                                 distribution, ordering);
       }
@@ -426,9 +423,9 @@ namespace Amesos2 {
 
         typedef typename KV_S::value_type view_scalar_t;
         typedef typename KV_GO::value_type view_go_t;
-        if_then_else<is_same<view_go_t,mat_go_t>::value,
+        std::conditional_t<std::is_same_v<view_go_t, mat_go_t>,
           same_go_helper_kokkos_view<M, KV_TMP, KV_GO, KV_GS, Op>,
-          diff_go_helper_kokkos_view<M, KV_TMP, KV_GO, KV_GS, Op> >::type::do_get(mat, nzvals_tmp, indices,
+          diff_go_helper_kokkos_view<M, KV_TMP, KV_GO, KV_GS, Op> >::do_get(mat, nzvals_tmp, indices,
                                                                                   pointers, nnz, map,
                                                                                   distribution, ordering);
 
@@ -504,9 +501,9 @@ namespace Amesos2 {
         typedef typename Matrix::scalar_t mat_scalar;
         typedef typename KV_S::value_type view_scalar_t;
 
-        if_then_else<is_same<mat_scalar,view_scalar_t>::value,
+        std::conditional_t<std::is_same_v<mat_scalar,view_scalar_t>,
           same_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op>,
-          diff_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat,
+          diff_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op> >::do_get(mat,
                                                                                      nzvals, indices,
                                                                                      pointers, nnz,
                                                                                      map,

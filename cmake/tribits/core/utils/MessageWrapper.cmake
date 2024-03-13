@@ -39,7 +39,7 @@
 
 include_guard()
 
-include(GlobalSet)
+include("${CMAKE_CURRENT_LIST_DIR}/GlobalSet.cmake")
 
 # @FUNCTION: message_wrapper()
 #

@@ -177,8 +177,7 @@ void kk_diagonally_dominant_sparseMatrix_generate(
           entriesInRow.insert(pos);
           colInd[k] = pos;
           values[k] = 100.0 * rand() / RAND_MAX - 50.0;
-          total_values +=
-              Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
+          total_values += Kokkos::ArithTraits<ScalarType>::abs(values[k]);
           break;
         }
       }
@@ -1180,33 +1179,16 @@ crsGraph_t read_kokkos_crst_graph(const char *filename_) {
   row_map_view_t rowmap_view("rowmap_view", nv + 1);
   cols_view_t columns_view("colsmap_view", nnzA);
 
-  {
-    typename row_map_view_t::HostMirror hr =
-        Kokkos::create_mirror_view(rowmap_view);
-    typename cols_view_t::HostMirror hc =
-        Kokkos::create_mirror_view(columns_view);
+  typename row_map_view_t::HostMirror hr(xadj, nv + 1);
+  typename cols_view_t::HostMirror hc(adj, nnzA);
+  Kokkos::deep_copy(rowmap_view, hr);
+  Kokkos::deep_copy(columns_view, hc);
 
-    for (lno_t i = 0; i <= nv; ++i) {
-      hr(i) = xadj[i];
-    }
-
-    for (size_type i = 0; i < nnzA; ++i) {
-      hc(i) = adj[i];
-    }
-    Kokkos::deep_copy(rowmap_view, hr);
-    Kokkos::deep_copy(columns_view, hc);
-  }
-
-  lno_t ncols = 0;
-  KokkosKernels::Impl::kk_view_reduce_max<cols_view_t,
-                                          typename crsGraph_t::execution_space>(
-      nnzA, columns_view, ncols);
-  ncols += 1;
-
-  crsGraph_t static_graph(columns_view, rowmap_view, ncols);
   delete[] xadj;
   delete[] adj;
   delete[] values;
+
+  crsGraph_t static_graph(columns_view, rowmap_view);
   return static_graph;
 }
 

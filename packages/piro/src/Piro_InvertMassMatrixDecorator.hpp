@@ -160,9 +160,6 @@ class InvertMassMatrixDecorator
    mutable bool calcMassMatrix; //Internal flag
 };
 }
-/** \class Piro::RythmosSolver
- *  \ingroup Piro_Thyra_solver_grp
- * */
 
 #include "Piro_InvertMassMatrixDecorator_Def.hpp"
 

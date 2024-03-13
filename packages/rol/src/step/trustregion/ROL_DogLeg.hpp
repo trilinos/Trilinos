@@ -48,7 +48,7 @@
     \brief Provides interface for dog leg trust-region subproblem solver.
 */
 
-#include "ROL_TrustRegion.hpp"
+#include "ROL_CauchyPoint.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL { 

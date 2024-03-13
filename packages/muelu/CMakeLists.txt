@@ -176,16 +176,6 @@ ELSE()
   SET(MUELU_VALGRIND_TESTING NO)
 ENDIF()
 
-# Profiling
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
-  HAVE_${PACKAGE_NAME_UC}_PROFILING
-  "Enable detailed timing and memory profiling of MueLu."
-  OFF)
-
-IF (${PACKAGE_NAME}_ENABLE_PROFILING)
-  MESSAGE(STATUS "Enabling MueLu profiling code")
-ENDIF()
-
 # Profiling (expert users only. There is no TPL for Google Perftools)
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
   HAVE_${PACKAGE_NAME_UC}_GOOGLE_PERFTOOLS
@@ -434,7 +424,6 @@ ENDIF()
 if(TPL_ENABLE_MATLAB)
   ADD_SUBDIRECTORY(matlab)
 ENDIF()
-ADD_SUBDIRECTORY(src/Interface)
 ADD_SUBDIRECTORY(adapters)
 if(TPL_ENABLE_MATLAB)
   ADD_SUBDIRECTORY(matlab/bin)
@@ -451,12 +440,6 @@ ENDIF()
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 ADD_SUBDIRECTORY(research)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
-
-#
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 #
 # D) Do standard postprocessing

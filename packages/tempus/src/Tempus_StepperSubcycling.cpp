@@ -14,14 +14,13 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperSubcycling)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperSubcycling)
 
-  // Nonmember constructor
-  template Teuchos::RCP<StepperSubcycling<double> >
-  createStepperSubcycling(
+// Nonmember constructor
+template Teuchos::RCP<StepperSubcycling<double> > createStepperSubcycling(
     const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl);
 
-}
+}  // namespace Tempus
 
 #endif

@@ -89,8 +89,6 @@ namespace {
   using Amesos2::MultiVecAdapter;
   using Amesos2::createMultiVecAdapter;
 
-  using Amesos2::Meta::is_same;
-
   using Amesos2::Util::getDistributionMap;
   using Amesos2::Util::to_teuchos_comm;
   using Amesos2::Util::get_1d_copy_helper;
@@ -131,7 +129,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos2::is_same<> )
+     * - Correct typedefs
      */
     typedef Epetra_MultiVector MV;
     typedef MultiVecAdapter<MV> ADAPT;
@@ -147,13 +145,13 @@ namespace {
     RCP<ADAPT> adapter = createMultiVecAdapter(mv);
 
     // The following should all pass at compile time
-    TEST_ASSERT( (is_same<double, ADAPT::scalar_t>::value) );
-    TEST_ASSERT( (is_same<int,    ADAPT::local_ordinal_t>::value) );
+    TEST_ASSERT( (std::is_same_v<double, ADAPT::scalar_t>) );
+    TEST_ASSERT( (std::is_same_v<int,    ADAPT::local_ordinal_t>) );
     // mfh 23 Apr 2019: I have removed the requirement that
     // ADAPT::global_ordinal_t == int.
-    TEST_ASSERT( (is_same<Node,   ADAPT::node_t>::value) );
-    TEST_ASSERT( (is_same<size_t, ADAPT::global_size_t>::value) );
-    TEST_ASSERT( (is_same<MV,     ADAPT::multivec_t>::value) );
+    TEST_ASSERT( (std::is_same_v<Node,   ADAPT::node_t>) );
+    TEST_ASSERT( (std::is_same_v<size_t, ADAPT::global_size_t>) );
+    TEST_ASSERT( (std::is_same_v<MV,     ADAPT::multivec_t>) );
 
     delete comm;
   }

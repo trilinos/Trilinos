@@ -93,6 +93,7 @@ private:
   Real              scale1_;     ///< Scale for inexact gradient computation.
   Real scale_, omega_, force_, forceFactor_;
   int updateIter_;
+  Real gtol_;
 
   // VERBOSITY SETTING
   int verbosity_;    ///< Print additional information to screen if > 0.
@@ -117,7 +118,7 @@ public:
 
   void writeName( std::ostream& os ) const override;
   
-  void writeOutput( std::ostream& os, bool print_header = false ) const override;
+  void writeOutput( std::ostream& os, const bool print_header = false ) const override;
 
 private:
 
@@ -138,7 +139,7 @@ private:
       @param[in]      x          is the current optimization variable.
       @param[in]      obj        is the objective function.
   */
-  void computeGradient(const Vector<Real> &x, Objective<Real> &obj);
+  void computeGradient(const Vector<Real> &x, Objective<Real> &obj, bool accept);
 
 }; // class ROL::TrustRegionAlgorithm
 } // namespace TypeU

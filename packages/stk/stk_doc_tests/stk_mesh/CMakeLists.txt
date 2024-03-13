@@ -32,20 +32,32 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util/stk_util)
-
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_mesh_doc_tests
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_mesh_doc_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS "--gtest_filter=StkMeshHowTo.use*"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX
-    )
+  )
+else()
+  add_executable(stk_mesh_doc_tests ${SOURCES})
+  target_link_libraries(stk_mesh_doc_tests stk_unit_test_utils)
+  if(${PROJECT_NAME}_ENABLE_STKIO)
+    target_link_libraries(stk_mesh_doc_tests stk_io)
+  endif()
+  target_link_libraries(stk_mesh_doc_tests stk_mesh_fixtures)
+  target_link_libraries(stk_mesh_doc_tests stk_mesh_base)
+  target_link_libraries(stk_mesh_doc_tests stk_unit_main)
+
+  add_test("stk_mesh_doc_tests" sh -c "mpiexec --np 1 ${CMAKE_CURRENT_BINARY_DIR}/stk_mesh_doc_tests --gtest_filter=StkMeshHowTo.iterate*")
+endif()
+
+target_include_directories(stk_mesh_doc_tests PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>
+)
 

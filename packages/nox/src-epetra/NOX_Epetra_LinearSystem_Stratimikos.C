@@ -403,7 +403,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
        << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
        << "Please set the \"Write Linear System\" parameter to false."
        << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
     EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix,
                        "test matrix", "Jacobian XXX");
@@ -632,7 +632,7 @@ throwError(const std::string& functionName, const std::string& errorMsg) const
     utils.out() << "NOX::Epetra::LinearSystemStratimikos::" << functionName
      << " - " << errorMsg << std::endl;
   }
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 //***********************************************************************

@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -109,7 +108,7 @@ namespace Intrepid2
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const override {
-      return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, than it needs orientations
+      return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, then it needs orientations
     }
     
     using BasisBase::getValues;

@@ -14,6 +14,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <string>
 
+#include <stk_math/StkVector.hpp>
 namespace krino {
 
 class InterfaceID;
@@ -26,9 +27,9 @@ class ElementCutter
 public:
   virtual ~ElementCutter() {}
   virtual std::vector<InterfaceID> get_sorted_cutting_interfaces() const = 0;
-  virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<Vector3d> & elemNodesCoords,
+  virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const = 0;
-  virtual void fill_tetrahedron_face_interior_intersections(const std::array<Vector3d,3> & faceNodes,
+  virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
     const InterfaceID & interface1,
     const InterfaceID & interface2,
     const ElementIntersectionPointFilter & intersectionPointFilter,
@@ -36,9 +37,8 @@ public:
   virtual bool might_have_interior_or_face_intersections() const = 0;
   virtual void fill_interior_intersections(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const = 0;
   virtual std::string visualize(const stk::mesh::BulkData & mesh) const = 0;
-  virtual bool have_crossing(const InterfaceID interface, const Segment3d & edge) const = 0;
-  virtual double interface_crossing_position(const InterfaceID interface, const Segment3d & edge) const = 0;
-  virtual int sign_at_position(const InterfaceID interface, const Vector3d & paramCoords) const = 0;
+  virtual int interface_sign_for_uncrossed_element(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodesCoords) const = 0;
+  virtual std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const = 0;
   virtual int get_starting_phase_for_cutting_surfaces() const = 0;
 };
 
@@ -49,8 +49,12 @@ public:
   static bool element_with_nodal_distance_intersects_interval(const std::vector<double> & elemNodeDist, const std::array<double,2> & loAndHi);
 
   virtual ~InterfaceGeometry() {}
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
-  virtual void prepare_to_process_elements(const stk::mesh::BulkData & mesh,
+  virtual bool might_have_interior_or_face_intersections() const = 0;
+  virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
 
@@ -84,6 +88,8 @@ public:
     const std::function<bool(const std::array<unsigned,4> &)> & intersectingPlanesDiagonalPicker) const = 0;
 
   virtual PhaseTag get_starting_phase(const ElementCutter * cutter) const = 0;
+
+  virtual void set_do_update_geometry_when_mesh_changes(const bool flag) const {}
 };
 
 inline bool InterfaceGeometry::element_with_nodal_distance_intersects_interval(const std::vector<double> & elemNodeDist, const std::array<double,2> & loAndHi)

@@ -144,7 +144,7 @@ lclDot (const RV& dotsOut,
 #endif // HAVE_TPETRA_DEBUG
 
   if (lclNumRows == 0) {
-    const dot_type zero = Kokkos::Details::ArithTraits<dot_type>::zero ();
+    const dot_type zero = Kokkos::ArithTraits<dot_type>::zero ();
     // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy (theDots, zero);
   }

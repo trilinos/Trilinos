@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
       std::cout << "numGlobalBlocks = " << NumGlobalElements
         << " cannot be < number of processors = " << NumProc << std::endl;
       std::cout << "Test failed!" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Create the interface between NOX and the application
@@ -331,6 +331,8 @@ int main(int argc, char *argv[])
     // 3. Nonlinear solve iterations (10)
     if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 10)
       status = 3;
+
+    success = status==0;
 
     // Summarize test results
     if (status == 0)

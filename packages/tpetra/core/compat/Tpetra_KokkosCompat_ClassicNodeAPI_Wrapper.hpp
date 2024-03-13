@@ -2,6 +2,7 @@
 #define TPETRA_KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
 #include "Kokkos_Core.hpp"
+#include "TpetraCore_config.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 //
@@ -43,6 +44,18 @@ public:
   /// release.  This Node type is safe to use.
   static constexpr bool classic = false;
 
+  //! Whether the ExecutionSpace is Kokkos::Serial.
+#ifdef KOKKOS_ENABLE_SERIAL
+  static constexpr bool is_serial = std::is_same_v<ExecutionSpace, Kokkos::Serial>;
+#else
+  static constexpr bool is_serial = false;
+#endif
+
+  static constexpr bool is_cpu = std::is_same_v<typename ExecutionSpace::memory_space, Kokkos::HostSpace>;
+
+  //! Whether the ExecutionSpace is GPU-like (its default memory space is not HostSpace)
+  static constexpr bool is_gpu = !is_cpu;
+
   KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) = delete;
   KokkosDeviceWrapperNode () = delete;
 
@@ -51,15 +64,27 @@ public:
 };
 
 #ifdef KOKKOS_ENABLE_SYCL
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
   typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
+#else
+  typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
+#endif
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
-  typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::HIP, ::Kokkos::Experimental::HIPSpace> KokkosHIPWrapperNode;
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+  typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPManagedSpace> KokkosHIPWrapperNode;
+#else
+  typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPSpace> KokkosHIPWrapperNode;
+#endif
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+  typedef KokkosDeviceWrapperNode<::Kokkos::Cuda,::Kokkos::CudaUVMSpace> KokkosCudaWrapperNode;
+#else
   typedef KokkosDeviceWrapperNode<::Kokkos::Cuda> KokkosCudaWrapperNode;
+#endif
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     if (arg == "-o") {
       output_file = argv[++ai];
     }
-    if (arg == "-i") {
+    else if (arg == "-i") {
       // Read from cin and echo each line to cout All results will
       // also be stored in Aprepro::parsing_results() stream if needed
       // at end of file.
@@ -62,6 +62,12 @@ int main(int argc, char *argv[])
       // Aprepro::parsing_results()
       std::fstream infile(argv[ai]);
       if (!infile.good()) {
+        if (!aprepro.ap_options.include_path.empty() && argv[ai][0] != '/') {
+          std::string filename = aprepro.ap_options.include_path + "/" + argv[ai];
+          infile.open(filename, std::fstream::in);
+        }
+      }
+      if (!infile.good()) {
         std::cerr << "APREPRO: Could not open file: " << argv[ai] << '\n';
         return 0;
       }
@@ -83,7 +89,7 @@ int main(int argc, char *argv[])
   if (readfile) {
     std::cerr << "Aprepro: There were " << aprepro.get_error_count()
               << " errors detected during parsing.\n";
-    return 0;
+    return aprepro.get_error_count() == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
   }
 
   // Read and parse a string's worth of data at a time.
@@ -125,4 +131,5 @@ int main(int argc, char *argv[])
   }
   std::cerr << "Aprepro: There were " << aprepro.get_error_count()
             << " errors detected during parsing.\n";
+  return aprepro.get_error_count() == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

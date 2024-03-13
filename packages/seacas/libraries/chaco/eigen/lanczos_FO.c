@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -139,21 +139,6 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
   double           Anorm;                                /* Norm estimate of the Laplacian matrix */
   int              left, right;                          /* ranges on the search for ritzvals */
   int              memory_ok; /* TRUE as long as don't run out of memory */
-
-  double *mkvec(int nl, int nh);     /* allocates space for a vector */
-  double *mkvec_ret(int nl, int nh); /* mkvec(int nl, int nh) which returns error code */
-  double  dot(double *vec1, int beg, int end, double *vec2); /* standard dot product routine */
-  struct orthlink *makeorthlnk();                          /* make space for entry in orthog. set */
-  double           ch_norm(double *vec, int beg, int end); /* vector norm */
-  double Tevec(double *, double *, int, double, double *); /* calc evec of T by linear recurrence */
-  struct scanlink *mkscanlist();                           /* make scan list for min ritz vecs */
-  double           lanc_seconds(void);                     /* current clock timer */
-  int              symmlq(), get_ritzvals();
-  void             setvec(), vecscale(),
-      update(double *vec1, int beg, int end, double *vec2, double fac, double *vec3), vecran(),
-      strout(char *msg);
-  void splarax(), scanmin(), scanmax(), frvec(double *v, int nl), orthogonalize();
-  void orthog1(), orthogvec(), bail(), warnings(), mkeigvecs();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering lanczos_FO>\n");

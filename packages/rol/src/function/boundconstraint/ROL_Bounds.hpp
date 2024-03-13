@@ -69,6 +69,15 @@ private:
   Real min_diff_;
 
   Elementwise::ReductionMin<Real> minimum_;
+  Elementwise::ReductionMax<Real> maximum_;
+
+  class isGreater : public Elementwise::BinaryFunction<Real> {
+  public:
+    isGreater() {}
+    Real apply(const Real &x, const Real &y) const {
+      return (x > y) ? static_cast<Real>(1) : static_cast<Real>(0);
+    }
+  } isGreater_;
 
   class Active : public Elementwise::BinaryFunction<Real> {
     public:

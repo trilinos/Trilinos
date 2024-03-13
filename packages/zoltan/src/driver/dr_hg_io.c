@@ -214,7 +214,7 @@ int read_hypergraph_file(
 
 
 
-  MPI_Bcast(&file_error, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&file_error, 1, MPI_INT, 0, zoltan_get_global_comm());
 
   if (file_error) {
     sprintf(cmesg,
@@ -354,7 +354,7 @@ int read_hypergraph_file(
    }
  }
 
-  MPI_Bcast(&base, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&base, 1, MPI_INT, 0, zoltan_get_global_comm());
 
   if (distributed_pins){
     gnhedges = nhedges;
@@ -404,14 +404,14 @@ int read_hypergraph_file(
     /* Distribute hypergraph graph */
     /* Use hypergraph vertex information and chaco edge information. */
 
-    if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs,
+    if (!chaco_dist_graph(zoltan_get_global_comm(), pio_info, 0, &gnvtxs, &nvtxs,
 	     &ch_start, &ch_adj, &vwgt_dim, &vwgts, &ch_ewgt_dim, &ch_ewgts,
 	     &ch_ndim, &ch_x, &ch_y, &ch_z, &ch_assignments)) {
       Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
       return 0;
     }
 
-    if (!dist_hyperedges(MPI_COMM_WORLD, pio_info, 0, base, gnvtxs, &gnhedges,
+    if (!dist_hyperedges(zoltan_get_global_comm(), pio_info, 0, base, gnvtxs, &gnhedges,
 		       &nhedges, &hgid, &hindex, &hvertex, &hvertex_proc,
 		       &hewgt_dim, &hewgts, ch_assignments)) {
       Gen_Error(0, "fatal: Error returned from dist_hyperedges");
@@ -477,7 +477,7 @@ int read_hypergraph_file(
    * Each element has one set of coordinates (i.e., node) if a coords file
    * was provided; zero otherwise.
    */
-  MPI_Bcast( &ch_no_geom, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ch_no_geom, 1, MPI_INT, 0, zoltan_get_global_comm());
   if (ch_no_geom)
     mesh->eb_nnodes[0] = 0;
   else
@@ -630,7 +630,7 @@ int read_mtxplus_file(
       }
     }
   
-    MPI_Bcast(&fsize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&fsize, 1, MPI_INT, 0, zoltan_get_global_comm());
   
     if (fsize == 0) {
       sprintf(cmesg, "fatal:  Could not open/read hypergraph file %s", filename);
@@ -642,7 +642,7 @@ int read_mtxplus_file(
       filebuf = (char *)malloc(fsize);
     }
   
-    MPI_Bcast(filebuf, fsize, MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(filebuf, fsize, MPI_BYTE, 0, zoltan_get_global_comm());
   }
   else{
     /* ERROR - we don't handle the zdrive.inp file request */
@@ -658,7 +658,7 @@ int read_mtxplus_file(
 
   free(filebuf);
   
-  MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, zoltan_get_global_comm());
   
   if (status != Num_Proc){
     Gen_Error(0, "fatal: invalid mtxp file");  /* TODO better message */
@@ -699,7 +699,7 @@ int read_mtxplus_file(
     mesh->format = ZOLTAN_COMPRESSED_VERTEX;
   }
 
-  MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, zoltan_get_global_comm());
 
   if (status != Num_Proc){
     return 0;
@@ -2189,7 +2189,7 @@ static void debug_elements(int Proc, int Num_Proc, int num, ELEM_INFO_PTR el)
       printf("\n");
       fflush(stdout);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
   }
 }
 static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, ZOLTAN_ID_TYPE *vtx, int *vtx_proc, ZOLTAN_ID_TYPE *egid)
@@ -2209,7 +2209,7 @@ static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, ZOLTAN_ID
       }
       fflush(stdout);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
   }
 }
 static void debug_pins(int Proc, int Num_Proc,  
@@ -2221,7 +2221,7 @@ static void debug_pins(int Proc, int Num_Proc,
 {
 int p,i,j,k;
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
   for (p=0; p < Num_Proc; p++){
     if (p == Proc){
       printf("Process: %d\n",p);
@@ -2252,8 +2252,8 @@ int p,i,j,k;
       printf("\n");
       fflush(stdout);
     } 
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
   }
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
 }
 #endif

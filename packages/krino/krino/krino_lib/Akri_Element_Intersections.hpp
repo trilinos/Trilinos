@@ -9,7 +9,7 @@
 #ifndef KRINO_INCLUDE_AKRI_ELEMENT_INTERSECTIONS_H_
 #define KRINO_INCLUDE_AKRI_ELEMENT_INTERSECTIONS_H_
 
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 #include <stk_topology/topology.hpp>
 #include <vector>
 
@@ -19,11 +19,11 @@ class Element_Cutter;
 
 struct ElementIntersection
 {
-  ElementIntersection(const Vector3d & coords, const std::vector<int> & domains)
+  ElementIntersection(const stk::math::Vector3d & coords, const std::vector<int> & domains)
   : parametricCoords(coords),
     sortedDomains(domains) {}
 
-  Vector3d parametricCoords;
+  stk::math::Vector3d parametricCoords;
   std::vector<int> sortedDomains;
 };
 

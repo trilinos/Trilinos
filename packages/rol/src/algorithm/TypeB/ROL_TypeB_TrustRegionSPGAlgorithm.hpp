@@ -116,6 +116,7 @@ private:
   Real force_;
   int updateIter_;
   Real forceFactor_;
+  Real gtol_;
 
   mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
@@ -139,7 +140,7 @@ public:
 
   void writeName( std::ostream& os ) const override;
 
-  void writeOutput( std::ostream& os, bool write_header = false ) const override;
+  void writeOutput( std::ostream& os, const bool write_header = false ) const override;
 
 private:
   void initialize(Vector<Real>          &x,
@@ -158,11 +159,14 @@ private:
                     const Vector<Real> &xold,
                     Objective<Real> &obj);
 
-  Real computeGradient(const Vector<Real> &x,
+  void computeGradient(const Vector<Real> &x,
                        Vector<Real> &g,
                        Vector<Real> &pwa,
                        Real del,
                        Objective<Real> &obj,
+                       bool accept,
+                       Real &gtol,
+                       Real &gnorm,
                        std::ostream &outStream = std::cout) const;
 
   // Compute the projected step s = P(x + alpha*w) - x

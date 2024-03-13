@@ -35,6 +35,7 @@
 #ifndef STK_MESH_BASE_FIELDBLAS_HPP
 #define STK_MESH_BASE_FIELDBLAS_HPP
 
+#include <stk_util/stk_config.h>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -42,6 +43,8 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Ngp.hpp>
+#include <stk_mesh/base/GetNgpField.hpp>
 
 #include <complex>
 #include <string>
@@ -181,15 +184,15 @@ struct FortranBLAS
         }
     }
 
-    inline static void fill(int kmax, const Scalar alpha, Scalar x[], const int inc=1)
+    inline static void fill(int numVals, Scalar alpha, Scalar x[], int stride = 1)
     {
-        auto ke = kmax*inc;
-        if (alpha == Scalar(0) ) {
-        	std::memset(x,0,ke*sizeof(Scalar));
-        } else {
-          for(int k = 0; k < ke ; k += inc) {
-              x[k] = alpha;
-          }
+        if (stride == 1) {
+            std::fill(x, x+numVals, alpha);
+        }
+        else {
+            for (Scalar * end = x+(numVals*stride); x < end; x+=stride) {
+                *x = alpha;
+            }
         }
     }
 
@@ -299,11 +302,10 @@ struct FortranBLAS<std::complex<Scalar> >
         }
     }
 
-    inline static void fill(int kmax, const std::complex<Scalar> alpha, std::complex<Scalar> x[], const int inc=1)
+    inline static void fill(int numVals, std::complex<Scalar> alpha, std::complex<Scalar> x[], int stride=1)
     {
-        auto ke = kmax*inc;
-        for(int k = 0; k < ke ; k += inc) {
-            x[k] = alpha;
+        for (std::complex<Scalar> * end = x+(numVals*stride); x < end; x+=stride) {
+            *x = alpha;
         }
     }
 
@@ -371,7 +373,7 @@ struct FortranBLAS<double>
 
     static void scal(int kmax, const double alpha, double x[]);
 
-    static void fill(int kmax, const double alpha, double x[], const int inc=1);
+    static void fill(int kmax, double alpha, double x[], int inc=1);
 
     static void swap(int kmax, double x[], double y[]);
 
@@ -399,7 +401,7 @@ struct FortranBLAS<float>
 
     static void scal(int kmax, const float alpha, float x[]);
 
-    static void fill(int kmax, const float alpha, float x[], const int inc=1);
+    static void fill(int kmax, float alpha, float x[], int inc=1);
 
     static void swap(int kmax, float x[], float y[]);
 
@@ -553,17 +555,40 @@ void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const
 {
   BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-  int orig_thread_count = fix_omp_threads();
+#ifdef STK_USE_DEVICE_MESH
+  const bool alreadySyncd_or_HostNewest = !xField.need_sync_to_host();
+
+  yField.clear_sync_state();
+
+  if (alreadySyncd_or_HostNewest) {
+#endif
+
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp parallel for schedule(static)
 #endif
-  for (size_t i = 0; i < buckets.size(); ++i) {
-      Bucket & b = *buckets[i];
-      BucketSpan<Scalar> x(xField, b);
-      BucketSpan<Scalar> y(yField, b);
-      y = x;
+    for (size_t i = 0; i < buckets.size(); ++i) {
+        Bucket & b = *buckets[i];
+        BucketSpan<Scalar> x(xField, b);
+        BucketSpan<Scalar> y(yField, b);
+        y = x;
+    }
+    unfix_omp_threads(orig_thread_count);
+    yField.clear_sync_state();
+    yField.modify_on_host();
+#ifdef STK_USE_DEVICE_MESH
   }
-  unfix_omp_threads(orig_thread_count);
+  else { // copy on device
+    auto ngpX = stk::mesh::get_updated_ngp_field<Scalar>(xField);
+    auto ngpY = stk::mesh::get_updated_ngp_field<Scalar>(yField);
+    auto ngpXview = impl::get_device_data(ngpX);
+    auto ngpYview = impl::get_device_data(ngpY);
+
+    Kokkos::deep_copy(ngpYview, ngpXview);
+    yField.modify_on_device();
+  }
+
+#endif
 }
 
 inline

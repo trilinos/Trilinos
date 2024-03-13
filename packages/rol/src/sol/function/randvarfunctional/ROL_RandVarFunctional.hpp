@@ -45,12 +45,13 @@
 #define ROL_RANDVARFUNCTIONAL_HPP
 
 #include "ROL_Vector.hpp"
+#include "ROL_Objective.hpp"
 #include "ROL_Ptr.hpp"
 #include "ROL_SampleGenerator.hpp"
 #include "ROL_ScalarController.hpp"
 #include "ROL_VectorController.hpp"
 
-/** @ingroup stochastic_group 
+/** @ingroup stochastic_group
     \class ROL::RandVarFunctional
     \brief Provides the interface to implement any functional that maps a
            random variable to a (extended) real number.

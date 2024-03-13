@@ -418,15 +418,15 @@ class KokkosKernelsHandle {
     return this->my_exec_space;
   }
 
-  /**
-   * \brief Returns the suggested team work size. If set with
-   * set_team_work_size, it will return the set value. Otherwise it will return
-   * the teamsize. \param team_size: input, team size used by the kernel. \param
-   * concurrency: input, the number of threads overall. Not used currently.
-   * \param overall_work_size: The overall work size.
-   */
-  int get_team_work_size(const int team_size, const int /* concurrency */,
-                         const nnz_lno_t /* overall_work_size */) {
+  /// \brief Returns the suggested team work size. If set with
+  /// set_team_work_size, it will return the set value. Otherwise it will return
+  /// the teamsize.
+  /// \param team_size input, team size used by the kernel.
+  /// \param concurrency filler for concurrency
+  /// \param overall_work_size filler for overall_work_size
+  int get_team_work_size(const int team_size,
+                         [[maybe_unused]] const int concurrency,
+                         [[maybe_unused]] const nnz_lno_t overall_work_size) {
     if (this->team_work_size != -1) {
       return this->team_work_size;
     } else {
@@ -453,11 +453,10 @@ class KokkosKernelsHandle {
    */
   bool is_dynamic_scheduling() { return this->use_dynamic_scheduling; }
 
-  /**
-   * \brief sets the shared memory size to be used by the kernels using shared
-   * memory on GPUs. \param shared_memory_size: input, shared memory size to be
-   * used by the kernel.   *
-   */
+  /// \brief sets the shared memory size to be used by the kernels using shared
+  /// memory on GPUs.
+  /// \param shared_memory_size_ input, shared memory size to be used by the
+  /// kernel.
   void set_shmem_size(const size_t shared_memory_size_) {
     this->shared_memory_size = shared_memory_size_;
   }
@@ -500,10 +499,9 @@ class KokkosKernelsHandle {
 
   int get_set_suggested_team_size() { return this->suggested_team_size; }
 
-  /**
-   * \brief Returns the team size, either set by the user or suggested by the
-   * handle. \param vector_size: suggested vector size by the handle.
-   */
+  /// \brief Returns the team size, either set by the user or suggested by the
+  /// handle.
+  /// \param vector_size_ suggested vector size by the handle.
   int get_suggested_team_size(const int vector_size_) {
     if (this->suggested_team_size != -1) {
       return this->suggested_team_size;
@@ -603,7 +601,36 @@ class KokkosKernelsHandle {
           "GS.");
     return cgs;
   }
+
+  // clang-format off
+  /**
+   * @brief Create a gauss seidel handle object
+   * 
+   * @param handle_exec_space The execution space instance to execute kernels on.
+   * @param num_streams The number of streams to allocate memory for.
+   * @param gs_algorithm Specifies which algorithm to use:
+   * 
+   *                     KokkosSpace::GS_DEFAULT  PointGaussSeidel
+   *                     KokkosSpace::GS_PERMUTED ??
+   *                     KokkosSpace::GS_TEAM     ??
+   *                     KokkosSpace::GS_CLUSTER  ??
+   *                     KokkosSpace::GS_TWOSTAGE ??
+   * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
+   * 
+   *                           KokkosGraph::COLORING_DEFAULT  ??
+   *                           KokkosGraph::COLORING_SERIAL   Serial Greedy Coloring
+   *                           KokkosGraph::COLORING_VB       Vertex Based Coloring
+   *                           KokkosGraph::COLORING_VBBIT    Vertex Based Coloring with bit array
+   *                           KokkosGraph::COLORING_VBCS     Vertex Based Color Set
+   *                           KokkosGraph::COLORING_VBD      Vertex Based Deterministic Coloring
+   *                           KokkosGraph::COLORING_VBDBIT   Vertex Based Deterministic Coloring with bit array
+   *                           KokkosGraph::COLORING_EB       Edge Based Coloring
+   *                           KokkosGraph::COLORING_SERIAL2  Serial Distance-2 Graph Coloring (kept here for
+   *                                                           backwards compatibility for SPGEMM and other use cases)
+   */
+  // clang-format on
   void create_gs_handle(
+      const HandleExecSpace &handle_exec_space, int num_streams,
       KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT,
       KokkosGraph::ColoringAlgorithm coloring_algorithm =
           KokkosGraph::COLORING_DEFAULT) {
@@ -612,10 +639,50 @@ class KokkosKernelsHandle {
     // ---------------------------------------- //
     // Two-stage Gauss-Seidel
     if (gs_algorithm == KokkosSparse::GS_TWOSTAGE)
-      this->gsHandle = new TwoStageGaussSeidelHandleType();
-    else
       this->gsHandle =
-          new PointGaussSeidelHandleType(gs_algorithm, coloring_algorithm);
+          new TwoStageGaussSeidelHandleType(handle_exec_space, num_streams);
+    else
+      this->gsHandle = new PointGaussSeidelHandleType(
+          handle_exec_space, num_streams, gs_algorithm, coloring_algorithm);
+  }
+
+  // clang-format off
+  /**
+   * @brief Create a gauss seidel handle object
+   * 
+   * @param gs_algorithm Specifies which algorithm to use:
+   * 
+   *                     KokkosSpace::GS_DEFAULT  PointGaussSeidel or BlockGaussSeidel, depending on matrix type.
+   *                     KokkosSpace::GS_PERMUTED Reorders rows/cols into colors to improve locality. Uses RangePolicy over rows.
+   *                     KokkosSpace::GS_TEAM     Uses TeamPolicy over batches of rows with ThreadVector within rows.
+   *                     KokkosSpace::GS_CLUSTER  Uses independent clusters of nodes in the graph. Within a cluster, x is updated sequentially.
+   *                                              For more information, see: https://arxiv.org/pdf/2204.02934.pdf.
+   *                     KokkosSpace::GS_TWOSTAGE Uses spmv to parallelize inner sweeps of x.
+   *                                              For more information, see: https://arxiv.org/pdf/2104.01196.pdf.
+   * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
+   * 
+   *                           KokkosGraph::COLORING_DEFAULT  Depends on execution space:
+   *                                                            COLORING_SERIAL on Kokkos::Serial;
+   *                                                            COLORING_EB on GPUs;
+   *                                                            COLORING_VBBIT on Kokkos::Sycl or elsewhere.
+   *                           KokkosGraph::COLORING_SERIAL   Serial Greedy Coloring
+   *                           KokkosGraph::COLORING_VB       Vertex Based Coloring
+   *                           KokkosGraph::COLORING_VBBIT    Vertex Based Coloring with bit array
+   *                           KokkosGraph::COLORING_VBCS     Vertex Based Color Set
+   *                           KokkosGraph::COLORING_VBD      Vertex Based Deterministic Coloring
+   *                           KokkosGraph::COLORING_VBDBIT   Vertex Based Deterministic Coloring with bit array
+   *                           KokkosGraph::COLORING_EB       Edge Based Coloring
+   *                           KokkosGraph::COLORING_SERIAL2  Serial Distance-2 Graph Coloring (kept here for
+   *                                                           backwards compatibility for SPGEMM and other use cases)
+   */
+  // clang-format on
+  void create_gs_handle(
+      KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT,
+      KokkosGraph::ColoringAlgorithm coloring_algorithm =
+          KokkosGraph::COLORING_DEFAULT) {
+    HandleExecSpace handle_exec_space;
+    return create_gs_handle(handle_exec_space, 1, gs_algorithm,
+                            coloring_algorithm);
   }
   // ---------------------------------------- //
   // Two-stage Gauss-Seidel handle
@@ -674,6 +741,31 @@ class KokkosKernelsHandle {
     gs2->setCompactForm(compact_form);
   }
 
+  // clang-format off
+  /**
+   * @brief Create a gs handle object
+   * 
+   * @param clusterAlgo Specifies which clustering algorithm to use:
+   * 
+   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_DEFAULT           ??
+   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_MIS2              ??
+   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_BALLOON           ??
+   *                    KokkosSparse::ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS ??
+   * @param hint_verts_per_cluster Hint how many verticies to use per cluster
+   * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
+   * 
+   *                           KokkosGraph::COLORING_DEFAULT  ??
+   *                           KokkosGraph::COLORING_SERIAL   Serial Greedy Coloring
+   *                           KokkosGraph::COLORING_VB       Vertex Based Coloring
+   *                           KokkosGraph::COLORING_VBBIT    Vertex Based Coloring with bit array
+   *                           KokkosGraph::COLORING_VBCS     Vertex Based Color Set
+   *                           KokkosGraph::COLORING_VBD      Vertex Based Deterministic Coloring
+   *                           KokkosGraph::COLORING_VBDBIT   Vertex Based Deterministic Coloring with bit array
+   *                           KokkosGraph::COLORING_EB       Edge Based Coloring
+   *                           KokkosGraph::COLORING_SERIAL2  Serial Distance-2 Graph Coloring (kept here for
+   *                                                           backwards compatibility for SPGEMM and other use cases)
+   */
+  // clang-format on
   void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo,
                         nnz_lno_t hint_verts_per_cluster,
                         KokkosGraph::ColoringAlgorithm coloring_algorithm =

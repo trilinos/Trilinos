@@ -385,7 +385,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     utils.out() << "ERROR: NOX::Epetra::FiniteDifference::computeJacobian() - "
         << "Jacobian to evaluate is not a FiniteDifference object!"
         << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   const Epetra_BlockMap& map = fo.Map();

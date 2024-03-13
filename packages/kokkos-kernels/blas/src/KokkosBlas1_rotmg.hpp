@@ -25,10 +25,13 @@ namespace KokkosBlas {
 /// \brief Compute the coefficients to apply a modified Givens rotation.
 ///
 /// \tparam execution_space the execution space where the kernel will be
-/// executed \tparam DXView a rank0 view type that hold non const data \tparam
-/// YView a rank0 view type that holds const data \tparam PView a rank1 view of
-/// static extent 5 that holds non const data
+///         executed
+/// \tparam DXView a rank0 view type that hold non const data
+/// \tparam YView a rank0 view type that holds const data
+/// \tparam PView a rank1 view of
+///         static extent 5 that holds non const data
 ///
+/// \param space [in] execution space used for parallel loops
 /// \param d1 [in/out]
 /// \param d2 [in/out]
 /// \param x1 [in/out]

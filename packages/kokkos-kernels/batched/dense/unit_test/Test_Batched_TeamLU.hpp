@@ -34,6 +34,8 @@ namespace TeamLU {
 
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 struct Functor_TestBatchedTeamLU {
+  using execution_space = typename DeviceType::execution_space;
+
   ViewType _a;
 
   KOKKOS_INLINE_FUNCTION
@@ -60,7 +62,7 @@ struct Functor_TestBatchedTeamLU {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -69,7 +71,7 @@ struct Functor_TestBatchedTeamLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_lu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize);

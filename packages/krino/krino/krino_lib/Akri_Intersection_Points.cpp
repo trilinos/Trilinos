@@ -176,12 +176,13 @@ static void communicate_all_intersection_points(const stk::mesh::BulkData & mesh
 }
 
 static std::vector<IntersectionPoint> build_intersection_points(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & geometry,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
     const IntersectionPointFilter & intersectionPointFilter)
 {
   std::vector<stk::mesh::Entity> elementsToIntersect;
-  stk::mesh::get_entities( mesh, stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part(), elementsToIntersect, false);
+  stk::mesh::get_entities( mesh, stk::topology::ELEMENT_RANK, mesh.mesh_meta_data().locally_owned_part() & elementSelector, elementsToIntersect, false);
 
   std::vector<IntersectionPoint> intersectionPoints;
   geometry.append_element_intersection_points(mesh, nodesToCapturedDomains, elementsToIntersect, intersectionPointFilter, intersectionPoints);
@@ -191,11 +192,12 @@ static std::vector<IntersectionPoint> build_intersection_points(const stk::mesh:
 }
 
 std::vector<IntersectionPoint> build_all_intersection_points(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & geometry,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains)
 {
   const IntersectionPointFilter intersectionPointFilter = keep_all_intersection_points_filter();
-  return build_intersection_points(mesh, geometry, nodesToCapturedDomains, intersectionPointFilter);
+  return build_intersection_points(mesh, elementSelector, geometry, nodesToCapturedDomains, intersectionPointFilter);
 }
 
 static IntersectionPointFilter
@@ -210,12 +212,13 @@ filter_intersection_points_to_those_not_already_handled(const NodeToCapturedDoma
 }
 
 std::vector<IntersectionPoint> build_uncaptured_intersection_points(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & geometry,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains)
 {
   IntersectionPointFilter intersectionPointFilter = filter_intersection_points_to_those_not_already_handled(nodesToCapturedDomains);
 
-  return build_intersection_points(mesh, geometry, nodesToCapturedDomains, intersectionPointFilter);
+  return build_intersection_points(mesh, elementSelector, geometry, nodesToCapturedDomains, intersectionPointFilter);
 }
 
 static IntersectionPointFilter
@@ -231,17 +234,26 @@ filter_intersection_points_to_those_using_previous_iteration_snap_nodes_but_not_
 }
 
 std::vector<stk::mesh::Entity> get_owned_elements_using_nodes_knowing_that_nodes_dont_have_common_elements(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const std::vector<stk::mesh::Entity> & nodes)
 {
   std::vector<stk::mesh::Entity> nodeElements;
   for (auto node : nodes)
+  {
     for (auto element : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
-      if (mesh.bucket(element).owned())
+    {
+      const auto & bucket = mesh.bucket(element);
+      if (bucket.owned() && elementSelector(bucket))
+      {
         nodeElements.push_back(element);
+      }
+    }
+  }
   return nodeElements;
 }
 
 std::vector<size_t> update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & geometry,
     const std::vector<stk::mesh::Entity> & iterationSortedSnapNodes,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains,
@@ -269,7 +281,7 @@ std::vector<size_t> update_intersection_points_after_snap_iteration(const stk::m
 
   if (geometry.snapped_elements_may_have_new_intersections())
   {
-    const std::vector<stk::mesh::Entity> updateElements = get_owned_elements_using_nodes_knowing_that_nodes_dont_have_common_elements(mesh, iterationSortedSnapNodes);
+    const std::vector<stk::mesh::Entity> updateElements = get_owned_elements_using_nodes_knowing_that_nodes_dont_have_common_elements(mesh, elementSelector, iterationSortedSnapNodes);
     geometry.append_element_intersection_points(mesh, nodesToCapturedDomains, updateElements, intersectionPointFilter, intersectionPoints);
     communicate_intersection_points(mesh, newSize, intersectionPoints);
   }

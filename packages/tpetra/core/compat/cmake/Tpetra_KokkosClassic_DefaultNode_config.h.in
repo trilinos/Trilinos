@@ -6,7 +6,7 @@
 // For backwards compatibility ONLY.
 #define TPETRA_KOKKOSCLASSIC_DEFAULTNODE TPETRA_DEFAULTNODE
 
-// Defined if and only if Tpetra's default execution space is Kokkos::SYCL.
+// Defined if and only if Tpetra's default execution space is Kokkos::Experimental::SYCL.
 #cmakedefine HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE
 // For backwards compatibility ONLY.
 #ifdef HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE

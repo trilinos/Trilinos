@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -48,7 +48,7 @@ template <typename INT> void Side_Set<INT>::entity_load_params()
   sets[0].extra_list               = nullptr;
   sets[0].distribution_factor_list = nullptr;
 
-  int err = ex_get_sets(fileId, 1, &sets[0]);
+  int err = ex_get_sets(fileId, 1, sets.data());
 
   if (err < 0) {
     Error(fmt::format("{}: Failed to get sideset parameters for sideset {}. !  Aborting...\n",

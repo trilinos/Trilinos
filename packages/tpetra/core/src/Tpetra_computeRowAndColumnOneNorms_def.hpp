@@ -780,7 +780,7 @@ copyMultiVectorColumnInto1DView (
 template<class OneDViewType, class IndexType>
 class FindZero {
 public:
-  static_assert (OneDViewType::Rank == 1,
+  static_assert (OneDViewType::rank == 1,
                  "OneDViewType must be a rank-1 Kokkos::View.");
   static_assert (std::is_integral<IndexType>::value,
                  "IndexType must be a built-in integer type.");

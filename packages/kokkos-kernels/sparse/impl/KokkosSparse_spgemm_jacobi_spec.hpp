@@ -291,6 +291,5 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
       false, true>;
 
 #include <KokkosSparse_spgemm_jacobi_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spgemm_jacobi_eti_spec_decl.hpp>
 
 #endif

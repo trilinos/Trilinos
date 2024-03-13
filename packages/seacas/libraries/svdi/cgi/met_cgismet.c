@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,7 +10,7 @@
 #include "mdcgi.h"  // for xcact_, xcoon_
 #include "stdtyp.h" // for anything
 
-void cgimet_(); /* tell linker to load driver */
+void cgimet_(anything **, int, anything **); /* tell linker to load driver */
 
 void cgismet(void) /* make name external so linker will load file*/ {}
 

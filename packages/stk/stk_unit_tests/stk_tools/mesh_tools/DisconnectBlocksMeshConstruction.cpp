@@ -946,7 +946,6 @@ void setup_mesh_with_hinge_ring(stk::mesh::BulkData& bulk)
   coordNode127[0] = coordNode27[0] - EPS;
   coordNode127[1] = coordNode27[1] - EPS;
   coordNode127[2] = coordNode27[2];
-  // stk::io::write_mesh("output.e", bulk);
 }
 
 stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge(stk::mesh::BulkData& bulk)

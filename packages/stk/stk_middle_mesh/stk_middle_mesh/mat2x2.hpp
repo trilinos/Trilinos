@@ -41,6 +41,19 @@ class Mat2x2
       }
     }
 
+    template <typename T2>
+    Mat2x2(const Mat2x2<T2>& other) :
+      m_data{other(0, 0), other(0, 1), other(1, 0), other(1, 1)}
+    {}
+
+    template <typename T2>
+    Mat2x2<T> operator=(const Mat2x2<T2>& other)
+    {
+      for (int i=0; i < 2; ++i)
+        for (int j=0; j < 2; ++j)
+          (*this)(i, j) = other(i, j);
+    }
+
     using value_type = T;
 
     T& operator()(const int i, const int j)
@@ -63,7 +76,8 @@ class Mat2x2
 
     static int extent(const int dim) { return 2; }
 
-    FORCE_NOINLINE_GCC Mat2x2<T>& operator+=(const T& val)
+    template <typename T2>
+    FORCE_NOINLINE_GCC Mat2x2<T>& operator+=(const T2& val)
     {
       for (int i = 0; i < 4; ++i)
         m_data[i] += val;
@@ -71,15 +85,18 @@ class Mat2x2
       return *this;
     }
 
-    FORCE_NOINLINE_GCC Mat2x2<T>& operator+=(const Mat2x2<T>& a)
+    template <typename T2>
+    FORCE_NOINLINE_GCC Mat2x2<T>& operator+=(const Mat2x2<T2>& a)
     {
-      for (int i = 0; i < 4; ++i)
-        m_data[i] += a.m_data[i];
+      for (int i = 0; i < 2; ++i)
+        for (int j=0; j < 2; ++j)
+          (*this)(i, j) += a(i, j);
 
       return *this;
     }
 
-    FORCE_NOINLINE_GCC Mat2x2<T>& operator-=(const T& val)
+    template <typename T2>
+    FORCE_NOINLINE_GCC Mat2x2<T>& operator-=(const T2& val)
     {
       for (int i = 0; i < 4; ++i)
         m_data[i] -= val;
@@ -87,15 +104,18 @@ class Mat2x2
       return *this;
     }
 
-    FORCE_NOINLINE_GCC Mat2x2<T>& operator-=(const Mat2x2<T>& a)
+    template <typename T2>
+    FORCE_NOINLINE_GCC Mat2x2<T>& operator-=(const Mat2x2<T2>& a)
     {
-      for (int i = 0; i < 4; ++i)
-        m_data[i] -= a.m_data[i];
+      for (int i=0; i < 2; ++i)
+        for (int j=0; j < 2; ++j)
+          (*this)(i, j) -= a(i, j);
 
       return *this;
     }
 
-    FORCE_NOINLINE_GCC Mat2x2<T>& operator*=(const T& val)
+    template <typename T2>
+    FORCE_NOINLINE_GCC Mat2x2<T>& operator*=(const T2& val)
     {
       for (int i = 0; i < 4; ++i)
         m_data[i] *= val;
@@ -103,7 +123,8 @@ class Mat2x2
       return *this;
     }
 
-    FORCE_NOINLINE_GCC Mat2x2<T>& operator/=(const T& val)
+    template <typename T2>
+    FORCE_NOINLINE_GCC Mat2x2<T>& operator/=(const T2& val)
     {
       for (int i = 0; i < 4; ++i)
         m_data[i] /= val;
@@ -115,32 +136,32 @@ class Mat2x2
     std::array<T, 4> m_data;
 };
 
-template <typename T>
-Mat2x2<T> operator+(const Mat2x2<T>& a, const typename Mat2x2<T>::value_type& val)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator+(const Mat2x2<T>& a, const T2& val)
 {
-  auto c = a;
+  Mat2x2<std::common_type_t<T, T2>> c = a;
   c += val;
   return c;
 }
 
-template <typename T>
-Mat2x2<T> operator+(const typename Mat2x2<T>::value_type& val, const Mat2x2<T>& a)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator+(const T2& val, const Mat2x2<T>& a)
 {
   return a + val;
 }
 
-template <typename T>
-Mat2x2<T> operator-(const Mat2x2<T>& a, const typename Mat2x2<T>::value_type& val)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator-(const Mat2x2<T>& a, const T2& val)
 {
-  auto c = a;
+  Mat2x2<std::common_type_t<T, T2>> c = a;
   c -= val;
   return c;
 }
 
-template <typename T>
-Mat2x2<T> operator-(const typename Mat2x2<T>::value_type& val, const Mat2x2<T>& a)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator-(const T2& val, const Mat2x2<T>& a)
 {
-  auto c = -a;
+  Mat2x2<std::common_type_t<T, T2>> c = -a;
   return c + val;
 }
 
@@ -150,24 +171,24 @@ Mat2x2<T> operator-(const Mat2x2<T>& a)
   return a * -1;
 }
 
-template <typename T>
-Mat2x2<T> operator*(const Mat2x2<T>& a, const typename Mat2x2<T>::value_type& val)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator*(const Mat2x2<T>& a, const T2& val)
 {
-  auto c = a;
+  Mat2x2<std::common_type_t<T, T2>> c = a;
   c *= val;
   return c;
 }
 
-template <typename T>
-Mat2x2<T> operator*(const typename Mat2x2<T>::value_type& val, const Mat2x2<T>& a)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator*(const T2& val, const Mat2x2<T>& a)
 {
   return a * val;
 }
 
-template <typename T>
-Mat2x2<T> operator*(const Mat2x2<T>& a, const Mat2x2<T>& b)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator*(const Mat2x2<T>& a, const Mat2x2<T2>& b)
 {
-  Mat2x2<T> c;
+  Mat2x2<std::common_type_t<T, T2>> c;
   c(0, 0) = a(0, 0) * b(0, 0) + a(0, 1) * b(1, 0);
   c(0, 1) = a(0, 0) * b(0, 1) + a(0, 1) * b(1, 1);
   c(1, 0) = a(1, 0) * b(0, 0) + a(1, 1) * b(1, 0);
@@ -175,26 +196,26 @@ Mat2x2<T> operator*(const Mat2x2<T>& a, const Mat2x2<T>& b)
   return c;
 }
 
-template <typename T>
-Mat2x2<T> operator/(const Mat2x2<T>& a, const typename Mat2x2<T>::value_type& val)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator/(const Mat2x2<T>& a, const T2& val)
 {
-  auto c = a;
+  Mat2x2<std::common_type_t<T, T2>> c = a;
   c /= val;
   return c;
 }
 
-template <typename T>
-Mat2x2<T> operator+(const Mat2x2<T>& a, const Mat2x2<T>& b)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator+(const Mat2x2<T>& a, const Mat2x2<T2>& b)
 {
-  auto c = a;
+  Mat2x2<std::common_type_t<T, T2>> c = a;
   c += b;
   return c;
 }
 
-template <typename T>
-Mat2x2<T> operator-(const Mat2x2<T>& a, const Mat2x2<T>& b)
+template <typename T, typename T2>
+Mat2x2<std::common_type_t<T, T2>> operator-(const Mat2x2<T>& a, const Mat2x2<T2>& b)
 {
-  auto c = a;
+  Mat2x2<std::common_type_t<T, T2>> c = a;
   c -= b;
   return c;
 }
@@ -216,15 +237,16 @@ void inverse2x2(Mat2x2<T>& a)
 }
 
 // solve Ax = b
-template <typename T>
-void matsolve2x2(const Mat2x2<T>& a, T x[2], const T b[2])
+template <typename T, typename T2>
+void matsolve2x2(const Mat2x2<T>& a, std::common_type_t<T, T2> x[2], const T2 b[2])
 {
+  using Tcommon = std::common_type_t<T, T2>;
   if (std::abs(a(0, 0)) < std::abs(a(1, 0)))
   {
     T fac = a(0, 0) / a(1, 0);
     // T A00 = A(0, 0) - fac*A(1, 0); // = 0
     T a01 = a(0, 1) - fac * a(1, 1);
-    T b0  = b[0] - fac * b[1];
+    Tcommon b0  = b[0] - fac * b[1];
 
     x[1] = b0 / a01;
     x[0] = (b[1] - a(1, 1) * x[1]) / a(1, 0);
@@ -234,27 +256,28 @@ void matsolve2x2(const Mat2x2<T>& a, T x[2], const T b[2])
     T fac = a(1, 0) / a(0, 0);
     // T A10 = A(1, 0) - fac*A(0, 0);  // = 0
     T a11 = a(1, 1) - fac * a(0, 1);
-    T b1  = b[1] - fac * b[0];
+    Tcommon b1  = b[1] - fac * b[0];
 
     x[1] = b1 / a11;
     x[0] = (b[0] - a(0, 1) * x[1]) / a(0, 0);
   }
 }
 
-template <typename T>
-void matsolve2x2_dot(const Mat2x2<T>& a, const Mat2x2<T>& aDot, T x[2], T xDot[2], const T b[2], const T bDot[2])
+template <typename T, typename T2, typename T3, typename T4, typename T5, typename T6>
+void matsolve2x2_dot(const Mat2x2<T>& a, const Mat2x2<T2>& aDot, T3 x[2], T4 xDot[2], const T5 b[2], const T6 bDot[2])
 {
+  using Tcommon = std::common_type_t<T, T2>;
   if (std::abs(a(0, 0)) < std::abs(a(1, 0)))
   {
-    T fac    = a(0, 0) / a(1, 0);
-    T facDot = aDot(0, 0) / a(1, 0) - aDot(1, 0) * a(0, 0) / (a(1, 0) * a(1, 0));
+    Tcommon fac    = a(0, 0) / a(1, 0);
+    Tcommon facDot = aDot(0, 0) / a(1, 0) - aDot(1, 0) * a(0, 0) / (a(1, 0) * a(1, 0));
 
     // T A00 = A(0, 0) - fac*A(1, 0); // = 0
-    T a01    = a(0, 1) - fac * a(1, 1);
-    T a01Dot = aDot(0, 1) - fac * aDot(1, 1) - facDot * a(1, 1);
+    Tcommon a01    = a(0, 1) - fac * a(1, 1);
+    Tcommon a01Dot = aDot(0, 1) - fac * aDot(1, 1) - facDot * a(1, 1);
 
-    T b0    = b[0] - fac * b[1];
-    T b0Dot = bDot[0] - fac * bDot[1] - facDot * b[1];
+    Tcommon b0    = b[0] - fac * b[1];
+    Tcommon b0Dot = bDot[0] - fac * bDot[1] - facDot * b[1];
 
     x[1]    = b0 / a01;
     xDot[1] = b0Dot / a01 - b0 * a01Dot / (a01 * a01);
@@ -265,15 +288,15 @@ void matsolve2x2_dot(const Mat2x2<T>& a, const Mat2x2<T>& aDot, T x[2], T xDot[2
   } else
   {
     // Gaussian elimination
-    T fac    = a(1, 0) / a(0, 0);
-    T facDot = aDot(1, 0) / a(0, 0) - aDot(0, 0) * a(1, 0) / (a(0, 0) * a(0, 0));
+    Tcommon fac    = a(1, 0) / a(0, 0);
+    Tcommon facDot = aDot(1, 0) / a(0, 0) - aDot(0, 0) * a(1, 0) / (a(0, 0) * a(0, 0));
 
     // T A10 = A(1, 0) - fac*A(0, 0);  // = 0
-    T a11    = a(1, 1) - fac * a(0, 1);
-    T a11Dot = aDot(1, 1) - fac * aDot(0, 1) - facDot * (a(0, 1));
+    Tcommon a11    = a(1, 1) - fac * a(0, 1);
+    Tcommon a11Dot = aDot(1, 1) - fac * aDot(0, 1) - facDot * (a(0, 1));
 
-    T b1    = b[1] - fac * b[0];
-    T b1Dot = bDot[1] - fac * bDot[0] - facDot * b[0];
+    Tcommon b1    = b[1] - fac * b[0];
+    Tcommon b1Dot = bDot[1] - fac * bDot[0] - facDot * b[0];
 
     x[1]    = b1 / a11;
     xDot[1] = b1Dot / a11 - a11Dot * b1 / (a11 * a11);
@@ -284,8 +307,8 @@ void matsolve2x2_dot(const Mat2x2<T>& a, const Mat2x2<T>& aDot, T x[2], T xDot[2
   }
 }
 
-template <typename T>
-void matvec2x2(const Mat2x2<T>& a, const T x[2], T b[2])
+template <typename T, typename T2>
+void matvec2x2(const Mat2x2<T>& a, const T2 x[2], std::common_type_t<T, T2> b[2])
 {
   b[0] = a(0, 0) * x[0] + a(0, 1) * x[1];
   b[1] = a(1, 0) * x[0] + a(1, 1) * x[1];
@@ -297,8 +320,8 @@ T det2x2(const Mat2x2<T>& a)
   return a(0, 0) * a(1, 1) - a(0, 1) * a(1, 0);
 }
 
-template <typename T>
-void det2x2_rev(const Mat2x2<T>& a, Mat2x2<T>& aBar, const T dBar)
+template <typename T, typename T2, typename T3>
+void det2x2_rev(const Mat2x2<T>& a, Mat2x2<T2>& aBar, const T3 dBar)
 {
   aBar(0, 0) = dBar * a(1, 1);
   aBar(0, 1) = -dBar * a(1, 0);
@@ -314,8 +337,8 @@ T norm_f(const Mat2x2<T>& a)
   return std::sqrt(val);
 }
 
-template <typename T>
-void norm_f_rev(const Mat2x2<T>& a, Mat2x2<T>& aBar, const T dBar)
+template <typename T, typename T2, typename T3>
+void norm_f_rev(const Mat2x2<T>& a, Mat2x2<T2>& aBar, const T3 dBar)
 {
   T val = a(0, 0) * a(0, 0) + a(0, 1) * a(0, 1) + a(1, 0) * a(1, 0) + a(1, 1) * a(1, 1);
 
@@ -347,11 +370,11 @@ std::ostream& operator<<(std::ostream& os, const Mat2x2<T>& a)
 }
 
 // forward mode differentiation of mat-mat, where only A has derivatives
-template <typename T, std::size_t N>
-Mat2x2<std::array<T, N>> matmat_dot( // const Mat2x2<T>& A,
-    const Mat2x2<std::array<T, N>>& aDot, const Mat2x2<T>& b)
+template <typename T, typename T2, std::size_t N>
+Mat2x2<std::array<std::common_type_t<T, T2>, N>> matmat_dot( // const Mat2x2<T>& A,
+    const Mat2x2<std::array<T, N>>& aDot, const Mat2x2<T2>& b)
 {
-  Mat2x2<std::array<T, N>> cDot;
+  Mat2x2<std::array<std::common_type_t<T, T2>, N>> cDot;
   for (unsigned int i = 0; i < N; ++i)
   {
     cDot(0, 0)[i] = aDot(0, 0)[i] * b(0, 0) + aDot(0, 1)[i] * b(1, 0);
@@ -364,17 +387,18 @@ Mat2x2<std::array<T, N>> matmat_dot( // const Mat2x2<T>& A,
 }
 
 // forward mode differentiation of Frobenious norm
-template <typename T, std::size_t N>
-std::array<T, N> norm_f_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T, N>>& aDot)
+template <typename T, typename T2, std::size_t N>
+std::array<std::common_type_t<T, T2>, N> norm_f_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T2, N>>& aDot)
 {
+  using Tcommon = std::common_type_t<T, T2>;
   T val = a(0, 0) * a(0, 0) + a(0, 1) * a(0, 1) + a(1, 0) * a(1, 0) + a(1, 1) * a(1, 1);
 
   T tmp = 1.0 / (2.0 * std::sqrt(val));
 
-  std::array<T, N> valDot;
+  std::array<Tcommon, N> valDot;
   for (unsigned int i = 0; i < N; ++i)
   {
-    T v1Dot = 2.0 * a(0, 0) * aDot(0, 0)[i] + 2.0 * a(0, 1) * aDot(0, 1)[i] + 2.0 * a(1, 0) * aDot(1, 0)[i] +
+    Tcommon v1Dot = 2.0 * a(0, 0) * aDot(0, 0)[i] + 2.0 * a(0, 1) * aDot(0, 1)[i] + 2.0 * a(1, 0) * aDot(1, 0)[i] +
               2.0 * a(1, 1) * aDot(1, 1)[i];
     valDot[i] = tmp * v1Dot;
   }
@@ -383,11 +407,11 @@ std::array<T, N> norm_f_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T, N>>& 
 }
 
 // forward mode differentiation of determinant
-template <typename T, std::size_t N>
-std::array<T, N> det2x2_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T, N>>& aDot)
+template <typename T, typename T2, std::size_t N>
+std::array<std::common_type_t<T, T2>, N> det2x2_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T2, N>>& aDot)
 {
   // T val = A(0, 0)*A(1, 1) - A(0, 1)*A(1, 0);
-  std::array<T, N> valDot;
+  std::array<std::common_type_t<T, T2>, N> valDot;
   for (unsigned int i = 0; i < N; ++i)
     valDot[i] = a(1, 1) * aDot(0, 0)[i] + a(0, 0) * aDot(1, 1)[i] + -a(1, 0) * aDot(0, 1)[i] - a(0, 1) * aDot(1, 0)[i];
 
@@ -396,9 +420,9 @@ std::array<T, N> det2x2_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T, N>>& 
 
 // foward mode over reverse mode
 // A_bar_dot is overwritten with the result
-template <typename T, std::size_t N>
-void det2x2_rev_dot(const Mat2x2<T>& a, Mat2x2<std::array<T, N>>& aDot, const T dBar, const std::array<T, N>& dBarDot,
-                    Mat2x2<std::array<T, N>>& aBarDot)
+template <typename T, typename T2, typename T3, typename T4, typename T5, std::size_t N>
+void det2x2_rev_dot(const Mat2x2<T>& a, Mat2x2<std::array<T2, N>>& aDot, const T3 dBar, const std::array<T4, N>& dBarDot,
+                    Mat2x2<std::array<T5, N>>& aBarDot)
 {
   /*
   A_bar(0, 0) =  d_bar*A(1, 1);
@@ -418,19 +442,19 @@ void det2x2_rev_dot(const Mat2x2<T>& a, Mat2x2<std::array<T, N>>& aDot, const T 
 
 // forward mode over reverse mode
 // A_bar_dot is updated (not overwritten) with the result
-template <typename T, std::size_t N>
-void norm_f_rev_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T, N>>& aDot, const T dBar,
-                    const std::array<T, N>& dBarDot, Mat2x2<std::array<T, N>>& aBarDot)
+template <typename T, typename T2, typename T3, typename T4, typename T5, std::size_t N>
+void norm_f_rev_dot(const Mat2x2<T>& a, const Mat2x2<std::array<T2, N>>& aDot, const T3 dBar,
+                    const std::array<T4, N>& dBarDot, Mat2x2<std::array<T5, N>>& aBarDot)
 {
   T val = a(0, 0) * a(0, 0) + a(0, 1) * a(0, 1) + a(1, 0) * a(1, 0) + a(1, 1) * a(1, 1);
 
-  std::array<T, N> valDot;
+  std::array<std::common_type_t<T, T2>, N> valDot;
   for (unsigned int i = 0; i < N; ++i)
     valDot[i] = 2.0 * a(0, 0) * aDot(0, 0)[i] + 2.0 * a(0, 1) * aDot(0, 1)[i] + 2.0 * a(1, 0) * aDot(1, 0)[i] +
                 2.0 * a(1, 1) * aDot(1, 1)[i];
 
   auto valBar = 0.5 * dBar / std::sqrt(val);
-  std::array<T, N> valBarDot;
+  std::array<std::common_type_t<T, T2, T4>, N> valBarDot;
   for (unsigned int i = 0; i < N; ++i)
     valBarDot[i] = 0.5 * dBarDot[i] / std::sqrt(val) - 0.25 * dBar * valDot[i] / std::pow(val, 1.5);
   /*

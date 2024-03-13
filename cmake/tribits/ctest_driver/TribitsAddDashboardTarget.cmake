@@ -45,7 +45,7 @@
 #
 ################################################################################
 
-include(TribitsGitRepoVersionInfo)
+include("${CMAKE_CURRENT_LIST_DIR}/../core/utils/TribitsGitRepoVersionInfo.cmake")
 
 #
 # Macro that drives a experimental 'dashboard' target

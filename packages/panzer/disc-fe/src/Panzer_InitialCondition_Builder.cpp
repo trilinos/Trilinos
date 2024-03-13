@@ -216,8 +216,6 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
     std::vector<panzer::Workset>& w = *wkstContainer.getWorksets(wd);
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
-      
-      // Need to figure out how to get restart time from Rythmos.
       workset.time = time_stamp;
       
       fm->evaluateFields<panzer::Traits::Residual>(workset);

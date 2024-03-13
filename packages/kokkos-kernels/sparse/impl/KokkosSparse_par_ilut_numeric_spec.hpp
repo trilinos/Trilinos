@@ -239,6 +239,5 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
       false, true>;
 
 #include <KokkosSparse_par_ilut_numeric_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_par_ilut_numeric_eti_spec_decl.hpp>
 
 #endif

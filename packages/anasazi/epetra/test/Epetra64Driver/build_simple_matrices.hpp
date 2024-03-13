@@ -154,6 +154,11 @@ void build_simple_matrix(
   else
     info = A->FillComplete();
 
+  // Clean up
+  delete rowMap;
+  delete colMap;
+  delete vectorMap;
+
   TEUCHOS_ASSERT( info==0);
 
 }

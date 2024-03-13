@@ -230,9 +230,9 @@ int read_exoII_file(int Proc,
 
   /* Perform reduction on necessary fields of element blocks.  kdd 2/2001 */
   MPI_Allreduce(nnodes, mesh->eb_nnodes, mesh->num_el_blks, MPI_INT, MPI_MAX, 
-                MPI_COMM_WORLD);
+                zoltan_get_global_comm());
   MPI_Allreduce(etypes, mesh->eb_etypes, mesh->num_el_blks, MPI_INT, MPI_MIN, 
-                MPI_COMM_WORLD);
+                zoltan_get_global_comm());
   for (i = 0; i < mesh->num_el_blks; i++) {
     strcpy(mesh->eb_names[i], get_elem_name(mesh->eb_etypes[i]));
   }
@@ -893,7 +893,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * for the adjacent elements in this communication map.
    */
 
-  ierr = Zoltan_Comm_Create(&comm_obj, max_len, proc_ids, MPI_COMM_WORLD, 
+  ierr = Zoltan_Comm_Create(&comm_obj, max_len, proc_ids, zoltan_get_global_comm(), 
                             msg, &nrecv);
   if (ierr != ZOLTAN_OK) {
     Gen_Error(0, "fatal: Error returned from Zoltan_Comm_Create");
@@ -1016,7 +1016,7 @@ char cmesg[256];
 char *str = "Proc";
 
   /* generate the parallel filename for this processor */
-  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
+  MPI_Comm_size(zoltan_get_global_comm(), &Num_Proc);
   gen_par_filename(pio_info->pexo_fname, tmp_nem_fname, pio_info, Proc,
                    Num_Proc);
   /* 

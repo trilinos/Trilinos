@@ -1,6 +1,6 @@
-#include "active_vert_data.hpp"
-#include "create_mesh.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/active_vert_data.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "gtest/gtest.h"
 
 #include <limits>
@@ -199,6 +199,43 @@ TEST(ActiveVertData, RemoteElements)
   mesh::RemoteSharedEntity remote2{1, 1};
   EXPECT_EQ(active.get_vert_owner(numLocalVerts), remote1);
   EXPECT_EQ(active.get_vert_owner(numLocalVerts + 1), remote2);
+}
+
+
+TEST(ActiveVertData, ExtraLocalVert)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  mesh::impl::MeshSpec spec;
+  spec.numelX = 3;
+  spec.numelY = 3;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;
+
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<mesh::Mesh> mesh1 = create_mesh(spec, func);
+
+  mesh::MeshEntityPtr centerVert = find_closest_vert(mesh1, utils::Point(1.0/3, 1.0/3));
+
+  opt::impl::ActiveVertData active(mesh1, centerVert);
+
+  mesh::MeshEntityPtr extraLocalVert = find_closest_vert(mesh1, utils::Point(1.0, 1.0/3));
+  active.add_local_vert(extraLocalVert);
+
+  int numLocalVerts = 10;
+  int numLocalTris = 12;
+  EXPECT_EQ(active.get_num_verts(), numLocalVerts);
+  EXPECT_EQ(active.get_num_local_verts(), numLocalVerts);
+  EXPECT_EQ(active.get_num_elements(), numLocalTris);
+  EXPECT_EQ(active.get_unique_verts().size(), size_t(numLocalVerts));
+  EXPECT_EQ(active.get_local_verts().size(), size_t(numLocalVerts));
+  EXPECT_EQ(active.get_local_verts().back(), extraLocalVert);
+  EXPECT_EQ(active.get_points_orig().size(), size_t(numLocalVerts));
+  EXPECT_EQ(active.get_points_orig().back().y, extraLocalVert->get_point_orig(0).y);
 }
 
 } // namespace impl

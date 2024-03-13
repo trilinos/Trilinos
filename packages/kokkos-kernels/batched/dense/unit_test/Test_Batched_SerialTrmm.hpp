@@ -22,6 +22,8 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
+#include <chrono>
+
 using namespace KokkosBatched;
 
 namespace Test {
@@ -59,7 +61,7 @@ struct VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -111,6 +113,7 @@ struct ParamTag {
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedSerialTrmm {
+  using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b;
 
   ScalarType _alpha;
@@ -136,7 +139,7 @@ struct Functor_TestBatchedSerialTrmm {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, ParamTagType> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _a.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -148,7 +151,7 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols,
                             const char* trans) {
   typedef typename ViewType::value_type value_type;
   typedef typename DeviceType::execution_space execution_space;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   ScalarType alpha(1.0);
   ScalarType beta(0.0);
@@ -165,7 +168,8 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols,
       Kokkos::create_mirror_view(B_actual);
   typename ViewType::HostMirror B_expected_host =
       Kokkos::create_mirror_view(B_expected);
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
   using ViewTypeSubA =
       decltype(Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL()));

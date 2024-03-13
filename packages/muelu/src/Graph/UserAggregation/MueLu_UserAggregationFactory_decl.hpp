@@ -46,7 +46,6 @@
 #ifndef MUELU_USERAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_USERAGGREGATIONFACTORY_DECL_HPP_
 
-
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
@@ -60,22 +59,22 @@
 
 namespace MueLu {
 
-template<class LocalOrdinal = DefaultLocalOrdinal,
-         class GlobalOrdinal = DefaultGlobalOrdinal,
-         class Node = DefaultNode>
+template <class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
 class UserAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_USERAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-public:
+ public:
   //! @name Constructors/Destructors.
   //@{
 
   //! Constructor.
-  UserAggregationFactory() { };
+  UserAggregationFactory(){};
 
   //! Destructor.
-  virtual ~UserAggregationFactory() { }
+  virtual ~UserAggregationFactory() {}
 
   RCP<const ParameterList> GetValidParameterList() const;
 
@@ -101,10 +100,10 @@ public:
 
   //@}
 
-private:
-}; // class UserAggregationFactory
+ private:
+};  // class UserAggregationFactory
 
-}
+}  // namespace MueLu
 
 #define MUELU_USERAGGREGATIONFACTORY_SHORT
 #endif /* MUELU_USERAGGREGATIONFACTORY_DECL_HPP_ */

@@ -89,6 +89,7 @@ namespace {
   using Teuchos::TRANS;
   using Teuchos::NO_TRANS;
 
+
   using Tpetra::global_size_t;
   using Tpetra::CrsMatrix;
   using Tpetra::MultiVector;
@@ -96,11 +97,11 @@ namespace {
   using Tpetra::createContigMap;
   using Tpetra::createUniformContigMap;
 
+
+
   using Amesos2::STRUMPACK;
-  using Amesos2::Meta::is_same;
 
   typedef Tpetra::Map<>::node_type Node;
-
 
   bool testMpi = true;
 
@@ -144,7 +145,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos2::is_same<> )
+     * - Correct typedefs
      */
     typedef ScalarTraits<SCALAR> ST;
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
@@ -181,13 +182,13 @@ namespace {
     TEST_ASSERT( solver->getStatus().getNumSolve() == 0 );
 
     // The following should all pass at compile time
-    //TEST_ASSERT( (is_same<MAT,typename SOLVER::matrix_type>::value) );
-    //TEST_ASSERT( (is_same<MV,typename SOLVER::vector_type>::value) );
-    //TEST_ASSERT( (is_same<SCALAR,typename SOLVER::scalar_type>::value) );
-    //TEST_ASSERT( (is_same<LO,typename SOLVER::local_ordinal_type>::value) );
-    //TEST_ASSERT( (is_same<GO,typename SOLVER::global_ordinal_type>::value) );
-    //TEST_ASSERT( (is_same<global_size_t,typename SOLVER::global_size_type>::value) );
-    // TEST_ASSERT( (is_same<Node,typename SOLVER::node_type>::value) );
+    //TEST_ASSERT( (std::is_same_v<MAT,typename SOLVER::matrix_type>) );
+    //TEST_ASSERT( (std::is_same_v<MV,typename SOLVER::vector_type>) );
+    //TEST_ASSERT( (std::is_same_v<SCALAR,typename SOLVER::scalar_type>) );
+    //TEST_ASSERT( (std::is_same_v<LO,typename SOLVER::local_ordinal_type>) );
+    //TEST_ASSERT( (std::is_same_v<GO,typename SOLVER::global_ordinal_type>) );
+    //TEST_ASSERT( (std::is_same_v<global_size_t,typename SOLVER::global_size_type>) );
+    // TEST_ASSERT( (std::is_same_v<Node,typename SOLVER::node_type>) );
   }
 
 
@@ -700,7 +701,25 @@ namespace {
   UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
+  // UNIT_TEST_GROUP_ORDINAL(int)
+
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   UNIT_TEST_GROUP_ORDINAL(int)
+  typedef long int LongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
+  #ifdef HAVE_TPETRA_INT_LONG_LONG
+  typedef long long int LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
+  #endif
+#else  //ETI
+  #ifdef HAVE_TPETRA_INST_INT_INT
+  UNIT_TEST_GROUP_ORDINAL(int)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+  typedef long int LongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongInt)
+  #endif
+#endif  // EXPL-INST
 
   //#  ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   //typedef long int LongInt;

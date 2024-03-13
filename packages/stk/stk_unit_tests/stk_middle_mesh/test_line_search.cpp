@@ -1,4 +1,4 @@
-#include "backtracking_line_search.hpp"
+#include "stk_middle_mesh/backtracking_line_search.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

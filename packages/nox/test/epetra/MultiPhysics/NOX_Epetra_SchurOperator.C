@@ -122,7 +122,7 @@ SchurOp::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   std::cout << "ERROR: NOX::Epetra::SchurOp::ApplyInverse() - Not valid "
        << "for this operator!" << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 
   return (-1);
 }
@@ -134,7 +134,7 @@ SchurOp::NormInf() const
 {
   std::cout << "ERROR: NOX::Epetra::SchurOp::NormInf() - Not Available for "
        << "this operator!" << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 
   return 1.0;
 }

@@ -40,7 +40,7 @@ int SerialTrsmInternalLeftLowerConj(const bool use_unit_diag, const int m,
                                     const int as0, const int as1,
                                     /**/ ValueType* KOKKOS_RESTRICT B,
                                     const int bs0, const int bs1) {
-  typedef Kokkos::Details::ArithTraits<ValueType> AT;
+  typedef Kokkos::ArithTraits<ValueType> AT;
 
   const ScalarType one(1.0), zero(0.0);
 
@@ -79,7 +79,7 @@ int SerialTrsmInternalLeftUpperConj(const bool use_unit_diag, const int m,
                                     const int as0, const int as1,
                                     /**/ ValueType* KOKKOS_RESTRICT B,
                                     const int bs0, const int bs1) {
-  typedef Kokkos::Details::ArithTraits<ValueType> AT;
+  typedef Kokkos::ArithTraits<ValueType> AT;
 
   const ScalarType one(1.0), zero(0.0);
 

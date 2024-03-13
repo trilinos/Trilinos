@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -62,9 +62,6 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
   int               error;                  /* out of space? */
   int               size;                   /* array spacing */
   int               i, j, k;                /* loop counters */
-  int               kl_refine();
-  void              strout(char *msg);
-  void              ch_mergesort(double *vals, int nvals, int *indices, int *space);
 
   error        = 1;
   term_wgts[1] = NULL;

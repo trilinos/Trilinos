@@ -13,8 +13,9 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-/// @file KokkosKernels_Preconditioner.hpp
-//
+
+/// @file KokkosSparse_Preconditioner.hpp
+
 #ifndef KK_PREC_HPP
 #define KK_PREC_HPP
 

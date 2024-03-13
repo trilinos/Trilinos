@@ -15,6 +15,7 @@ class Mesh;
 template <typename T>
 class VariableSizeField : public impl::FieldBase
 {
+
   public:
     VariableSizeField(const FieldShape& fshape, const impl::EntityCount count, std::shared_ptr<Mesh> mesh)
       : m_fshape(fshape)
@@ -36,16 +37,34 @@ class VariableSizeField : public impl::FieldBase
       return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node, component);
     }
 
+    impl::IteratorRange<T> operator()(MeshEntityPtr entity, int node)
+    {
+      assert(is_entity_on_mesh(entity));
+      return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node);
+    }    
+
     const T& operator()(MeshEntityPtr entity, int node, int component) const
     {
       assert(is_entity_on_mesh(entity));
       return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node, component);
     }
 
+    impl::ConstIteratorRange<T> operator()(MeshEntityPtr entity, int node) const
+    {
+      assert(is_entity_on_mesh(entity));
+      return m_fields[get_type_dimension(entity->get_type())].operator()(entity, node);
+    }  
+
     void insert(MeshEntityPtr entity, int node, const T& val = T())
     {
       assert(is_entity_on_mesh(entity));
       return m_fields[get_type_dimension(entity->get_type())].insert(entity, node, val);
+    }
+
+    void resize(MeshEntityPtr entity, int node, int newSize, const T& val=T())
+    {
+      assert(is_entity_on_mesh(entity));
+      return m_fields[get_type_dimension(entity->get_type())].resize(entity, node, newSize, val);
     }
 
     void clear(int dim) { m_fields[dim].clear(); }
@@ -67,6 +86,11 @@ class VariableSizeField : public impl::FieldBase
     const FieldShape& get_field_shape() const { return m_fshape; }
 
     std::shared_ptr<Mesh> get_mesh() const { return m_mesh; }
+
+    StorageUsage get_storage_usage() const
+    {
+      return m_fields[0].get_storage_usage() + m_fields[1].get_storage_usage() + m_fields[2].get_storage_usage();
+    }
 
   protected:
     void add_entity(int dim) override { m_fields[dim].add_entity(); }
@@ -103,6 +127,13 @@ VariableSizeFieldPtr<T> create_variable_size_field(std::shared_ptr<Mesh> mesh, c
   mesh->attach_field(field);
 
   return field;
+}
+
+template <typename T>
+double compute_storage_efficiency(VariableSizeFieldPtr<T> field)
+{
+  StorageUsage usage = field->get_storage_usage();
+  return double(usage.numUsed)/std::max(usage.numAllocated, size_t(1));
 }
 
 } // namespace mesh

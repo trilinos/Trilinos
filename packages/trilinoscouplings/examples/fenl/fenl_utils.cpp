@@ -40,11 +40,10 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
     GROUPING_TASMANIAN_SURROGATE };
   const char *grouping_names[] = { "natural", "max-anisotropy", "mortan-z", "tasmanian-surrogate" };
 
-  const int num_sampling_types = 5;
+  const int num_sampling_types = 4;
   const SamplingType sampling_values[] = {
-    SAMPLING_STOKHOS, SAMPLING_DAKOTA, SAMPLING_TASMANIAN, SAMPLING_FILE,
-    SAMPLING_VPS };
-  const char *sampling_names[] = { "stokhos", "dakota", "tasmanian", "file", "vps" };
+    SAMPLING_STOKHOS, SAMPLING_TASMANIAN, SAMPLING_FILE, SAMPLING_VPS };
+  const char *sampling_names[] = { "stokhos", "tasmanian", "file", "vps" };
 
   clp.setOption("serial", "no-serial",     &cmdline.USE_SERIAL, "use the serial device");
   clp.setOption("threads",                 &cmdline.USE_THREADS, "number of pthreads threads");

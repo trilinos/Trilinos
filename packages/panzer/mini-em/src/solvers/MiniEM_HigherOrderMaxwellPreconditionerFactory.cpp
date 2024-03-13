@@ -14,6 +14,7 @@
 #include "Panzer_String_Utilities.hpp"
 
 #include "MiniEM_Utils.hpp"
+#include <stdexcept>
 
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
@@ -206,7 +207,12 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
    // Hcurl mass matrix, unit weight
    Teko::LinearOp M1 = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_EDGE_1"));
    // Hcurl mass matrix, dt/mu weight
-   Teko::LinearOp Ms = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE_1"));
+   Teko::LinearOp Ms;
+   try {
+     Ms = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix weighted AUXILIARY_EDGE 1"));
+   } catch (std::runtime_error&) {
+     Ms = M1;
+   }
 
    describeAndWriteMatrix("S_E",*S_E,debug,dump);
    describeAndWriteMatrix("M0",*M0,debug,dump);
@@ -286,10 +292,11 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
      // Operators for RefMaxwell coarse grid solve
      // ("A" and "D0" are already set above.)
      Teuchos::ParameterList& lvlList = muelulist.sublist("level " + std::to_string(maxLevels-1) + " user data");
-     lvlList.set("M1",M1);
-     lvlList.set("Ms",Ms);
+     lvlList.set("Dk_1",discreteGradients.back());
+     lvlList.set("Mk_one",M1);
+     lvlList.set("M1_beta",Ms);
      lvlList.set("Coordinates", S_E_prec_pl.get<RCP<TpMV> >("Coordinates"));
-     lvlList.set("M0inv",M0inv);
+     lvlList.set("invMk_1_invBeta",M0inv);
 
      Teko::InverseLibrary myInvLib = invLib;
 

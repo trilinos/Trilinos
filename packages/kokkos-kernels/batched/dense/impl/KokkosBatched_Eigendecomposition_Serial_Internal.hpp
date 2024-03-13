@@ -72,7 +72,7 @@ struct SerialEigendecompositionInternal {
                   "Serial eigendecomposition on device and/or without LAPACK "
                   "is not implemented yet");
     //       typedef RealType real_type;
-    //       typedef Kokkos::Details::ArithTraits<real_type> ats;
+    //       typedef Kokkos::ArithTraits<real_type> ats;
 
     //       const real_type one(1), zero(0), tol = 1e2*ats::epsilon();
     //       //const Kokkos::pair<real_type,real_type> identity(one, zero);
@@ -388,42 +388,10 @@ struct SerialEigendecompositionInternal {
       const int ers, RealType* ei, const int eis, RealType* UL, const int uls0,
       const int uls1, RealType* UR, const int urs0, const int urs1, RealType* w,
       const int wlen) {
-#if defined(KOKKOS_IF_ON_HOST)
     KOKKOS_IF_ON_HOST((host_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0,
                                    uls1, UR, urs0, urs1, w, wlen);))
     KOKKOS_IF_ON_DEVICE((device_invoke(m, A, as0, as1, er, ers, ei, eis, UL,
                                        uls0, uls1, UR, urs0, urs1, w, wlen);))
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)  // FIXME remove when
-                                                          // requiring minimum
-                                                          // version of
-                                                          // Kokkos 3.6
-    // if (as0 == 1 || as1 == 1) {
-    /// column major or row major and it runs on host
-    /// potentially it can run tpls internally
-    // NOTE BMK: If LAPACK not enabled, this will static_assert.
-    //           If neither stride is unit, will runtime assert.
-    //           Otherwise will succeed using LAPACK.
-    host_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0, uls1, UR, urs0,
-                urs1, w, wlen);
-    /*
-  } else {
-    /// arbitrary strides should be handled by native implementation
-    device_invoke(m,
-                  A, as0, as1,
-                  er, ers,
-                  ei, eis,
-                  UL, uls0, uls1,
-                  UR, urs0, urs1,
-                  w, wlen);
-    throw std::runtime_error("Serial eigendecomposition without unit stride
-  implemented yet.");
-  }
-  */
-#else
-    /// device code runs
-    device_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0, uls1, UR, urs0,
-                  urs1, w, wlen);
-#endif
     return 0;
   }
 };

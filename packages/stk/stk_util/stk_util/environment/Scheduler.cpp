@@ -44,7 +44,7 @@
 #include <utility>   // for pair, swap
 
 #include "stk_util/environment/EnvData.hpp"      // for EnvData
-#include "stk_util/parallel/ParallelReduce.hpp"  // for all_reduce_max
+#include "stk_util/parallel/ParallelReduceBool.hpp"
 #include "stk_util/util/Callback.hpp"            // for create_callback
 #include "stk_util/util/SignalHandler.hpp"       // for SignalHandler
 
@@ -361,10 +361,7 @@ bool Scheduler::force_schedule()
   // processor so we need to see if it is true on any processor...
   bool result = forceSchedule_;
   if (EnvData::parallel_size() > 1) {
-    static int inbuf[1], outbuf[1];
-    inbuf[0] = forceSchedule_ ? 1 : 0;
-    stk::all_reduce_max(EnvData::parallel_comm(), inbuf, outbuf, 1);
-    result = outbuf[0] > 0;
+    result = stk::is_true_on_any_proc(EnvData::parallel_comm(), forceSchedule_);
   }
   forceSchedule_ = false;
   return result;
@@ -577,7 +574,11 @@ Time Scheduler::next_implicit_output_time(Time time) const
     begin = next++;
   }
 
-  assert( (*begin).first <= time);
+#ifndef NDEBUG
+  static constexpr double eps = std::numeric_limits<double>::epsilon();
+  STK_ThrowAssertMsg( (*begin).first <= (time + eps), "begin.first="<<(*begin).first<<", time="<<time<<" diff "<<((*begin).first-time)<<" eps "<<std::numeric_limits<double>::epsilon());
+#endif
+
   assert(next == end || (*next).first > delta.min);
 
   // At this point, have the correct time interval which specifies start and frequency

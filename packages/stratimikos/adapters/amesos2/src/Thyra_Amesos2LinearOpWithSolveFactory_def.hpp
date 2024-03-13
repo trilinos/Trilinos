@@ -57,7 +57,6 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Teuchos_TypeTraits.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Thyra {

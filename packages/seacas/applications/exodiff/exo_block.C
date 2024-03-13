@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -28,7 +28,7 @@ Exo_Block<INT>::Exo_Block(int file_id, size_t id, const char *type, size_t num_e
     : Exo_Entity(file_id, id, num_e), elmt_type(type), num_nodes_per_elmt(num_npe)
 {
   SMART_ASSERT(id > 0);
-  SMART_ASSERT(elmt_type != "");
+  SMART_ASSERT(!elmt_type.empty());
   SMART_ASSERT(num_npe > 0);
 }
 
@@ -115,7 +115,7 @@ template <typename INT> const INT *Exo_Block<INT>::Connectivity(size_t elmt_inde
 template <typename INT> int Exo_Block<INT>::Check_State() const
 {
   SMART_ASSERT(id_ >= EX_INVALID_ID);
-  SMART_ASSERT(!(id_ == EX_INVALID_ID && elmt_type != ""));
+  SMART_ASSERT(!(id_ == EX_INVALID_ID && !elmt_type.empty()));
   SMART_ASSERT(!(id_ == EX_INVALID_ID && num_nodes_per_elmt >= 0));
   SMART_ASSERT(!(id_ == EX_INVALID_ID && !conn.empty()));
 

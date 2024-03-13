@@ -44,15 +44,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UnitTest_BDF2 
-  SOURCES Tempus_UnitTest_BDF2.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  UnitTest_BackwardEuler
+  SOURCES Tempus_UnitTest_BackwardEuler.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UnitTest_BackwardEuler
-  SOURCES Tempus_UnitTest_BackwardEuler.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  UnitTest_BDF2 
+  SOURCES Tempus_UnitTest_BDF2.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
@@ -435,14 +435,34 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_BackwardEuler_CopyFiles
+  DEST_FILES Tempus_BackwardEuler_SinCos.xml
+  EXEDEPS UnitTest_BackwardEuler
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_BDF2_CopyFiles
+  DEST_FILES Tempus_BDF2_SinCos.xml
+  EXEDEPS UnitTest_BDF2
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_DIRK_BackwardEuler_CopyFiles
   DEST_FILES Tempus_DIRK_VanDerPol.xml
   EXEDEPS UnitTest_DIRK_BackwardEuler
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkExplicitAForm_CopyFiles
+  DEST_FILES Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  EXEDEPS UnitTest_NewmarkExplicitAForm
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitAForm_CopyFiles
-  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml
   EXEDEPS UnitTest_NewmarkImplicitAForm
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitDForm_CopyFiles
+  DEST_FILES Tempus_NewmarkImplicitDForm_HarmonicOscillator_Damped_SecondOrder.xml
+  EXEDEPS UnitTest_NewmarkImplicitDForm
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_IntegratorBasic_CopyFiles

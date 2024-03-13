@@ -38,6 +38,7 @@
 #include <stk_mesh/base/FieldDataManager.hpp>
 #include <stk_mesh/baseImpl/NgpFieldAux.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/util/FieldDataAllocator.hpp>
 #include <stk_ngp_test/ngp_test.hpp>
 
 namespace {
@@ -80,6 +81,7 @@ public:
     rawBucketAllocations.resize(numBuckets);
     for(unsigned i=0; i<numBuckets; ++i) {
       rawBucketAllocations[i] = fieldDataAllocator.allocate(bytesPerBucket);
+      ASAN_UNPOISON_MEMORY_REGION(rawBucketAllocations[i], bytesPerBucket);
       double* hostBucketPtr = reinterpret_cast<double*>(rawBucketAllocations[i]);
 
       for(unsigned entityIndex=0; entityIndex<bucketCapacity; ++entityIndex) {

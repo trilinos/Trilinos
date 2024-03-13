@@ -55,15 +55,15 @@ void FortranBLAS<double>::scal(int kmax, const double alpha, double x[])
     SIERRA_FORTRAN(dscal)(&kmax,&alpha,x,&one);
 }
 
-void FortranBLAS<double>::fill(int kmax, const double alpha, double x[], const int inc)
+void FortranBLAS<double>::fill(int numVals, double alpha, double x[], int stride)
 {
-    auto ke = kmax*inc;
-    if (alpha == double(0) ) {
-            std::memset(x,0,ke*sizeof(double));
-    } else {
-      for(int k = 0; k < ke ; k += inc) {
-          x[k] = alpha;
-      }
+    if (stride == 1) {
+        std::fill(x, x+numVals, alpha);
+    }
+    else {
+        for (double * end = x+(numVals*stride); x < end; x+=stride) {
+            *x = alpha;
+        }
     }
 }
 
@@ -148,11 +148,15 @@ void FortranBLAS<float>::scal(int kmax, const float alpha, float x[])
     SIERRA_FORTRAN(sscal)(&kmax,&alpha,x,&one);
 }
 
-void FortranBLAS<float>::fill(int kmax, const float alpha, float x[], const int inc)
+void FortranBLAS<float>::fill(int numVals, float alpha, float x[], int stride)
 {
-    auto ke = kmax*inc;
-    for(int k = 0; k < ke ; k += inc) {
-        x[k] = alpha;
+    if (stride == 1) {
+        std::fill(x, x+numVals, alpha);
+    }
+    else {
+        for (float * end = x+(numVals*stride); x < end; x+=stride) {
+            *x = alpha;
+        }
     }
 }
 

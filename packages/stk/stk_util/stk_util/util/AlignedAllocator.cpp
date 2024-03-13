@@ -34,6 +34,7 @@
 #include <stk_util/util/AlignedAllocator.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
+#include <iostream>
 #include "Kokkos_Core.hpp"
 
 namespace non_std {

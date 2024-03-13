@@ -69,10 +69,10 @@ extern void popRegion ();
 namespace Teuchos {
 
 //! Error reporting function for stacked timer.
-void error_out(const std::string& msg, const bool fail_all = false);
+TEUCHOSCOMM_LIB_DLL_EXPORT void error_out(const std::string& msg, const bool fail_all = false);
 
 /**
- * \brief the basic timer used elsewhere, uses MPI_Wtime for time
+ * \brief The basic timer used internally, uses std::chrono::high_resolution_clock.
  *
  * This class hold  a time and number of times this timer is called, and a
  * count of how many "updates" this timer has services.  Example if you have a
@@ -218,7 +218,7 @@ protected:
  * timer.report(std::cout); // dump to screen
  *
  */
-class StackedTimer
+class TEUCHOSCOMM_LIB_DLL_EXPORT StackedTimer
 {
 protected:
 
@@ -455,12 +455,7 @@ protected:
       */
     BaseTimer::TimeInfo findTimer(const std::string &name,bool& found);
 
-  protected:
-
-
   }; // LevelTimer
-
-
 
 
 public:
@@ -471,6 +466,7 @@ public:
     */
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
     : timer_(0,name,nullptr,false),
+      global_mpi_aggregation_called_(false),
       enable_verbose_(false),
       verbose_timestamp_levels_(0), // 0 disables
       verbose_ostream_(Teuchos::rcpFromRef(std::cout)),
@@ -696,6 +692,7 @@ public:
    * Dump all the data from all the MPI ranks to an ostream
    * @param [in,out] os - Output stream
    * @param [in] comm - Teuchos comm pointer
+   * @param [in] options - Options on what data to output and how to format the data
    */
   void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
@@ -760,12 +757,50 @@ public:
   /// restart timers after a call to disableTimers().
   void enableTimers();
 
+  /**
+   * Aggregate timer data from all MPI processes to rank 0 of the comm.
+   * @param [in] comm - Teuchos comm pointer.
+   * @param [in] options - Determines what data the user wants aggregated.
+   */
+  void aggregateMpiData(Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
+
+  /**
+   * Returns the total time for the timer averaged across all MPI
+   * processes (inlcudes only the MPI processes where the timer
+   * exists).
+   *
+   * @param[in] flat_timer_name Timer name that is flattened to include parent names in the string.
+   * @return Total timer averaged across all MPI processes.
+   */
+  double getMpiAverageTime(const std::string& flat_timer_name);
+
+  /**
+   * Returns the number of times this timer was started, averaged
+   * across all MPI processes (inlcudes only the MPI processes where
+   * the timer exists).
+   *
+   * @param[in] flat_timer_name Timer name that is flattened to include parent names in the string.
+   * @return Total number of times the timer was started, averaged across all MPI processes.
+   */
+  double getMpiAverageCount(const std::string& flat_timer_name);
+
+  /**
+   * Returns true if the timer name exists in the stacked timer. This
+   * can only be called after aggregateMpiData() is called so that the
+   * flattened names are generated.
+   *
+   * @param[in] flat_timer_name Timer name that is flattened to include parent names in the string.
+   * @return true if the timer exists.
+   */
+  bool isTimer(const std::string& flat_timer_name);
+
 protected:
   /// Current level running
   LevelTimer *top_;
   /// Base timer
   LevelTimer timer_;
 
+  // Global MPI aggregation arrays
   Array<std::string> flat_names_;
   Array<double> min_;
   Array<double> max_;
@@ -777,6 +812,7 @@ protected:
   Array<unsigned long> count_;
   Array<unsigned long long> updates_;
   Array<int> active_;
+  bool global_mpi_aggregation_called_;
 
   /// Stores the column widths for output alignment
   struct AlignmentWidths {
@@ -831,6 +867,11 @@ protected:
     * Migrate all the timer data to rank=0 if parallel
     */
    void collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, const OutputOptions &options );
+
+   /**
+    * Returns the index into the mpi aggregated timers for a timer name
+    */
+   int getFlatNameIndex(const std::string& flat_timer_name);
 
   /**
    * Compute the column widths to align the output from report() in

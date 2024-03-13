@@ -17,6 +17,7 @@
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_Snap.hpp>
+#include <Akri_Unit_BoundingBoxMesh.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <gtest/gtest.h>
 #include <stk_io/IossBridge.hpp>
@@ -48,7 +49,7 @@ public:
     auto & vec_type = fixture.meta_data().spatial_dimension() == 2 ? FieldType::VECTOR_2D : FieldType::VECTOR_3D;
     coord_field = aux_meta.register_field("coordinates", vec_type, stk::topology::NODE_RANK, 1u, 1u, fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
-    cdfemSupport.add_interpolation_field(coord_field);
+    cdfemSupport.add_edge_interpolation_field(coord_field);
 
     cdfemSupport.set_prolongation_model(INTERPOLATION);
   }
@@ -86,13 +87,14 @@ public:
       const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
       nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
           krino_mesh->get_active_part(),
-          cdfemSupport.get_interpolation_fields(),
+          cdfemSupport.get_snap_fields(),
           interfaceGeometry,
           cdfemSupport.get_global_ids_are_parallel_consistent(),
           cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
-          minIntPtWeightForEstimatingCutQuality);
+          minIntPtWeightForEstimatingCutQuality,
+          cdfemSupport.get_max_edge_snap());
     }
-    interfaceGeometry.prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
+    interfaceGeometry.prepare_to_decompose_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
 
     krino_mesh->generate_nonconformal_elements();
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
@@ -183,12 +185,12 @@ protected:
   const InterfaceGeometry & get_interface_geometry() const { return *mySphereGeometry; }
   typename BoundingBoxMesh::BoundingBoxType get_domain() const
   {
-    const Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? Vector3d(1.,1.,0.) : Vector3d(1.,1.,1.);
+    const stk::math::Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? stk::math::Vector3d(1.,1.,0.) : stk::math::Vector3d(1.,1.,1.);
     typename BoundingBoxMesh::BoundingBoxType domain(-0.5*extents, 0.5*extents);
     return domain;
   }
   double get_mesh_size() const { return 1./6.; }
-  Sphere mySphere{"test sphere",  Vector3d::ZERO, 0.35};
+  Sphere mySphere{stk::math::Vector3d::ZERO, 0.35};
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> mySphereGeometry;
 };
 
@@ -225,7 +227,7 @@ public:
   CubeDecompositionFixture()
   {
     const double x = 0.25;
-    const std::array<Vector3d,8> cubeVerts =
+    const std::array<stk::math::Vector3d,8> cubeVerts =
       {{
         {-x,-x,-x}, {+x,-x,-x}, {+x,+x,-x}, {-x,+x,-x},
         {-x,-x,+x}, {+x,-x,+x}, {+x,+x,+x}, {-x,+x,+x}
@@ -241,10 +243,7 @@ public:
         {{4,5,6}}, {{4,6,7}}
       }};
     for (auto && facetVerts : facetsVerts)
-    {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( cubeVerts[facetVerts[0]], cubeVerts[facetVerts[1]], cubeVerts[facetVerts[2]] );
-      myCube.add( std::move(facet) );
-    }
+      myCube.emplace_back_3d( cubeVerts[facetVerts[0]], cubeVerts[facetVerts[1]], cubeVerts[facetVerts[2]] );
 
     myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
@@ -252,12 +251,12 @@ protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }
   typename BoundingBoxMesh::BoundingBoxType get_domain() const
   {
-    const Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? Vector3d(1.,1.,0.) : Vector3d(1.,1.,1.);
+    const stk::math::Vector3d extents = (2 == this->fixture.meta_data().spatial_dimension()) ? stk::math::Vector3d(1.,1.,0.) : stk::math::Vector3d(1.,1.,1.);
     typename BoundingBoxMesh::BoundingBoxType domain(-0.5*extents, 0.5*extents);
     return domain;
   }
   double get_mesh_size() const { return 1./6.; }
-  Faceted_Surface myCube{"test cube"};
+  Faceted_Surface<Facet3d> myCube;
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> myCubeGeometry;
 };
 

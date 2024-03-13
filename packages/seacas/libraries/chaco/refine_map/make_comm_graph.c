@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,32 +12,31 @@
 
 /* Construct a weighted quotient graph representing the inter-set communication. */
 int make_comm_graph(struct vtx_data ***pcomm_graph, /* graph for communication requirements */
-                    struct vtx_data ** graph,       /* graph data structure */
+                    struct vtx_data  **graph,       /* graph data structure */
                     int                nvtxs,       /* number of vertices in graph */
                     int                using_ewgts, /* are edge weights being used? */
-                    int *              assign,      /* current assignment */
+                    int               *assign,      /* current assignment */
                     int                nsets_tot    /* total number of sets */
 )
 {
   float  ewgt;               /* edge weight in graph */
-  int ** edges_list  = NULL; /* lists of edges */
-  int ** ewgts_list  = NULL; /* lists of edge weights */
-  int *  edges       = NULL; /* edges in communication graph */
-  int *  ewgts       = NULL; /* edge weights in communication graph */
+  int  **edges_list  = NULL; /* lists of edges */
+  int  **ewgts_list  = NULL; /* lists of edge weights */
+  int   *edges       = NULL; /* edges in communication graph */
+  int   *ewgts       = NULL; /* edge weights in communication graph */
   float *float_ewgts = NULL; /* edge weights in floating point */
-  int *  adj_sets    = NULL; /* weights connecting sets */
-  int *  order       = NULL; /* ordering of vertices by set */
-  int *  sizes       = NULL; /* sizes of different sets */
-  int *  start       = NULL; /* pointers into adjacency data */
-  int *  adjacency   = NULL; /* array with all the edge info */
-  int *  eptr        = NULL; /* loops through edges in graph */
-  int *  ewptr       = NULL; /* loop through edge weights */
+  int   *adj_sets    = NULL; /* weights connecting sets */
+  int   *order       = NULL; /* ordering of vertices by set */
+  int   *sizes       = NULL; /* sizes of different sets */
+  int   *start       = NULL; /* pointers into adjacency data */
+  int   *adjacency   = NULL; /* array with all the edge info */
+  int   *eptr        = NULL; /* loops through edges in graph */
+  int   *ewptr       = NULL; /* loop through edge weights */
   int    set, set2;          /* sets two vertices belong to */
   int    vertex;             /* vertex in graph */
   int    ncomm_edges;        /* number of edges in communication graph */
   int    error;              /* out of space? */
   int    i, j;               /* loop counters */
-  int    reformat();
 
   error        = 1;
   *pcomm_graph = NULL;

@@ -306,6 +306,8 @@ ProductModelEvaluator<Real>::evalModelImpl(
     Thyra::ModelEvaluatorBase::InArgsSetup<Real> internal_inArgs;
     Thyra::ModelEvaluatorBase::OutArgsSetup<Real> internal_outArgs;
 
+    internal_outArgs.setModelEvalDescription(outArgs.modelEvalDescription()+"_internal");
+
     internal_inArgs.set_Np_Ng(thyra_model_->Np(), thyra_model_->Ng());
     internal_outArgs.set_Np_Ng(thyra_model_->Np(), thyra_model_->Ng());
 
@@ -487,9 +489,9 @@ ProductModelEvaluator<Real>::evalModelImpl(
     if (supports_dfdp_op) {
         Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dfdp_op =
             Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(outArgs.get_DfDp(0).getLinearOp());
-        if (!Teuchos::is_null(dfdp_op))
-        for(std::size_t j=0; j<p_indices_.size(); ++j) {
-            internal_outArgs.set_DfDp( p_indices_[j], Thyra::ModelEvaluatorBase::Derivative<Real>(Teuchos::rcp_dynamic_cast<Thyra::LinearOpBase<Real>>(dfdp_op->getNonconstBlock(0, j))));
+        if (Teuchos::nonnull(dfdp_op)) {
+            for(std::size_t j=0; j<p_indices_.size(); ++j)
+                internal_outArgs.set_DfDp( p_indices_[j], Thyra::ModelEvaluatorBase::Derivative<Real>(Teuchos::rcp_dynamic_cast<Thyra::LinearOpBase<Real>>(dfdp_op->getNonconstBlock(0, j))));
         }
     }
 
@@ -497,7 +499,7 @@ ProductModelEvaluator<Real>::evalModelImpl(
         if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,i,0).supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
             Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dgdp_op =
                 Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<Real>>(outArgs.get_DgDp(i,0).getLinearOp());
-            if (!Teuchos::is_null(dgdp_op)) {
+            if (Teuchos::nonnull(dgdp_op)) {
                 for(std::size_t j=0; j<p_indices_.size(); ++j) {
                     auto dgdp_j_mv =
                         Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Real>>( Teuchos::rcp_dynamic_cast<Thyra::DefaultScaledAdjointLinearOp<Real>>(dgdp_op->getNonconstBlock(0, j))->getNonconstOp() );
@@ -518,6 +520,20 @@ ProductModelEvaluator<Real>::evalModelImpl(
                         internal_outArgs.set_DgDp(i, p_indices_[j], Thyra::ModelEvaluatorBase::Derivative<Real>(dgdp_j_mv, dgdp_orient));
                     }
                 }
+            }
+        }
+    }
+
+    for (auto i = 0; i < thyra_model_->Ng(); ++i) {
+        bool suppGradMV = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,i,0).supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+        bool suppJacMV = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,i,0).supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        if (suppGradMV || suppJacMV) {
+            auto dgdp_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(outArgs.get_DgDp(i,0).getMultiVector());
+            if (Teuchos::nonnull(dgdp_vec)) {
+                auto dgdp_orient = suppGradMV ? Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM : Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
+                for(std::size_t j=0; j<p_indices_.size(); ++j) {
+                    internal_outArgs.set_DgDp(i, p_indices_[j], Thyra::ModelEvaluatorBase::Derivative<Real>(dgdp_vec->getNonconstMultiVectorBlock(j), dgdp_orient));
+               }
             }
         }
     }
@@ -801,24 +817,40 @@ ProductModelEvaluator<Real>::fromInternalOutArgs(const Thyra::ModelEvaluatorBase
 
     for (auto g_index = 0; g_index < outArgs1.Ng(); ++g_index) {
         outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index));
-        Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
+        outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index));
+        
+        bool suppLinOp(true), suppGradMV(true), suppJacMV(true);        
         for (std::size_t i = 0; i < p_indices_.size(); ++i) {
-            if (!outArgs1.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices_[i]).none()) {
-                dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-                break;
-            }
+            const auto& dgdpi_support = outArgs1.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, g_index, p_indices_[i]);
+            suppLinOp = dgdpi_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP) ?  suppLinOp : false;
+            suppGradMV = dgdpi_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) ?  suppGradMV : false;
+            suppJacMV = dgdpi_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?  suppJacMV : false;
         }
+
+        Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
+        if(suppLinOp) dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+        if(suppGradMV) dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+        if(suppJacMV) dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+
         outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDp, g_index, 0, dgdp_support);
     }
 
-    Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support;
-    for (std::size_t i = 0; i < p_indices_.size(); ++i) {
-        if (!outArgs1.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, p_indices_[i]).none()) {
-            dfdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
-            break;
+    { //DfDp
+        bool suppLinOp(true), suppGradMV(true), suppJacMV(true);        
+        for (std::size_t i = 0; i < p_indices_.size(); ++i) {
+            const auto& dfdpi_support = outArgs1.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, p_indices_[i]);
+            suppLinOp = dfdpi_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP) ?  suppLinOp : false;
+            suppGradMV = dfdpi_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) ?  suppGradMV : false;
+            suppJacMV = dfdpi_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?  suppJacMV : false;
         }
+
+        Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support;
+        if(suppLinOp) dfdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+        if(suppGradMV) dfdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+        if(suppJacMV) dfdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+
+        outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DfDp, 0, dfdp_support);
     }
-    outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DfDp, 0, dfdp_support);
 
     for (auto g_index = 0; g_index < outArgs1.Ng(); ++g_index) {
 
@@ -869,6 +901,7 @@ ProductModelEvaluator<Real>::toInternalOutArgs(const Thyra::ModelEvaluatorBase::
 
     for (auto g_index = 0; g_index < outArgs1.Ng(); ++g_index) {
         outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx, g_index));
+        outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index, outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDx_dot, g_index));
         outArgs2.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xx, g_index, outArgs1.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_xx, g_index));
         for (std::size_t i = 0; i < p_indices_.size(); ++i) {
             outArgs2.setSupports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDp, g_index, p_indices_[i], outArgs1.supports(Thyra::ModelEvaluator<Real>::OUT_ARG_DgDp, g_index, 0));
@@ -944,6 +977,64 @@ ProductModelEvaluator<Real>::block_diagonal_hessian_22(const Teuchos::RCP<Thyra:
     thyra_model_->evalModel(inArgs, outArgs);
 }
 #endif
+
+template <typename Real>
+Teuchos::RCP<Piro::ProductModelEvaluator<Real>> getNonconstProductModelEvaluator(Teuchos::RCP<Thyra::ModelEvaluator<Real>> model) {
+    Teuchos::RCP<Piro::ProductModelEvaluator<Real>> model_PME = 
+        Teuchos::rcp_dynamic_cast<Piro::ProductModelEvaluator<Real>>(model);
+    if (!model_PME.is_null()) {
+        return model_PME;
+    }
+    Teuchos::RCP<Thyra::ModelEvaluator<Real>> model_tmp = model;
+    while (true) {
+        Teuchos::RCP<Thyra::ModelEvaluatorDelegatorBase<Real>> model_MEDB =
+            Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDelegatorBase<Real>>(model_tmp);
+        if (!model_MEDB.is_null()) {
+            model_tmp = model_MEDB->getNonconstUnderlyingModel();
+            //std::cout << model_MEDB->description() << std::endl;
+            model_PME = Teuchos::rcp_dynamic_cast<Piro::ProductModelEvaluator<Real>>(model_tmp);
+            if (!model_PME.is_null()) {
+                return model_PME;
+            }
+        }
+        else
+            return Teuchos::null;
+    }
+}
+
+template <typename Real>
+Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> getProductModelEvaluator(const Teuchos::RCP<const Thyra::ModelEvaluator<Real>> model) {
+    Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> model_PME = 
+        Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(model);
+    if (!model_PME.is_null()) {
+        return model_PME;
+    }
+    Teuchos::RCP<const Thyra::ModelEvaluator<Real>> model_tmp = model;
+    while (true) {
+        Teuchos::RCP<const Thyra::ModelEvaluatorDelegatorBase<Real>> model_MEDB =
+            Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluatorDelegatorBase<Real>>(model_tmp);
+        if (!model_MEDB.is_null()) {
+            model_tmp = model_MEDB->getUnderlyingModel();
+            //std::cout << model_MEDB->description() << std::endl;
+            model_PME = Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(model_tmp);
+            if (!model_PME.is_null()) {
+                return model_PME;
+            }
+        }
+        else
+            return Teuchos::null;
+    }
+}
+
+template <typename Real>
+Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> getProductModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<Real>> model) {
+    return getProductModelEvaluator(Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluator<Real>>(model));
+}
+
+template <typename Real>
+Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> getProductModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<Real>> model) {
+    return getProductModelEvaluator(Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluator<Real>>(model));
+}
 
 } // namespace Piro
 

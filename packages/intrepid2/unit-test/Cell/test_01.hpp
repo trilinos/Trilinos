@@ -113,7 +113,7 @@ namespace Intrepid2 {
       // set the space large enough .... subcell itself can be a cell
       const ordinal_type maxNodeCount = 256;
       DynRankView ConstructWithLabel(refSubcellNodesMax,  maxNodeCount, cellDim);
-      DynRankView ConstructWithLabel(mappedParamNodesMax, maxNodeCount, cellDim);
+      DynRankView ConstructWithLabel(mappedParamVerticesMax, maxNodeCount, cellDim);
       
       // Loop over subcells of the specified dimension
       for(size_type subcOrd=0;subcOrd<subcCount;++subcOrd) {
@@ -121,9 +121,10 @@ namespace Intrepid2 {
         const auto subcNodeCount = parentCell.getNodeCount(subcDim, subcOrd);
 
         const Kokkos::pair<ordinal_type,ordinal_type> nodeRange(0, subcNodeCount);
+        const Kokkos::pair<ordinal_type,ordinal_type> vertexRange(0, subcVertexCount);
         
         auto refSubcellNodes  = Kokkos::subdynrankview( refSubcellNodesMax,  nodeRange, Kokkos::ALL() );
-        auto mappedParamNodes = Kokkos::subdynrankview( mappedParamNodesMax, nodeRange, Kokkos::ALL() );
+        auto mappedParamVertices = Kokkos::subdynrankview( mappedParamVerticesMax, vertexRange, Kokkos::ALL() );
         
         // Retrieve correct reference subcell vertices
         ct::getReferenceSubcellVertices(refSubcellNodes, subcDim, subcOrd, parentCell);
@@ -132,7 +133,7 @@ namespace Intrepid2 {
         switch (subcDim) {
         case 1: {
           // For edges parametrization domain is always 1-cube passed as "subcParamVert_A"
-          ct::mapToReferenceSubcell(mappedParamNodes,
+          ct::mapToReferenceSubcell(mappedParamVertices,
                                     subcParamVert_A,
                                     subcDim,
                                     subcOrd,
@@ -142,14 +143,14 @@ namespace Intrepid2 {
         case 2: {
           // For faces need to treat Triangle and Quadrilateral faces separately          
           if (subcVertexCount == 3) // domain "subcParamVert_A" is the standard 2-simplex  
-            ct::mapToReferenceSubcell(mappedParamNodes,
+            ct::mapToReferenceSubcell(mappedParamVertices,
                                       subcParamVert_A,
                                       subcDim,
                                       subcOrd,
                                       parentCell);
 
           else if (subcVertexCount == 4) // Domain "subcParamVert_B" is the standard 2-cube
-            ct::mapToReferenceSubcell(mappedParamNodes,
+            ct::mapToReferenceSubcell(mappedParamVertices,
                                       subcParamVert_B,
                                       subcDim,
                                       subcOrd,
@@ -169,9 +170,9 @@ namespace Intrepid2 {
         }
         
         //strided subviews from subviews cannot be directly copied to host into a non-strided views
-        DynRankView ConstructWithLabel(nonStridedParamNodes, mappedParamNodes.extent(0),mappedParamNodes.extent(1));
-        Kokkos::deep_copy(nonStridedParamNodes, mappedParamNodes);
-        auto hMappedParamNodes = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), nonStridedParamNodes);
+        DynRankView ConstructWithLabel(nonStridedParamVertices, mappedParamVertices.extent(0),mappedParamVertices.extent(1));
+        Kokkos::deep_copy(nonStridedParamVertices, mappedParamVertices);
+        auto hMappedParamVertices = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), nonStridedParamVertices);
 
         DynRankView ConstructWithLabel(nonStridedRefNodes, refSubcellNodes.extent(0),refSubcellNodes.extent(1));
         Kokkos::deep_copy(nonStridedRefNodes, refSubcellNodes);
@@ -180,12 +181,12 @@ namespace Intrepid2 {
         // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).
         for (size_type subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
           for (size_type i=0;i<cellDim;++i)
-            if (std::abs(hMappedParamNodes(subcVertOrd, i) - hRefSubcellNodes(subcVertOrd, i)) > tol) {
+            if (std::abs(hMappedParamVertices(subcVertOrd, i) - hRefSubcellNodes(subcVertOrd, i)) > tol) {
               ++errorFlag; 
               *outStreamPtr 
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
                 << " Cell Topology = " << parentCell.getName() << "\n"
-                << " Mapped vertex = " << hMappedParamNodes(subcVertOrd, i)
+                << " Mapped vertex = " << hMappedParamVertices(subcVertOrd, i)
                 << " Reference subcell vertex = " << hRefSubcellNodes(subcVertOrd, i) << "\n"
                 << " Parametrization of subcell " << subcOrd << " which is "
                 << parentCell.getName(subcDim,subcOrd) << " failed for vertex " << subcVertOrd << ":\n"

@@ -120,6 +120,4 @@ struct COLOR_D1<KernelHandle, size_view_t, lno_view_t, false,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
       false, true>;
 
-#include <generated_specializations_hpp/KokkosGraph_color_d1_eti_spec_decl.hpp>
-
 #endif

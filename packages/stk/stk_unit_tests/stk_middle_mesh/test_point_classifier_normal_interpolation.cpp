@@ -1,4 +1,4 @@
-#include "predicates/point_classifier_normal_interpolation.hpp"
+#include "stk_middle_mesh/predicates/point_classifier_normal_interpolation.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

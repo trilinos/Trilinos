@@ -61,6 +61,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
+#include "Panzer_IntrepidOrientation.hpp"
 #include "Panzer_L2Projection.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
@@ -152,7 +153,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   using LO = int;
   using GO = panzer::GlobalOrdinal;
   timer->start("ConnManager ctor");
-  const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
+  const RCP<panzer_stk::STKConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
@@ -243,6 +244,66 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   panzer::L2Projection projectionFactory;
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
+
+  
+
+
+
+  // Ignore the workset factory and set the basis directly
+  bool ignoreWorksetFactory = true;
+  std::map<std::string,Teuchos::RCP<panzer::BasisValues2<double>>> map_basis_values;
+  if (ignoreWorksetFactory) {
+
+    // Get the orientations for all element blocks
+    std::map<std::string,std::vector<Intrepid2::Orientation>> orientations;
+    panzer::buildIntrepidOrientations(eBlockNames,*connManager,orientations);
+
+    std::vector<shards::CellTopology> topologies;
+    connManager->getElementBlockTopologies(topologies);
+
+    for (size_t i=0; i <  eBlockNames.size(); ++i) {
+
+      const auto& eblock = eBlockNames[i];
+      const auto& topo = topologies[i];
+ 
+      // Get nodal coordinates for integration rules
+      std::vector<std::size_t> lids;
+      panzer::Intrepid2FieldPattern coord_fp(hgradBasis);
+      Kokkos::DynRankView<double,PHX::Device> nodal_coords_kokkos;
+      connManager->getDofCoords(eblock,coord_fp,lids,nodal_coords_kokkos);
+
+      // This is ugly. Need to fix connManager interface for layouts (fad vs non-fad).
+      PHX::MDField<double,panzer::Cell,panzer::BASIS,panzer::Dim> nodal_coords("nodal_coords","<Cell,BASIS,Dim>",
+                                                                               nodal_coords_kokkos.extent(0),
+                                                                               nodal_coords_kokkos.extent(1),
+                                                                               nodal_coords_kokkos.extent(2));
+      Kokkos::deep_copy(nodal_coords.get_view(),nodal_coords_kokkos);
+
+      // Build IV
+      Teuchos::RCP<shards::CellTopology> rcp_topo = Teuchos::rcp(new shards::CellTopology(topo.getCellTopologyData()));
+      Teuchos::RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(integrationDescriptor,rcp_topo,static_cast<int>(nodal_coords_kokkos.extent(0))));
+      Teuchos::RCP<panzer::IntegrationValues2<double>> iv = Teuchos::rcp(new panzer::IntegrationValues2<double>);
+      iv->setup(ir,nodal_coords);
+
+      // Build BV
+      Teuchos::RCP<panzer::BasisValues2<double>> bv = Teuchos::rcp(new panzer::BasisValues2<double>);
+      Teuchos::RCP<panzer::BasisIRLayout> birl = Teuchos::rcp(new panzer::BasisIRLayout(hgradBD.getType(),hgradBD.getOrder(),*ir));
+      bv->setupUniform(birl,
+                       iv->getUniformCubaturePointsRef(true),
+                       iv->getJacobian(true),
+                       iv->getJacobianDeterminant(true),
+                       iv->getJacobianInverse(true));
+      bv->setOrientations(orientations[eblock]);
+      bv->setWeightedMeasure(iv->getWeightedMeasure(true));
+      bv->setCellNodeCoordinates(nodal_coords);
+      map_basis_values[eblock] = bv;
+    }
+    projectionFactory.useBasisValues(map_basis_values);
+  }
+
+
+
+
 
   TEST_ASSERT(nonnull(projectionFactory.getTargetGlobalIndexer()));
 
@@ -369,16 +430,13 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
         const int numBasisE = static_cast<int>(offsetsE.extent(0));
         const int numBasisB = static_cast<int>(offsetsB.extent(0));
-
-        using li = Intrepid2::Experimental::LagrangianInterpolation<PHX::Device>;
+        using li = Intrepid2::LagrangianInterpolation<PHX::Device>;
 
         //Computing HGRAD coefficients for PHI to interpolate function f(x,y,z) = 1+x+2y+3z
         DynRankView basisCoeffsPHI("basisCoeffsPHI", workset.numOwnedCells(), numBasisPHI);
         {
-          DynRankView dofCoordsPHI("dofCoordsPHI", workset.numOwnedCells(), numBasisPHI, dim);
-          DynRankView dofCoeffsPHI("dofCoeffsPHI", workset.numOwnedCells(), numBasisPHI);
-
-          li::getDofCoordsAndCoeffs(dofCoordsPHI,  dofCoeffsPHI, hgradBasis.getRawPtr(), elemOrts);
+          DynRankView dofCoordsPHI("dofCoordsPHI", numBasisPHI, dim);         
+          hgradBasis->getDofCoords(dofCoordsPHI);
 
           //map the reference Dof coordinates into physical frame
           DynRankView physCoordsPHI("physCoordsPHI", workset.numOwnedCells(), numBasisPHI, dim);
@@ -394,18 +452,18 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           });
 
           //compute basis coefficients
-          li::getBasisCoeffs(basisCoeffsPHI, functValuesAtDofCoordsPHI, dofCoeffsPHI);
+          li::getBasisCoeffs(basisCoeffsPHI, functValuesAtDofCoordsPHI, hgradBasis.getRawPtr(), elemOrts);
         }
 
 
         //Computing HCURL coefficients for E to interpolate the constant vector [1,1,1]
         DynRankView basisCoeffsE("basisCoeffsE", workset.numOwnedCells(), numBasisE);
         {
-          DynRankView dofCoordsE("dofCoordsE", workset.numOwnedCells(), numBasisE, dim);
-          DynRankView dofCoeffsE("dofCoeffsE", workset.numOwnedCells(), numBasisE, dim);
-          li::getDofCoordsAndCoeffs(dofCoordsE,  dofCoeffsE, curlBasis.getRawPtr(), elemOrts);
+          //Because the function is constant, we do not need the DoF coordinates.
+          //DynRankView dofCoordsE("dofCoordsE", numBasisE, dim);
+          //curlBasis->getDofCoords(dofCoordsE);
 
-          //Because the function is constant, we do not need to map the coordinates to physical frame.
+          
 
           // Evaluate the function (in the physical frame) and map it back to the reference frame
           // In order to map an HCurl function back to the reference frame we need to multiply it
@@ -421,21 +479,21 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           });
 
           //compute basis coefficients
-          li::getBasisCoeffs(basisCoeffsE, functValuesAtDofCoordsE, dofCoeffsE);
+          li::getBasisCoeffs(basisCoeffsE, functValuesAtDofCoordsE, curlBasis.getRawPtr(), elemOrts);
         }
 
    /*
         // Alternative way of computing HCurl coefficients with L2 projection
         #include "Intrepid2_ProjectionTools.hpp"
-        using pts = Intrepid2::Experimental::ProjectionTools<PHX::Device>;
+        using pts = Intrepid2::ProjectionTools<PHX::Device>;
         DynRankView basisCoeffsE("basisCoeffsE", workset.numOwnedCells(), numBasisE);
         {
           int targetCubDegree(0);
-          Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
+          Intrepid2::ProjectionStruct<PHX::Device,double> projStruct;
           projStruct.createL2DGProjectionStruct(curlBasis, targetCubDegree);
           int numPoints = projStruct.getNumTargetEvalPoints();
           //DynRankView evalPoints("evalPoints", elemOrts, workset.numOwnedCells(), numPoints, dim);
-          //pts::getL2EvaluationPoints(evalPoints, curlBasis, &projStruct);
+          //auto evalPoints = projStruct->getAllEvalPoints();
 
           DynRankView functValuesAtEvalPoints("funE", workset.numOwnedCells(), numPoints ,dim);
           double curlScaling = boxLength/2.0/numXElements;
@@ -456,11 +514,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         //Computing HDIV coefficients for B to interpolate the constant vector [1,1,1]
         DynRankView basisCoeffsB("basisCoeffsB", workset.numOwnedCells(), numBasisB);
         {
-          DynRankView dofCoordsB("dofCoordsB", workset.numOwnedCells(), numBasisB, dim);
-          DynRankView dofCoeffsB("dofCoeffsB", workset.numOwnedCells(), numBasisB, dim);
-          li::getDofCoordsAndCoeffs(dofCoordsB,  dofCoeffsB, divBasis.getRawPtr(), elemOrts);
-
-
           // Evaluate the function (in the physical frame) and map it back to the reference frame
           // In order to map an HDiv function back to the reference frame we need to multiply it
           // by det(J) J^(-1)   (J being the Jacobian of the map from reference to physical frame)
@@ -476,7 +529,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           });
 
           //compute basis coefficients
-          li::getBasisCoeffs(basisCoeffsB, functValuesAtDofCoordsB, dofCoeffsB);
+          li::getBasisCoeffs(basisCoeffsB, functValuesAtDofCoordsB, divBasis.getRawPtr(), elemOrts);
         }
 
 

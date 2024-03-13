@@ -1115,14 +1115,14 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
   }
 
   if (hpp->output_level >= HIER_DEBUG_LIST){
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
     for (i=0; i < zz->Num_Proc; i++){
       if (i == zz->Proc){
         view_hierarchy_specification(hpp->spec, i, (i==0));
       }
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(zoltan_get_global_comm());
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
   }
 
   return ZOLTAN_OK;
@@ -1746,6 +1746,7 @@ int Zoltan_Hier(
       ZOLTAN_FREE(&hpp.adjproc);
       ZOLTAN_FREE(&hpp.geom_vec);
       MPI_Comm_free(&hpp.hier_comm);
+      hpp.hier_comm = MPI_COMM_NULL;
     }
 
     ierr = Zoltan_LB_Free_Part(&hier_import_gids, &hier_import_lids,

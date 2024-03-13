@@ -193,6 +193,9 @@ public:
 
   //! The maximum number of entries in any row on the calling process.
   virtual size_t getLocalMaxNumRowEntries() const;
+  
+  //! The number of degrees of freedom per mesh point.
+  virtual local_ordinal_type getBlockSize () const;
 
   //! Whether this matrix has a column Map.
   virtual bool hasColMap() const;

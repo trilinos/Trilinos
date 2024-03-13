@@ -56,7 +56,7 @@ namespace Test {
 // Run GS on the given vectors, where the handle is already set up.
 template <typename Handle, typename crsMat_t, typename vec_t>
 void run_gauss_seidel(
-    Handle& kh, crsMat_t input_mat, vec_t x_vector, vec_t y_vector,
+    Handle &kh, crsMat_t input_mat, vec_t x_vector, vec_t y_vector,
     bool is_symmetric_graph, typename crsMat_t::value_type omega,
     int apply_type = 0  // 0 for symmetric, 1 for forward, 2 for backward.
 ) {
@@ -142,6 +142,59 @@ void run_gauss_seidel(
   kh.destroy_gs_handle();
 }
 
+template <typename ExecSpace, typename Handle, typename crsMat_t,
+          typename vec_t>
+void run_gauss_seidel_streams(
+    std::vector<ExecSpace> &instances, std::vector<Handle> &kh,
+    std::vector<crsMat_t> &input_mat, std::vector<vec_t> &x_vector,
+    std::vector<vec_t> &y_vector, bool is_symmetric_graph,
+    typename crsMat_t::value_type omega,
+    int apply_type,  // 0 for symmetric, 1 for forward, 2 for backward.
+    int nstreams = 1) {
+  for (int i = 0; i < nstreams; i++) {
+    gauss_seidel_symbolic(instances[i], &kh[i], input_mat[i].numRows(),
+                          input_mat[i].numCols(), input_mat[i].graph.row_map,
+                          input_mat[i].graph.entries, is_symmetric_graph);
+    gauss_seidel_numeric(instances[i], &kh[i], input_mat[i].numRows(),
+                         input_mat[i].numCols(), input_mat[i].graph.row_map,
+                         input_mat[i].graph.entries, input_mat[i].values,
+                         is_symmetric_graph);
+  }
+
+  const int apply_count = 2;
+  for (int i = 0; i < nstreams; i++) {
+    switch (apply_type) {
+      case 0:
+        symmetric_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
+        break;
+      case 1:
+        forward_sweep_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
+        break;
+      case 2:
+        backward_sweep_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
+        break;
+      default:
+        symmetric_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
+        break;
+    }
+  }
+}
 }  // namespace Test
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -153,7 +206,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth,
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+  typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
   srand(245);
   lno_t numCols = numRows;
   crsMat_t input_mat =
@@ -177,8 +230,8 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth,
   int apply_count = 3;  // test symmetric, forward, backward
   scalar_view_t x_vector(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "x vector"), nv);
-  const scalar_t one  = Kokkos::Details::ArithTraits<scalar_t>::one();
-  const scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero();
+  const scalar_t one  = Kokkos::ArithTraits<scalar_t>::one();
+  const scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
   //*** Point-coloring version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     Kokkos::Timer timer1;
@@ -239,10 +292,10 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
   typedef
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           crsMat_t;
-  typedef Kokkos::View<scalar_t**, default_layout, device> scalar_view2d_t;
-  typedef Kokkos::View<scalar_t**, default_layout, Kokkos::HostSpace>
+  typedef Kokkos::View<scalar_t **, default_layout, device> scalar_view2d_t;
+  typedef Kokkos::View<scalar_t **, default_layout, Kokkos::HostSpace>
       host_scalar_view2d_t;
-  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+  typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
   crsMat_t input_mat =
@@ -270,11 +323,11 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
     for (lno_t j = 0; j < nv; j++) {
       sum += solution_x(j, i) * solution_x(j, i);
     }
-    initial_norms[i] = Kokkos::Details::ArithTraits<mag_t>::sqrt(
-        Kokkos::Details::ArithTraits<scalar_t>::abs(sum));
+    initial_norms[i] = Kokkos::ArithTraits<mag_t>::sqrt(
+        Kokkos::ArithTraits<scalar_t>::abs(sum));
   }
   int apply_count     = 3;  // test symmetric, forward, backward
-  const scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero();
+  const scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
   //*** Point-coloring version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     Kokkos::Timer timer1;
@@ -289,8 +342,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
         scalar_t diff = x_host(j, i) - solution_x(j, i);
         diffDot += diff * diff;
       }
-      mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
-          Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
+      mag_t res = Kokkos::ArithTraits<mag_t>::sqrt(
+          Kokkos::ArithTraits<scalar_t>::abs(diffDot));
       EXPECT_LT(res, initial_norms[i]);
     }
   }
@@ -312,8 +365,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
             scalar_t diff = x_host(j, i) - solution_x(j, i);
             diffDot += diff * diff;
           }
-          mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
-              Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
+          mag_t res = Kokkos::ArithTraits<mag_t>::sqrt(
+              Kokkos::ArithTraits<scalar_t>::abs(diffDot));
           EXPECT_LT(res, initial_norms[i]);
         }
       }
@@ -332,8 +385,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
         scalar_t diff = x_host(j, i) - solution_x(j, i);
         diffDot += diff * diff;
       }
-      mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
-          Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
+      mag_t res = Kokkos::ArithTraits<mag_t>::sqrt(
+          Kokkos::ArithTraits<scalar_t>::abs(diffDot));
       EXPECT_LT(res, initial_norms[i]);
     }
   }
@@ -350,8 +403,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
         scalar_t diff = x_host(j, i) - solution_x(j, i);
         diffDot += diff * diff;
       }
-      mag_t res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
-          Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
+      mag_t res = Kokkos::ArithTraits<mag_t>::sqrt(
+          Kokkos::ArithTraits<scalar_t>::abs(diffDot));
       EXPECT_LT(res, initial_norms[i]);
     }
   }
@@ -361,8 +414,8 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth,
                          lno_t row_size_variance) {
-  const scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero();
-  const scalar_t one  = Kokkos::Details::ArithTraits<scalar_t>::one();
+  const scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
+  const scalar_t one  = Kokkos::ArithTraits<scalar_t>::one();
   srand(245);
   typedef typename device::execution_space exec_space;
   typedef
@@ -396,7 +449,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth,
   // initial solution is zero
   Kokkos::deep_copy(x_host, zero);
   // get the inverse diagonal (only needed on host)
-  Kokkos::View<scalar_t*, Kokkos::HostSpace> invDiag("diag^-1", numRows);
+  Kokkos::View<scalar_t *, Kokkos::HostSpace> invDiag("diag^-1", numRows);
   for (lno_t i = 0; i < numRows; i++) {
     for (size_type j = rowmap(i); j < rowmap(i + 1); j++) {
       if (entries(j) == i) invDiag(i) = one / values(j);
@@ -419,10 +472,9 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth,
   // Copy solution back
   Kokkos::deep_copy(x, x_host);
   // Check against gold solution
-  scalar_t xSq     = KokkosBlas::dot(x, x);
-  scalar_t solnDot = KokkosBlas::dot(x, xgold);
-  double scaledSolutionDot =
-      Kokkos::Details::ArithTraits<scalar_t>::abs(solnDot / xSq);
+  scalar_t xSq             = KokkosBlas::dot(x, x);
+  scalar_t solnDot         = KokkosBlas::dot(x, xgold);
+  double scaledSolutionDot = Kokkos::ArithTraits<scalar_t>::abs(solnDot / xSq);
   EXPECT_TRUE(0.99 < scaledSolutionDot);
 }
 
@@ -533,7 +585,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows,
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::index_type::non_const_type entries_view_t;
   typedef typename crsMat_t::row_map_type::non_const_type rowmap_view_t;
-  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+  typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
   const scalar_t one = Kokkos::ArithTraits<scalar_t>::one();
   srand(245);
   std::vector<size_type> rowmap = {0};
@@ -575,11 +627,11 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows,
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "Entries"), totalEntries);
   rowmap_view_t rowmapView(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "Rowmap"), numRows + 1);
-  Kokkos::deep_copy(valuesView, Kokkos::View<scalar_t*, Kokkos::HostSpace>(
+  Kokkos::deep_copy(valuesView, Kokkos::View<scalar_t *, Kokkos::HostSpace>(
                                     values.data(), totalEntries));
-  Kokkos::deep_copy(entriesView, Kokkos::View<lno_t*, Kokkos::HostSpace>(
+  Kokkos::deep_copy(entriesView, Kokkos::View<lno_t *, Kokkos::HostSpace>(
                                      entries.data(), totalEntries));
-  Kokkos::deep_copy(rowmapView, Kokkos::View<size_type*, Kokkos::HostSpace>(
+  Kokkos::deep_copy(rowmapView, Kokkos::View<size_type *, Kokkos::HostSpace>(
                                     rowmap.data(), numRows + 1));
   crsMat_t input_mat("A", numRows, numRows, totalEntries, valuesView,
                      rowmapView, entriesView);
@@ -630,7 +682,7 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+  typedef typename Kokkos::ArithTraits<scalar_t>::mag_type mag_t;
   const scalar_t one = Kokkos::ArithTraits<scalar_t>::one();
   size_type nnz      = nnzPerRow * numRows;
   crsMat_t input_mat =
@@ -663,58 +715,201 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   EXPECT_LT(result_norm_res, 0.25 * initial_norm_res);
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##gauss_seidel_asymmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_gauss_seidel_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20,                  \
-                                                             200, 10, false);                  \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##gauss_seidel_asymmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
-        2000, 2000 * 20, 200, 10, 3, false);                                                   \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##gauss_seidel_symmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {  \
-    test_gauss_seidel_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20,                  \
-                                                             200, 10, true);                   \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##gauss_seidel_symmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {  \
-    test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
-        2000, 2000 * 20, 200, 10, 3, true);                                                    \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##gauss_seidel_empty##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {            \
-    test_gauss_seidel_empty<SCALAR, ORDINAL, OFFSET, DEVICE>();                                \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##balloon_clustering##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {            \
-    test_balloon_clustering<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 100, 2000);                 \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##sequential_sor##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                \
-    test_sequential_sor<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 15, 50,                  \
-                                                         10);                                  \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##gauss_seidel_long_rows##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_gauss_seidel_long_rows<SCALAR, ORDINAL, OFFSET, DEVICE>(500, 10, 20,                  \
-                                                                 true);                        \
-  }                                                                                            \
-  TEST_F(                                                                                      \
-      TestCategory,                                                                            \
-      sparse##_##gauss_seidel_custom_coloring##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {  \
-    test_gauss_seidel_custom_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(500,                    \
-                                                                       10);                    \
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void test_gauss_seidel_streams_rank1(
+    lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance,
+    bool symmetric, double omega,
+    KokkosGraph::ColoringAlgorithm coloringAlgo = KokkosGraph::COLORING_DEFAULT,
+    int nstreams                                = 1) {
+  using namespace Test;
+  using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device,
+                                                    void, size_type>;
+  using scalar_view_t   = typename crsMat_t::values_type::non_const_type;
+  using mag_t           = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using execution_space = typename device::execution_space;
+
+  using const_size_type = const size_type;
+  using const_lno_t     = const lno_t;
+  using const_scalar_t  = const scalar_t;
+  using KernelHandle =
+      KokkosKernelsHandle<const_size_type, const_lno_t, const_scalar_t,
+                          execution_space, typename device::memory_space,
+                          typename device::memory_space>;
+  srand(245);
+  lno_t numCols                         = numRows;
+  typename crsMat_t::value_type m_omega = omega;
+
+#ifdef KOKKOS_ENABLE_OPENMP
+  if (std::is_same_v<execution_space, Kokkos::OpenMP>) {
+    int exec_concurrency = execution_space().concurrency();
+    if (exec_concurrency < nstreams) {
+      std::cerr << "TEST SKIPPED: Not enough concurrency to partition "
+                   "execution space. exec_concurrency: "
+                << exec_concurrency << std::endl;
+      return;
+    }
+  }
+#endif  // KOKKOS_ENABLE_OPENMP
+
+  std::vector<execution_space> instances;
+  if (nstreams == 1)
+    instances = Kokkos::Experimental::partition_space(execution_space(), 1);
+  else if (nstreams == 2)
+    instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
+  else if (nstreams == 3)
+    instances =
+        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
+  else
+    instances =
+        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
+
+  std::vector<KernelHandle> kh_v(nstreams);
+  std::vector<crsMat_t> input_mat_v(nstreams);
+  std::vector<scalar_view_t> solution_x_v(nstreams);
+  std::vector<scalar_view_t> x_vector_v(nstreams);
+  std::vector<scalar_view_t> y_vector_v(nstreams);
+  std::vector<mag_t> initial_norm_res_v(nstreams);
+
+  const scalar_t one  = Kokkos::ArithTraits<scalar_t>::one();
+  const scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
+
+  for (int i = 0; i < nstreams; i++) {
+    input_mat_v[i] =
+        KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+            crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
+
+    if (symmetric) {
+      // Symmetrize on host, rather than relying on the parallel versions (those
+      // can be tested for symmetric=false)
+      input_mat_v[i] =
+          Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(
+              input_mat_v[i]);
+    }
+    lno_t nv = input_mat_v[i].numRows();
+    scalar_view_t solution_x_tmp(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
+    solution_x_v[i] = solution_x_tmp;
+    create_random_x_vector(solution_x_v[i]);
+    initial_norm_res_v[i] = KokkosBlas::nrm2(solution_x_v[i]);
+    y_vector_v[i] = create_random_y_vector(input_mat_v[i], solution_x_v[i]);
+    // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
+    // behavior of each algorithm _should be_ the same on every execution space,
+    // which is why we just test GS_DEFAULT.
+
+    scalar_view_t x_vector_tmp(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "x vector"), nv);
+    x_vector_v[i] = x_vector_tmp;
+
+    kh_v[i] = KernelHandle();  // Initialize KokkosKernelsHandle defaults.
+    kh_v[i].create_gs_handle(instances[i], nstreams, GS_DEFAULT, coloringAlgo);
+  }
+
+  int apply_count = 3;  // test symmetric, forward, backward
+  //*** Point-coloring version ****
+  for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
+    for (int i = 0; i < nstreams; i++)
+      Kokkos::deep_copy(instances[i], x_vector_v[i], zero);
+
+    run_gauss_seidel_streams(instances, kh_v, input_mat_v, x_vector_v,
+                             y_vector_v, symmetric, m_omega, apply_type,
+                             nstreams);
+    for (int i = 0; i < nstreams; i++) {
+      KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one,
+                        x_vector_v[i]);
+      mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
+      EXPECT_LT(result_norm_res, initial_norm_res_v[i])
+          << "on stream_idx: " << i;
+    }
+  }
+
+  for (int i = 0; i < nstreams; i++) kh_v[i].destroy_gs_handle();
+}
+
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_asymmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
+    test_gauss_seidel_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20,                          \
+                                                             200, 10, false);                          \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_asymmetric_streams_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, false, 0.9, KokkosGraph::COLORING_DEFAULT,                           \
+        1);                                                                                            \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, false, 0.9, KokkosGraph::COLORING_DEFAULT,                           \
+        2);                                                                                            \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, false, 0.9, KokkosGraph::COLORING_DEFAULT,                           \
+        3);                                                                                            \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, false, 0.9, KokkosGraph::COLORING_DEFAULT,                           \
+        4);                                                                                            \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_asymmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
+    test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(                                          \
+        2000, 2000 * 20, 200, 10, 3, false);                                                           \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_symmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {          \
+    test_gauss_seidel_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(2000, 2000 * 20,                          \
+                                                             200, 10, true);                           \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_symmetric_streams_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {  \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, true, 0.9, KokkosGraph::COLORING_DEFAULT,                            \
+        1);                                                                                            \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, true, 0.9, KokkosGraph::COLORING_DEFAULT,                            \
+        2);                                                                                            \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, true, 0.9, KokkosGraph::COLORING_DEFAULT,                            \
+        3);                                                                                            \
+    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
+        2000, 2000 * 20, 200, 10, true, 0.9, KokkosGraph::COLORING_DEFAULT,                            \
+        4);                                                                                            \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_symmetric_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {          \
+    test_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(                                          \
+        2000, 2000 * 20, 200, 10, 3, true);                                                            \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_empty##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                    \
+    test_gauss_seidel_empty<SCALAR, ORDINAL, OFFSET, DEVICE>();                                        \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##balloon_clustering##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                    \
+    test_balloon_clustering<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 100, 2000);                         \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##sequential_sor##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                        \
+    test_sequential_sor<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 15, 50,                          \
+                                                         10);                                          \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_long_rows##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                \
+    test_gauss_seidel_long_rows<SCALAR, ORDINAL, OFFSET, DEVICE>(500, 10, 20,                          \
+                                                                 true);                                \
+  }                                                                                                    \
+  TEST_F(                                                                                              \
+      TestCategory,                                                                                    \
+      sparse##_##gauss_seidel_custom_coloring##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {          \
+    test_gauss_seidel_custom_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(500,                            \
+                                                                       10);                            \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

@@ -76,7 +76,7 @@ public:
       skinPart(meta.declare_part_with_topology("skin", get_side_topology())),
       block1(meta.declare_part_with_topology("block_1", get_element_topology())),
       activePart(meta.declare_part("active")),
-      coordField(meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates"))
+      coordField(stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta, stk::topology::NODE_RANK, "coordinates"))
     {
         if (bulkData.parallel_size() <= 2)
         {

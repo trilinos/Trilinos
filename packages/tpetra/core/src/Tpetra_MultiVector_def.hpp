@@ -37,6 +37,7 @@
 // ************************************************************************
 // @HEADER
 
+// clang-format off
 #ifndef TPETRA_MULTIVECTOR_DEF_HPP
 #define TPETRA_MULTIVECTOR_DEF_HPP
 
@@ -62,6 +63,7 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_Random.hpp"
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
 #  include "Teuchos_SerialDenseMatrix.hpp"
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -203,7 +205,7 @@ namespace { // (anonymous)
         // won't hurt anything because by setting zeroOut=false, users
         // already agreed that they don't care about the contents of
         // the MultiVector.
-        const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
+        const ST nan = Kokkos::ArithTraits<ST>::nan ();
         KokkosBlas::fill (d_view, nan);
       }
     }
@@ -261,7 +263,7 @@ namespace { // (anonymous)
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
                const std::pair<size_t, size_t>& rowRng,
-               const Kokkos::Impl::ALL_t& colRng)
+               const Kokkos::ALL_t& colRng)
 
   {
     // The bug we saw below should be harder to trigger here.
@@ -271,7 +273,7 @@ namespace { // (anonymous)
   template<class WrappedDualViewType>
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
-               const Kokkos::Impl::ALL_t& rowRng,
+               const Kokkos::ALL_t& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
     using DualViewType = typename WrappedDualViewType::DVT;
@@ -317,7 +319,7 @@ namespace { // (anonymous)
     // method yet, but its Views do.
     // NOTE: dv.stride() returns a vector of length one
     // more than its rank
-    size_t strides[WrappedOrNotDualViewType::t_dev::Rank+1];
+    size_t strides[WrappedOrNotDualViewType::t_dev::rank+1];
     dv.stride(strides);
     const size_t LDA = strides[1];
     const size_t numRows = dv.extent (0);
@@ -1124,7 +1126,8 @@ namespace Tpetra {
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
-   const CombineMode CM)
+   const CombineMode CM,
+   const execution_space &space)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
@@ -1134,8 +1137,14 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // We've already called checkSizes(), so this cast must succeed.
+    MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
+    const bool copyOnHost = runKernelOnHost(sourceMV);
+    const char longFuncNameHost[] = "Tpetra::MultiVector::copyAndPermute[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::copyAndPermute[Device]";
     const char tfecfFuncName[] = "copyAndPermute: ";
-    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
+    ProfilingRegion regionCAP (copyOnHost ? longFuncNameHost : longFuncNameDevice);
 
     const bool verbose = Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -1155,9 +1164,6 @@ namespace Tpetra {
        std::logic_error, "permuteToLIDs.extent(0) = "
        << permuteToLIDs.extent (0) << " != permuteFromLIDs.extent(0) = "
        << permuteFromLIDs.extent (0) << ".");
-
-    // We've already called checkSizes(), so this cast must succeed.
-    MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
     const size_t numCols = this->getNumVectors ();
 
     // sourceMV doesn't belong to us, so we can't sync it.  Do the
@@ -1166,7 +1172,6 @@ namespace Tpetra {
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool copyOnHost = runKernelOnHost(sourceMV);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "copyOnHost=" << (copyOnHost ? "true" : "false") << endl;
@@ -1217,8 +1222,8 @@ namespace Tpetra {
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             using range_t = 
-                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
-            range_t rp(0,numSameIDs);
+                  Kokkos::RangePolicy<execution_space, size_t>;
+            range_t rp(space, 0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
             Kokkos::parallel_for(rp, aaf);
@@ -1226,7 +1231,8 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
-            Kokkos::deep_copy (tgt_j, src_j); 
+            Kokkos::deep_copy (space, tgt_j, src_j); 
+            space.fence();
           }
         }
       }
@@ -1244,8 +1250,8 @@ namespace Tpetra {
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             using range_t = 
-                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
-            range_t rp(0,numSameIDs);
+                  Kokkos::RangePolicy<execution_space, size_t>;
+            range_t rp(space, 0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
             Kokkos::parallel_for(rp, aaf);
@@ -1253,7 +1259,8 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-            Kokkos::deep_copy (tgt_j, src_j); 
+            Kokkos::deep_copy (space, tgt_j, src_j); 
+            space.fence();
           }
         }
       }
@@ -1443,7 +1450,7 @@ namespace Tpetra {
         auto srcWhichVecs_d = create_const_view (srcWhichVecs.view_device ());
         if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp;
-          permute_array_multi_column_variable_stride (tgt_d, src_d,
+          permute_array_multi_column_variable_stride (space, tgt_d, src_d,
                                                       permuteToLIDs_d,
                                                       permuteFromLIDs_d,
                                                       tgtWhichVecs_d,
@@ -1452,7 +1459,7 @@ namespace Tpetra {
         }
         else {
           using op_type = KokkosRefactor::Details::InsertOp;
-          permute_array_multi_column_variable_stride (tgt_d, src_d,
+          permute_array_multi_column_variable_stride (space, tgt_d, src_d,
                                                       permuteToLIDs_d,
                                                       permuteFromLIDs_d,
                                                       tgtWhichVecs_d,
@@ -1463,12 +1470,12 @@ namespace Tpetra {
       else {
         if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp;
-          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+          permute_array_multi_column (space, tgt_d, src_d, permuteToLIDs_d,
                                       permuteFromLIDs_d, numCols, op_type());
         }
         else {
           using op_type = KokkosRefactor::Details::InsertOp;
-          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+          permute_array_multi_column (space, tgt_d, src_d, permuteToLIDs_d,
                                       permuteFromLIDs_d, numCols, op_type());
         }
       }
@@ -1480,6 +1487,20 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
   }
+
+// clang-format on
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
+    const SrcDistObject &sourceObj, const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &permuteFromLIDs,
+    const CombineMode CM) {
+  copyAndPermute(sourceObj, numSameIDs, permuteToLIDs, permuteFromLIDs, CM,
+                 execution_space());
+}
+// clang-format off
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1499,8 +1520,15 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // We've already called checkSizes(), so this cast must succeed.
+    MV& sourceMV = const_cast<MV&>(dynamic_cast<const MV&> (sourceObj));
+
+    const bool packOnHost = runKernelOnHost(sourceMV);
+    const char longFuncNameHost[] = "Tpetra::MultiVector::packAndPrepare[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::packAndPrepare[Device]";
     const char tfecfFuncName[] = "packAndPrepare: ";
-    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepare");
+    ProfilingRegion regionPAP (packOnHost ? longFuncNameHost : longFuncNameDevice);
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1527,8 +1555,6 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-    // We've already called checkSizes(), so this cast must succeed.
-    MV& sourceMV = const_cast<MV&>(dynamic_cast<const MV&> (sourceObj));
 
     const size_t numCols = sourceMV.getNumVectors ();
 
@@ -1581,7 +1607,6 @@ namespace Tpetra {
       (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
-    const bool packOnHost = runKernelOnHost(sourceMV);
     if (printDebugOutput) {
       std::ostringstream os;
       os << *prefix << "packOnHost=" << (packOnHost ? "true" : "false") << endl;
@@ -1891,7 +1916,12 @@ namespace Tpetra {
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
-    const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
+
+    const bool unpackOnHost = runKernelOnHost(imports);
+
+    const char longFuncNameHost[] = "Tpetra::MultiVector::unpackAndCombine[Host]";
+    const char longFuncNameDevice[] = "Tpetra::MultiVector::unpackAndCombine[Device]";
+    const char * longFuncName = unpackOnHost ? longFuncNameHost : longFuncNameDevice;
     const char tfecfFuncName[] = "unpackAndCombine: ";
     ProfilingRegion regionUAC (longFuncName);
 
@@ -1963,7 +1993,6 @@ namespace Tpetra {
     // the size of the imports buffer.
     // DistObject::doTransferNew decides where it was last modified (based on
     // whether communication buffers used were on host or device).
-    const bool unpackOnHost = runKernelOnHost(imports);
     if (unpackOnHost) {
       if (this->imports_.need_sync_host()) this->imports_.sync_host();
     }
@@ -2304,9 +2333,9 @@ namespace Tpetra {
     // necessarily be thrown on all processes consistently.  We should
     // instead pass along error state with the inner product.  We
     // could do this by setting an extra slot to
-    // Kokkos::Details::ArithTraits<dot_type>::one() on error.  The
+    // Kokkos::ArithTraits<dot_type>::one() on error.  The
     // final sum should be
-    // Kokkos::Details::ArithTraits<dot_type>::zero() if not error.
+    // Kokkos::ArithTraits<dot_type>::zero() if not error.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       lclNumRows != A.getLocalLength (), std::runtime_error,
       "MultiVectors do not have the same local length.  "
@@ -2420,9 +2449,9 @@ namespace Tpetra {
     // keep them for now, because MultiVector's unit tests insist on
     // them.  In the future, we should instead pass along error state
     // with the inner product.  We could do this by setting an extra
-    // slot to Kokkos::Details::ArithTraits<dot_type>::one() on error.
+    // slot to Kokkos::ArithTraits<dot_type>::one() on error.
     // The final sum should be
-    // Kokkos::Details::ArithTraits<dot_type>::zero() if not error.
+    // Kokkos::ArithTraits<dot_type>::zero() if not error.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclNumRows != A.getLocalLength (), std::runtime_error,
        "MultiVectors do not have the same local length.  "
@@ -2533,7 +2562,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
+    typedef Kokkos::ArithTraits<impl_scalar_type> ATS;
 
     const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
@@ -2646,7 +2675,7 @@ namespace Tpetra {
   randomize ()
   {
     typedef impl_scalar_type IST;
-    typedef Kokkos::Details::ArithTraits<IST> ATS;
+    typedef Kokkos::ArithTraits<IST> ATS;
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
     typedef typename pool_type::generator_type generator_type;
 
@@ -2663,23 +2692,14 @@ namespace Tpetra {
   randomize (const Scalar& minVal, const Scalar& maxVal)
   {
     typedef impl_scalar_type IST;
+    typedef Tpetra::Details::Static_Random_XorShift64_Pool<typename device_type::execution_space> tpetra_pool_type;
     typedef Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> pool_type;
 
-    // Seed the pseudorandom number generator using the calling
-    // process' rank.  This helps decorrelate different process'
-    // pseudorandom streams.  It's not perfect but it's effective and
-    // doesn't require MPI communication.  The seed also includes bits
-    // from the standard library's rand().
-    //
-    // FIXME (mfh 07 Jan 2015) Should we save the seed for later use?
-    // The code below just makes a new seed each time.
+    // Seed the pool based on the system RNG and the MPI rank, if needed
+    if(!tpetra_pool_type::isSet())
+      tpetra_pool_type::resetPool(this->getMap()->getComm()->getRank());
 
-    const uint64_t myRank =
-      static_cast<uint64_t> (this->getMap ()->getComm ()->getRank ());
-    uint64_t seed64 = static_cast<uint64_t> (std::rand ()) + myRank + 17311uLL;
-    unsigned int seed = static_cast<unsigned int> (seed64&0xffffffff);
-
-    pool_type rand_pool (seed);
+    pool_type & rand_pool = tpetra_pool_type::getPool();
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
@@ -4003,6 +4023,13 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::wrapped_dual_view_type 
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getWrappedDualView() const {
+    return view_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dView () const
@@ -4346,7 +4373,7 @@ namespace Tpetra {
       // NOTE (mfh 17 Mar 2019) If we ever get rid of UVM, then device
       // and host will be separate allocations.  In that case, it may
       // pay to do the all-reduce from device to host.
-      Kokkos::fence(); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
+      Kokkos::fence("MultiVector::reduce"); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
       auto X_lcl = this->getLocalViewDevice(Access::ReadWrite);
       allReduceView (X_lcl, X_lcl, *comm);
     }

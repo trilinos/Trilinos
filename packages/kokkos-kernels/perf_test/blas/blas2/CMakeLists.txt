@@ -5,3 +5,10 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
     KokkosBlas2_gemv_perf_test
     SOURCES KokkosBlas2_gemv_perf_test.cpp
 )
+
+IF(KokkosKernels_ENABLE_BENCHMARK)
+    KOKKOSKERNELS_ADD_BENCHMARK(
+        Blas2_Benchmark
+        SOURCES KokkosBlas2_gemv_perf_test_benchmark.cpp
+    )
+ENDIF()

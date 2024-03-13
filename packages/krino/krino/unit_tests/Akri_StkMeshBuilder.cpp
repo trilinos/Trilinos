@@ -15,10 +15,16 @@ namespace krino
 
 template<stk::topology::topology_t TOPO>
 StkMeshBuilder<TOPO>::StkMeshBuilder(stk::mesh::BulkData & mesh, const stk::ParallelMachine comm)
-: mMesh(mesh), mAuxMeta(AuxMetaData::create(mesh.mesh_meta_data())), mPhaseSupport(Phase_Support::get(mesh.mesh_meta_data())), mComm(comm)
+: mMesh(mesh), mAuxMeta(AuxMetaData::create(mesh.mesh_meta_data())), mPhaseSupport(Phase_Support::get(mesh.mesh_meta_data())), mComm(comm), time(0.0)
 {
   declare_coordinates();
   mMesh.mesh_meta_data().use_simple_fields();
+}
+
+template<stk::topology::topology_t TOPO>
+const stk::mesh::FieldBase & StkMeshBuilder<TOPO>::get_coordinates_field() const
+{
+  return *mMesh.mesh_meta_data().coordinate_field();
 }
 
 template<stk::topology::topology_t TOPO>
@@ -440,14 +446,22 @@ void StkMeshBuilder<TOPO>::write_mesh(const std::string & fileName)
   Ioss::PropertyManager properties;
   properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
   properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
-
+  properties.add(Ioss::Property("MAXIMUM_NAME_LENGTH", 180));
   size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS, properties);
+  const stk::mesh::FieldVector fields = stkIo.bulk_data().mesh_meta_data().get_fields();
+  for(stk::mesh::FieldBase* field : fields)
+  {
+      const Ioss::Field::RoleType* fieldRole = stk::io::get_field_role(*field);
+      if(fieldRole == nullptr || *fieldRole == Ioss::Field::TRANSIENT)
+          stkIo.add_field(outputFileIndex, *field);
+  }
   stkIo.set_active_selector(get_aux_meta().active_part());
   stkIo.set_subset_selector(outputFileIndex, get_aux_meta().active_part());
   stkIo.write_output_mesh(outputFileIndex);
-  stkIo.begin_output_step(outputFileIndex, 0.);
+  stkIo.begin_output_step(outputFileIndex, time);
   stkIo.write_defined_output_fields(outputFileIndex);
   stkIo.end_output_step(outputFileIndex);
+  time+=1.0;
 }
 
 // Explicit template instantiation

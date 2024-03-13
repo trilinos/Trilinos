@@ -56,7 +56,7 @@ NOX::MultiVector::MultiVector(int numVecs) :
   if (numVecs <= 0) {
     std::cerr << "NOX::MultiVector:  Error!  Multivector"
      << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 }
 
@@ -67,7 +67,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
   if (numVecs <= 0) {
     std::cerr << "NOX::MultiVector:  Error!  Multivector"
      << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   for (int i=0; i<numVecs; i++) {
@@ -83,7 +83,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
   if (numVecs <= 0) {
     std::cerr << "NOX::MultiVector:  Error!  Multivector"
      << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   for (int i=0; i<numVecs; i++) {
@@ -417,7 +417,7 @@ NOX::MultiVector::checkIndex(int idx) const
 {
   if ( idx < 0 || idx >= static_cast<int>(vecs.size()) ) {
     std::cerr << "NOX::MultiVector:  Error!  Invalid index " << idx << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 }
 
@@ -427,6 +427,6 @@ NOX::MultiVector::checkSize(int sz) const
   if (static_cast<int>(vecs.size()) != sz) {
     std::cerr << "NOX::MultiVector:  Error!  Size of supplied multivector is"
      << " incompatible with this multivector" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 }

@@ -7,6 +7,7 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
@@ -15,7 +16,7 @@ smoother ->
 
 Level 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -25,7 +26,7 @@ BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -41,6 +42,7 @@ smoother ->
  schwarz: combine mode = Zero   [unused]
  schwarz: use reordering = 0   [unused]
  subdomain solver name = RILUK   [unused]
+ timer for apply = 0   [unused]
  subdomain solver parameters -> 
   fact: iluk level-of-fill = 0   [unused]
   fact: absolute threshold = 0   [unused]
@@ -49,7 +51,7 @@ smoother ->
 
 Level 2
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -59,7 +61,7 @@ BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -80,7 +82,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
-Smoother complexity = 0.00
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

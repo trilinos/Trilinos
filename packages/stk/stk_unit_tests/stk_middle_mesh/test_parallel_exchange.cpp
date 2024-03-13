@@ -1,4 +1,4 @@
-#include "parallel_exchange.hpp"
+#include "stk_middle_mesh/parallel_exchange.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

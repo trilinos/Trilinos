@@ -55,7 +55,7 @@ TEST(StkIoHowTo, useTextMesh)
 
   stkIo.add_mesh_database(textMeshDesc, stk::io::READ_MESH);
 
-  Ioss::Region* ioRegion = stkIo.get_input_io_region().get();
+  Ioss::Region* ioRegion = stkIo.get_input_ioss_region().get();
   EXPECT_TRUE(ioRegion != nullptr);
 
   Ioss::DatabaseIO* ioDatabase = ioRegion->get_database();
@@ -78,7 +78,7 @@ TEST(StkIoHowTo, useTextMesh_withAllOptions)
 
   stkIo.add_mesh_database(textMeshDesc, stk::io::READ_MESH);
 
-  Ioss::Region* ioRegion = stkIo.get_input_io_region().get();
+  Ioss::Region* ioRegion = stkIo.get_input_ioss_region().get();
   EXPECT_TRUE(ioRegion != nullptr);
 
   Ioss::DatabaseIO* ioDatabase = ioRegion->get_database();

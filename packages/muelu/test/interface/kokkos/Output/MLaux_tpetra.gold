@@ -6,13 +6,11 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 2
  relaxation: damping factor = 1
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -20,19 +18,21 @@ algorithm = "distance laplacian": threshold = 0.01, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.01
 aggregation: drop scheme = distance laplacian
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-aggregation: min agg size = 1   [unused]
-aggregation: max selected neighbors = 0   [unused]
-aggregation: ordering = natural   [unused]
-aggregation: preserve Dirichlet points = 0   [unused]
+aggregation: match ML phase2a = 1   [unused]
+Nullspace factory (MueLu::NullspaceFactory)
+Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-sa: damping factor = 1.33333
+sa: damping factor = 1.333
+sa: eigenvalue estimate num iterations = 10
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionFactory)
@@ -40,18 +40,14 @@ Computing Ac (MueLu::RAPFactory)
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-RepairMainDiagonal = 0
+RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
+Build (MueLu::CoordinatesTransferFactory)
+Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
-repartition: min rows per proc = 512
-repartition: max imbalance = 1.3
-Build (MueLu::RepartitionInterface)
-Build (MueLu::IsorropiaInterface)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-[empty list]
-[empty list]
+Build (MueLu::Zoltan2Interface)
+ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
 Using original prolongator
 type = Interpolation
@@ -61,7 +57,6 @@ type = Restriction
 Computing Ac (MueLu::RebalanceAcFactory)
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
 smoother -> 
- A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  Amesos2 -> 
   [empty list]
 
@@ -70,7 +65,7 @@ smoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 2
 Operator complexity = 1.33
-Smoother complexity = 1.33
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

@@ -48,7 +48,7 @@
 #include <Ifpack2_Details_FastILU_Base.hpp>
 
 //forward-declare the local preconditioner type
-template<typename LocalOrdinal, typename Scalar, typename execution_space>
+template<typename LocalOrdinal, typename Scalar, typename execution_space, bool BlockCrsEnabled>
 class FastILUPrec;
 
 namespace Ifpack2
@@ -58,7 +58,7 @@ namespace Details
 
 /// \class Filu
 /// \brief The Ifpack2 wrapper to the ILU preconditioner of ShyLU FastILU.
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, bool BlockCrsEnabled>
 class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
   public:
@@ -66,7 +66,7 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     typedef typename Base::TRowMatrix TRowMatrix;
     typedef typename Base::ImplScalar ImplScalar;
     typedef typename Base::ImplScalarArray ImplScalarArray;
-    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space> LocalFILU;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space, BlockCrsEnabled> LocalFILU;
 
     //! Constructor
     Filu(Teuchos::RCP<const TRowMatrix> mat_);

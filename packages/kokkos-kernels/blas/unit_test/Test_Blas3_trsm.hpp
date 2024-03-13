@@ -19,6 +19,8 @@
 #include <KokkosBlas3_trsm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#include <chrono>
+
 namespace Test {
 
 template <class ViewTypeA, class ExecutionSpace>
@@ -54,7 +56,7 @@ struct trsm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -102,7 +104,7 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
                     typename ViewTypeA::value_type alpha) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using APT             = Kokkos::Details::ArithTraits<ScalarA>;
+  using APT             = Kokkos::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
   double machine_eps = APT::epsilon();
@@ -121,7 +123,8 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
   typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror_view(B);
   typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
 
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   if ((diag[0] == 'U') || (diag[0] == 'u')) {
@@ -258,42 +261,42 @@ int test_trsm(const char* mode, ScalarA alpha) {
 TEST_F(TestCategory, trsm_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_float");
   float alpha = 1.0f;
-  test_trsm<float, float, TestExecSpace>("LLNN", alpha);
-  test_trsm<float, float, TestExecSpace>("LLNU", alpha);
-  test_trsm<float, float, TestExecSpace>("LLTN", alpha);
-  test_trsm<float, float, TestExecSpace>("LLTU", alpha);
-  test_trsm<float, float, TestExecSpace>("LUNN", alpha);
-  test_trsm<float, float, TestExecSpace>("LUNU", alpha);
-  test_trsm<float, float, TestExecSpace>("LUTN", alpha);
-  test_trsm<float, float, TestExecSpace>("LUTU", alpha);
+  test_trsm<float, float, TestDevice>("LLNN", alpha);
+  test_trsm<float, float, TestDevice>("LLNU", alpha);
+  test_trsm<float, float, TestDevice>("LLTN", alpha);
+  test_trsm<float, float, TestDevice>("LLTU", alpha);
+  test_trsm<float, float, TestDevice>("LUNN", alpha);
+  test_trsm<float, float, TestDevice>("LUNU", alpha);
+  test_trsm<float, float, TestDevice>("LUTN", alpha);
+  test_trsm<float, float, TestDevice>("LUTU", alpha);
 
-  test_trsm<float, float, TestExecSpace>("RLNN", alpha);
-  test_trsm<float, float, TestExecSpace>("RLNU", alpha);
-  test_trsm<float, float, TestExecSpace>("RLTN", alpha);
-  test_trsm<float, float, TestExecSpace>("RLTU", alpha);
-  test_trsm<float, float, TestExecSpace>("RUNN", alpha);
-  test_trsm<float, float, TestExecSpace>("RUNU", alpha);
-  test_trsm<float, float, TestExecSpace>("RUTN", alpha);
-  test_trsm<float, float, TestExecSpace>("RUTU", alpha);
+  test_trsm<float, float, TestDevice>("RLNN", alpha);
+  test_trsm<float, float, TestDevice>("RLNU", alpha);
+  test_trsm<float, float, TestDevice>("RLTN", alpha);
+  test_trsm<float, float, TestDevice>("RLTU", alpha);
+  test_trsm<float, float, TestDevice>("RUNN", alpha);
+  test_trsm<float, float, TestDevice>("RUNU", alpha);
+  test_trsm<float, float, TestDevice>("RUTN", alpha);
+  test_trsm<float, float, TestDevice>("RUTU", alpha);
 
   alpha = 4.5f;
-  test_trsm<float, float, TestExecSpace>("LLNN", alpha);
-  test_trsm<float, float, TestExecSpace>("LLNU", alpha);
-  test_trsm<float, float, TestExecSpace>("LLTN", alpha);
-  test_trsm<float, float, TestExecSpace>("LLTU", alpha);
-  test_trsm<float, float, TestExecSpace>("LUNN", alpha);
-  test_trsm<float, float, TestExecSpace>("LUNU", alpha);
-  test_trsm<float, float, TestExecSpace>("LUTN", alpha);
-  test_trsm<float, float, TestExecSpace>("LUTU", alpha);
+  test_trsm<float, float, TestDevice>("LLNN", alpha);
+  test_trsm<float, float, TestDevice>("LLNU", alpha);
+  test_trsm<float, float, TestDevice>("LLTN", alpha);
+  test_trsm<float, float, TestDevice>("LLTU", alpha);
+  test_trsm<float, float, TestDevice>("LUNN", alpha);
+  test_trsm<float, float, TestDevice>("LUNU", alpha);
+  test_trsm<float, float, TestDevice>("LUTN", alpha);
+  test_trsm<float, float, TestDevice>("LUTU", alpha);
 
-  test_trsm<float, float, TestExecSpace>("RLNN", alpha);
-  test_trsm<float, float, TestExecSpace>("RLNU", alpha);
-  test_trsm<float, float, TestExecSpace>("RLTN", alpha);
-  test_trsm<float, float, TestExecSpace>("RLTU", alpha);
-  test_trsm<float, float, TestExecSpace>("RUNN", alpha);
-  test_trsm<float, float, TestExecSpace>("RUNU", alpha);
-  test_trsm<float, float, TestExecSpace>("RUTN", alpha);
-  test_trsm<float, float, TestExecSpace>("RUTU", alpha);
+  test_trsm<float, float, TestDevice>("RLNN", alpha);
+  test_trsm<float, float, TestDevice>("RLNU", alpha);
+  test_trsm<float, float, TestDevice>("RLTN", alpha);
+  test_trsm<float, float, TestDevice>("RLTU", alpha);
+  test_trsm<float, float, TestDevice>("RUNN", alpha);
+  test_trsm<float, float, TestDevice>("RUNU", alpha);
+  test_trsm<float, float, TestDevice>("RUTN", alpha);
+  test_trsm<float, float, TestDevice>("RUTU", alpha);
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -304,42 +307,42 @@ TEST_F(TestCategory, trsm_float) {
 TEST_F(TestCategory, trsm_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_double");
   double alpha = 1.0;
-  test_trsm<double, double, TestExecSpace>("LLNN", alpha);
-  test_trsm<double, double, TestExecSpace>("LLNU", alpha);
-  test_trsm<double, double, TestExecSpace>("LLTN", alpha);
-  test_trsm<double, double, TestExecSpace>("LLTU", alpha);
-  test_trsm<double, double, TestExecSpace>("LUNN", alpha);
-  test_trsm<double, double, TestExecSpace>("LUNU", alpha);
-  test_trsm<double, double, TestExecSpace>("LUTN", alpha);
-  test_trsm<double, double, TestExecSpace>("LUTU", alpha);
+  test_trsm<double, double, TestDevice>("LLNN", alpha);
+  test_trsm<double, double, TestDevice>("LLNU", alpha);
+  test_trsm<double, double, TestDevice>("LLTN", alpha);
+  test_trsm<double, double, TestDevice>("LLTU", alpha);
+  test_trsm<double, double, TestDevice>("LUNN", alpha);
+  test_trsm<double, double, TestDevice>("LUNU", alpha);
+  test_trsm<double, double, TestDevice>("LUTN", alpha);
+  test_trsm<double, double, TestDevice>("LUTU", alpha);
 
-  test_trsm<double, double, TestExecSpace>("RLNN", alpha);
-  test_trsm<double, double, TestExecSpace>("RLNU", alpha);
-  test_trsm<double, double, TestExecSpace>("RLTN", alpha);
-  test_trsm<double, double, TestExecSpace>("RLTU", alpha);
-  test_trsm<double, double, TestExecSpace>("RUNN", alpha);
-  test_trsm<double, double, TestExecSpace>("RUNU", alpha);
-  test_trsm<double, double, TestExecSpace>("RUTN", alpha);
-  test_trsm<double, double, TestExecSpace>("RUTU", alpha);
+  test_trsm<double, double, TestDevice>("RLNN", alpha);
+  test_trsm<double, double, TestDevice>("RLNU", alpha);
+  test_trsm<double, double, TestDevice>("RLTN", alpha);
+  test_trsm<double, double, TestDevice>("RLTU", alpha);
+  test_trsm<double, double, TestDevice>("RUNN", alpha);
+  test_trsm<double, double, TestDevice>("RUNU", alpha);
+  test_trsm<double, double, TestDevice>("RUTN", alpha);
+  test_trsm<double, double, TestDevice>("RUTU", alpha);
 
   alpha = 4.5;
-  test_trsm<double, double, TestExecSpace>("LLNN", alpha);
-  test_trsm<double, double, TestExecSpace>("LLNU", alpha);
-  test_trsm<double, double, TestExecSpace>("LLTN", alpha);
-  test_trsm<double, double, TestExecSpace>("LLTU", alpha);
-  test_trsm<double, double, TestExecSpace>("LUNN", alpha);
-  test_trsm<double, double, TestExecSpace>("LUNU", alpha);
-  test_trsm<double, double, TestExecSpace>("LUTN", alpha);
-  test_trsm<double, double, TestExecSpace>("LUTU", alpha);
+  test_trsm<double, double, TestDevice>("LLNN", alpha);
+  test_trsm<double, double, TestDevice>("LLNU", alpha);
+  test_trsm<double, double, TestDevice>("LLTN", alpha);
+  test_trsm<double, double, TestDevice>("LLTU", alpha);
+  test_trsm<double, double, TestDevice>("LUNN", alpha);
+  test_trsm<double, double, TestDevice>("LUNU", alpha);
+  test_trsm<double, double, TestDevice>("LUTN", alpha);
+  test_trsm<double, double, TestDevice>("LUTU", alpha);
 
-  test_trsm<double, double, TestExecSpace>("RLNN", alpha);
-  test_trsm<double, double, TestExecSpace>("RLNU", alpha);
-  test_trsm<double, double, TestExecSpace>("RLTN", alpha);
-  test_trsm<double, double, TestExecSpace>("RLTU", alpha);
-  test_trsm<double, double, TestExecSpace>("RUNN", alpha);
-  test_trsm<double, double, TestExecSpace>("RUNU", alpha);
-  test_trsm<double, double, TestExecSpace>("RUTN", alpha);
-  test_trsm<double, double, TestExecSpace>("RUTU", alpha);
+  test_trsm<double, double, TestDevice>("RLNN", alpha);
+  test_trsm<double, double, TestDevice>("RLNU", alpha);
+  test_trsm<double, double, TestDevice>("RLTN", alpha);
+  test_trsm<double, double, TestDevice>("RLTU", alpha);
+  test_trsm<double, double, TestDevice>("RUNN", alpha);
+  test_trsm<double, double, TestDevice>("RUNU", alpha);
+  test_trsm<double, double, TestDevice>("RUTN", alpha);
+  test_trsm<double, double, TestDevice>("RUTU", alpha);
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -350,73 +353,73 @@ TEST_F(TestCategory, trsm_double) {
 TEST_F(TestCategory, trsm_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_complex_double");
   Kokkos::complex<double> alpha = 1.0;
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUCU", alpha);
 
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUCU", alpha);
 
   alpha = Kokkos::complex<double>(4.5, 0.0);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "LUCU", alpha);
 
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RLCU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUNN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUNU", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUCN", alpha);
-  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_trsm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "RUCU", alpha);
   Kokkos::Profiling::popRegion();
 }
@@ -428,74 +431,74 @@ TEST_F(TestCategory, trsm_complex_double) {
 TEST_F(TestCategory, trsm_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trsm_complex_float");
   Kokkos::complex<float> alpha = 1.0f;
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLCU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU",
+                                                                        alpha);
 
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLCU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU",
+                                                                        alpha);
 
   alpha = Kokkos::complex<float>(4.5f, 0.0f);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LLCU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "LUCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU",
+                                                                        alpha);
 
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RLCU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUNN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUNU", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUCN", alpha);
-  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
-      "RUCU", alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN",
+                                                                        alpha);
+  test_trsm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU",
+                                                                        alpha);
   Kokkos::Profiling::popRegion();
 }
 #endif

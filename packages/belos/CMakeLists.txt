@@ -128,11 +128,6 @@ ADD_SUBDIRECTORY(doc)
 ######################################################################
 
 #
-# Exclude leftover GNU Autotools files.
-#
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-#
 # Files and directories to exclude from the release tarball.
 #
 TRIBITS_EXCLUDE_FILES(

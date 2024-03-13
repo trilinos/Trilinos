@@ -752,6 +752,15 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
                                "Belos::TFQMRSolMgr::solve(): Invalid return from TFQMRIter::iterate().");
           }
         }
+        catch (const StatusTestNaNError& e) {
+          // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          achievedTol_ = MT::one();
+          Teuchos::RCP<MV> X = problem_->getLHS();
+          MVT::MvInit( *X, SCT::zero() );
+          printer_->stream(Warnings) << "Belos::TFQMRSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+          return Unconverged; 
+        }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught std::exception in TFQMRIter::iterate() at iteration "
                                    << tfqmr_iter->getNumIters() << std::endl

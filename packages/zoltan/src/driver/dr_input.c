@@ -711,7 +711,7 @@ void brdcst_cmd_info (
   float_params[k++] = Test.Dynamic_Weights;
   float_params[k++] = Test.Dynamic_Graph;
 
-  MPI_Bcast (float_params, k, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  MPI_Bcast (float_params, k, MPI_FLOAT, 0, zoltan_get_global_comm());
 
   k = 0;
   Test.Dynamic_Weights = float_params[k++];
@@ -739,7 +739,7 @@ void brdcst_cmd_info (
   int_params[j++] = Test.Gen_Files;
   int_params[j++] = Test.Vtx_Inc;
 
-  MPI_Bcast (int_params, j, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast (int_params, j, MPI_INT, 0, zoltan_get_global_comm());
 
   j = 0;
   Debug_Driver           = int_params[j++];
@@ -763,7 +763,7 @@ void brdcst_cmd_info (
   Test.Gen_Files         = int_params[j++];
   Test.Vtx_Inc           = int_params[j++];
 
-  MPI_Bcast (pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
+  MPI_Bcast (pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, zoltan_get_global_comm());
 
   switch (pio_info->file_type) {
   case CHACO_FILE:
@@ -785,16 +785,16 @@ void brdcst_cmd_info (
     if (Proc != 0)
       pio_info->dsk_list = (int*) malloc (pio_info->dsk_list_cnt*sizeof(int));
     MPI_Bcast (pio_info->dsk_list, pio_info->dsk_list_cnt, MPI_INT, 0,
-    MPI_COMM_WORLD);
+    zoltan_get_global_comm());
   }
 
   /* and broadcast the problem specifications */
-  MPI_Bcast (prob, sizeof(PROB_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
+  MPI_Bcast (prob, sizeof(PROB_INFO), MPI_BYTE, 0, zoltan_get_global_comm());
   if (prob->num_params > 0) {
     size = prob->num_params * sizeof(Parameter_Pair);
     if (Proc != 0)
       prob->params = (Parameter_Pair*) malloc(size);
-    MPI_Bcast (prob->params, size, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast (prob->params, size, MPI_CHAR, 0, zoltan_get_global_comm());
   }
 
   /* now calculate where the file for this processor is */

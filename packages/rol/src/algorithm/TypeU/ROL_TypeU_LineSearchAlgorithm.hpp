@@ -143,6 +143,7 @@ public:
   void initialize(const Vector<Real> &x, const Vector<Real> &g,
                   Objective<Real> &obj, std::ostream &outStream = std::cout);
 
+  using TypeU::Algorithm<Real>::run;
   void run( Vector<Real>       &x,
             const Vector<Real> &g, 
             Objective<Real>    &obj,
@@ -152,7 +153,7 @@ public:
 
   void writeName( std::ostream& os ) const override;
   
-  void writeOutput( std::ostream& os, bool print_header = false ) const override;
+  void writeOutput( std::ostream& os, const bool print_header = false ) const override;
 
 }; // class ROL::TypeU::LineSearchAlgorithm
 

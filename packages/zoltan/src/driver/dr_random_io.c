@@ -262,7 +262,7 @@ int create_random_triangles(
 
   /* Distribute graph */
 
-  if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
+  if (!chaco_dist_graph(zoltan_get_global_comm(), pio_info, 0, &gnvtxs, &nvtxs, 
              &start, &adj, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts, 
              &ndim, &x, &y, &z, &assignments)) {
     Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
@@ -421,7 +421,7 @@ int create_random_input(
 
   /* Distribute graph */
 
-  if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
+  if (!chaco_dist_graph(zoltan_get_global_comm(), pio_info, 0, &gnvtxs, &nvtxs, 
              &start, &adj, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts, 
              &ndim, &x, &y, &z, &assignments)) {
     Gen_Error(0, "fatal: Error returned from chaco_dist_graph");

@@ -203,6 +203,11 @@ size_t ReorderFilter<MatrixType>::getLocalNumEntries() const
   return A_->getLocalNumEntries();
 }
 
+template<class MatrixType>
+typename MatrixType::local_ordinal_type ReorderFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
 
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::
@@ -223,7 +228,6 @@ getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
     }
   }
 }
-
 
 template<class MatrixType>
 size_t ReorderFilter<MatrixType>::
@@ -500,9 +504,12 @@ void ReorderFilter<MatrixType>::permuteOriginalToReorderedTempl(const Tpetra::Mu
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = originalX.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = reorderedY.get2dViewNonConst();
 
+  const local_ordinal_type blockSize = getBlockSize();
+  const local_ordinal_type numRows = originalX.getLocalLength() / blockSize;
   for(size_t k=0; k < originalX.getNumVectors(); k++)
-    for(local_ordinal_type i=0; (size_t)i< originalX.getLocalLength(); i++)
-      y_ptr[k][perm_[i]] = (RangeScalar)x_ptr[k][i];
+    for(local_ordinal_type i=0; i< numRows; i++)
+      for(local_ordinal_type j=0; j< blockSize; ++j)
+        y_ptr[k][perm_[i]*blockSize + j] = (RangeScalar)x_ptr[k][i*blockSize + j];
 }
 
 
@@ -528,7 +535,6 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef Teuchos::ScalarTraits<DomainScalar> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms (reorderedX.getNumVectors ());
     reorderedX.norm2 (norms ());
@@ -550,15 +556,18 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = reorderedX.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = originalY.get2dViewNonConst();
 
+  const local_ordinal_type blockSize = getBlockSize();
+  const local_ordinal_type numRows = reorderedX.getLocalLength() / blockSize;
   for (size_t k = 0; k < reorderedX.getNumVectors (); ++k) {
-    for (local_ordinal_type i = 0; (size_t)i < reorderedX.getLocalLength (); ++i) {
-      y_ptr[k][reverseperm_[i]] = (RangeScalar) x_ptr[k][i];
+    for (local_ordinal_type i = 0; i < numRows; ++i) {
+      for(local_ordinal_type j = 0; j < blockSize; ++j) {
+        y_ptr[k][reverseperm_[i]*blockSize + j] = (RangeScalar) x_ptr[k][i*blockSize + j];
+      }
     }
   }
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    typedef Teuchos::ScalarTraits<RangeScalar> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms (originalY.getNumVectors ());
     originalY.norm2 (norms ());

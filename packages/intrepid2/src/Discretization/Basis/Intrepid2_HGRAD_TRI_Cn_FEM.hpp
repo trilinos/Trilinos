@@ -112,10 +112,11 @@ namespace Intrepid2 {
                typename inputPointValueType,  class ...inputPointProperties,
                typename vinvValueType,        class ...vinvProperties>
       static void
-      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                        const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                        const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
-                        const EOperator operatorType);
+      getValues(const typename DeviceType::execution_space& space,
+                      Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+                const EOperator operatorType);
 
       /**
          \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM
@@ -183,17 +184,18 @@ namespace Intrepid2 {
   class Basis_HGRAD_TRI_Cn_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
+    using BasisBase = Basis<DeviceType, outputValueType, pointValueType>;
     using HostBasis = Basis_HGRAD_TRI_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
-      
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using typename BasisBase::ExecutionSpace;
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
 
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType;
+    using typename BasisBase::ScalarViewType;
 
-    typedef typename Basis<DeviceType,outputValueType,pointValueType>::scalarType  scalarType;
+    using typename BasisBase::scalarType;
 
   private:
 
@@ -210,13 +212,14 @@ namespace Intrepid2 {
     Basis_HGRAD_TRI_Cn_FEM(const ordinal_type order,
                            const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
-    getValues(       OutputViewType outputValues,
-                     const PointViewType  inputPoints,
-                     const EOperator operatorType = OPERATOR_VALUE) const override {
+    getValues( const ExecutionSpace& space,
+                     OutputViewType outputValues,
+               const PointViewType  inputPoints,
+               const EOperator operatorType = OPERATOR_VALUE) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
@@ -226,10 +229,11 @@ namespace Intrepid2 {
 #endif
       constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HGRAD_TRI_Cn_FEM::
-        getValues<DeviceType,numPtsPerEval>( outputValues,
-                                                inputPoints,
-                                                this->vinv_,
-                                                operatorType);
+        getValues<DeviceType,numPtsPerEval>(space,
+                                            outputValues,
+                                            inputPoints,
+                                            this->vinv_,
+                                            operatorType);
     }
 
     virtual

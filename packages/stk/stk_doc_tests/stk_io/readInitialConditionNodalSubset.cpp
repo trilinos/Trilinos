@@ -96,7 +96,7 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionNodalSubset)
 
     // "NodeBlock_1" is the name of the node field on the input mesh.
     stk::io::MeshField mf(temperature, dbFieldNameShell);
-    double time = stkIo.get_input_io_region()->get_state_time(1);
+    double time = stkIo.get_input_ioss_region()->get_state_time(1);
     mf.set_read_time(time);
 
     const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();

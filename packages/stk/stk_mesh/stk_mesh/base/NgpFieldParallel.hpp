@@ -78,8 +78,7 @@ void do_final_sync_to_device(const std::vector<NgpField<T>*>& ngpFields)
 template <typename T>
 void copy_owned_to_shared(const stk::mesh::BulkData & bulk,
                           const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                          bool doFinalSyncBackToDevice = true,
-                          bool syncOnlySharedOrGhosted = false)
+                          bool doFinalSyncBackToDevice = true)
 {
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -89,7 +88,7 @@ void copy_owned_to_shared(const stk::mesh::BulkData & bulk,
     stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
   }
 
-  stk::mesh::copy_owned_to_shared(bulk, stkFields, syncOnlySharedOrGhosted );
+  stk::mesh::copy_owned_to_shared(bulk, stkFields);
 
   if(doFinalSyncBackToDevice) {
     do_final_sync_to_device(ngpFields);
@@ -99,8 +98,7 @@ void copy_owned_to_shared(const stk::mesh::BulkData & bulk,
 template <typename T>
 void communicate_field_data(const stk::mesh::Ghosting & ghosting,
                             const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                            bool doFinalSyncBackToDevice = true,
-                            bool syncOnlySharedOrGhosted = false)
+                            bool doFinalSyncBackToDevice = true)
 {
   const stk::mesh::MetaData & meta = ghosting.mesh().mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -110,7 +108,7 @@ void communicate_field_data(const stk::mesh::Ghosting & ghosting,
     stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
   }
 
-  stk::mesh::communicate_field_data(ghosting, stkFields, syncOnlySharedOrGhosted);
+  stk::mesh::communicate_field_data(ghosting, stkFields);
 
   if(doFinalSyncBackToDevice) {
     do_final_sync_to_device(ngpFields);
@@ -120,8 +118,7 @@ void communicate_field_data(const stk::mesh::Ghosting & ghosting,
 template <typename T>
 void communicate_field_data(const stk::mesh::BulkData & bulk,
                             const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                            bool doFinalSyncBackToDevice = true,
-                            bool syncOnlySharedOrGhosted = false)
+                            bool doFinalSyncBackToDevice = true)
 {
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -131,7 +128,7 @@ void communicate_field_data(const stk::mesh::BulkData & bulk,
     stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
   }
 
-  stk::mesh::communicate_field_data(bulk, stkFields, syncOnlySharedOrGhosted);
+  stk::mesh::communicate_field_data(bulk, stkFields);
 
   if(doFinalSyncBackToDevice) {
     do_final_sync_to_device(ngpFields);
@@ -264,7 +261,7 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
   }
 
   const bool deterministic = false;
-  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double>(MPI_COMM_WORLD,
+  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double>(bulk.parallel(),
                                                                 comm_procs,
                                                                 exchangeHandler,
                                                                 deterministic);

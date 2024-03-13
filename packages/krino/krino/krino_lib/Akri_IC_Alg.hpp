@@ -39,7 +39,7 @@ public:
 
   void addCalculator(std::unique_ptr<IC_Calculator> calc) { my_calculators.emplace_back(std::move(calc)); }
 
-  BoundingBox get_surface_bounding_box() { return surface_list.get_bounding_box(); }
+  BoundingBox get_surface_bounding_box();
 
   void execute(const double time);
 private:

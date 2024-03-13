@@ -46,18 +46,13 @@
 #ifndef MUELU_GRAPHBASE_FWD_HPP
 #define MUELU_GRAPHBASE_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class GraphBase;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class GraphBase;
 }
 
 #ifndef MUELU_GRAPHBASE_SHORT
 #define MUELU_GRAPHBASE_SHORT
 #endif
 
-
-
-#endif // MUELU_GRAPHBASE_FWD_HPP
+#endif  // MUELU_GRAPHBASE_FWD_HPP

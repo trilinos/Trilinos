@@ -9,6 +9,7 @@
 #include <Akri_Startup.hpp>
 
 #include <Akri_DiagWriter.hpp>
+#include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_RegisterProduct.hpp>
 
 #include <mpi.h>
@@ -17,6 +18,7 @@
 #include <iostream>
 #include <string>
 
+#include <Kokkos_Core.hpp>
 #include <stk_util/diag/WriterRegistry.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/environment/EnvData.hpp>
@@ -173,7 +175,7 @@ Startup::Startup(int argc, char ** argv)
     s << " poutfile=" << logFileName << "." << stk::EnvData::parallel_size() << "." << stk::EnvData::parallel_rank() << " pout>poutfile";
     parallel_output_description = s.str();
   }
-  stk::bind_output_streams(output_description+parallel_output_description);
+  stk::bind_output_streams(output_description+parallel_output_description); // necessary for krinolog to work, otherwise you may get segfault
   stk::EnvData::instance().m_outputP0 = &sierra::out();
 
   // output run info
@@ -224,6 +226,7 @@ void Startup::setup_commandline_options()
 
 Startup::~Startup()
 {
+  krino::MasterElementDeterminer::clear_master_elements();  // needed at least with MasterElementIntrepid to destruct Views on Basis objs before Kokkos::finalize()
   Kokkos::finalize();
   MPI_Finalize();
 }
@@ -263,7 +266,8 @@ void Startup::handle_exception(const char * what, const bool is_parsing)
   std::cout << std::flush;
   std::cerr << std::flush;
 
-  std::abort();
+  const int errorCode{-1};
+  MPI_Abort(stk::EnvData::parallel_comm(), errorCode);
 }
 
 void Startup::report_handler(const char * message, int type)

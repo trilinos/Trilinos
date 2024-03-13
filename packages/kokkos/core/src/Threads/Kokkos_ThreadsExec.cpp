@@ -768,9 +768,6 @@ void ThreadsExec::initialize(int thread_count_arg) {
               << thread_count << " threads per process." << std::endl;
   }
 
-  // Init the array for used for arbitrarily sized atomics
-  Impl::init_lock_array_host_space();
-
   Impl::SharedAllocationRecord<void, void>::tracking_enable();
 }
 
@@ -818,8 +815,6 @@ void ThreadsExec::finalize() {
   s_threads_process.m_pool_size      = 1;
   s_threads_process.m_pool_fan_size  = 0;
   s_threads_process.m_pool_state     = ThreadsExec::Inactive;
-
-  Kokkos::Profiling::finalize();
 }
 
 //----------------------------------------------------------------------------

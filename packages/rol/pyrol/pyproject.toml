@@ -1,0 +1,49 @@
+[build-system]
+requires = ["scikit-build-core>=0.3.3","pybind11 @ git+https://github.com/pybind/pybind11.git@smart_holder"]
+build-backend = "scikit_build_core.build"
+
+
+[project]
+name = "pyrol"
+version = "0.0.1"
+description="A Python interface to the Rapid Optimization Library (ROL)"
+readme = "README.md"
+authors = [
+  { name = "Christian Glusa" },
+  { name = "Kim Liegeois" },
+  { name = "Aurya Javeed" },
+]
+requires-python = ">=3.7"
+dependencies = ["numpy"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+]
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+cmake.verbose = true
+logging.level = "DEBUG"
+cmake.minimum-version = "3.23.0"
+wheel.install-dir = "pyrol"
+
+[tool.scikit-build.cmake.define]
+CMAKE_BUILD_TYPE = "RELEASE"
+Trilinos_ASSERT_DEFINED_DEPENDENCIES = "OFF"
+BUILD_SHARED_LIBS = "ON"
+Trilinos_ENABLE_TESTS = "OFF"
+Trilinos_ENABLE_EXAMPLES = "OFF"
+Trilinos_ENABLE_Fortran = "OFF"
+Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES = "OFF"
+Trilinos_ENABLE_ROL = "ON"
+ROL_Ptr = "Teuchos::RCP"
+ROL_ENABLE_PYROL = "ON"
+PYROL_ENABLE_BINDER = "OFF"
+PYROL_PIP_INSTALL = "ON"
+CMAKE_INSTALL_RPATH="$ORIGIN/lib64;$ORIGIN/lib;$ORIGIN;@loader_path/lib64;@loader_path/lib;@loader_path"

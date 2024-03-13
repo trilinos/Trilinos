@@ -338,11 +338,6 @@ struct TestViewCudaTexture {
 };
 
 TEST(cuda, impl_view_texture) {
-#if defined(KOKKOS_ENABLE_CUDA) && \
-    defined(KOKKOS_COMPILER_NVHPC)  // FIXME_NVHPC
-  GTEST_SKIP()
-      << "Getting error_count of 1000 meaning all assertions are failing";
-#endif
   TestViewCudaTexture<Kokkos::CudaSpace>::run();
   TestViewCudaTexture<Kokkos::CudaUVMSpace>::run();
 }
@@ -374,7 +369,8 @@ template <typename View>
 View create_view() {
   using execution_space = typename View::execution_space;
   View view("", 10);
-  InitFunctor iota(view);
+  // MSVC+CUDA errors on CTAD here
+  InitFunctor<View> iota(view);
   Kokkos::parallel_for("test_view_subview_const_randomaccess",
                        Kokkos::RangePolicy<execution_space>(0, view.extent(0)),
                        iota);
@@ -406,11 +402,6 @@ void test_view_subview_const_randomaccess() {
 }  // namespace issue_5594
 
 TEST(cuda, view_subview_const_randomaccess) {
-#if defined(KOKKOS_ENABLE_CUDA) && \
-    defined(KOKKOS_COMPILER_NVHPC)  // FIXME_NVHPC (similar failure to
-                                    // TestViewCudaTexture?)
-  GTEST_SKIP() << "RandomAccess view not working on NVHPC?";
-#endif
   issue_5594::test_view_subview_const_randomaccess<Kokkos::Cuda,
                                                    Kokkos::CudaSpace>();
   issue_5594::test_view_subview_const_randomaccess<Kokkos::Cuda,

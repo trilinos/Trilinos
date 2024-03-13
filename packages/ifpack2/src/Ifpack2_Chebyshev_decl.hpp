@@ -699,6 +699,8 @@ private:
   int NumInitialize_;
   //! The total number of successful calls to compute().
   int NumCompute_;
+  //! Whether apply should register and use a timer
+  bool TimerForApply_;
   /// \brief The total number of successful calls to apply().
   ///
   /// This is "mutable" because apply() is a const method; apply() is

@@ -25,14 +25,14 @@ namespace KokkosBlas {
 /// \brief Applies modified Givens rotation coefficients to vectors x and y.
 ///
 /// \tparam execution_space the execution space where the kernel will be
-/// executed, it can be used to specify a stream too.
+///         executed, it can be used to specify a stream too.
 /// \tparam VectorView a rank1 view type that hold non const data
 /// \tparam ParamView a rank1 view of static extent [5] type that
-/// holds const data
+///         holds const data
 ///
 /// \param space [in]  execution space used for parallel loops in this kernel
-/// \param x1 [in/out] vector to be rotated with param coefficients
-/// \param y1 [in/out] vector to be rotated with param coefficients
+/// \param X [in/out] vector to be rotated with param coefficients
+/// \param Y [in/out] vector to be rotated with param coefficients
 /// \param param [in]  output of rotmg contains rotation coefficients
 ///
 template <class execution_space, class VectorView, class ParamView>

@@ -131,6 +131,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
      */
     void setParameters (const Teuchos::ParameterList& List);
 
+    bool isBlockCrs() const;
+
     //! Initialize the preconditioner
     void initialize();
 
@@ -202,6 +204,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     OrdinalArray localRowPtrs_;   //set in initialize()
     OrdinalArray localColInds_;   //set in initialize()
     OrdinalArrayHost localRowPtrsHost_; //set in initialize() and used to get localValues_ in compute()
+
     double initTime_;
     double computeTime_;
     mutable double applyTime_;
@@ -223,6 +226,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
       bool guessFlag;
       int blockSizeILU;
       int blockSize;
+      bool blockCrs;
+      int blockCrsSize;
+      bool fillBlocks;
       static Params getDefaults();
     };
 

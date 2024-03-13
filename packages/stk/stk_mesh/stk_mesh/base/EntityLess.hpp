@@ -52,7 +52,6 @@ public:
   inline bool operator()( const EntityProc & lhs, const EntityProc & rhs) const;
   inline bool operator()( const EntityProc & lhs, const Entity rhs) const;
   inline bool operator()( const EntityProc & lhs, const EntityKey & rhs) const;
-  inline EntityLess& operator=(const EntityLess& rhs);
 private:
   const BulkData* m_mesh;
 #ifdef SIERRA_MIGRATION

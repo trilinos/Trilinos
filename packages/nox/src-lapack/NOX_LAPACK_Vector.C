@@ -256,7 +256,7 @@ double NOX::LAPACK::Vector::norm(const NOX::LAPACK::Vector& weights) const
 {
   if (weights.length() != n) {
     std::cerr << "NOX::LAPACK::Vector::norm - size mismatch for weights vector" << std::endl;
-    throw "NOX::LAPACK Error";
+    throw std::runtime_error("NOX::LAPACK Error");
   }
 
   double value = 0;        // final answer
@@ -279,7 +279,7 @@ double NOX::LAPACK::Vector::innerProduct(const NOX::LAPACK::Vector& y) const
   if (y.length() != n) {
     std::cerr << "NOX::LAPACK::Vector::innerProduct - size mismatch for y vector"
      << std::endl;
-    throw "NOX::LAPACK Error";
+    throw std::runtime_error("NOX::LAPACK Error");
   }
 
   return DDOT_F77(&n, &x[0], &i_one, &y[0], &i_one);

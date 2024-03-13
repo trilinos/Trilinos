@@ -85,7 +85,7 @@ NOX::Multiphysics::Group::Group( const Group & source, NOX::CopyType type ):
 
     default:
       std::cerr << "ERROR: Invalid ConstructorType for group copy constructor." << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
   }
 }
 
@@ -209,7 +209,7 @@ NOX::Multiphysics::Group::getNormF() const
 {
   if (!isF()) {
     std::cerr << "ERROR: NOX::Epetra::Group::getNormF() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return normRHS;

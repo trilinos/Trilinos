@@ -497,6 +497,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
 
   // Open the output file for reading.
   stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.use_simple_fields();
   stkIo.add_mesh_database(filename, stk::io::READ_RESTART);
   stkIo.create_input_mesh();
   stkIo.populate_bulk_data();

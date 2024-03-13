@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,24 +15,24 @@
 /* Recursively apply median to a SINGLE vector of values */
 
 void rec_median_1(struct vtx_data **graph,        /* data structure with vertex weights */
-                  double *          vals,         /* values of which to find median */
+                  double           *vals,         /* values of which to find median */
                   int               nvtxs,        /* number of values I own */
-                  int *             active,       /* space for list of nmyvals ints */
+                  int              *active,       /* space for list of nmyvals ints */
                   int               cube_or_mesh, /* 0=> hypercube, other=> mesh */
                   int               nsets,        /* number of sets to divide into */
-                  double *          goal,         /* desired sizes for sets */
+                  double           *goal,         /* desired sizes for sets */
                   int               using_vwgts,  /* are vertex weights being used? */
-                  int *             assign,       /* set each vertex gets assigned to */
+                  int              *assign,       /* set each vertex gets assigned to */
                   int               top           /* is this the top call in the recursion? */
 )
 {
   struct vtx_data **sub_graph;                /* subgraph data structure with vertex weights */
-  double *          sub_vals;                 /* subgraph entries in vals vector */
+  double           *sub_vals;                 /* subgraph entries in vals vector */
   double            merged_goal[MAXSETS / 2]; /* combined goal values */
   double            sub_vwgt_sum;             /* sum of vertex weights in subgraph */
-  int *             loc2glob;                 /* mapping from subgraph to graph numbering */
+  int              *loc2glob;                 /* mapping from subgraph to graph numbering */
   int               mapping[MAXSETS];         /* appropriate set number */
-  int *             sub_assign;               /* assignment returned from subgraph */
+  int              *sub_assign;               /* assignment returned from subgraph */
   int               sub_nvtxs;                /* number of vertices in subgraph */
   int               sub_nsets;                /* number of sets in side of first partition */
   int               setsize[2];               /* number of vertices in two subsets */
@@ -40,9 +40,6 @@ void rec_median_1(struct vtx_data **graph,        /* data structure with vertex 
   int               ndims;                    /* number of bits defining set */
   int               mesh_dims[3];             /* shape of fictitious mesh */
   int               i, j;                     /* loop counters */
-  int               bit_reverse();
-  void              median(), make_subgoal(), make_subvector();
-  void              make_maps2();
 
   cube_or_mesh = (cube_or_mesh != 0);
   mesh_dims[1] = mesh_dims[2] = 1;
@@ -157,30 +154,28 @@ void rec_median_1(struct vtx_data **graph,        /* data structure with vertex 
 /* Note: currently only works for power-of-two number of processors. */
 
 void rec_median_k(struct vtx_data **graph,        /* data structure with vertex weights */
-                  double **         vals,         /* values of which to find median */
+                  double          **vals,         /* values of which to find median */
                   int               nvtxs,        /* number of values I own */
-                  int *             active,       /* space for list of nmyvals ints */
+                  int              *active,       /* space for list of nmyvals ints */
                   int               ndims,        /* number of dimensions to divide */
                   int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
-                  double *          goal,         /* desired sizes for sets */
+                  double           *goal,         /* desired sizes for sets */
                   int               using_vwgts,  /* are vertex weights being used? */
-                  int *             assign        /* set each vertex gets assigned to */
+                  int              *assign        /* set each vertex gets assigned to */
 )
 {
   struct vtx_data **sub_graph;                /* subgraph data structure with vertex weights */
-  double *          sub_vals[MAXDIMS];        /* subgraph entries in vals vectors */
+  double           *sub_vals[MAXDIMS];        /* subgraph entries in vals vectors */
   double            merged_goal[MAXSETS / 2]; /* combined goal values */
   double            sub_vwgt_sum;             /* sum of vertex weights in subgraph */
-  int *             loc2glob;                 /* mapping from subgraph to graph numbering */
-  int *             sub_assign;               /* assignment returned from subgraph */
+  int              *loc2glob;                 /* mapping from subgraph to graph numbering */
+  int              *sub_assign;               /* assignment returned from subgraph */
   int               sub_nvtxs;                /* number of vertices in subgraph */
   int               setsize[2];               /* number of vertices in two subsets */
   int               maxsize;                  /* number of vertices in larger subset */
   int               nsets;                    /* number of sets we are dividing into */
   int               mesh_dims[3];             /* shape of fictitious mesh */
   int               i, j;                     /* loop counters */
-
-  void median(), make_subgoal(), make_subvector(), make_maps2();
 
   mesh_dims[1] = mesh_dims[2] = 1;
 

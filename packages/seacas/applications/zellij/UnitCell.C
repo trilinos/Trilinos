@@ -32,7 +32,7 @@ namespace {
   Ioss::ElementBlock *get_element_block(Ioss::ElementBlock *block, int64_t elem_id,
                                         std::shared_ptr<Ioss::Region> &region)
   {
-    auto new_block = block;
+    auto *new_block = block;
     if (block == nullptr || !block->contains(elem_id)) {
       new_block = region->get_element_block(elem_id);
       assert(new_block != nullptr);
@@ -276,7 +276,7 @@ void UnitCell::generate_boundary_faces(unsigned int which_faces)
                                         Flg::MAX_J, Flg::MIN_K, Flg::MAX_K};
   auto                   &faces = face_generator.faces("ALL");
   Ioss::ElementBlock     *block = nullptr;
-  for (auto &face : faces) {
+  for (const auto &face : faces) {
     if (face.elementCount_ == 1) {
       block             = get_element_block(block, face.element[0] / 10, m_region);
       auto block_offset = block->get_offset();

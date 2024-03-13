@@ -133,7 +133,7 @@ int max_assignment, have_assignments;
   /* Broadcast initial assignments if they exist.  
    * Assignments can be used for partitions and/or processors.
    */
-  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+  MPI_Comm_rank(zoltan_get_global_comm(), &proc);
 
   /* First, tell other processors whether the assignments array is NULL. */
   if (proc == host_proc) 

@@ -40,6 +40,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
   using namespace std;
   // dimensions of the returned view are (C,F,F)
   auto fs = FUNCTION_SPACE_HCURL;
+  
+  Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations("orientations", geometry.numCells() );
+  geometry.orientations(orientations, 0, -1);
 
   shards::CellTopology cellTopo = geometry.cellTopology();
   
@@ -67,23 +70,26 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
   // Allocate some intermediate containers
   ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints, spaceDim );
   
-  ScalarView<Scalar,DeviceType> basisCurlValues, transformedCurlValues, transformedWeightedCurlValues;
+  ScalarView<Scalar,DeviceType> basisCurlValues, unorientedTransformedCurlValues, transformedCurlValues, transformedWeightedCurlValues;
   if (spaceDim == 2)
   {
     // curl in 2D is a scalar:
     basisCurlValues = ScalarView<Scalar,DeviceType>("basis curl values", numFields, numPoints);
-    transformedCurlValues = ScalarView<Scalar,DeviceType> ("transformed curl values", worksetSize, numFields, numPoints);
-    transformedWeightedCurlValues = ScalarView<Scalar,DeviceType> ("transformed weighted curl values", worksetSize, numFields, numPoints);
+    unorientedTransformedCurlValues = ScalarView<Scalar,DeviceType>("unoriented transformed curl values", worksetSize, numFields, numPoints);
+    transformedCurlValues = ScalarView<Scalar,DeviceType>("transformed curl values", worksetSize, numFields, numPoints);
+    transformedWeightedCurlValues = ScalarView<Scalar,DeviceType>("transformed weighted curl values", worksetSize, numFields, numPoints);
     
   }
   else
   {
     // curl in 3D is a vector
     basisCurlValues = ScalarView<Scalar,DeviceType>("basis curl values", numFields, numPoints, spaceDim);
-    transformedCurlValues = ScalarView<Scalar,DeviceType> ("transformed curl values", worksetSize, numFields, numPoints, spaceDim);
-    transformedWeightedCurlValues = ScalarView<Scalar,DeviceType> ("transformed weighted curl values", worksetSize, numFields, numPoints, spaceDim);
+    unorientedTransformedCurlValues= ScalarView<Scalar,DeviceType>("unoriented transformed curl values", worksetSize, numFields, numPoints, spaceDim);
+    transformedCurlValues = ScalarView<Scalar,DeviceType>("transformed curl values", worksetSize, numFields, numPoints, spaceDim);
+    transformedWeightedCurlValues = ScalarView<Scalar,DeviceType>("transformed weighted curl values", worksetSize, numFields, numPoints, spaceDim);
   }
   
+  ScalarView<Scalar,DeviceType> unorientedTransformedBasisValues("unoriented transformed basis values", worksetSize, numFields, numPoints, spaceDim);
   ScalarView<Scalar,DeviceType> transformedBasisValues("transformed basis values", worksetSize, numFields, numPoints, spaceDim);
   ScalarView<Scalar,DeviceType> transformedWeightedBasisValues("transformed weighted basis values", worksetSize, numFields, numPoints, spaceDim);
   
@@ -124,24 +130,29 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
     
     std::pair<int,int> cellRange = {startCell, startCell+numCellsInWorkset};
     auto cellWorkset = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
+    auto orientationsWorkset = Kokkos::subview(orientations, cellRange);
     
     if (numCellsInWorkset != worksetSize)
     {
-      Kokkos::resize(jacobian,                       numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianInverse,                numCellsInWorkset, numPoints, spaceDim, spaceDim);
-      Kokkos::resize(jacobianDeterminant,            numCellsInWorkset, numPoints);
-      Kokkos::resize(cellMeasures,                   numCellsInWorkset, numPoints);
-      Kokkos::resize(transformedBasisValues,         numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(transformedWeightedBasisValues, numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(jacobian,                         numCellsInWorkset, numPoints, spaceDim, spaceDim);
+      Kokkos::resize(jacobianInverse,                  numCellsInWorkset, numPoints, spaceDim, spaceDim);
+      Kokkos::resize(jacobianDeterminant,              numCellsInWorkset, numPoints);
+      Kokkos::resize(cellMeasures,                     numCellsInWorkset, numPoints);
+      Kokkos::resize(unorientedTransformedBasisValues, numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(transformedBasisValues,           numCellsInWorkset, numFields, numPoints, spaceDim);
+      Kokkos::resize(transformedWeightedBasisValues,   numCellsInWorkset, numFields, numPoints, spaceDim);
+      
       if (spaceDim == 2)
       {
-        Kokkos::resize(transformedCurlValues,          numCellsInWorkset, numFields, numPoints);
-        Kokkos::resize(transformedWeightedCurlValues,  numCellsInWorkset, numFields, numPoints);
+        Kokkos::resize(unorientedTransformedCurlValues, numCellsInWorkset, numFields, numPoints);
+        Kokkos::resize(transformedCurlValues,           numCellsInWorkset, numFields, numPoints);
+        Kokkos::resize(transformedWeightedCurlValues,   numCellsInWorkset, numFields, numPoints);
       }
       else
       {
-        Kokkos::resize(transformedCurlValues,          numCellsInWorkset, numFields, numPoints, spaceDim);
-        Kokkos::resize(transformedWeightedCurlValues,  numCellsInWorkset, numFields, numPoints, spaceDim);
+        Kokkos::resize(unorientedTransformedCurlValues, numCellsInWorkset, numFields, numPoints, spaceDim);
+        Kokkos::resize(transformedCurlValues,           numCellsInWorkset, numFields, numPoints, spaceDim);
+        Kokkos::resize(transformedWeightedCurlValues,   numCellsInWorkset, numFields, numPoints, spaceDim);
       }
     }
     jacobianAndCellMeasureTimer->start();
@@ -155,7 +166,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
         
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
-    FunctionSpaceTools::HCURLtransformCURL(transformedCurlValues, jacobian, jacobianDeterminant, basisCurlValues);
+    FunctionSpaceTools::HCURLtransformCURL(unorientedTransformedCurlValues, jacobian, jacobianDeterminant, basisCurlValues);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(transformedCurlValues, unorientedTransformedCurlValues,
+                                                           orientationsWorkset, basis.get());
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
     FunctionSpaceTools::multiplyMeasure(transformedWeightedCurlValues, cellMeasures, transformedCurlValues);
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim); // multiply each entry of transformedCurlValues: one flop for each.
@@ -164,7 +177,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
     
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedCurlValues, transformedWeightedCurlValues);
     
-    FunctionSpaceTools::HCURLtransformVALUE(transformedBasisValues, jacobianInverse, basisValues);
+    FunctionSpaceTools::HCURLtransformVALUE(unorientedTransformedBasisValues, jacobianInverse, basisValues);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(transformedBasisValues, unorientedTransformedBasisValues,
+                                                           orientationsWorkset, basis.get());
     FunctionSpaceTools::multiplyMeasure(transformedWeightedBasisValues, cellMeasures, transformedBasisValues);
     bool sumInto = true; // add the (value,value) integral to the (curl,curl) that we've already integrated
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedBasisValues, transformedWeightedBasisValues, sumInto);

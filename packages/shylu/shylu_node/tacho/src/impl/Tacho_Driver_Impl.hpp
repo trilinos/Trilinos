@@ -200,7 +200,8 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze() {
       graph_tools_type G(graph);
 #if defined(TACHO_HAVE_METIS)
       if (_order_connected_graph_separately) {
-        G.setOption(METIS_OPTION_CCORDER, 1);
+        idx_t one_i = 1;
+        G.setOption(METIS_OPTION_CCORDER, one_i);
       }
 #endif
       G.reorder(_verbose);
@@ -216,7 +217,8 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze() {
         graph_tools_type G(graph);
 #if defined(TACHO_HAVE_METIS)
         if (_order_connected_graph_separately) {
-          G.setOption(METIS_OPTION_CCORDER, 1);
+          idx_t one_i = 1;
+          G.setOption(METIS_OPTION_CCORDER, one_i);
         }
 #endif
         G.reorder(_verbose);

@@ -134,8 +134,8 @@ computeBasisValues(typename Traits::EvalData d)
   typedef Intrepid2::FunctionSpaceTools<PHX::exec_space> FST;
 
   const int num_points = 1; // Always a single point in this evaluator!
-  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points);
-  Kokkos::DynRankView<double,PHX::Device> physical_points_cell("physical_points_cell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points, num_dim);
+  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", this->wda(d).cell_node_coordinates.extent_int(0), num_points);
+  Kokkos::DynRankView<double,PHX::Device> physical_points_cell("physical_points_cell", this->wda(d).cell_node_coordinates.extent_int(0), num_points, num_dim);
   for (panzer::index_t cell(0); cell < d.num_cells; ++cell)
     for (size_t dim=0; dim<num_dim; ++dim)
       physical_points_cell(cell,0,dim) = point_[dim];
@@ -143,7 +143,7 @@ computeBasisValues(typename Traits::EvalData d)
   const double tol = 1.0e-12;
   CTD::checkPointwiseInclusion(inCell,
                                physical_points_cell,
-                               this->wda(d).cell_vertex_coordinates.get_view(),
+                               this->wda(d).cell_node_coordinates.get_view(),
                                *topology_,
                                tol);
 
@@ -170,12 +170,12 @@ computeBasisValues(typename Traits::EvalData d)
   }
 
   // Map point to reference frame
-  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.extent(1);
+  const size_t num_nodes = this->wda(d).cell_node_coordinates.extent(1);
   Kokkos::DynRankView<double,PHX::Device> cell_coords(
-    "cell_coords", 1, num_vertex, num_dim); // Cell, Basis, Dim
-  for (size_t i=0; i<num_vertex; ++i) {
+    "cell_coords", 1, num_nodes, num_dim); // Cell, Basis, Dim
+  for (size_t i=0; i<num_nodes; ++i) {
     for (size_t j=0; j<num_dim; ++j) {
-      cell_coords(0,i,j) = this->wda(d).cell_vertex_coordinates(cellIndex_,i,j);
+      cell_coords(0,i,j) = this->wda(d).cell_node_coordinates(cellIndex_,i,j);
     }
   }
   Kokkos::DynRankView<double,PHX::Device> physical_points(

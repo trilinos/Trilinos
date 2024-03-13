@@ -166,7 +166,7 @@ void StkInterface::write_output_stk(const std::string& fname, stk::mesh::BulkDat
   if (writeNames)
   {
     std::cout << "adding property" << std::endl;
-    Ioss::Region* ioReg = stkIo.get_output_io_region(fh).get();
+    Ioss::Region* ioReg = stkIo.get_output_ioss_region(fh).get();
 
     for (unsigned int i = 0; i < m_input.interfaces.size(); ++i)
     {

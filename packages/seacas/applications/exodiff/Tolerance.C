@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -122,10 +122,10 @@ bool Tolerance::Diff(double v1, double v2) const
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return fabs(fabs(v1) - fabs(v2)) > value * max;
   }
-  else if (type == ToleranceMode::EIGEN_ABS_) {
+  if (type == ToleranceMode::EIGEN_ABS_) {
     return fabs(fabs(v1) - fabs(v2)) > value;
   }
-  else if (type == ToleranceMode::EIGEN_COM_) {
+  if (type == ToleranceMode::EIGEN_COM_) {
     // if (Abs(x - y) <= Max(absTol, relTol * Max(Abs(x), Abs(y))))
     // In the current implementation, absTol == relTol;
     // At some point, store both values...
@@ -136,9 +136,7 @@ bool Tolerance::Diff(double v1, double v2) const
     double tol = 1.0 < max ? max : 1.0;
     return fabs(fabs(v1) - fabs(v2)) >= tol * value;
   }
-  else {
-    return true;
-  }
+  return true;
 }
 
 const char *Tolerance::typestr() const
@@ -155,21 +153,19 @@ const char *Tolerance::typestr() const
   if (type == ToleranceMode::ULPS_FLOAT_) {
     return "ulps_float";
   }
-  else if (type == ToleranceMode::ULPS_DOUBLE_) {
+  if (type == ToleranceMode::ULPS_DOUBLE_) {
     return "ulps_double";
   }
-  else if (type == ToleranceMode::EIGEN_REL_) {
+  if (type == ToleranceMode::EIGEN_REL_) {
     return "eigenrel";
   }
-  else if (type == ToleranceMode::EIGEN_ABS_) {
+  if (type == ToleranceMode::EIGEN_ABS_) {
     return "eigenabs";
   }
-  else if (type == ToleranceMode::EIGEN_COM_) {
+  if (type == ToleranceMode::EIGEN_COM_) {
     return "eigencom";
   }
-  else {
-    return "ignore";
-  }
+  return "ignore";
 }
 
 const char *Tolerance::abrstr() const
@@ -186,21 +182,19 @@ const char *Tolerance::abrstr() const
   if (type == ToleranceMode::ULPS_FLOAT_) {
     return "upf";
   }
-  else if (type == ToleranceMode::ULPS_DOUBLE_) {
+  if (type == ToleranceMode::ULPS_DOUBLE_) {
     return "upd";
   }
-  else if (type == ToleranceMode::EIGEN_REL_) {
+  if (type == ToleranceMode::EIGEN_REL_) {
     return "ere";
   }
-  else if (type == ToleranceMode::EIGEN_ABS_) {
+  if (type == ToleranceMode::EIGEN_ABS_) {
     return "eab";
   }
-  else if (type == ToleranceMode::EIGEN_COM_) {
+  if (type == ToleranceMode::EIGEN_COM_) {
     return "eco";
   }
-  else {
-    return "ign";
-  }
+  return "ign";
 }
 
 double Tolerance::UlpsDiffFloat(double A, double B) const

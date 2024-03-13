@@ -1,7 +1,0 @@
-FEI_OUTPUT_LEVEL MATRIX_FILES
-outputLevel 2
-debugOutput .
-Trilinos_Solver Belos
-krylov_solver GMRES
-Maximum Iterations 100
-Convergence Tolerance      1.e-8

@@ -304,7 +304,7 @@ void make_nodes_shared(const stk::mesh::BulkData& inputBulk,
                        stk::mesh::Entity newEntity)
 {
   std::vector<int> commShared;
-  inputBulk.comm_shared_procs(inputBulk.entity_key(oldEntity), commShared);
+  inputBulk.comm_shared_procs(oldEntity, commShared);
   for(int sharedProc : commShared)
     outputBulk.add_node_sharing(newEntity, sharedProc);
 }

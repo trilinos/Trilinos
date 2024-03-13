@@ -55,9 +55,8 @@ void doWork()
 
 TEST(StkDiagTimerHowTo, useTimersInParallel)
 {
-  MPI_Comm communicator = MPI_COMM_WORLD;
-  int numProcs = -1;
-  MPI_Comm_size(communicator, &numProcs);
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
   if(numProcs == 2)
   {
     enum {CHILDMASK1 = 1};
@@ -76,8 +75,7 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
     bool printTimingsOnlySinceLastPrint = false;
     stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint, communicator);
 
-    int procId = -1;
-    MPI_Comm_rank(communicator, &procId);
+    int procId = stk::parallel_machine_rank(communicator);
     if(procId == 0)
     {
       std::string expectedOutput = "                                                  \
@@ -94,7 +92,8 @@ totalTestRuntime  2            SKIP  SKIP          SKIP  SKIP          SKIP  SKI
 Took SKIP seconds to generate the table above.                                            \
                     ";
 std::cerr<<expectedOutput<<" : "<<outputStream.str()<<std::endl;
-      EXPECT_TRUE(stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
+      using stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers;
+      EXPECT_TRUE(areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
     }
 
     stk::diag::deleteRootTimer(rootTimer);

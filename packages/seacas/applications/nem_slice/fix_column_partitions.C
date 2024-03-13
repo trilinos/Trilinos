@@ -346,7 +346,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
 
       std::pair<std::map<int, int>::iterator, bool> status =
           procid_elcount.insert(std::pair<int, int>(procid, 1));
-      if (status.second == false) { // procid already in map; could not insert
+      if (!status.second) { // procid already in map; could not insert
         std::map<int, int>::iterator itmap = status.first;
         (itmap->second)++;
       }

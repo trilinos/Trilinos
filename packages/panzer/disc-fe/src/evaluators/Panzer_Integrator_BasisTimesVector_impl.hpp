@@ -53,6 +53,7 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 
 namespace panzer
 {
@@ -104,6 +105,8 @@ namespace panzer
       logic_error, "Integrator_BasisTimesVector:  Basis of type \""
       << tmpBasis->name() << "\" does not require orientations.  This seems " \
       "very strange, so I'm failing.");
+    TEUCHOS_TEST_FOR_EXCEPTION(fmNames.size() > 3,std::runtime_error,
+                               "ERROR: Integrator_BasisTimesVector only supports up to three multipliers!");
 
     // Create the field for the vector-valued quantity we're integrating.
     vector_ = MDField<const ScalarT, Cell, IP, Dim>(valName, ir.dl_vector);
@@ -120,17 +123,14 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ =
-      View<Kokkos::View<const ScalarT**, typename PHX::DevLayout<ScalarT>::type, Kokkos::MemoryUnmanaged>*>("BasisTimesVector::KokkosFieldMultipliers",
-      fmNames.size());
-    for (const auto& name : fmNames)
-    {
+    for (const auto& name : fmNames) {
       fieldMults_[i++] = MDField<const ScalarT, Cell, IP>(name, ir.dl_scalar);
       this->addDependentField(fieldMults_[i - 1]);
     } // end loop over the field multipliers
 
     // Set the name of this object.
-    string n("Integrator_BasisTimesVector (");
+    string n("Integrator_BasisTimesVector<");
+    n += std::to_string(fmNames.size()) + ">(";
     if (evalStyle == EvaluatorStyle::CONTRIBUTES)
       n += "Cont";
     else // if (evalStyle == EvaluatorStyle::EVALUATES)
@@ -181,6 +181,9 @@ namespace panzer
       "Integrator_BasisTimesVector:  Basis of type \"" << bd_.getType()
       << "\" is not a vector basis.")
 
+    TEUCHOS_TEST_FOR_EXCEPTION(multipliers.size() > 3,std::runtime_error,
+                               "ERROR: Integrator_BasisTimesVector only supports up to three multipliers!");
+
     // Create the field for the vector-valued quantity we're integrating.
     vector_ = valTag;
     this->addDependentField(vector_);
@@ -196,9 +199,6 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(multipliers.size());
-    kokkosFieldMults_ =
-      View<Kokkos::View<const ScalarT**, typename PHX::DevLayout<ScalarT>::type, Kokkos::MemoryUnmanaged>*>("BasisTimesVector::KokkosFieldMultipliers",
-      multipliers.size());
     for (const auto& fm : multipliers)
     {
       fieldMults_[i++] = fm;
@@ -206,7 +206,8 @@ namespace panzer
     } // end loop over the field multipliers
 
     // Set the name of this object.
-    string n("Integrator_BasisTimesVector (");
+    string n("Integrator_BasisTimesVector<");
+    n += std::to_string(multipliers.size()) + ">(";
     if (evalStyle == EvaluatorStyle::CONTRIBUTES)
       n += "Cont";
     else // if (evalStyle == EvaluatorStyle::EVALUATES)
@@ -261,10 +262,8 @@ namespace panzer
     using std::size_t;
 
     // Get the PHX::Views of the field multipliers.
-    auto kokkosFieldMults_h = Kokkos::create_mirror_view(kokkosFieldMults_);
-    for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_h(i) = fieldMults_[i].get_static_view();
-    Kokkos::deep_copy(kokkosFieldMults_, kokkosFieldMults_h);
+    for (size_t i=0; i < fieldMults_.size(); ++i)
+      kokkosFieldMults_[i] = fieldMults_[i].get_static_view();
 
     // Determine the number of quadrature points and the dimensionality of the
     // vector that we're integrating.
@@ -274,14 +273,6 @@ namespace panzer
     // Determine the index in the Workset bases for our particular basis name.
     if (not useDescriptors_)
       basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
-
-    // Allocate temporary memory
-    if (Sacado::IsADType<ScalarT>::value) {
-      const auto fadSize = Kokkos::dimension_scalar(field_.get_static_view());
-      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0),fadSize);
-    } else {
-      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0));
-    }
 
   } // end of postRegistrationSetup()
 
@@ -297,66 +288,76 @@ namespace panzer
   Integrator_BasisTimesVector<EvalT, Traits>::
   operator()(
     const FieldMultTag<NUM_FIELD_MULT>& /* tag */,
-    const size_t&                       cell) const
+    const typename Kokkos::TeamPolicy<FieldMultTag<NUM_FIELD_MULT>,PHX::exec_space>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
+    const int cell = team.league_rank();
+    const int numBases = basis_.extent(1);
 
     // Initialize the evaluated field.
-    const int numBases(basis_.extent(1));
-    if (evalStyle_ == EvaluatorStyle::EVALUATES)
-      for (int basis(0); basis < numBases; ++basis)
+    if (evalStyle_ == EvaluatorStyle::EVALUATES) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
         field_(cell, basis) = 0.0;
+      });
+    }
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
-    if (NUM_FIELD_MULT == 0)
-    {
+    if constexpr (NUM_FIELD_MULT == 0) {
       // Loop over the quadrature points and dimensions of our vector fields,
       // scale the integrand by the multiplier, and then perform the
       // integration, looping over the bases.
-      for (int qp(0); qp < numQP_; ++qp)
-      {
-        for (int dim(0); dim < numDim_; ++dim)
-        {
-          for (int basis(0); basis < numBases; ++basis)
+      for (int qp(0); qp < numQP_; ++qp) {
+        for (int dim(0); dim < numDim_; ++dim) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
             field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim);
+          });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
-    else if (NUM_FIELD_MULT == 1)
-    {
+    else if constexpr (NUM_FIELD_MULT == 1) {
       // Loop over the quadrature points and dimensions of our vector fields,
       // scale the integrand by the multiplier and the single field multiplier,
       // and then perform the actual integration, looping over the bases.
-      for (int qp(0); qp < numQP_; ++qp)
-      {
-        for (int dim(0); dim < numDim_; ++dim)
-        {
-          for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim) * kokkosFieldMults_(0)(cell, qp);
+      for (int qp(0); qp < numQP_; ++qp) {
+        for (int dim(0); dim < numDim_; ++dim) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim)
+              * kokkosFieldMults_[0](cell, qp);
+          });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
-    else
-    {
-      // Loop over the quadrature points and pre-multiply all the field
-      // multipliers together.  Then loop over the dimensions of our vector
-      // fields, scale the integrand by the multiplier and the combination of
-      // the field multipliers, and then perform the actual integration,
-      // looping over the bases.
-      const int numFieldMults(kokkosFieldMults_.extent(0));
-      for (int qp(0); qp < numQP_; ++qp)
-      {
-        tmp_(cell) = 1.0;
-        for (int fm(0); fm < numFieldMults; ++fm)
-          tmp_(cell) *= kokkosFieldMults_(fm)(cell, qp);
-        for (int dim(0); dim < numDim_; ++dim)
-        {
-          for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim) * tmp_(cell);
+    else if constexpr (NUM_FIELD_MULT == 2) {
+      // Loop over the quadrature points and dimensions of our vector fields,
+      // scale the integrand by the multiplier and the single field multiplier,
+      // and then perform the actual integration, looping over the bases.
+      for (int qp(0); qp < numQP_; ++qp) {
+        for (int dim(0); dim < numDim_; ++dim) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim) 
+              * kokkosFieldMults_[0](cell, qp) * kokkosFieldMults_[1](cell, qp);
+          });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
-    } // end if (NUM_FIELD_MULT == something)
+    }
+    else if constexpr (NUM_FIELD_MULT == 3) {
+      // Loop over the quadrature points and dimensions of our vector fields,
+      // scale the integrand by the multiplier and the single field multiplier,
+      // and then perform the actual integration, looping over the bases.
+      for (int qp(0); qp < numQP_; ++qp) {
+        for (int dim(0); dim < numDim_; ++dim) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim)
+              * kokkosFieldMults_[0](cell, qp) * kokkosFieldMults_[1](cell, qp) * kokkosFieldMults_[2](cell, qp);
+          });
+        } // end loop over the dimensions of the vector field
+      } // end loop over the quadrature points
+    }
+    else {
+      Kokkos::abort("Panzer_Integrator_BasisTimesVector: NUM_FIELD_MULT out of range!");
+    }
+
   } // end of operator()()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -383,12 +384,22 @@ namespace panzer
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells
     // in the Workset and execute operator()() above.
-    if (fieldMults_.size() == 0)
-      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.num_cells), *this);
-    else if (fieldMults_.size() == 1)
-      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.num_cells), *this);
-    else
-      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.num_cells), *this);
+    if (fieldMults_.size() == 0) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::exec_space>(workset.num_cells);
+      parallel_for("Panzer_Integrator_BasisTimesVector<0>", policy, *this);
+    }
+    else if (fieldMults_.size() == 1) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::exec_space>(workset.num_cells);
+      parallel_for("Panzer_Integrator_BasisTimesVector<1>", policy, *this);
+    }
+    else  if (fieldMults_.size() == 2) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<2>,PHX::exec_space>(workset.num_cells);
+      parallel_for("Panzer_Integrator_BasisTimesVector<2>", policy, *this);
+    }
+    else  if (fieldMults_.size() == 3) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<3>,PHX::exec_space>(workset.num_cells);
+      parallel_for("Panzer_Integrator_BasisTimesVector<3>", policy, *this);
+    }
   } // end of evaluateFields()
 
   /////////////////////////////////////////////////////////////////////////////

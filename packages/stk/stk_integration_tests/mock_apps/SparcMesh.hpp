@@ -113,14 +113,13 @@ public:
     }
   }
 
-  void sparc_dest_bounding_boxes(std::vector<BoundingSphere>& range_vector) const
+  void sparc_dest_bounding_boxes(std::vector<BoundingBox>& range_vector) const
   {
     range_vector.clear();
-    constexpr double radius = 1.e-6;
     const int thisProc = stk::parallel_machine_rank(comm());
     for(const SparcSide& side : m_sides) {
       EntityProc entityProc(side.key, thisProc);
-      range_vector.emplace_back(stk::search::Sphere<double>(get_centroid(side), radius), entityProc);
+      range_vector.emplace_back(get_box(side), entityProc);
     }
   }
 

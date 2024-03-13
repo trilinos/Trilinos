@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov), or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -169,7 +168,6 @@ namespace Intrepid2
     template<class Rank2View, class BFunctor, int rankB = 2>
     static void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, BFunctor &B, Rank2View &C)
     {
-      using DeviceType = DefaultTestDeviceType;
       using Scalar = typename Rank2View::value_type;
       const int N0 = transposeA ? A.extent_int(1) : A.extent_int(0);
       const int N1 = transposeA ? A.extent_int(0) : A.extent_int(1);

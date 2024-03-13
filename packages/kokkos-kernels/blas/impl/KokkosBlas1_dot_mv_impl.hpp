@@ -72,14 +72,13 @@ struct Dot_MV_Functor {
 
 // Main version: the result view is accessible from execution space, so it can
 // be computed in-place
-template <class RV, class XV, class YV, class size_type>
+template <class execution_space, class RV, class XV, class YV, class size_type>
 void MV_Dot_Invoke(
-    const RV& r, const XV& x, const YV& y,
+    const execution_space& space, const RV& r, const XV& x, const YV& y,
     typename std::enable_if<Kokkos::SpaceAccessibility<
-        typename XV::execution_space,
-        typename RV::memory_space>::accessible>::type* = nullptr) {
-  using execution_space = typename XV::execution_space;
-  size_type numDots     = std::max(x.extent(1), y.extent(1));
+        execution_space, typename RV::memory_space>::accessible>::type* =
+        nullptr) {
+  size_type numDots = std::max(x.extent(1), y.extent(1));
   if (x.extent(0) != y.extent(0)) {
     std::ostringstream oss;
     oss << "KokkosBlas::dot (rank-2): x and y have different lengths ("
@@ -103,14 +102,13 @@ void MV_Dot_Invoke(
   }
   // Zero out the result vector
   Kokkos::deep_copy(
-      execution_space(), r,
-      Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+      space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerDot;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
       x.extent(0), numDots, teamsPerDot);
   size_type numTeams = numDots * teamsPerDot;
-  Kokkos::TeamPolicy<execution_space> pol(numTeams, Kokkos::AUTO);
+  Kokkos::TeamPolicy<execution_space> pol(space, numTeams, Kokkos::AUTO);
   Kokkos::parallel_for("Dot_MV", pol,
                        Dot_MV_Functor<execution_space, RV, XV, YV, size_type>(
                            r, x, y, teamsPerDot));
@@ -118,18 +116,20 @@ void MV_Dot_Invoke(
 
 // Version for when a temporary result view is needed (implemented in terms of
 // the other version)
-template <class RV, class XV, class YV, class size_type>
+template <class execution_space, class RV, class XV, class YV, class size_type>
 void MV_Dot_Invoke(
-    const RV& r, const XV& x, const YV& y,
+    const execution_space& space, const RV& r, const XV& x, const YV& y,
     typename std::enable_if<!Kokkos::SpaceAccessibility<
-        typename XV::execution_space,
-        typename RV::memory_space>::accessible>::type* = nullptr) {
+        execution_space, typename RV::memory_space>::accessible>::type* =
+        nullptr) {
   Kokkos::View<typename RV::non_const_value_type*, typename XV::memory_space>
       tempResult(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "Dot_MV temp result"),
           r.extent(0));
-  MV_Dot_Invoke<decltype(tempResult), XV, YV, size_type>(tempResult, x, y);
-  Kokkos::deep_copy(typename XV::execution_space(), r, tempResult);
+  MV_Dot_Invoke<execution_space, decltype(tempResult), XV, YV, size_type>(
+      space, tempResult, x, y);
+  Kokkos::deep_copy(space, r, tempResult);
+  space.fence();
 }
 
 }  // namespace Impl

@@ -162,7 +162,7 @@ Group::Group(const Group& source, CopyType type) :
 
   default:
     std::cerr << "ERROR: Invalid ConstructorType for group copy constructor." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
 }
@@ -296,7 +296,7 @@ Abstract::Group::ReturnType Group::computeF()
   if (status == false) {
     std::cout << "ERROR: Epetra::Group::computeF() - fill failed!!!"
      << std::endl;
-    throw "NOX Error: Fill Failed";
+    throw std::runtime_error("NOX Error: Fill Failed");
   }
 
   isValidRHS = true;
@@ -319,7 +319,7 @@ Abstract::Group::ReturnType Group::computeJacobian()
   if (status == false) {
     std::cout << "ERROR: NOX::Epetra::Group::computeJacobian() - fill failed!!!"
      << std::endl;
-    throw "NOX Error: Fill Failed";
+    throw std::runtime_error("NOX Error: Fill Failed");
   }
 
   // Update status of Jacobian wrt solution vector
@@ -335,12 +335,12 @@ Abstract::Group::ReturnType Group::computeGradient()
 
   if (!isF()) {
     std::cerr << "ERROR: NOX::Epetra::Group::computeGradient() - RHS is out of date wrt X!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::Epetra::Group::computeGradient() - Jacobian is out of date wrt X!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Compute grad = Jacobian^T * RHS.
@@ -361,12 +361,12 @@ Abstract::Group::ReturnType Group::computeNewton(Teuchos::ParameterList& p)
 
   if (!isF()) {
     std::cerr << "ERROR: NOX::Epetra::Group::computeNewton() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::Epetra::Group::computeNewton() - invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   Abstract::Group::ReturnType status;
@@ -559,7 +559,7 @@ const Abstract::Vector& Group::getF() const
 {
   if (!isF()) {
     std::cerr << "ERROR: NOX::Epetra::Group::getF() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return RHSVector;
@@ -569,7 +569,7 @@ double Group::getNormF() const
 {
   if (!isF()) {
     std::cerr << "ERROR: NOX::Epetra::Group::getNormF() - invalid RHS" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return RHSVectorPtr->norm();
@@ -579,7 +579,7 @@ const Abstract::Vector& Group::getGradient() const
 {
   if (!isGradient()) {
     std::cerr << "ERROR: NOX::Epetra::Group::getGradient() - invalid gradient" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return gradVector;
@@ -589,7 +589,7 @@ const Abstract::Vector& Group::getNewton() const
 {
   if (!isNewton()) {
     std::cerr << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return NewtonVector;
@@ -648,12 +648,12 @@ bool Group::computeNormNewtonSolveResidual ()
   if (!isValidRHS) {
     std::cerr << "ERROR: NOX::Epetra::Group::computeNormNewtonSolveResidual() - invalid RHS"
      << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   if (!isValidNewton) {
     std::cerr << "ERROR: NOX::Epetra::Group::computeNormNewtonSolveResidual() - invalid "
      << "Newton direction" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Allocate the tmpVectorPtr if not already done (deleted in ~Group)
@@ -680,7 +680,7 @@ computeJacobianConditionNumber(int maxIters, double tolerance,
     if (!isJacobian()) {
       std::cerr << "ERROR: NOX::Epetra::Group::computeJacobianConditionNumber()"
        << " - Jacobian is invalid wrt the solution." << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     if (Teuchos::is_null(azConditionNumberPtr))
@@ -705,7 +705,7 @@ double NOX::Epetra::Group::getJacobianConditionNumber() const
   if (!isConditionNumber()) {
     std::cerr << "ERROR: NOX::Epetra::Group::getJacobianConditionNumber()"
      << " - condition number has not yet been computed!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return conditionNumber;

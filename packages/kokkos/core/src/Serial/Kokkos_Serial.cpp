@@ -20,7 +20,7 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_Serial.hpp>
+#include <Serial/Kokkos_Serial.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <impl/Kokkos_ExecSpaceManager.hpp>
@@ -42,9 +42,6 @@ void SerialInternal::initialize() {
 
   Impl::SharedAllocationRecord<void, void>::tracking_enable();
 
-  // Init the array of locks used for arbitrarily sized atomics
-  Impl::init_lock_array_host_space();
-
   m_is_initialized = true;
 }
 
@@ -60,8 +57,6 @@ void SerialInternal::finalize() {
 
     m_thread_team_data.scratch_assign(nullptr, 0, 0, 0, 0, 0);
   }
-
-  Kokkos::Profiling::finalize();
 
   m_is_initialized = false;
 }
@@ -148,16 +143,18 @@ Serial::Serial()
     : m_space_instance(&Impl::SerialInternal::singleton(),
                        [](Impl::SerialInternal*) {}) {}
 
+Serial::Serial(NewInstance)
+    : m_space_instance(new Impl::SerialInternal, [](Impl::SerialInternal* ptr) {
+        ptr->finalize();
+        delete ptr;
+      }) {}
+
 void Serial::print_configuration(std::ostream& os, bool /*verbose*/) const {
   os << "Host Serial Execution Space:\n";
   os << "  KOKKOS_ENABLE_SERIAL: yes\n";
 
-  os << "Serial Atomics:\n";
-  os << "  KOKKOS_ENABLE_SERIAL_ATOMICS: ";
-#ifdef KOKKOS_ENABLE_SERIAL_ATOMICS
-  os << "yes\n";
-#else
-  os << "no\n";
+#ifdef KOKKOS_INTERNAL_NOT_PARALLEL
+  os << "Kokkos atomics disabled\n";
 #endif
 
   os << "\nSerial Runtime Configuration:\n";

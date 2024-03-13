@@ -124,7 +124,7 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
 #ifdef DEBUG
     int nrows = C_->RowMap().NumMyElements();
     cout << "DEBUG MODE" << endl;
-    ASSERT((nrows == localDRowMap_->NumGlobalElements()));
+    SHYLU_CORE_ASSERT((nrows == localDRowMap_->NumGlobalElements()));
 
     int gids[nrows], gids1[nrows];
     C_->RowMap().MyGlobalElements(gids);
@@ -132,7 +132,7 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
 
     for (int i = 0; i < nrows; i++)
     {
-       ASSERT((gids[i] == gids1[i]));
+       SHYLU_CORE_ASSERT((gids[i] == gids1[i]));
     }
 #endif
 
@@ -178,7 +178,7 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
 #endif
     //cout << "Out of local schur's Apply" << endl;
     cntApply++;
-    return 0;
+    return err;
 }
 
 void ShyLU_Local_Schur_Operator::PrintTimingInfo()

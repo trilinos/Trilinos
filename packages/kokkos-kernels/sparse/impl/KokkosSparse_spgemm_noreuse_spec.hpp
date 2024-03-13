@@ -158,6 +158,5 @@ struct SPGEMM_NOREUSE<CMatrix, AMatrix, BMatrix, false,
       false, true>;
 
 #include <KokkosSparse_spgemm_noreuse_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spgemm_noreuse_eti_spec_decl.hpp>
 
 #endif  // KOKKOSSPARSE_IMPL_SPGEMM_NOREUSE_SPEC_HPP_

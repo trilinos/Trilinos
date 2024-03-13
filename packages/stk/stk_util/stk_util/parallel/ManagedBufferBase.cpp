@@ -16,7 +16,7 @@ void ManagedCommBufferBase::allocate_send_buffers()
 void ManagedCommBufferBase::clear_send_bufs()
 {
   for (size_t i=0; i < m_sendBufs.size(); ++i) {
-    get_send_buf(i).reset();
+    m_sendBufs[i] = CommBuffer();
     m_sendBufStorage[i].clear();
   }
 
@@ -26,7 +26,7 @@ void ManagedCommBufferBase::clear_send_bufs()
 void ManagedCommBufferBase::clear_recv_bufs()
 {
   for (size_t i=0; i < m_recvBufs.size(); ++i) {
-    get_recv_buf(i).reset();
+    m_recvBufs[i] = CommBuffer();
     m_recvBufStorage[i].clear();
   }
 }

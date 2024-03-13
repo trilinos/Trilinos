@@ -1,4 +1,4 @@
-#include "newton.hpp"
+#include "stk_middle_mesh/newton.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

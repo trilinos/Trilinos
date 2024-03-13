@@ -9,8 +9,6 @@ SET(main_driver_SOURCES
   user_app_NOXObserverFactory.hpp
   user_app_NOXObserver_WriteToExodus.hpp
   user_app_NOXObserver_NeumannBCAnalyticSystemTest.hpp
-  user_app_RythmosObserverFactory.hpp
-  user_app_RythmosObserver_WriteToExodus.hpp
   )
 
 TRIBITS_ADD_EXECUTABLE(
@@ -23,13 +21,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-ss.xml
     energy-ss-tp.xml
     energy-ss-loca-eigenvalue.xml
-    energy-transient.xml
     energy-ss-blocked.xml
-    energy-transient-blocked.xml
     energy-transient-tempus-blocked.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
-    meshmotion.xml
     periodic_wedge.xml
     periodic_wedge.pam
     energy-periodic-32bit-limit.xml
@@ -44,13 +39,6 @@ TRIBITS_ADD_ADVANCED_TEST(
     XHOST trilinos-test.sandia.gov trilinos-test2.sandia.gov zan.sandia.gov
   TEST_1 EXEC main_driver
     ARGS  --i=energy-ss-tp.xml --exodus-io-num-procs=1
-    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-  )
-
-TRIBITS_ADD_ADVANCED_TEST(
-  main_driver_energy-transient
-  TEST_0 EXEC main_driver
-    ARGS  --i=energy-transient.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
 
@@ -90,22 +78,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_ADVANCED_TEST(
-  main_driver_meshmotion
-  TEST_0 EXEC main_driver
-    ARGS  --i=meshmotion.xml
-    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-    NUM_MPI_PROCS 2
-  )
-
 IF(${PACKAGE_NAME}_ENABLE_Teko)
-  TRIBITS_ADD_ADVANCED_TEST(
-    main_driver_energy-transient-blocked
-    TEST_0 EXEC main_driver
-      ARGS  --i=energy-transient-blocked.xml
-      PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
-    )
-
   IF(${PACKAGE_NAME}_ENABLE_Tempus)
     TRIBITS_ADD_ADVANCED_TEST(
       main_driver_energy-transient-tempus-blocked

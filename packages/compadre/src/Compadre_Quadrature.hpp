@@ -8,7 +8,7 @@
 namespace Compadre {
 
 // ENUM for quadrature types
-enum QuadratureType {INVALID, LINE, TRI, QUAD, TET, HEX};
+enum QuadratureType : int {INVALID, LINE, TRI, QUAD, TET, HEX};
 
 //!  Quadrature
 /*!

@@ -24,6 +24,9 @@ template <class CcsType, class IdType, class MapType, class ValsType,
 void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
                       MapType crs_row_map_d, ValsType crs_vals_d,
                       ColsType cols) {
+  using ordinal_type = typename CcsType::ordinal_type;
+  using size_type    = typename CcsType::size_type;
+
   using ViewTypeRowIds = decltype(crs_col_ids_d);
   using ViewTypeColMap = decltype(crs_row_map_d);
   using ViewTypeVals   = decltype(crs_vals_d);
@@ -58,11 +61,11 @@ void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
       Kokkos::create_mirror_view(ccs_vals_d);
   Kokkos::deep_copy(ccs_vals, ccs_vals_d);
 
-  for (int j = 0; j < cols; ++j) {
+  for (ordinal_type j = 0; j < cols; ++j) {
     auto col_start = ccs_col_map(j);
     auto col_len   = ccs_col_map(j + 1) - col_start;
 
-    for (int k = 0; k < col_len; ++k) {
+    for (size_type k = 0; k < col_len; ++k) {
       auto i = col_start + k;
 
       auto row_start = crs_row_map(ccs_row_ids(i));
@@ -72,7 +75,7 @@ void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
       if (row_len == 0) continue;
 
       // Linear search for corresponding element in crs matrix
-      int l = row_start;
+      auto l = row_start;
       while (l < row_end && crs_col_ids(l) != j) {
         ++l;
       }
@@ -131,19 +134,19 @@ TEST_F(TestCategory, sparse_crs2ccs) {
   std::srand(ticks);
 
   // Empty cases
-  doCrs2Ccs<float, Kokkos::LayoutLeft, TestExecSpace>(1, 0, 1, 10);
-  doCrs2Ccs<float, Kokkos::LayoutLeft, TestExecSpace>(0, 1, 1, 10);
+  doCrs2Ccs<float, Kokkos::LayoutLeft, TestDevice>(1, 0, 1, 10);
+  doCrs2Ccs<float, Kokkos::LayoutLeft, TestDevice>(0, 1, 1, 10);
 
-  doCrs2Ccs<float, Kokkos::LayoutRight, TestExecSpace>(1, 0, 1, 10);
-  doCrs2Ccs<float, Kokkos::LayoutRight, TestExecSpace>(0, 1, 1, 10);
+  doCrs2Ccs<float, Kokkos::LayoutRight, TestDevice>(1, 0, 1, 10);
+  doCrs2Ccs<float, Kokkos::LayoutRight, TestDevice>(0, 1, 1, 10);
 
-  doCrs2Ccs<float, Kokkos::LayoutLeft, TestExecSpace>(0, 0, 1, 10);
-  doCrs2Ccs<float, Kokkos::LayoutRight, TestExecSpace>(0, 0, 1, 10);
+  doCrs2Ccs<float, Kokkos::LayoutLeft, TestDevice>(0, 0, 1, 10);
+  doCrs2Ccs<float, Kokkos::LayoutRight, TestDevice>(0, 0, 1, 10);
 
   // Square cases
   for (size_t i = 4; i < 1024; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;
-    doAllCrs2Ccs<TestExecSpace>(dim, dim);
+    doAllCrs2Ccs<TestDevice>(dim, dim);
   }
 
   // Non-square cases
@@ -151,16 +154,16 @@ TEST_F(TestCategory, sparse_crs2ccs) {
     size_t m = (std::rand() % 511) + 1;
     size_t n = (std::rand() % 511) + 1;
     while (n == m) n = (std::rand() % 511) + 1;
-    doAllCrs2Ccs<TestExecSpace>(m, n);
+    doAllCrs2Ccs<TestDevice>(m, n);
   }
 
   // Fully sparse cases
-  doCrs2Ccs<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
-  doCrs2Ccs<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
+  doCrs2Ccs<float, Kokkos::LayoutLeft, TestDevice>(5, 5, 1, 10, true);
+  doCrs2Ccs<double, Kokkos::LayoutRight, TestDevice>(50, 10, 10, 100, true);
 
   // Test the convenience wrapper that accepts a crs matrix
-  RandCsMatrix<float, Kokkos::LayoutLeft, TestExecSpace> csMat(2, 2, 10, 10,
-                                                               false);
+  RandCsMatrix<float, Kokkos::LayoutLeft, TestDevice> csMat(2, 2, 10, 10,
+                                                            false);
   auto crsMatrix = ccs2crs(csMat.get_dim2(), csMat.get_dim1(), csMat.get_nnz(),
                            csMat.get_vals(), csMat.get_map(), csMat.get_ids());
   auto ccsMatrix = crs2ccs(crsMatrix);

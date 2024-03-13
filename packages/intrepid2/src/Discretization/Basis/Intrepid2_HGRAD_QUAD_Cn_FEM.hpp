@@ -88,7 +88,8 @@ namespace Intrepid2 {
                typename inputPointValueType,  class ...inputPointProperties,
                typename vinvValueType,        class ...vinvProperties>
       static void
-      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues(  const typename DeviceType::execution_space& space,
+                        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                   const EOperator operatorType);
@@ -166,13 +167,15 @@ namespace Intrepid2 {
   class Basis_HGRAD_QUAD_Cn_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisBase = Basis<DeviceType, outputValueType, pointValueType>;
+    using typename BasisBase::ExecutionSpace;
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
 
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType;
+    using typename BasisBase::ScalarViewType;
 
   private:
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
@@ -187,11 +190,12 @@ namespace Intrepid2 {
     Basis_HGRAD_QUAD_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
-    getValues(       OutputViewType outputValues,
+    getValues( const ExecutionSpace& space,
+                     OutputViewType outputValues,
                const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -203,10 +207,11 @@ namespace Intrepid2 {
 #endif
       constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HGRAD_QUAD_Cn_FEM::
-        getValues<DeviceType,numPtsPerEval>( outputValues,
-                                                inputPoints,
-                                                this->vinv_,
-                                                operatorType);
+        getValues<DeviceType,numPtsPerEval>(space,
+                                            outputValues,
+                                            inputPoints,
+                                            this->vinv_,
+                                            operatorType);
     }
 
     virtual

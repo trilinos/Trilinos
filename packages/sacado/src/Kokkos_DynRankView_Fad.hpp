@@ -877,7 +877,7 @@ public:
                         src.m_map.m_impl_offset.layout() );
 
       dst.m_map.m_impl_handle = src.m_map.m_impl_handle ;
-      dst.m_rank = src.Rank ;
+      dst.m_rank = src.rank ;
 
       dst.m_map.m_fad_size = src.m_map.m_fad_size ;
       dst.m_map.m_fad_stride = src.m_map.m_fad_stride ;

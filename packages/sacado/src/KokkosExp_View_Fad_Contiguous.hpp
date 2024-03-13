@@ -382,7 +382,7 @@ struct SacadoViewFill<
   OutputView,
   typename std::enable_if<
     ( Kokkos::is_view_fad_contiguous<OutputView>::value &&
-      std::is_same<typename OutputView::execution_space, Kokkos::Experimental::HIP>::value &&
+      std::is_same<typename OutputView::execution_space, Kokkos::HIP>::value &&
       !Kokkos::ViewScalarStride<OutputView>::is_unit_stride )
     >::type
   >
@@ -611,7 +611,7 @@ public:
   typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::Cuda>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
 #elif defined(KOKKOS_ENABLE_HIP)
   typedef typename Sacado::LocalScalarType< fad_type, unsigned(PartitionedFadStride) >::type strided_scalar_type;
-  typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::Experimental::HIP>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
+  typedef typename std::conditional< std::is_same<typename Traits::execution_space, Kokkos::HIP>::value, strided_scalar_type, fad_type >::type thread_local_scalar_type;
 #else
   typedef fad_type thread_local_scalar_type;
 #endif
@@ -1639,13 +1639,13 @@ private:
       ( /* Same array layout IF */
         ( rank == 0 ) /* output rank zero */
         ||
-        // OutputRank 1 or 2, InputLayout Left, Interval 0
-        // because single stride one or second index has a stride.
-        ( rank <= 2 && R0 && std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutLeft >::value )
+        // OutputRank 1, InputLayout Left, Interval 0
+        // because single stride one
+        ( rank <= 1 && R0 && std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutLeft >::value )
         ||
-        // OutputRank 1 or 2, InputLayout Right, Interval [InputRank-1]
-        // because single stride one or second index has a stride.
-        ( rank <= 2 && R0_rev && std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutRight >::value )
+        // OutputRank 1, InputLayout Right, Interval [InputRank-1]
+        // because single stride one
+        ( rank <= 1 && R0_rev && std::is_same< typename SrcTraits::array_layout , Kokkos::LayoutRight >::value )
         ), typename SrcTraits::array_layout , Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::scalar_stride>
       >::type array_layout ;
 
@@ -1699,8 +1699,35 @@ public:
                                    , array_extents.domain_offset(5)
                                    , array_extents.domain_offset(6)
                                    , array_extents.domain_offset(7) );
-        dst.m_array_offset = dst_array_offset_type( src.m_array_offset ,
-                                                    array_extents );
+        dst_array_offset_type dst_array_offset( src.m_array_offset ,
+                                                array_extents );
+        // For LayoutStride, we always use LayoutRight indexing (because we
+        // don't know whether the original array was Left or Right), so we
+        // need to swap the Fad dimension to the last and shift all of the
+        // other dimensions left by 1
+        if constexpr(std::is_same<typename traits_type::array_layout, LayoutStride>::value)
+        {
+          Kokkos::LayoutStride ls(
+            dst_array_offset.m_dim.N0, dst_array_offset.m_stride.S0,
+            dst_array_offset.m_dim.N1, dst_array_offset.m_stride.S1,
+            dst_array_offset.m_dim.N2, dst_array_offset.m_stride.S2,
+            dst_array_offset.m_dim.N3, dst_array_offset.m_stride.S3,
+            dst_array_offset.m_dim.N4, dst_array_offset.m_stride.S4,
+            dst_array_offset.m_dim.N5, dst_array_offset.m_stride.S5,
+            dst_array_offset.m_dim.N6, dst_array_offset.m_stride.S6,
+            dst_array_offset.m_dim.N7, dst_array_offset.m_stride.S7);
+          auto t1 = ls.dimension[0];
+          for (unsigned i=0; i<rank; ++i)
+            ls.dimension[i] = ls.dimension[i+1];
+          ls.dimension[rank] = t1;
+          auto t2 = ls.stride[0];
+          for (unsigned i=0; i<rank; ++i)
+            ls.stride[i] = ls.stride[i+1];
+          ls.stride[rank] = t2;
+          dst.m_array_offset = dst_array_offset_type(std::integral_constant<unsigned, 0>(), ls);
+        }
+        else
+          dst.m_array_offset = dst_array_offset;
       }
       else {
         const SubviewExtents< SrcTraits::rank + 1 , rank + 1 >

@@ -619,6 +619,22 @@ void Bucket::initialize_ngp_field_bucket_ids()
   }
 }
 
+void Bucket::grow_ngp_field_bucket_ids()
+{
+  const MetaData& meta = mesh().mesh_meta_data();
+  const FieldVector& allFields = meta.get_fields();
+
+  const unsigned oldNumFields = m_ngp_field_bucket_id.size();
+  const unsigned newNumFields = allFields.size();
+  STK_ThrowRequire(newNumFields >= oldNumFields);
+
+  const unsigned numNewFields = newNumFields - oldNumFields;
+  for (unsigned i = 0; i < numNewFields; ++i) {
+    m_ngp_field_bucket_id.push_back(INVALID_BUCKET_ID);
+    m_ngp_field_is_modified.push_back(false);
+  }
+}
+
 void Bucket::set_ngp_field_bucket_id(unsigned fieldOrdinal, unsigned ngpFieldBucketId)
 {
   STK_ThrowRequire(fieldOrdinal < m_ngp_field_bucket_id.size());
@@ -690,6 +706,11 @@ void Bucket::reset_entity_location(Entity entity, unsigned to_ordinal, const Fie
 
   m_mesh.copy_entity_fields_callback(m_entity_rank, m_bucket_id, to_ordinal,
                                      from_bucket.m_bucket_id, from_ordinal, fields);
+}
+
+void Bucket::reset_empty_space(const FieldVector & fields)
+{
+  m_mesh.reset_empty_field_data_callback(m_entity_rank, m_bucket_id, m_size, m_capacity, fields);
 }
 
 void Bucket::add_entity(Entity entity)

@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
   bool changed      = false;
   bool allow_modify = interFace.modify_existing_assembly();
 
-  while (1) {
+  while (true) {
     std::string input;
     if (from_term) {
       fmt::print(fg(fmt::terminal_color::magenta), "\n");

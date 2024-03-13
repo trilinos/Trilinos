@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "projection.hpp"
+#include "stk_middle_mesh/projection.hpp"
 
 namespace stk {
 namespace middle_mesh {
@@ -17,36 +17,6 @@ void test_float_eq(const utils::Point& p1, const utils::Point& p2)
 
 } // namespace
 
-TEST(Point, Operations)
-{
-  utils::Point p1(1, 2, 3);
-  utils::Point p2(4, 5, 6);
-  utils::Point p3(6, 5, 4);
-
-  test_float_eq(p1 + p2, utils::Point(5, 7, 9));
-  test_float_eq(p1 - p3, utils::Point(-5, -3, -1));
-
-  test_float_eq(p1 * 2, utils::Point(2, 4, 6));
-  test_float_eq(2 * p1, utils::Point(2, 4, 6));
-
-  test_float_eq(p1 / 2, utils::Point(0.5, 1, 1.5));
-
-  EXPECT_FLOAT_EQ(dot(p1, p2), 1 * 4 + 2 * 5 + 3 * 6);
-  test_float_eq(cross(p1, p2), utils::Point(-3, 6, -3));
-
-  auto p4 = project(p1, p2);
-  EXPECT_FLOAT_EQ(dot(p4, p2), std::sqrt(dot(p4, p4)) * std::sqrt(dot(p2, p2)));
-
-  test_float_eq(-p1, utils::Point(-p1.x, -p1.y, -p1.z));
-
-  auto ptmp = p1;
-  ptmp += p2;
-  test_float_eq(ptmp, p1 + p2);
-
-  ptmp = p1;
-  ptmp -= p2;
-  test_float_eq(ptmp, p1 - p2);
-}
 
 TEST(Projection, ProjectToPlane)
 {
@@ -209,47 +179,6 @@ TEST(Projection, project_plane_coords_rev)
   EXPECT_NEAR(p4Bar.z, p4BarFd.z, 1e-6);
 }
 
-TEST(Projection, Dot_rev)
-{
-  utils::Point p1(1, 2, 3), p2(4, 6, 9), p1Bar, p2Bar;
-
-  dot_rev(p1, p2, p1Bar, p2Bar, 1);
-
-  // compute finite difference
-  auto v     = dot(p1, p2);
-  double eps = 1e-7;
-
-  p1.x += eps;
-  double dvDp1x = (dot(p1, p2) - v) / eps;
-  p1.x -= eps;
-
-  p1.y += eps;
-  double dvDp1y = (dot(p1, p2) - v) / eps;
-  p1.y -= eps;
-
-  p1.z += eps;
-  double dvDp1z = (dot(p1, p2) - v) / eps;
-  p1.z -= eps;
-
-  p2.x += eps;
-  double dvDp2x = (dot(p1, p2) - v) / eps;
-  p2.x -= eps;
-
-  p2.y += eps;
-  double dvDp2y = (dot(p1, p2) - v) / eps;
-  p2.y -= eps;
-
-  p2.z += eps;
-  double dvDp2z = (dot(p1, p2) - v) / eps;
-  p2.z -= eps;
-
-  EXPECT_NEAR(dvDp1x, p1Bar.x, 1e-6);
-  EXPECT_NEAR(dvDp1y, p1Bar.y, 1e-6);
-  EXPECT_NEAR(dvDp1z, p1Bar.z, 1e-6);
-  EXPECT_NEAR(dvDp2x, p2Bar.x, 1e-6);
-  EXPECT_NEAR(dvDp2y, p2Bar.y, 1e-6);
-  EXPECT_NEAR(dvDp2z, p2Bar.z, 1e-6);
-}
 
 } // namespace impl
 } // namespace middle_mesh

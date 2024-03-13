@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,6 +45,9 @@ namespace IOShell {
     double                   minimum_time{-std::numeric_limits<double>::max()};
     double                   append_time{std::numeric_limits<double>::max()};
     double                   timestep_delay{0.0};
+    double                   rel_tolerance{0.0};
+    double                   abs_tolerance{0.0};
+    double                   tol_floor{0.0};
     int                      append_step{std::numeric_limits<int>::max()};
     int                      surface_split_type{-1};
     int                      data_storage_type{0};
@@ -72,6 +75,7 @@ namespace IOShell {
     bool zlib{true};
     bool szip{false};
     bool debug{false};
+    bool detect_nans{false};
     bool statistics{false};
     bool memory_statistics{false};
     bool do_transform_fields{false};

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,7 +15,9 @@
 const int MAX_ERR_MSG = 1024;
 int       error_lev   = 1;
 
-static std::vector<error_message> error_info;
+namespace {
+  std::vector<error_message> error_info;
+}
 
 /*****************************************************************************/
 /*****************************************************************************/

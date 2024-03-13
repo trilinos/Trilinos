@@ -32,7 +32,7 @@ class XiCoordinatesForTest : public XiCoordinates
 class ApplicationInterfaceSPMDTester : public ::testing::Test
 {
   protected:
-    void runtest(int nprocs1, int nprocs2, const ParallelSearchOpts& parallelSearchOpts, const VolumeSnapOpts& volumeSnapOpts,
+    void runtest(ApplicationInterfaceType type, int nprocs1, int nprocs2, bool createTriangles, const ParallelSearchOpts& parallelSearchOpts, const VolumeSnapOpts& volumeSnapOpts,
                  const BoundarySnapAndQualityImprovementOpts& boundarySnapOpts, const MiddleGridOpts& middleGridOpts)
     {
       if (nprocs1 == 0)
@@ -54,11 +54,11 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
 
       create_mesh_comms(nprocs1, nprocs2);
 
-      create_input_meshes();
+      create_input_meshes(createTriangles);
 
       auto xiPts = std::make_shared<XiCoordinatesForTest>();
       auto interface =
-          application_interface_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, MPI_COMM_WORLD,
+          application_interface_factory(type, inputMesh1, inputMesh2, MPI_COMM_WORLD,
                                         xiPts,
                                         parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
 
@@ -123,7 +123,7 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
       return color1 == 0 || color2 == 0;
     }
 
-    void create_input_meshes()
+    void create_input_meshes(bool createTriangles)
     {
       mesh::impl::MeshSpec spec1, spec2;
       spec1.xmin   = 0;
@@ -142,10 +142,10 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
       auto f     = [](const utils::Point& pt) { return pt; };
 
       if (meshComm1 != MPI_COMM_NULL)
-        inputMesh1 = create_mesh(spec1, f, meshComm1);
+        inputMesh1 = create_mesh(spec1, f, meshComm1, createTriangles);
 
       if (meshComm2 != MPI_COMM_NULL)
-        inputMesh2 = create_mesh(spec2, f, meshComm2);
+        inputMesh2 = create_mesh(spec2, f, meshComm2, createTriangles);
     }
 
     void test_remote_info(mesh::FieldPtr<mesh::RemoteSharedEntity> remoteInfoOneToTwo, 
@@ -231,6 +231,8 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
     std::shared_ptr<mesh::Mesh> middleGrid2;
 };
 
+const std::vector<stk::middle_mesh::ApplicationInterfaceType> InterfaceTypes = {/*stk::middle_mesh::ApplicationInterfaceType::FakeParallel,*/ stk::middle_mesh::ApplicationInterfaceType::Parallel};
+
 
 } // namespace
 
@@ -245,9 +247,15 @@ TEST_F(ApplicationInterfaceSPMDTester, Defaults)
   BoundarySnapAndQualityImprovementOpts boundarySnapOpts;
   MiddleGridOpts middleGridOpts;
 
-  for (int nprocs = 1; nprocs <= commsize; ++nprocs)
+  for (bool createTriangles : {false, true})
   {
-    runtest(nprocs, nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+    {
+      for (int nprocs = 1; nprocs <= commsize; ++nprocs)
+      {
+        runtest(type, nprocs, nprocs, createTriangles, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+      }
+    }
   }
 }
 
@@ -263,11 +271,17 @@ TEST_F(ApplicationInterfaceSPMDTester, MToN)
   boundarySnapOpts.type = BoundarySnapAndQualityImprovementType::None;
   MiddleGridOpts middleGridOpts;
 
-  for (int nprocs1 = 1; nprocs1 <= commsize; ++nprocs1)
-    for (int nprocs2 = 1; nprocs2 <= commsize; ++nprocs2)
+  for (bool createTriangles : {false, true})
+  {
+    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
     {
-      runtest(nprocs1, nprocs2, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+      for (int nprocs1 = 1; nprocs1 <= commsize; ++nprocs1)
+        for (int nprocs2 = 1; nprocs2 <= commsize; ++nprocs2)
+        {
+          runtest(type, nprocs1, nprocs2, createTriangles, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+        }
     }
+  }
 }
 
 TEST_F(ApplicationInterfaceSPMDTester, EnableVolumeSnap)
@@ -284,7 +298,7 @@ TEST_F(ApplicationInterfaceSPMDTester, EnableVolumeSnap)
 
   for (int nprocs = 1; nprocs <= commsize; ++nprocs)
   {
-    runtest(nprocs, nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    runtest(ApplicationInterfaceType::FakeParallel, nprocs, nprocs, false, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
   }
 }
 
@@ -300,9 +314,15 @@ TEST_F(ApplicationInterfaceSPMDTester, BoundarySnapThenQuality)
   boundarySnapOpts.type = BoundarySnapAndQualityImprovementType::SnapThenQuality;
   MiddleGridOpts middleGridOpts;
 
-  for (int nprocs = 1; nprocs < commsize; ++nprocs)
+  for (bool createTriangles : {false, true})
   {
-    runtest(nprocs, nprocs, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+    {
+      for (int nprocs = 1; nprocs < commsize; ++nprocs)
+      {
+        runtest(type, nprocs, nprocs, createTriangles, parallelSearchOpts, volumeSnapOpts, boundarySnapOpts, middleGridOpts);
+      }
+    }
   }
 }
 
@@ -325,12 +345,16 @@ TEST(ApplicationInterfaceSPMD, MeshNotCreatedError)
   auto inputMesh1 = mesh::impl::create_mesh(spec1, f, comm1);
   auto inputMesh2 = mesh::impl::create_mesh(spec1, f, comm1);
 
-  auto interface = application_interface_factory(ApplicationInterfaceType::FakeParallel, inputMesh1, inputMesh2, comm1);
 
-  EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh1());
-  EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh2());
-  EXPECT_ANY_THROW(interface->get_mesh1_classification());
-  EXPECT_ANY_THROW(interface->get_mesh2_classification());
-  EXPECT_ANY_THROW(interface->compute_mesh1_inverse_classification());
-  EXPECT_ANY_THROW(interface->compute_mesh2_inverse_classification());
+  for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+  {
+    auto interface = application_interface_factory(type, inputMesh1, inputMesh2, comm1);
+
+    EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh1());
+    EXPECT_ANY_THROW(interface->get_middle_grid_for_mesh2());
+    EXPECT_ANY_THROW(interface->get_mesh1_classification());
+    EXPECT_ANY_THROW(interface->get_mesh2_classification());
+    EXPECT_ANY_THROW(interface->compute_mesh1_inverse_classification());
+    EXPECT_ANY_THROW(interface->compute_mesh2_inverse_classification());
+  }
 }

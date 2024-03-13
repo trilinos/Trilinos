@@ -36,8 +36,20 @@
 #include <sys/resource.h>  // for rusage, getrusage, RUSAGE_SELF
 #include <sys/time.h>      // for timeval
 
+#ifdef __INTEL_LLVM_COMPILER
+#include <time.h>
+#endif
+
 namespace stk {
 
+#ifdef __INTEL_LLVM_COMPILER
+double cpu_time()
+{
+  clock_t ticks = clock();
+  auto time = ticks / (double)CLOCKS_PER_SEC;
+  return time;
+}
+#else
 double
 cpu_time()
 {
@@ -47,8 +59,9 @@ cpu_time()
 
   double seconds = my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec;
   double micro_seconds = my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec;
-  
+
   return seconds + micro_seconds*1.0e-6;
 }
+#endif
 
 } // namespace stk

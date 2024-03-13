@@ -9,4 +9,3 @@
 
 /* Define if want to build with KokkosKernels enabled */
 #cmakedefine HAVE_INTREPID2_KOKKOSKERNELS
-

@@ -1,11 +1,12 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
+#include "defs.h"
 #include "structs.h"
 
 /* Check an eigenpair of A by direct multiplication.  */
@@ -14,8 +15,6 @@ double checkeig(double *err, struct vtx_data **A, double *y, int n, double lambd
 {
   double resid;
   double normy;
-  double ch_norm(double *vec, int beg, int end);
-  void   splarax(), scadd();
 
   splarax(err, A, n, y, vwsqrt, work);
   scadd(err, 1, n, -lambda, y);

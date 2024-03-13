@@ -625,8 +625,8 @@ testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lc
   Kokkos::View<val_type**, HDT> L ("L", lclNumRows, lclNumCols);
   Kokkos::View<val_type**, HDT> U ("U", lclNumRows, lclNumCols);
 
-  const val_type ZERO = Kokkos::Details::ArithTraits<val_type>::zero ();
-  const val_type ONE = Kokkos::Details::ArithTraits<val_type>::one ();
+  const val_type ZERO = Kokkos::ArithTraits<val_type>::zero ();
+  const val_type ONE = Kokkos::ArithTraits<val_type>::one ();
   const val_type TWO = ONE + ONE;
   const val_type N = static_cast<val_type> (static_cast<mag_type> (lclNumRows));
   const val_type d = TWO * N;
@@ -774,7 +774,7 @@ testArrowMatrixAssembly(const int lclNumRows,
   using LO = typename crs_matrix_type::local_ordinal_type;
   using SC = typename crs_matrix_type::scalar_type;
 
-  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef Kokkos::ArithTraits<SC> KAT;
   typedef typename KAT::val_type IST;
   typedef typename KAT::mag_type mag_type;
   typedef typename crs_matrix_type::local_graph_device_type local_graph_type;
@@ -945,7 +945,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   typedef Tpetra::RowMatrix<SC, LO, GO> row_matrix_type;
   typedef Tpetra::Vector<SC, LO, GO> vec_type;
   typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
-  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef Kokkos::ArithTraits<SC> KAT;
   typedef typename KAT::val_type IST;
   typedef typename KAT::mag_type mag_type;
   int lclSuccess = 1;

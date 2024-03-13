@@ -531,7 +531,7 @@ namespace Teuchos
     if (n <= 0) return;
     if (incx==1 && incy==1) {
       for(OrdinalType i=0; i<n; ++i) {
-        ScalarType temp = *c*dx[i] + sconj*dy[i];
+        ScalarType temp = *c*dx[i] + *s*dy[i];
         dy[i] = *c*dy[i] - sconj*dx[i];
         dx[i] = temp;
       }
@@ -541,7 +541,7 @@ namespace Teuchos
       if (incx < izero) ix = (-n+1)*incx;
       if (incy < izero) iy = (-n+1)*incy;
       for(OrdinalType i=0; i<n; ++i) {
-        ScalarType temp = *c*dx[ix] + sconj*dy[iy];
+        ScalarType temp = *c*dx[ix] + *s*dy[iy];
         dy[iy] = *c*dy[iy] - sconj*dx[ix];
         dx[ix] = temp;
         ix += incx;

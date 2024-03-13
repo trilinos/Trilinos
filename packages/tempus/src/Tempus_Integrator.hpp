@@ -17,14 +17,17 @@
 #include <string>
 
 namespace Teuchos {
-   class Time;
+class Time;
 }
 
 namespace Tempus {
-  template<typename Scalar> class Stepper;
-  template<typename Scalar> class SolutionHistory;
-  template<typename Scalar> class TimeStepControl;
-}
+template <typename Scalar>
+class Stepper;
+template <typename Scalar>
+class SolutionHistory;
+template <typename Scalar>
+class TimeStepControl;
+}  // namespace Tempus
 
 namespace Tempus {
 
@@ -58,41 +61,41 @@ namespace Tempus {
  *     - The "set" methods which update parameters in the ParameterList
  *       must update the Integrator ParameterList.
  */
-template<class Scalar>
+template <class Scalar>
 class Integrator
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<Tempus::Integrator<Scalar> >
-{
-public:
-
+    virtual public Teuchos::VerboseObject<Tempus::Integrator<Scalar> > {
+ public:
   /// \name Basic integrator methods
   //@{
-    /// Advance the solution to time, and return true if successful.
-    virtual bool advanceTime(const Scalar time_final) = 0;
-    /// Get current time
-    virtual Scalar getTime() const = 0;
-    /// Get current index
-    virtual int getIndex() const = 0;
-    /// Get the Status
-    virtual Tempus::Status getStatus() const = 0;
-    /// Set the Status
-    virtual void setStatus(const Tempus::Status st) = 0;
-    /// Get the stepper
-    virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
-    /// Returns the SolutionHistory for this Integrator
-    virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const = 0;
-    /// Returns the SolutionHistory for this Integrator
-    virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() = 0;
-    /// Returns the TimeStepControl for this Integrator
-    virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const = 0;
-    virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() = 0;
-    /// Returns the IntegratorTimer_ for this Integrator
-    virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const = 0;
-    virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const = 0;
+  /// Advance the solution to time, and return true if successful.
+  virtual bool advanceTime(const Scalar time_final) = 0;
+  /// Get current time
+  virtual Scalar getTime() const = 0;
+  /// Get current index
+  virtual int getIndex() const = 0;
+  /// Get the Status
+  virtual Tempus::Status getStatus() const = 0;
+  /// Set the Status
+  virtual void setStatus(const Tempus::Status st) = 0;
+  /// Get the stepper
+  virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
+  /// Returns the SolutionHistory for this Integrator
+  virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory()
+      const = 0;
+  /// Returns the SolutionHistory for this Integrator
+  virtual Teuchos::RCP<SolutionHistory<Scalar> >
+  getNonConstSolutionHistory() = 0;
+  /// Returns the TimeStepControl for this Integrator
+  virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl()
+      const = 0;
+  virtual Teuchos::RCP<TimeStepControl<Scalar> >
+  getNonConstTimeStepControl() = 0;
+  /// Returns the IntegratorTimer_ for this Integrator
+  virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const = 0;
+  virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const    = 0;
   //@}
-
 };
 
-
-} // namespace Tempus
-#endif // Tempus_Integrator_hpp
+}  // namespace Tempus
+#endif  // Tempus_Integrator_hpp

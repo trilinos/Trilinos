@@ -50,6 +50,7 @@
 #include "Ifpack2_Diagonal.hpp"
 #include "Ifpack2_IdentitySolver.hpp"
 #include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_MDF.hpp"
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Experimental_RBILUK.hpp"
@@ -123,16 +124,21 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<row_matrix_type> (matrix));
   }
+  else if (precTypeUpper == "MDF") {
+    prec = rcp (new MDF<row_matrix_type> (matrix));
+  }
   else if (precTypeUpper == "RBILUK") {
     prec = rcp (new Experimental::RBILUK<row_matrix_type>(matrix));
   }
-  else if (precTypeUpper == "FAST_IC" || precTypeUpper == "FAST_ILU" || precTypeUpper == "FAST_ILDL") {
+  else if (precTypeUpper == "FAST_IC" || precTypeUpper == "FAST_ILU" || precTypeUpper == "FAST_ILU_B" || precTypeUpper == "FAST_ILDL") {
     #ifdef HAVE_IFPACK2_SHYLU_NODEFASTILU
     {
       if(precTypeUpper == "FAST_IC")
         prec = rcp (new Details::Fic<scalar_type, local_ordinal_type, global_ordinal_type, node_type>(matrix));
       else if(precTypeUpper == "FAST_ILU")
-        prec = rcp (new Details::Filu<scalar_type, local_ordinal_type, global_ordinal_type, node_type>(matrix));
+        prec = rcp (new Details::Filu<scalar_type, local_ordinal_type, global_ordinal_type, node_type, false>(matrix));
+      else if(precTypeUpper == "FAST_ILU_B")
+        prec = rcp (new Details::Filu<scalar_type, local_ordinal_type, global_ordinal_type, node_type, true>(matrix));
       else if(precTypeUpper == "FAST_ILDL")
         prec = rcp (new Details::Fildl<scalar_type, local_ordinal_type, global_ordinal_type, node_type>(matrix));
     }
@@ -249,9 +255,9 @@ OneLevelFactory<MatrixType>::isSupported (const std::string& precType) const
 #ifdef HAVE_IFPACK2_AMESOS2
     "AMESOS2",
 #endif
-    "DIAGONAL", "ILUT", "RELAXATION", "RILUK", "RBILUK",
+    "DIAGONAL", "ILUT", "RELAXATION", "RILUK", "RBILUK", "MDF",
 #ifdef HAVE_IFPACK2_SHYLU_NODEFASTILU
-    "FAST_IC", "FAST_ILU", "FAST_ILDL",
+    "FAST_IC", "FAST_ILU", "FAST_ILU_B", "FAST_ILDL",
 #endif
     "BLOCK_RELAXATION", "BLOCK RELAXATION", "BLOCKRELAXATION", "DENSE_BLOCK_RELAXATION", "DENSE BLOCK RELAXATION", "DENSEBLOCKRELAXATION",
     "DATABASE SCHWARZ",

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "communication_api.hpp"
-#include "create_mesh.hpp"
+#include "stk_middle_mesh/communication_api.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
 
 using namespace stk::middle_mesh;
 

@@ -488,11 +488,6 @@ void Piro::TempusSolverForwardOnly<Scalar>::evalModelImpl(
 
   }
 
-  //
-  // Removed the "computing sensitivities" section that was copied from Piro_RythmosSolver.hpp,
-  // as did not need to convert it for Charon needs.
-  //
-
   *out << "\nF) Check the solution to the forward problem ...\n";
 
   // As post-processing step, calculate responses at final solution

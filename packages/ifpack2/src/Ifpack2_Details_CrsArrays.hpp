@@ -51,6 +51,7 @@
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_KokkosCompat_DefaultNode.hpp>
+#include <Tpetra_BlockCrsMatrix_Helpers_decl.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_ReorderFilter.hpp>
@@ -69,6 +70,7 @@ struct CrsArrayReader
   typedef typename device_type::execution_space execution_space;
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TRowMatrix;
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TCrsMatrix;
+  typedef Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TBcrsMatrix;
   typedef Ifpack2::LocalFilter<TRowMatrix> Filter;
   typedef Ifpack2::ReorderFilter<TRowMatrix> ReordFilter;
   typedef KokkosSparse::CrsMatrix<ImplScalar, LocalOrdinal, execution_space> KCrsMatrix;
@@ -86,9 +88,14 @@ struct CrsArrayReader
   static void getValues(const TRowMatrix* A, ScalarArray& vals, OrdinalArrayHost& rowptrs)
   {
     auto Acrs = dynamic_cast<const TCrsMatrix*>(A);
+    auto Abcrs = dynamic_cast<const TBcrsMatrix*>(A);
     if(Acrs)
     {
       getValuesCrs(Acrs, vals);
+      return;
+    }
+    if (Abcrs) {
+      getValuesBcrs(Abcrs, vals);
       return;
     }
     using range_type = Kokkos::pair<int, int>;
@@ -124,9 +131,14 @@ struct CrsArrayReader
   static void getStructure(const TRowMatrix* A, OrdinalArrayHost& rowptrsHost, OrdinalArray& rowptrs, OrdinalArray& colinds)
   {
     auto Acrs = dynamic_cast<const TCrsMatrix*>(A);
+    auto Abcrs = dynamic_cast<const TBcrsMatrix*>(A);
     if(Acrs)
     {
       getStructureCrs(Acrs, rowptrsHost, rowptrs, colinds);
+      return;
+    }
+    if (Abcrs) {
+      getStructureBcrs(Abcrs, rowptrsHost, rowptrs, colinds);
       return;
     }
     //Need to allocate new array, then copy in one row at a time
@@ -193,6 +205,36 @@ struct CrsArrayReader
     rowptrsHost_ = Kokkos::create_mirror(rowptrs_);
     Kokkos::deep_copy(rowptrsHost_, rowptrs_);
   }
+
+  //! Faster specialization of getValues() for when A is a Tpetra::BlockCrsMatrix.
+  static void getValuesBcrs(const TBcrsMatrix* A, ScalarArray& values_)
+  {
+    auto localA = A->getLocalMatrixDevice();
+    auto values = localA.values;
+    auto nnz = values.extent(0);
+    values_ = ScalarArray("Values", nnz );
+    Kokkos::deep_copy(values_, values);
+  }
+
+  //! Faster specialization of getStructure() for when A is a Tpetra::BlockCrsMatrix.
+  static void getStructureBcrs(const TBcrsMatrix* A, OrdinalArrayHost& rowptrsHost_, OrdinalArray& rowptrs_, OrdinalArray& colinds_)
+  {
+    //rowptrs really have data type size_t, but need them as LocalOrdinal, so must convert manually
+    auto localA = A->getLocalMatrixDevice();
+    auto rowptrs = localA.graph.row_map;
+    auto colinds = localA.graph.entries;
+    auto numRows = A->getLocalNumRows();
+    auto nnz = colinds.extent(0);
+    //allocate rowptrs, it's a deep copy (colinds is a shallow copy so not necessary for it)
+    rowptrs_ = OrdinalArray("RowPtrs", numRows + 1);
+    colinds_ = OrdinalArray("ColInds", nnz );
+    Kokkos::deep_copy(rowptrs_, rowptrs);
+    Kokkos::deep_copy(colinds_, colinds);
+    // deep-copy to host
+    rowptrsHost_ = Kokkos::create_mirror(rowptrs_);
+    Kokkos::deep_copy(rowptrsHost_, rowptrs_);
+  }
+
 };
 
 } //Details

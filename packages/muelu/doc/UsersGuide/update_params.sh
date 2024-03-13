@@ -63,6 +63,8 @@ echo '// @HEADER
 // ***********************************************************************
 //
 // @HEADER
+
+// clang-format off
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
 #include "MueLu_Exceptions.hpp"
@@ -128,14 +130,6 @@ namespace MueLu {
       if (value == temp.str() ) { ss << "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"; return ss.str(); }
     }
 
-    if (name == "repartition: enable") {
-      std::stringstream temp1; temp1 << "\"" << "1" << "\"";
-      if (value == temp1.str()) {
-        RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-        *out << "WARNING: repartitioning in MueLu is different to ML's. Please refer to the MueLu user's Manual for more information." << std::endl;
-      }
-    }
-
     // put in auto-generated code here
 ' > $code_file
 xsltproc gen_interpreter.xsl masterList.xml >> $code_file
@@ -172,9 +166,13 @@ echo ';
 }
 ' >> $code_file
 
-# fix quotation
-sed -i '/<Parameter/ s/\\""/\\"/g' $code_file
-sed -i '/<Parameter/ s/"\\"/\\"/g' $code_file
+# fix quotation using sed
+# GH: similar to other instances in MueLu, we need to work around the GNU/BSD sed issue
+#     the moral of the story is -i is not portable for testing!
+sed '/<Parameter/ s/\\""/\\"/g' "$code_file" > "$code_file.tmp"
+mv "$code_file.tmp" "$code_file"
+sed '/<Parameter/ s/"\\"/\\"/g' "$code_file" > "$code_file.tmp"
+mv "$code_file.tmp" "$code_file"
 
 # generate LaTeX files (MueLu options and ML compatibility)
 SECTIONS=( "general" "smoothing_and_coarse" "aggregation" "misc" "multigrid" "rebalancing" "reuse" "refmaxwell" )

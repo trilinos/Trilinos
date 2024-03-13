@@ -79,7 +79,7 @@ namespace {
       std::iota(gids, gids + element_count, element_offset);
     }
     else if (ngid_ent == 2) {
-      auto *global_ids = (int64_t*)gids;
+      auto *global_ids = (int64_t *)gids;
       std::iota(global_ids, global_ids + element_count, element_offset);
     }
     else {

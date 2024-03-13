@@ -103,7 +103,7 @@ bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
   {
     utils->out() << "NOX::LineSearch::NonlinearCG::compute "
          << "- step value is NaN or Inf. " << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   step = - numerator / denominator;
@@ -138,7 +138,7 @@ computeDirectionalDerivative(const Abstract::Vector& dir,
   {
     utils->out() << "NOX::LineSearch::NonlinearCG::computeDirectionalDerivative "
          << "- Invalid F" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Compute the perturbation parameter

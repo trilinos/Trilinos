@@ -131,7 +131,11 @@ std::ostream& operator<<(std::ostream& os, EntityState state)
   return os;
 }
 
-template< class FieldType > struct FieldTraits ;
+template< class FieldType > struct STK_DEPRECATED FieldTraits ;
+
+namespace legacy {
+template< class FieldType > struct FieldTraits;
+}
 
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,
 //and the offset (ordinal) into that bucket.
@@ -151,6 +155,16 @@ struct FastMeshIndex
   unsigned bucket_id;
   unsigned bucket_ord;
 };
+
+inline bool operator<(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
+{
+  return lhs.bucket_id == rhs.bucket_id ? lhs.bucket_ord < rhs.bucket_ord : lhs.bucket_id < rhs.bucket_id;
+}
+
+inline bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
+{
+  return lhs.bucket_id == rhs.bucket_id && lhs.bucket_ord == rhs.bucket_ord;
+}
 
 NAMED_PAIR(BucketInfo, unsigned, bucket_id, unsigned, num_entities_this_bucket)
 

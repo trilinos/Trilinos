@@ -46,6 +46,8 @@ class TrilinosPRConfigurationBase(object):
         arg_pr_config_file: The config.ini file that specifies the configuration to load.
         arg_pr_jenkins_job_name: The Jenkins Job Name.
         arg_ccache_enable: Enable ccache.
+        arg_dashboard_build_name: A shortened genconfig build name
+                                  for posting to a testing dashboard.
         filename_subprojects: The subprojects file.
         working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
             is executed from.
@@ -79,6 +81,21 @@ class TrilinosPRConfigurationBase(object):
     # --------------------
 
     @property
+    def arg_extra_configure_args(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores extra configure arguments that will be passed
+        to the cmake call when configuring Trilinos.
+
+        Returns:
+            self.args.extra_configure_args
+        """
+        return self.args.extra_configure_args
+
+    @property
     def arg_ctest_driver(self):
         """
         Argument Wrapper: This property wraps the value provided in self.args
@@ -108,6 +125,20 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.ctest_drop_site
 
+    @property
+    def arg_use_explicit_cachefile(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores whether or not an explicit cachefile directive
+        will be passed (as opposed to using -C).
+
+        Returns:
+            self.args.use_explicit_cachefile
+        """
+        return self.args.use_explicit_cachefile
 
     @property
     def arg_build_dir(self):
@@ -270,6 +301,14 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.genconfig_build_name
 
+    @property
+    def arg_dashboard_build_name(self):
+        """
+        The simplified genconfig build name containing only the
+        special attributes of the full build name.
+        Default is to use the value in args.dashboard_build_name.
+        """
+        return self.args.dashboard_build_name
 
     @property
     def arg_filename_subprojects(self):
@@ -445,6 +484,8 @@ class TrilinosPRConfigurationBase(object):
         """
         if self.arg_pullrequest_cdash_track == "Pull Request":
             output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
+        elif self.arg_dashboard_build_name != "__UNKNOWN__":
+            output = self.arg_dashboard_build_name
         else:
             output = self.arg_pr_genconfig_job_name            
         return output
@@ -649,36 +690,6 @@ class TrilinosPRConfigurationBase(object):
         return 0
 
 
-    def validate_branch_constraints(self):
-        """
-        Verify that the source branch is allowed.
-
-        For the `master` branch, we only allow the source branch to be
-        a protected branch named with the scheme `master_merge_YYYYMMDD_HHMMSS`
-        """
-        print("")
-        print("Validate target branch constraints:")
-        print("--- Target branch is '{}'".format(self.args.target_branch_name))
-
-        re_master_merge_source = "master_merge_[0-9]{8}_[0-9]{6}"
-        if "master" == self.args.target_branch_name:
-            print("--- Target branch is 'master'. Checking source branch constraints...")
-            if not re.match(re_master_merge_source, self.args.source_branch_name):
-                message  = "+" + "="*78 + "+\n"
-                message += "ERROR: Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS\n"
-                message += "       This violates Trilinos policy for pull requests into the master\n"
-                message += "       branch.\n"
-                message += "       Source branch provided is {}\n".format(self.args.source_branch_name)
-                message += "       Perhaps you forgot to set `develop` as the target in your PR?\n"
-                message += "+" + "="*78 + "+\n"
-                #print(message)
-                sys.exit(message)
-
-        print("--- target branch constraints OK")
-        print("")
-        return 0
-
-
     def prepare_test(self):
         """
         Prepares a test environment for exeution.
@@ -686,9 +697,6 @@ class TrilinosPRConfigurationBase(object):
         This includes tasks like determining the # of cores to use, setting
         environment variables, loading environment modules, etc.
         """
-        # Validate the branch constraints (i.e., if target_branch_name is master, then
-        # source_branch_name must be master_merge_YYYYMMDD_HHMMSS)
-        self.validate_branch_constraints()
 
         self.message("+" + "-"*78 + "+")
         self.message("Configuration Parameters")
@@ -702,6 +710,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("--- arg_pr_gen_config_file      = {}".format(self.arg_pr_gen_config_file))
         self.message("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
         self.message("--- arg_pr_genconfig_job_name   = {}".format(self.arg_pr_genconfig_job_name))
+        self.message("--- arg_dashboard_build_name    = {}".format(self.arg_dashboard_build_name))
         self.message("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
         self.message("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
         self.message("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))

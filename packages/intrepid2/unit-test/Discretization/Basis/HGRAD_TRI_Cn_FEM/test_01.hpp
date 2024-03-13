@@ -61,66 +61,33 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
+
 namespace Intrepid2 {
 
   namespace Test {
 
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-
-
     template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HGRAD_TRI_Cn_FEM_Test01(const bool verbose) {
 
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
+      //! Create an execution space instance.
+      const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs,       false);
+      //! Setup test output stream.
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "HGRAD_TRI_Cn_FEM", {
+          "1) Conversion of Dof tags into Dof ordinals and back",
+          "2) Basis values for VALUE, GRAD, CURL, and Dk operators"
+      });
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-
-      using DeviceSpaceType = typename DeviceType::execution_space;
-      typedef typename
-        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
-
-      *outStream
-        << "===============================================================================\n"
-        << "|                                                                             |\n"
-        << "|                 Unit Test (HGRAD_TRI_Cn_FEM)                                |\n"
-        << "|                                                                             |\n"
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-        << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-        << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
-        << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
-        << "|                                                                             |\n"
-        << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
       typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
       typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
       typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
-//      typedef Kokkos::DynRankView<PointValueType,HostSpaceType>   DynRankViewHostPointValueType;
-
-
-
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
 
       const scalar_type tol = tolerence();
       int errorFlag = 0;
@@ -152,13 +119,13 @@ namespace Intrepid2 {
         const ordinal_type polydim = triBasis.getCardinality();
 
         //Need to use Scalar type for lattice because PointTools dont's work with FAD types
-        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+        DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, np_lattice , dim);
         PointTools::getLattice(lattice_scalar, tri_3, order, 0, POINTTYPE_WARPBLEND);
         DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
 
         RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
         DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , np_lattice);
-        triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
+        triBasis.getValues(space, basisAtLattice, lattice, OPERATOR_VALUE);
 
         auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
         Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
@@ -242,14 +209,14 @@ namespace Intrepid2 {
         const ordinal_type polydim = triBasis.getCardinality();
 
         //Need to use Scalar type for lattice because PointTools dont's work with FAD types
-        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+        DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, np_lattice , dim);
         PointTools::getLattice(lattice_scalar, tri_3, order, 0, POINTTYPE_WARPBLEND);
         DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
 
         RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
         DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , np_lattice , dim);
-        triBasis.getValues(basisAtLattice, lattice, OPERATOR_CURL);
+        triBasis.getValues(space, basisAtLattice, lattice, OPERATOR_CURL);
 
         auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
         Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
@@ -268,19 +235,19 @@ namespace Intrepid2 {
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       };
-      
+
       *outStream
       << "\n"
       << "===============================================================================\n"
       << "| TEST 4: Function Space is Correct                                           |\n"
       << "===============================================================================\n";
-      
+
       try {
         for (auto order=1;order<std::min(3, maxOrder);++order) {
           TriBasisType triBasis(order);
-          
+
           const EFunctionSpace fs = triBasis.getFunctionSpace();
-          
+
           if (fs != FUNCTION_SPACE_HGRAD)
           {
             *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";

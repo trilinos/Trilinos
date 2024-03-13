@@ -982,8 +982,8 @@ struct ViewAssignment< ViewMPVectorInterlaced , ViewMPVectorInterlaced , void >
                              typename View<ST,SL,SD,SM,specialize>::array_layout >::value
                     &&
                     // Same rank
-                    ( unsigned(View<DT,DL,DD,DM,specialize>::Rank) ==
-                      unsigned(View<ST,SL,SD,SM,specialize>::Rank) )
+                    ( unsigned(View<DT,DL,DD,DM,specialize>::rank) ==
+                      unsigned(View<ST,SL,SD,SM,specialize>::rank) )
                     &&
                     // Destination is not managed
                     ! View<DT,DL,DD,DM,specialize>::is_managed
@@ -997,7 +997,7 @@ struct ViewAssignment< ViewMPVectorInterlaced , ViewMPVectorInterlaced , void >
     typedef typename dst_traits::value_type                   dst_sacado_mp_vector_type ;
     typedef typename dst_sacado_mp_vector_type::storage_type  dst_stokhos_storage_type ;
 
-    enum { DstRank         = dst_type::Rank };
+    enum { DstRank         = dst_type::rank };
     enum { DstStaticLength = dst_stokhos_storage_type::static_size };
 
     const int length = part.end - part.begin ;
@@ -1015,7 +1015,7 @@ struct ViewAssignment< ViewMPVectorInterlaced , ViewMPVectorInterlaced , void >
     dims[5] = src.m_array_shape.N5;
     dims[6] = src.m_array_shape.N6;
     dims[7] = src.m_array_shape.N7;
-    unsigned rank = dst_type::Rank;
+    unsigned rank = dst_type::rank;
 
     dst_shape_type::assign( dst.m_shape,
                             dims[0] , dims[1] , dims[2] , dims[3] ,

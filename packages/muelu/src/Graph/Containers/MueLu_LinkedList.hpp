@@ -52,33 +52,30 @@
 
 namespace MueLu {
 
-  typedef struct MueLu_Node_Struct
-  {
-    int nodeId;
-    struct MueLu_Node_Struct *next;
-  } MueLu_Node;
+typedef struct MueLu_Node_Struct {
+  int nodeId;
+  struct MueLu_Node_Struct *next;
+} MueLu_Node;
 
-  class LinkedList {
+class LinkedList {
+ public:
+  LinkedList();
 
-  public:
-    LinkedList();
+  ~LinkedList();
 
-    ~LinkedList();
+  bool IsEmpty();
 
-    bool IsEmpty();
+  void Add(int iNode);
 
-    void Add(int iNode);
+  int Pop();
 
-    int Pop();
+ private:
+  MueLu_Node *nodeHead;
+  MueLu_Node *nodeTail;
 
-  private:
-    MueLu_Node *nodeHead;
-    MueLu_Node *nodeTail;
+  void DeleteHead();
+};
 
-    void DeleteHead();
+}  // namespace MueLu
 
-  };
-
-}
-
-#endif // MUELU_LINKEDLIST_HPP
+#endif  // MUELU_LINKEDLIST_HPP

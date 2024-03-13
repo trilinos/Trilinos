@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "change_of_basis.hpp"
+#include "stk_middle_mesh/change_of_basis.hpp"
 
 namespace stk {
 namespace middle_mesh {

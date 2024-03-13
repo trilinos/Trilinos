@@ -60,8 +60,8 @@ namespace SDMUtilsUnitTest {
   typedef void (*cpqr_func_type)(const SDM&, SDM&, SDM&, Teuchos::Array<ordinal_type>&);
   typedef ordinal_type (*wcpqr_func_type)(const scalar_type&, const SDM&, const Teuchos::Array<scalar_type>&, SDM&, SDM&, Teuchos::Array<ordinal_type>&);
   
-  scalar_type rtol = 1.0e-12;
-  scalar_type atol = 1.0e-12;
+  scalar_type rtol = 1.0e-11;
+  scalar_type atol = 1.0e-11;
 
   void generateRandomMatrix(SDM& A, ordinal_type rank) {
     ordinal_type m = A.numRows();

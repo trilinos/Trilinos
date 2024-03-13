@@ -235,15 +235,7 @@ public:
         Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_dgdp.getVector());
     if ( !thyra_dgdp.getVector().is_null()) {
       if ( !prodvec_dgdp.is_null()) {
-        Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> model_PME = 
-          Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(thyra_model_);
-        if (model_PME.is_null()) {
-          Teuchos::RCP<const Thyra::ModelEvaluatorDelegatorBase<Real>> model_MEDB =
-            Teuchos::rcp_dynamic_cast<const Thyra::ModelEvaluatorDelegatorBase<Real>>(thyra_model_);
-          if (!model_MEDB.is_null()) {
-            model_PME = Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(model_MEDB->getUnderlyingModel());
-          }
-        }
+        Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> model_PME = getProductModelEvaluator(thyra_model_);
 
         if ( !model_PME.is_null()) {
           Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> dgdp_op =

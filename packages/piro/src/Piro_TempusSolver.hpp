@@ -165,6 +165,11 @@ public:
   Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> 
   getPiroTempusIntegrator() const {return piroTempusIntegrator_;} 
 
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
+  getSubModel() {return model_;}
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
+  getAdjointSubModel() {return adjointModel_;} 
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
   //@{

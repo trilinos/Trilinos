@@ -106,7 +106,7 @@ postRegistrationSetup(
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::ELEMENT_RANK, fieldName);
+    stkFields_[fd] = mesh_->getMetaData()->get_field<double>(stk::topology::ELEMENT_RANK, fieldName);
   }
 }
 

@@ -210,6 +210,16 @@ public:
   void
   addFactory (const Teuchos::RCP<custom_solver_factory_type>& factory);
 
+  /// \brief Clear all custom solver factories.
+  ///
+  /// Any custom solver factories that have been added to this factory.
+  /// 
+  /// \note To developers: Since a custom factory will be added to all 
+  ///   current and future instances, there needs to be a method to clear
+  ///   these factories to avoid memory leaks.
+  void
+  clearFactories ();
+
   /// \brief register a solver for Inverted Injection (DII).
   static void
   registerSolver (const std::string & solverName,
@@ -414,6 +424,15 @@ SolverFactoryParent<Scalar, MV, OP>::
 addFactory (const Teuchos::RCP<CustomSolverFactory<Scalar, MV, OP> >& factory)
 {
   factories_.push_back (factory);
+}
+
+
+template<class Scalar, class MV, class OP>
+void
+SolverFactoryParent<Scalar, MV, OP>::
+clearFactories ()
+{
+  factories_.clear();
 }
 
 

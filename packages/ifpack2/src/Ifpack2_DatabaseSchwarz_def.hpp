@@ -527,6 +527,9 @@ void DatabaseSchwarz<MatrixType>::compute()
               DenseMatRCP database_candidate = DatabaseMatrices_[idatabase];
               abserror += Teuchos::ScalarTraits<typename row_matrix_type::scalar_type>::magnitude((*patch_matrix)(irow,icol)-(*database_candidate)(irow,icol));
             }
+            // break out early if we finish a row and the error is already too high
+            if(abserror > Teuchos::as<typename Teuchos::ScalarTraits<typename row_matrix_type::scalar_type>::magnitudeType>(PatchTolerance_))
+              break;
           }
 
           // check if this error is acceptable; if so, mark the match and break

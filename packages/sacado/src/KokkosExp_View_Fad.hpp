@@ -248,7 +248,7 @@ struct PODViewDeepCopyType< ViewType, typename std::enable_if< is_view_fad<ViewT
 
   typedef ViewType view_type;
   typedef typename ArrayScalar< typename view_type::value_type >::type fad_converted_type;
-  typedef typename AppendRankToConvertedFad< fad_converted_type, view_type::Rank >::type new_data_type;
+  typedef typename AppendRankToConvertedFad< fad_converted_type, view_type::rank >::type new_data_type;
 
   typedef typename ViewArrayLayoutSelector<typename view_type::array_layout>::type layout;
   //typedef typename view_type::array_layout layout;
@@ -670,6 +670,380 @@ as_view_of_rank_n(View<T, Args...>) {
 
 }
 
+} // namespace Kokkos
+
+namespace Kokkos {
+namespace Experimental {
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 1))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  for (size_t i0 = 0; i0 < dst.extent(0); ++i0)
+    dst(i0) = value;
+}
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 2))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  for (size_t i0 = 0; i0 < dst.extent(0); ++i0)
+    for (size_t i1 = 0; i1 < dst.extent(1); ++i1)
+      dst(i0,i1) = value;
+}
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 3))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  for (size_t i0 = 0; i0 < dst.extent(0); ++i0)
+    for (size_t i1 = 0; i1 < dst.extent(1); ++i1)
+      for (size_t i2 = 0; i2 < dst.extent(2); ++i2)
+        dst(i0,i1,i2) = value;
+}
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 4))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  for (size_t i0 = 0; i0 < dst.extent(0); ++i0)
+    for (size_t i1 = 0; i1 < dst.extent(1); ++i1)
+      for (size_t i2 = 0; i2 < dst.extent(2); ++i2)
+        for (size_t i3 = 0; i3 < dst.extent(3); ++i3)
+          dst(i0,i1,i2,i3) = value;
+}
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 5))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  for (size_t i0 = 0; i0 < dst.extent(0); ++i0)
+    for (size_t i1 = 0; i1 < dst.extent(1); ++i1)
+      for (size_t i2 = 0; i2 < dst.extent(2); ++i2)
+        for (size_t i3 = 0; i3 < dst.extent(3); ++i3)
+          for (size_t i4 = 0; i4 < dst.extent(4); ++i4)
+            dst(i0,i1,i2,i3,i4) = value;
+}
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 6))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  for (size_t i0 = 0; i0 < dst.extent(0); ++i0)
+    for (size_t i1 = 0; i1 < dst.extent(1); ++i1)
+      for (size_t i2 = 0; i2 < dst.extent(2); ++i2)
+        for (size_t i3 = 0; i3 < dst.extent(3); ++i3)
+          for (size_t i4 = 0; i4 < dst.extent(4); ++i4)
+            for (size_t i5 = 0; i5 < dst.extent(5); ++i5)
+              dst(i0,i1,i2,i3,i4,i5) = value;
+}
+
+template <class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 7))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  for (size_t i0 = 0; i0 < dst.extent(0); ++i0)
+    for (size_t i1 = 0; i1 < dst.extent(1); ++i1)
+      for (size_t i2 = 0; i2 < dst.extent(2); ++i2)
+        for (size_t i3 = 0; i3 < dst.extent(3); ++i3)
+          for (size_t i4 = 0; i4 < dst.extent(4); ++i4)
+            for (size_t i5 = 0; i5 < dst.extent(5); ++i5)
+              for (size_t i6 = 0; i6 < dst.extent(6); ++i6)
+                dst(i0,i1,i2,i3,i4,i5,i6) = value;
+}
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 1))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  const size_t N = dst.extent(0);
+
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N),
+                       [&](const int& i) { dst(i) = value; });
+  team.team_barrier();
+}
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 2))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  const size_t N = dst.extent(0) * dst.extent(1);
+
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
+    int i0      = i % dst.extent(0);
+    int i1      = i / dst.extent(0);
+    dst(i0, i1) = value;
+  });
+  team.team_barrier();
+}
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 3))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  const size_t N = dst.extent(0) * dst.extent(1) * dst.extent(2);
+
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
+    int i0          = i % dst.extent(0);
+    int itmp        = i / dst.extent(0);
+    int i1          = itmp % dst.extent(1);
+    int i2          = itmp / dst.extent(1);
+    dst(i0, i1, i2) = value;
+  });
+  team.team_barrier();
+}
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 4))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  const size_t N =
+      dst.extent(0) * dst.extent(1) * dst.extent(2) * dst.extent(3);
+
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
+    int i0              = i % dst.extent(0);
+    int itmp            = i / dst.extent(0);
+    int i1              = itmp % dst.extent(1);
+    itmp                = itmp / dst.extent(1);
+    int i2              = itmp % dst.extent(2);
+    int i3              = itmp / dst.extent(2);
+    dst(i0, i1, i2, i3) = value;
+  });
+  team.team_barrier();
+}
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 5))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  const size_t N = dst.extent(0) * dst.extent(1) * dst.extent(2) *
+                   dst.extent(3) * dst.extent(4);
+
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
+    int i0                  = i % dst.extent(0);
+    int itmp                = i / dst.extent(0);
+    int i1                  = itmp % dst.extent(1);
+    itmp                    = itmp / dst.extent(1);
+    int i2                  = itmp % dst.extent(2);
+    itmp                    = itmp / dst.extent(2);
+    int i3                  = itmp % dst.extent(3);
+    int i4                  = itmp / dst.extent(3);
+    dst(i0, i1, i2, i3, i4) = value;
+  });
+  team.team_barrier();
+}
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 6))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  const size_t N = dst.extent(0) * dst.extent(1) * dst.extent(2) *
+                   dst.extent(3) * dst.extent(4) * dst.extent(5);
+
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
+    int i0                      = i % dst.extent(0);
+    int itmp                    = i / dst.extent(0);
+    int i1                      = itmp % dst.extent(1);
+    itmp                        = itmp / dst.extent(1);
+    int i2                      = itmp % dst.extent(2);
+    itmp                        = itmp / dst.extent(2);
+    int i3                      = itmp % dst.extent(3);
+    itmp                        = itmp / dst.extent(3);
+    int i4                      = itmp % dst.extent(4);
+    int i5                      = itmp / dst.extent(4);
+    dst(i0, i1, i2, i3, i4, i5) = value;
+  });
+  team.team_barrier();
+}
+
+template <class TeamType, class DT, class... DP>
+void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
+    const TeamType& team, const View<DT, DP...>& dst,
+    typename ViewTraits<DT, DP...>::const_value_type& value,
+    typename std::enable_if<(
+      ( std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value
+        ||
+        std::is_same< typename ViewTraits<DT,DP...>::specialize,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+      && (unsigned(ViewTraits<DT, DP...>::rank) == 7))>::type*)
+{
+  if (dst.data() == nullptr)
+    return;
+
+  const size_t N = dst.extent(0) * dst.extent(1) * dst.extent(2) *
+                   dst.extent(3) * dst.extent(4) * dst.extent(5) *
+                   dst.extent(6);
+
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
+    int i0                          = i % dst.extent(0);
+    int itmp                        = i / dst.extent(0);
+    int i1                          = itmp % dst.extent(1);
+    itmp                            = itmp / dst.extent(1);
+    int i2                          = itmp % dst.extent(2);
+    itmp                            = itmp / dst.extent(2);
+    int i3                          = itmp % dst.extent(3);
+    itmp                            = itmp / dst.extent(3);
+    int i4                          = itmp % dst.extent(4);
+    itmp                            = itmp / dst.extent(4);
+    int i5                          = itmp % dst.extent(5);
+    int i6                          = itmp / dst.extent(5);
+    dst(i0, i1, i2, i3, i4, i5, i6) = value;
+  });
+  team.team_barrier();
+}
+
+} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -1521,10 +1895,11 @@ public:
       m_impl_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
 
       if ( ctor_prop::initialize ) {
+        auto space = ((ViewCtorProp<void,execution_space> const &) prop).value;
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
 				if (execution_space_specified)
-					record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
+					record->m_destroy = functor_type( space
 							, (fad_value_type *) m_impl_handle
 							, m_array_offset.span()
 							, record->get_label()
@@ -1537,6 +1912,7 @@ public:
 
         // Construct values
         record->m_destroy.construct_shared_allocation();
+        space.fence();
       }
     }
 

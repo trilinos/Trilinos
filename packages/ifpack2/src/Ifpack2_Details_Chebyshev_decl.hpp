@@ -406,8 +406,9 @@ private:
 
   /// \brief In ifpackApplyImpl(): Iteration update MultiVector.
   ///
-  /// We cache this multivector here to avoid creating it on each call.
+  /// We cache these multivectors here to avoid creating them on each call.
   Teuchos::RCP<MV> W_;
+  Teuchos::RCP<MV> W2_;
 
   /// \brief Estimate that we compute for maximum eigenvalue of A.
   ///
@@ -555,6 +556,14 @@ private:
   /// created MultiVector as W_.  Caching optimizes the common case of
   /// calling apply() many times.
   Teuchos::RCP<MV> makeTempMultiVector (const MV& B);
+
+  /// \brief Set W2 to temporary MultiVector with the same Map as B.
+  ///
+  /// This is an optimization for apply(). This method caches the
+  /// created MultiVector as W2_. Caching optimizes the common case of
+  /// calling apply() many times. This is used by fourth kind
+  /// Chebyshev as two temporary multivectors are needed.
+  Teuchos::RCP<MV> makeSecondTempMultiVector (const MV& B);
 
   //! W = alpha*D_inv*B and X = 0 + W.
   void

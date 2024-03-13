@@ -149,8 +149,8 @@ namespace panzer {
                         const PHX::MDField<Scalar,Cell,IP> & jac_det,
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                         const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
-                        const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                        bool use_vertex_coordinates=true,
+                        const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coordinates,
+                        bool use_node_coordinates=true,
                         const int in_num_cells = -1);
 
     void evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim> & cell_cub_points,
@@ -163,8 +163,8 @@ namespace panzer {
                           const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
                           const PHX::MDField<Scalar,Cell,IP> & jac_det,
                           const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
-                          const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                          bool use_vertex_coordinates=true,
+                          const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coordinates,
+                          bool use_node_coordinates=true,
                           const int in_num_cells = -1);
 
 
@@ -173,8 +173,8 @@ namespace panzer {
                         const PHX::MDField<Scalar,Cell,IP> & jac_det,
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                         const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
-                        const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                        bool use_vertex_coordinates=true,
+                        const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coordinates,
+                        bool use_node_coordinates=true,
                         const int in_num_cells = -1);
 
 
@@ -243,7 +243,7 @@ namespace panzer {
     bool orientationsApplied() const
     {return orientations_applied_;}
 
-    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coordinates,
                                   const int in_num_cells = -1);
 
   private:
@@ -282,7 +282,11 @@ namespace panzer {
     PHX::MDField<const Scalar,Cell,IP,Dim,Dim>  cubature_jacobian_inverse_;
     PHX::MDField<const Scalar,Cell,IP>          cubature_weights_;
 
-    PHX::MDField<const Scalar,Cell,NODE,Dim> cell_vertex_coordinates_;
+    // Coordinates of the mesh nodes
+    PHX::MDField<const Scalar,Cell,NODE,Dim> cell_node_coordinates_;
+
+    // Cell topology from the mesh
+    Teuchos::RCP<const shards::CellTopology> cell_topology_;
 
     // Number of cells to apply orientations to (required in situations where virtual cells exist)
     int num_orientations_cells_;
@@ -365,14 +369,23 @@ namespace panzer {
     void
     setWeightedMeasure(PHX::MDField<const Scalar, Cell, IP> weighted_measure);
 
+    /////////// TO BE DEPRECATED.....
     /// Set the cell vertex coordinates (required for getBasisCoordinates())
     void
     setCellVertexCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates);
+    ////////// END TO BE DEPRECATED
+
+    /// Set the cell node coordinates (required for getBasisCoordinates())
+    void
+    setCellNodeCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> node_coordinates);
 
     /// Check if reference point space is uniform across all cells (faster evaluation)
     bool
     hasUniformReferenceSpace() const
     {return is_uniform_;}
+
+    /// Return the basis descriptor
+    panzer::BasisDescriptor getBasisDescriptor() const;
 
     /// Get the extended dimensions used by sacado AD allocations
     const std::vector<PHX::index_size_type> &

@@ -46,9 +46,12 @@
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_LinearPartitioner.hpp"
 #include "Ifpack2_LinePartitioner.hpp"
+#include "Ifpack2_Zoltan2Partitioner_decl.hpp"
+#include "Ifpack2_Zoltan2Partitioner_def.hpp"
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
-#include <Ifpack2_Parameters.hpp>
+#include "Ifpack2_LocalFilter.hpp"
+#include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 namespace Ifpack2 {
@@ -103,6 +106,7 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   IsComputed_ (false),
   NumInitialize_ (0),
   NumCompute_ (0),
+  TimerForApply_(true),
   NumApply_ (0),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
@@ -140,6 +144,7 @@ getValidParameters () const
   validParams->set("schwarz: filter singletons", false);
   validParams->set("schwarz: overlap level", 0);
   validParams->set("partitioner: type", "greedy");
+  validParams->set("zoltan2: algorithm", "phg");
   validParams->set("partitioner: local parts", 1);
   validParams->set("partitioner: overlap", 0);
   validParams->set("partitioner: combine mode", "ZERO"); // use string mode for this
@@ -169,6 +174,8 @@ getValidParameters () const
                                    typename MatrixType::global_ordinal_type,
                                    typename MatrixType::node_type> > dummy;
   validParams->set("partitioner: coordinates",dummy);
+  validParams->set("timer for apply", true);
+  validParams->set("partitioner: subparts per part", 1);
 
   return validParams;
 }
@@ -351,6 +358,9 @@ setParametersImpl (Teuchos::ParameterList& List)
     "Ifpack2::BlockRelaxation:setParameters: Setting the \"relaxation: "
     "backward mode\" parameter to true is not yet supported.");
 
+  if(List.isParameter("timer for apply"))
+    TimerForApply_ = List.get<bool>("timer for apply");
+
   // copy the list as each subblock's constructor will
   // require it later
   List_ = List;
@@ -516,15 +526,21 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     "the case beta == 0.  You specified beta = " << beta << ".");
 
   const std::string timerName ("Ifpack2::BlockRelaxation::apply");
-  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
-  if (timer.is_null ()) {
-    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  Teuchos::RCP<Teuchos::Time> timer;
+  if (TimerForApply_) {
+    timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+    if (timer.is_null ()) {
+      timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+    }
   }
 
-  double startTime = timer->wallTime();
+  Teuchos::Time time = Teuchos::Time(timerName);
+  double startTime = time.wallTime();
 
   {
-    Teuchos::TimeMonitor timeMon (*timer);
+    Teuchos::RCP<Teuchos::TimeMonitor> timeMon;
+    if (TimerForApply_)
+      timeMon = Teuchos::rcp(new Teuchos::TimeMonitor(*timer));
 
     // If X and Y are pointing to the same memory location,
     // we need to create an auxiliary vector, Xcopy
@@ -567,7 +583,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     }
   }
 
-  ApplyTime_ += (timer->wallTime() - startTime);
+  ApplyTime_ += (time.wallTime() - startTime);
   ++NumApply_;
 }
 
@@ -638,6 +654,22 @@ initialize ()
     } else if (PartitionerType_ == "user") {
       Partitioner_ =
         rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
+    } else if (PartitionerType_ == "zoltan2") {
+      #if defined(HAVE_IFPACK2_ZOLTAN2)
+      if (A_->getGraph ()->getComm ()->getSize () == 1) {
+        // Only one MPI, so call zoltan2 with global graph
+        Partitioner_ =
+          rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_->getGraph ()) );
+      } else {
+        // Form local matrix to get local graph for calling zoltan2
+        Teuchos::RCP<const row_matrix_type> A_local = rcp (new LocalFilter<row_matrix_type> (A_));
+        Partitioner_ =
+          rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_local->getGraph ()) );
+      }
+      #else
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Ifpack2::BlockRelaxation::initialize: Zoltan2 not enabled.");
+      #endif
     } else {
       // We should have checked for this in setParameters(), so it's a
       // logic_error, not an invalid_argument or runtime_error.

@@ -138,6 +138,5 @@ struct Rot<ExecutionSpace, VectorView, ScalarView, false,
       false, true>;
 
 #include <KokkosBlas1_rot_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_rot_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_ROT_SPEC_HPP_

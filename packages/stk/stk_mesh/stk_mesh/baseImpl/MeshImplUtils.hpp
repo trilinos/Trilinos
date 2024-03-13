@@ -312,6 +312,12 @@ void require_valid_relation(const char action[],
                             const Entity e_from,
                             const Entity e_to);
 
+bool is_valid_relation(const BulkData& mesh,
+                       Entity e_from,
+                       Entity e_to,
+                       EntityRank e_to_rank,
+                       ConnectivityOrdinal ord);
+
 bool is_good_rank_and_id(const MetaData& meta,
                          EntityRank rank,
                          EntityId id);
@@ -339,6 +345,13 @@ bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity 
 
 bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);
 
+void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk,
+                                            stk::mesh::Entity connectedEntity,
+                                            EntityVector& scratchSpace);
+
+void print_upward_connected_entities(stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     std::ostream& os);
 } // namespace impl
 } // namespace mesh
 } // namespace stk

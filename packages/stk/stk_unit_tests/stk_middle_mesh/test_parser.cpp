@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "parser.hpp"
+#include "stk_middle_mesh/parser.hpp"
 
 namespace stk {
 namespace middle_mesh {

@@ -250,6 +250,13 @@ size_t DropFilter<MatrixType>::getLocalMaxNumRowEntries() const
 
 //==========================================================================
 template<class MatrixType>
+typename MatrixType::local_ordinal_type DropFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
+
+//==========================================================================
+template<class MatrixType>
 bool DropFilter<MatrixType>::hasColMap() const
 {
   return true;

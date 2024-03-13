@@ -17,12 +17,13 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_io/IossBridge.hpp>
 
-#include <Akri_AdaptivityInterface.hpp>
 #include <Akri_BoundingBox.hpp>
 #include <Akri_BoundingBoxMesh.hpp>
+#include <Akri_CDFEM_Support.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Interface_Name_Generator.hpp>
+#include <Akri_LevelSetPolicy.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_MeshClone.hpp>
 #include <Akri_Phase_Support.hpp>
@@ -32,6 +33,7 @@
 #include <Akri_RebalanceUtils.hpp>
 #include <Akri_Snap.hpp>
 
+#include <Akri_Unit_BoundingBoxMesh.hpp>
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_Quality.hpp>
@@ -238,192 +240,7 @@ void build_two_tet4_mesh_np2(DECOMP_FIXTURE & fixture,
 }
 } // namespace
 
-template <unsigned NUM_LS> struct LSPerPhasePolicy
-{
-  void
-  setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
-  {
-    AuxMetaData & aux_meta = AuxMetaData::get(meta);
-    Phase_Support::get(meta).set_one_levelset_per_phase(true);
-    STK_ThrowRequire(!is_death);
-    for (unsigned i = 0; i < NUM_LS; ++i)
-    {
-      const std::string isovar_name = "LS" + std::to_string(i);
-      FieldRef ls_isovar =
-          aux_meta.declare_field(isovar_name, FieldType::REAL, stk::topology::NODE_RANK, 1u);
-      cdfem_support.add_interpolation_field(ls_isovar);
-
-      LevelSet * ls_ptr = nullptr;
-      myLSFields.emplace_back(isovar_name, Surface_Identifier(i), ls_isovar, 0., ls_ptr);
-    }
-  }
-
-  void register_ls_on_blocks(const stk::mesh::PartVector & blocks,
-      stk::mesh::MetaData & meta,
-      Block_Surface_Connectivity & block_surface_info,
-      const bool register_fields)
-  {
-    AuxMetaData & aux_meta = AuxMetaData::get(meta);
-    PhaseVec named_phases;
-    for (unsigned ls = 0; ls < NUM_LS; ++ls)
-    {
-      PhaseTag tag;
-      tag.add(Surface_Identifier(ls), -1);
-      named_phases.push_back(NamedPhase("P" + std::to_string(ls), tag));
-    }
-
-    Phase_Support & phase_support = Phase_Support::get(meta);
-    phase_support.set_input_block_surface_connectivity(block_surface_info);
-    for (unsigned ls = 0; ls < NUM_LS; ++ls)
-      phase_support.register_blocks_for_level_set(Surface_Identifier(ls), blocks);
-    std::vector<
-        std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>>
-        ls_sets;
-    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, named_phases));
-    phase_support.decompose_blocks(ls_sets);
-
-    for (auto && b : blocks)
-    {
-      for (unsigned ls = 0; ls < NUM_LS; ++ls)
-      {
-        auto conformal_part = phase_support.find_conformal_io_part(*b, named_phases[ls].tag());
-        STK_ThrowRequire(conformal_part != nullptr);
-        if (register_fields)
-        {
-          // Need to register every LS on every conformal part
-          for (unsigned ls2 = 0; ls2 < NUM_LS; ++ls2)
-          {
-            aux_meta.register_field(myLSFields[ls2].isovar.name(),
-                FieldType::REAL,
-                stk::topology::NODE_RANK,
-                1u,
-                1u,
-                *conformal_part);
-          }
-          aux_meta.register_field(
-              myLSFields[ls].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *b);
-        }
-      }
-    }
-  }
-
-  const std::vector<LS_Field> & ls_fields() const { return myLSFields; }
-
-  std::vector<LS_Field> myLSFields;
-};
-
-template <unsigned NUM_LS> struct LSPerInterfacePolicy
-{
-  void
-  setup_ls_field(const bool is_death, stk::mesh::MetaData & meta, CDFEM_Support & cdfem_support)
-  {
-    AuxMetaData & aux_meta = AuxMetaData::get(meta);
-    Phase_Support::get(meta).set_one_levelset_per_phase(false);
-
-    if (is_death)
-    {
-      STK_ThrowRequire(1 == NUM_LS);
-      death_spec = std::unique_ptr<CDFEM_Inequality_Spec>(new CDFEM_Inequality_Spec("death_spec"));
-      FieldRef lsIsovar = aux_meta.declare_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u);
-      cdfem_support.add_interpolation_field(lsIsovar);
-      myLSFields.emplace_back(lsIsovar.name(), Surface_Identifier(0), lsIsovar, 0., nullptr, death_spec.get());
-    }
-    else
-    {
-      for (unsigned i = 0; i < NUM_LS; ++i)
-      {
-        const std::string isovar_name = "LS" + std::to_string(i);
-        FieldRef ls_isovar =
-            aux_meta.declare_field(isovar_name, FieldType::REAL, stk::topology::NODE_RANK, 1u);
-        cdfem_support.add_interpolation_field(ls_isovar);
-
-        LevelSet * ls_ptr = nullptr;
-        myLSFields.emplace_back(isovar_name, Surface_Identifier(i), ls_isovar, 0., ls_ptr);
-      }
-    }
-  }
-
-  void register_ls_on_blocks(const stk::mesh::PartVector & blocks,
-      stk::mesh::MetaData & meta,
-      Block_Surface_Connectivity & block_surface_info,
-      const bool register_fields)
-  {
-    AuxMetaData & aux_meta = AuxMetaData::get(meta);
-    PhaseVec named_phases;
-    const unsigned numPhases = 1 << NUM_LS;
-    for (unsigned phase = 0; phase < numPhases; ++phase)
-    {
-      std::string phaseName = "P";
-      PhaseTag tag;
-      for (unsigned ls = 0; ls < NUM_LS; ++ls)
-      {
-        const bool lsIsNeg = (phase >> ls) % 2 == 0;
-        const int lsSign = lsIsNeg ? -1 : 1;
-        tag.add(Surface_Identifier(ls), lsSign);
-        phaseName += (lsIsNeg ? "-" : "+");
-      }
-      named_phases.push_back(NamedPhase(phaseName, tag));
-    }
-
-    if (death_spec)
-    {
-      death_spec->set_phases(named_phases[0].tag(), named_phases[1].tag());
-    }
-
-    Phase_Support & phase_support = Phase_Support::get(meta);
-    phase_support.set_input_block_surface_connectivity(block_surface_info);
-    for (unsigned ls = 0; ls < NUM_LS; ++ls)
-      phase_support.register_blocks_for_level_set(Surface_Identifier(ls), blocks);
-    std::vector<
-        std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>>
-        ls_sets;
-    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, named_phases));
-    phase_support.decompose_blocks(ls_sets);
-
-    if (register_fields)
-    {
-      for (auto && b : blocks)
-      {
-        for (unsigned ls = 0; ls < NUM_LS; ++ls)
-        {
-          aux_meta.register_field(
-              myLSFields[ls].isovar.name(), FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, *b);
-
-          for (unsigned phase = 0; phase < numPhases; ++phase)
-          {
-            auto conformal_part =
-                phase_support.find_conformal_io_part(*b, named_phases[phase].tag());
-            STK_ThrowRequire(conformal_part != nullptr);
-            aux_meta.register_field(myLSFields[ls].isovar.name(),
-                FieldType::REAL,
-                stk::topology::NODE_RANK,
-                1u,
-                1u,
-                *conformal_part);
-          }
-        }
-      }
-    }
-  }
-
-  FieldRef ls_field_ref(const unsigned lsIndex) const { return myLSFields[lsIndex].isovar; }
-  const std::vector<LS_Field> & ls_fields() const { return myLSFields; }
-
-  unsigned num_ls() const { return NUM_LS; }
-
-  const FieldRef ls_field_ref() const
-  {
-    STK_ThrowRequire(1 == num_ls());
-    return ls_field_ref(0);
-  }
-
-  std::vector<LS_Field> myLSFields;
-  std::unique_ptr<CDFEM_Inequality_Spec> death_spec;
-};
-
-template <class MESH_FIXTURE, class LS_FIELD_POLICY>
+template <class MESH_FIXTURE, class LS_FIELD_POLICY, unsigned NUM_LS>
 class CompleteDecompositionFixture : public ::testing::Test
 {
 public:
@@ -439,22 +256,27 @@ public:
         1u,
         fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
-    cdfemSupport.add_interpolation_field(coord_field);
+    cdfemSupport.add_edge_interpolation_field(coord_field);
     cdfemSupport.register_parent_node_ids_field();
 
     cdfemSupport.set_prolongation_model(INTERPOLATION);
   }
 
-  void setup_ls_field(const bool is_death = false)
+  void
+  register_ls_on_blocks(const stk::mesh::PartVector & blocks, const bool doRegisterField = true)
   {
-    ls_policy.setup_ls_field(is_death, fixture.meta_data(), cdfemSupport);
+    myLSFields = LS_FIELD_POLICY::setup_levelsets_on_blocks(fixture.meta_data(), NUM_LS, blocks, block_surface_info, doRegisterField);
   }
 
-  void
-  register_ls_on_blocks(const stk::mesh::PartVector & blocks, const bool register_fields = true)
+  std::vector<LS_Field> & levelset_fields()
   {
-    ls_policy.register_ls_on_blocks(
-        blocks, fixture.meta_data(), block_surface_info, register_fields);
+    return myLSFields;
+  }
+
+  FieldRef get_ls_field(const unsigned lsIndex=0)
+  {
+    STK_ThrowRequire(lsIndex < myLSFields.size());
+    return myLSFields[lsIndex].isovar;
   }
 
   stk::mesh::Part & declare_input_block(const std::string & name, const stk::topology topo)
@@ -497,19 +319,20 @@ public:
   void decompose_mesh()
   {
     NodeToCapturedDomainsMap nodesToSnappedDomains;
-    std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), ls_policy.ls_fields());
+    std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(fixture.meta_data().spatial_dimension(), krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), levelset_fields());
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
     {
       const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
       nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
           krino_mesh->get_active_part(),
-          cdfemSupport.get_interpolation_fields(),
+          cdfemSupport.get_snap_fields(),
           *interfaceGeometry,
           cdfemSupport.get_global_ids_are_parallel_consistent(),
           cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
-          minIntPtWeightForEstimatingCutQuality);
+          minIntPtWeightForEstimatingCutQuality,
+          cdfemSupport.get_max_edge_snap());
     }
-    interfaceGeometry->prepare_to_process_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
+    interfaceGeometry->prepare_to_decompose_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
 
     krino_mesh->generate_nonconformal_elements();
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() ==
@@ -575,8 +398,6 @@ public:
     cdfemSupport.set_cdfem_edge_tol(0.1);
     cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
 
-    setup_ls_field();
-
     const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
     auto & block1_part = declare_input_block("block_1", tet4);
     auto & block2_part = declare_input_block("block_2", tet4);
@@ -616,12 +437,12 @@ public:
         for (auto && node : *b_ptr)
         {
           const double * coords = field_data<double>(coord_field, node);
-          double * ls_data = field_data<double>(ls_policy.ls_field_ref(), node);
+          double * ls_data = field_data<double>(get_ls_field(), node);
           if (ls_data) *ls_data = coords[1] - 0.5;
         }
       }
     }
-    stk::mesh::communicate_field_data(mesh, {&ls_policy.ls_field_ref().field(), &coord_field.field()});
+    stk::mesh::communicate_field_data(mesh, {&get_ls_field().field(), &coord_field.field()});
 
     ASSERT_NO_THROW(decompose_mesh());
 
@@ -672,7 +493,7 @@ public:
       for (auto && node : *b_ptr)
       {
         const double * coords = field_data<double>(coord_field, node);
-        double * ls_data = field_data<double>(ls_policy.ls_field_ref(), node);
+        double * ls_data = field_data<double>(get_ls_field(), node);
         if (ls_data) *ls_data = coords[2] - 0.5;
       }
     }
@@ -700,11 +521,11 @@ public:
   CDFEM_Support & cdfemSupport;
   std::unique_ptr<CDMesh> krino_mesh;
   Block_Surface_Connectivity block_surface_info;
-  LS_FIELD_POLICY ls_policy;
+  std::vector<LS_Field> myLSFields;
   LogRedirecter log;
 };
 
-typedef DecompositionFixture<RegularTri, LSPerInterfacePolicy<1>> RegularTriSingleLSDecompositionFixture;
+typedef DecompositionFixture<RegularTri, LSPerInterfacePolicy, 1> RegularTriSingleLSDecompositionFixture;
 TEST_F(RegularTriSingleLSDecompositionFixture, decompose)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -760,7 +581,7 @@ public:
 TEST_F(DecompositionFixtureWithoutRegisteringFields, IsovariableNotDefinedOnAnyBlock)
 {
   EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
-      mMesh.mesh_meta_data(), lsPolicy.ls_fields(), true));
+      mMesh.mesh_meta_data(), levelset_fields(), true));
 }
 
 TEST_F(DecompositionFixtureWithoutRegisteringFields, IsovariableNotDefinedOnBlock1)
@@ -774,7 +595,7 @@ TEST_F(DecompositionFixtureWithoutRegisteringFields, IsovariableNotDefinedOnBloc
   get_aux_meta().register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, B_part);
 
   EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
-      mMesh.mesh_meta_data(), lsPolicy.ls_fields(), true));
+      mMesh.mesh_meta_data(), levelset_fields(), true));
 }
 
 TEST_F(DecompositionFixtureWithoutRegisteringFields, IsovariableOnlyOnBlock1SteadyState)
@@ -785,7 +606,7 @@ TEST_F(DecompositionFixtureWithoutRegisteringFields, IsovariableOnlyOnBlock1Stea
   get_aux_meta().register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, blockPart);
 
   EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
-      mMesh.mesh_meta_data(), lsPolicy.ls_fields(), true));
+      mMesh.mesh_meta_data(), levelset_fields(), true));
 }
 
 class DecompositionFixtureForDeathWithoutRegisteringFields : public RegularTriSingleLSDecompositionFixture
@@ -801,7 +622,7 @@ public:
 TEST_F(DecompositionFixtureForDeathWithoutRegisteringFields, DeathIsovariableNotDefinedOnDecomposedBlock)
 {
   EXPECT_ANY_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
-      mMesh.mesh_meta_data(), lsPolicy.ls_fields(), true));
+      mMesh.mesh_meta_data(), levelset_fields(), true));
 }
 
 TEST_F(DecompositionFixtureForDeathWithoutRegisteringFields, DeathIsovariableNotDefinedOnDeadBlock)
@@ -813,10 +634,10 @@ TEST_F(DecompositionFixtureForDeathWithoutRegisteringFields, DeathIsovariableNot
   get_aux_meta().register_field("LS", FieldType::REAL, stk::topology::NODE_RANK, 1u, 1u, alive_part);
 
   EXPECT_NO_THROW(Phase_Support::check_isovariable_field_existence_on_decomposed_blocks(
-      mMesh.mesh_meta_data(), lsPolicy.ls_fields(), true));
+      mMesh.mesh_meta_data(), levelset_fields(), true));
 }
 
-class TwoRightTrisOn1Or2ProcsSingleLSDecompositionFixture : public DecompositionFixture<TwoRightTrisSharingDiagonal, LSPerInterfacePolicy<1>>
+class TwoRightTrisOn1Or2ProcsSingleLSDecompositionFixture : public DecompositionFixture<TwoRightTrisSharingDiagonal, LSPerInterfacePolicy, 1>
 {
 public:
 TwoRightTrisOn1Or2ProcsSingleLSDecompositionFixture()
@@ -956,7 +777,7 @@ TEST_F(TwoRightTrisOn1Or2ProcsSingleLSDecompositionFixture, Check_Compatibility_
   // fixture.write_results("Two_Tri3_Check_Compatibility_When_Snapping.e");
 }
 
-class FourDisconnectedTrisOn2Or4ProcsDecompositionFixture : public DecompositionFixture<FourDisconnectedTris, LSPerInterfacePolicy<1>>
+class FourDisconnectedTrisOn2Or4ProcsDecompositionFixture : public DecompositionFixture<FourDisconnectedTris, LSPerInterfacePolicy, 1>
 {
 public:
 FourDisconnectedTrisOn2Or4ProcsDecompositionFixture()
@@ -1040,7 +861,7 @@ void set_level_sets(const stk::mesh::BulkData & mesh,
   }
 }
 
-class CDMeshTestsTwoRightTris3LSPerPhase : public DecompositionFixture<TwoRightTrisSharingDiagonal, LSPerPhasePolicy<3>>
+class CDMeshTestsTwoRightTris3LSPerPhase : public DecompositionFixture<TwoRightTrisSharingDiagonal, LSPerPhasePolicy, 3>
 {
 public:
 CDMeshTestsTwoRightTris3LSPerPhase()
@@ -1074,7 +895,7 @@ TEST_F(CDMeshTestsTwoRightTris3LSPerPhase, Two_Tri3_Check_Compatibility_When_Sna
   get_aux_meta().clear_force_64bit_flag();
 
   const double eps = 1.e-13;
-  set_level_sets(mMesh, lsPolicy.ls_fields(),
+  set_level_sets(mMesh, levelset_fields(),
       get_ids_of_nodes_with_given_indices({0, 1, 2, 3}),
       {{-1., 1., 1. + eps}, {-1., 1., 1. + eps}, {1.e2, 1., -1.}, {1., -1., -1. + eps}});
 
@@ -1095,7 +916,38 @@ TEST_F(CDMeshTestsTwoRightTris3LSPerPhase, Two_Tri3_Check_Compatibility_When_Sna
   //write_mesh("Two_Tri3_Check_Compatibility_When_Snapping_LSPerPhase.e");
 }
 
-class TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRightTets, LSPerInterfacePolicy<1>>
+
+
+class TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRegularTetsSharingNodeAtOrigin, LSPerInterfacePolicy, 1>
+{
+public:
+TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture()
+{
+  if(stk::parallel_machine_size(mComm) == 1)
+    this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1}, {0,0});
+  else if(stk::parallel_machine_size(mComm) == 2)
+    this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1}, {0,1});
+
+  setup_ls_fields();
+}
+};
+
+TEST_F(TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture, onlyCutFacesImpactNodeScoringToImproveQuality)
+{
+  if (stk::parallel_machine_size(mComm) > 2) return;
+
+  set_level_set({0,1,2,3,4,5,6}, {-0.49, 1.5, 1.5, 1.5, -0.06, 0.18, 0.18});
+
+  attempt_decompose_mesh();
+
+  const ScaledJacobianQualityMetric qualityMetric;
+  const double qualityAfterCut = compute_mesh_quality(mMesh, get_aux_meta().active_part(), qualityMetric);
+  EXPECT_LT(0.07, qualityAfterCut);
+
+  //write_mesh("test.e");
+}
+
+class TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRightTets, LSPerInterfacePolicy, 1>
 {
 public:
 TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture() {}
@@ -1194,8 +1046,8 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Random_TwoTet4_In
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
-    randomize_ls_field(mMesh, lsPolicy.ls_field_ref(), mt, dist);
-    stk::mesh::communicate_field_data(mMesh, {&lsPolicy.ls_field_ref().field(), &get_coordinates_field().field()});
+    randomize_ls_field(mMesh, get_ls_field(), mt, dist);
+    stk::mesh::communicate_field_data(mMesh, {&get_ls_field().field(), &get_coordinates_field().field()});
 
     attempt_decompose_mesh();
 
@@ -1206,7 +1058,7 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Random_TwoTet4_In
   }
 }
 
-typedef CompleteDecompositionFixture<BoundingBoxMeshTri3, LSPerInterfacePolicy<1>> CDMeshTestsBboxMesh2D;
+typedef CompleteDecompositionFixture<BoundingBoxMeshTri3, LSPerInterfacePolicy, 1> CDMeshTestsBboxMesh2D;
 TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -1222,13 +1074,11 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
       SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
-  setup_ls_field();
-
   auto & block1_part = aux_meta.get_part("block_1");
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 0.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 0.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
@@ -1257,9 +1107,9 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    randomize_ls_field(mesh, ls_policy.ls_field_ref(), mt, dist);
-    set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), ls_policy.ls_field_ref(), 1.);
-    stk::mesh::communicate_field_data(mesh, {&ls_policy.ls_field_ref().field(), &coord_field.field()});
+    randomize_ls_field(mesh, get_ls_field(), mt, dist);
+    set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), get_ls_field(), 1.);
+    stk::mesh::communicate_field_data(mesh, {&get_ls_field().field(), &coord_field.field()});
 
     try
     {
@@ -1312,7 +1162,7 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
             << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
-typedef CompleteDecompositionFixture<BoundingBoxMeshTri3, LSPerPhasePolicy<3>>
+typedef CompleteDecompositionFixture<BoundingBoxMeshTri3, LSPerPhasePolicy, 3>
     CDMeshTestsBboxMesh2DLSPerPhase;
 TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
 {
@@ -1329,22 +1179,19 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
       SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
-  setup_ls_field();
-
   auto & block1_part = aux_meta.get_part("block_1");
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 0.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 0.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
-  fixture.create_domain_sides();
   stk::mesh::BulkData & mesh = fixture.bulk_data();
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(), &aux_meta.active_part()});
 
-  const auto & lsFields = ls_policy.ls_fields();
+  const auto & lsFields = levelset_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
   for (auto && lsField : lsFields)
     sync_fields.push_back(&lsField.isovar.field());
@@ -1419,7 +1266,7 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
             << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
-typedef CompleteDecompositionFixture<BoundingBoxMeshTet4, LSPerInterfacePolicy<1>> CDMeshTestsBboxMesh3D;
+typedef CompleteDecompositionFixture<BoundingBoxMeshTet4, LSPerInterfacePolicy, 1> CDMeshTestsBboxMesh3D;
 TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -1435,13 +1282,11 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
       SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
-  setup_ls_field();
-
   auto & block1_part = aux_meta.get_part("block_1");
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 1.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 1.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.populate_mesh();
@@ -1470,9 +1315,9 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    randomize_ls_field(mesh, ls_policy.ls_field_ref(), mt, dist);
-    set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), ls_policy.ls_field_ref(), 1.);
-    stk::mesh::communicate_field_data(mesh, {&ls_policy.ls_field_ref().field(), &coord_field.field()});
+    randomize_ls_field(mesh, get_ls_field(), mt, dist);
+    set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), get_ls_field(), 1.);
+    stk::mesh::communicate_field_data(mesh, {&get_ls_field().field(), &coord_field.field()});
 
     try
     {
@@ -1525,7 +1370,7 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
             << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
-typedef CompleteDecompositionFixture<BoundingBoxMeshTet4, LSPerInterfacePolicy<1>> CDMeshTestsBboxMesh3DBCC;
+typedef CompleteDecompositionFixture<BoundingBoxMeshTet4, LSPerInterfacePolicy, 1> CDMeshTestsBboxMesh3DBCC;
 TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -1541,13 +1386,11 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
       SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   const double approxMinRelativeSize = 0.25;
 
-  setup_ls_field();
-
   auto & block1_part = aux_meta.get_part("block_1");
 
   register_ls_on_blocks({&block1_part});
 
-  typename BoundingBoxMesh::BoundingBoxType domain(Vector3d::ZERO, Vector3d(1., 1., 1.));
+  typename BoundingBoxMesh::BoundingBoxType domain(stk::math::Vector3d::ZERO, stk::math::Vector3d(1., 1., 1.));
   const double mesh_size = 1. / 3.;
   fixture.set_domain(domain, mesh_size);
   fixture.set_mesh_structure_type(BCC_BOUNDING_BOX_MESH);
@@ -1579,9 +1422,9 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    randomize_ls_field(mesh, ls_policy.ls_field_ref(), mt, dist);
-    set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), ls_policy.ls_field_ref(), 1.);
-    stk::mesh::communicate_field_data(mesh, {&ls_policy.ls_field_ref().field(), &coord_field.field()});
+    randomize_ls_field(mesh, get_ls_field(), mt, dist);
+    set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), get_ls_field(), 1.);
+    stk::mesh::communicate_field_data(mesh, {&get_ls_field().field(), &coord_field.field()});
 
     try
     {
@@ -1634,7 +1477,7 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
             << ", maxVolume=" << overallMaxVolume << std::endl;
 }
 
-class CDMeshTestsRightTri3LSPerPhase : public DecompositionFixture<RightTri, LSPerPhasePolicy<3>>
+class CDMeshTestsRightTri3LSPerPhase : public DecompositionFixture<RightTri, LSPerPhasePolicy, 3>
 {
 public:
 CDMeshTestsRightTri3LSPerPhase()
@@ -1652,7 +1495,7 @@ TEST_F(CDMeshTestsRightTri3LSPerPhase, Tri3_3LS_SnappedTriplePoint)
 
   cdfem_support().set_cdfem_edge_tol(0.15);
 
-  set_level_sets(mMesh, lsPolicy.ls_fields(),
+  set_level_sets(mMesh, levelset_fields(),
       get_ids_of_nodes_with_given_indices({0, 1, 2}),
       {{0.0, 0.1, 0.2}, {0.0, -0.2, -0.25}, {0.0, -0.01, -0.005}});
 
@@ -1683,7 +1526,7 @@ TEST_F(CDMeshTestsRightTri3LSPerPhase, Tri3_3LS_TriplePointDebug)
 
   cdfem_support().set_cdfem_edge_tol(0.01);
 
-  set_level_sets(mMesh, lsPolicy.ls_fields(),
+  set_level_sets(mMesh, levelset_fields(),
       get_ids_of_nodes_with_given_indices({0, 1, 2}),
       {{-0.2, 0.7, 0.1}, {0.1, -0.5, 0.3}, {0.6, 0.4, -0.5}});
 
@@ -1694,7 +1537,7 @@ TEST_F(CDMeshTestsRightTri3LSPerPhase, Tri3_3LS_TriplePointDebug)
   std::remove("debug_2d.e");
 }
 
-class TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture : public DecompositionFixture<TwoRightTrisSharingDiagonal, LSPerPhasePolicy<3>>
+class TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture : public DecompositionFixture<TwoRightTrisSharingDiagonal, LSPerPhasePolicy, 3>
 {
 public:
 TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture()
@@ -1714,7 +1557,7 @@ TEST_F(TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture, Random_TwoTri3_In
 
   cdfem_support().set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
 
-  const auto & lsFields = lsPolicy.ls_fields();
+  const auto & lsFields = levelset_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&get_coordinates_field().field()};
   for (auto && ls_field : lsFields)
     sync_fields.push_back(&ls_field.isovar.field());
@@ -1749,7 +1592,7 @@ TEST_F(TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture, Random_TwoTri3_In
   }
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<3>>
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy, 3>
     CDMeshTests3DLSPerInterface;
 TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
 {
@@ -1771,8 +1614,6 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
   cdfemSupport.set_cdfem_edge_tol(0.1);
   cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
 
-  setup_ls_field();
-
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
 
@@ -1785,7 +1626,7 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const auto & ls_fields = ls_policy.ls_fields();
+  const auto & ls_fields = levelset_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
   for (auto && ls_field : ls_fields)
     sync_fields.push_back(&ls_field.isovar.field());
@@ -1842,7 +1683,7 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
   }
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<3>>
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy, 3>
     CDMeshTests3DLSPerInterface;
 TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
 {
@@ -1864,8 +1705,6 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
   cdfemSupport.set_cdfem_edge_tol(0.001);
   cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_NEAREST_EDGE_CUT);
 
-  setup_ls_field();
-
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
 
@@ -1882,7 +1721,7 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
       mesh.get_entity(stk::topology::NODE_RANK, 2),
       mesh.get_entity(stk::topology::NODE_RANK, 3),
       mesh.get_entity(stk::topology::NODE_RANK, 4)}};
-  const auto & ls_fields = ls_policy.ls_fields();
+  const auto & ls_fields = levelset_fields();
   *field_data<double>(ls_fields[0].isovar, nodes[0]) = -1;
   *field_data<double>(ls_fields[0].isovar, nodes[1]) = 1.;
   *field_data<double>(ls_fields[0].isovar, nodes[2]) = 2.;
@@ -1909,7 +1748,7 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
   EXPECT_GT(quality, goldQuality);
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerPhasePolicy<3>>
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerPhasePolicy, 3>
     CDMeshTests3DLSPerPhase;
 TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
 {
@@ -1928,8 +1767,6 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
   cdfemSupport.set_cdfem_edge_tol(0.1);
   cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
 
-  setup_ls_field();
-
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
@@ -1947,7 +1784,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const auto & ls_fields = ls_policy.ls_fields();
+  const auto & ls_fields = levelset_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
   for (auto && ls_field : ls_fields)
     sync_fields.push_back(&ls_field.isovar.field());
@@ -2015,8 +1852,6 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
   cdfemSupport.set_cdfem_edge_degeneracy_handling(
       SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
 
-  setup_ls_field();
-
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
@@ -2034,7 +1869,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const auto & ls_fields = ls_policy.ls_fields();
+  const auto & ls_fields = levelset_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
   for (auto && ls_field : ls_fields)
     sync_fields.push_back(&ls_field.isovar.field());
@@ -2107,8 +1942,6 @@ TEST_F(CDMeshTests3DLSPerPhase, RestoreAfterFailedStep)
   cdfemSupport.set_cdfem_edge_tol(0.1);
   cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
 
-  setup_ls_field();
-
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
   auto & block1_part = declare_input_block("block_1", tet4);
   auto & block2_part = declare_input_block("block_2", tet4);
@@ -2126,7 +1959,7 @@ TEST_F(CDMeshTests3DLSPerPhase, RestoreAfterFailedStep)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const auto & ls_fields = ls_policy.ls_fields();
+  const auto & ls_fields = levelset_fields();
   std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
   for (auto && ls_field : ls_fields)
     sync_fields.push_back(&ls_field.isovar.field());
@@ -2186,7 +2019,7 @@ TEST_F(CDMeshTests3DLSPerPhase, RestoreAfterFailedStep)
   }
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<1>> CDMeshTests3D;
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy, 1> CDMeshTests3D;
 
 TEST_F(CDMeshTests3D, Rebalance_with_rcb)
 {
@@ -2199,7 +2032,7 @@ TEST_F(CDMeshTests3D, Rebalance_with_parmetis)
     run_rebalance_with("parmetis");
 }
 
-typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy<1>> MeshCloneTest;
+typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerInterfacePolicy, 1> MeshCloneTest;
 TEST_F(MeshCloneTest, FaceOwnershipAndPartChangeBetweenClones)
 {
   /*

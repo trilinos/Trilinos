@@ -801,7 +801,11 @@ namespace Tpetra {
     using std::endl;
     using Details::getDualViewCopyFromArrayView;
     using Details::ProfilingRegion;
-    const char funcName[] = "Tpetra::DistObject::doTransfer";
+
+    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
+    const char funcNameHost[] = "Tpetra::DistObject::beginTransfer[Host]";
+    const char funcNameDevice[] = "Tpetra::DistObject::beginTransfer[Device]";
+    const char *funcName = commOnHost ? funcNameHost : funcNameDevice;
 
     ProfilingRegion region_doTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
@@ -906,7 +910,6 @@ namespace Tpetra {
        "cannot have permutes in restricted mode.");
 
     // Do we need all communication buffers to live on host?
-    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "doTransfer: Use new interface; "
@@ -1157,8 +1160,11 @@ namespace Tpetra {
     using std::endl;
     using Details::getDualViewCopyFromArrayView;
     using Details::ProfilingRegion;
-    const char funcName[] = "Tpetra::DistObject::doTransfer";
 
+    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
+    const char funcNameHost[] = "Tpetra::DistObject::endTransfer[Host]";
+    const char funcNameDevice[] = "Tpetra::DistObject::endTransfer[Device]";
+    const char *funcName = commOnHost ? funcNameHost : funcNameDevice;
     ProfilingRegion region_doTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
     std::shared_ptr<std::string> prefix;
@@ -1261,7 +1267,6 @@ namespace Tpetra {
        "cannot have permutes in restricted mode.");
 
     // Do we need all communication buffers to live on host?
-    const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "doTransfer: Use new interface; "
@@ -1491,7 +1496,7 @@ namespace Tpetra {
            numImportPacketsPerLID_av);
       }
       else { // pack on device
-        Kokkos::fence(); // for UVM
+        Kokkos::fence("DistObject::doPosts-1"); // for UVM
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
@@ -1536,7 +1541,7 @@ namespace Tpetra {
            this->imports_.view_host ());
       }
       else { // pack on device
-        Kokkos::fence(); // for UVM
+        Kokkos::fence("DistObject::doPosts-2"); // for UVM
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
@@ -1681,6 +1686,34 @@ namespace Tpetra {
      buffer_device_type>&,
    const CombineMode CM)
   {}
+
+// clang-format on
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
+    const SrcDistObject &source, const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &permuteFromLIDs,
+    const CombineMode CM, const execution_space &space) {
+  /*
+  This is called if the derived class doesn't know how to pack and prepare in
+  an arbitrary execution space instance, but it was asked to anyway.
+  Provide a safe illusion by actually doing the work in the default instance,
+  and syncing the default instance with the provided instance.
+  The caller expects
+  1. any work in the provided instance to complete before this.
+  2. This to complete before any following work in the provided instance.
+  */
+
+  space.fence(); // // TODO: Tpetra::Details::Spaces::exec_space_wait
+  copyAndPermute(source, numSameIDs, permuteToLIDs, permuteFromLIDs,
+                 CM);        // default instance
+  execution_space().fence(); // TODO:
+                             // Tpetra::Details::Spaces::exec_space_wait
+}
+// clang-format off
+
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

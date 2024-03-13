@@ -6,10 +6,11 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -17,13 +18,13 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.02
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -58,10 +59,11 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -69,13 +71,13 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.02
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -111,7 +113,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.45
-Smoother complexity = 1.78
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
@@ -134,10 +136,11 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -170,10 +173,11 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -181,13 +185,13 @@ algorithm = "classical": threshold = 0.02, blocksize = 1
 Lumping dropped entries
 aggregation: drop tol = 0.02
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -223,7 +227,7 @@ Replacing maps with a subcommunicator
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.45
-Smoother complexity = 1.78
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
@@ -243,7 +247,7 @@ presmoother ->
  Amesos2 -> 
   [empty list]
 Build (MueLu::RebalanceTransferFactory)
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::TentativePFactory_kokkos)
 matrixmatrix: kernel params -> 
  [empty list]

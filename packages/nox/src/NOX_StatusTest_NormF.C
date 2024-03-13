@@ -139,7 +139,7 @@ void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
   {
     utils.err() << "NOX::StatusTest::NormF::NormF - Unable to compute F"
         << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   initialTolerance = computeNorm(initialGuess);

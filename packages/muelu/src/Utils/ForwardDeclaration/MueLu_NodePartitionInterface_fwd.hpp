@@ -50,8 +50,8 @@
 #if defined(HAVE_MPI)
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class NodePartitionInterface;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class NodePartitionInterface;
 }
 
 #ifndef MUELU_NODEPARTITIONINTERFACE_SHORT
@@ -60,4 +60,4 @@ namespace MueLu {
 
 #endif
 
-#endif // MUELU_NODEPARTITIONINTERFACE_FWD_HPP
+#endif  // MUELU_NODEPARTITIONINTERFACE_FWD_HPP

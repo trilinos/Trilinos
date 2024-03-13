@@ -62,13 +62,13 @@ bool
 LocalFilter<MatrixType>::
 mapPairsAreFitted (const row_matrix_type& A)
 {
-  const map_type& rangeMap = * (A.getRangeMap ());
-  const map_type& rowMap = * (A.getRowMap ());
-  const bool rangeAndRowFitted = mapPairIsFitted (rowMap, rangeMap);
+  const auto rangeMap = A.getRangeMap();
+  const auto rowMap = A.getRowMap();
+  const bool rangeAndRowFitted = mapPairIsFitted (*rowMap, *rangeMap);
 
-  const map_type& domainMap = * (A.getDomainMap ());
-  const map_type& columnMap = * (A.getColMap ());
-  const bool domainAndColumnFitted = mapPairIsFitted (columnMap, domainMap);
+  const auto domainMap = A.getDomainMap();
+  const auto columnMap = A.getColMap();
+  const bool domainAndColumnFitted = mapPairIsFitted (*columnMap, *domainMap);
 
   //Note BMK 6-22: Map::isLocallyFitted is a local-only operation, not a collective.
   //This means that it can return different values on different ranks. This can cause MPI to hang,
@@ -147,13 +147,8 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // of entries, namely, that of the local number of entries of A's
   // range Map.
 
-  const size_t numRows = A_->getRangeMap()->getLocalNumElements ();
-
-  // using std::cerr;
-  // using std::endl;
-  // cerr << "A_ has " << A_->getLocalNumRows () << " rows." << endl
-  //      << "Range Map has " << A_->getRangeMap ()->getLocalNumElements () << " entries." << endl
-  //      << "Row Map has " << A_->getRowMap ()->getLocalNumElements () << " entries." << endl;
+  const int blockSize = getBlockSize();
+  const size_t numRows = A_->getRangeMap()->getLocalNumElements () / blockSize;
 
   const global_ordinal_type indexBase = static_cast<global_ordinal_type> (0);
 
@@ -172,7 +167,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
     localDomainMap_ = localRangeMap_;
   }
   else {
-    const size_t numCols = A_->getDomainMap()->getLocalNumElements ();
+    const size_t numCols = A_->getDomainMap()->getLocalNumElements () / blockSize;
     localDomainMap_ =
       rcp (new map_type (numCols, indexBase, localComm,
                          Tpetra::GloballyDistributed));
@@ -191,7 +186,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // Allocate temporary arrays for getLocalRowCopy().
   Kokkos::resize(localIndices_,MaxNumEntries_);
   Kokkos::resize(localIndicesForGlobalCopy_,MaxNumEntries_);
-  Kokkos::resize(Values_,MaxNumEntries_);
+  Kokkos::resize(Values_,MaxNumEntries_*blockSize*blockSize);
 
   // now compute:
   // - the number of nonzero per row
@@ -296,10 +291,28 @@ Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getGraph () const
 {
-  // FIXME (mfh 20 Nov 2013) This is not what the documentation says
-  // this method should do!  It should return the graph of the locally
-  // filtered matrix, not the original matrix's graph.
-  return A_->getGraph ();
+  if (local_graph_ == Teuchos::null) {
+    local_ordinal_type numRows = this->getLocalNumRows();
+    Teuchos::Array<size_t> entriesPerRow(numRows);
+    for(local_ordinal_type i = 0; i < numRows; i++) {
+      entriesPerRow[i] = this->getNumEntriesInLocalRow(i);
+    }
+    Teuchos::RCP<crs_graph_type> local_graph_nc =
+      Teuchos::rcp (new crs_graph_type (this->getRowMap (),
+                                        this->getColMap (),
+                                        entriesPerRow()));
+    // copy local indexes into local graph
+    nonconst_local_inds_host_view_type indices("indices",this->getLocalMaxNumRowEntries());
+    nonconst_values_host_view_type values("values",this->getLocalMaxNumRowEntries());
+    for(local_ordinal_type i = 0; i < numRows; i++) {
+      size_t numEntries = 0;
+      this->getLocalRowCopy(i, indices, values, numEntries); // get indices & values
+      local_graph_nc->insertLocalIndices (i, numEntries, indices.data());
+    }
+    local_graph_nc->fillComplete (this->getDomainMap (), this->getRangeMap ());
+    local_graph_ = Teuchos::rcp_const_cast<const crs_graph_type> (local_graph_nc);
+  }
+  return local_graph_;
 }
 
 
@@ -352,6 +365,11 @@ size_t LocalFilter<MatrixType>::getLocalNumEntries () const
   return NumNonzeros_;
 }
 
+template<class MatrixType>
+typename MatrixType::local_ordinal_type LocalFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
 
 template<class MatrixType>
 size_t
@@ -504,10 +522,11 @@ getLocalRowCopy (local_ordinal_type LocalRow,
     return;
   }
 
+  const LO blockNumEntr = getBlockSize() * getBlockSize();
 
   const size_t numEntInLclRow = NumEntries_[LocalRow];
   if (static_cast<size_t> (Indices.size ()) < numEntInLclRow ||
-      static_cast<size_t> (Values.size ()) < numEntInLclRow) {
+      static_cast<size_t> (Values.size ()) < numEntInLclRow*blockNumEntr) {
     // FIXME (mfh 07 Jul 2014) Return an error code instead of
     // throwing.  We should really attempt to fill as much space as
     // we're given, in this case.
@@ -547,7 +566,7 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   const map_type& matrixColMap = * (A_->getColMap ());
 
   const size_t capacity = static_cast<size_t> (std::min (Indices.size (),
-                                                         Values.size ()));
+                                                         Values.size ()/blockNumEntr));
   NumEntries = 0;
   const size_t numRows = localRowMap_->getLocalNumElements (); // superfluous
   const bool buggy = true; // mfh 07 Jul 2014: See FIXME below.
@@ -569,7 +588,8 @@ getLocalRowCopy (local_ordinal_type LocalRow,
       // only local indices
       if ((size_t) localIndices_[j] < numRows) {
         Indices[NumEntries] = localIndices_[j];
-        Values[NumEntries]  = Values_[j];
+        for (LO k=0;k<blockNumEntr;++k)
+          Values[NumEntries*blockNumEntr + k]  = Values_[j*blockNumEntr + k];
         NumEntries++;
       }
     } else {
@@ -579,7 +599,8 @@ getLocalRowCopy (local_ordinal_type LocalRow,
         // overwrite memory that doesn't belong to us.
         if (NumEntries < capacity) {
           Indices[NumEntries] = matrixLclCol;
-          Values[NumEntries]  = Values_[j];
+          for (LO k=0;k<blockNumEntr;++k)
+            Values[NumEntries*blockNumEntr + k]  = Values_[j*blockNumEntr + k];
         }
         NumEntries++;
       }
@@ -678,6 +699,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::LocalFilter::apply: The 1-norm of the input X is NaN or Inf.");
   }
 #endif // HAVE_IFPACK2_DEBUG
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    getBlockSize() > 1, std::runtime_error,
+    "Ifpack2::LocalFilter::apply: Block size greater than zero is not yet supported for "
+    "LocalFilter::apply. Please contact an Ifpack2 developer to request this feature.");
 
   if (&X == &Y) {
     // FIXME (mfh 23 Apr 2014) We have to do more work to figure out
@@ -845,13 +871,14 @@ typename
 LocalFilter<MatrixType>::mag_type
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
-  typedef Kokkos::Details::ArithTraits<scalar_type> STS;
-  typedef Kokkos::Details::ArithTraits<mag_type> STM;
+  typedef Kokkos::ArithTraits<scalar_type> STS;
+  typedef Kokkos::ArithTraits<mag_type> STM;
   typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
   const size_type maxNumRowEnt = getLocalMaxNumRowEntries ();
+  const local_ordinal_type blockNumEntr = getBlockSize() * getBlockSize();
   nonconst_local_inds_host_view_type ind ("ind",maxNumRowEnt);
-  nonconst_values_host_view_type val ("val",maxNumRowEnt);
+  nonconst_values_host_view_type val ("val",maxNumRowEnt*blockNumEntr);
   const size_t numRows = static_cast<size_t> (localRowMap_->getLocalNumElements ());
 
   // FIXME (mfh 03 Apr 2013) Scale during sum to avoid overflow.
@@ -859,7 +886,7 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
   for (size_t i = 0; i < numRows; ++i) {
     size_t numEntries = 0;
     this->getLocalRowCopy (i, ind, val, numEntries);
-    for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
+    for (size_type k = 0; k < static_cast<size_type> (numEntries*blockNumEntr); ++k) {
       const mag_type v_k_abs = STS::magnitude (val[k]);
       sumSquared += v_k_abs * v_k_abs;
     }

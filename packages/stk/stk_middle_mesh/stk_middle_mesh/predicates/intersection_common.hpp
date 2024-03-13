@@ -7,6 +7,18 @@
 
 namespace stk {
 namespace middle_mesh {
+namespace nonconformal4 {
+namespace impl {
+
+class MeshRelationalDataScatter;
+
+}
+}
+}
+}
+
+namespace stk {
+namespace middle_mesh {
 namespace predicates {
 namespace impl {
 
@@ -91,6 +103,8 @@ struct PointRecordForTriangle
     friend PointClassifierForTriangle;
     friend TriangleCoordUtils;
     friend QuadToTriangles;
+    friend class stk::middle_mesh::nonconformal4::impl::MeshRelationalDataScatter;
+
     friend std::ostream& operator<<(std::ostream& os, const PointRecordForTriangle& record);
 };
 
@@ -130,6 +144,7 @@ struct PointRecord
     friend PointClassifier; // TODO: maybe find a way to not use friends
     friend QuadToTriangles;
     friend PointClassifierNormalWrapper;
+    friend class stk::middle_mesh::nonconformal4::impl::MeshRelationalDataScatter;
 
     friend std::ostream& operator<<(std::ostream& os, const PointRecord& record);
 };

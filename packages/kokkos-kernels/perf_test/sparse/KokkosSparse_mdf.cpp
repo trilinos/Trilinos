@@ -19,15 +19,14 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_IOUtils.hpp"
 #include "KokkosSparse_Utils_cusparse.hpp"
-#include "KokkosSparse_mdf.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_perf_test_utilities.hpp"
 
-struct Params {
-  int use_cuda    = 0;
-  int use_hip     = 0;
-  int use_sycl    = 0;
-  int use_openmp  = 0;
-  int use_threads = 0;
+#include "KokkosSparse_mdf.hpp"
+
+using perf_test::CommonInputParams;
+
+struct LocalParams {
   std::string amtx;
   int m         = 10000;
   int n         = 10000;
@@ -54,8 +53,61 @@ struct diag_generator_functor {
   }
 };
 
-template <typename crsMat_t>
-void run_experiment(const Params& params) {
+void print_options() {
+  std::cerr << "Options\n" << std::endl;
+
+  std::cerr << perf_test::list_common_options();
+
+  std::cerr << "\t[Optional] --amtx <path> :: input matrix" << std::endl;
+  std::cerr << "\t[Optional] --repeat      :: how many times to repeat overall "
+               "MDF"
+            << std::endl;
+  std::cerr << "\t[Optional] --verbose     :: enable verbose output"
+            << std::endl;
+  std::cerr << "\nSettings for randomly generated A matrix" << std::endl;
+  std::cerr << "\t[Optional] --m           :: number of rows to generate"
+            << std::endl;
+  std::cerr << "\t[Optional] --n           :: number of cols to generate"
+            << std::endl;
+  std::cerr
+      << "\t[Optional] --nnz         :: number of entries per row to generate"
+      << std::endl;
+  std::cerr << "\t[Optional] --diag        :: generate a diagonal matrix"
+            << std::endl;
+}  // print_options
+
+int parse_inputs(LocalParams& params, int argc, char** argv) {
+  for (int i = 1; i < argc; ++i) {
+    if (perf_test::check_arg_str(i, argc, argv, "--amtx", params.amtx)) {
+      ++i;
+    } else if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
+      ++i;
+    } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
+      ++i;
+    } else if (perf_test::check_arg_int(i, argc, argv, "--nnz",
+                                        params.nnzPerRow)) {
+      ++i;
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--diag",
+                                         params.diag)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--repeat",
+                                        params.repeat)) {
+      ++i;
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose",
+                                         params.verbose)) {
+    } else {
+      std::cerr << "Unrecognized command line argument #" << i << ": "
+                << argv[i] << std::endl;
+      print_options();
+      return 1;
+    }
+  }
+  return 0;
+}  // parse_inputs
+
+template <typename execution_space>
+void run_experiment(int argc, char** argv, CommonInputParams /*params*/) {
+  using crsMat_t =
+      KokkosSparse::CrsMatrix<double, int, execution_space, void, int>;
   using size_type  = typename crsMat_t::size_type;
   using lno_t      = typename crsMat_t::ordinal_type;
   using scalar_t   = typename crsMat_t::value_type;
@@ -67,19 +119,22 @@ void run_experiment(const Params& params) {
   using entries_t = typename graph_t::entries_type::non_const_type;
   using values_t  = typename crsMat_t::values_type::non_const_type;
 
+  LocalParams localParams;
+  parse_inputs(localParams, argc, argv);
+
   std::cout << "************************************* \n";
   std::cout << "************************************* \n";
   crsMat_t A;
-  lno_t m = params.m;
-  lno_t n = params.n;
-  if (params.amtx.length()) {
-    std::cout << "Loading A from " << params.amtx << '\n';
+  lno_t m = localParams.m;
+  lno_t n = localParams.n;
+  if (localParams.amtx.length()) {
+    std::cout << "Loading A from " << localParams.amtx << '\n';
     A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
-        params.amtx.c_str());
+        localParams.amtx.c_str());
     m = A.numRows();
     n = A.numCols();
   } else {
-    if (params.diag) {
+    if (localParams.diag) {
       std::cout << "Randomly generating diag matrix\n";
       rowmap_t rowmapA("A row map", m + 1);
       entries_t entriesA("A entries", m);
@@ -100,13 +155,13 @@ void run_experiment(const Params& params) {
       A = crsMat_t("A matrix", m, valuesA, graph);
     } else {
       std::cout << "Randomly generating matrix\n";
-      size_type nnzUnused = m * params.nnzPerRow;
+      size_type nnzUnused = m * localParams.nnzPerRow;
       A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
           m, n, nnzUnused, 0, (n + 3) / 3);
     }
   }
 
-  if (params.verbose) {
+  if (localParams.verbose) {
     std::cout << "Matrix A" << std::endl;
     std::cout << "  row_map A:" << std::endl;
     KokkosKernels::Impl::print_1Dview(A.graph.row_map);
@@ -125,9 +180,12 @@ void run_experiment(const Params& params) {
   timer.reset();
   KokkosSparse::Experimental::MDF_handle<crsMat_t> handle(A);
   handle.set_verbosity(0);
+  if (localParams.verbose) {
+    handle.set_verbosity(1);
+  }
   handleTime += timer.seconds();
 
-  for (int sumRep = 0; sumRep < params.repeat; sumRep++) {
+  for (int sumRep = 0; sumRep < localParams.repeat; sumRep++) {
     timer.reset();
     KokkosSparse::Experimental::mdf_symbolic(A, handle);
     Kokkos::fence();
@@ -140,16 +198,16 @@ void run_experiment(const Params& params) {
   }
 
   std::cout << "Mean total time:    "
-            << handleTime + (symbolicTime / params.repeat) +
-                   (numericTime / params.repeat)
+            << handleTime + (symbolicTime / localParams.repeat) +
+                   (numericTime / localParams.repeat)
             << std::endl
             << "Handle time: " << handleTime << std::endl
-            << "Mean symbolic time: " << (symbolicTime / params.repeat)
+            << "Mean symbolic time: " << (symbolicTime / localParams.repeat)
             << std::endl
-            << "Mean numeric time:  " << (numericTime / params.repeat)
+            << "Mean numeric time:  " << (numericTime / localParams.repeat)
             << std::endl;
 
-  if (params.verbose) {
+  if (localParams.verbose) {
     entries_t permutation = handle.get_permutation();
 
     std::cout << "MDF permutation:" << std::endl;
@@ -157,164 +215,8 @@ void run_experiment(const Params& params) {
   }
 }  // run_experiment
 
-void print_options() {
-  std::cerr << "Options\n" << std::endl;
-
-  std::cerr
-      << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp "
-         "[numThreads]' | '--cuda [cudaDeviceIndex]' | '--hip [hipDeviceIndex]'"
-         " | '--sycl [syclDeviceIndex]'"
-      << std::endl;
-
-  std::cerr << "\t[Optional] --amtx <path> :: input matrix" << std::endl;
-  std::cerr << "\t[Optional] --repeat      :: how many times to repeat overall "
-               "MDF"
-            << std::endl;
-  std::cerr << "\t[Optional] --verbose     :: enable verbose output"
-            << std::endl;
-  std::cerr << "\nSettings for randomly generated A matrix" << std::endl;
-  std::cerr << "\t[Optional] --m           :: number of rows to generate"
-            << std::endl;
-  std::cerr << "\t[Optional] --n           :: number of cols to generate"
-            << std::endl;
-  std::cerr
-      << "\t[Optional] --nnz         :: number of entries per row to generate"
-      << std::endl;
-  std::cerr << "\t[Optional] --diag        :: generate a diagonal matrix"
-            << std::endl;
-}  // print_options
-
-int parse_inputs(Params& params, int argc, char** argv) {
-  for (int i = 1; i < argc; ++i) {
-    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
-      params.use_threads = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
-      params.use_openmp = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
-      params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
-      params.use_hip = atoi(argv[++i]) + 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--sycl")) {
-      params.use_sycl = atoi(argv[++i]) + 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
-      params.amtx = argv[++i];
-    } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
-      params.m = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--n")) {
-      params.n = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--nnz")) {
-      params.nnzPerRow = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--diag")) {
-      params.diag = true;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
-      params.repeat = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
-      params.verbose = true;
-    } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
-      print_options();
-      return 1;
-    }
-  }
-  return 0;
-}  // parse_inputs
-
+#define KOKKOSKERNELS_PERF_TEST_NAME run_experiment
+#include "KokkosKernels_perf_test_instantiation.hpp"
 int main(int argc, char** argv) {
-  Params params;
-
-  if (parse_inputs(params, argc, argv)) {
-    return 1;
-  }
-  const int num_threads =
-      std::max(params.use_openmp,
-               params.use_threads);  // Assumption is that use_openmp variable
-                                     // is provided as number of threads
-
-  // If cuda, hip or sycl is used, set device_id
-  int device_id = 0;
-  if (params.use_cuda > 0) {
-    device_id = params.use_cuda - 1;
-  }
-  if (params.use_hip > 0) {
-    device_id = params.use_hip - 1;
-  }
-  if (params.use_sycl > 0) {
-    device_id = params.use_sycl - 1;
-  }
-
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
-
-  bool useOMP     = params.use_openmp != 0;
-  bool useThreads = params.use_threads != 0;
-  bool useCUDA    = params.use_cuda != 0;
-  bool useHIP     = params.use_hip != 0;
-  bool useSYCL    = params.use_sycl != 0;
-  bool useSerial  = !useOMP && !useCUDA && !useHIP && !useSYCL;
-
-  if (useOMP) {
-#if defined(KOKKOS_ENABLE_OPENMP)
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::OpenMP, void, int>;
-    run_experiment<crsMat_t>(params);
-#else
-    std::cout << "ERROR: OpenMP requested, but not available.\n";
-    return 1;
-#endif
-  }
-  if (useThreads) {
-#if defined(KOKKOS_ENABLE_THREADS)
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Threads, void, int>;
-    run_experiment<crsMat_t>(params);
-#else
-    std::cout << "ERROR: OpenMP requested, but not available.\n";
-    return 1;
-#endif
-  }
-  if (useCUDA) {
-#if defined(KOKKOS_ENABLE_CUDA)
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Cuda, void, int>;
-    run_experiment<crsMat_t>(params);
-#else
-    std::cout << "ERROR: CUDA requested, but not available.\n";
-    return 1;
-#endif
-  }
-  if (useHIP) {
-#if defined(KOKKOS_ENABLE_HIP)
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::HIP, void, int>;
-    run_experiment<crsMat_t>(params);
-#else
-    std::cout << "ERROR: HIP requested, but not available.\n";
-    return 1;
-#endif
-  }
-  if (useSYCL) {
-#if defined(KOKKOS_ENABLE_SYCL)
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Experimental::SYCL, void,
-                                int>;
-    run_experiment<crsMat_t>(params);
-#else
-    std::cout << "ERROR: SYCL requested, but not available.\n";
-    return 1;
-#endif
-  }
-  if (useSerial) {
-#if defined(KOKKOS_ENABLE_SERIAL)
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Serial, void, int>;
-    run_experiment<crsMat_t>(params);
-#else
-    std::cout << "ERROR: Serial device requested, but not available.\n";
-    return 1;
-#endif
-  }
-  Kokkos::finalize();
-  return 0;
+  return main_instantiation(argc, argv);
 }  // main

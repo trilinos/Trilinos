@@ -1,6 +1,6 @@
-#include "create_mesh.hpp"
-#include "gathered_mesh_coordinate_update.hpp"
-#include "mesh_gather_to_root.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/gathered_mesh_coordinate_update.hpp"
+#include "stk_middle_mesh/mesh_gather_to_root.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

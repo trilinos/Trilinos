@@ -3,8 +3,8 @@
 #ifndef STK_INTERFACE_EXODUS_WRITER
 #define STK_INTERFACE_EXODUS_WRITER
 
-#include "field.hpp"
-#include "mesh.hpp"
+#include "stk_middle_mesh/field.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "field_output_adaptor.hpp"
 
 #include "stk_io/DatabasePurpose.hpp"

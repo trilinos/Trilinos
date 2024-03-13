@@ -16,36 +16,32 @@ namespace Thyra {
 /** \brief Concrete <tt>PreconditionerFactoryBase</tt> subclass that
  * just returns an already created/initialized preconditioner object.
  */
-template<class Scalar>
+template <class Scalar>
 class ReusePreconditionerFactory
-  : virtual public PreconditionerFactoryBase<Scalar>
-{
-public:
-
+  : virtual public PreconditionerFactoryBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
   /** \brief Construct to uninitialized. */
   ReusePreconditionerFactory() {}
 
-  void initialize(
-    const RCP<PreconditionerBase<Scalar> > &prec
-    ) {
+  void initialize(const RCP<PreconditionerBase<Scalar> > &prec)
+  {
 #ifdef TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT(is_null(prec));
 #endif
     prec_ = prec;
   }
 
-  RCP<PreconditionerBase<Scalar> >
-  getNonconstPreconditioner() { return prec_; }
+  RCP<PreconditionerBase<Scalar> > getNonconstPreconditioner() { return prec_; }
 
-  RCP<const PreconditionerBase<Scalar> >
-  getPreconditioner() const { return prec_; }
-
-  void uninitialize() {
-    prec_ = Teuchos::null;
+  RCP<const PreconditionerBase<Scalar> > getPreconditioner() const
+  {
+    return prec_;
   }
+
+  void uninitialize() { prec_ = Teuchos::null; }
 
   /** \name Overridden from Teuchos::Describable. */
   //@{
@@ -53,8 +49,7 @@ public:
   std::string description() const
   {
     std::ostringstream oss;
-    oss << this->Teuchos::Describable::description()
-        << "{"
+    oss << this->Teuchos::Describable::description() << "{"
         << "prec=";
     if (!is_null(prec_))
       oss << prec_->description();
@@ -66,27 +61,17 @@ public:
 
   //@}
 
-  /** @name Overridden from ParameterListAcceptor (simple forwarding functions) */
+  /** @name Overridden from ParameterListAcceptor (simple forwarding functions)
+   */
   //@{
 
-  void setParameterList(RCP<ParameterList> const& /* paramList */)
-  {
-  }
+  void setParameterList(RCP<ParameterList> const & /* paramList */) {}
 
-  RCP<ParameterList> getNonconstParameterList()
-  {
-    return Teuchos::null;
-  }
+  RCP<ParameterList> getNonconstParameterList() { return Teuchos::null; }
 
-  RCP<ParameterList> unsetParameterList()
-  {
-    return Teuchos::null;
-  }
+  RCP<ParameterList> unsetParameterList() { return Teuchos::null; }
 
-  RCP<const ParameterList> getParameterList() const
-  {
-    return Teuchos::null;
-  }
+  RCP<const ParameterList> getParameterList() const { return Teuchos::null; }
 
   RCP<const ParameterList> getValidParameters() const
   {
@@ -100,46 +85,42 @@ public:
   /** @name Overridden from PreconditionerFactoryBase */
   //@{
 
-  bool isCompatible(const LinearOpSourceBase<Scalar> &/* fwdOpSrc */) const
-  { return false; }
+  bool isCompatible(const LinearOpSourceBase<Scalar> & /* fwdOpSrc */) const
+  {
+    return false;
+  }
 
-   RCP<PreconditionerBase<Scalar> > createPrec() const
-  { return prec_; }
+  RCP<PreconditionerBase<Scalar> > createPrec() const { return prec_; }
 
   void initializePrec(
-    const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
-    PreconditionerBase<Scalar> * /* precOp */,
-    const ESupportSolveUse /* supportSolveUse */ = SUPPORT_SOLVE_UNSPECIFIED
-    ) const
+      const RCP<const LinearOpSourceBase<Scalar> > & /* fwdOpSrc */,
+      PreconditionerBase<Scalar> * /* precOp */,
+      const ESupportSolveUse /* supportSolveUse */ =
+          SUPPORT_SOLVE_UNSPECIFIED) const
   {
   }
 
-  void uninitializePrec(
-    PreconditionerBase<Scalar> * /* precOp */,
-    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
-    ESupportSolveUse *supportSolveUse = NULL
-    ) const
+  void uninitializePrec(PreconditionerBase<Scalar> * /* precOp */,
+                        RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
+                        ESupportSolveUse *supportSolveUse                = NULL) const
   {
   }
 
   //@}
 
-private:
-
+ private:
   // //////////////////////////////
   // Private data members
 
-  RCP< PreconditionerBase<Scalar> > prec_;
-
+  RCP<PreconditionerBase<Scalar> > prec_;
 };
 
 /** \brief Nonmember constructor function.
  *
  * \relates ReusePreconditionerFactory
  */
-template<class Scalar>
-RCP<ReusePreconditionerFactory<Scalar> >
-reusePreconditionerFactory()
+template <class Scalar>
+RCP<ReusePreconditionerFactory<Scalar> > reusePreconditionerFactory()
 {
   return Teuchos::rcp(new ReusePreconditionerFactory<Scalar>());
 }
@@ -148,18 +129,16 @@ reusePreconditionerFactory()
  *
  * \relates ReusePreconditionerFactory
  */
-template<class Scalar>
-RCP<ReusePreconditionerFactory<Scalar> >
-reusePreconditionerFactory(
-  const RCP<PreconditionerBase<Scalar> > &prec
-  )
+template <class Scalar>
+RCP<ReusePreconditionerFactory<Scalar> > reusePreconditionerFactory(
+    const RCP<PreconditionerBase<Scalar> > &prec)
 {
-  RCP<ReusePreconditionerFactory<Scalar> >
-    fac = Teuchos::rcp(new ReusePreconditionerFactory<Scalar>());
+  RCP<ReusePreconditionerFactory<Scalar> > fac =
+      Teuchos::rcp(new ReusePreconditionerFactory<Scalar>());
   fac->initialize(prec);
   return fac;
 }
 
-}       // end namespace Thyra
+}  // end namespace Thyra
 
 #endif

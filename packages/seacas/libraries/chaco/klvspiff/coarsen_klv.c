@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -27,12 +27,12 @@ void coarsen_klv(
     int               nedges,       /* number of edges in graph */
     int               using_vwgts,  /* are vertices weights being used? */
     int               using_ewgts,  /* are edge weights being used? */
-    float *           term_wgts[],  /* weights for terminal propagation */
+    float            *term_wgts[],  /* weights for terminal propagation */
     int               igeom,        /* dimension for geometric information */
-    float **          coords,       /* coordinates for vertices */
+    float           **coords,       /* coordinates for vertices */
     int               vwgt_max,     /* largest vertex weight */
-    int *             assignment,   /* processor each vertex gets assigned to */
-    double *          goal,         /* desired set sizes */
+    int              *assignment,   /* processor each vertex gets assigned to */
+    double           *goal,         /* desired set sizes */
     int               architecture, /* 0 => hypercube, d => d-dimensional mesh */
     int (*hops)[MAXSETS],           /* cost of edge between sets */
     int     solver_flag,            /* which eigensolver to use */
@@ -44,12 +44,12 @@ void coarsen_klv(
     double  eigtol,                 /* tolerance in eigen calculation */
     int     nstep,                  /* number of coarsenings between RQI steps */
     int     step,                   /* current step number */
-    int **  pbndy_list,             /* pointer to returned boundary list */
+    int   **pbndy_list,             /* pointer to returned boundary list */
     double *weights,                /* weights of vertices in each set */
     int     give_up                 /* has coarsening bogged down? */
 )
 {
-  extern FILE *     Output_File;            /* output file or null */
+  extern FILE      *Output_File;            /* output file or null */
   extern int        DEBUG_TRACE;            /* trace the execution of the code */
   extern int        DEBUG_COARSEN;          /* debug flag for coarsening */
   extern double     COARSEN_RATIO_MIN;      /* vtx reduction demanded */
@@ -61,22 +61,22 @@ void coarsen_klv(
   extern double     KL_IMBALANCE;           /* fractional imbalance allowed in KL */
   struct vtx_data **cgraph;                 /* array of vtx data for coarsened graph */
   double            new_goal[MAXSETS];      /* new goal if not using vertex weights */
-  double *          real_goal;              /* chooses between goal and new_goal */
+  double           *real_goal;              /* chooses between goal and new_goal */
   double            total_weight;           /* total weight of vertices */
   double            goal_weight;            /* total weight of vertices in goal */
-  float *           cterm_wgts[MAXSETS];    /* terminal weights for coarse graph */
-  float *           new_term_wgts[MAXSETS]; /* modified for Bui's method */
-  float **          real_term_wgts;         /* which of previous two to use */
+  float            *cterm_wgts[MAXSETS];    /* terminal weights for coarse graph */
+  float            *new_term_wgts[MAXSETS]; /* modified for Bui's method */
+  float           **real_term_wgts;         /* which of previous two to use */
   float             ewgt_max;               /* largest edge weight in graph */
-  float *           twptr      = NULL;      /* loops through term_wgts */
-  float *           twptr_save = NULL;      /* copy of twptr */
-  float *           ctwptr;                 /* loops through cterm_wgts */
-  float **          ccoords;                /* coarse graph coordinates */
-  int *             v2cv;                   /* mapping from vtxs to coarse vtxs */
-  int *             flag;                   /* scatter array for coarse bndy vtxs */
-  int *             bndy_list;              /* list of vertices on boundary */
-  int *             cbndy_list;             /* list of vertices of coarse graph on boundary */
-  int *             cassignment;            /* set assignments for coarsened vertices */
+  float            *twptr      = NULL;      /* loops through term_wgts */
+  float            *twptr_save = NULL;      /* copy of twptr */
+  float            *ctwptr;                 /* loops through cterm_wgts */
+  float           **ccoords;                /* coarse graph coordinates */
+  int              *v2cv;                   /* mapping from vtxs to coarse vtxs */
+  int              *flag;                   /* scatter array for coarse bndy vtxs */
+  int              *bndy_list;              /* list of vertices on boundary */
+  int              *cbndy_list;             /* list of vertices of coarse graph on boundary */
+  int              *cassignment;            /* set assignments for coarsened vertices */
   int               flattened;              /* was this graph flattened? */
   int               list_length;            /* length of boundary vtx list */
   int               cnvtxs;                 /* number of vertices in coarsened graph */
@@ -85,12 +85,6 @@ void coarsen_klv(
   int               nextstep;               /* next step in RQI test */
   int               max_dev;                /* largest allowed deviation from balance */
   int               i, j;                   /* loop counters */
-  int               find_bndy(), flatten();
-  double            find_maxdeg();
-  void              makevwsqrt(), make_connected(), print_connected(), eigensolve();
-  void              make_unconnected(), assign(), klvspiff(), coarsen1(), free_graph();
-  void              compress_ewgts(), restore_ewgts(), count_weights(), bpm_improve();
-  void              simple_part();
 
   if (DEBUG_COARSEN > 0 || DEBUG_TRACE > 0) {
     printf("<Entering coarsen_kl, step=%d, nvtxs=%d, nedges=%d, vmax=%d>\n", step, nvtxs, nedges,

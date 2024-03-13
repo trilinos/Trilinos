@@ -44,7 +44,6 @@
 #ifndef ROL_TYPEB_LSecantBALGORITHM_DEF_HPP
 #define ROL_TYPEB_LSecantBALGORITHM_DEF_HPP
 
-#include "unistd.h"
 namespace ROL {
 namespace TypeB {
 
@@ -482,82 +481,82 @@ void LSecantBAlgorithm<Real>::applyFreePrecond(Vector<Real> &hv,
 
 template<typename Real>
 void LSecantBAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if (verbosity_ > 1) {
-    hist << std::string(114,'-') << std::endl;
-    hist << " L-Secant-B line search method status output definitions" << std::endl << std::endl;
-    hist << "  iter    - Number of iterates (steps taken)" << std::endl;
-    hist << "  value   - Objective function value" << std::endl; 
-    hist << "  gnorm   - Norm of the gradient" << std::endl;
-    hist << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  LSpar   - Line-Search parameter" << std::endl;
-    hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
-    hist << "  #grad   - Number of times the gradient was computed" << std::endl;
-    hist << "  #proj   - Number of times the projection was applied" << std::endl;
-    hist << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
-    hist << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
-    hist << "       0 - Converged" << std::endl;
-    hist << "       1 - Iteration Limit Exceeded" << std::endl;
-    hist << "       2 - Bounds Exceeded" << std::endl;
-    hist << std::string(114,'-') << std::endl;
+    os << std::string(114,'-') << std::endl;
+    os << " L-Secant-B line search method status output definitions" << std::endl << std::endl;
+    os << "  iter    - Number of iterates (steps taken)" << std::endl;
+    os << "  value   - Objective function value" << std::endl; 
+    os << "  gnorm   - Norm of the gradient" << std::endl;
+    os << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  LSpar   - Line-Search parameter" << std::endl;
+    os << "  #fval   - Number of times the objective function was evaluated" << std::endl;
+    os << "  #grad   - Number of times the gradient was computed" << std::endl;
+    os << "  #proj   - Number of times the projection was applied" << std::endl;
+    os << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
+    os << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
+    os << "       0 - Converged" << std::endl;
+    os << "       1 - Iteration Limit Exceeded" << std::endl;
+    os << "       2 - Bounds Exceeded" << std::endl;
+    os << std::string(114,'-') << std::endl;
   }
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "LSpar";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "#proj";
-  hist << std::setw(10) << std::left << "iterCG";
-  hist << std::setw(10) << std::left << "flagCG";
-  hist << std::endl;
-  os << hist.str();
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "LSpar";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "#proj";
+  os << std::setw(10) << std::left << "iterCG";
+  os << std::setw(10) << std::left << "flagCG";
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void LSecantBAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << "L-Secant-B Line-Search Method (Type B, Bound Constraints)" << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << "L-Secant-B Line-Search Method (Type B, Bound Constraints)" << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void LSecantBAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << "---";
+    os << std::setw(10) << std::left << "---";
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << SPiter_;
-    hist << std::setw(10) << std::left << SPflag_;
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << SPiter_;
+    os << std::setw(10) << std::left << SPflag_;
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 } // namespace TypeB

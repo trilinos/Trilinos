@@ -59,7 +59,9 @@
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
 #include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
+#include "Intrepid2_CubatureDirectTriSymmetric.hpp"
 #include "Intrepid2_CubatureDirectTetDefault.hpp"
+#include "Intrepid2_CubatureDirectTetSymmetric.hpp"
 //#include "Intrepid2_CubatureCompositeTet.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
 #include "Intrepid2_CubatureTensorPyr.hpp"
@@ -90,7 +92,8 @@ namespace Intrepid2 {
     static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> > 
     create( unsigned                         topologyKey,
             const std::vector<ordinal_type> &degree,
-            const EPolyType                  polytype = POLYTYPE_MAX );
+            const EPolyType                  polytype = POLYTYPE_MAX,
+            const bool                       symmetric = false );
 
     /** \brief Factory method.
 
@@ -106,7 +109,8 @@ namespace Intrepid2 {
     static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> >
     create( const shards::CellTopology       cellTopology,
             const std::vector<ordinal_type> &degree,
-            const EPolyType                  polytype = POLYTYPE_MAX );
+            const EPolyType                  polytype = POLYTYPE_MAX,
+            const bool                       symmetric = false  );
 
 
     /** \brief Factory method.
@@ -123,7 +127,8 @@ namespace Intrepid2 {
     static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> >
     create( unsigned                    topologyKey,
             const ordinal_type          degree,
-            const EPolyType             polytype = POLYTYPE_MAX );
+            const EPolyType             polytype = POLYTYPE_MAX, 
+            const bool                  symmetric = false  );
     
     /** \brief Factory method.
 
@@ -139,7 +144,8 @@ namespace Intrepid2 {
     static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> > 
     create( const shards::CellTopology  cellTopology,
             const ordinal_type          degree,
-            const EPolyType             polytype = POLYTYPE_MAX );
+            const EPolyType             polytype = POLYTYPE_MAX, 
+            const bool                  symmetric = false   );
 
 
     /** \brief Factory method for polygon cubature.

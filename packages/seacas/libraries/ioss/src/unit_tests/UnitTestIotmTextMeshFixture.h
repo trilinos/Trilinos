@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -562,8 +562,8 @@ namespace Iotm {
         int    nodesPerElem = topo->number_nodes();
 
         for (size_t i = 0; i < elementCount; ++i) {
-          INT     *conn = &connectivity[i * nodesPerElem];
-          EntityId id   = static_cast<EntityId>(elemIds[i]);
+          INT *conn = &connectivity[i * nodesPerElem];
+          auto id   = static_cast<EntityId>(elemIds[i]);
 
           if (id == elemId) {
             for (int j = 0; j < nodesPerElem; j++) {

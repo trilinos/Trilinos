@@ -66,7 +66,6 @@
 #include "Ioss_VariableType.h"                 // for VariableType
 #include "ProcessSetsOrBlocks.hpp"             // for get_part_for_grouping_...
 #include "StkIoUtils.hpp"                      // for part_primary_entity_rank
-#include "Teuchos_RCP.hpp"                     // for RCP::operator->, RCP::...
 #include "stk_io/OutputParams.hpp"             // for OutputParams
 #include "stk_mesh/base/Bucket.hpp"            // for Bucket
 #include "stk_mesh/base/Entity.hpp"            // for Entity
@@ -88,320 +87,14 @@
 namespace stk {
 namespace io {
 
-
-template <typename DataType>
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           DataType globalVarData)
-{
-    STK_ThrowErrorMsgIf(Teuchos::is_null(output_region),
-                     "There is no Output mesh region associated with this Mesh Data.");
-    STK_ThrowErrorMsgIf(output_region->get_state() != Ioss::STATE_TRANSIENT,
-                     "The output region " << output_region->name() <<
-                     " is not in the correct state for outputting data at this time.");
-    STK_ThrowErrorMsgIf(!output_region->field_exists(globalVarName),
-                     "The field named '" << globalVarName << "' does not exist.");
-    output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
-}
-
-template
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           int globalVarData);
-template
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           int64_t globalVarData);
-template
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           double globalVarData);
-
-template <typename DataType>
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           std::vector<DataType> &globalVarData)
-{
-    STK_ThrowErrorMsgIf(Teuchos::is_null(output_region),
-                     "There is no Output mesh region associated with this Mesh Data.");
-    STK_ThrowErrorMsgIf(output_region->get_state() != Ioss::STATE_TRANSIENT,
-                     "The output region " << output_region->name() <<
-                     " is not in the correct state for outputting data at this time.");
-    STK_ThrowErrorMsgIf(!output_region->field_exists(globalVarName),
-                     "The field named '" << globalVarName << "' does not exist "
-                     "on output region "  << output_region->name());
-    size_t comp_count = output_region->get_fieldref(globalVarName).raw_storage()->component_count();
-    STK_ThrowErrorMsgIf(comp_count != globalVarData.size(),
-                     "On output region "  << output_region->name() <<
-                     ", the field named '" << globalVarName << "' was registered with size "
-                     << comp_count
-                     << " but the output size is " << globalVarData.size());
-
-    output_region->put_field_data(globalVarName, globalVarData);
-}
-
-template
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           std::vector<int> &globalVarData);
-template
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           std::vector<int64_t> &globalVarData);
-template
-void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
-                           std::vector<double> &globalVarData);
-
-bool internal_has_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName)
-{
-  STK_ThrowErrorMsgIf(Teuchos::is_null(input_region),
-                   "There is no Input mesh region associated with this Mesh Data.");
-
-  return input_region->field_exists(globalVarName);
-}
-
-
-template <typename DataType>
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          DataType &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found)
-{
-    STK_ThrowErrorMsgIf(Teuchos::is_null(input_region),
-                     "There is no Input mesh region associated with this Mesh Data.");
-
-    if (input_region->field_exists(globalVarName)) {
-        input_region->get_fieldref(globalVarName).check_type(iossType);
-        input_region->get_field_data(globalVarName, &globalVarData, sizeof(DataType));
-        return true;
-    }
-    else {
-        if (abort_if_not_found) {
-            std::ostringstream msg;
-            msg << "ERROR: The field named '" << globalVarName << "' does not exist "
-                    << "on input region "  << input_region->name();
-            throw std::runtime_error( msg.str() );
-        }
-        return false;
-    }
-}
-
-template
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          int &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-template
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          int64_t &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-template
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          double &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-
-template <typename DataType>
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          std::vector<DataType> &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found)
-{
-    STK_ThrowErrorMsgIf(Teuchos::is_null(input_region),
-                     "There is no Input mesh region associated with this Mesh Data.");
-
-    if (input_region->field_exists(globalVarName)) {
-        input_region->get_fieldref(globalVarName).check_type(iossType);
-        input_region->get_field_data(globalVarName, globalVarData);
-        return true;
-    }
-    else {
-        if (abort_if_not_found) {
-            std::ostringstream msg;
-            msg << "ERROR: The field named '" << globalVarName << "' does not exist "
-                    << "on input region "  << input_region->name();
-            throw std::runtime_error( msg.str() );
-        }
-        return false;
-    }
-}
-
-template
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          std::vector<int> &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-template
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          std::vector<int64_t> &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-template
-bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-                          std::vector<double> &globalVarData, Ioss::Field::BasicType iossType,
-                          bool abort_if_not_found);
-
-
-void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const stk::util::Parameter &param)
-{
-  internal_write_parameter(output_region, name, param.value, param.type);
-}
-
-void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const std::any &any_value,
-                              stk::util::ParameterType::Type type)
-{
-    try {
-        switch(type)
-        {
-            case stk::util::ParameterType::INTEGER: {
-                int value = std::any_cast<int>(any_value);
-                internal_write_global(output_region, name, value);
-                break;
-            }
-
-            case stk::util::ParameterType::INT64: {
-                int64_t value = std::any_cast<int64_t>(any_value);
-                internal_write_global(output_region, name, value);
-                break;
-            }
-
-            case stk::util::ParameterType::DOUBLE: {
-                double value = std::any_cast<double>(any_value);
-                internal_write_global(output_region, name, value);
-                break;
-            }
-
-            case stk::util::ParameterType::DOUBLEVECTOR: {
-                std::vector<double> vec = std::any_cast<std::vector<double> >(any_value);
-                internal_write_global(output_region, name, vec);
-                break;
-            }
-
-            case stk::util::ParameterType::INTEGERVECTOR: {
-                std::vector<int> vec = std::any_cast<std::vector<int> >(any_value);
-                internal_write_global(output_region, name, vec);
-                break;
-            }
-
-            case stk::util::ParameterType::INT64VECTOR: {
-                std::vector<int64_t> vec = std::any_cast<std::vector<int64_t> >(any_value);
-                internal_write_global(output_region, name, vec);
-                break;
-            }
-
-            default: {
-                std::cerr << "WARNING: '" << name << "' is not a supported type. It's value cannot be output." << std::endl;
-                break;
-            }
-        }
-    }
-    catch(...) {
-        std::cerr << "ERROR: Actual type of parameter named '" << name
-                << "' does not match the declared type. Something went wrong."
-                << " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
-        throw;
-    }
-}
-
-void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
+void write_defined_global_any_fields(std::shared_ptr<Ioss::Region> region,
                                      std::vector<stk::io::GlobalAnyVariable> &global_any_fields)
 {
     for (size_t i=0; i < global_any_fields.size(); i++) {
         const std::string &name = global_any_fields[i].m_name;
         const std::any *value = global_any_fields[i].m_value;
         stk::util::ParameterType::Type type = global_any_fields[i].m_type;
-        internal_write_parameter(region, name, *value, type);
-    }
-}
-
-bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
-                             const std::string &globalVarName,
-                             stk::util::Parameter& param,
-                             bool abort_if_not_found)
-{
-  return internal_read_parameter(input_region, globalVarName, param.value, param.type, abort_if_not_found);
-}
-
-bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
-                             const std::string &globalVarName,
-                             std::any &any_value, stk::util::ParameterType::Type type,
-                             bool abort_if_not_found)
-{
-    bool success = false;
-    switch(type)
-    {
-        case stk::util::ParameterType::INTEGER: {
-            int value = 0;
-            success = internal_read_global(input_region, globalVarName, value, Ioss::Field::INTEGER,
-                                           abort_if_not_found);
-            any_value = value;
-            break;
-        }
-
-        case stk::util::ParameterType::INT64: {
-            int64_t value = 0;
-            success = internal_read_global(input_region, globalVarName, value, Ioss::Field::INT64,
-                                           abort_if_not_found);
-            any_value = value;
-            break;
-        }
-
-        case stk::util::ParameterType::DOUBLE: {
-            double value = 0;
-            success = internal_read_global(input_region, globalVarName, value, Ioss::Field::REAL,
-                                           abort_if_not_found);
-            any_value = value;
-            break;
-        }
-
-        case stk::util::ParameterType::DOUBLEVECTOR: {
-            std::vector<double> vec;
-            success = internal_read_global(input_region, globalVarName, vec, Ioss::Field::REAL,
-                                           abort_if_not_found);
-            any_value = vec;
-            break;
-        }
-
-        case stk::util::ParameterType::INTEGERVECTOR: {
-            std::vector<int> vec;
-            success = internal_read_global(input_region, globalVarName, vec, Ioss::Field::INTEGER,
-                                           abort_if_not_found);
-            any_value = vec;
-            break;
-        }
-
-        case stk::util::ParameterType::INT64VECTOR: {
-            std::vector<int64_t> vec;
-            success = internal_read_global(input_region, globalVarName, vec, Ioss::Field::INT64,
-                                           abort_if_not_found);
-            any_value = vec;
-            break;
-        }
-
-        default: {
-            std::cerr << "WARNING: '" << globalVarName << "' is not a supported type. It's value cannot be input." << std::endl;
-            break;
-        }
-    }
-    return success;
-}
-
-void internal_add_global(Teuchos::RCP<Ioss::Region> region,
-                         const std::string &globalVarName,
-                         const std::string &storage,
-                         Ioss::Field::BasicType dataType,
-                         int copies,
-                         Ioss::Field::RoleType role)
-{
-    STK_ThrowErrorMsgIf(region->field_exists(globalVarName),
-                     "On region named " << region->name() <<
-                     " Attempt to add global variable '" << globalVarName << "' twice.");
-
-    region->field_add(Ioss::Field(globalVarName, dataType, storage, copies, role, 1));
-}
-
-void internal_add_global(Teuchos::RCP<Ioss::Region> region,
-                         const std::string &globalVarName,
-                         int component_count,
-                         Ioss::Field::BasicType dataType,
-                         int copies,
-                         Ioss::Field::RoleType role)
-{
-    if (component_count == 1) {
-        internal_add_global(region, globalVarName, "scalar", dataType, copies, role);
-    } else {
-        std::ostringstream type;
-        type << "Real[" << component_count << "]";
-        internal_add_global(region, globalVarName, type.str(), dataType, copies, role);
+        impl::write_parameter(region, name, *value, type);
     }
 }
 
@@ -464,10 +157,14 @@ void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,
 
     const bool anythingToUnpack =
         stk::pack_and_communicate(comm, [&comm, &bulk, &distFact, &sides]() {
+           std::vector<int> sharedProcs;
             for (stk::mesh::Entity side : sides) {
                 STK_ThrowRequireMsg(bulk.is_valid(side),"communicate_shared_side_entity_fields, invalid side");
-                if (!bulk.bucket(side).owned()) {
-                    CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
+                sharedProcs.clear();
+                bulk.comm_shared_procs(side, sharedProcs);
+                for (int sharedProc : sharedProcs)
+                {
+                    CommBuffer & buffer = comm.send_buffer(sharedProc);
                     pack_distribution_factor(bulk, buffer, distFact, side);
                 }
             }
@@ -860,7 +557,360 @@ bool is_processed_field(stk::mesh::Part &part,
     return isProcessed;
 }
 
-void internal_fill_output_entities(Ioss::GroupingEntity *io_entity,
+void put_field_data(OutputParams &params,
+                    stk::mesh::Part &part,
+                    stk::mesh::EntityRank part_type,
+                    Ioss::GroupingEntity *io_entity,
+                    const std::vector<stk::io::FieldAndName> &namedFields,
+                    Ioss::Field::RoleType filter_role,
+                    const stk::mesh::FieldState *state)
+{
+    bool hasFieldsToProcess = false;
+    for (const stk::io::FieldAndName& namedField: namedFields) {
+        hasFieldsToProcess |= is_processed_field(part, part_type, io_entity, namedField);
+    }
+
+    if (hasFieldsToProcess)
+    {
+        std::vector<stk::mesh::Entity> entities;
+        impl::fill_output_entities(io_entity, &part, part_type, params, entities);
+
+        for (const stk::io::FieldAndName& namedField: namedFields) {
+            const stk::mesh::FieldBase *f = namedField.field();
+            const std::string& field_name = namedField.db_name();
+
+            if (is_processed_field(part, part_type, io_entity, namedField)) {
+                if(state != nullptr)
+                {
+                    f = f->field_state(*state);
+                    if(f == nullptr) {
+                        f = namedField.field();
+                    }
+                }
+
+                stk::io::field_data_to_ioss(params.bulk_data(), f, entities, io_entity, field_name, filter_role);
+            }
+        }
+    }
+}
+
+void put_field_data(OutputParams &params,
+                    stk::mesh::Part &part,
+                    stk::mesh::EntityRank part_type,
+                    Ioss::GroupingEntity *io_entity,
+                    const std::vector<stk::io::FieldAndName> &namedFields,
+                    const stk::mesh::FieldState *state)
+{
+    put_field_data(params, part, part_type, io_entity, namedFields, Ioss::Field::Field::TRANSIENT, state);
+}
+
+namespace impl {
+
+template <typename DataType>
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           DataType globalVarData)
+{
+    STK_ThrowErrorMsgIf (output_region == nullptr,
+                     "There is no Output mesh region associated with this Mesh Data.");
+    STK_ThrowErrorMsgIf (output_region->get_state() != Ioss::STATE_TRANSIENT,
+                     "The output region " << output_region->name() <<
+                     " is not in the correct state for outputting data at this time.");
+    STK_ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
+                     "The field named '" << globalVarName << "' does not exist.");
+    output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
+}
+
+template
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           int globalVarData);
+template
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           int64_t globalVarData);
+template
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           double globalVarData);
+
+template <typename DataType>
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           std::vector<DataType> &globalVarData)
+{
+    STK_ThrowErrorMsgIf (output_region == nullptr,
+                     "There is no Output mesh region associated with this Mesh Data.");
+    STK_ThrowErrorMsgIf (output_region->get_state() != Ioss::STATE_TRANSIENT,
+                     "The output region " << output_region->name() <<
+                     " is not in the correct state for outputting data at this time.");
+    STK_ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
+                     "The field named '" << globalVarName << "' does not exist "
+                     "on output region "  << output_region->name());
+    size_t comp_count = output_region->get_fieldref(globalVarName).raw_storage()->component_count();
+    STK_ThrowErrorMsgIf (comp_count != globalVarData.size(),
+                     "On output region "  << output_region->name() <<
+                     ", the field named '" << globalVarName << "' was registered with size "
+                     << comp_count
+                     << " but the output size is " << globalVarData.size());
+
+    output_region->put_field_data(globalVarName, globalVarData);
+}
+
+template
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           std::vector<int> &globalVarData);
+template
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           std::vector<int64_t> &globalVarData);
+template
+void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string &globalVarName,
+                           std::vector<double> &globalVarData);
+
+bool has_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName)
+{
+  STK_ThrowErrorMsgIf (input_region == nullptr,
+                   "There is no Input mesh region associated with this Mesh Data.");
+
+  return input_region->field_exists(globalVarName);
+}
+
+template <typename DataType>
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          DataType &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found)
+{
+    STK_ThrowErrorMsgIf (input_region == nullptr,
+                     "There is no Input mesh region associated with this Mesh Data.");
+
+    if (input_region->field_exists(globalVarName)) {
+        input_region->get_fieldref(globalVarName).check_type(iossType);
+        input_region->get_field_data(globalVarName, &globalVarData, sizeof(DataType));
+        return true;
+    }
+    else {
+        if (abort_if_not_found) {
+            std::ostringstream msg;
+            msg << "ERROR: The field named '" << globalVarName << "' does not exist "
+                    << "on input region "  << input_region->name();
+            throw std::runtime_error( msg.str() );
+        }
+        return false;
+    }
+}
+
+template
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          int &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+template
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          int64_t &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+template
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          double &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+
+template <typename DataType>
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          std::vector<DataType> &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found)
+{
+    STK_ThrowErrorMsgIf (input_region == nullptr,
+                     "There is no Input mesh region associated with this Mesh Data.");
+
+    if (input_region->field_exists(globalVarName)) {
+        input_region->get_fieldref(globalVarName).check_type(iossType);
+        input_region->get_field_data(globalVarName, globalVarData);
+        return true;
+    }
+    else {
+        if (abort_if_not_found) {
+            std::ostringstream msg;
+            msg << "ERROR: The field named '" << globalVarName << "' does not exist "
+                    << "on input region "  << input_region->name();
+            throw std::runtime_error( msg.str() );
+        }
+        return false;
+    }
+}
+
+template
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          std::vector<int> &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+template
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          std::vector<int64_t> &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+template
+bool read_global(std::shared_ptr<Ioss::Region> input_region, const std::string &globalVarName,
+                          std::vector<double> &globalVarData, Ioss::Field::BasicType iossType,
+                          bool abort_if_not_found);
+
+
+void write_parameter(std::shared_ptr<Ioss::Region> output_region,
+                              const std::string &name, const stk::util::Parameter &param)
+{
+  write_parameter(output_region, name, param.value, param.type);
+}
+
+void write_parameter(std::shared_ptr<Ioss::Region> output_region,
+                              const std::string &name, const std::any &any_value,
+                              stk::util::ParameterType::Type type)
+{
+    try {
+        switch(type)
+        {
+            case stk::util::ParameterType::INTEGER: {
+                int value = std::any_cast<int>(any_value);
+                write_global(output_region, name, value);
+                break;
+            }
+
+            case stk::util::ParameterType::INT64: {
+                int64_t value = std::any_cast<int64_t>(any_value);
+                write_global(output_region, name, value);
+                break;
+            }
+
+            case stk::util::ParameterType::DOUBLE: {
+                double value = std::any_cast<double>(any_value);
+                write_global(output_region, name, value);
+                break;
+            }
+
+            case stk::util::ParameterType::DOUBLEVECTOR: {
+                std::vector<double> vec = std::any_cast<std::vector<double> >(any_value);
+                write_global(output_region, name, vec);
+                break;
+            }
+
+            case stk::util::ParameterType::INTEGERVECTOR: {
+                std::vector<int> vec = std::any_cast<std::vector<int> >(any_value);
+                write_global(output_region, name, vec);
+                break;
+            }
+
+            case stk::util::ParameterType::INT64VECTOR: {
+                std::vector<int64_t> vec = std::any_cast<std::vector<int64_t> >(any_value);
+                write_global(output_region, name, vec);
+                break;
+            }
+
+            default: {
+                std::cerr << "WARNING: '" << name << "' is not a supported type. It's value cannot be output." << std::endl;
+                break;
+            }
+        }
+    }
+    catch(...) {
+        std::cerr << "ERROR: Actual type of parameter named '" << name
+                << "' does not match the declared type. Something went wrong."
+                << " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
+        throw;
+    }
+}
+
+bool read_parameter(std::shared_ptr<Ioss::Region> input_region,
+                             const std::string &globalVarName,
+                             stk::util::Parameter& param,
+                             bool abort_if_not_found)
+{
+  return read_parameter(input_region, globalVarName, param.value, param.type, abort_if_not_found);
+}
+
+bool read_parameter(std::shared_ptr<Ioss::Region> input_region,
+                             const std::string &globalVarName,
+                             std::any &any_value, stk::util::ParameterType::Type type,
+                             bool abort_if_not_found)
+{
+    bool success = false;
+    switch(type)
+    {
+        case stk::util::ParameterType::INTEGER: {
+            int value = 0;
+            success = read_global(input_region, globalVarName, value, Ioss::Field::INTEGER,
+                                           abort_if_not_found);
+            any_value = value;
+            break;
+        }
+
+        case stk::util::ParameterType::INT64: {
+            int64_t value = 0;
+            success = read_global(input_region, globalVarName, value, Ioss::Field::INT64,
+                                           abort_if_not_found);
+            any_value = value;
+            break;
+        }
+
+        case stk::util::ParameterType::DOUBLE: {
+            double value = 0;
+            success = read_global(input_region, globalVarName, value, Ioss::Field::REAL,
+                                           abort_if_not_found);
+            any_value = value;
+            break;
+        }
+
+        case stk::util::ParameterType::DOUBLEVECTOR: {
+            std::vector<double> vec;
+            success = read_global(input_region, globalVarName, vec, Ioss::Field::REAL,
+                                           abort_if_not_found);
+            any_value = vec;
+            break;
+        }
+
+        case stk::util::ParameterType::INTEGERVECTOR: {
+            std::vector<int> vec;
+            success = read_global(input_region, globalVarName, vec, Ioss::Field::INTEGER,
+                                           abort_if_not_found);
+            any_value = vec;
+            break;
+        }
+
+        case stk::util::ParameterType::INT64VECTOR: {
+            std::vector<int64_t> vec;
+            success = read_global(input_region, globalVarName, vec, Ioss::Field::INT64,
+                                           abort_if_not_found);
+            any_value = vec;
+            break;
+        }
+
+        default: {
+            std::cerr << "WARNING: '" << globalVarName << "' is not a supported type. It's value cannot be input." << std::endl;
+            break;
+        }
+    }
+    return success;
+}
+
+void add_global(std::shared_ptr<Ioss::Region> region,
+                         const std::string &globalVarName,
+                         const std::string &storage,
+                         Ioss::Field::BasicType dataType,
+                         int copies,
+                         Ioss::Field::RoleType role)
+{
+    STK_ThrowErrorMsgIf(region->field_exists(globalVarName),
+                     "On region named " << region->name() <<
+                     " Attempt to add global variable '" << globalVarName << "' twice.");
+
+    region->field_add(Ioss::Field(globalVarName, dataType, storage, copies, role, 1));
+}
+
+void add_global(std::shared_ptr<Ioss::Region> region,
+                         const std::string &globalVarName,
+                         int component_count,
+                         Ioss::Field::BasicType dataType,
+                         int copies,
+                         Ioss::Field::RoleType role)
+{
+    if (component_count == 1) {
+        add_global(region, globalVarName, "scalar", dataType, copies, role);
+    } else {
+        std::ostringstream type;
+        type << "Real[" << component_count << "]";
+        add_global(region, globalVarName, type.str(), dataType, copies, role);
+    }
+}
+
+void fill_output_entities(Ioss::GroupingEntity *io_entity,
                                    stk::mesh::Part *part,
                                    stk::mesh::EntityRank part_type,
                                    OutputParams &params,
@@ -902,51 +952,6 @@ void internal_fill_output_entities(Ioss::GroupingEntity *io_entity,
     }
 }
 
-void put_field_data(OutputParams &params,
-                    stk::mesh::Part &part,
-                    stk::mesh::EntityRank part_type,
-                    Ioss::GroupingEntity *io_entity,
-                    const std::vector<stk::io::FieldAndName> &namedFields,
-                    Ioss::Field::RoleType filter_role,
-                    const stk::mesh::FieldState *state)
-{
-    bool hasFieldsToProcess = false;
-    for (const stk::io::FieldAndName& namedField: namedFields) {
-        hasFieldsToProcess |= is_processed_field(part, part_type, io_entity, namedField);
-    }
-
-    if (hasFieldsToProcess)
-    {
-        std::vector<stk::mesh::Entity> entities;
-        internal_fill_output_entities(io_entity, &part, part_type, params, entities);
-
-        for (const stk::io::FieldAndName& namedField: namedFields) {
-            const stk::mesh::FieldBase *f = namedField.field();
-            const std::string& field_name = namedField.db_name();
-
-            if (is_processed_field(part, part_type, io_entity, namedField)) {
-                if(state != nullptr)
-                {
-                    f = f->field_state(*state);
-                    if(f == nullptr) {
-                        f = namedField.field();
-                    }
-                }
-
-                stk::io::field_data_to_ioss(params.bulk_data(), f, entities, io_entity, field_name, filter_role);
-            }
-        }
-    }
-}
-
-void put_field_data(OutputParams &params,
-                    stk::mesh::Part &part,
-                    stk::mesh::EntityRank part_type,
-                    Ioss::GroupingEntity *io_entity,
-                    const std::vector<stk::io::FieldAndName> &namedFields,
-                    const stk::mesh::FieldState *state)
-{
-    put_field_data(params, part, part_type, io_entity, namedFields, Ioss::Field::Field::TRANSIENT, state);
 }
 
 } // namespace io

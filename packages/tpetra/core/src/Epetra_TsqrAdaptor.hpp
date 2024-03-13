@@ -54,7 +54,15 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 
-#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+#if defined(TPETRA_DEPRECATED_DECLARATIONS)
+#warning This file is deprecated due to Epetra removal and will be removed
+#endif
+#else
+#error This file is deprecated due to Epetra removal and will be removed
+#endif
+
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE) && defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 #include "Tsqr_NodeTsqrFactory.hpp" // create intranode TSQR object
 #include "Tsqr.hpp" // full (internode + intranode) TSQR
@@ -93,6 +101,7 @@ namespace Epetra {
   /// \warning The current implementation of this adaptor requires
   ///   that all Epetra_MultiVector inputs use the same communicator
   ///   object (that is, the same Epetra_Comm) and map.
+  TPETRA_DEPRECATED_MSG("epetra removal")
   class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     typedef Epetra_MultiVector MV;
@@ -369,7 +378,7 @@ namespace Epetra {
 
 } // namespace Epetra
 
-#endif // defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
+#endif // defined(TPETRA_ENABLE_DEPRECATED_CODE) && defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
 #endif // EPETRA_TSQRADAPTOR_HPP
 

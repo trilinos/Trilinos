@@ -72,7 +72,7 @@ namespace panzer {
 
     // Currently panzer support only one type of elements for whole mesh (use the first cell topology)
     const auto cellTopo = elementBlockTopologies.at(0);
-    const int numVertexPerCell = cellTopo.getVertexCount();
+    const int numVerticesPerCell = cellTopo.getVertexCount();
 
     const auto fp = NodalFieldPattern(cellTopo);
     connMgr.buildConnectivity(fp);
@@ -95,8 +95,9 @@ namespace panzer {
       for (int c=0;c<numElementsPerBlock;++c) {
         const int localCellId = elementBlock.at(c);
         Kokkos::View<const panzer::GlobalOrdinal*,Kokkos::HostSpace>
-          nodes(connMgr.getConnectivity(localCellId), numVertexPerCell);
-        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
+          vertices(connMgr.getConnectivity(localCellId), numVerticesPerCell);
+          // This function call expects a view for the vertices, not the nodes
+        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, vertices));
       }
     }
   }
@@ -127,6 +128,57 @@ namespace panzer {
 
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "panzer::buildIntrepidOrientation: Could not cast GlobalIndexer");
+  }
+
+  void buildIntrepidOrientations(const std::vector<std::string>& eBlockNames,
+                                 const panzer::ConnManager & connMgrInput,
+                                 std::map<std::string,std::vector<Intrepid2::Orientation>> & orientations)
+  {
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    auto connMgrPtr = connMgrInput.noConnectivityClone();
+    auto& connMgr = *connMgrPtr;
+
+    // Map element block name to topology
+    std::map<std::string,shards::CellTopology> eb_name_to_topo;
+    {
+      std::vector<std::string> elementBlockIds;
+      connMgr.getElementBlockIds(elementBlockIds);
+
+      std::vector<shards::CellTopology> elementBlockTopologies;
+      connMgr.getElementBlockTopologies(elementBlockTopologies);
+
+      for (size_t i=0; i < elementBlockIds.size(); ++i) {
+        eb_name_to_topo[elementBlockIds[i]] = elementBlockTopologies[i];
+      }
+    }
+
+    // Currently panzer supports only one element topology for whole mesh (use the first cell topology)
+    const auto cellTopo = eb_name_to_topo[eBlockNames[0]];
+    const int numVerticesPerCell = cellTopo.getVertexCount();
+
+    const auto fp = NodalFieldPattern(cellTopo);
+    connMgr.buildConnectivity(fp);
+
+    // Loop over requested element blocks
+    for (size_t i=0;i<eBlockNames.size();++i) {
+
+      const auto &lids = connMgr.getElementBlock(eBlockNames[i]);
+      const size_t num_elems = lids.size();
+      auto& orts = orientations[eBlockNames[i]];
+      orts.resize(num_elems);
+
+      for (size_t c=0;c<num_elems;++c) {
+        const int lid = lids[c];
+        Kokkos::View<const panzer::GlobalOrdinal*,Kokkos::HostSpace> 
+          vertices(connMgr.getConnectivity(lid),numVerticesPerCell);
+
+        // This function call expects a view for the vertices, not the nodes
+        orts[c] = Intrepid2::Orientation::getOrientation(cellTopo, vertices);
+      }
+    }
   }
 
 } // end namespace panzer

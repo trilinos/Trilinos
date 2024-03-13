@@ -35,6 +35,7 @@ namespace Test {
 template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename PivotViewType, typename WorkViewType, typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
+  using execution_space = typename DeviceType::execution_space;
   MatrixViewType _a;
   VectorViewType _x, _b, _t;
   PivotViewType _p;
@@ -80,7 +81,7 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
     member.team_barrier();
 
     /// xx = bb;
-    TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, bb, xx);
+    TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, bb, xx);
     member.team_barrier();
 
     /// xx = Q^{T} xx;
@@ -108,7 +109,7 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
@@ -119,7 +120,7 @@ template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename PivotViewType, typename WorkViewType, typename AlgoTagType>
 void impl_test_batched_qr_with_columnpivoting(const int N, const int BlkSize) {
   typedef typename MatrixViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
   // const value_type one(1);
   /// randomized input testing views
   MatrixViewType a("a", N, BlkSize, BlkSize);

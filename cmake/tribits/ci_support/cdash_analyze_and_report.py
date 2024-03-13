@@ -542,6 +542,10 @@ if __name__ == '__main__':
     # D.2.a) Get list of dicts of builds off cdash/index.phpp
     #
 
+    # @arghdos: note, we do not have to normalize the URLs from the input
+    # options because they are currently taken from the cdash site already
+    # (i.e., they are already in normalized form).
+
     cdashIndexBuildsBrowserUrl = CDQAR.getCDashIndexBrowserUrl(
       inOptions.cdashSiteUrl, inOptions.cdashProjectName, inOptions.date,
       inOptions.cdashBuildsFilters)
@@ -663,7 +667,7 @@ if __name__ == '__main__':
       CDQAR.MatchDictKeysValuesFunctor(nonpassingTestsSLOD)
 
     #
-    # D.3) Partition the varous list of tests into different sets that will
+    # D.3) Partition the various list of tests into different sets that will
     # be displayed in different tables.
     #
 

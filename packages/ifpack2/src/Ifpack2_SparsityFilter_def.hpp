@@ -246,6 +246,13 @@ size_t SparsityFilter<MatrixType>::getLocalMaxNumRowEntries() const
 
 //==========================================================================
 template<class MatrixType>
+typename MatrixType::local_ordinal_type SparsityFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
+
+//==========================================================================
+template<class MatrixType>
 bool SparsityFilter<MatrixType>::hasColMap() const
 {
   return true;

@@ -46,18 +46,13 @@
 #ifndef MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP
 #define MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MergedBlockedMatrixFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class MergedBlockedMatrixFactory;
 }
 
 #ifndef MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
 #define MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP
+#endif  // MUELU_MERGEDBLOCKEDMATRIXFACTORY_FWD_HPP

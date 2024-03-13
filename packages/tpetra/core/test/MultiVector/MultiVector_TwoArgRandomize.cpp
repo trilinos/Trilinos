@@ -63,7 +63,7 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
     typedef Teuchos::ScalarTraits<SC> STS;
-    typedef Kokkos::Details::ArithTraits<SC> KAT;
+    typedef Kokkos::ArithTraits<SC> KAT;
     typedef typename MV::impl_scalar_type IST;
 
     out << "Test that two-argument Tpetra::MultiVector::randomize builds, "

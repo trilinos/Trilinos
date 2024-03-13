@@ -78,7 +78,13 @@ class PAR_ILUTHandle {
                                      /// iteration to iteration drops below
                                      /// this, the algorithm will stop (even if
                                      /// max_iters has not been hit)
-  float_t fill_in_limit;             /// The threshold for the ILU factorization
+  float_t fill_in_limit;             /// The threshold for removing candidates
+                          /// from the intermediate L and U is set such
+                          /// that the resulting sparsity pattern has
+                          /// at most `fill_in_limit` times the number
+                          /// of non-zeros of the ILU(0)
+                          /// factorization. This selection is executed
+                          /// separately for both factors L and U.
   bool async_update;  /// Whether compute LU factors should do asychronous
                       /// updates. When ON, the algorithm will usually converge
                       /// faster but it makes the algorithm non-deterministic.

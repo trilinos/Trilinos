@@ -66,12 +66,12 @@ namespace Excn {
     IntVector                truthTable{};
     std::vector<std::string> attributeNames{};
     std::string              name_{};
-    int64_t                  id{0};
+    ex_entity_id             id{0};
     size_t                   elementCount{0};
     size_t                   nodesPerElement{0};
     size_t                   attributeCount{0};
     size_t                   offset_{0};
-    size_t                   position_{0};
+    mutable size_t           position_{0};
     std::string              elType{};
   };
 
@@ -79,13 +79,13 @@ namespace Excn {
   {
     NodeSet() = default;
 
-    IntVector   truthTable{};
-    int64_t     id{0};
-    size_t      nodeCount{0};
-    size_t      dfCount{0};
-    size_t      offset_{0};
-    size_t      position_{0};
-    std::string name_{};
+    IntVector    truthTable{};
+    ex_entity_id id{0};
+    size_t       nodeCount{0};
+    size_t       dfCount{0};
+    size_t       offset_{0};
+    size_t       position_{0};
+    std::string  name_{};
 
     std::vector<INT> nodeSetNodes{};
     std::vector<INT> nodeOrderMap{};
@@ -109,18 +109,17 @@ namespace Excn {
     }
   };
 
-  using Side = std::pair<int, int>;
   template <typename INT> struct SideSet
   {
     SideSet() = default;
 
-    IntVector   truthTable{};
-    int64_t     id{0};
-    size_t      sideCount{0};
-    size_t      dfCount{0};
-    size_t      offset_{0};
-    size_t      position_{0};
-    std::string name_{};
+    IntVector    truthTable{};
+    ex_entity_id id{0};
+    size_t       sideCount{0};
+    size_t       dfCount{0};
+    size_t       offset_{0};
+    size_t       position_{0};
+    std::string  name_{};
 
     std::vector<INT> elems{};
     std::vector<INT> sides{};
@@ -146,9 +145,9 @@ namespace Excn {
         : id(the_id), entityCount(count), type(the_type)
     {
     }
-    int64_t id{0};
-    size_t  entityCount{0};
-    char    type{'U'}; // 'n' for node, 'e' for element
+    ex_entity_id id{0};
+    size_t       entityCount{0};
+    char         type{'U'}; // 'n' for node, 'e' for element
   };
 
   struct CommunicationMetaData

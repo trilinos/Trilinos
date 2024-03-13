@@ -57,7 +57,7 @@
 namespace Intrepid2
 {
 /** \brief Use the cell nodes provided by one cell geometry object to create another CellGeometry that is node-based (as opposed to tensor-grid-based, uniform-grid-based, etc.)
-   \param [in] anyCellGeometry - the projected geometry degrees of freedom
+   \param [in] anyCellGeometry - the geometry object from which to get the node locations
    \param [in] copyAffineness - if true, the resulting geometry will be marked as affine if the original geometry was, allowing reduce storage of Jacobians, etc.
    \return a representation of the same geometry, defined using cell-to-nodes and node-to-coordinates containers.
 */
@@ -73,13 +73,12 @@ namespace Intrepid2
     using PointScalarView = ScalarView<PointScalar, DeviceType >;
     using intView         = ScalarView<        int, DeviceType >;
     
-    auto cellToNodes      = intView                          ("cell to nodes", numCells, numNodes);    // this will be a one-to-one mapping
+    auto cellToNodes      = intView                        ("cell to nodes", numCells, numNodes);    // this will be a one-to-one mapping
     PointScalarView nodes = getView<PointScalar,DeviceType>("nodes", numCells * numNodes, spaceDim); // we store redundant copies of vertices for each cell
 
     using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodes});
     
-    // "workset"
     Kokkos::parallel_for("copy cell nodes from CellGeometry", policy,
     KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinalInCell) {
       const int globalNodeOrdinal = cellOrdinal * numNodes + nodeOrdinalInCell;

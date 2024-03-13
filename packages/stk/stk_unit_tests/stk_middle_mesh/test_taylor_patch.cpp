@@ -1,4 +1,4 @@
-#include "taylor_patch.hpp"
+#include "stk_middle_mesh/taylor_patch.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {
@@ -142,7 +142,7 @@ TEST(TaylorPatch, GeneralPlaneCenteredElsewhere)
   patch.construct_patch(pts, utils::Point(2, 2));
 
   // for this case, the (u, v, w) coordinate system is aligned with (x,y,z)
-  double tol = 1e-15;
+  double tol = 1e-14;
   expect_float_eq(patch.eval_point(0, 0), utils::Point(0, 0, 1), tol);
   expect_float_eq(patch.eval_point(1, 0), utils::Point(1, 0, 0), tol);
   expect_float_eq(patch.eval_point(0, 1), utils::Point(0, 1, 0), tol);
@@ -207,7 +207,7 @@ TEST(TaylorPatch, NonOrthogonalPlane)
   patch.construct_patch(pts);
 
   // for this case, the (u, v, w) coordinate system is aligned with (x,y,z)
-  double tol = 1e-15;
+  double tol = 1e-14;
   expect_float_eq(patch.eval_point(1, 1), utils::Point(1, 1, 2), tol);
   expect_float_eq(patch.eval_point(2, 1), utils::Point(2, 1, 1), tol);
   expect_float_eq(patch.eval_point(1, 2), utils::Point(1, 2, 1), tol);
@@ -310,6 +310,36 @@ TEST(TaylorPatch, SinglePoint)
     EXPECT_FLOAT_EQ(derivs[0], derivsEx[0]);
     EXPECT_FLOAT_EQ(derivs[1], derivsEx[1]);
   }
+}
+
+TEST(TaylorPatch, Perturbation)
+{
+  // the z coordinates of some points are perturbed by machine epsilon
+  // If the method used to compute the taylor patch is not stable, this small
+  // perturbation can cause large variations in the computed surface
+  utils::Point pt0(0.8000000000000002, 0.7999999999999998, 0.9999999999999996);
+  utils::Point pt1(1, 0.7999999999999999, 0.9999999999999997);
+  utils::Point pt2(0.8000000000000002, 0.6, 0.9999999999999996);
+  utils::Point pt3(1, 0.6, 0.9999999999999994);
+  utils::Point pt4(0.6000000000000001, 0.6, 0.9999999999999996);
+  utils::Point pt5(0.6000000000000001, 0.7999999999999998, 0.9999999999999996);
+  utils::Point pt6(1, 1, 0.9999999999999997);
+  utils::Point pt7(0.8, 1, 0.9999999999999996);
+  utils::Point pt8(0.6000000000000001, 1, 0.9999999999999996);
+
+  std::vector<utils::Point> pts = {pt0, pt1, pt2, pt3, pt4, pt5, pt6, pt7, pt8};
+
+  utils::impl::TaylorPatch patch;
+  patch.construct_patch(pts);
+
+  double tol = 1e-14;
+  EXPECT_NEAR(patch.eval_point(0.8,  0.8).z,  1.0, tol);
+  EXPECT_NEAR(patch.eval_point(0.85, 0.8).z,  1.0, tol);
+  EXPECT_NEAR(patch.eval_point(0.8,  0.85).z, 1.0, tol);
+  EXPECT_NEAR(patch.eval_point(0.85, 0.85).z, 1.0, tol);
+  EXPECT_NEAR(patch.eval_point(0.75, 0.8).z,  1.0, tol);
+  EXPECT_NEAR(patch.eval_point(0.8,  0.75).z, 1.0, tol);
+  EXPECT_NEAR(patch.eval_point(0.75, 0.75).z, 1.0, tol);
 }
 
 // TODO: test single point case

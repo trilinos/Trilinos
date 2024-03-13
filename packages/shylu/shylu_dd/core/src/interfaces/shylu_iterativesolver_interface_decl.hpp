@@ -29,7 +29,7 @@
 #endif
 
 //#include <Zoltan2_config.h>
-#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
+#if defined(HAVE_SHYLU_DDCORE_ZOLTAN2CORE)
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>

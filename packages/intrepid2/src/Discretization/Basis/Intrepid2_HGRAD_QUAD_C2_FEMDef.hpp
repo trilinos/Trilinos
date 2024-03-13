@@ -54,13 +54,14 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
 
   namespace Impl {                                                                                                                                                       
-                                                                                                                                                                         
+
+    template<bool serendipity>                                                                                                                                                          
     template<EOperator opType>                                                                                                                                           
     template<typename OutputViewType,                                                                                                                                    
              typename inputViewType>                                                                                                                                     
     KOKKOS_INLINE_FUNCTION                                                                                                                                               
     void                                                                                                                                                                 
-    Basis_HGRAD_QUAD_C2_FEM::Serial<opType>::                                                                                                                             
+    Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::Serial<opType>::                                                                                                                             
     getValues(       OutputViewType output,                                                                                                                              
                const inputViewType input ) {   
     switch (opType) {
@@ -68,18 +69,34 @@ namespace Intrepid2 {
       const auto x = input(0);
       const auto y = input(1);
 
-      // output is a rank-2 array with dimensions (basisCardinality_, dim0)
-      output.access(0) = x*(x - 1.0)*y*(y - 1.0)/4.0;
-      output.access(1) = x*(x + 1.0)*y*(y - 1.0)/4.0;
-      output.access(2) = x*(x + 1.0)*y*(y + 1.0)/4.0;
-      output.access(3) = x*(x - 1.0)*y*(y + 1.0)/4.0;
-      // edge midpoints basis functions
-      output.access(4) = (1.0 - x)*(1.0 + x)*y*(y - 1.0)/2.0;
-      output.access(5) = x*(x + 1.0)*(1.0 - y)*(1.0 + y)/2.0;
-      output.access(6) = (1.0 - x)*(1.0 + x)*y*(y + 1.0)/2.0;
-      output.access(7) = x*(x - 1.0)*(1.0 - y)*(1.0 + y)/2.0;
-      // quad bubble basis function
-      output.access(8) = (1.0 - x)*(1.0 + x)*(1.0 - y)*(1.0 + y); 
+      // output is a rank-1 array with dimensions (basisCardinality_)
+      if constexpr (!serendipity) {
+        output.access(0) = x*(x - 1.0)*y*(y - 1.0)/4.0;
+        output.access(1) = x*(x + 1.0)*y*(y - 1.0)/4.0;
+        output.access(2) = x*(x + 1.0)*y*(y + 1.0)/4.0;
+        output.access(3) = x*(x - 1.0)*y*(y + 1.0)/4.0;
+        // edge midpoints basis functions
+        output.access(4) = (1.0 - x)*(1.0 + x)*y*(y - 1.0)/2.0;
+        output.access(5) = x*(x + 1.0)*(1.0 - y)*(1.0 + y)/2.0;
+        output.access(6) = (1.0 - x)*(1.0 + x)*y*(y + 1.0)/2.0;
+        output.access(7) = x*(x - 1.0)*(1.0 - y)*(1.0 + y)/2.0;
+
+        // quad bubble basis function
+        output.access(8) = (1.0 - x)*(1.0 + x)*(1.0 - y)*(1.0 + y); 
+
+      } else {  //serendipity
+
+        output.access(0) = 0.25*(1.0 - x)*(1.0 - y)*(-x - y - 1.0);
+        output.access(1) = 0.25*(1.0 + x)*(1.0 - y)*( x - y - 1.0);
+        output.access(2) = 0.25*(1.0 + x)*(1.0 + y)*( x + y - 1.0);
+        output.access(3) = 0.25*(1.0 - x)*(1.0 + y)*(-x + y - 1.0);
+
+        output.access(4) = 0.5*(1.0 - x*x)*(1.0 - y);
+        output.access(5) = 0.5*(1.0 + x)*(1.0 - y*y);
+        output.access(6) = 0.5*(1.0 - x*x)*(1.0 + y);
+        output.access(7) = 0.5*(1.0 - x)*(1.0 - y*y);
+      }
+
       break;
     }
     case OPERATOR_D1 :
@@ -87,33 +104,61 @@ namespace Intrepid2 {
       const auto x = input(0);
       const auto y = input(1);
 
-      // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-      output.access(0, 0) = (-0.25 + 0.5*x)*(-1. + y)*y;
-      output.access(0, 1) = (-1.0 + x)*x*(-0.25 + 0.5*y);
-      
-      output.access(1, 0) = (0.25 + 0.5*x)*(-1. + y)*y;
-      output.access(1, 1) = x*(1. + x)*(-0.25 + 0.5*y);
-      
-      output.access(2, 0) = (0.25 + 0.5*x)*y*(1. + y);
-      output.access(2, 1) = x*(1. + x)*(0.25 + 0.5*y);
- 
-      output.access(3, 0) = (-0.25 + 0.5*x)*y*(1. + y);
-      output.access(3, 1) = (-1. + x)*x*(0.25 + 0.5*y);
+      if constexpr (!serendipity) {
 
-      output.access(4, 0) = x*(1.0 - y)*y;
-      output.access(4, 1) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
+        output.access(0, 0) = (-0.25 + 0.5*x)*(-1. + y)*y;
+        output.access(0, 1) = (-1.0 + x)*x*(-0.25 + 0.5*y);
         
-      output.access(5, 0) = 0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
-      output.access(5, 1) =-x*(1.0 + x)*y;
+        output.access(1, 0) = (0.25 + 0.5*x)*(-1. + y)*y;
+        output.access(1, 1) = x*(1. + x)*(-0.25 + 0.5*y);
         
-      output.access(6, 0) =-y*(1.0 + y)*x;
-      output.access(6, 1) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
-        
-      output.access(7, 0) = 0.5*(1.0 - y)*(1.0+ y)*(-1.0 + 2.0*x);
-      output.access(7, 1) = (1.0 - x)*x*y;
- 
-      output.access(8, 0) =-2.0*(1.0 - y)*(1.0 + y)*x;
-      output.access(8, 1) =-2.0*(1.0 - x)*(1.0 + x)*y;          
+        output.access(2, 0) = (0.25 + 0.5*x)*y*(1. + y);
+        output.access(2, 1) = x*(1. + x)*(0.25 + 0.5*y);
+  
+        output.access(3, 0) = (-0.25 + 0.5*x)*y*(1. + y);
+        output.access(3, 1) = (-1. + x)*x*(0.25 + 0.5*y);
+
+        output.access(4, 0) = x*(1.0 - y)*y;
+        output.access(4, 1) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
+          
+        output.access(5, 0) = 0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
+        output.access(5, 1) =-x*(1.0 + x)*y;
+          
+        output.access(6, 0) =-y*(1.0 + y)*x;
+        output.access(6, 1) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
+          
+        output.access(7, 0) = 0.5*(1.0 - y)*(1.0+ y)*(-1.0 + 2.0*x);
+        output.access(7, 1) = (1.0 - x)*x*y; 
+
+        output.access(8, 0) =-2.0*(1.0 - y)*(1.0 + y)*x;
+        output.access(8, 1) =-2.0*(1.0 - x)*(1.0 + x)*y;
+
+      } else { //serendipity
+
+        output.access(0, 0) = -0.25*(1.0-y)*(-x-y-1.0) - 0.25*(1.0-x)*(1.0-y);
+        output.access(0, 1) = -0.25*(1.0-x)*(-x-y-1.0) - 0.25*(1.0-x)*(1.0-y);
+
+        output.access(1, 0) =  0.25*(1.0-y)*( x-y-1.0) + 0.25*(1.0+x)*(1.0-y);
+        output.access(1, 1) = -0.25*(1.0+x)*( x-y-1.0) - 0.25*(1.0+x)*(1.0-y);
+
+        output.access(2, 0) =  0.25*(1.0+y)*( x+y-1.0) + 0.25*(1.0+x)*(1.0+y);
+        output.access(2, 1) =  0.25*(1.0+x)*( x+y-1.0) + 0.25*(1.0+x)*(1.0+y);
+
+        output.access(3, 0) = -0.25*(1.0+y)*(-x+y-1.0) - 0.25*(1.0-x)*(1.0+y);
+        output.access(3, 1) =  0.25*(1.0-x)*(-x+y-1.0) + 0.25*(1.0-x)*(1.0+y);
+
+        output.access(4, 0) = -x*(1.0-y);
+        output.access(4, 1) = -0.5*(1.0-x*x);
+
+        output.access(5, 0) =  0.5*(1.0-y*y);
+        output.access(5, 1) = -y*(1.0+x);
+          
+        output.access(6, 0) = -x*(1.0+y);
+        output.access(6, 1) =  0.5*(1.0-x*x);
+
+        output.access(7, 0) = -0.5*(1.0-y*y);
+        output.access(7, 1) = -y*(1.0-x);
+      }      
       break;
     }
     case OPERATOR_CURL : {
@@ -122,178 +167,257 @@ namespace Intrepid2 {
 
       // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
       // CURL(u) = (u_y, -u_x), is rotated GRAD
-      output.access(0, 1) =-(-0.25 + 0.5*x)*(-1. + y)*y;
-      output.access(0, 0) = (-1.0 + x)*x*(-0.25 + 0.5*y);
+
+      if constexpr (!serendipity) {
+        output.access(0, 1) =-(-0.25 + 0.5*x)*(-1. + y)*y;
+        output.access(0, 0) = (-1.0 + x)*x*(-0.25 + 0.5*y);
+        
+        output.access(1, 1) =-(0.25 + 0.5*x)*(-1. + y)*y;
+        output.access(1, 0) = x*(1. + x)*(-0.25 + 0.5*y);
+        
+        output.access(2, 1) =-(0.25 + 0.5*x)*y*(1. + y);
+        output.access(2, 0) = x*(1. + x)*(0.25 + 0.5*y);
+        
+        output.access(3, 1) =-(-0.25 + 0.5*x)*y*(1. + y);
+        output.access(3, 0) = (-1. + x)*x*(0.25 + 0.5*y);
+        
+        output.access(4, 1) =-x*(1.0 - y)*y;
+        output.access(4, 0) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
+        
+        output.access(5, 1) =-0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
+        output.access(5, 0) =-x*(1.0 + x)*y;
+        
+        output.access(6, 1) = y*(1.0 + y)*x;
+        output.access(6, 0) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
+        
+        output.access(7, 1) =-0.5*(1.0 - y)*(1.0 + y)*(-1.0 + 2.0*x);
+        output.access(7, 0) = (1.0 - x)*x*y;
+ 
+        output.access(8, 1) = 2.0*(1.0 - y)*(1.0 + y)*x;
+        output.access(8, 0) =-2.0*(1.0 - x)*(1.0 + x)*y;
       
-      output.access(1, 1) =-(0.25 + 0.5*x)*(-1. + y)*y;
-      output.access(1, 0) = x*(1. + x)*(-0.25 + 0.5*y);
-      
-      output.access(2, 1) =-(0.25 + 0.5*x)*y*(1. + y);
-      output.access(2, 0) = x*(1. + x)*(0.25 + 0.5*y);
-      
-      output.access(3, 1) =-(-0.25 + 0.5*x)*y*(1. + y);
-      output.access(3, 0) = (-1. + x)*x*(0.25 + 0.5*y);
-      
-      output.access(4, 1) =-x*(1.0 - y)*y;
-      output.access(4, 0) = 0.5*(1.0 - x)*(1.0 + x)*(-1.0 + 2.0*y);
-      
-      output.access(5, 1) =-0.5*(1.0 - y)*(1.0 + y)*(1.0 + 2.0*x);
-      output.access(5, 0) =-x*(1.0 + x)*y;
-      
-      output.access(6, 1) = y*(1.0 + y)*x;
-      output.access(6, 0) = 0.5*(1.0 - x)*(1.0 + x)*(1.0 + 2.0*y);
-      
-      output.access(7, 1) =-0.5*(1.0 - y)*(1.0 + y)*(-1.0 + 2.0*x);
-      output.access(7, 0) = (1.0 - x)*x*y;
-      
-      output.access(8, 1) = 2.0*(1.0 - y)*(1.0 + y)*x;
-      output.access(8, 0) =-2.0*(1.0 - x)*(1.0 + x)*y;          
+      }  else { //serendipity
+        output.access(0, 1) =  0.25*(1.0-y)*(-x-y-1.0) + 0.25*(1.0-x)*(1.0-y);
+        output.access(0, 0) = -0.25*(1.0-x)*(-x-y-1.0) - 0.25*(1.0-x)*(1.0-y);
+
+        output.access(1, 1) = -0.25*(1.0-y)*( x-y-1.0) - 0.25*(1.0+x)*(1.0-y);
+        output.access(1, 0) = -0.25*(1.0+x)*( x-y-1.0) - 0.25*(1.0+x)*(1.0-y);
+
+        output.access(2, 1) = -0.25*(1.0+y)*( x+y-1.0) - 0.25*(1.0+x)*(1.0+y);
+        output.access(2, 0) =  0.25*(1.0+x)*( x+y-1.0) + 0.25*(1.0+x)*(1.0+y);
+
+        output.access(3, 1) =  0.25*(1.0+y)*(-x+y-1.0) + 0.25*(1.0-x)*(1.0+y);
+        output.access(3, 0) =  0.25*(1.0-x)*(-x+y-1.0) + 0.25*(1.0-x)*(1.0+y);
+
+        output.access(4, 1) =  x*(1.0-y);
+        output.access(4, 0) = -0.5*(1.0-x*x);
+
+        output.access(5, 1) = -0.5*(1.0-y*y);
+        output.access(5, 0) = -y*(1.0+x);
+          
+        output.access(6, 1) =  x*(1.0+y);
+        output.access(6, 0) =  0.5*(1.0-x*x);
+
+        output.access(7, 1) =  0.5*(1.0-y*y);
+        output.access(7, 0) = -y*(1.0-x);
+      }        
       break;
     }
     case OPERATOR_D2 : {
       const auto x = input(0);
       const auto y = input(1);
-      // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality=3) 
-      output.access(0, 0) = 0.5*(-1.0 + y)*y;
-      output.access(0, 1) = 0.25 - 0.5*y + x*(-0.5 + 1.*y);
-      output.access(0, 2) = 0.5*(-1.0 + x)*x;
+      // output.access is a rank-3 array with dimensions (basisCardinality_, D2Cardinality=3) 
 
-      output.access(1, 0) = 0.5*(-1.0 + y)*y;
-      output.access(1, 1) =-0.25 + 0.5*y + x*(-0.5 + 1.*y);
-      output.access(1, 2) = 0.5*x*(1.0 + x);
-      
-      output.access(2, 0) = 0.5*y*(1.0 + y);
-      output.access(2, 1) = 0.25 + 0.5*y + x*(0.5 + 1.*y);
-      output.access(2, 2) = 0.5*x*(1.0 + x);
-      
-      output.access(3, 0) = 0.5*y*(1.0 + y);
-      output.access(3, 1) =-0.25 - 0.5*y + x*(0.5 + 1.*y);
-      output.access(3, 2) = 0.5*(-1.0 + x)*x;
-      
-      output.access(4, 0) = (1.0 - y)*y;
-      output.access(4, 1) = x*(1. - 2.*y);
-      output.access(4, 2) = (1.0 - x)*(1.0 + x);
+      if constexpr (!serendipity) {
 
-      output.access(5, 0) = (1.0 - y)*(1.0 + y);
-      output.access(5, 1) = x*(0. - 2.*y) - 1.*y;
-      output.access(5, 2) =-x*(1.0 + x);
+        output.access(0, 0) = 0.5*(-1.0 + y)*y;
+        output.access(0, 1) = 0.25 - 0.5*y + x*(-0.5 + 1.*y);
+        output.access(0, 2) = 0.5*(-1.0 + x)*x;
 
-      output.access(6, 0) =-y*(1.0 + y);
-      output.access(6, 1) = x*(-1. - 2.*y);
-      output.access(6, 2) = (1.0 - x)*(1.0 + x);
+        output.access(1, 0) = 0.5*(-1.0 + y)*y;
+        output.access(1, 1) =-0.25 + 0.5*y + x*(-0.5 + 1.*y);
+        output.access(1, 2) = 0.5*x*(1.0 + x);
+        
+        output.access(2, 0) = 0.5*y*(1.0 + y);
+        output.access(2, 1) = 0.25 + 0.5*y + x*(0.5 + 1.*y);
+        output.access(2, 2) = 0.5*x*(1.0 + x);
+        
+        output.access(3, 0) = 0.5*y*(1.0 + y);
+        output.access(3, 1) =-0.25 - 0.5*y + x*(0.5 + 1.*y);
+        output.access(3, 2) = 0.5*(-1.0 + x)*x;
+        
+        output.access(4, 0) = (1.0 - y)*y;
+        output.access(4, 1) = x*(1. - 2.*y);
+        output.access(4, 2) = (1.0 - x)*(1.0 + x);
 
-      output.access(7, 0) = (1.0 - y)*(1.0 + y);
-      output.access(7, 1) = x*(0. - 2.*y) + 1.*y;
-      output.access(7, 2) = (1.0 - x)*x;
+        output.access(5, 0) = (1.0 - y)*(1.0 + y);
+        output.access(5, 1) = x*(0. - 2.*y) - 1.*y;
+        output.access(5, 2) =-x*(1.0 + x);
 
-      output.access(8, 0) =-2.0 + 2.0*y*y;
-      output.access(8, 1) = 4*x*y;
-      output.access(8, 2) =-2.0 + 2.0*x*x;
+        output.access(6, 0) =-y*(1.0 + y);
+        output.access(6, 1) = x*(-1. - 2.*y);
+        output.access(6, 2) = (1.0 - x)*(1.0 + x);
+
+        output.access(7, 0) = (1.0 - y)*(1.0 + y);
+        output.access(7, 1) = x*(0. - 2.*y) + 1.*y;
+        output.access(7, 2) = (1.0 - x)*x;
+
+        output.access(8, 0) =-2.0 + 2.0*y*y;
+        output.access(8, 1) = 4*x*y;
+        output.access(8, 2) =-2.0 + 2.0*x*x;
+
+      } else { //serendipity
+
+        output.access(0, 0) =  0.5*(1.0 - y);
+        output.access(0, 1) =  0.25*(1.0 - 2.0*x - 2.0*y);
+        output.access(0, 2) =  0.5*(1.0 - x);
+
+        output.access(1, 0) =  0.5*(1.0 - y);
+        output.access(1, 1) = -0.25*(1.0 + 2.0*x - 2.0*y);
+        output.access(1, 2) =  0.5*(1.0 + x);
+
+        output.access(2, 0) =  0.5*(1.0 + y);
+        output.access(2, 1) =  0.25*(1.0 + 2.0*x + 2.0*y);
+        output.access(2, 2) =  0.5*(1.0 + x);
+
+        output.access(3, 0) =  0.5*(1.0 + y);
+        output.access(3, 1) = -0.25*(1.0 - 2.0*x + 2.0*y);
+        output.access(3, 2) =  0.5*(1.0 - x);
+        
+        output.access(4, 0) = -(1.0 - y);
+        output.access(4, 1) =  x;
+        output.access(4, 2) =  0.0;
+
+        output.access(5, 0) =  0.0;
+        output.access(5, 1) = -y;
+        output.access(5, 2) = -(1.0 + x);
+
+        output.access(6, 0) = -(1.0 + y);
+        output.access(6, 1) = -x;
+        output.access(6, 2) =  0.0;
+
+        output.access(7, 0) =  0.0;
+        output.access(7, 1) =  y;
+        output.access(7, 2) = -(1.0 - x);
+
+      }
       break;
     }
     case OPERATOR_D3 : {
-      const auto x = input(0);
-      const auto y = input(1);
-      output.access(0, 0) = 0.0;
-      output.access(0, 1) =-0.5 + y;
-      output.access(0, 2) =-0.5 + x;
-      output.access(0, 3) = 0.0;
+      if constexpr (!serendipity) {
+        const auto x = input(0);
+        const auto y = input(1);
+        output.access(0, 0) = 0.0;
+        output.access(0, 1) =-0.5 + y;
+        output.access(0, 2) =-0.5 + x;
+        output.access(0, 3) = 0.0;
 
-      output.access(1, 0) = 0.0;
-      output.access(1, 1) =-0.5 + y;
-      output.access(1, 2) = 0.5 + x;
-      output.access(1, 3) = 0.0;
+        output.access(1, 0) = 0.0;
+        output.access(1, 1) =-0.5 + y;
+        output.access(1, 2) = 0.5 + x;
+        output.access(1, 3) = 0.0;
 
-      output.access(2, 0) = 0.0;
-      output.access(2, 1) = 0.5 + y;
-      output.access(2, 2) = 0.5 + x;
-      output.access(2, 3) = 0.0;
+        output.access(2, 0) = 0.0;
+        output.access(2, 1) = 0.5 + y;
+        output.access(2, 2) = 0.5 + x;
+        output.access(2, 3) = 0.0;
 
-      output.access(3, 0) = 0.0;
-      output.access(3, 1) = 0.5 + y;
-      output.access(3, 2) =-0.5 + x;
-      output.access(3, 3) = 0.0;
+        output.access(3, 0) = 0.0;
+        output.access(3, 1) = 0.5 + y;
+        output.access(3, 2) =-0.5 + x;
+        output.access(3, 3) = 0.0;
 
-      output.access(4, 0) = 0.0;
-      output.access(4, 1) = 1.0 - 2.0*y;
-      output.access(4, 2) =-2.0*x;
-      output.access(4, 3) = 0.0;
+        output.access(4, 0) = 0.0;
+        output.access(4, 1) = 1.0 - 2.0*y;
+        output.access(4, 2) =-2.0*x;
+        output.access(4, 3) = 0.0;
 
-      output.access(5, 0) = 0.0;
-      output.access(5, 1) =-2.0*y;
-      output.access(5, 2) =-1.0 - 2.0*x;
-      output.access(5, 3) = 0.0;
+        output.access(5, 0) = 0.0;
+        output.access(5, 1) =-2.0*y;
+        output.access(5, 2) =-1.0 - 2.0*x;
+        output.access(5, 3) = 0.0;
 
-      output.access(6, 0) = 0.0;
-      output.access(6, 1) =-1.0 - 2.0*y;
-      output.access(6, 2) =-2.0*x;
-      output.access(6, 3) = 0.0;
+        output.access(6, 0) = 0.0;
+        output.access(6, 1) =-1.0 - 2.0*y;
+        output.access(6, 2) =-2.0*x;
+        output.access(6, 3) = 0.0;
 
-      output.access(7, 0) = 0.0;
-      output.access(7, 1) =-2.0*y;
-      output.access(7, 2) = 1.0 - 2.0*x;
-      output.access(7, 3) = 0.0;        
+        output.access(7, 0) = 0.0;
+        output.access(7, 1) =-2.0*y;
+        output.access(7, 2) = 1.0 - 2.0*x;
+        output.access(7, 3) = 0.0;             
+
+        output.access(8, 0) = 0.0;
+        output.access(8, 1) = 4.0*y;
+        output.access(8, 2) = 4.0*x;
+        output.access(8, 3) = 0.0;
+
+      }  else { //serendipity
       
-      output.access(8, 0) = 0.0;
-      output.access(8, 1) = 4.0*y;
-      output.access(8, 2) = 4.0*x;
-      output.access(8, 3) = 0.0;                
+        output.access(0, 0) = 0.0;
+        output.access(0, 1) =-0.5;
+        output.access(0, 2) =-0.5;
+        output.access(0, 3) = 0.0;
+
+        output.access(1, 0) = 0.0;
+        output.access(1, 1) =-0.5;
+        output.access(1, 2) = 0.5;
+        output.access(1, 3) = 0.0;
+
+        output.access(2, 0) = 0.0;
+        output.access(2, 1) = 0.5;
+        output.access(2, 2) = 0.5;
+        output.access(2, 3) = 0.0;
+
+        output.access(3, 0) = 0.0;
+        output.access(3, 1) = 0.5;
+        output.access(3, 2) =-0.5;
+        output.access(3, 3) = 0.0;
+
+        output.access(4, 0) = 0.0;
+        output.access(4, 1) = 1.0;
+        output.access(4, 2) = 0.0;
+        output.access(4, 3) = 0.0;
+
+        output.access(5, 0) = 0.0;
+        output.access(5, 1) = 0.0;
+        output.access(5, 2) =-1.0;
+        output.access(5, 3) = 0.0;
+
+        output.access(6, 0) = 0.0;
+        output.access(6, 1) =-1.0;
+        output.access(6, 2) = 0.0;
+        output.access(6, 3) = 0.0;
+
+        output.access(7, 0) = 0.0;
+        output.access(7, 1) = 0.0;
+        output.access(7, 2) = 1.0;
+        output.access(7, 3) = 0.0;         
+      }            
       break;
     }
     case OPERATOR_D4 : {
-      output.access(0, 0) = 0.0;
-      output.access(0, 1) = 0.0;
-      output.access(0, 2) = 1.0;
-      output.access(0, 3) = 0.0;                
-      output.access(0, 4) = 0.0;                
 
-      output.access(1, 0) = 0.0;
-      output.access(1, 1) = 0.0;
-      output.access(1, 2) = 1.0;
-      output.access(1, 3) = 0.0;                
-      output.access(1, 4) = 0.0;                
-      
-      output.access(2, 0) = 0.0;
-      output.access(2, 1) = 0.0;
-      output.access(2, 2) = 1.0;
-      output.access(2, 3) = 0.0;                
-      output.access(2, 4) = 0.0;                
-      
-      output.access(3, 0) = 0.0;
-      output.access(3, 1) = 0.0;
-      output.access(3, 2) = 1.0;
-      output.access(3, 3) = 0.0;                
-      output.access(3, 4) = 0.0;                
-      
-      output.access(4, 0) = 0.0;
-      output.access(4, 1) = 0.0;
-      output.access(4, 2) =-2.0;
-      output.access(4, 3) = 0.0;                
-      output.access(4, 4) = 0.0;                
+      const ordinal_type jend = output.extent(1);
+      const ordinal_type iend = output.extent(0);
 
-      output.access(5, 0) = 0.0;
-      output.access(5, 1) = 0.0;
-      output.access(5, 2) =-2.0;
-      output.access(5, 3) = 0.0;                
-      output.access(5, 4) = 0.0;                
-      
-      output.access(6, 0) = 0.0;
-      output.access(6, 1) = 0.0;
-      output.access(6, 2) =-2.0;
-      output.access(6, 3) = 0.0;                
-      output.access(6, 4) = 0.0;                
-      
-      output.access(7, 0) = 0.0;
-      output.access(7, 1) = 0.0;
-      output.access(7, 2) =-2.0;
-      output.access(7, 3) = 0.0;                
-      output.access(7, 4) = 0.0;                
-      
-      output.access(8, 0) = 0.0;
-      output.access(8, 1) = 0.0;
-      output.access(8, 2) = 4.0;
-      output.access(8, 3) = 0.0;                
-      output.access(8, 4) = 0.0;                
+      for (ordinal_type j=0;j<jend;++j)
+        for (ordinal_type i=0;i<iend;++i)
+          output.access(i, j) = 0.0;
+
+      if constexpr (!serendipity) {
+        output.access(0, 2) = 1.0; 
+        output.access(1, 2) = 1.0; 
+        output.access(2, 2) = 1.0; 
+        output.access(3, 2) = 1.0;              
+        
+        output.access(4, 2) =-2.0; 
+        output.access(5, 2) =-2.0;  
+        output.access(6, 2) =-2.0; 
+        output.access(7, 2) =-2.0;          
+        
+        output.access(8, 2) = 4.0;
+      }            
       break;
     }
     case OPERATOR_MAX : {
@@ -319,13 +443,15 @@ namespace Intrepid2 {
     }
     }
   }
-
+ 
+  template<bool serendipity>
   template<typename DT, 
   typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   void 
-  Basis_HGRAD_QUAD_C2_FEM::
-  getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+  Basis_HGRAD_QUAD_DEG2_FEM<serendipity>::
+  getValues( const typename DT::execution_space& space,
+                   Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
              const EOperator operatorType ) {
     typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
@@ -334,7 +460,7 @@ namespace Intrepid2 {
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.extent(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
   
     switch (operatorType) {
     
@@ -393,17 +519,14 @@ namespace Intrepid2 {
     }
   }
 
-
-
-
   }
   // -------------------------------------------------------------------------------------
 
 
-  template<typename DT, typename OT, typename PT>
-  Basis_HGRAD_QUAD_C2_FEM<DT,OT,PT>::
-  Basis_HGRAD_QUAD_C2_FEM() {
-    this->basisCardinality_  = 9;
+  template<bool serendipity, typename DT, typename OT, typename PT>
+  Basis_HGRAD_QUAD_DEG2_FEM<serendipity, DT,OT,PT>::
+  Basis_HGRAD_QUAD_DEG2_FEM() {
+    this->basisCardinality_  = serendipity ? 8 : 9;
     this->basisDegree_       = 2;    
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
     this->basisType_         = BASIS_FEM_DEFAULT;
@@ -427,11 +550,11 @@ namespace Intrepid2 {
                                  1, 1, 0, 1,
                                  1, 2, 0, 1,
                                  1, 3, 0, 1,
-                                 // quad center
+                                 // quad center, not used for serendipity elements
                                  2, 0, 0, 1};
   
       //host view
-      OrdinalTypeArray1DHost tagView(&tags[0],36);
+      OrdinalTypeArray1DHost tagView(&tags[0], serendipity ? 32 : 36);
     
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -458,7 +581,9 @@ namespace Intrepid2 {
     dofCoords(6,0) =  0.0;   dofCoords(6,1) =  1.0;
     dofCoords(7,0) = -1.0;   dofCoords(7,1) =  0.0;
   
-    dofCoords(8,0) =  0.0;   dofCoords(8,1) =  0.0;
+    if constexpr (!serendipity) {
+      dofCoords(8,0) =  0.0;   dofCoords(8,1) =  0.0;
+    }
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);   

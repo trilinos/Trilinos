@@ -62,23 +62,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
 
 namespace Intrepid2 {
 
 namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
-
 
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HDIV_TET_In_FEM_Test01(const bool verbose) {
@@ -121,8 +109,6 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
-
   const scalar_type tol = tolerence();
   int errorFlag = 0;
 
@@ -147,13 +133,13 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
     TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
 
     const ordinal_type cardinality = tetBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, cardinality , dim);
     tetBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
     RealSpaceTools<DeviceType>::clone(dofCoords, dofCoords_scalar);
 
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoeffs, cardinality , dim);
     tetBasis.getDofCoeffs(dofCoeffs);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
@@ -203,7 +189,7 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
     const ordinal_type order = std::min(4, maxOrder);
     TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
     const ordinal_type cardinality = tetBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(dofCoords_scalar, cardinality , dim);
     tetBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
@@ -216,7 +202,7 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
     Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
 
     //Normals at each face
-    DynRankViewHostScalarValueType ConstructWithLabelScalar(normals, cardinality, dim); // normals at each point basis point
+    DynRankViewHostScalarValueType ConstructWithLabel(normals, cardinality, dim); // normals at each point basis point
     shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
     for (int sideId = 0; sideId < 4; ++sideId) {
       auto normal = Kokkos::subview(normals, sideId, Kokkos::ALL());
@@ -283,7 +269,7 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
       const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
       const ordinal_type cardinality = tetBasis.getCardinality();
       //Need to use Scalar type for lattice because PointTools dont's work with FAD types
-      DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+      DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
       DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
       RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
@@ -494,7 +480,7 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
       shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
       const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
       const ordinal_type cardinality = tetBasis.getCardinality();
-      DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+      DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
       DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
       RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);

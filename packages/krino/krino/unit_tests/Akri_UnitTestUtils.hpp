@@ -8,12 +8,19 @@
 
 #ifndef KRINO_UNIT_TESTS_INCLUDE_AKRI_UNITTESTUTILS_H_
 #define KRINO_UNIT_TESTS_INCLUDE_AKRI_UNITTESTUTILS_H_
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
-void expect_eq(const Vector3d & gold, const Vector3d & result, const double relativeTol=1.e-6);
-void expect_eq_absolute(const Vector3d & gold, const Vector3d & result, const double absoluteTol=1.e-6);
+class Facet2d;
+class Facet3d;
+
+void expect_eq(const stk::math::Vector3d & gold, const stk::math::Vector3d & result, const double relativeTol=1.e-6);
+void expect_eq_absolute(const stk::math::Vector3d & gold, const stk::math::Vector3d & result, const double absoluteTol=1.e-6);
+void expect_eq(const Facet2d & gold, const Facet2d & result, const double relativeTol=1.e-6);
+void expect_eq(const Facet3d & gold, const Facet3d & result, const double relativeTol=1.e-6);
+bool is_near_relative(const Facet2d & gold, const Facet2d & result, const double relativeTol=1.e-6);
+bool is_near_relative(const Facet3d & gold, const Facet3d & result, const double relativeTol=1.e-6);
 
 }
 

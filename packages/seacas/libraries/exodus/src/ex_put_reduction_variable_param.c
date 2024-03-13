@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -18,9 +18,6 @@ static int ex__prepare_result_var(int exoid, int num_vars, char *type_name, char
   int varid;
   int dims[2];
   int dim_str_name;
-#if NC_HAS_HDF5
-  int fill = NC_FILL_CHAR;
-#endif
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -62,7 +59,8 @@ static int ex__prepare_result_var(int exoid, int num_vars, char *type_name, char
     }
     return (EX_FATAL); /* exit define mode and return */
   }
-#if NC_HAS_HDF5
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
+  int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, varid, 0, &fill);
 #endif
   return (EX_NOERR);

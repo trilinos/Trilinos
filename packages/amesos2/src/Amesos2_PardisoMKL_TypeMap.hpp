@@ -278,10 +278,10 @@ namespace Amesos2 {
   template <>
   struct TypeMap<PardisoMKL,long int>
   {
-    typedef Meta::if_then_else<
+    typedef std::conditional_t<
       sizeof(int) < sizeof(long int),
       TypeMap<PardisoMKL,long long int>::type,
-      TypeMap<PardisoMKL,int>::type >::type type;
+      TypeMap<PardisoMKL,int>::type > type;
   };
 
 } // end namespace Amesos

@@ -46,18 +46,13 @@
 #ifndef MUELU_VISUALIZATIONHELPERS_FWD_HPP
 #define MUELU_VISUALIZATIONHELPERS_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class VisualizationHelpers;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class VisualizationHelpers;
 }
 
 #ifndef MUELU_VISUALIZATIONHELPERS_SHORT
 #define MUELU_VISUALIZATIONHELPERS_SHORT
 #endif
 
-
-
-#endif // MUELU_VISUALIZATIONHELPERS_FWD_HPP
+#endif  // MUELU_VISUALIZATIONHELPERS_FWD_HPP

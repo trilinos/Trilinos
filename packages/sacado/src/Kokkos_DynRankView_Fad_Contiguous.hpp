@@ -751,7 +751,7 @@ public:
                         src.m_map.m_impl_offset.layout() );
 
       dst.m_map.m_impl_handle = src.m_map.m_impl_handle ;
-      dst.m_rank = src.Rank ;
+      dst.m_rank = src.rank ;
 
       dst.m_map.m_fad_size = src.m_map.m_fad_size ;
       dst.m_map.m_original_fad_size = src.m_map.m_original_fad_size;
@@ -824,7 +824,7 @@ public:
       dst.m_map.m_impl_offset.m_stride = src.m_map.m_array_offset.m_stride ;
 
       dst.m_map.m_impl_handle = src.m_map.m_impl_handle ;
-      dst.m_rank = src.Rank ;
+      dst.m_rank = src.rank ;
     }
 };
 

@@ -34,7 +34,7 @@ function evaluate_jsrun_command {
 
   if [ "$ECHO_CMD" == "1" ]; then
     echo "BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
-    echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " \
+    echo "AFTER: export TPETRA_ASSUME_GPU_AWARE_MPI=${TPETRA_ASSUME_GPU_AWARE_MPI}; jsrun " \
       $(printf "'%s' " "${args[@]}")
   fi
 
@@ -74,12 +74,22 @@ function evaluate_jsrun_command {
   return $jsrun_ret
 }
 
-# Check if TPETRA_ASSUME_CUDA_AWARE_MPI is set and default to 0 if unset.
-if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "0" ]] && \
-   [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" != "1" ]] \
+# Check if TPETRA_ASSUME_CUDA_AWARE_MPI (no longer supported) is set, but TPETRA_ASSUME_GPU_AWARE_MPI is not.
+# In this case, print a warning and then set the proper variable.
+if [[ -z "$TPETRA_ASSUME_GPU_AWARE_MPI" && ! -z "$TPETRA_ASSUME_CUDA_AWARE_MPI" ]] ;
+then
+  echo "** WARNING **, the environment variable TPETRA_ASSUME_CUDA_AWARE_MPI is no longer supported."
+  echo "               Use TPETRA_ASSUME_GPU_AWARE_MPI instead."
+  echo "               For now, will set TPETRA_ASSUME_GPU_AWARE_MPI=$TPETRA_ASSUME_CUDA_AWARE_MPI and continue."
+  export TPETRA_ASSUME_GPU_AWARE_MPI="$TPETRA_ASSUME_CUDA_AWARE_MPI"
+fi
+
+# Check if TPETRA_ASSUME_GPU_AWARE_MPI is set and default to 0 if unset.
+if [[ "$TPETRA_ASSUME_GPU_AWARE_MPI" != "0" ]] && \
+   [[ "$TPETRA_ASSUME_GPU_AWARE_MPI" != "1" ]] \
   ; then
-  echo "WARNING, you have not set TPETRA_ASSUME_CUDA_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_CUDA_AWARE_MPI=0"
-  export TPETRA_ASSUME_CUDA_AWARE_MPI=0
+  echo "WARNING, you have not set TPETRA_ASSUME_GPU_AWARE_MPI=0 or 1, defaulting to TPETRA_ASSUME_GPU_AWARE_MPI=0"
+  export TPETRA_ASSUME_GPU_AWARE_MPI=0
 fi
 
 # Parse input arguments and modify them for jsrun
@@ -155,8 +165,8 @@ if [ "$np_is_one" == "true" ]; then
 fi
 
 # I think if np=1 and disable_gpu_hooks is passed, then you aren't supposed to use -gpu
-if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]; then
-  debug_print "TPETRA_ASSUME_CUDA_AWARE_MPI=1 and np>1, adding -M -gpu"
+if [[ "$TPETRA_ASSUME_GPU_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]; then
+  debug_print "TPETRA_ASSUME_GPU_AWARE_MPI=1 and np>1, adding -M -gpu"
   added_arg="false"
 
   # look for an '-M' arg and prepend an arg (this could be a function)

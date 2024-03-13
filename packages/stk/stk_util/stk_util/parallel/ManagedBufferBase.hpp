@@ -57,6 +57,10 @@ class ManagedBufferBase
 
     virtual ~ManagedBufferBase() {}
 
+    ManagedBufferBase(const ManagedBufferBase&) = delete;
+
+    ManagedBufferBase operator=(const ManagedBufferBase&) = delete;
+
     using value_type = T;
 
     MPI_Comm get_comm() const { return m_comm; }
@@ -128,6 +132,10 @@ class ManagedCommBufferBase
       m_recvBufs.resize(commSize);
       m_recvBufStorage.resize(commSize);
     }
+
+    ManagedCommBufferBase(const ManagedCommBufferBase&) = delete;
+
+    ManagedCommBufferBase operator=(const ManagedCommBufferBase&) = delete;
 
     virtual ~ManagedCommBufferBase() {}
 

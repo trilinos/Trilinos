@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,7 +36,6 @@ void bucketsortsv(struct vtx_data **graph,      /* graph data structure */
   int             neighbor;     /* neighbor of vertex */
   int             set;          /* set that neighboring vertex belongs to */
   int             i, j;         /* loop counters */
-  void            randomize(int *array, int n), add2bilist();
 
   /* For each vertex, compute d-values and store in buckets. */
 

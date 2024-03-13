@@ -11,6 +11,9 @@
 
 #include "Tempus_config.hpp"
 
+#define TEMPUS_INSTANTIATE_TEMPLATE_CLASS_TPETRA(name, SC, LO, GO, Node) \
+  template class name<SC, LO, GO, Node>;
+
 // Always instantiate on double
 #define TEMPUS_INSTANTIATE_TEMPLATE_CLASS_ON_DOUBLE(name) \
   template class name<double>;
@@ -23,7 +26,7 @@
 #define TEMPUS_INSTANTIATE_TEMPLATE_CLASS_ON_COMPLEX_DOUBLE(name)
 #endif
 
-#define TEMPUS_INSTANTIATE_TEMPLATE_CLASS(name) \
+#define TEMPUS_INSTANTIATE_TEMPLATE_CLASS(name)     \
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS_ON_DOUBLE(name) \
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS_ON_COMPLEX_DOUBLE(name)
 

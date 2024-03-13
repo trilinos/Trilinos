@@ -318,8 +318,11 @@ double EdgeIntersectionData::solve_alpha_linear_system(double beta, bool& alphaV
   a(1, 0) = dDeltaB;
   a(1, 1) = -dot(d, d);
 
-  // std::cout << "A = " << A << std::endl;
-  // std::cout << "det(A) = " << det2x2(A) << std::endl;
+  if (std::abs(det2x2(a)) < m_tol)
+  {
+    alphaValid = false;
+    return -1;
+  }
 
   std::array<double, 2> rhs = {dot(cMinusB0, deltaB), dot(cMinusB0, d)};
 
@@ -346,6 +349,7 @@ double EdgeIntersectionData::solve_alpha_linear_system(double beta, bool& alphaV
   bDirection = bDirection / bDirectionLen;
 
   utils::Point dUnit = d / std::sqrt(dot(d, d));
+
   // std::cout << "d_unit = " << d_unit << std::endl;
   double cosTheta = std::abs(dot(bDirection, dUnit));
   cosTheta        = clamp(cosTheta, 0, 1);

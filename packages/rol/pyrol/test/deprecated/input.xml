@@ -1,0 +1,149 @@
+<ParameterList name="Inputs">
+
+  <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="General">
+    <Parameter name="Output Level" type="int" value="1" />
+    
+    <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
+    <Parameter name="Inexact Objective Function"     type="bool" value="false" />
+    <Parameter name="Inexact Gradient"               type="bool" value="false" />
+    <Parameter name="Inexact Hessian-Times-A-Vector" type="bool" value="false" />
+
+    <!-- ===========  SECANT INPUTS  =========== -->
+    <ParameterList name="Secant">
+      <Parameter name="Type"                  type="string" value="Limited-Memory BFGS" />
+      <Parameter name="Maximum Storage"       type="int"    value="10"                  />
+      <Parameter name="Barzilai-Borwein"      type="int"    value="1"                   />
+      <Parameter name="Use Default Scaling"   type="bool"   value="true"                />
+      <Parameter name="Initial Hessian Scale" type="double" value="1.0"                 />
+      <Parameter name="Use as Preconditioner" type="bool"   value="false"               />
+      <Parameter name="Use as Hessian"        type="bool"   value="false"               />
+    </ParameterList>
+
+    <!-- ===========  KRYLOV INPUTS  =========== -->
+    <ParameterList name="Krylov">
+      <Parameter name="Type"               type="string" value="Conjugate Gradients" />
+      <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
+      <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
+      <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+    </ParameterList>
+
+    <!-- ===========  POLYHEDRAL PROJECTION INPUTS  =========== -->
+    <ParameterList name="Polyhedral Projection">
+      <Parameter name="Type"                 type="string" value="Dai-Fletcher" />
+      <Parameter name="Iteration Limit"      type="int"    value="1000"         />
+      <!--
+      <Parameter name="Absolute Tolerance"   type="double" value="?"            />
+      <Parameter name="Relative Tolerance"   type="double" value="?"            />
+      <Parameter name="Multiplier Tolerance" type="double" value="?"            />
+      <ParameterList name="Douglas-Rachford">
+        <Parameter name="Constraint Weight"    type="double" value="?" />
+        <Parameter name="Penalty Parameter"    type="double" value="?" />
+        <Parameter name="Relaxation Parameter" type="double" value="?" />
+      </ParameterList>
+      -->
+    </ParameterList>
+  </ParameterList>
+
+  <!-- ===========  STEP SUBLIST  =========== -->
+  <ParameterList name="Step">
+    <Parameter name="Type" type="string" value="Trust Region" />
+    
+    <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
+    <ParameterList name="Augmented Lagrangian">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Use Default Initial Penalty Parameter"    type="bool"   value="true"         />
+      <Parameter name="Initial Penalty Parameter"                type="double" value="1e1"          />
+      <Parameter name="Use Scaled Augmented Lagrangian"          type="bool" value="false"          />
+      <Parameter name="Penalty Parameter Reciprocal Lower Bound" type="double" value="0.1"          />
+      <Parameter name="Penalty Parameter Growth Factor"          type="double" value="1e1"          />
+      <Parameter name="Maximum Penalty Parameter"                type="double" value="1e8"          />
+      <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Optimality Tolerance Update Exponent"     type="double" value="1.0"          />
+      <Parameter name="Optimality Tolerance Decrease Exponent"   type="double" value="1.0"          />
+      <Parameter name="Initial Optimality Tolerance"             type="double" value="1.0"          />
+      <!-- ===========  FEASIBILITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Feasibility Tolerance Update Exponent"    type="double" value="0.1"          />
+      <Parameter name="Feasibility Tolerance Decrease Exponent"  type="double" value="0.9"          />
+      <Parameter name="Initial Feasibility Tolerance"            type="double" value="1.0"          />
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <Parameter name="Print Intermediate Optimization History"  type="bool"   value="false"        />
+      <Parameter name="Subproblem Iteration Limit"               type="int"    value="1000"         />
+      <Parameter name="Subproblem Step Type"                     type="string" value="Trust Region" />
+      <Parameter name="Level of Hessian Approximation"           type="int"    value="0"            />
+      <!-- ===========  SCALING =========== -->
+      <Parameter name="Use Default Problem Scaling"              type="bool"   value="true"         /> 
+      <Parameter name="Objective Scaling"                        type="double" value="1.0"          />
+      <Parameter name="Constraint Scaling"                       type="double" value="1.0"          />
+    </ParameterList>
+
+    <!-- ===========  COMPOSITE STEP  =========== -->
+    <ParameterList name="Composite Step">
+      <Parameter name="Initial Radius"         type="double" value="1e-2" />
+      <Parameter name="Use Constraint Hessian" type="bool"   value="true" />
+      <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
+      <ParameterList name="Optimality System Solver">
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-8" />
+        <Parameter name="Fix Tolerance"              type="bool"   value="true" />
+      </ParameterList>
+      <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Tangential Subproblem Solver">
+        <Parameter name="Iteration Limit"    type="int"    value="20"   />
+        <Parameter name="Relative Tolerance" type="double" value="1e-2" />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ============= FLETCHER PENALTY  =========== -->
+    <ParameterList name="Fletcher">
+      <Parameter name="Penalty Parameter"                        type="double" value="1.0"          /> 
+      <Parameter name="Regularization Parameter"                 type="double" value="0.0"          /> 
+      <Parameter name="Minimum Regularization Parameter"         type="double" value="1e-8"         /> 
+      <Parameter name="Regularization Parameter Decrease Factor" type="double" value="1e-1"         /> 
+      <Parameter name="Penalty Parameter Growth Factor"          type="double" value="2.0"          /> 
+      <Parameter name="Modify Penalty Parameter"                 type="bool"   value="false"        /> 
+      <Parameter name="Maximum Penalty Parameter"                type="double" value="1e8"          /> 
+      <Parameter name="Minimum Penalty Parameter"                type="double" value="1e-6"         />     
+      <Parameter name="Subproblem Step Type"                     type="string" value="Trust Region" />
+      <Parameter name="Subproblem Iteration Limit"               type="int"    value="100"          />
+    </ParameterList>
+    
+    <!-- ===========  Stabilized LCL  =========== -->
+    <ParameterList name="Stablized LCL">
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Use Default Initial Penalty Parameter"   type="bool"   value="true"         />
+      <Parameter name="Initial Penalty Parameter"               type="double" value="1e1"          />
+      <Parameter name="Initial Elastic Penalty Parameter"       type="double" value="1e2"          />
+      <Parameter name="Use Scaled Stabilized LCL"               type="bool" value="false"          />
+      <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1e1"          />
+      <Parameter name="Maximum Penalty Parameter"               type="double" value="1e8"          />
+      <Parameter name="Maximum Elastic Penalty Parameter"       type="double" value="1e8"          />
+      <Parameter name="Elastic Penalty Parameter Growth Rate"   type="double" value="1e1"          />
+      <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Optimality Tolerance Increase Exponent"  type="double" value="1.0"          />
+      <Parameter name="Optimality Tolerance Decrease Exponent"  type="double" value="1.0"          />
+      <Parameter name="Initial Optimality Tolerance"            type="double" value="1.0"          />
+      <!-- ===========  FEASIBILITY TOLERANCE UPDATE  =========== -->
+      <Parameter name="Feasibility Tolerance Increase Exponent" type="double" value="0.9"          />
+      <Parameter name="Feasibility Tolerance Decrease Exponent" type="double" value="0.1"          />
+      <Parameter name="Initial Feasibility Tolerance"           type="double" value="1.0"          />
+      <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="1000"         />
+      <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
+      <Parameter name="Level of Hessian Approximation"          type="int"    value="0"            />
+      <!-- ===========  SCALING =========== -->
+      <Parameter name="Use Default Problem Scaling"             type="bool"   value="true"         /> 
+      <Parameter name="Objective Scaling"                       type="double" value="1.0"          />
+      <Parameter name="Constraint Scaling"                      type="double" value="1.0"          />
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- ===========  STATUS TEST SUBLIST  =========== -->
+  <ParameterList name="Status Test">
+    <Parameter name="Gradient Tolerance"      type="double" value="1.e-8"  />
+    <Parameter name="Constraint Tolerance"    type="double" value="1.e-8"  />
+    <Parameter name="Step Tolerance"          type="double" value="1.e-12" />
+    <Parameter name="Iteration Limit"         type="int"    value="100"    />
+    <Parameter name="Use Relative Tolerances" type="bool"   value="false"  />
+  </ParameterList>
+</ParameterList>

@@ -791,7 +791,7 @@ endmacro()
 
 
 # Helper macros to pass through common CMake configure arguments used by both
-# package-by-pacakge approach and all-at-once approach
+# package-by-package approach and all-at-once approach
 #
 macro(tribits_fwd_cmake_config_args_0)
   set( CONFIGURE_OPTIONS
@@ -1643,27 +1643,27 @@ macro(tribits_ctest_all_at_once)
 
   if (AAO_CONFIGURE_FAILED OR AAO_BUILD_FAILED OR AAO_INSTALL_FAILED)
     if (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
-      # Special value "ALL_PACAKGES" so that it will trigger enabling all
+      # Special value "ALL_PACKAGES" so that it will trigger enabling all
       # packages on the next CI iteration!
       set(${PROJECT_NAME}_FAILED_PACKAGES  ALL_PACKAGES)
     else()
       # Specific packages were selected to be tested so fail all of them!
       set(${PROJECT_NAME}_FAILED_PACKAGES  ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
     endif()
-    # NOTE: With the all-at-once appraoch, there is no way to determine which
+    # NOTE: With the all-at-once approach, there is no way to determine which
     # packages have build or install failures given the current ctest_build()
     # command.  And since some build targets don't get used in tests, we can't
     # look at what packages have test failures in order to know that a build
     # failure will cause a test failure.  And in the case of install failures,
     # those will never cause test failures.  Therefore, if there are any build
     # or install failures, we just have to assume that any tested package
-    # could have failed.  Hense, we set the above just like for a (global)
+    # could have failed.  Hence, we set the above just like for a (global)
     # configure failures.  Perhaps we could read the generated *.xml files to
-    # figure that out but that is not worth the work righ now.  The only bad
+    # figure that out but that is not worth the work right now.  The only bad
     # consequence of this is that a CI build would end up building and testing
-    # every package even if only one dowstream package had a build failure,
+    # every package even if only one downstream package had a build failure,
     # for example.  That is just one of the downsides of the all-at-once
-    # appraoch vs. the package-by-package appraoch.
+    # approach vs. the package-by-package approach.
   elseif (FAILED_TEST_LOG_FILE)
     tribits_get_failed_packages_from_failed_tests("${FAILED_TEST_LOG_FILE}"
       ${PROJECT_NAME}_FAILED_PACKAGES )

@@ -32,36 +32,36 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-#
-# A) Package-specific configuration options
-#
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
 FILE(GLOB HEADERS *.hpp *.h)
 FILE(GLOB SOURCES *.cpp)
 
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_util_util
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
+IF(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_util_util
+    NOINSTALLHEADERS ${HEADERS}
+    SOURCES ${SOURCES}
   )
+ELSE()
+  add_library(stk_util_util ${SOURCES})
+
+  target_link_libraries(stk_util_util PUBLIC Kokkos::kokkos)
+ENDIF()
+
+target_include_directories(stk_util_util PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_util>
+  $<INSTALL_INTERFACE:include>
+)
+target_include_directories(stk_util_util PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_BINARY_DIR}>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/util/)
+
+IF(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_util_util DESTINATION ${STK_INSTALL_LIBDIR})
+ENDIF()
+

@@ -1,5 +1,0 @@
-#include "Rythmos_ImplicitBDFStepperRampingStepControl_decl.hpp"
-#ifndef HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
-#include "Rythmos_ImplicitBDFStepperRampingStepControl_def.hpp"
-#endif
-

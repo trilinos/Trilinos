@@ -128,7 +128,7 @@ void write_mesh_with_specified_splitting(stk::mesh::BulkData &bulk, const std::s
   stkIo.set_bulk_data(bulk);
 
   size_t outputIdx = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);
-  Ioss::Region* ioRegion = stkIo.get_output_io_region(outputIdx).get();
+  Ioss::Region* ioRegion = stkIo.get_output_ioss_region(outputIdx).get();
 
   Ioss::DatabaseIO *db = ioRegion->get_database();
   assert(db != nullptr);
@@ -1256,7 +1256,8 @@ protected:
 #ifndef NDEBUG
     std::ostringstream oss;
     oss << "output." << get_bulk().parallel_rank();
-    std::ofstream ofs = std::ofstream(oss.str(), std::ofstream::out);
+    std::string fileName = oss.str();
+    std::ofstream ofs(fileName, std::ofstream::out);
     STK_ThrowRequireMsg(ofs.fail() == false, "Failed to open debug file: " << oss.str());
     outputStream = &ofs;
 #endif
@@ -1271,6 +1272,9 @@ protected:
         EXPECT_EQ(entry.expectedCoincidence, isParallelCoincident);
       }
     }
+#ifndef NDEBUG
+    unlink(fileName.c_str());
+#endif
   }
 };
 

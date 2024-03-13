@@ -24,11 +24,6 @@ ADD_SUBDIRECTORY(utils)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-
-#
-# Exclude files for source package.
-#
-
 TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 #

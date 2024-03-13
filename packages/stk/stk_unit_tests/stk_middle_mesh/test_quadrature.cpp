@@ -1,4 +1,4 @@
-#include "quadrature.hpp"
+#include "stk_middle_mesh/quadrature.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

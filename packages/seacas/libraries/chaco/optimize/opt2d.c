@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,13 +14,13 @@
 double opt2d(
     /* Compute rotation angle to minimize distance to discrete points. */
     struct vtx_data **graph,  /* data structure with vertex weights */
-    double **         yvecs,  /* eigenvectors */
+    double          **yvecs,  /* eigenvectors */
     int               nvtxs,  /* total number of vertices */
     int               nmyvtxs /* number of vertices I own */
 )
 {
   extern int DEBUG_OPTIMIZE; /* debug flag for optimization */
-  double *   aptr, *bptr;    /* loop through yvecs */
+  double    *aptr, *bptr;    /* loop through yvecs */
   double     coeffs[5];      /* various products of yvecs */
   double     a, b;           /* temporary values */
   double     func = 0.0;     /* value of function to be minimized */
@@ -36,9 +36,6 @@ double opt2d(
   double     pdtol;          /* allowed error in hessian pd-ness */
   int        pdflag;         /* is hessian positive semi-definite? */
   int        i;              /* loop counter */
-  double     func2d();
-  double     grad2d();
-  double     hess2d();
 
   /* Set parameters. */
   step_max = PI / 8;

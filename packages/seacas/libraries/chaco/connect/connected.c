@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,11 +12,11 @@
 
 void make_connected(
     /* Add edges to make graph connected. */
-    struct vtx_data **    graph,      /* graph data structure */
+    struct vtx_data     **graph,      /* graph data structure */
     int                   nvtxs,      /* number of vertices in graph */
-    int *                 nedges,     /* number of edges in graph */
-    int *                 mark,       /* space for nvtxs+1 ints */
-    int *                 vtxlist,    /* space for nvtxs ints */
+    int                  *nedges,     /* number of edges in graph */
+    int                  *mark,       /* space for nvtxs+1 ints */
+    int                  *vtxlist,    /* space for nvtxs ints */
     struct connect_data **cdata,      /* space for connectivity data */
     int                   using_ewgts /* are edges of graph weighted? */
 )
@@ -26,8 +26,6 @@ void make_connected(
   struct edgeslist *curr_edge; /* pointer for manipulating edge list */
   struct edgeslist *next_edge; /* pointer for manipulating edge list */
   int               nadded;    /* number of edges being added */
-  int               find_edges();
-  void              add_edges();
 
   /* First find edges needed to make graph connected. */
   nadded = find_edges(graph, nvtxs, mark, vtxlist, &new_edges);
@@ -60,17 +58,17 @@ void make_connected(
 
 void make_unconnected(
     /* Restore graph to its pristine state and free space for connectivity. */
-    struct vtx_data **    graph,      /* graph data structure */
-    int *                 nedges,     /* number of edges in graph */
+    struct vtx_data     **graph,      /* graph data structure */
+    int                  *nedges,     /* number of edges in graph */
     struct connect_data **cdata,      /* space for connectivity data */
     int                   using_ewgts /* are edges of graph weighted? */
 )
 {
-  struct ilists *   old_edges = NULL; /* edges overwritten for connecting */
-  struct flists *   old_ewgts = NULL; /* weights of edges overwritten */
+  struct ilists    *old_edges = NULL; /* edges overwritten for connecting */
+  struct flists    *old_ewgts = NULL; /* weights of edges overwritten */
   struct edgeslist *new_edges;        /* list of edges connecting graph */
-  struct ilists *   tempi;            /* used for freeing space */
-  struct flists *   tempf;            /* used for freeing space */
+  struct ilists    *tempi;            /* used for freeing space */
+  struct flists    *tempf;            /* used for freeing space */
   struct edgeslist *tempe;            /* used for freeing edgelist space */
   struct edgeslist *edges;            /* loops through new edges */
   int               vtx;              /* vertex in an added edge */

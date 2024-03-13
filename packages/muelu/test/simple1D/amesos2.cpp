@@ -82,13 +82,13 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
-#include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
+#include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
 
 int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   /**********************************************************************************/
@@ -99,23 +99,23 @@ int main(int argc, char *argv[]) {
 
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
-  //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
+  // Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                    // manage parameters of xpetra
 
   // custom parameters
-  LO maxLevels = 1;
-  LO its=2;
-  std::string coarseSolver="amesos2";
-  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
-  clp.setOption("its",&its,"number of multigrid cycles");
-  clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
+  LO maxLevels             = 1;
+  LO its                   = 2;
+  std::string coarseSolver = "amesos2";
+  clp.setOption("maxLevels", &maxLevels, "maximum number of levels allowed");
+  clp.setOption("its", &its, "number of multigrid cycles");
+  clp.setOption("coarseSolver", &coarseSolver, "amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
 
-  switch (clp.parse(argc,argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
   matrixParameters.check();
@@ -128,31 +128,31 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters
   }
 
-
 #ifdef FOR_PARALLEL_DEBUGGING
-  //Utils::BreakForDebugger(*comm);
+  // Utils::BreakForDebugger(*comm);
 
   LO mypid = comm->getRank();
 
-  if (mypid  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
-  for (LO i = 0; i <comm->getSize(); i++) {
-    if (i == mypid ) {
+  if (mypid == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
+  for (LO i = 0; i < comm->getSize(); i++) {
+    if (i == mypid) {
       char buf[80];
       char hostname[80];
       gethostname(hostname, sizeof(hostname));
       LO pid = getpid();
       sprintf(buf, "Host: %s\tMPI rank: %d,\tPID: %d\n\tattach %d\n\tcontinue\n",
-          hostname, mypid, pid, pid);
-      printf("%s\n",buf);
+              hostname, mypid, pid, pid);
+      printf("%s\n", buf);
       fflush(stdout);
       sleep(1);
     }
   }
 
   if (mypid == 0) {
-    printf( "** Enter a character to continue > "); fflush(stdout);
+    printf("** Enter a character to continue > ");
+    fflush(stdout);
     char go = ' ';
-    scanf("%c",&go);
+    scanf("%c", &go);
   }
   comm->barrier();
 #endif
@@ -161,35 +161,35 @@ int main(int argc, char *argv[]) {
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());  // TODO: Matrix vs. CrsMatrixWrap
   RCP<Matrix> Op = Pr->BuildMatrix();
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
 
   // dump matrix to file
-  //std::string fileName = "Amat.mm";
-  //Utils::Write(fileName,Op);
+  // std::string fileName = "Amat.mm";
+  // Utils::Write(fileName,Op);
 
-  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
-  nullSpace->putScalar( (SC) 1.0);
+  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
+  nullSpace->putScalar((SC)1.0);
   Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;
 
-  RCP<MueLu::Hierarchy<SC,LO,GO,NO> > H = rcp( new Hierarchy() );
+  RCP<MueLu::Hierarchy<SC, LO, GO, NO> > H = rcp(new Hierarchy());
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
+  RCP<MueLu::Level> Finest = rcp(new MueLu::Level());
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  Finest->Set("A",Op);
-  Finest->Set("Nullspace",nullSpace);
-  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-  //FIXME is implemented
+  Finest->Set("A", Op);
+  Finest->Set("Nullspace", nullSpace);
+  Finest->Request("Nullspace");  // FIXME putting this in to avoid error until Merge needs business
+  // FIXME is implemented
 
-  Finest->Set("NullSpace",nullSpace);
+  Finest->Set("NullSpace", nullSpace);
   H->SetLevel(Finest);
 
   RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
@@ -199,15 +199,15 @@ int main(int argc, char *argv[]) {
 
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UncoupledAggFact));
 
-  RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<Factory>         Rfact = rcp( new TransPFactory() );
-  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
-  RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
+  RCP<SaPFactory> Pfact        = rcp(new SaPFactory(TentPFact));
+  RCP<Factory> Rfact           = rcp(new TransPFactory());
+  RCP<GenericPRFactory> PRfact = rcp(new GenericPRFactory(Pfact, Rfact));
+  RCP<RAPFactory> Acfact       = rcp(new RAPFactory());
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 1);
-  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  ifpackList.set("relaxation: sweeps", (LO)1);
+  ifpackList.set("relaxation: damping factor", (SC)1.0);
   /*
      ifpackList.set("type", "Chebyshev");
      ifpackList.set("chebyshev: degree", (int) 1);
@@ -218,82 +218,81 @@ int main(int argc, char *argv[]) {
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-    smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+    smooProto = rcp(new IfpackSmoother("point relaxation stand-alone", ifpackList));
 #endif
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_IFPACK2)
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-    smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
+    smooProto = rcp(new Ifpack2Smoother("RELAXATION", ifpackList));
 #endif
   }
   if (smooProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: smoother error"));
   }
 
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+  RCP<SmootherFactory> SmooFact = rcp(new SmootherFactory(smooProto));
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   Teuchos::ParameterList status;
-  status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
-  //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
-  //RCP<Matrix> P = coarseLevel->template Get< RCP<Matrix> >("P");
-  //fileName = "Pfinal.mm";
-  //Utils::Write(fileName,P);
+  status = H->FullPopulate(PRfact, Acfact, SmooFact, 0, maxLevels);
+  // RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
+  // RCP<Matrix> P = coarseLevel->template Get< RCP<Matrix> >("P");
+  // fileName = "Pfinal.mm";
+  // Utils::Write(fileName,P);
   if (comm->getRank() == 0) {
-    std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
-    status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
+    std::cout << "======================\n Multigrid statistics \n======================" << std::endl;
+    status.print(std::cout, Teuchos::ParameterList::PrintOptions().indent(2));
   }
 
-  //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
+  // FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
   RCP<SmootherPrototype> coarseProto;
   if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
     if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
     Teuchos::ParameterList amesosList;
-    amesosList.set("PrintTiming",true);
-    coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+    amesosList.set("PrintTiming", true);
+    coarseProto = rcp(new AmesosSmoother("Amesos_Klu", amesosList));
     //#elif
 #endif
   } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-    if (coarseSolver=="amesos2") {
+    if (coarseSolver == "amesos2") {
 #if defined(HAVE_MUELU_AMESOS2)
       if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
-      Teuchos::ParameterList paramList; //unused
-      coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
+      Teuchos::ParameterList paramList;  // unused
+      coarseProto = rcp(new Amesos2Smoother("Superlu", paramList));
 #else
-      std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
+      std::cout << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
       return EXIT_FAILURE;
-#endif // HAVE_MUELU_AMESOS2
-    } else if(coarseSolver=="ifpack2") {
+#endif  // HAVE_MUELU_AMESOS2
+    } else if (coarseSolver == "ifpack2") {
 #if defined(HAVE_MUELU_IFPACK2)
       if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
       Teuchos::ParameterList ifpack2List;
-      ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
+      ifpack2List.set("fact: ilut level-of-fill", 99);  // TODO ??
       ifpack2List.set("fact: drop tolerance", 0);
       ifpack2List.set("fact: absolute threshold", 0);
       ifpack2List.set("fact: relative threshold", 0);
-      coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+      coarseProto = rcp(new Ifpack2Smoother("ILUT", ifpack2List));
 #else
-      std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
+      std::cout << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
       return EXIT_FAILURE;
 #endif
     } else {
-      std::cout  << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
+      std::cout << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
       return EXIT_FAILURE;
     }
-
   }
   if (coarseProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
   }
 
   SmootherFactory coarseSolveFact(coarseProto);
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  H->SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
 
   // Define RHS
-  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
-  RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> X   = MultiVectorFactory::Build(map, 1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(map, 1);
 
   X->setSeed(846930886);
   X->randomize();
@@ -301,14 +300,14 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0)
     std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-  Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  Op->apply(*X, *RHS, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
 
   // Use AMG directly as an iterative method
   {
-    X->putScalar( (SC) 0.0);
+    X->putScalar((SC)0.0);
 
     H->PrintResidualHistory(true);
-    H->Iterate(*RHS,*X,its);
+    H->Iterate(*RHS, *X, its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -316,5 +315,4 @@ int main(int argc, char *argv[]) {
   }
 
   return EXIT_SUCCESS;
-
 }

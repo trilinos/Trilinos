@@ -30,10 +30,11 @@
 #ifndef SACADO_TEMPLATE_CONTAINER_HPP
 #define SACADO_TEMPLATE_CONTAINER_HPP
 
+#include <type_traits>
+
 // While this code does not directly use C++11 features, it uses mpl::vector,
 // which does
 #include "Sacado_ConfigDefs.h"
-#ifdef HAVE_SACADO_CXX11
 
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
@@ -44,7 +45,6 @@
 #include "Sacado_mpl_deref.hpp"
 #include "Sacado_mpl_next.hpp"
 #include "Sacado_mpl_enable_if.hpp"
-#include "Sacado_mpl_is_same.hpp"
 
 namespace Sacado {
 
@@ -233,7 +233,7 @@ namespace Sacado {
                         Iter1,
                         Iter2,
                         typename mpl::enable_if_c<
-                          mpl::is_same< T, typename mpl::deref<Iter1>::type
+                          std::is_same< T, typename mpl::deref<Iter1>::type
                                         >::value
                           >::type > {
       static typename TupleSeq<TypeSeq,ObjectT,Iter1,Iter2>::type&
@@ -258,7 +258,7 @@ namespace Sacado {
                         Iter1,
                         Iter2,
                         typename mpl::enable_if_c<
-                          !mpl::is_same< T, typename mpl::deref<Iter1>::type
+                          !std::is_same< T, typename mpl::deref<Iter1>::type
                                          >::value
                           >::type > :
       GetTupleSeq< T, TypeSeq, ObjectT, typename mpl::next<Iter1>::type, Iter2>
@@ -275,5 +275,4 @@ namespace Sacado {
 
 }
 
-#endif
 #endif

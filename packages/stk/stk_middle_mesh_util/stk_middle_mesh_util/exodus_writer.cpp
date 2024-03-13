@@ -1,9 +1,9 @@
-#include "mesh.hpp"
-#include "mesh_entity.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
 #ifdef STK_BUILT_IN_SIERRA
 
-#include "field_output_adaptor.hpp"
-#include "exodus_writer.hpp"
+#include "stk_middle_mesh_util/field_output_adaptor.hpp"
+#include "stk_middle_mesh_util/exodus_writer.hpp"
 #include "stk_io/WriteMesh.hpp"
 
 namespace stk {

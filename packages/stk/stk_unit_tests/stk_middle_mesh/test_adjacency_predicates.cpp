@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "predicates/adjacency_predicates.hpp"
+#include "stk_middle_mesh/predicates/adjacency_predicates.hpp"
 
 namespace stk {
 namespace middle_mesh {

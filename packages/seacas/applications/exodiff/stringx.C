@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -73,7 +73,7 @@ std::string extract_token(std::string &s, const char *delimiters)
       s = "";
       return "";
     }
-    else if (s[p] == '"') {
+    if (s[p] == '"') {
       // Special case of a quoted variable name which likely contains
       // whitespace, but it should work for any quoted variable
       // name. Some of this is a bit redundant but it makes this section
@@ -174,7 +174,7 @@ void to_lower(std::string &s)
 
 char first_character(const std::string &s)
 {
-  for (auto &elem : s) {
+  for (const auto &elem : s) {
     if (isspace(static_cast<int>(elem)) == 0) {
       return elem;
     }

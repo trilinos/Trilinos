@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -93,38 +93,6 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
   double            numerical_zero;      /* used for zero in presence of round-off  */
   int               ritzval_flag;        /* status flag for get_ritzvals() */
   int               memory_ok;           /* TRUE until memory runs out */
-
-  double *mkvec(int nl, int nh);     /* allocates space for a vector */
-  double *mkvec_ret(int nl, int nh); /* mkvec(int nl, int nh) which returns error code */
-  double  dot(double *vec1, int beg, int end, double *vec2); /* standard dot product routine */
-  struct orthlink *makeorthlnk(); /* makes space for new entry in orthog. set */
-  double           ch_norm(double *vec, int beg, int end); /* vector norm */
-  double           Tevec(double *, double *, int, double,
-                         double *);    /* calc eigenvector of T by linear recurrence */
-  struct scanlink *mkscanlist();       /* init scan list for min ritz vecs */
-  double           lanc_seconds(void); /* switcheable timer */
-                                       /* free allocated memory safely */
-  int    lanpause();                   /* figure when to pause Lanczos iteration */
-  int    get_ritzvals();               /* compute eigenvalues of T */
-  void   setvec();                     /* initialize a vector */
-  void   vecscale();                   /* scale a vector */
-  void   splarax();                    /* matrix vector multiply */
-  void   update(double *vec1, int beg, int end, double *vec2, double fac,
-                double *vec3);     /* add scalar multiple of a vector to another */
-  void   sorthog();                /* orthogonalize vector against list of others */
-  void   bail();                   /* our exit routine */
-  void   scanmin();                /* store small values of vector in linked list */
-  void   frvec(double *v, int nl); /* free vector */
-  void   scadd();                  /* add scalar multiple of vector to another */
-  void   cpvec();                  /* copy a vector */
-  void   orthog1();                /* efficiently orthog. against vector of ones */
-  void   solistout();              /* print out orthogonalization list */
-  void   doubleout();              /* print a double precision number */
-  void   orthogvec();              /* orthogonalize one vector against another */
-  void   get_extval();             /* find extended Ritz values */
-  void   scale_diag();             /* scale vector by diagonal matrix */
-  void   strout(char *msg);        /* print string to screen and file */
-  double checkeig_ext();           /* check extended eigenpair residual directly */
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering lanczos_ext>\n");

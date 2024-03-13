@@ -8,19 +8,24 @@
 #ifndef KRINO_KRINO_KRINO_LIB_AKRI_OUTPUTUTILS_HPP_
 #define KRINO_KRINO_KRINO_LIB_AKRI_OUTPUTUTILS_HPP_
 #include <string>
+#include <vector>
 
 #include <stk_io/DatabasePurpose.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-
-namespace stk { namespace mesh{ class BulkData; } }
-namespace stk { namespace mesh{ class Part; } }
-namespace krino { class Faceted_Surface; }
+#include <stk_mesh/base/Types.hpp>
 
 namespace krino {
 
-void output_field_with_mesh(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose = stk::io::WRITE_RESULTS);
+template<class FACET>
+class Faceted_Surface;
+
+void output_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose = stk::io::WRITE_RESULTS);
+void output_composed_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose = stk::io::WRITE_RESULTS);
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex);
-void write_facets( const int dim, const Faceted_Surface & facetedSurface, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
+stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector);
+
+template<class FACET>
+void write_facets( const std::vector<FACET> & facetedSurface, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
 
 }
 

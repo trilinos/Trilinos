@@ -135,7 +135,7 @@ type(PARIO_INFO) :: pio_info
 
 
 !  Allocate space for arrays. 
-  call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr)
+  call MPI_Comm_size(zoltan_get_global_comm(), nprocs, ierr)
   allocate(psize(nprocs))
   allocate(partid(nprocs))
   allocate(idx(nprocs))
@@ -143,7 +143,7 @@ type(PARIO_INFO) :: pio_info
 !  
 !   *  Create a load-balancing object.
 !   
-  zz_obj => Zoltan_Create(MPI_COMM_WORLD)
+  zz_obj => Zoltan_Create(zoltan_get_global_comm())
   if (.not.associated(zz_obj)) then
     print *, "fatal:  NULL object returned from Zoltan_Create()"
     run_zoltan = .false.
@@ -168,7 +168,7 @@ type(PARIO_INFO) :: pio_info
 !     note: contents of this file may override the parameters set above 
   if (prob%ztnPrm_file /= "") then  
     call ztnPrm_read_file(zz_obj, prob%ztnPrm_file, &
-         MPI_COMM_WORLD)
+         zoltan_get_global_comm())
   endif
 
 !  
@@ -1027,7 +1027,7 @@ integer(Zoltan_INT), intent(out) :: ierr
   endif
 
 !   get the processor number 
-  call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
+  call MPI_Comm_rank(zoltan_get_global_comm(), proc, mpierr)
 
   j = 1
   do i = 0, current_elem%adj_len-1
@@ -1239,7 +1239,7 @@ integer(Zoltan_INT) :: test_both
   mesh => Mesh
 
   ! Find maximum partition number across all processors. 
-  call MPI_Comm_size(MPI_COMM_WORLD, Num_Proc, ierr)
+  call MPI_Comm_size(zoltan_get_global_comm(), Num_Proc, ierr)
   max_part = -1
   gmax_part = -1
   do i = 0, mesh%num_elems-1
@@ -1248,7 +1248,7 @@ integer(Zoltan_INT) :: test_both
     endif
   end do
   call MPI_Allreduce(max_part, gmax_part, 1, MPI_INTEGER, MPI_MAX, &
-                     MPI_COMM_WORLD, ierr)
+                     zoltan_get_global_comm(), ierr)
   if ((gmax_part == (Num_Proc-1)) .and. (Test_Local_Partitions == 0)) then
     test_both = 1
   else

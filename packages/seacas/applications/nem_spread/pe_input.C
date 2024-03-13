@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,6 @@
 #include <cstdio>  // for nullptr, stderr, etc
 #include <cstdlib> // for exit, realloc
 #include <cstring> // for strtok, strchr, strstr, etc
-#include <rf_allo.h>
 
 #define TLIST_CNT 5
 

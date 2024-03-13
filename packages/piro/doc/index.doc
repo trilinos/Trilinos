@@ -59,7 +59,6 @@ by %Piro include:
 <ul>
 <li>NOX: Nonlinear Solver
 <li>LOCA: Continuation and Bifurcation Analysis Solver
-<li>Rythmos: Transient DAE solver
 <li>Stokhos: Embedded UQ solver for Stochastic-Galerkin over random variables
 <li>LIME: Algorithms for multi-physics coupling (under development)
 </ul>
@@ -79,10 +78,6 @@ As a ResponseOnlyModelEvaluator, any %Piro solver will
 satisfy the interface for non-intrusive optimization
 and UQ algorithms. In Trilinos, these include:
 <ul>
-<li>Dakota via %TriKota: The entire Dakota framework
-(developed at Sandia independently from Trilinos) is available
-through the adapters and build system of the %TriKota package.
-</ul>
 
 %Piro provides convenient \link Piro_analysis_driver_grp driver routines\endlink
 that perform the analysis of a ResponseOnlyModelEvaluator (including %Piro solved models)
@@ -93,15 +88,15 @@ using any of those package.
 To get concrete, here is a typical use case (which can be seen
 in the test directory).
 <ul>
-<li> Wrap your application code in an <tt>EpetraExt::ModelEvaluator</tt>,
+<li> Wrap your application code in an <tt>ModelEvaluator</tt>,
 taking a solution vector and parameters as input, and producing
 a residual vector, Jacobian, and response (interpreted as an objective function).
 <li> Construct this model, and use it and a parameter list
-(specified in an XML file) to construct a \link Piro::Epetra::NOXSolver NOXSolver\endlink.
-<li> Call the \link Piro::Epetra::PerformAnalysis analysis routine\endlink
+(specified in an XML file) to construct a \link Piro::NOXSolver NOXSolver\endlink.
+<li> Call the \link Piro::PerformAnalysis analysis routine\endlink
 with this solver and a parameter list to perform optimization of this model.
 <li> Add support for time dependence to your model, construct
-the \link Piro::Epetra::RythmosSolver RythmosSolver\endlink instead,
+the \link Piro::TempusSolver TempusSolver\endlink instead,
 and repeat optimization for transient application.
 </ul>
 
@@ -124,10 +119,9 @@ and not just two.
 
 \section piro_help Piro Contacts
 
-%Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey,
-Roger Pawlowski, and Eric Phipps. Much of the code is adapted from
-tests and examples for NOX, LOCA, Rythmos, Stokhos
-and TriKota, and was developed and matured in the Albany
+%Piro is developed by Andy Salinger, Roscoe Bartlett, Todd Coffey, Kim Liegeois,
+Roger Pawlowski, Mauro Perego, Eric Phipps and Irina Tezaur. Much of the code is adapted from
+tests and examples for NOX, LOCA, Stokhos, and was developed and matured in the Albany
 application code before being library-ized into %Piro.
 
 */

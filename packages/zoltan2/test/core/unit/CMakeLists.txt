@@ -98,7 +98,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
- 
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BasicIdentifierInput
   SOURCES input/BasicIdentifierInput.cpp
@@ -157,10 +157,19 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_scorec_unit_tests
 )
 
 ENDIF()
- 
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraCrsMatrixInput
+  SOURCES input/TpetraCrsMatrixInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraRowMatrixInput
-  SOURCES input/TpetraRowMatrixInput.cpp 
+  SOURCES input/TpetraRowMatrixInput.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -177,26 +186,35 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XpetraTraits
-  SOURCES input/XpetraTraits.cpp 
+  TpetraRowGraphInputKokkos
+  SOURCES input/TpetraRowGraphInputKokkos.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
- 
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  XpetraTraits
+  SOURCES input/XpetraTraits.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraCrsMatrixInput
-  SOURCES input/XpetraCrsMatrixInput.cpp 
+  SOURCES input/XpetraCrsMatrixInput.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
- 
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraCrsGraphInput
-  SOURCES input/XpetraCrsGraphInput.cpp 
+  SOURCES input/XpetraCrsGraphInput.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -205,7 +223,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraVectorInput
-  SOURCES input/XpetraVectorInput.cpp 
+  SOURCES input/XpetraVectorInput.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -214,7 +232,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE(
   XpetraMultiVectorInput
-  SOURCES input/XpetraMultiVectorInput.cpp 
+  SOURCES input/XpetraMultiVectorInput.cpp
   COMM serial mpi
   )
 
@@ -251,7 +269,7 @@ TRIBITS_ADD_TEST(
 #
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GraphModel
-  SOURCES models/GraphModel.cpp 
+  SOURCES models/GraphModel.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -274,7 +292,7 @@ ENDIF()
 IF (${PROJECT_NAME}_ENABLE_Pamgen)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     GraphModel2ndAdjsFromAdjs
-    SOURCES models/GraphModel2ndAdjsFromAdjs.cpp 
+    SOURCES models/GraphModel2ndAdjsFromAdjs.cpp
     NUM_MPI_PROCS 4
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"
@@ -294,6 +312,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CoordinateModel
   SOURCES models/CoordinateModel.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixAdapter
+  SOURCES input/MatrixAdapter.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BasicVectorAdapter
+  SOURCES input/BasicVectorAdapter.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -339,7 +375,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Metric
-  SOURCES util/Metric.cpp 
+  SOURCES util/Metric.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -348,7 +384,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TPLTraits
-  SOURCES util/TPLTraits.cpp 
+  SOURCES util/TPLTraits.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"

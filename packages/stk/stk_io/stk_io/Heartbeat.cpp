@@ -38,7 +38,7 @@
 #include <exception>                 // for exception
 #include <cstddef>                          // for size_t
 #include <iostream>                         // for operator<<, basic_ostream
-#include <stk_io/IOHelpers.hpp>             // for internal_add_global, writ...
+#include <stk_io/IOHelpers.hpp>             // for impl::add_global, writ...
 #include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf, ThrowReq...
 #include <utility>                          // for pair, move
@@ -51,7 +51,6 @@
 #include "Ioss_Region.h"                    // for Region
 #include "Ioss_State.h"                     // for STATE_DEFINE_TRANSIENT
 #include "StkIoUtils.hpp"                   // for get_io_parameter_size_and...
-#include "Teuchos_RCP.hpp"                  // for RCP::operator->, RCP::RCP<T>
 #include "stk_util/parallel/Parallel.hpp"   // for parallel_machine_rank
 #include "stk_util/util/ParameterList.hpp"  // for Parameter, Type, ...
 
@@ -119,7 +118,7 @@ impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
     }
 
     // NOTE: 'region' owns 'db' pointer at this time...
-    m_region = Teuchos::rcp(new Ioss::Region(db, filename));
+    m_region = std::make_shared<Ioss::Region>(db, filename);
 
 }
 
@@ -165,7 +164,7 @@ void impl::Heartbeat::internal_define_global_ref(const std::string &name,
 
         // Determine name and type of parameter...
         std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
-        internal_add_global(m_region, name, parameter_type.first, parameter_type.second, copies, role);
+        impl::add_global(m_region, name, parameter_type.first, parameter_type.second, copies, role);
         m_fields.emplace_back(name, value, type);
     }
 }
@@ -214,7 +213,7 @@ void impl::Heartbeat::internal_define_global_ref(const std::string &name,
         // Determine name and type of parameter...
         std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type.second, *value);
         STK_ThrowRequireMsg(dataType == parameter_type.second, "data type must be consistent");
-        internal_add_global(m_region, name, storage, dataType, copies, role);
+        impl::add_global(m_region, name, storage, dataType, copies, role);
         m_fields.emplace_back(name, value, type.second);
     }
 }

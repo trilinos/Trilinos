@@ -378,23 +378,23 @@ TensorBase<T, ST>::fill(Filler const value)
   case Filler::ZEROS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
-      entry = Kokkos::Details::ArithTraits<S>::zero();
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
+      entry = Kokkos::ArithTraits<S>::zero();
     }
     break;
 
   case Filler::ONES:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
-      entry = Kokkos::Details::ArithTraits<S>::one();
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
+      entry = Kokkos::ArithTraits<S>::one();
     }
     break;
 
   case Filler::SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
       entry = static_cast<S>(i);
     }
     break;
@@ -411,7 +411,7 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
       entry = random<S>();
     }
     break;
@@ -424,7 +424,7 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
       entry = random_uniform<S>();
     }
     break;
@@ -437,7 +437,7 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-      fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
       entry = random_normal<S>();
     }
     break;
@@ -470,7 +470,7 @@ TensorBase<T, ST>::fill(T const & s)
 
   for (Index i = 0; i < number_components; ++i) {
     auto & entry = (*this)[i];
-    fill_AD<T>(entry, Kokkos::Details::ArithTraits<S>::zero());
+    fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
     entry = s;
   }
 

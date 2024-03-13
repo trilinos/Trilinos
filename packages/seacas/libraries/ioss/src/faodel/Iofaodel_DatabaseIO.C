@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -299,7 +299,7 @@ mpisyncstart.enable true
     }
   }
 
-  const std::string DatabaseIO::get_format() const { return "faodel"; }
+  std::string DatabaseIO::get_format() const { return "faodel"; }
 
   bool DatabaseIO::begin_state__(int /* state */, double /* time */) { return false; }
 
@@ -974,7 +974,7 @@ mpisyncstart.enable true
 
         auto sideblock_name = get_entity_name(sideblocks_search_oc.keys[i], "SideBlock");
         auto property_key   = make_property_key(parallel_rank(), *(get_region()), "SideBlock",
-                                              sideblock_name, "STRING", "topology_type");
+                                                sideblock_name, "STRING", "topology_type");
         lunasa::DataObject property_ldo;
         pool.Need(property_key, &property_ldo);
         Ioss::Property topo_property = this->read_property(property_ldo);

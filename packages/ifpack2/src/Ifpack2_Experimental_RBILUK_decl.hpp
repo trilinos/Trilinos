@@ -163,6 +163,10 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
       local_ordinal_type,
       global_ordinal_type,
       node_type> crs_matrix_type;
+  
+  using crs_graph_type = Tpetra::CrsGraph<local_ordinal_type,
+                                          global_ordinal_type,
+                                          node_type>;
 
   typedef Tpetra::BlockCrsMatrix<scalar_type,
                             local_ordinal_type,
@@ -346,13 +350,7 @@ private:
   using values_device_view_type     = typename block_crs_matrix_type::values_device_view_type;
 
   void allocate_L_and_U_blocks();
-  void initAllValues (const block_crs_matrix_type& A);
-
-  //! The (original) input matrix for which to compute ILU(k).
-  Teuchos::RCP<const row_matrix_type> A_;
-
-  //! The underlying constant block matrix.
-  Teuchos::RCP<const block_crs_matrix_type> A_block_;
+  void initAllValues ();
 
   //! The block size of the input matrix.
   local_ordinal_type blockSize_;

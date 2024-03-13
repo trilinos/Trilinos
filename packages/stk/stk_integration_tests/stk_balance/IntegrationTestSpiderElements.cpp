@@ -27,7 +27,7 @@ protected:
     stk::io::put_io_part_attribute(spherePart);
     stk::io::put_io_part_attribute(beamPart);
 
-    stk::balance::internal::register_internal_fields(get_bulk(), m_balanceSettings);
+    stk::balance::internal::register_internal_fields_and_parts(get_bulk(), m_balanceSettings);
 
     stk::io::fill_mesh(meshSpec, get_bulk());
 

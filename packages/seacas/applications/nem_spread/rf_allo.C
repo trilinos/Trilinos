@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -17,7 +17,9 @@
 extern int Proc;
 #endif
 
-static void *smalloc(size_t n, char *filename, int lineno);
+namespace {
+  void *smalloc(size_t n, char *filename, int lineno);
+}
 
 /******************************************************************************
  *
@@ -181,26 +183,27 @@ void *array_alloc(const char *file, int lineno, int numdim, ...)
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void *smalloc(size_t n, char *filename, int lineno)
+namespace {
+  void *smalloc(size_t n, char *filename, int lineno)
 
-{
-  void *pntr = nullptr; /* return value */
+  {
+    void *pntr = nullptr; /* return value */
 
-  if (n != 0) {
-    pntr = malloc(n);
+    if (n != 0) {
+      pntr = malloc(n);
+    }
+
+    if (pntr == nullptr && n != 0) {
+      fmt::print(stderr,
+                 "{} (from {},{}) Out of space - number of bytes "
+                 "requested = {}\n",
+                 __func__, filename, lineno, fmt::group_digits(n));
+      exit(0);
+    }
+
+    return pntr;
   }
-
-  if (pntr == nullptr && n != 0) {
-    fmt::print(stderr,
-               "{} (from {},{}) Out of space - number of bytes "
-               "requested = {}\n",
-               __func__, filename, lineno, fmt::group_digits(n));
-    exit(0);
-  }
-
-  return pntr;
-}
-
+} // namespace
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

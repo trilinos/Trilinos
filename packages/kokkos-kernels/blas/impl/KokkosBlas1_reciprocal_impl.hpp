@@ -30,9 +30,8 @@ namespace Impl {
 // Entry-wise reciprocalolute value / magnitude: R(i,j) = reciprocal(X(i,j)).
 template <class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Reciprocal_Functor {
-  typedef typename RMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -69,9 +68,8 @@ struct MV_Reciprocal_Functor {
 // reciprocal(R(i,j)).
 template <class RMV, class SizeType = typename RMV::size_type>
 struct MV_ReciprocalSelf_Functor {
-  typedef typename RMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -100,9 +98,8 @@ struct MV_ReciprocalSelf_Functor {
 // reciprocal(X(i)).
 template <class RV, class XV, class SizeType = typename RV::size_type>
 struct V_Reciprocal_Functor {
-  typedef typename RV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
 
   RV R_;
   XV X_;
@@ -130,9 +127,8 @@ struct V_Reciprocal_Functor {
 // reciprocal(R(i)).
 template <class RV, class SizeType = typename RV::size_type>
 struct V_ReciprocalSelf_Functor {
-  typedef typename RV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV R_;
 
@@ -151,8 +147,9 @@ struct V_ReciprocalSelf_Functor {
 
 // Invoke the "generic" (not unrolled) multivector functor that
 // computes entry-wise reciprocalolute value.
-template <class RMV, class XMV, class SizeType>
-void MV_Reciprocal_Generic(const RMV& R, const XMV& X) {
+template <class execution_space, class RMV, class XMV, class SizeType>
+void MV_Reciprocal_Generic(const execution_space& space, const RMV& R,
+                           const XMV& X) {
   static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Reciprocal_Generic: RMV is not a Kokkos::View.");
@@ -166,9 +163,8 @@ void MV_Reciprocal_Generic(const RMV& R, const XMV& X) {
                 "KokkosBlas::Impl::"
                 "MV_Reciprocal_Generic: XMV is not rank 2");
 
-  typedef typename XMV::execution_space execution_space;
   const SizeType numRows = X.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (R == X) {  // if R and X are the same (alias one another)
     MV_ReciprocalSelf_Functor<RMV, SizeType> op(R);
@@ -180,8 +176,9 @@ void MV_Reciprocal_Generic(const RMV& R, const XMV& X) {
 }
 
 // Variant of MV_Reciprocal_Generic for single vectors (1-D Views) R and X.
-template <class RV, class XV, class SizeType>
-void V_Reciprocal_Generic(const RV& R, const XV& X) {
+template <class execution_space, class RV, class XV, class SizeType>
+void V_Reciprocal_Generic(const execution_space& space, const RV& R,
+                          const XV& X) {
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::Impl::"
                 "V_Reciprocal_Generic: RV is not a Kokkos::View.");
@@ -195,9 +192,8 @@ void V_Reciprocal_Generic(const RV& R, const XV& X) {
                 "KokkosBlas::Impl::"
                 "V_Reciprocal_Generic: XV is not rank 1");
 
-  typedef typename XV::execution_space execution_space;
   const SizeType numRows = X.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (R == X) {  // if R and X are the same (alias one another)
     V_ReciprocalSelf_Functor<RV, SizeType> op(R);

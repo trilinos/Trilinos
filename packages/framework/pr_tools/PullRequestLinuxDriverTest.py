@@ -73,12 +73,6 @@ def parse_args():
                           help='Repo with the new changes',
                           required=True)
 
-    required.add_argument('--source-branch-name',
-                          dest="source_branch_name",
-                          action='store',
-                          help='Branch with the new changes',
-                          required=True)
-
     required.add_argument('--target-repo-url',
                           dest="target_repo_url",
                           action='store',
@@ -115,6 +109,13 @@ def parse_args():
                           help='The Jenkins build number',
                           required=True)
 
+    optional.add_argument('--dashboard-build-name',
+                          dest="dashboard_build_name",
+                          action='store',
+                          default="UNKNOWN",
+                          help='The build name posted by ctest to a dashboard',
+                          required=False)
+
     optional.add_argument('--source-dir',
                           dest="source_dir",
                           action='store',
@@ -127,6 +128,13 @@ def parse_args():
                           action='store',
                           default="UNKNOWN",
                           help="Path to the build directory.",
+                          required=False)
+
+    optional.add_argument('--use-explicit-cachefile',
+                          dest='use_explicit_cachefile',
+                          action='store_true',
+                          default=False,
+                          help="Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.",
                           required=False)
 
     optional.add_argument('--ctest-driver',
@@ -237,6 +245,12 @@ def parse_args():
                           default=False,
                           help="Enable dry-run mode. Script will run but not execute the build steps. Default = %(default)s")
 
+    optional.add_argument("--extra-configure-args",
+                          dest="extra_configure_args",
+                          action="store",
+                          default="",
+                          help="Extra arguments that will be passed to CMake for configuring Trilinos.")
+
     arguments = parser.parse_args()
 
     # Type conversions
@@ -250,7 +264,6 @@ def parse_args():
     print("| PullRequestLinuxDriverTest Parameters")
     print("+" + "="*78 + "+")
     print("| - [R] source-repo-url             : {source_repo_url}".format(**vars(arguments)))
-    print("| - [R] source-branch-name          : {source_branch_name}".format(**vars(arguments)))
     print("| - [R] target_repo_url             : {target_repo_url}".format(**vars(arguments)))
     print("| - [R] target_branch_name          : {target_branch_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-build-name      : {pullrequest_build_name}".format(**vars(arguments)))
@@ -273,6 +286,8 @@ def parse_args():
     print("| - [O] req-mem-per-core            : {req_mem_per_core}".format(**vars(arguments)))
     print("| - [O] test-mode                   : {test_mode}".format(**vars(arguments)))
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
+    print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
+    print("| - [O] dashboard_build_name        : {dashboard_build_name}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 

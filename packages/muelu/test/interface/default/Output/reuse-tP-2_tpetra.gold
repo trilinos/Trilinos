@@ -6,6 +6,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -21,11 +22,11 @@ Lumping dropped entries
 Reusing graph
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -61,6 +62,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -76,11 +78,11 @@ Lumping dropped entries
 Reusing graph
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -121,7 +123,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
-Smoother complexity = 1.78
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
@@ -144,6 +146,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 1
 Build (MueLu::RebalanceTransferFactory)
@@ -183,6 +186,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ timer for apply = 0
 
 Level 2
 Build (MueLu::RebalanceTransferFactory)
@@ -198,11 +202,11 @@ Lumping dropped entries
 Reusing graph
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -242,7 +246,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
-Smoother complexity = 1.78
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

@@ -8,6 +8,7 @@
 #include "remote_coordinate_updator.hpp"
 
 #include "stk_util/parallel/DataExchangeKnownPatternNonBlockingBuffer.hpp"
+#include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
 
 
 namespace stk {
@@ -32,9 +33,10 @@ class ActiveVertContainer
     template <typename Tfilter, typename Tvalid>
     ActiveVertContainer(std::shared_ptr<Mesh> mesh, Tfilter filter, Tvalid isValid, const int nlayers=-1) :
       m_mesh(mesh),
-      m_recvPatchMapping(utils::impl::comm_size(mesh->get_comm())),
-      m_coordExchanger(mesh->get_comm()),
-      m_coordUpdator(mesh)
+      m_recvVertexLists(utils::impl::comm_size(mesh->get_comm())),
+      m_sendVertexLists(utils::impl::comm_size(mesh->get_comm())),
+      m_exchanger(mesh->get_comm()),
+      m_sharedCoordUpdator(mesh)
     {
       get_active_verts(filter, isValid, nlayers);
     }
@@ -66,6 +68,19 @@ class ActiveVertContainer
       std::vector<int> uniqueVertIdxsOnDest;
     };
 
+    struct VertexUse
+    {
+      RemoteSharedEntity owner;
+      int patchIdx;
+      int vertIdxInPatch;
+    };
+
+    struct VertexUses
+    {
+      int ownerLocalId;
+      std::vector<std::pair<int, int>> patchAndVertIdxs;
+    };    
+
     template <typename Tfilter, typename Tvalid>
     void get_active_verts(Tfilter filter, Tvalid isValid, const int nlayers)
     {
@@ -80,7 +95,7 @@ class ActiveVertContainer
       else
         layers.get_layers(filter, roots, nlayers, verts);
 
-      Exchanger exchanger(m_mesh->get_comm());
+      std::vector<opt::impl::ActiveVertData> nonOwnedActiveVerts;
       for (auto& v : verts)
         if (v && filter(v))
         {
@@ -91,20 +106,12 @@ class ActiveVertContainer
           }
           else
           {
-            auto& patch = m_nonOwnedActiveVerts.emplace_back(m_mesh, v);
-            assert(patch.get_num_elements() != 0);
-            set_patch_destinations(patch, exchanger);
+            nonOwnedActiveVerts.emplace_back(m_mesh, v);
+            assert(nonOwnedActiveVerts.back().get_num_elements() > 0);
           }
         }
 
-      exchanger.allocate_send_buffers();
-      for (auto& patch : m_nonOwnedActiveVerts)
-        set_patch_destinations(patch, exchanger);
-
-      exchanger.execute();
-      get_remote_patch_contributions(exchanger);
-      update_remote_coords();
-      set_remote_coords_orig();
+      setup_remote_patches(nonOwnedActiveVerts);    
     }
 
     template <typename Tfilter, typename Tvalid>
@@ -123,34 +130,39 @@ class ActiveVertContainer
         throw std::runtime_error("some roots must be provided for mesh quality optimization");
     }
 
-    void set_patch_destinations(opt::impl::ActiveVertData& patch, Exchanger& exchanger);
+    void setup_remote_patches(const std::vector<opt::impl::ActiveVertData>& nonOwnedActiveVerts);
+
+    void set_patch_destinations(const opt::impl::ActiveVertData& patch, Exchanger& exchanger);
 
     void get_remote_patch_contributions(Exchanger& exchanger);
 
     void compute_vertex_to_patch_map(std::map<int, int>& vertexToPatch);
 
-
     void pack(Exchanger& exchanger, int destRank, const RemoteActiveVertData& remoteData);
 
     RemoteActiveVertData unpack(Exchanger& exchanger, int sendRank); 
 
+    void create_local_verts_used_by_remote_patches(int patchIdx, RemoteActiveVertData& remoteData);
+
     void merge_patches(int patchIdx, int senderRank, RemoteActiveVertData& remoteData);
+
+    void collect_remote_vertices();
+
+    void setup_send_comm_lists();
 
     void start_coord_update();
 
     void finish_coord_update();
 
-    void unpack_buffer(int rank, const std::vector<utils::Point>& vertCoords);
-
     void set_remote_coords_orig();
 
     std::shared_ptr<Mesh> m_mesh;
     std::vector<opt::impl::ActiveVertData> m_activeVerts;
-    std::vector<opt::impl::ActiveVertData> m_nonOwnedActiveVerts;
 
-    std::vector<std::vector<PatchRemoteInfo>> m_recvPatchMapping;
-    stk::DataExchangeKnownPatternNonBlockingBuffer<utils::Point> m_coordExchanger;
-    stk::middle_mesh::mesh::impl::RemoteCoordinateUpdator m_coordUpdator;
+    std::vector<std::vector<VertexUses>> m_recvVertexLists;
+    std::vector<std::vector<int>> m_sendVertexLists;
+    stk::DataExchangeKnownPatternNonBlockingBuffer<utils::Point> m_exchanger;
+    RemoteCoordinateUpdator m_sharedCoordUpdator;
 };
 
 

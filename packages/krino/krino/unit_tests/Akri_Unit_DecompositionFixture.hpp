@@ -15,10 +15,11 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_FieldRef.hpp>
+#include <Akri_LevelSetPolicy.hpp>
 
 namespace krino {
 
-template <typename MESHSPEC, typename LS_FIELD_POLICY>
+template <typename MESHSPEC, typename LS_FIELD_POLICY, unsigned NUM_LS>
 class DecompositionFixture : public StkMeshFixture<MESHSPEC::TOPOLOGY>
 {
 public:
@@ -39,12 +40,19 @@ FieldRef get_coordinates_field() { return this->get_aux_meta().get_current_coord
 
 void setup_ls_fields_with_options(const bool isDeath, const bool doRegisterField)
 {
-  lsPolicy.setup_ls_field(isDeath, mMesh.mesh_meta_data(), cdfem_support());
-
   mMesh.mesh_meta_data().enable_late_fields();
 
   Block_Surface_Connectivity blockSurfaceConnectivity(mMesh.mesh_meta_data());
-  lsPolicy.register_ls_on_blocks(mBuilder.get_block_parts(), mMesh.mesh_meta_data(), blockSurfaceConnectivity, doRegisterField);
+
+  if (isDeath)
+  {
+    deathSpec.reset(new CDFEM_Inequality_Spec("death_spec"));
+    myLSFields = LS_FIELD_POLICY::setup_levelsets_on_blocks(mMesh.mesh_meta_data(), NUM_LS, mBuilder.get_block_parts(), blockSurfaceConnectivity, doRegisterField, deathSpec.get());
+  }
+  else
+  {
+    myLSFields = LS_FIELD_POLICY::setup_levelsets_on_blocks(mMesh.mesh_meta_data(), NUM_LS, mBuilder.get_block_parts(), blockSurfaceConnectivity, doRegisterField);
+  }
 }
 
 void setup_ls_fields_for_death()
@@ -67,9 +75,15 @@ void setup_ls_fields()
   setup_ls_fields_with_options(false, true);
 }
 
-FieldRef get_ls_field(const unsigned lsIndex)
+std::vector<LS_Field> & levelset_fields()
 {
-  return lsPolicy.ls_field_ref(lsIndex);
+  return myLSFields;
+}
+
+FieldRef get_ls_field(const unsigned lsIndex=0)
+{
+  STK_ThrowRequire(lsIndex < myLSFields.size());
+  return myLSFields[lsIndex].isovar;
 }
 
 stk::mesh::Entity get_node(const unsigned nodeIndex)
@@ -84,14 +98,14 @@ double & node_ls_field(FieldRef lsField, const stk::mesh::Entity node)
 
 double & node_ls_field(const stk::mesh::Entity node)
 {
-  STK_ThrowRequire(1 == lsPolicy.num_ls());
+  STK_ThrowRequire(1 == myLSFields.size());
   return *field_data<double>(get_ls_field(0), node);
 }
 
 void set_level_set(const std::vector<unsigned> & nodeIndices,
     const std::vector<double> & nodeLS)
 {
-  STK_ThrowRequire(1 == lsPolicy.num_ls());
+  STK_ThrowRequire(1 == myLSFields.size());
   STK_ThrowRequire(nodeIndices.size() == nodeLS.size());
   for (size_t i = 0; i < nodeIndices.size(); ++i)
     node_ls_field(get_node(nodeIndices[i])) = nodeLS[i];
@@ -137,19 +151,20 @@ void check_nonfatal_error(const std::string & baseName, const int iteration)
 void decompose_mesh()
 {
   NodeToCapturedDomainsMap nodesToSnappedDomains;
-  std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(cdmesh->get_active_part(), cdfem_support(), Phase_Support::get(mMesh.mesh_meta_data()), lsPolicy.ls_fields());
+  std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(mMesh.mesh_meta_data().spatial_dimension(), cdmesh->get_active_part(), cdfem_support(), Phase_Support::get(mMesh.mesh_meta_data()), levelset_fields());
   if (cdfem_support().get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
   {
     const double minIntPtWeightForEstimatingCutQuality = cdfem_support().get_snapper().get_edge_tolerance();
     nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(cdmesh->stk_bulk(),
         cdmesh->get_active_part(),
-        cdfem_support().get_interpolation_fields(),
+        cdfem_support().get_snap_fields(),
         *interfaceGeometry,
         cdfem_support().get_global_ids_are_parallel_consistent(),
         cdfem_support().get_snapping_sharp_feature_angle_in_degrees(),
-        minIntPtWeightForEstimatingCutQuality);
+        minIntPtWeightForEstimatingCutQuality,
+        cdfem_support().get_max_edge_snap());
   }
-  interfaceGeometry->prepare_to_process_elements(mMesh, nodesToSnappedDomains);
+  interfaceGeometry->prepare_to_decompose_elements(mMesh, nodesToSnappedDomains);
 
   cdmesh->generate_nonconformal_elements();
   if (cdfem_support().get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
@@ -207,7 +222,7 @@ void setup_cdfem_support()
 {
   FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
   cdfem_support().set_coords_field(coordsField);
-  cdfem_support().add_interpolation_field(coordsField);
+  cdfem_support().add_edge_interpolation_field(coordsField);
   cdfem_support().register_parent_node_ids_field();
 
   cdfem_support().set_prolongation_model(INTERPOLATION);
@@ -216,7 +231,8 @@ void setup_cdfem_support()
 protected:
 MESHSPEC meshSpec;
 std::unique_ptr<CDMesh> cdmesh;
-LS_FIELD_POLICY lsPolicy;
+std::unique_ptr<CDFEM_Inequality_Spec> deathSpec;
+std::vector<LS_Field> myLSFields;
 LogRedirecter log;
 
 };

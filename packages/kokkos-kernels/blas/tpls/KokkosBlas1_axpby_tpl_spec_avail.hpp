@@ -20,7 +20,8 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AV, class XMV, class BV, class YMV, int rank = YMV::Rank>
+template <class execution_space, class AV, class XMV, class BV, class YMV,
+          int rank = YMV::rank>
 struct axpby_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -36,7 +37,7 @@ namespace Impl {
 #define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)        \
   template <class ExecSpace>                                                   \
   struct axpby_tpl_spec_avail<                                                 \
-      SCALAR,                                                                  \
+      ExecSpace, SCALAR,                                                       \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       SCALAR,                                                                  \
@@ -63,7 +64,7 @@ KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
 #define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)      \
   template <class ExecSpace>                                                   \
   struct axpby_tpl_spec_avail<                                                 \
-      SCALAR,                                                                  \
+      ExecSpace, SCALAR,                                                       \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       SCALAR,                                                                  \

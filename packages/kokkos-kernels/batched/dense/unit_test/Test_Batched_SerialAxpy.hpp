@@ -30,6 +30,7 @@ namespace Axpy {
 
 template <typename DeviceType, typename ViewType, typename alphaViewType>
 struct Functor_TestBatchedSerialAxpy {
+  using execution_space = typename DeviceType::execution_space;
   const alphaViewType _alpha;
   const ViewType _X;
   const ViewType _Y;
@@ -54,7 +55,7 @@ struct Functor_TestBatchedSerialAxpy {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType> policy(0, _X.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, _X.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -65,7 +66,7 @@ void impl_test_batched_axpy(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
   typedef typename ViewType::const_value_type const_value_type;
   typedef typename alphaViewType::const_value_type alpha_const_value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   ViewType X0("x0", N, BlkSize), X1("x1", N, BlkSize), Y0("y0", N, BlkSize),
       Y1("y1", N, BlkSize);

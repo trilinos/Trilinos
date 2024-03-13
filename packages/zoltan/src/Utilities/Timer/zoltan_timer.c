@@ -49,6 +49,7 @@
 #include "zoltan_types.h"
 #include "zoltan_util.h"
 #include "zoltan_mem.h"
+#include "zoltan_comm.h"
 
 #ifdef VAMPIR
 #include <VT.h>
@@ -88,7 +89,7 @@ extern "C" {
 #define FATALERROR(yo, str) \
   { \
     int ppproc; \
-    MPI_Comm_rank(MPI_COMM_WORLD, &ppproc); \
+    MPI_Comm_rank(zoltan_get_global_comm(), &ppproc); \
     ZOLTAN_PRINT_ERROR(ppproc, yo, str); \
     return ZOLTAN_FATAL; \
   }

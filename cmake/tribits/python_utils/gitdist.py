@@ -36,7 +36,7 @@ else:
 distRepoStatusLegend = r"""Legend:
 * ID: Repository ID, zero based (order git commands are run)
 * Repo Dir: Relative to base repo (base repo shown first with '(Base)')
-* Branch: Current branch (or detached HEAD)
+* Branch: Current branch, or (if detached HEAD) tag name or SHA1
 * Tracking Branch: Tracking branch (or empty if no tracking branch exists)
 * C: Number local commits w.r.t. tracking branch (empty if zero or no TB)
 * M: Number of tracked modified (uncommitted) files (empty if zero)
@@ -333,7 +333,7 @@ outputs a table like:
   |----|-----------------------|--------|-----------------|---|----|---|
   |  0 | BaseRepo (Base)       | dummy  |                 |   |    |   |
   |  1 | ExtraRepo1            | master | origin/master   | 1 |  2 |   |
-  |  2 | ExtraRepo1/ExtraRepo2 | HEAD   |                 |   | 25 | 4 |
+  |  2 | ExtraRepo1/ExtraRepo2 | abc123 |                 |   | 25 | 4 |
   |  3 | ExtraRepo3            | master | origin/master   |   |    |   |
   ----------------------------------------------------------------------
 
@@ -341,6 +341,13 @@ If the option --dist-legend is also passed in, the output will include:
 
 """+distRepoStatusLegend+\
 r"""
+
+In the case of a detached head state, as shown above with the repo
+'ExtraRepo3', the SHA1 (e.g. 'abc123') was printed instead of 'HEAD'.
+However, if the repo is in the detached head state but a tag happens to point
+to the current commit (e.g. 'git tag --points-at' returns non-empy), then the
+tag name (e.g. 'v1.2.3') is printed instead of the SHA1 of the commit.
+
 One can also show the status of only changed repos with the command:
 
   $ gitdist dist-repo-status --dist-mod-only  # alias 'gitdist-mod-status'
@@ -351,7 +358,7 @@ which produces a table like:
   | ID | Repo Dir              | Branch | Tracking Branch | C | M  | ? |
   |----|-----------------------|--------|-----------------|---|----|---|
   |  1 | ExtraRepo1            | master | origin/master   | 1 |  2 |   |
-  |  2 | ExtraRepo1/ExtraRepo2 | HEAD   |                 |   | 25 | 4 |
+  |  2 | ExtraRepo1/ExtraRepo2 | abc123 |                 |   | 25 | 4 |
   ----------------------------------------------------------------------
 
 (see the alias 'gitdist-mod-status' in --dist-help=aliases).
@@ -396,13 +403,13 @@ lines per repo in the file).  A compatible repo version file can be generated
 with this script listing three lines per repo (e.g. as shown above) using (for
 example):
 
-  $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
+  $ gitdist --dist-no-color log --color=never -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
 (which is defined as the alias 'gitdist-repo-versions' in the file
 'gitdist-setup.sh') or two lines per repo using (for example):
 
-  $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
+  $ gitdist --dist-no-color log --color=never -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
 
 This allows checking out consistent versions of the set git repos, diffing two
@@ -473,7 +480,7 @@ outputs a table like:
   |:-------------- |:-------:|:------------------- |:---------------------- |:---------------------------------------------- |
   | MockProjectDir | e2dc488 | 2019-10-23 10:16:07 | user@domain.com        | Merge Pull Request #1234 from user/repo/branch |
   | ExtraRepo1     | f671414 | 2019-10-22 11:18:47 | wile.e.coyote@acme.com | Fixed a Bug                                    |
-  | ExtraRepo2     | 50bbf3e | 2019-10-17 16:32:15 | someone@somwhere.com   | Did Some Work                                  |
+  | ExtraRepo2     | 50bbf3e | 2019-10-17 16:32:15 | someone@somewhere.com   | Did Some Work                                  |
 
 If the option --dist-short is also passed in, the output will be limited to:
 
@@ -495,7 +502,7 @@ include:
   $ alias gitdist-status="gitdist dist-repo-status"
   $ alias gitdist-mod="gitdist --dist-mod-only"
   $ alias gitdist-mod-status="gitdist dist-repo-status --dist-mod-only"
-  $ alias gitdist-repo-versions="gitdist --dist-no-color log -1 \
+  $ alias gitdist-repo-versions="gitdist --dist-no-color log --color=never -1 \
     --pretty=format:\"%h [%ad] <%ae>%n%s\" | grep -v \"^$\""
 
 These are added by sourcing the provided file 'gitdist-setup.sh' (which should
@@ -844,7 +851,8 @@ def createTable(tableData, utf8=False):
       if mockSttySize:
         sttySize = mockSttySize
       else:
-        sttySize = os.popen("stty size", "r").read()
+        with os.popen("stty size", "r") as subprocess:
+          sttySize = subprocess.read()
       rows, columns = sttySize.split()
     except:
       shrink = False
@@ -1039,7 +1047,6 @@ def getDistHelpTopicStr(helpTopicVal):
 
 
 def getUsageHelpStr(helpTopicArg):
-  #print("helpTopicArg = " + helpTopicArg)
   usageHelpStr = helpUsageHeader
   if helpTopicArg == "":
     # No help topic option so just use the standard help header
@@ -1050,8 +1057,6 @@ def getUsageHelpStr(helpTopicArg):
       # Option not formatted correctly, set let error handler get it."
       return ""
     (helpTopicArgName, helpTopicVal) = helpTopicArg.split("=")
-    #print("helpTopicArgName = " + helpTopicArgName)
-    #print("helpTopicVal = " + helpTopicVal)
     usageHelpStr += getDistHelpTopicStr(helpTopicVal)
   return usageHelpStr
 
@@ -1074,7 +1079,7 @@ def getCmndOutput(cmnd, rtnCode=False):
   child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
     stderr = subprocess.STDOUT)
   output = child.stdout.read()
-  child.wait()
+  child.communicate()
   if rtnCode:
     return (s(output), child.returncode)
   return s(output)
@@ -1094,7 +1099,6 @@ def runCmnd(options, cmnd):
 # Determine if a command exists:
 def commandExists(cmnd):
   whichCmnd = getCmndOutput("which "+cmnd).strip()
-  #print("whichCmnd = %s" % whichCmnd)
   if os.path.exists(whichCmnd):
     return True
   return False
@@ -1188,14 +1192,10 @@ def getCommandlineOps():
   helpTopicArg = "" 
 
   for arg in argv:
-    #print("\narg = '" + arg + "'")
     matchedNativeArg = False
     for nativeArgName in nativeArgNames:
-      #print("\nnativeArgName ='" + nativeArgName + "'")
       currentArgName = arg[0:len(nativeArgName)]
-      #print("currentArgName = '" + currentArgName + "'")
       if currentArgName == nativeArgName:
-        #print("\nMatches native arg!")
         nativeArgs.append(arg)
         matchedNativeArg = True
         if currentArgName == distHelpArgName:
@@ -1204,19 +1204,11 @@ def getCommandlineOps():
     matchedNativeCmnd = False
     for nativeCmndName in nativeCmndNames:
       if arg == nativeCmndName:
-        #print("\nMatches native cmnd!")
         nativeCmnds.append(nativeCmndName)
         matchedNativeCmnd = True
         break
     if not (matchedNativeArg or matchedNativeCmnd):
-      #print("\nDoes *not* match native arg!")
       otherArgs.append(arg)
-    #print("\nnativeArgs = " + str(nativeArgs))
-    #print("otherArgs = " + str(otherArgs))
-
-  #print("\nnativeArgs = " + str(nativeArgs))
-  #print("nativeCmnds = " + str(nativeCmnds))
-  #print("otherArgs = " + str(otherArgs))
 
   if len(nativeCmnds) == 0:
     nativeCmnd = None
@@ -1320,7 +1312,10 @@ def getCommandlineOps():
 
   clp.add_option(
     noColorArgName, dest="useColor", action="store_false",
-    help="If set, don't use color in the output for gitdist (better for output to a file).",
+    help="If set, don't use color in the output for gitdist and set"
+    +" '-c color.status=never' before the git command (like 'status')."
+    +"  NOTE: user should also pass in --color=never for git commands "
+    +" accept that argument.  (Better for output to a file).",
     default=True )
 
   clp.add_option(
@@ -1460,7 +1455,6 @@ def requoteCmndLineArgsIntoArray(inArgs):
       newArg = arg
     else:
       newArg = splitArg[0]+"="+'='.join(splitArg[1:])
-    #print("\nnewArg =" + newArg)
     argsArray.append(newArg)
   return argsArray
 
@@ -1472,19 +1466,12 @@ def getRepoVersionDictFromRepoVersionFileString(repoVersionFileStr):
   len_repoVersionFileStrList = len(repoVersionFileStrList)
   i = 0
   while i < len_repoVersionFileStrList:
-    #print("i = %d" % i)
     repoDirLine = repoVersionFileStrList[i]
-    #print("repoDirLine = '" + repoDirLine + "'")
     if repoDirLine[0:3] == "***":
       repoDir = repoDirLine.split(":")[1].strip()
-      #print("repoDir = '" + repoDir + "'")
       repoVersionLine = repoVersionFileStrList[i+1]
-      #print("repoVersionLine = '" + repoVersionLine + "'")
       repoSha1 = repoVersionLine.split(" ")[0].strip()
-      #print("repoSha1 = '" + repoSha1 + "'")
-      #print("baseRepoName = '"+baseRepoName+"'")
       repoDirToEnter = ("." if repoDir == baseRepoName else repoDir)
-      #print("repoDirToEnter = '" + repoDirToEnter + "'")
       repoVersionDict.update({repoDirToEnter : repoSha1})
     else:
       break
@@ -1535,20 +1522,14 @@ def replaceRepoVersionInCmndLineArg(cmndLineArg, verToken, repoDirName, repoSha1
 def replaceRepoVersionInCmndLineArgs(cmndLineArgsArray, repoDirName, \
   repoVersionDict, repoVersionDict2 \
   ):
-  #print("repoDirName = %s" % repoDirName)
   repoSha1 = assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict)
   repoSha1_2 = assertAndGetRepoVersionFromDict(repoDirName, repoVersionDict2)
-  #print("repoSha1 =   " + repoSha1  )
-  #print("repoSha1_2 = " + repoSha1_2)
   cmndLineArgsArrayRepo = []
   for cmndLineArg in cmndLineArgsArray:
-    #print("cmndLineArg = " + cmndLineArg)
     newCmndLineArg = replaceRepoVersionInCmndLineArg(cmndLineArg, \
       "_VERSION_", repoDirName, repoSha1)
-    #print("newCmndLineArg = " + newCmndLineArg)
     newCmndLineArg = replaceRepoVersionInCmndLineArg(newCmndLineArg, \
       "_VERSION2_", repoDirName, repoSha1_2)
-    #print("newCmndLineArg = " + newCmndLineArg)
     cmndLineArgsArrayRepo.append(newCmndLineArg)
   return cmndLineArgsArrayRepo
 
@@ -1574,7 +1555,12 @@ def runRepoCmnd(options, cmndLineArgsArray, repoDirName, baseDir, \
     repoDirName, repoVersionDict, repoVersionDict2)
   cmndLineArgsArrayDefaultBranch = replaceDefaultBranchInCmndLineArgs( \
     cmndLineArgsArrayRepo, repoDirName, defaultBranchDict)
-  egCmndArray = [ options.useGit ] + cmndLineArgsArrayDefaultBranch
+  egCmndArray = [ options.useGit ]
+  if options.useColor:
+    egCmndArray.extend(['-c', 'color.status=always'])
+  else:
+    egCmndArray.extend(['-c', 'color.status=never'])
+  egCmndArray.extend(cmndLineArgsArrayDefaultBranch)
   runCmnd(options, egCmndArray)
 
 
@@ -1594,6 +1580,20 @@ def repoExistsAndNotExcluded(options, extraRepo, notReposList):
   if not os.path.isdir(extraRepo): return False
   if extraRepo in notReposList: return False
   return True
+
+
+# Get the identifier for the current commit in the repo
+def getRepoVersionIdentifier(options, getCmndOutputFunc, showMoreHeadDetails):
+  branch = getLocalBranch(options, getCmndOutputFunc)
+  if showMoreHeadDetails != "SHOW_MORE_HEAD_DETAILS":
+    return branch
+  if branch != "HEAD":
+    return branch
+  tagName = getCmndOutputFunc(options.useGit + " tag --points-at").strip()
+  if tagName != "":
+    return tagName
+  sha1 = getCmndOutputFunc(options.useGit + " log --pretty=%h -1").strip()
+  return sha1
 
 
 # Get the tracking branch for a repo
@@ -1626,8 +1626,6 @@ def getTrackingBranch(options, getCmndOutputFunc):
 
 # Get number of commits as a str wr.t.t tracking branch
 def getNumCommitsWrtTrackingBranch(options, trackingBranch, getCmndOutputFunc):
-  #print("type(options.useGit) =", type(options.useGit))
-  #print("type(trackingBranch) =", type(trackingBranch))
   if trackingBranch == "":
     return ""
   (summaryLines, rtnCode) = \
@@ -1639,14 +1637,12 @@ def getNumCommitsWrtTrackingBranch(options, trackingBranch, getCmndOutputFunc):
   summaryLines = summaryLines.strip()
   if summaryLines:
     for summaryLine in filterWarnings(summaryLines.splitlines()):
-      #print("summaryLine = '" + summaryLine + "'")
       numAuthorCommits = int(summaryLine.strip().split()[0].strip())
-      #print("numAuthorCommits = " + numAuthorCommits)
       numCommits += numAuthorCommits
   return str(numCommits)
   # NOTE: Above, we would like to use 'git ref-list --count' but that is not
   # supported in older versions of git (at least not in 1.7.0.4).  Using 'git
-  # shortlog -s' will return just one line per author so this is not likley to
+  # shortlog -s' will return just one line per author so this is not likely to
   # return a lot of data and the cost of the python code to process this
   # should be insignificant compared to the process execution command.
 
@@ -1689,7 +1685,9 @@ def getNumModifiedAndUntracked(options, getCmndOutputFunc):
 
 class RepoStatsStruct:
 
-  def __init__(self, branch, trackingBranch, numCommits, numModified, numUntracked):
+  def __init__(self, branch, trackingBranch, numCommits, numModified,
+      numUntracked \
+    ):
     self.branch = branch
     self.trackingBranch = trackingBranch
     self.numCommits = numCommits
@@ -1723,21 +1721,16 @@ class RepoStatsStruct:
     return False
 
 
-def getRepoStats(options, getCmndOutputFunc=None):
+def getRepoStats(options, getCmndOutputFunc=None, showMoreHeadDetails=""):
   if not getCmndOutputFunc:
     getCmndOutputFunc = getCmndOutput
-  branch         = getLocalBranch(options, getCmndOutputFunc)
+  branch = getRepoVersionIdentifier(options, getCmndOutputFunc, showMoreHeadDetails)
   trackingBranch = getTrackingBranch(options, getCmndOutputFunc)
-  numCommits     = getNumCommitsWrtTrackingBranch(options,
-                                                  trackingBranch,
-                                                  getCmndOutputFunc)
+  numCommits = getNumCommitsWrtTrackingBranch(options, trackingBranch, getCmndOutputFunc)
   (numModified, numUntracked) = getNumModifiedAndUntracked(options,
-                                                           getCmndOutputFunc)
-  return RepoStatsStruct(branch,
-                         trackingBranch,
-                         numCommits,
-                         numModified,
-                         numUntracked)
+    getCmndOutputFunc)
+  return RepoStatsStruct(branch, trackingBranch, numCommits,
+    numModified, numUntracked)
 
 
 class RepoVersionStruct:
@@ -1903,7 +1896,6 @@ if __name__ == '__main__':
   repoVersionDict2 = getRepoVersionDictFromRepoVersionFile(options.versionFile2)
 
   # Reform the commandline arguments correctly
-  #print("otherArgs = ", str(otherArgs))
   cmndLineArgsArray = requoteCmndLineArgsIntoArray(otherArgs)
 
   if options.debug:
@@ -1929,7 +1921,7 @@ if __name__ == '__main__':
       # Get repo stats
       repoStats = None
       if options.modifiedOnly or distRepoStatus:
-        repoStats = getRepoStats(options)
+        repoStats = getRepoStats(options, showMoreHeadDetails="SHOW_MORE_HEAD_DETAILS")
       repoVersions = None
       if distRepoVersionTable:
         repoVersions = getRepoVersions(options)

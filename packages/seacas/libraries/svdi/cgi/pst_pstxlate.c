@@ -5296,7 +5296,7 @@ static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int b
   File descriptor which is returned from open is stored in current
   statelist
 */
-void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatibility */
+void cdrofs(int *ifilcd)
 {
   int        errnum, errsev;
   char       symbol[1024];
@@ -5342,24 +5342,17 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
 }
 
 /* this routine is here only for compatibility with SVDI drivers */
-void cdrof3(ifilcd, idum) int *ifilcd, *idum;
-{
-  cdrofs(ifilcd);
-}
+void cdrof3(int *ifilcd, int *idum) { cdrofs(ifilcd); }
 
 /* this routine is here only for compatibility with SVDI drivers */
-void cdroff(ifilcd, idum1, idum2, idum3) int *ifilcd, *idum1, *idum2, *idum3;
-{
-  cdrofs(ifilcd);
-}
+void cdroff(int *ifilcd, int *idum1, int *idum2, int *idum3) { cdrofs(ifilcd); }
 
 /*
   Try to read LENGTH words from the file. Return the actual number
   of words read. FORTRAN unit number is ignored, file descriptor is
   gotten from the current statelist
 */
-void  cdrrfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrrfs(int *ifilcd, int *length, char *buffer, int *istat)
 {
 
   /* if the file hasn't been opened, open it */
@@ -5377,8 +5370,7 @@ char *buffer;
   Write LENGTH words from BUFFER to the file.  FORTRAN unit number is
   ignored, file descriptor is gotten from the current state list
 */
-void  cdrwfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
-char *buffer;
+void cdrwfs(int *ifilcd, int *length, char *buffer, int *istat)
 {
 
   /* if the file hasn't been opened, open it */
@@ -5399,15 +5391,14 @@ char *buffer;
   Close file sequential. FORTRAN unit number is ignore and file
   descriptor is gotten from current state
 */
-void cdrcfs(ifilcd, eof) int *ifilcd, *eof;
+void cdrcfs(int *ifilcd, int *eof)
 {
   /* close the file */
   close(cur_state->file_d);
 }
 
 /* open routine for the Abekas */
-void cdroab(ifilcd, frame) int *ifilcd;
-int *frame;
+void cdroab(int *ifilcd, int *frame)
 {
   char ic[5];
   int  i, inbr;

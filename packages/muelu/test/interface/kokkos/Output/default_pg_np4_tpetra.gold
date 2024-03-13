@@ -4,11 +4,12 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Gauss-Seidel
+ timer for apply = 0
 
 Level 1
 Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -18,7 +19,7 @@ BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -34,11 +35,12 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Gauss-Seidel
+ timer for apply = 0
 
 Level 2
 Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -48,7 +50,7 @@ BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -72,7 +74,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.45
-Smoother complexity = 1.78
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

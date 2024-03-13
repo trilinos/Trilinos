@@ -91,7 +91,7 @@ struct V_ReciprocalThresholdSelfFunctor
   typedef typename XV::execution_space execution_space;
   typedef typename XV::non_const_value_type value_type;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<value_type> KAT;
+  typedef Kokkos::ArithTraits<value_type> KAT;
   typedef typename KAT::mag_type mag_type;
 
   XV X_;
@@ -144,7 +144,7 @@ struct GlobalReciprocalThreshold<TpetraVectorType, true> {
   {
     typedef typename TpetraVectorType::scalar_type scalar_type;
     typedef typename TpetraVectorType::mag_type mag_type;
-    typedef Kokkos::Details::ArithTraits<scalar_type> STS;
+    typedef Kokkos::ArithTraits<scalar_type> STS;
 
     const scalar_type ONE = STS::one ();
     const mag_type min_val_abs = STS::abs (min_val);
@@ -195,7 +195,36 @@ struct LapackHelper{
                            Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> offdiag) {
     throw std::runtime_error("LAPACK does not support the scalar type.");
   }
+
 };
+
+template<class V>
+void
+computeInitialGuessForCG (const V& diagonal, V& x) {
+  using device_type = typename V::node_type::device_type;
+  using range_policy = Kokkos::RangePolicy<typename device_type::execution_space>;
+
+  // Initial randomization of the vector
+  x.randomize();
+
+
+  // Zero the stuff that where the diagonal is equal to one.  These are assumed to
+  // correspond to OAZ rows in the matrix.
+  size_t N = x.getLocalLength();
+  auto d_view = diagonal.template getLocalView<device_type>(Tpetra::Access::ReadOnly);
+  auto x_view = x.template getLocalView<device_type>(Tpetra::Access::ReadWrite);
+
+  auto ONE  = Teuchos::ScalarTraits<typename V::impl_scalar_type>::one();
+  auto ZERO = Teuchos::ScalarTraits<typename V::impl_scalar_type>::zero();
+
+  Kokkos::parallel_for("computeInitialGuessforCG::zero_bcs", range_policy(0,N), KOKKOS_LAMBDA(const size_t & i) {
+      if(d_view(i,0) == ONE)
+        x_view(i,0) = ZERO;       
+    });
+}
+
+
+
 
 
 template<class ScalarType>
@@ -852,7 +881,6 @@ Chebyshev<ScalarType, MV>::compute ()
   if (userInvDiag_.is_null ()) {
     Teuchos::RCP<const crs_matrix_type> A_crsMat =
       Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-
     if (D_.is_null ()) { // We haven't computed D_ before
       if (! A_crsMat.is_null () && A_crsMat->isFillComplete ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets.
@@ -932,8 +960,9 @@ Chebyshev<ScalarType, MV>::compute ()
                                                                  eigRelTolerance_, eigNormalizationFreq_, stream,
                                                                  computeSpectralRadius_);
     }
-    else
+    else {
       computedLambdaMax = cgMethod (*A_, *D_, eigMaxIters_);
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (computedLambdaMax),
       std::runtime_error,
@@ -1170,8 +1199,8 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 
       typedef typename MV::impl_scalar_type IST;
       typedef typename MV::local_ordinal_type LO;
-      typedef Kokkos::Details::ArithTraits<IST> ATS;
-      typedef Kokkos::Details::ArithTraits<typename ATS::mag_type> STM;
+      typedef Kokkos::ArithTraits<IST> ATS;
+      typedef Kokkos::ArithTraits<typename ATS::mag_type> STM;
 
       const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
       for (LO i = 0; i < lclNumRows; ++i) {
@@ -1350,8 +1379,10 @@ fourthKindApplyImpl (const op_type& A,
   MV& Z = *Z_ptr;
   
   // Store 4th-kind result (needed as temporary for bootstrapping opt. 4th-kind Chebyshev)
-  MV X4 (B.getMap (), B.getNumVectors (), false);
-  
+  // Fetch the second cached temporary (multi)vector.
+  Teuchos::RCP<MV> X4_ptr = makeSecondTempMultiVector (B);
+  MV& X4 = *X4_ptr;
+
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     
@@ -1529,6 +1560,8 @@ ifpackApplyImpl (const op_type& A,
 }
 
 
+
+
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
@@ -1542,6 +1575,8 @@ cgMethodWithInitGuess (const op_type& A,
   if (debug_) {
     *out_ << " cgMethodWithInitGuess:" << endl;
   }
+
+
 
   const ST one = STS::one();
   ST beta, betaOld = one, pAp, pApOld = one, alpha, rHz, rHzOld, rHzOld2 = one, lambdaMax;
@@ -1578,11 +1613,17 @@ cgMethodWithInitGuess (const op_type& A,
       if (debug_) {
         *out_ << " diag[" << iter << "]     = " << diag[iter] << endl;
         *out_ << " offdiag["<< iter-1 << "] = " << offdiag[iter-1] << endl;
-        }
+        *out_ << " rHz = "<<rHz <<endl;
+        *out_ << " alpha = "<<alpha<<endl;
+        *out_ << " beta = "<<beta<<endl;
+      }
     } else {
       diag[iter] = STS::real(pAp/rHzOld);
       if (debug_) {
         *out_ << " diag[" << iter << "]     = " << diag[iter] << endl;
+        *out_ << " rHz = "<<rHz <<endl;
+        *out_ << " alpha = "<<alpha<<endl;
+        *out_ << " beta = "<<beta<<endl;
       }
     }
     rHzOld2 = rHzOld;
@@ -1602,6 +1643,7 @@ Chebyshev<ScalarType, MV>::
 cgMethod (const op_type& A, const V& D_inv, const int numIters)
 {
   using std::endl;
+
   if (debug_) {
     *out_ << "cgMethod:" << endl;
   }
@@ -1611,10 +1653,8 @@ cgMethod (const op_type& A, const V& D_inv, const int numIters)
     r = rcp(new V(A.getDomainMap ()));
     if (eigKeepVectors_)
       eigVector_ = r;
-    // For the first pass, just let the pseudorandom number generator
-    // fill x with whatever values it wants; don't try to make its
-    // entries nonnegative.
-    PowerMethod::computeInitialGuessForPowerMethod (*r, false);
+    // For CG, we need to get the BCs right and we'll use D_inv to get that
+    Details::computeInitialGuessForCG (D_inv,*r);
   } else
     r = eigVector_;
 
@@ -1652,6 +1692,23 @@ makeTempMultiVector (const MV& B)
   }
   return W_;
 }
+
+template<class ScalarType, class MV>
+Teuchos::RCP<MV>
+Chebyshev<ScalarType, MV>::
+makeSecondTempMultiVector (const MV& B)
+{
+  // ETP 02/08/17:  We must check not only if the temporary vectors are
+  // null, but also if the number of columns match, since some multi-RHS
+  // solvers (e.g., Belos) may call apply() with different numbers of columns.
+
+  const size_t B_numVecs = B.getNumVectors ();
+  if (W2_.is_null () || W2_->getNumVectors () != B_numVecs) {
+    W2_ = Teuchos::rcp (new MV (B.getMap (), B_numVecs, false));
+  }
+  return W2_;
+}
+
 
 template<class ScalarType, class MV>
 std::string

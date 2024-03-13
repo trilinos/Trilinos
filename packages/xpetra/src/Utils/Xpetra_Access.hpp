@@ -46,25 +46,19 @@
 #ifndef XPETRA_ACCESS_HPP
 #define XPETRA_ACCESS_HPP
 
+namespace Xpetra {
+namespace Access {
+// Structs for Access tags, these should not be used by user code
+struct ReadOnlyStruct {};
+struct OverwriteAllStruct {};
+struct ReadWriteStruct {};
 
-namespace Xpetra
-{
-namespace Access
-{
-  // Structs for Access tags, these should not be used by user code
-  struct ReadOnlyStruct {};
-  struct OverwriteAllStruct {};
-  struct ReadWriteStruct {};
-
-
-  //Tag indicating intent to read up-to-date data, but not modify.
-  constexpr struct ReadOnlyStruct  ReadOnly  = ReadOnlyStruct();
-  //Tag indicating intent to completely overwrite existing data.
-  constexpr struct OverwriteAllStruct OverwriteAll = OverwriteAllStruct();
-  //Tag indicating intent to both read up-to-date data and modify it.
-  constexpr struct ReadWriteStruct ReadWrite = ReadWriteStruct();
-}
-}
-#endif // XPETRA_ACCESS_HPP
-
-
+// Tag indicating intent to read up-to-date data, but not modify.
+constexpr struct ReadOnlyStruct ReadOnly = ReadOnlyStruct();
+// Tag indicating intent to completely overwrite existing data.
+constexpr struct OverwriteAllStruct OverwriteAll = OverwriteAllStruct();
+// Tag indicating intent to both read up-to-date data and modify it.
+constexpr struct ReadWriteStruct ReadWrite = ReadWriteStruct();
+}  // namespace Access
+}  // namespace Xpetra
+#endif  // XPETRA_ACCESS_HPP

@@ -127,8 +127,8 @@ int main(int argc, char **argv) {
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
-  test_priority<Kokkos::SYCL>(success, *out);
-  test_reuse<Kokkos::SYCL>(success, *out);
+  test_priority<Kokkos::Experimental::SYCL>(success, *out);
+  test_reuse<Kokkos::Experimental::SYCL>(success, *out);
 #endif
 
   if (success) {

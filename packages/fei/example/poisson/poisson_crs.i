@@ -1,9 +1,0 @@
-SOLVER_LIBRARY Trilinos_AztecOO
-L 256
-AZ_max_iter 500
-outputLevel 1
-AZ_conv AZ_r0
-AZ_tol 3.e-8
-AZ_solver AZ_cg
-AZ_precond AZ_dom_decomp
-AZ_subdomain_solve AZ_icc

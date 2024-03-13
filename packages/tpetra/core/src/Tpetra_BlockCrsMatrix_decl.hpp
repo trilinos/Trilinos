@@ -391,7 +391,7 @@ public:
   //@{
 
   //! The number of degrees of freedom per mesh point.
-  LO getBlockSize () const { return blockSize_; }
+  virtual LO getBlockSize () const override { return blockSize_; }
 
   //! Get the (mesh) graph.
   virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const override;
@@ -744,6 +744,12 @@ protected:
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source) override;
 
+  // clang-format on
+  using dist_object_type::
+      copyAndPermute; ///< DistObject copyAndPermute has multiple overloads --
+                      ///< use copyAndPermutes for anything we don't override
+                      // clang-format off
+
   virtual void
   copyAndPermute
   (const SrcDistObject& sourceObj,
@@ -934,7 +940,7 @@ private:
     // Gonna badly fake this here for other execspaces
 #elif defined(KOKKOS_ENABLE_HIP)
     static constexpr bool value =
-      std::is_same<typename Device::execution_space, Kokkos::Experimental::HIP>::value;
+      std::is_same<typename Device::execution_space, Kokkos::HIP>::value;
 #elif defined(KOKKOS_ENABLE_SYCL)
     static constexpr bool value =
       std::is_same<typename Device::execution_space, Kokkos::Experimental::SYCL>::value;

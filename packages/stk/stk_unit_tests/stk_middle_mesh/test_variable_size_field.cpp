@@ -1,5 +1,5 @@
-#include "mesh.hpp"
-#include "variable_size_field.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/variable_size_field.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {
@@ -59,6 +59,33 @@ TEST(VariableSizeField, ValuesOneNode)
   EXPECT_EQ(field(v3, 0, 0), 4);
   EXPECT_EQ(field(v3, 0, 1), 5);
   EXPECT_EQ(field(v3, 0, 2), 6);
+}
+
+TEST(VariableSizeField, InsertMoveToFront)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0);
+  auto v3 = mesh->create_vertex(2, 0, 0);
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  fieldPtr->insert(v1, 0, 1);
+  fieldPtr->insert(v2, 0, 2);
+  fieldPtr->insert(v3, 0, 3);
+  fieldPtr->insert(v1, 0, 4);
+  fieldPtr->insert(v2, 0, 5);
+
+  EXPECT_EQ(fieldPtr->get_num_comp(v1, 0), 2);
+  EXPECT_EQ(fieldPtr->get_num_comp(v2, 0), 2);
+  EXPECT_EQ(fieldPtr->get_num_comp(v3, 0), 1);
+
+  auto& field = *fieldPtr;
+  EXPECT_EQ(field(v1, 0, 0), 1);
+  EXPECT_EQ(field(v1, 0, 1), 4);
+  EXPECT_EQ(field(v2, 0, 0), 2);
+  EXPECT_EQ(field(v2, 0, 1), 5);
+  EXPECT_EQ(field(v3, 0, 0), 3);
 }
 
 TEST(VariableSizeField, ValuesTwoNode2)
@@ -222,6 +249,213 @@ TEST(VariableSizeField, ClearThenAddValues)
   EXPECT_EQ(field(v2, 0, 0), 2);
   EXPECT_EQ(field(v2, 0, 1), 4);
 }
+
+TEST(VariableSizeField, Iteration)
+{
+
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0);
+
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  fieldPtr->insert(v1, 0, 1);
+  fieldPtr->insert(v2, 0, 2);
+  fieldPtr->insert(v1, 0, 3);
+  fieldPtr->insert(v2, 0, 4);
+  fieldPtr->insert(v1, 0, 5);
+  fieldPtr->insert(v2, 0, 6);
+
+  std::vector<int> v1Vals, v2Vals;
+  auto& field = *fieldPtr;
+  for (auto& v : field(v1, 0))
+    v1Vals.push_back(v);
+
+  for (auto& v : field(v2, 0))
+    v2Vals.push_back(v);
+
+  std::vector<int> v1ValsExpected = {1, 3, 5};
+  std::vector<int> v2ValsExpected = {2, 4, 6};
+  EXPECT_EQ(v1Vals, v1ValsExpected);
+  EXPECT_EQ(v2Vals, v2ValsExpected);
+
+  v1Vals.clear();
+  v2Vals.clear();
+  const auto& fieldConst = *fieldPtr;
+  for (auto& v : fieldConst(v1, 0))
+    v1Vals.push_back(v);
+
+  for (auto& v : fieldConst(v2, 0))
+    v2Vals.push_back(v);
+
+  EXPECT_EQ(v1Vals, v1ValsExpected);
+  EXPECT_EQ(v2Vals, v2ValsExpected);
+}
+
+TEST(VariableSizeField, ResizeLarger)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0);
+
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+  fieldPtr->insert(v1, 0, 1);
+  fieldPtr->insert(v2, 0, 2);
+  fieldPtr->insert(v1, 0, 3);
+  fieldPtr->insert(v2, 0, 4);
+  fieldPtr->insert(v1, 0, 5);
+  fieldPtr->insert(v2, 0, 6);
+
+  fieldPtr->resize(v1, 0, 5, 666);
+  auto& field = *fieldPtr;
+  EXPECT_EQ(field.get_num_comp(v1, 0), 5);
+  EXPECT_EQ(field(v1, 0, 0), 1);
+  EXPECT_EQ(field(v1, 0, 1), 3);
+  EXPECT_EQ(field(v1, 0, 2), 5);
+  EXPECT_EQ(field(v1, 0, 3), 666);
+  EXPECT_EQ(field(v1, 0, 4), 666);
+
+  EXPECT_EQ(field(v2, 0, 0), 2);
+  EXPECT_EQ(field(v2, 0, 1), 4);
+  EXPECT_EQ(field(v2, 0, 2), 6);
+}
+
+TEST(VariableSizeField, ResizeSmaller)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0);
+
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+  fieldPtr->insert(v1, 0, 1);
+  fieldPtr->insert(v1, 0, 3);
+  fieldPtr->insert(v1, 0, 5);
+  fieldPtr->insert(v1, 0, 7);
+
+
+  fieldPtr->insert(v2, 0, 2);
+  fieldPtr->insert(v2, 0, 4);
+  fieldPtr->insert(v2, 0, 6);
+
+  fieldPtr->resize(v1, 0, 2);
+  auto& field = *fieldPtr;
+  EXPECT_EQ(field.get_num_comp(v1, 0), 2);
+  EXPECT_EQ(field(v1, 0, 0), 1);
+  EXPECT_EQ(field(v1, 0, 1), 3);
+
+  EXPECT_EQ(field(v2, 0, 0), 2);
+  EXPECT_EQ(field(v2, 0, 1), 4);
+  EXPECT_EQ(field(v2, 0, 2), 6);
+
+  fieldPtr->insert(v1, 0, 9);
+  fieldPtr->insert(v1, 0, 11);
+  EXPECT_EQ(field.get_num_comp(v1, 0), 4);
+  EXPECT_EQ(field(v1, 0, 0), 1);
+  EXPECT_EQ(field(v1, 0, 1), 3);  
+  EXPECT_EQ(field(v1, 0, 2), 9);
+  EXPECT_EQ(field(v1, 0, 3), 11);
+
+  fieldPtr->insert(v1, 0, 13);
+  EXPECT_EQ(field.get_num_comp(v1, 0), 5);
+  EXPECT_EQ(field(v1, 0, 0), 1);
+  EXPECT_EQ(field(v1, 0, 1), 3);  
+  EXPECT_EQ(field(v1, 0, 2), 9);
+  EXPECT_EQ(field(v1, 0, 3), 11);  
+  EXPECT_EQ(field(v1, 0, 4), 13);  
+
+  EXPECT_EQ(field(v2, 0, 0), 2);
+  EXPECT_EQ(field(v2, 0, 1), 4);
+  EXPECT_EQ(field(v2, 0, 2), 6);  
+
+}
+
+
+TEST(VariableSizeField, OneThenTwoStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 4; ++i)
+  {
+    fieldPtr->insert(v1, 0, 0);
+  } 
+
+  for (int i=0; i < 4; ++i)
+  {
+    fieldPtr->insert(v2, 0, 1);
+  }   
+
+  EXPECT_EQ(mesh::compute_storage_efficiency(fieldPtr), 1.0);
+}
+
+TEST(VariableSizeField, TwoThenOneStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v2, 0, 0);
+  } 
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v1, 0, 1);
+  }   
+
+  EXPECT_EQ(mesh::compute_storage_efficiency(fieldPtr), 1.0);
+}
+
+TEST(VariableSizeField, AlternatingPatternStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v1, 0, 0);
+    fieldPtr->insert(v2, 0, 1);
+  } 
+
+  std::cout << "storage usage: " << fieldPtr->get_storage_usage() << std::endl;
+  EXPECT_GE(mesh::compute_storage_efficiency(fieldPtr), 0.5);
+}
+
+TEST(VariableSizeField, ThreeElementCyclicPatternStorage)
+{
+  auto mesh = make_empty_mesh(MPI_COMM_WORLD);
+
+  auto v1 = mesh->create_vertex(0, 0, 0);
+  auto v2 = mesh->create_vertex(1, 0, 0); 
+  auto v3 = mesh->create_vertex(2, 0, 0); 
+  auto fieldPtr = create_variable_size_field<int>(mesh, FieldShape(1, 0, 0));
+
+  for (int i=0; i < 100; ++i)
+  {
+    fieldPtr->insert(v1, 0, 0);
+    fieldPtr->insert(v2, 0, 1);
+    fieldPtr->insert(v3, 0, 2);
+  } 
+
+  std::cout << "storage usage: " << fieldPtr->get_storage_usage() << std::endl;
+  EXPECT_GE(mesh::compute_storage_efficiency(fieldPtr), 0.5);
+}
+
+
+//TODO: test iteration after resize
+
 } // namespace impl
 } // namespace middle_mesh
 } // namespace stk

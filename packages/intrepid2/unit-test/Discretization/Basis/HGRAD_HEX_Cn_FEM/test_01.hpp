@@ -54,30 +54,17 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-//#include "Intrepid2_CubatureDirectLineGauss.hpp"
-//#include "Intrepid2_FunctionSpaceTools.hpp"
-
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+
 namespace Intrepid2 {
 
 namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
 
 template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
@@ -125,8 +112,6 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;      
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;      
-
-#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
 
   const scalar_type tol = tolerence();
   int errorFlag = 0;
@@ -321,7 +306,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order, POINTTYPE_WARPBLEND);
     constexpr ordinal_type dim=3;
     const ordinal_type basisCardinality = hexBasis.getCardinality();
-    DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, basisCardinality , dim);
+    DynRankViewScalarValueType ConstructWithLabel(lattice_scalar, basisCardinality , dim);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, basisCardinality , dim);
 
     hexBasis.getDofCoords(lattice_scalar);
@@ -509,7 +494,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     if(order < maxOrder) {
       HexBasisType hexBasis(order);
 
-      DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 27, 3);
+      DynRankViewHostScalarValueType ConstructWithLabel(hexNodesHost, 27, 3);
       DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 27, 3);
       
 

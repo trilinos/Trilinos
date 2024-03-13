@@ -33,49 +33,28 @@
 # 
 
 
-#
-# A) Package-specific configuration options
-#
-
-#TRIBITS_CONFIGURE_FILE(STK_config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
-
-#
-# Core headers
-#
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../util/)
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../stk_util)
-#TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../seacas/ioss/src)
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_io
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
+if(HAVE_STK_Trilinos)
+  TRIBITS_ADD_LIBRARY(stk_io
+    NOINSTALLHEADERS ${HEADERS}
+    SOURCES ${SOURCES}
   )
+else()
+  find_package(SEACAS REQUIRED)
+  add_library(stk_io ${SOURCES})
+  target_link_libraries(stk_io PUBLIC ${SEACAS_LIBRARIES})
+  target_link_libraries(stk_io PUBLIC stk_mesh_base)
+endif()
+
+target_include_directories(stk_io PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_io>
+  $<INSTALL_INTERFACE:include>
+)
 
 INSTALL(FILES ${HEADERS} DESTINATION
 ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/)
@@ -84,3 +63,7 @@ ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/)
 # with  -lstk_io_uti before -lstk_io.  I think the DEPLIBS added in
 # util/CMakeLists.txt should have done this, but it didn't work for me.
 ADD_SUBDIRECTORY(util)
+
+if(NOT HAVE_STK_Trilinos)
+  INSTALL(TARGETS stk_io DESTINATION ${STK_INSTALL_LIBDIR})
+endif()

@@ -156,6 +156,5 @@ struct SPADD_SYMBOLIC<KernelHandle, a_size_view_t, a_lno_view_t, b_size_view_t,
       false, true>;
 
 #include <KokkosSparse_spadd_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spadd_symbolic_eti_spec_decl.hpp>
 
 #endif

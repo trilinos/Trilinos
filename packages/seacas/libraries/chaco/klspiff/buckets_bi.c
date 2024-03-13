@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -56,7 +56,6 @@ void bucketsorts_bi(struct vtx_data **graph,       /* graph data structure */
   double          hop_cost;        /* relative hop/cut importance */
   int             myhop;           /* hops associated with current vertex */
   int             i, j;            /* loop counters */
-  void            randomize(int *array, int n), add2bilist();
 
   /* For each vertex, compute d-values for each possible transition. */
   /* Then store them in each appropriate bucket. */

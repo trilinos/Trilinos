@@ -13,7 +13,6 @@
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_PhysicsStateCounter.hpp"
 
-
 namespace Tempus_Test {
 
 /** \brief This is a Forward Euler time stepper to test the PhysicsState.
@@ -21,86 +20,84 @@ namespace Tempus_Test {
  *  It is derived from StepperForwardEuler, and simply increments
  *  a physics counter.
  */
-template<class Scalar>
-class StepperPhysicsStateTest
-  : virtual public Tempus::StepperExplicit<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperPhysicsStateTest : virtual public Tempus::StepperExplicit<Scalar> {
+ public:
   /// Constructor
   StepperPhysicsStateTest(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
   {
-    this->setStepperType(        this->description());
-    this->setUseFSAL(            false);
-    this->setICConsistency(      "None");
-    this->setICConsistencyCheck( false);
+    this->setStepperType(this->description());
+    this->setUseFSAL(false);
+    this->setICConsistency("None");
+    this->setICConsistencyCheck(false);
 
     this->setModel(appModel);
   }
 
   void initialize() {}
   Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState()
-  { return Teuchos::null; }
-  Scalar getOrder() const {return 1.0;}
-  Scalar getOrderMin() const {return 1.0;}
-  Scalar getOrderMax() const {return 1.0;}
-  Tempus::OrderODE getOrderODE() const {return Tempus::FIRST_ORDER_ODE;}
+  {
+    return Teuchos::null;
+  }
+  Scalar getOrder() const { return 1.0; }
+  Scalar getOrderMin() const { return 1.0; }
+  Scalar getOrderMax() const { return 1.0; }
+  Tempus::OrderODE getOrderODE() const { return Tempus::FIRST_ORDER_ODE; }
 
   /// Take the specified timestep, dt, and return true if successful.
   virtual void takeStep(
-    const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory)
-{
-  using Teuchos::RCP;
-
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperPhysicsStateTest::takeStep()");
+      const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory)
   {
-    RCP<Tempus::SolutionState<Scalar> > currentState =
-      solutionHistory->getCurrentState();
+    using Teuchos::RCP;
 
-    typedef Thyra::ModelEvaluatorBase MEB;
-    this->inArgs_.set_x(currentState->getX());
-    if (this->inArgs_.supports(MEB::IN_ARG_t))
-      this->inArgs_.set_t(currentState->getTime());
+    TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperPhysicsStateTest::takeStep()");
+    {
+      RCP<Tempus::SolutionState<Scalar> > currentState =
+          solutionHistory->getCurrentState();
 
-    // For model evaluators whose state function f(x, x_dot, t) describes
-    // an implicit ODE, and which accept an optional x_dot input argument,
-    // make sure the latter is set to null in order to request the evaluation
-    // of a state function corresponding to the explicit ODE formulation
-    // x_dot = f(x, t)
-    if (this->inArgs_.supports(MEB::IN_ARG_x_dot))
-      this->inArgs_.set_x_dot(Teuchos::null);
-    this->outArgs_.set_f(currentState->getXDot());
+      typedef Thyra::ModelEvaluatorBase MEB;
+      this->inArgs_.set_x(currentState->getX());
+      if (this->inArgs_.supports(MEB::IN_ARG_t))
+        this->inArgs_.set_t(currentState->getTime());
 
-    this->appModel_->evalModel(this->inArgs_,this->outArgs_);
+      // For model evaluators whose state function f(x, x_dot, t) describes
+      // an implicit ODE, and which accept an optional x_dot input argument,
+      // make sure the latter is set to null in order to request the evaluation
+      // of a state function corresponding to the explicit ODE formulation
+      // x_dot = f(x, t)
+      if (this->inArgs_.supports(MEB::IN_ARG_x_dot))
+        this->inArgs_.set_x_dot(Teuchos::null);
+      this->outArgs_.set_f(currentState->getXDot());
 
-    // Forward Euler update, x = x + dt*xdot
-    RCP<Tempus::SolutionState<Scalar> > workingState =
-      solutionHistory->getWorkingState();
-    const Scalar dt = workingState->getTimeStep();
-    Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-      *(currentState->getX()),dt,*(currentState->getXDot()));
+      this->appModel_->evalModel(this->inArgs_, this->outArgs_);
 
-    RCP<PhysicsStateCounter<Scalar> > pSC =
-      Teuchos::rcp_dynamic_cast<PhysicsStateCounter<Scalar> >
-        (workingState->getPhysicsState());
-    int counter = pSC->getCounter();
-    counter++;
-    pSC->setCounter(counter);
+      // Forward Euler update, x = x + dt*xdot
+      RCP<Tempus::SolutionState<Scalar> > workingState =
+          solutionHistory->getWorkingState();
+      const Scalar dt = workingState->getTimeStep();
+      Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
+                     *(currentState->getX()), dt, *(currentState->getXDot()));
 
-    workingState->setSolutionStatus(Tempus::Status::PASSED);
-    workingState->setOrder(this->getOrder());
+      RCP<PhysicsStateCounter<Scalar> > pSC =
+          Teuchos::rcp_dynamic_cast<PhysicsStateCounter<Scalar> >(
+              workingState->getPhysicsState());
+      int counter = pSC->getCounter();
+      counter++;
+      pSC->setCounter(counter);
+
+      workingState->setSolutionStatus(Tempus::Status::PASSED);
+      workingState->setOrder(this->getOrder());
+    }
+    return;
   }
-  return;
-}
 
-Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const
-{
-  return Teuchos::null;
-}
-
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const
+  {
+    return Teuchos::null;
+  }
 };
 
-} // namespace Tempus_Test
+}  // namespace Tempus_Test
 
-#endif // Tempus_PhysicsStateTest_StepperForwardEuler_hpp
+#endif  // Tempus_PhysicsStateTest_StepperForwardEuler_hpp

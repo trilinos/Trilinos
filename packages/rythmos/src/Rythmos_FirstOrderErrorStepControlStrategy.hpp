@@ -1,4 +1,0 @@
-#include "Rythmos_FirstOrderErrorStepControlStrategy_decl.hpp"
-#ifndef HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
-#include "Rythmos_FirstOrderErrorStepControlStrategy_def.hpp"
-#endif

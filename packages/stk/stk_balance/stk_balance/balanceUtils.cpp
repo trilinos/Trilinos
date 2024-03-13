@@ -50,14 +50,6 @@ int BalanceSettings::getGraphVertexWeight(stk::topology type) const
   return 1;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-double BalanceSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
-{
-  return 1.0;
-}
-#endif
-
 double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const
 {
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
@@ -180,14 +172,6 @@ bool BalanceSettings::isMultiCriteriaRebalance() const
   return false;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use setVertexWeightFieldName() and setVertexWeightMethod(VertexWeightMethod::FIELD) instead")
-bool BalanceSettings::areVertexWeightsProvidedViaFields() const
-{
-  return false;
-}
-#endif
-
 void BalanceSettings::setVertexWeightFieldName(std::string field_name, unsigned criteria_index)
 {
   STK_ThrowRequireMsg(criteria_index < m_vertexWeightFieldNames.size(),
@@ -300,9 +284,9 @@ bool BalanceSettings::shouldFixSpiders() const
   return false;
 }
 
-std::string BalanceSettings::getSpiderBeamConnectivityCountFieldName() const
+std::string BalanceSettings::getSpiderPartName() const
 {
-  return "stk_balance_beam_connectivity_count";
+  return "stk_balance_spider_elements";
 }
 
 std::string BalanceSettings::getSpiderVolumeConnectivityCountFieldName() const
@@ -317,7 +301,8 @@ std::string BalanceSettings::getOutputSubdomainFieldName() const
 
 std::string BalanceSettings::getDiagnosticElementWeightFieldName() const
 {
-  return "stk_balance_diagnostic_element_weight";
+
+  return "stk_balance_diagnostic_element_weight" + std::to_string(getNumCriteria());
 }
 
 std::string BalanceSettings::getVertexConnectivityWeightFieldName() const
@@ -325,7 +310,7 @@ std::string BalanceSettings::getVertexConnectivityWeightFieldName() const
   return "stk_balance_vertex_connectivity_weight";
 }
 
-const stk::mesh::Field<int> * BalanceSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+stk::mesh::Part * BalanceSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
 {
   return nullptr;
 }
@@ -342,7 +327,8 @@ const stk::mesh::Field<int> * BalanceSettings::getOutputSubdomainField(const stk
 
 const stk::mesh::Field<double> * BalanceSettings::getDiagnosticElementWeightField(const stk::mesh::BulkData & stkMeshBulkData) const
 {
-  if (m_diagnosticElementWeightsField == nullptr) {
+  if (m_diagnosticElementWeightsField == nullptr ||
+      (getDiagnosticElementWeightFieldName() != m_diagnosticElementWeightsField->name())) {
     m_diagnosticElementWeightsField =
         stkMeshBulkData.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
                                                            getDiagnosticElementWeightFieldName());
@@ -429,7 +415,7 @@ GraphCreationSettings::GraphCreationSettings()
     m_UseConstantToleranceForFaceSearch(false),
     m_shouldFixSpiders(DefaultSettings::fixSpiders),
     m_shouldFixMechanisms(DefaultSettings::fixMechanisms),
-    m_spiderBeamConnectivityCountField(nullptr),
+    m_spiderPart(nullptr),
     m_spiderVolumeConnectivityCountField(nullptr),
     m_outputSubdomainField(nullptr),
     m_includeSearchResultInGraph(DefaultSettings::useContactSearch),
@@ -514,59 +500,79 @@ double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology,
   return weightTable[element1Index][element2Index];
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE
-STK_DEPRECATED_MSG("Use getFieldVertexWeight() instead")
-double GraphCreationSettings::getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
-{
-  return 1.0;
-}
-#endif
-
 int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
 {
   switch(type)
   {
   case stk::topology::PARTICLE:
-  case stk::topology::LINE_2:
+  case stk::topology::LINE_2_1D:
+  case stk::topology::LINE_3_1D:
   case stk::topology::BEAM_2:
   case stk::topology::BEAM_3:
+  case stk::topology::SHELL_LINE_2:
+  case stk::topology::SHELL_LINE_3:
   case stk::topology::SPRING_2:
   case stk::topology::SPRING_3:
     return 1;
-  case stk::topology::SHELL_TRIANGLE_3:
-    return 3;
-  case stk::topology::SHELL_TRIANGLE_6:
-    return 8;
-  case stk::topology::SHELL_QUADRILATERAL_4:
-    return 6;
-  case stk::topology::SHELL_QUADRILATERAL_8:
-    return 8;
   case stk::topology::TRI_3_2D:
     return 3;
+  case stk::topology::TRI_4_2D:
+    return 4;
+  case stk::topology::TRI_6_2D:
+    return 6;
   case stk::topology::QUAD_4_2D:
     return 6;
-  case stk::topology::HEXAHEDRON_8:
-    return 3;
-  case stk::topology::HEXAHEDRON_20:
+  case stk::topology::QUAD_8_2D:
     return 8;
+  case stk::topology::QUAD_9_2D:
+    return 9;
+  case stk::topology::SHELL_TRI_3:
+    return 3;
+  case stk::topology::SHELL_TRI_4:
+    return 4;
+  case stk::topology::SHELL_TRI_6:
+    return 8;
+  case stk::topology::SHELL_QUAD_4:
+    return 6;
+  case stk::topology::SHELL_QUAD_8:
+    return 8;
+  case stk::topology::SHELL_QUAD_9:
+    return 9;
+  case stk::topology::TET_4:
+    return 1;
+  case stk::topology::TET_8:
+    return 5;
+  case stk::topology::TET_10:
+    return 6;
+  case stk::topology::TET_11:
+    return 7;
   case stk::topology::PYRAMID_5:
     return 1;
-  case stk::topology::TETRAHEDRON_4:
-    return 1;
-  case stk::topology::TETRAHEDRON_10:
+  case stk::topology::PYRAMID_13:
+    return 5;
+  case stk::topology::PYRAMID_14:
     return 6;
   case stk::topology::WEDGE_6:
     return 2;
   case stk::topology::WEDGE_12:
-    // TODO
+    return 10;
   case stk::topology::WEDGE_15:
     return 12;
+  case stk::topology::WEDGE_18:
+    return 14;
+  case stk::topology::HEX_8:
+    return 3;
+  case stk::topology::HEX_20:
+    return 8;
+  case stk::topology::HEX_27:
+    return 10;
   default:
     if ( type.is_superelement( ))
     {
       return 10;
     }
-    throw("Invalid Element Type In WeightsOfElement");
+    STK_ThrowErrorMsg("Unrecognized element type (" << type << ") in getGraphVertexWeight()");
+    return 0;  // Keep compiler happy about always having a return value
   }
 }
 
@@ -697,6 +703,7 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
   case stk::topology::TET_11:
   case stk::topology::PYRAMID_13:
   case stk::topology::PYRAMID_14:
+  case stk::topology::WEDGE_12:
   case stk::topology::WEDGE_15:
   case stk::topology::WEDGE_18:
   case stk::topology::HEX_20:
@@ -710,8 +717,7 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
     }
     else
     {
-      std::cerr << "Topology is " << elementTopology << std::endl;
-      throw("Invalid Element Type in GetDimOfElement");
+      STK_ThrowErrorMsg("Unrecognized element type (" << elementTopology << ") in getConnectionTableIndex()");
     }
     break;
   };
@@ -781,8 +787,7 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
     }
     else
     {
-      std::cerr << "Topology is " << elementTopology << std::endl;
-      throw("Invalid Element Type in GetDimOfElement");
+      STK_ThrowErrorMsg("Unrecognized element type (" << elementTopology << ") in getEdgeWeightTableIndex()");
     }
     break;
   };
@@ -809,16 +814,14 @@ bool GraphCreationSettings::shouldFixSpiders() const
   return m_shouldFixSpiders;
 }
 
-const stk::mesh::Field<int> * GraphCreationSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+stk::mesh::Part * GraphCreationSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
 {
-  if (m_spiderBeamConnectivityCountField == nullptr) {
-    m_spiderBeamConnectivityCountField =
-        stkMeshBulkData.mesh_meta_data().get_field<int>(stk::topology::NODE_RANK,
-                                                        getSpiderBeamConnectivityCountFieldName());
-    STK_ThrowRequireMsg(m_spiderBeamConnectivityCountField != nullptr,
-                    "Must create nodal spider beam connectivity count field when fixing spider elements.");
+  if (m_spiderPart == nullptr) {
+    m_spiderPart = stkMeshBulkData.mesh_meta_data().get_part(getSpiderPartName());
+    STK_ThrowRequireMsg(m_spiderPart != nullptr,
+                    "Must create spider part when fixing spider elements.");
   }
-  return m_spiderBeamConnectivityCountField;
+  return m_spiderPart;
 }
 
 const stk::mesh::Field<int> * GraphCreationSettings::getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const

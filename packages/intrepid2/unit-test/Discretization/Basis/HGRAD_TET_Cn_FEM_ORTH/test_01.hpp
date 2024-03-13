@@ -59,55 +59,25 @@
 #include "Teuchos_RCP.hpp"
 #include "Intrepid2_CubatureDirectTetDefault.hpp"
 
+#include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
+
 namespace Intrepid2 {
 
 namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    try {                                                               \
-      ++nthrow;                                                         \
-      S ;                                                               \
-    }                                                                   \
-    catch (std::exception &err) {                                        \
-      ++ncatch;                                                         \
-      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                 \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    }
 
 template<typename ValueType, typename DeviceType>
 int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
 
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-
-  if (verbose)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
+  Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+    verbose, "HGRAD_TET_Cn_FEM_ORTH", {
+      "1) Tests orthogonality of tetrahedral orthogonal basis"
+  });
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  *outStream
-  << "===============================================================================\n"
-  << "|                                                                             |\n"
-  << "|                           Unit Test OrthogonalBases                         |\n"
-  << "|                                                                             |\n"
-  << "|     1) Tests orthogonality of tetrahedral orthogonal basis                   |\n"
-  << "|                                                                             |\n"
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov),                     |\n"
-  << "|                      Denis Ridzal (dridzal@sandia.gov),                     |\n"
-  << "|                      Robert Kirby (robert.c.kirby@ttu.edu),                 |\n"
-  << "|                      Mauro Perego (mperego@sandia.gov),                     |\n"
-  << "|                      Kyungjoo Kim (kyukim@sandia.gov)                       |\n"
-  << "|                                                                             |\n"
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-  << "|                                                                             |\n"
-  << "===============================================================================\n";
-
   typedef Kokkos::DynRankView<ValueType, DeviceType> DynRankView;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   const ValueType tol = tolerence();
   int errorFlag = 0;

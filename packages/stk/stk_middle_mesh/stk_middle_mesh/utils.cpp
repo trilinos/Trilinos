@@ -27,6 +27,18 @@ MPI_Comm comm_dup(MPI_Comm comm)
   return newComm;
 }
 
+int get_rank_on_other_comm(MPI_Comm comm1, MPI_Comm comm2, int rankOnComm1)
+{
+  MPI_Group comm1Group, comm2Group;
+  MPI_Comm_group(comm1, &comm1Group);
+  MPI_Comm_group(comm2, &comm2Group);
+
+  int rankOnComm2;
+  MPI_Group_translate_ranks(comm1Group, 1, &rankOnComm1, comm2Group, &rankOnComm2);
+
+  return rankOnComm2;
+}
+
 } // namespace impl
 
 } // namespace utils

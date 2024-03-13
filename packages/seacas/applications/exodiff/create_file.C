@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -301,7 +301,7 @@ namespace {
   {
     if (!names.empty()) {
       fmt::print("{} variables to be differenced:\n", type);
-      for (auto &name : names) {
+      for (const auto &name : names) {
         fmt::print("\t{}\n", name);
       }
     }

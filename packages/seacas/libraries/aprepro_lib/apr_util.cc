@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -140,8 +140,8 @@ namespace SEAMS {
 
   void immutable_modify(const SEAMS::Aprepro &apr, const SEAMS::symrec *var)
   {
-    apr.error("(IMMUTABLE) Variable " + var->name + " is immutable and cannot be modified", true,
-              false);
+    apr.warning("(IMMUTABLE) Variable " + var->name + " is immutable and cannot be modified", true,
+                false);
   }
 
   void undefined_error(const SEAMS::Aprepro &apr, const std::string &var)

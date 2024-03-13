@@ -49,21 +49,11 @@
 
 namespace Amesos2 {
 
-  template <class S, class LO, class GO, class N>
+  template <class S, class LO, class GO, class NO>
   LO get_mp_vector_size(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, N> >& A = Teuchos::null,
-    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& X = Teuchos::null,
-    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, N> >& B = Teuchos::null)
-  {
-    // Without KokkosRefactor, can only do static
-    return S::static_size;
-  }
-
-  template <class S, class LO, class GO, class D>
-  LO get_mp_vector_size(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
-    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
-    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Tpetra::KokkosCompat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::MP::Vector<S>, LO, GO, NO > >& A = Teuchos::null,
+    const Teuchos::RCP<Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, NO > >& X = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, NO > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
       return Kokkos::dimension_scalar(A->getLocalValuesDevice(Tpetra::Access::ReadOnly));
@@ -520,10 +510,10 @@ namespace Amesos2 {
           Teuchos::RCP<Vector>       X,
           Teuchos::RCP<const Vector> B ) {
       ctassert<
-        Meta::is_same<
+        std::is_same_v<
           typename MatrixTraits<Matrix>::scalar_t,
           typename MultiVecAdapter<Vector>::scalar_t
-        >::value
+        >
       > same_scalar_assertion;
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 
@@ -553,10 +543,10 @@ namespace Amesos2 {
     typedef typename Scalar::value_type BaseScalar;
     typedef typename solver_traits<ConcreteSolver>::supported_scalars supported_scalars;
     static const bool value =
-      Meta::if_then_else<Meta::is_same<supported_scalars, Meta::nil_t>::value,
-                         Meta::true_type,
+      std::conditional_t<std::is_same_v<supported_scalars, Meta::nil_t>,
+                         std::true_type,
                          Meta::type_list_contains<supported_scalars,
-                                                  BaseScalar> >::type::value;
+                                                  BaseScalar> >::value;
   };
 
 } // namespace Amesos2

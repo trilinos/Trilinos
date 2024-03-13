@@ -13,7 +13,6 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_IC_Alg.hpp>
 #include <Akri_LevelSet.hpp>
-#include <Akri_MeshSurface.hpp>
 #include <Akri_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>

@@ -44,11 +44,12 @@ void determine_node_snapping_from_intersection_points(const stk::mesh::BulkData 
 }
 
 void snap_to_node(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & elementSelector,
     const InterfaceGeometry & interfaceGeometry,
     const CDFEM_Snapper & snapper,
     NodeToCapturedDomainsMap & nodesToCapturedDomains)
 {
-    const std::vector<IntersectionPoint> intersectionPoints = build_uncaptured_intersection_points(mesh, interfaceGeometry, nodesToCapturedDomains);
+    const std::vector<IntersectionPoint> intersectionPoints = build_uncaptured_intersection_points(mesh, elementSelector, interfaceGeometry, nodesToCapturedDomains);
 
     determine_node_snapping_from_intersection_points(mesh, intersectionPoints, snapper, nodesToCapturedDomains);
     communicate_node_captured_domains_for_all_nodes(mesh, nodesToCapturedDomains);

@@ -65,6 +65,10 @@
 extern "C" {
 #endif
 
+#if NC_VERSION_MAJOR > 4 || (NC_VERSION_MAJOR == 4 && NC_VERSION_MINOR >= 6) || NC_HAS_HDF5
+#define EX_CAN_USE_NC_DEF_VAR_FILL 1
+#endif
+
 /**
  * \defgroup Internal Internal Functions and Defines
  * \internal
@@ -189,9 +193,9 @@ EXODUS_EXPORT int indent;
   } while (0)
 #else
 #define EX_FUNC_ENTER()                                                                            \
-  {                                                                                                \
+  do {                                                                                             \
     ex__reset_error_status();                                                                      \
-  }
+  } while (0)
 #define EX_FUNC_ENTER_INT()
 #define EX_FUNC_LEAVE(error) return error
 #define EX_FUNC_VOID()       return

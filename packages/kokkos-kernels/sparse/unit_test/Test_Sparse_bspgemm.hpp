@@ -123,7 +123,7 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual,
     return false;
   }
 
-  typedef typename Kokkos::Details::ArithTraits<
+  typedef typename Kokkos::ArithTraits<
       typename scalar_view_t::non_const_value_type>::mag_type eps_type;
   eps_type eps = std::is_same<eps_type, float>::value ? 3e-2 : 5e-7;
 
@@ -159,6 +159,15 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
     return;
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUSPARSE_VERSION < 11600)
+  {
+    std::cerr
+        << "TEST SKIPPED: See "
+           "https://github.com/kokkos/kokkos-kernels/issues/1965 for details."
+        << std::endl;
+    return;
+  }
+#endif
   using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);

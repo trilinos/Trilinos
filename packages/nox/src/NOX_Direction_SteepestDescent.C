@@ -91,7 +91,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   else {
     utils->out() << "NOX::Direction::SteepestDescent::reset - Invalid choice "
          << "\"" << tmp << "\" for \"Scaling Type\"" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
  return true;
@@ -162,5 +162,5 @@ void NOX::Direction::SteepestDescent::throwError(const std::string& functionName
     if (utils->isPrintType(Utils::Error))
       utils->err() << "NOX::Direction::SteepestDescent::" << functionName
        << " - " << errorMsg << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
 }

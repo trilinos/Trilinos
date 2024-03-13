@@ -22,18 +22,17 @@ namespace Teko {
  * ToDo: Finish documentation!
  */
 class StratimikosFactory : public Thyra::PreconditionerFactoryBase<double> {
-public:
-
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
   /** \brief . */
   StratimikosFactory();
 
-  StratimikosFactory(const Teuchos::RCP<Teko::RequestHandler> & rh);
-  StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & builder,
-                     const Teuchos::RCP<Teko::RequestHandler> & rh);
-    
+  StratimikosFactory(const Teuchos::RCP<Teko::RequestHandler> &rh);
+  StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> &builder,
+                     const Teuchos::RCP<Teko::RequestHandler> &rh);
+
 #ifdef TEKO_HAVE_EPETRA
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
@@ -43,8 +42,7 @@ public:
    *
    * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
    */
-  STANDARD_COMPOSITION_MEMBERS(
-    Thyra::EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
+  STANDARD_COMPOSITION_MEMBERS(Thyra::EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor);
 #endif
 
   //@}
@@ -53,7 +51,7 @@ public:
   //@{
 
   /** \brief . */
-  bool isCompatible( const Thyra::LinearOpSourceBase<double> &fwdOp ) const;
+  bool isCompatible(const Thyra::LinearOpSourceBase<double> &fwdOp) const;
   /** \brief . */
   bool applySupportsConj(Thyra::EConj conj) const;
   /** \brief . */
@@ -61,17 +59,13 @@ public:
   /** \brief . */
   Teuchos::RCP<Thyra::PreconditionerBase<double> > createPrec() const;
   /** \brief . */
-  void initializePrec(
-    const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
-    Thyra::PreconditionerBase<double> *prec,
-    const Thyra::ESupportSolveUse supportSolveUse
-    ) const;
+  void initializePrec(const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
+                      Thyra::PreconditionerBase<double> *prec,
+                      const Thyra::ESupportSolveUse supportSolveUse) const;
   /** \brief . */
-  void uninitializePrec(
-    Thyra::PreconditionerBase<double> *prec
-    ,Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > *fwdOp
-    ,Thyra::ESupportSolveUse *supportSolveUse
-    ) const;
+  void uninitializePrec(Thyra::PreconditionerBase<double> *prec,
+                        Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > *fwdOp,
+                        Thyra::ESupportSolveUse *supportSolveUse) const;
 
   //@}
 
@@ -79,8 +73,7 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(
-    Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const &paramList);
   /** \brief . */
   Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
   /** \brief . */
@@ -102,69 +95,59 @@ public:
   //@}
 
   /** Setup an thyra preconditioner (most likely blocked)
-    */
-  void initializePrec_Thyra(
-    const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
-    Thyra::PreconditionerBase<double> *prec,
-    const Thyra::ESupportSolveUse supportSolveUse
-    ) const;
+   */
+  void initializePrec_Thyra(const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
+                            Thyra::PreconditionerBase<double> *prec,
+                            const Thyra::ESupportSolveUse supportSolveUse) const;
 
 #ifdef TEKO_HAVE_EPETRA
   /** Setup an epetra preconditioner.
-    */
-  void initializePrec_Epetra(
-    const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
-    Thyra::PreconditionerBase<double> *prec,
-    const Thyra::ESupportSolveUse supportSolveUse
-    ) const;
+   */
+  void initializePrec_Epetra(const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
+                             Thyra::PreconditionerBase<double> *prec,
+                             const Thyra::ESupportSolveUse supportSolveUse) const;
 #endif
 
   /** Access to the application communication request handling mechnism
-    */
-  void setRequestHandler(const Teuchos::RCP<Teko::RequestHandler> & rh)
-  { reqHandler_ = rh; }
+   */
+  void setRequestHandler(const Teuchos::RCP<Teko::RequestHandler> &rh) { reqHandler_ = rh; }
 
   /** Access to the application communication request handling mechnism
-    */
-  Teuchos::RCP<Teko::RequestHandler> getRequestHandler() const 
-  { return reqHandler_; }
+   */
+  Teuchos::RCP<Teko::RequestHandler> getRequestHandler() const { return reqHandler_; }
 
   //! Get the decomposition vector in use by this factory
-  const std::vector<int> & getDecomposition() const
-  { return decomp_; }
+  const std::vector<int> &getDecomposition() const { return decomp_; }
 
-private:
-
+ private:
 #ifdef TEKO_HAVE_EPETRA
   /** Build the segragated jacobian operator according to
-    * the input parameter list.
-    *
-    * \param[in] Jac Epetra_CrsMatrix (assumed) to be decomposed.
-    * \param[in] wrapInput RCP to an Epetra operator that was either previously
-    *                      wrapped, or it is <code>Teuchos::null</code>
-    * \param[in] out Stream for use when reporting testing results
-    *
-    * \returns Blocked operator that was requested, if <code>wrapInput</code> is not
-    *          null, then the returned pointer will match (i.e. wrapInput will be over-
-    *          written).
-    */
+   * the input parameter list.
+   *
+   * \param[in] Jac Epetra_CrsMatrix (assumed) to be decomposed.
+   * \param[in] wrapInput RCP to an Epetra operator that was either previously
+   *                      wrapped, or it is <code>Teuchos::null</code>
+   * \param[in] out Stream for use when reporting testing results
+   *
+   * \returns Blocked operator that was requested, if <code>wrapInput</code> is not
+   *          null, then the returned pointer will match (i.e. wrapInput will be over-
+   *          written).
+   */
   Teuchos::RCP<Epetra_Operator> buildWrappedEpetraOperator(
-                                                     const Teuchos::RCP<const Epetra_Operator> & Jac,
-                                                     const Teuchos::RCP<Epetra_Operator> & wrapInput,
-                                                     std::ostream & out) const;
+      const Teuchos::RCP<const Epetra_Operator> &Jac,
+      const Teuchos::RCP<Epetra_Operator> &wrapInput, std::ostream &out) const;
 
   /** Build strided vectors using the operator range map and
-    * the decomposition vectors.
-    *
-    * \param[in] Jac Epetra_CrsMatrix (assumed) to be decomposed.
-    * \param[in] decomp Decomposition vector.
-    * \param[in,out] vars Vector of vectors of global ids specifying
-    *                     how the operator is to be blocked.
-    */
-  void buildStridedVectors(const Epetra_Operator & Jac,
-                           const std::vector<int> & decomp,
-                           std::vector<std::vector<int> > & vars) const;
-#endif // TEKO_HAVE_EPETRA
+   * the decomposition vectors.
+   *
+   * \param[in] Jac Epetra_CrsMatrix (assumed) to be decomposed.
+   * \param[in] decomp Decomposition vector.
+   * \param[in,out] vars Vector of vectors of global ids specifying
+   *                     how the operator is to be blocked.
+   */
+  void buildStridedVectors(const Epetra_Operator &Jac, const std::vector<int> &decomp,
+                           std::vector<std::vector<int> > &vars) const;
+#endif  // TEKO_HAVE_EPETRA
 
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
@@ -172,30 +155,31 @@ private:
   mutable Teuchos::RCP<Teko::InverseFactory> invFactory_;
   Teuchos::RCP<Teko::RequestHandler> reqHandler_;
   mutable std::vector<int> decomp_;
-  Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> builder_; // builder to use for default solvers
+  Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder>
+      builder_;  // builder to use for default solvers
 };
 
 /** Inject Teko into a solver builder with a specified name. Note that the builder
-  * is used to define the default solvers in Teko. Therefore any dynamically specified
-  * solver/preconditioner, will be inherited by Teko. This relationship does not persist,
-  * so no solvers added to the builder after the call to addTekoToStratimikosBuilder will
-  * be inherited. Finally, to avoid circular references Teko will not include itself in
-  * that list of solvers/precondtioners.
-  */
-void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
-                                 const std::string & stratName="Teko");
+ * is used to define the default solvers in Teko. Therefore any dynamically specified
+ * solver/preconditioner, will be inherited by Teko. This relationship does not persist,
+ * so no solvers added to the builder after the call to addTekoToStratimikosBuilder will
+ * be inherited. Finally, to avoid circular references Teko will not include itself in
+ * that list of solvers/precondtioners.
+ */
+void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder &builder,
+                                 const std::string &stratName = "Teko");
 
 /** Inject Teko into a solver builder with a specified name. Note that the builder
-  * is used to define the default solvers in Teko. Therefore any dynamically specified
-  * solver/preconditioner, will be inherited by Teko. This relationship does not persist,
-  * so no solvers added to the builder after the call to addTekoToStratimikosBuilder will
-  * be inherited. Finally, to avoid circular references Teko will not include itself in
-  * that list of solvers/precondtioners.
-  */
-void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
-                                 const Teuchos::RCP<Teko::RequestHandler> & rh,
-                                 const std::string & stratName="Teko");
+ * is used to define the default solvers in Teko. Therefore any dynamically specified
+ * solver/preconditioner, will be inherited by Teko. This relationship does not persist,
+ * so no solvers added to the builder after the call to addTekoToStratimikosBuilder will
+ * be inherited. Finally, to avoid circular references Teko will not include itself in
+ * that list of solvers/precondtioners.
+ */
+void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder &builder,
+                                 const Teuchos::RCP<Teko::RequestHandler> &rh,
+                                 const std::string &stratName = "Teko");
 
-} // namespace Teko
+}  // namespace Teko
 
-#endif 
+#endif

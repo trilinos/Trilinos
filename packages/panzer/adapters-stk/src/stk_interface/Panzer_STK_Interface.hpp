@@ -51,8 +51,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include "Kokkos_Core.hpp"
 
@@ -105,7 +103,7 @@ class STK_Interface {
 public:
    typedef double ProcIdData; // ECC: Not sure why?
    typedef stk::mesh::Field<double> SolutionFieldType;
-   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
+   typedef stk::mesh::Field<double> VectorFieldType;
    typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
 
    // some simple exception classes
@@ -981,6 +979,8 @@ public:
    void setFaceFieldData(const std::string & fieldName,const std::string & blockId,
                          const std::vector<std::size_t> & localFaceIds,const ArrayT & faceValues,double scaleValue=1.0);
 
+   //////////// TO BE DEPRECATED
+
    /** Get vertices associated with a number of elements of the same geometry.
      *
      * \param[in] localIds Element local IDs to construct vertices
@@ -1072,6 +1072,101 @@ public:
      */
    template <typename ArrayT>
    void getElementVerticesNoResize(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const;
+
+   ///////////// END TO BE DEPRECATED
+
+   /** Get nodes associated with a number of elements of the same geometry.
+     *
+     * \param[in] localIds Element local IDs to construct nodes
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+
+   template <typename ArrayT>
+   void getElementNodes(const std::vector<std::size_t> & localIds, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry.
+     *
+     * \param[in] elements Element entities to construct nodes
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodes(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry.
+     *
+     * \param[in] localIds Element local IDs to construct nodes
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodes(const std::vector<std::size_t> & localIds,const std::string & eBlock, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry.
+     *
+     * \param[in] elements Element entities to construct nodes
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodes(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry. The node array will not be resized.
+     *
+     * \param[in] localIds Element local IDs to construct nodes
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodesNoResize(const std::vector<std::size_t> & localIds, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry. The node array will not be resized.
+     *
+     * \param[in] elements Element entities to construct nodes
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodesNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry. The node array will not be resized.
+     *
+     * \param[in] localIds Element local IDs to construct nodes
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodesNoResize(const std::vector<std::size_t> & localIds,const std::string & eBlock, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry. The node array will not be resized.
+     *
+     * \param[in] elements Element entities to construct nodes
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodesNoResize(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & nodes) const;
 
    // const stk::mesh::FEMInterface & getFEMInterface() const
    // { return *femPtr_; }
@@ -1185,7 +1280,7 @@ public:
    void setBlockWeight(const std::string & blockId,double weight)
    { blockWeights_[blockId] = weight; }
 
-   /** When coordinates are returned in the getElementVertices
+   /** When coordinates are returned in the getElementNodes
      * method, extract coordinates using a specified field (not the intrinsic coordinates)
      * where available (where unavailable the intrinsic coordinates are used.
      * Note that this does not change the behavior of getNodeCoordinates.
@@ -1205,6 +1300,8 @@ public:
    /** Use lower case (or not) for I/O */
    bool getUseLowerCaseForIO() const
    { return useLowerCase_; }
+
+   ///////////////// TO BE DEPRECATED....
 
    /** Get vertices associated with a number of elements of the same geometry, note that a coordinate field
      * will be used (if not is available an exception will be thrown).
@@ -1237,6 +1334,40 @@ public:
 
    template <typename ArrayT>
    void getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
+
+   /////////////////// END TO BE DEPRECATED
+
+   /** Get nodes associated with a number of elements of the same geometry, note that a coordinate field
+     * will be used (if not is available an exception will be thrown).
+     *
+     * \param[in] elements Element entities to construct nodes
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodes_FromField(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & nodes) const;
+
+   template <typename ArrayT>
+   void getElementNodes_FromFieldNoResize(const std::vector<stk::mesh::Entity> & elements,
+                                             const std::string & eBlock, ArrayT & nodes) const;
+
+   /** Get nodes associated with a number of elements of the same geometry. This access the true mesh coordinates
+     * array.
+     *
+     * \param[in] elements Element entities to construct nodes
+     * \param[out] nodes Output array that will be sized (<code>localIds.size()</code>,#Nodes,#Dim)
+     *
+     * \note If not all elements have the same number of nodes an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementNodes_FromCoords(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const;
+
+   template <typename ArrayT>
+   void getElementNodes_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const;
 
   /** Uniformly refine the mesh using Percept
    *
@@ -1602,6 +1733,8 @@ void STK_Interface::setFaceFieldData(const std::string & fieldName,const std::st
    }
 }
 
+//////// TO BE DEPRECATED...
+
 template <typename ArrayT>
 void STK_Interface::getElementVertices(const std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
 {
@@ -1924,6 +2057,337 @@ void STK_Interface::getElementVertices_FromFieldNoResize(const std::vector<stk::
           // recall mesh field coordinates are stored as displacements
           // from the mesh coordinates, make sure to add them together
           vertices(cell,i,d) = solnData[0]+coord[d];
+        }
+      }
+   }
+}
+
+//////////// END TO BE DEPRECATED
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes(const std::vector<std::size_t> & localElementIds, ArrayT & nodes) const
+{
+   if(!useFieldCoordinates_) {
+     //
+     // gather from the intrinsic mesh coordinates (non-lagrangian)
+     //
+
+     const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+
+     // convert to a vector of entity objects
+     std::vector<stk::mesh::Entity> selected_elements;
+     for(std::size_t cell=0;cell<localElementIds.size();cell++)
+       selected_elements.push_back(elements[localElementIds[cell]]);
+
+     getElementNodes_FromCoords(selected_elements,nodes);
+   }
+   else {
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                "STK_Interface::getElementNodes: Cannot call this method when field coordinates are used "
+                                "without specifying an element block.");
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const
+{
+   if(!useFieldCoordinates_) {
+     getElementNodes_FromCoords(elements,nodes);
+   }
+   else {
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                "STK_Interface::getElementNodes: Cannot call this method when field coordinates are used "
+                                "without specifying an element block.");
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & nodes) const
+{
+   if(!useFieldCoordinates_) {
+     getElementNodes_FromCoords(elements,nodes);
+   }
+   else {
+     getElementNodes_FromField(elements,eBlock,nodes);
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes(const std::vector<std::size_t> & localElementIds,const std::string & eBlock, ArrayT & nodes) const
+{
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+
+   // convert to a vector of entity objects
+   std::vector<stk::mesh::Entity> selected_elements;
+   for(std::size_t cell=0;cell<localElementIds.size();cell++)
+     selected_elements.push_back(elements[localElementIds[cell]]);
+
+   if(!useFieldCoordinates_) {
+     getElementNodes_FromCoords(selected_elements,nodes);
+   }
+   else {
+     getElementNodes_FromField(selected_elements,eBlock,nodes);
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodesNoResize(const std::vector<std::size_t> & localElementIds, ArrayT & nodes) const
+{
+   if(!useFieldCoordinates_) {
+     //
+     // gather from the intrinsic mesh coordinates (non-lagrangian)
+     //
+
+     const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+
+     // convert to a vector of entity objects
+     std::vector<stk::mesh::Entity> selected_elements;
+     for(std::size_t cell=0;cell<localElementIds.size();cell++)
+       selected_elements.push_back(elements[localElementIds[cell]]);
+
+     getElementNodes_FromCoordsNoResize(selected_elements,nodes);
+   }
+   else {
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                "STK_Interface::getElementNodesNoResize: Cannot call this method when field coordinates are used "
+                                "without specifying an element block.");
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodesNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const
+{
+   if(!useFieldCoordinates_) {
+     getElementNodes_FromCoordsNoResize(elements,nodes);
+   }
+   else {
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                "STK_Interface::getElementNodesNoResize: Cannot call this method when field coordinates are used "
+                                "without specifying an element block.");
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodesNoResize(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & nodes) const
+{
+   if(!useFieldCoordinates_) {
+     getElementNodes_FromCoordsNoResize(elements,nodes);
+   }
+   else {
+     getElementNodes_FromFieldNoResize(elements,eBlock,nodes);
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodesNoResize(const std::vector<std::size_t> & localElementIds,const std::string & eBlock, ArrayT & nodes) const
+{
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+
+   // convert to a vector of entity objects
+   std::vector<stk::mesh::Entity> selected_elements;
+   for(std::size_t cell=0;cell<localElementIds.size();cell++)
+     selected_elements.push_back(elements[localElementIds[cell]]);
+
+   if(!useFieldCoordinates_) {
+     getElementNodes_FromCoordsNoResize(selected_elements,nodes);
+   }
+   else {
+     getElementNodes_FromFieldNoResize(selected_elements,eBlock,nodes);
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes_FromCoords(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const
+{
+   // nothing to do! silently return
+   if(elements.size() == 0) {
+     nodes = Kokkos::createDynRankView(nodes, "nodes", 0, 0, 0);
+     return;
+   }
+
+   //
+   // gather from the intrinsic mesh coordinates (non-lagrangian)
+   //
+
+   // get *master* cell toplogy...(belongs to first element)
+   const auto masterNodeCount
+     = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->node_count;
+
+   // allocate space
+   nodes = Kokkos::createDynRankView(nodes, "nodes", elements.size(), masterNodeCount,getDimension());
+   auto nodes_h = Kokkos::create_mirror_view(nodes);
+   Kokkos::deep_copy(nodes_h, nodes);
+
+   // loop over each requested element
+   const auto dim = getDimension();
+   for(std::size_t cell = 0; cell < elements.size(); cell++) {
+      const auto element = elements[cell];
+      TEUCHOS_ASSERT(element != 0);
+
+      const auto nodeCount
+        = stk::mesh::get_cell_topology(bulkData_->bucket(element).topology()).getCellTopologyData()->node_count;
+      TEUCHOS_TEST_FOR_EXCEPTION(nodeCount != masterNodeCount, std::runtime_error,
+                         "In call to STK_Interface::getElementNodes all elements "
+                         "must have the same node count!");
+
+      // loop over all element nodes
+      const size_t num_nodes = bulkData_->num_nodes(element);
+      auto const* elem_nodes = bulkData_->begin_nodes(element);
+      TEUCHOS_TEST_FOR_EXCEPTION(num_nodes!=masterNodeCount,std::runtime_error,
+                         "In call to STK_Interface::getElementNodes cardinality of "
+                                 "element node relations must be the node count!");
+      for(std::size_t node = 0; node < num_nodes; ++node) {
+        const double * coord = getNodeCoordinates(elem_nodes[node]);
+
+        // set each dimension of the coordinate
+        for(unsigned d=0;d<dim;d++)
+          nodes_h(cell,node,d) = coord[d];
+      }
+   }
+   Kokkos::deep_copy(nodes, nodes_h);
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const
+{
+   // nothing to do! silently return
+   if(elements.size()==0) {
+      return;
+   }
+
+   //
+   // gather from the intrinsic mesh coordinates (non-lagrangian)
+   //
+
+   // get *master* cell toplogy...(belongs to first element)
+   unsigned masterNodeCount
+     = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->node_count;
+
+   // loop over each requested element
+   unsigned dim = getDimension();
+   auto nodes_h = Kokkos::create_mirror_view(nodes);
+   for(std::size_t cell=0;cell<elements.size();cell++) {
+      stk::mesh::Entity element = elements[cell];
+      TEUCHOS_ASSERT(element!=0);
+
+      unsigned nodeCount
+        = stk::mesh::get_cell_topology(bulkData_->bucket(element).topology()).getCellTopologyData()->node_count;
+      TEUCHOS_TEST_FOR_EXCEPTION(nodeCount!=masterNodeCount,std::runtime_error,
+                         "In call to STK_Interface::getElementNodes all elements "
+                         "must have the same node count!");
+
+      // loop over all element nodes
+      const size_t num_nodes = bulkData_->num_nodes(element);
+      stk::mesh::Entity const* elem_nodes = bulkData_->begin_nodes(element);
+      TEUCHOS_TEST_FOR_EXCEPTION(num_nodes!=masterNodeCount,std::runtime_error,
+                         "In call to STK_Interface::getElementNodes cardinality of "
+                                 "element node relations must be the node count!");
+      for(std::size_t node=0; node<num_nodes; ++node) {
+        const double * coord = getNodeCoordinates(elem_nodes[node]);
+
+        // set each dimension of the coordinate
+        for(unsigned d=0;d<dim;d++)
+          nodes_h(cell,node,d) = coord[d];
+      }
+   }
+   Kokkos::deep_copy(nodes, nodes_h);
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes_FromField(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & nodes) const
+{
+   TEUCHOS_ASSERT(useFieldCoordinates_);
+
+   // nothing to do! silently return
+   if(elements.size()==0) {
+     nodes = Kokkos::createDynRankView(nodes,"nodes",0,0,0);
+      return;
+   }
+
+   // get *master* cell toplogy...(belongs to first element)
+   unsigned masterNodeCount
+     = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->node_count;
+
+   // allocate space
+   nodes = Kokkos::createDynRankView(nodes,"nodes",elements.size(),masterNodeCount,getDimension());
+   auto nodes_h = Kokkos::create_mirror_view(nodes);
+   std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
+   if(itr==meshCoordFields_.end()) {
+     // no coordinate field set for this element block
+     TEUCHOS_ASSERT(false);
+   }
+
+   const std::vector<std::string> & coordField = itr->second;
+   std::vector<SolutionFieldType*> fields(getDimension());
+   for(std::size_t d=0;d<fields.size();d++) {
+     fields[d] = this->getSolutionField(coordField[d],eBlock);
+   }
+
+   // loop over elements
+   for(std::size_t cell=0;cell<elements.size();cell++) {
+      stk::mesh::Entity element = elements[cell];
+
+      // loop over nodes set solution values
+      const size_t num_nodes = bulkData_->num_nodes(element);
+      stk::mesh::Entity const* elem_nodes = bulkData_->begin_nodes(element);
+      for(std::size_t i=0; i<num_nodes; ++i) {
+        stk::mesh::Entity node = elem_nodes[i];
+
+        const double * coord = getNodeCoordinates(node);
+
+        for(unsigned d=0;d<getDimension();d++) {
+          double * solnData = stk::mesh::field_data(*fields[d],node);
+
+          // recall mesh field coordinates are stored as displacements
+          // from the mesh coordinates, make sure to add them together
+	        nodes_h(cell,i,d) = solnData[0]+coord[d];
+        }
+      }
+   }
+   Kokkos::deep_copy(nodes, nodes_h);
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementNodes_FromFieldNoResize(const std::vector<stk::mesh::Entity> & elements,
+                                                         const std::string & eBlock, ArrayT & nodes) const
+{
+   TEUCHOS_ASSERT(useFieldCoordinates_);
+
+   // nothing to do! silently return
+   if(elements.size()==0) {
+      return;
+   }
+
+   std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
+   if(itr==meshCoordFields_.end()) {
+     // no coordinate field set for this element block
+     TEUCHOS_ASSERT(false);
+   }
+
+   const std::vector<std::string> & coordField = itr->second;
+   std::vector<SolutionFieldType*> fields(getDimension());
+   for(std::size_t d=0;d<fields.size();d++) {
+     fields[d] = this->getSolutionField(coordField[d],eBlock);
+   }
+
+   // loop over elements
+   for(std::size_t cell=0;cell<elements.size();cell++) {
+      stk::mesh::Entity element = elements[cell];
+
+      // loop over nodes set solution values
+      const size_t num_nodes = bulkData_->num_nodes(element);
+      stk::mesh::Entity const* elem_nodes = bulkData_->begin_nodes(element);
+      for(std::size_t i=0; i<num_nodes; ++i) {
+        stk::mesh::Entity node = elem_nodes[i];
+
+        const double * coord = getNodeCoordinates(node);
+
+        for(unsigned d=0;d<getDimension();d++) {
+          double * solnData = stk::mesh::field_data(*fields[d],node);
+
+          // recall mesh field coordinates are stored as displacements
+          // from the mesh coordinates, make sure to add them together
+          nodes(cell,i,d) = solnData[0]+coord[d];
         }
       }
    }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,14 +57,14 @@ namespace Iotr {
       }
     }
     else if (field.get_type() == Ioss::Field::INTEGER) {
-      int *idata = static_cast<int *>(data);
+      auto *idata = static_cast<int *>(data);
 
       for (size_t i = 0; i < count * components; i++) {
         idata[i] += intOffset;
       }
     }
     else if (field.get_type() == Ioss::Field::INT64) {
-      int64_t *idata = static_cast<int64_t *>(data);
+      auto *idata = static_cast<int64_t *>(data);
 
       for (size_t i = 0; i < count * components; i++) {
         idata[i] += intOffset;

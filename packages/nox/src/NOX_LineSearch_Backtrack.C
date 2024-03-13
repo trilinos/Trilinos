@@ -92,7 +92,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
          << reductionFactor << "\" for \"Reduction Factor\"!  "
          << "Value must be greater than zero and less than 1.0."
          << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   return true;
@@ -118,7 +118,7 @@ compute(NOX::Abstract::Group& grp, double& step,
   {
     utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F"
         << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   newF = meritFunctionPtr->computef(grp);
@@ -160,7 +160,7 @@ compute(NOX::Abstract::Group& grp, double& step,
     if (rtype != NOX::Abstract::Group::Ok)
     {
       utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     newF = meritFunctionPtr->computef(grp);

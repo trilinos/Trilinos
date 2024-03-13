@@ -36,6 +36,10 @@ namespace LOCA {
       local_map = Teuchos::rcp(new NOX::TMap(U_multiVec->getNumVectors(),0,U_multiVec->getMap()->getComm(),::Tpetra::LocallyReplicated));
     }
 
+    LowRankUpdateRowMatrix::local_ordinal_type 
+    LowRankUpdateRowMatrix::getBlockSize () const
+    {return J_rowMatrix->getBlockSize();}
+
     Teuchos::RCP<const Teuchos::Comm<int> >
     LowRankUpdateRowMatrix::getComm() const
     {return J_rowMatrix->getComm();}

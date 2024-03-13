@@ -2039,8 +2039,8 @@ namespace percept {
         const double bytes_in_MB = 1024*1024;
         auditdata data;
         AuditLogDefaults(&data, "mesh_adapt", sierra::ProductRegistry::version(), eMeshP->get_parallel_size());
-        strcpy(data.starttime,sierra::format_time(sierra::Env::start_time(), "%Y%m%d%H%M%S").c_str());
-        strcpy(data.purpose,"meshing");
+        data.starttime = sierra::format_time(sierra::Env::start_time(), "%Y%m%d%H%M%S");
+        data.purpose = "meshing";
 
         data.num_proc       = eMeshP->get_parallel_size();
 
@@ -2051,7 +2051,7 @@ namespace percept {
         data.hwm_min        = hwm_min / bytes_in_MB;
         data.hwm_max        = hwm_max / bytes_in_MB;
         data.hwm_avg        = hwm_avg / bytes_in_MB;
-        strcpy(data.status, status ? "success" : "fail" );
+        data.status = status ? "success" : "fail";
 
         OutputAuditLog(&data);
       }

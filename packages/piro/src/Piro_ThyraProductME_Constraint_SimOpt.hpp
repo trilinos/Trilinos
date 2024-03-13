@@ -567,7 +567,6 @@ public:
       }
     }
     else {
-      Thyra::ModelEvaluatorBase::Derivative<Real> dfdp_dv = outArgs.get_DfDp(0);
       auto dfdp_op = dfdp_dv.getLinearOp();      
       if (dfdp_op != Teuchos::null) {
         dfdp_op->apply(Thyra::TRANS,*thyra_v.getVector(), thyra_ajv.getMultiVector().ptr(),1.0, 0.0);

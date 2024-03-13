@@ -195,10 +195,30 @@ int main(int argc, char *argv[])
     MF->computeJacobian(InitialGuess, *MF);
     MF->Apply( directionVec, MF_resultVec );
 
+    // Matrix-Free operator (backward difference)
+    Teuchos::RCP<NOX::Epetra::MatrixFree> MFb = Teuchos::rcp(
+      new NOX::Epetra::MatrixFree(printParams, iReq, noxInitGuess) );
+    MFb->setDifferenceMethod(NOX::Epetra::MatrixFree::Backward);
+
+    Epetra_Vector MFb_resultVec(Problem.GetMatrix()->Map());
+    MFb->computeJacobian(InitialGuess, *MFb);
+    MFb->Apply( directionVec, MFb_resultVec );
+
+    // Matrix-Free operator (centered difference)
+    Teuchos::RCP<NOX::Epetra::MatrixFree> MFc = Teuchos::rcp(
+      new NOX::Epetra::MatrixFree(printParams, iReq, noxInitGuess) );
+    MFc->setDifferenceMethod(NOX::Epetra::MatrixFree::Centered);
+
+    Epetra_Vector MFc_resultVec(Problem.GetMatrix()->Map());
+    MFc->computeJacobian(InitialGuess, *MFc);
+    MFc->Apply( directionVec, MFc_resultVec );
+
     // Need NOX::Epetra::Vectors for tests
     NOX::Epetra::Vector noxAvec ( A_resultVec , NOX::DeepCopy );
     NOX::Epetra::Vector noxFDvec( FD_resultVec, NOX::DeepCopy );
     NOX::Epetra::Vector noxMFvec( MF_resultVec, NOX::DeepCopy );
+    NOX::Epetra::Vector noxMFbvec( MFb_resultVec, NOX::DeepCopy );
+    NOX::Epetra::Vector noxMFcvec( MFc_resultVec, NOX::DeepCopy );
 
     // Create a TestCompare class
     NOX::Epetra::TestCompare tester( printing.out(), printing);
@@ -210,6 +230,10 @@ int main(int argc, char *argv[])
                                 "Finite-Difference Operator Apply Test" );
     status += tester.testVector( noxMFvec, noxAvec, reltol, abstol,
                                 "Matrix-Free Operator Apply Test" );
+    status += tester.testVector( noxMFbvec, noxAvec, reltol, abstol,
+                                "Matrix-Free Operator (Backward difference) Apply Test" );
+    status += tester.testVector( noxMFcvec, noxAvec, reltol, abstol,
+                                "Matrix-Free Operator (Centered difference) Apply Test" );
 
     success = status==0;
 

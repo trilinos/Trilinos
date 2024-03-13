@@ -27,7 +27,7 @@ namespace Tacho {
 
 template <> struct SetIdentity<Algo::OnDevice> {
   template <typename MemberType, typename ViewTypeA, typename ScalarType>
-  inline static int invoke(MemberType &member, const ViewTypeA &A, const ScalarType &alpha) {
+  inline static int invoke(MemberType &exec_instance, const ViewTypeA &A, const ScalarType &alpha) {
 
     typedef typename ViewTypeA::non_const_value_type value_type;
 
@@ -40,7 +40,6 @@ template <> struct SetIdentity<Algo::OnDevice> {
       using exec_space = MemberType;
       using team_policy_type = Kokkos::TeamPolicy<exec_space>;
 
-      const auto exec_instance = member;
       const auto policy = team_policy_type(exec_instance, n, Kokkos::AUTO);
       Kokkos::parallel_for(
           policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {

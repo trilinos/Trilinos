@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "create_mesh.hpp"
-#include "element_operations_2d.hpp"
-#include "incremental_mesh_boundary_snapper.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/element_operations_2d.hpp"
+#include "stk_middle_mesh/incremental_mesh_boundary_snapper.hpp"
 #include "util/meshes.hpp"
 
 namespace stk {
@@ -25,9 +25,10 @@ void test_areas_positive(std::shared_ptr<Mesh> mesh)
 }
 } // namespace
 
+
 TEST(IncrementalMeshBoundarySnapper, QuarterAnnulus)
 {
-  if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
+  if (utils::impl::comm_size(MPI_COMM_WORLD) > 4)
     GTEST_SKIP();
 
   double pi   = std::atan(1) * 4;
@@ -71,7 +72,7 @@ TEST(IncrementalMeshBoundarySnapper, QuarterAnnulus)
 
     IncrementalBoundarySnapperOpts snapperOpts;
     snapperOpts.boundarySnapNsteps = 2;
-    auto snapper                   = make_incremental_boundary_snapper(mesh1, mesh2, snapperOpts);
+    auto snapper                   = make_incremental_boundary_snapper(mesh1, mesh2, MPI_COMM_WORLD, snapperOpts);
     snapper->snap();
 
     // printVertEdges("mesh1_final", mesh1);
@@ -81,7 +82,12 @@ TEST(IncrementalMeshBoundarySnapper, QuarterAnnulus)
     test_areas_positive(mesh2);
 
     mesh::impl::ElementOperations2D elemOps;
-    EXPECT_FLOAT_EQ(elemOps.compute_area(mesh1), elemOps.compute_area(mesh2));
+    std::array<double, 2> areasLocal, areasGlobal;
+    areasLocal[0] = elemOps.compute_area(mesh1);
+    areasLocal[1] = elemOps.compute_area(mesh2);
+
+    MPI_Allreduce(areasLocal.data(), areasGlobal.data(), 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_FLOAT_EQ(areasGlobal[0], areasGlobal[1]);
   }
 }
 } // namespace impl

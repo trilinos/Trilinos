@@ -144,6 +144,5 @@ struct SPTRSV_SYMBOLIC<KernelHandle, RowMapType, EntriesType, false,
       false, true>;
 
 #include <KokkosSparse_sptrsv_symbolic_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_sptrsv_symbolic_eti_spec_decl.hpp>
 
 #endif

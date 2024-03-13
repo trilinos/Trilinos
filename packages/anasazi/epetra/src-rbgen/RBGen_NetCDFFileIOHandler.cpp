@@ -53,6 +53,7 @@
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#include "AnasaziGlobalComm.hpp"
 #else
 #include "Epetra_SerialComm.h"
 #endif
@@ -61,13 +62,13 @@
 #include "Teuchos_ParameterList.hpp"
 
 namespace RBGen {
-  
-  NetCDFFileIOHandler::NetCDFFileIOHandler() 
+
+  NetCDFFileIOHandler::NetCDFFileIOHandler()
     : isInit(false), num_nodes(0), num_nod_var(0), len_string(0), var_name(0)
   {
   }
 
-  NetCDFFileIOHandler::~NetCDFFileIOHandler() 
+  NetCDFFileIOHandler::~NetCDFFileIOHandler()
   {
     for (int i=0; i<num_nod_var; i++)
       delete [] var_name[i];
@@ -76,7 +77,7 @@ namespace RBGen {
 
   void NetCDFFileIOHandler::Initialize( const Teuchos::RCP< Teuchos::ParameterList >& params )
   {
-    
+
     // Save the parameter list.
     params_ = params;
 
@@ -102,7 +103,7 @@ namespace RBGen {
   Teuchos::RCP<Epetra_MultiVector> NetCDFFileIOHandler::Read( const std::vector<std::string>& filenames )
   {
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( MPI_COMM_WORLD );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
 #endif
@@ -123,12 +124,12 @@ namespace RBGen {
     }
     catch (std::exception &e) {
       createSSIdx = true;
-    }    
+    }
     */
     //
     // Open all the files and check that the snapshots have the same dimensions.
     //
-    if ( comm.MyPID() == 0 ) {	
+    if ( comm.MyPID() == 0 ) {
       size_t rows0=0, cols0=0, cols_t=0, total_rows=0;
 
       std::string temp_filename = in_path + filenames[0];
@@ -136,14 +137,14 @@ namespace RBGen {
       if (status != NC_NOERR) handle_error(status);
       //
       // If the scaling index vector is needed we can create it here.
-      //	
+      //
       if (createSSIdx) {
 	idx_pair.first = total_rows;
       }
       //
       // Get information on the number of snapshots in the file.
       status = nc_inq_dimid(ncid,"row",&row_id);
-      if (status != NC_NOERR) handle_error(status); 
+      if (status != NC_NOERR) handle_error(status);
       status = nc_inq_dimlen(ncid,row_id, &rows0);
       if (status != NC_NOERR) handle_error(status);
       total_rows += rows0;
@@ -163,40 +164,40 @@ namespace RBGen {
 	if (status != NC_NOERR) handle_error(status);
 	status=nc_inq_dimlen(ncid,len_string_id,&len_string_t);
 	if (status != NC_NOERR) handle_error(status);
-	
+
 	// Get number of nodes.
 	status=nc_inq_dimid(ncid,"num_nodes",&num_nodes_id);
 	if (status != NC_NOERR) handle_error(status);
 	status=nc_inq_dimlen(ncid,num_nodes_id, &num_nodes_t);
 	if (status != NC_NOERR) handle_error(status);
-	
+
 	// Get number of nodal variables.
 	status=nc_inq_dimid(ncid,"num_nod_var",&num_nod_var_id);
 	if (status != NC_NOERR) handle_error(status);
 	status=nc_inq_dimlen(ncid,num_nod_var_id,&num_nod_var_t);
 	if (status != NC_NOERR) handle_error(status);
-	
+
 	len_string = len_string_t;
 	num_nodes = num_nodes_t;
 	num_nod_var = num_nod_var_t;
-	
+
 	// Read in names of nodal variables.
 	status=nc_inq_varid(ncid,"name_nod_var",&name_nod_var_id);
 	if (status != NC_NOERR) handle_error(status);
-	
+
 	var_name = new char*[ num_nod_var ];
 	for (i=0; i<num_nod_var; ++i)
 	  var_name[i] =  new char[ len_string ];
-	
+
 	for (i=0; i<num_nod_var; ++i) {
 	  start2[0]=i;
 	  start2[1]=0;
 	  count2[0]=1;
 	  count2[1]=len_string;
-	  
+
 	  status=nc_get_vara_text(ncid,name_nod_var_id,start2,count2,var_name[i]);
 	  if (status != NC_NOERR) handle_error(status);
-	}	
+	}
 	//
 	// If the scaling index vector is needed we can set the endpoint here.
 	//
@@ -207,7 +208,7 @@ namespace RBGen {
 
 	// Now we are initialized!
 	isInit = true;
-	
+
 	// Output information.
 	std::cout<<"len_string = "<<len_string<<std::endl;
 	std::cout<<"num_nodes = "<<num_nodes<<std::endl;
@@ -217,7 +218,7 @@ namespace RBGen {
 	  std::cout<<var_name[i]<<" ";
 	std::cout<<std::endl;
       }
-      
+
       // Close first file.
       status = nc_close(ncid);
       if (status != NC_NOERR) handle_error(status);
@@ -235,7 +236,7 @@ namespace RBGen {
 	//
 	// Get information on the number of snapshots in the file.
 	status = nc_inq_dimid(ncid,"row",&row_id);
-	if (status != NC_NOERR) handle_error(status); 
+	if (status != NC_NOERR) handle_error(status);
 	status = nc_inq_dimlen(ncid,row_id, &rows_t);
 	if (status != NC_NOERR) handle_error(status);
 	//
@@ -278,7 +279,7 @@ namespace RBGen {
     comm.Broadcast( &num_vars, 1, 0 );
     //
     // Sync all other processors on the scaling index vector if necessary
-    // 
+    //
     if (createSSIdx) {
       for (i=0; i<(int)filenames.size(); i++) {
 	if ( comm.MyPID() != 0 )
@@ -287,10 +288,10 @@ namespace RBGen {
 	comm.Broadcast( &scaling_idx[i].second, 1, 0 );
       }
       // Set the scaling index vector
-      //params_->set("Snapshot Scaling Indices", scaling_idx);   
+      //params_->set("Snapshot Scaling Indices", scaling_idx);
     }
     //
-    // Create maps for new Epetra_MultiVector to hold the snapshots and 
+    // Create maps for new Epetra_MultiVector to hold the snapshots and
     // temporary Epetra_Vector used by processor 0 to import the information.
     //
     Epetra_Map Map( num_vars, 0, comm );
@@ -319,7 +320,7 @@ namespace RBGen {
     // imported into the i-th column of the Epetra_MultiVector.
     //
     // Read starting with row "start2[0]" for "count2[0]" rows, as the columns vary from
-    // "start2[1]" to "count2[1]", i.e. specifically for this case, read starting with row i 
+    // "start2[1]" to "count2[1]", i.e. specifically for this case, read starting with row i
     // for 1 row, as the columns vary from first column to the last column
     //
     start2[1]=0;
@@ -337,19 +338,19 @@ namespace RBGen {
 	//
 	// Get information on the number of snapshots in the file.
 	status = nc_inq_dimid(ncid,"row",&row_id);
-	if (status != NC_NOERR) handle_error(status); 
+	if (status != NC_NOERR) handle_error(status);
 	status = nc_inq_dimlen(ncid,row_id, &rows_t);
-	
+
 	if (status != NC_NOERR) handle_error(status);
 	// Get the pointer for the snapshot matrix
 	status = nc_inq_varid(ncid,"snapshot",&ss_id);
-	if (status != NC_NOERR) handle_error(status); 
+	if (status != NC_NOERR) handle_error(status);
 	//
 	// Convert from size_t to int.
 	rows = rows_t;
       }
       comm.Broadcast( &rows, 1, 0 );
-      
+
       for (j=0; j<rows; j++) {
 	//
 	// Get column of Epetra_MultiVector in terms of Epetra_Vector.
@@ -394,15 +395,15 @@ namespace RBGen {
     if ( index ) delete [] index;
     if ( temp_vec_f ) delete [] temp_vec_f;
     if ( temp_vec_d ) delete [] temp_vec_d;
-    
+
     // Return.
     return newMV;
   }
-  
+
   void NetCDFFileIOHandler::Write( const Teuchos::RCP<const Epetra_MultiVector>& MV, const std::string& filename )
   {
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( MPI_COMM_WORLD );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
 #endif
@@ -413,7 +414,7 @@ namespace RBGen {
     int ncid, len_string_id, num_nodes_id, num_nod_var_id, row_id, col_id, ss_id, name_nod_var_id;
     int i,j;
     int ss_dimids[2];
-    
+
     //size_t start[1],count[1];
     size_t start2[2],count2[2];
     //
@@ -438,26 +439,26 @@ namespace RBGen {
     //
     Epetra_Export exporter( MV->Map(), *Proc0Map );
     //
-    if ( comm.MyPID() == 0 ) {	
+    if ( comm.MyPID() == 0 ) {
       //
       // Open basis output file and define output variables going into the file.
       //
       std::string temp_filename = out_path + filename;
       status=nc_create(temp_filename.c_str(),NC_CLOBBER,&ncid);
       if (status != NC_NOERR) handle_error(status);
-      
+
       status=nc_def_dim(ncid,"len_string",(long)len_string,&len_string_id);
       if (status != NC_NOERR) handle_error(status);
-      
+
       status=nc_def_dim(ncid,"num_nodes",(long)num_nodes,&num_nodes_id);
       if (status != NC_NOERR) handle_error(status);
-      
+
       status=nc_def_dim(ncid,"num_nod_var",(long)num_nod_var,&num_nod_var_id);
       if (status != NC_NOERR) handle_error(status);
-      
+
       status=nc_def_dim(ncid,"row",NC_UNLIMITED,&row_id);
       if (status != NC_NOERR) handle_error(status);
-      
+
       status=nc_def_dim(ncid,"col",(long)dim,&col_id);
       if (status != NC_NOERR) handle_error(status);
 
@@ -465,12 +466,12 @@ namespace RBGen {
       ss_dimids[1]=col_id;
       status=nc_def_var(ncid,"snapshot",NC_FLOAT,2,ss_dimids,&ss_id);
       if (status != NC_NOERR) handle_error(status);
-      
+
       ss_dimids[0]=num_nod_var_id;
       ss_dimids[1]=len_string_id;
       status=nc_def_var(ncid,"name_nod_var",NC_CHAR,2,ss_dimids,&name_nod_var_id);
       if (status != NC_NOERR) handle_error(status);
-      
+
       status=nc_enddef(ncid);
       if (status != NC_NOERR) handle_error(status);
 
@@ -499,12 +500,12 @@ namespace RBGen {
 	//
 	for (j=0; j<dim; ++j)
 	  temp_vec[j] = Proc0Vector[j];
-	
+
 	status=nc_put_vara_float(ncid,ss_id,start2,count2,temp_vec);
 	if (status != NC_NOERR) handle_error(status);
       }
-    }     
-    
+    }
+
     // Write the list of names of the nodal variables to the Netcdf file */
     if ( comm.MyPID() == 0 ) {
       for(i=0; i<num_nod_var; ++i) {
@@ -514,11 +515,11 @@ namespace RBGen {
 	count2[1] = strlen(var_name[i]);
 	/*    printf("start2=%d %d\n",start2[0],start2[1]);
 	      printf("count2=%d %d\n",count2[0],count2[1]); */
-	
+
 	status=nc_put_vara_text(ncid,name_nod_var_id,start2,count2,var_name[i]);
 	if (status != NC_NOERR) handle_error(status);
-      } 
-      
+      }
+
       status=nc_close(ncid);
       if (status != NC_NOERR) handle_error(status);
     }
@@ -527,7 +528,7 @@ namespace RBGen {
     delete Proc0Map;
     if (temp_vec) delete [] temp_vec;
   }
-  
+
 } // namespace RBGen
 
 

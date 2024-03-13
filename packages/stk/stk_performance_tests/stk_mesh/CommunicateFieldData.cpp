@@ -351,7 +351,7 @@ void test_communicate_field_data_ngp_ghosting(stk::mesh::BulkData& mesh, const s
           set_modify_on_device<double>(ngpFields);
         }
 
-        stk::mesh::communicate_field_data(mesh, ngpFields, true, true);
+        stk::mesh::communicate_field_data(mesh, ngpFields, true);
       }
       batchTimer.stop_batch_timer();
     }

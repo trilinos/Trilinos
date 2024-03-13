@@ -853,7 +853,7 @@ macro(tribits_set_package_and_related_upstream_packages_to_external  packageName
   tribits_set_upstream_dep_packages_as_external(${packageName}
     ${subpackageTriggeredParentPackageExternal})
 
-  tribits_set_package_as_processed_by_downstream_tribits_external_package(${packageName})
+  tribits_mark_package_as_upstream_of_tribits_compliant_external_package(${packageName})
 
 endmacro()
 # NOTE: In the above macro, if ${packageName} is made EXTERNAL because it one
@@ -1317,10 +1317,16 @@ macro(tribits_set_upstream_dep_packages_as_external  packageName
 endmacro()
 
 
-# Mark a package as being processed by a downstream TriBITS-compliant external
-# package
+# Mark a package as being upstream of a TriBITS-compliant external package
+# (and therefore should be processed by a downstream TriBITS-complaint
+# package)
 #
-macro(tribits_set_package_as_processed_by_downstream_tribits_external_package  packageName)
+# NOTE: These packages are initially marked by setting
+# ``${packageName}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE=TRUE``.
+# If this packages are not actually defined by a downstream TriBITS-compliant
+# external package, then this variable will be set to ``FALSE`` later.
+#
+macro(tribits_mark_package_as_upstream_of_tribits_compliant_external_package  packageName)
 
   set_default(${packageName}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE FALSE)
 
@@ -1344,10 +1350,10 @@ macro(tribits_set_package_as_processed_by_downstream_tribits_external_package  p
         endif()
         if (packageEnable AND (NOT ${packageName}_IS_TRIBITS_COMPLIANT))
           message("-- "
-            "NOTE: ${packageName} is ${directOrIndirectStr} downstream from a"
+            "NOTE: ${packageName} is ${directOrIndirectStr} upstream from a"
             " TriBITS-compliant external package${downstreamPkgStr}")
         endif()
-        set(${packageName}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE TRUE)
+        set(${packageName}_PROCESSED_BY_DOWNSTREAM_TRIBITS_EXTERNAL_PACKAGE  TRUE)
         break()
       endif()
 
@@ -1356,6 +1362,7 @@ macro(tribits_set_package_as_processed_by_downstream_tribits_external_package  p
   endif()
 
 endmacro()
+
 
 
 # Macro that sets ``<ParentPackage>_ENABLE_<SubPackage>=ON`` if not already
@@ -1421,13 +1428,6 @@ macro(tribits_set_internal_package_to_external  depPkgName)
     set(${depPkgName}_FINDMOD  TRIBITS_PKG)
     set(${depPkgName}_INTERNAL_PACKAGE_ALREADY_SET_EXTERNAL TRUE)
   endif()
-endmacro()
-
-
-macro(tribits_set_as_processed_by_downstream_tribits_external_package   packageName
-    depPkgName
-  )
-
 endmacro()
 
 

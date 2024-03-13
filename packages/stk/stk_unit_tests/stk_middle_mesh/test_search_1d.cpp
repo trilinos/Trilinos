@@ -1,4 +1,4 @@
-#include "search_1d.hpp"
+#include "stk_middle_mesh/search_1d.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

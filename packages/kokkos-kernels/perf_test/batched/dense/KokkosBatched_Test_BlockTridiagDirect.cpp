@@ -117,8 +117,7 @@ struct FactorizeModeAndAlgo<Kokkos::Cuda> : FactorizeModeAndAlgoDeviceImpl {};
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct FactorizeModeAndAlgo<Kokkos::Experimental::HIP>
-    : FactorizeModeAndAlgoDeviceImpl {};
+struct FactorizeModeAndAlgo<Kokkos::HIP> : FactorizeModeAndAlgoDeviceImpl {};
 #endif
 
 template <typename ExecutionSpace>
@@ -156,8 +155,7 @@ struct SolveModeAndAlgo<Kokkos::Cuda> : SolveModeAndAlgoDeviceImpl {};
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct SolveModeAndAlgo<Kokkos::Experimental::HIP>
-    : SolveModeAndAlgoDeviceImpl {};
+struct SolveModeAndAlgo<Kokkos::HIP> : SolveModeAndAlgoDeviceImpl {};
 #endif
 
 template <class VT>
@@ -245,7 +243,7 @@ int main(int argc, char *argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    // typedef Kokkos::Details::ArithTraits<value_type> ats;
+    // typedef Kokkos::ArithTraits<value_type> ats;
     Kokkos::Timer timer;
 
     ///

@@ -52,10 +52,10 @@ void impl_test_complex_real_imag_value() {
     a[k].imag() = k * 5 + 4;
   }
 
-  const auto a_real = Kokkos::Details::ArithTraits<vector_type>::real(a);
-  const auto a_imag = Kokkos::Details::ArithTraits<vector_type>::imag(a);
+  const auto a_real = Kokkos::ArithTraits<vector_type>::real(a);
+  const auto a_imag = Kokkos::ArithTraits<vector_type>::imag(a);
 
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   for (int k = 0; k < vector_length; ++k) {
     EXPECT_NEAR(a[k].real(), a_real[k], eps);
@@ -71,7 +71,7 @@ void impl_test_batched_vector_arithmatic() {
   typedef typename vector_type::value_type value_type;
   const int vector_length = vector_type::vector_length;
 
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
   typedef typename ats::mag_type mag_type;
 
   vector_type a, b, c;
@@ -265,96 +265,96 @@ int test_batched_complex_real_imag_value() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, batched_vector_arithmatic_simd_float3) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<float>, 3>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<float>, 3>();
 }
 TEST_F(TestCategory, batched_vector_arithmatic_simd_float4) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<float>, 4>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<float>, 4>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_arithmatic_simd_float8) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<float>, 8>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<float>, 8>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_arithmatic_simd_float16) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<float>, 16>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<float>, 16>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, batched_vector_arithmatic_simd_double3) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<double>, 3>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<double>, 3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_arithmatic_simd_double4) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<double>, 4>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<double>, 4>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_arithmatic_simd_double8) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<double>, 8>();
+  test_batched_vector_arithmatic<TestDevice, SIMD<double>, 8>();
 }
 #endif
 
 #define __DO_NOT_TEST__
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, batched_vector_arithmatic_simd_scomplex3) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<Kokkos::complex<float> >,
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >,
                                  3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_arithmatic_simd_scomplex4) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<Kokkos::complex<float> >,
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >,
                                  4>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_arithmatic_simd_scomplex8) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<Kokkos::complex<float> >,
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<float> >,
                                  8>();
 }
 
 TEST_F(TestCategory, batched_vector_scomplex_real_imag_value3) {
-  test_batched_complex_real_imag_value<TestExecSpace,
+  test_batched_complex_real_imag_value<TestDevice,
                                        SIMD<Kokkos::complex<float> >, 3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_scomplex_real_imag_value2) {
-  test_batched_complex_real_imag_value<TestExecSpace,
+  test_batched_complex_real_imag_value<TestDevice,
                                        SIMD<Kokkos::complex<float> >, 2>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_scomplex_real_imag_value4) {
-  test_batched_complex_real_imag_value<TestExecSpace,
+  test_batched_complex_real_imag_value<TestDevice,
                                        SIMD<Kokkos::complex<float> >, 4>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, batched_vector_arithmatic_simd_dcomplex3) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<Kokkos::complex<double> >,
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >,
                                  3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_arithmatic_simd_dcomplex2) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<Kokkos::complex<double> >,
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >,
                                  2>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_arithmatic_simd_dcomplex4) {
-  test_batched_vector_arithmatic<TestExecSpace, SIMD<Kokkos::complex<double> >,
+  test_batched_vector_arithmatic<TestDevice, SIMD<Kokkos::complex<double> >,
                                  4>();
 }
 
 TEST_F(TestCategory, batched_vector_dcomplex_real_imag_value3) {
-  test_batched_complex_real_imag_value<TestExecSpace,
+  test_batched_complex_real_imag_value<TestDevice,
                                        SIMD<Kokkos::complex<double> >, 3>();
 }
 // avx
 TEST_F(TestCategory, batched_vector_dcomplex_real_imag_value2) {
-  test_batched_complex_real_imag_value<TestExecSpace,
+  test_batched_complex_real_imag_value<TestDevice,
                                        SIMD<Kokkos::complex<double> >, 2>();
 }
 // avx 512
 TEST_F(TestCategory, batched_vector_dcomplex_real_imag_value4) {
-  test_batched_complex_real_imag_value<TestExecSpace,
+  test_batched_complex_real_imag_value<TestDevice,
                                        SIMD<Kokkos::complex<double> >, 4>();
 }
 #endif

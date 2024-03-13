@@ -99,7 +99,7 @@ AMGOperator::AMGOperator(const Epetra_Comm &_Comm, const Epetra_Operator *KK, in
     if (numDofs == 1)
       ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, param, ML_DEFAULT);
     else
-      ML_Gen_Smoother_BlockGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, param, ML_DEFAULT, 
+      ML_Gen_Smoother_BlockGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, param, ML_DEFAULT,
                                        numDofs);
   }
 
@@ -113,7 +113,7 @@ AMGOperator::AMGOperator(const Epetra_Comm &_Comm, const Epetra_Operator *KK, in
       int *blockIndices = new int[size];
       int j;
       for (j = 0; j < size; ++j)
-        blockIndices[j] = j/numDofs; 
+        blockIndices[j] = j/numDofs;
       for (j = 0; j < AMG_NLevels; ++j) {
         size = ml_handle->Amat[j].getrow->Nrows;
         ML_Gen_Smoother_VBlockJacobi(ml_handle, j, ML_BOTH, param, ML_DEFAULT,
@@ -199,7 +199,7 @@ AMGOperator::AMGOperator(const Epetra_Comm &_Comm, const Epetra_Operator *KK, in
       int *blockIndices = new int[size];
       int j;
       for (j = 0; j < size; ++j)
-        blockIndices[j] = j/numDofs; 
+        blockIndices[j] = j/numDofs;
       for (j = 0; j < AMG_NLevels; ++j) {
         size = ml_handle->Amat[j].getrow->Nrows;
         ML_Gen_Smoother_VBlockJacobi(ml_handle, j, ML_BOTH, (param) ? param[j] : 1,
@@ -304,7 +304,7 @@ void AMGOperator::setCoarseSolver_Cycle(int coarseSolver, int cycle) {
         if (verbose < 2)
           options[AZ_output] = AZ_none;
 #ifdef EPETRA_MPI
-        AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
+        AZ_set_proc_config(proc_config, get_global_comm());
 #endif
         params[AZ_tol] = 1.0e-14;
         coarseLocalSize = ml_handle->Amat[AMG_NLevels-1].invec_leng;
@@ -313,7 +313,7 @@ void AMGOperator::setCoarseSolver_Cycle(int coarseSolver, int cycle) {
           cout << "\n --> Total number of coarse grid unknowns = " << coarseGlobalSize << endl;
         // Define the data for the projection
         if (Q) {
-          int zCol = ml_agg->nullspace_dim; 
+          int zCol = ml_agg->nullspace_dim;
           double *ZZ = ml_agg->nullspace_vect;
           ZcoarseTZcoarse = new double[zCol*zCol];
           double *tmp = new double[zCol*zCol];
@@ -329,7 +329,7 @@ void AMGOperator::setCoarseSolver_Cycle(int coarseSolver, int cycle) {
             cerr << endl;
           }
 #ifndef MACOSX
-          singularCoarse::setNullSpace(ml_agg->nullspace_vect, coarseLocalSize, 
+          singularCoarse::setNullSpace(ml_agg->nullspace_vect, coarseLocalSize,
                                        ml_agg->nullspace_dim, ZcoarseTZcoarse, &MyComm);
 #endif
           delete[] tmp;
@@ -340,10 +340,10 @@ void AMGOperator::setCoarseSolver_Cycle(int coarseSolver, int cycle) {
 //        options[AZ_keep_kvecs] = (Q) ? coarseGlobalSize - Q->NumVectors() : coarseGlobalSize;
 //        options[AZ_apply_kvecs] = AZ_APPLY;
 #ifdef MACOSX
-        ML_Gen_SmootherAztec(ml_handle, AMG_NLevels-1, options, params, proc_config, status, 
+        ML_Gen_SmootherAztec(ml_handle, AMG_NLevels-1, options, params, proc_config, status,
                              options[AZ_max_iter], ML_PRESMOOTHER, NULL);
 #else
-        ML_Gen_SmootherAztec(ml_handle, AMG_NLevels-1, options, params, proc_config, status, 
+        ML_Gen_SmootherAztec(ml_handle, AMG_NLevels-1, options, params, proc_config, status,
                              options[AZ_max_iter], ML_PRESMOOTHER,
                              (Q) ?  singularCoarse::projection : NULL);
 #endif
@@ -367,7 +367,7 @@ void AMGOperator::setCoarseSolver_Cycle(int coarseSolver, int cycle) {
 
   //------------------------------------
   // This definition of Prec calls the old class 'Epetra_ML_Operator'
-  //Prec = new Epetra_ML_Operator(ml_handle, MyComm, K->OperatorDomainMap(), 
+  //Prec = new Epetra_ML_Operator(ml_handle, MyComm, K->OperatorDomainMap(),
   //                              K->OperatorDomainMap());
   //------------------------------------
 
@@ -420,12 +420,12 @@ int AMGOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
   if ((rightProjection == true) && (Q)) {
     int qcol = Q->NumVectors();
     double *work = new double[2*qcol*xcol];
-    memcpy(X2.Values(), X.Values(), xcol*X.MyLength()*sizeof(double)); 
+    memcpy(X2.Values(), X.Values(), xcol*X.MyLength()*sizeof(double));
     callBLAS.GEMM('T', 'N', qcol, xcol, Q->MyLength(), 1.0, Q->Values(), Q->MyLength(),
                   X2.Values(), X2.MyLength(), 0.0, work + qcol*xcol, qcol);
     MyComm.SumAll(work + qcol*xcol, work, qcol*xcol);
     int info = 0;
-    callLAPACK.POTRS('U', qcol, xcol, QtQ, qcol, work, qcol, &info); 
+    callLAPACK.POTRS('U', qcol, xcol, QtQ, qcol, work, qcol, &info);
     callBLAS.GEMM('N', 'N', X2.MyLength(), xcol, qcol, -1.0, Q->Values(), Q->MyLength(),
                   work, qcol, 1.0, X2.Values(), X2.MyLength());
     delete[] work;
@@ -443,7 +443,7 @@ int AMGOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
                   Y.Values(), Y.MyLength(), 0.0, work + qcol*xcol, qcol);
     MyComm.SumAll(work + qcol*xcol, work, qcol*xcol);
     int info = 0;
-    callLAPACK.POTRS('U', qcol, xcol, QtQ, qcol, work, qcol, &info); 
+    callLAPACK.POTRS('U', qcol, xcol, QtQ, qcol, work, qcol, &info);
     callBLAS.GEMM('N', 'N', Y.MyLength(), xcol, qcol, -1.0, Q->Values(), Q->MyLength(),
                   work, qcol, 1.0, Y.Values(), Y.MyLength());
     delete[] work;

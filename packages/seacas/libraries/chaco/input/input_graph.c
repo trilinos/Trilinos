@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,7 +8,8 @@
 
 #include "defs.h"    // for TRUE, FALSE
 #include "smalloc.h" // for smalloc, sfree
-#include <stdio.h>   // for printf, fprintf, NULL, etc
+
+#include <stdio.h> // for printf, fprintf, NULL, etc
 
 int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtxs, int **vweights,
                 float **eweights)
@@ -27,8 +28,8 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
   extern int   CHECK_INPUT; /* print warnings or not? */
   extern int   DEBUG_INPUT; /* echo that input file read successful? */
   extern int   DEBUG_TRACE; /* trace main execution path */
-  int *        adjptr;      /* loops through adjacency data */
-  float *      ewptr;       /* loops through edge weight data */
+  int         *adjptr;      /* loops through adjacency data */
+  float       *ewptr;       /* loops through edge weight data */
   int          narcs;       /* number of edges expected in graph */
   int          nedges;      /* twice number of edges really in graph */
   int          nedge;       /* loops through edges for each vertex */
@@ -53,8 +54,6 @@ int input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtx
   int          ignored;     /* how many edges are ignored? */
   int          error_flag;  /* error reading input? */
   int          j;           /* loop counters */
-  int          read_int();
-  double       read_val();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering input_graph>\n");

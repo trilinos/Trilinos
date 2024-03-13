@@ -186,6 +186,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
       #if defined(HAVE_TEUCHOS_LONG_DOUBLE) 
         static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
                        std::is_same<ScalarType, std::complex<double> >::value ||
+                       std::is_same<ScalarType, Kokkos::complex<double> >::value ||
                        std::is_same<ScalarType, float>::value ||
                        std::is_same<ScalarType, double>::value ||
                        std::is_same<ScalarType, long double>::value,
@@ -194,6 +195,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
        #else
         static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
                        std::is_same<ScalarType, std::complex<double> >::value ||
+                       std::is_same<ScalarType, Kokkos::complex<double> >::value ||
                        std::is_same<ScalarType, float>::value ||
                        std::is_same<ScalarType, double>::value,
                        "Belos::GCRODRSolMgr: ScalarType must be one of the four "
@@ -1515,6 +1517,15 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           sTest_->checkStatus( &*gcrodr_prime_iter );
           if (convTest_->getStatus() == Passed)
             primeConverged = true;
+        }
+        catch (const StatusTestNaNError& e) {
+          // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          achievedTol_ = MT::one();
+          Teuchos::RCP<MV> X = problem_->getLHS();
+          MVT::MvInit( *X, SCT::zero() );
+          printer_->stream(Warnings) << "Belos::GCRODRSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+          return Unconverged; 
         }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration "

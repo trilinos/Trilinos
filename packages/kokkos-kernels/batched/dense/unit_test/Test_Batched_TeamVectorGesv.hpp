@@ -35,6 +35,7 @@ namespace TeamVectorGesv {
 template <typename DeviceType, typename MatrixType, typename VectorType,
           typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorGesv {
+  using execution_space = typename DeviceType::execution_space;
   const MatrixType _A;
   const VectorType _X;
   const VectorType _B;
@@ -63,8 +64,8 @@ struct Functor_TestBatchedTeamVectorGesv {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::TeamPolicy<DeviceType> policy(_X.extent(0), Kokkos::AUTO(),
-                                          Kokkos::AUTO());
+    Kokkos::TeamPolicy<execution_space> policy(_X.extent(0), Kokkos::AUTO(),
+                                               Kokkos::AUTO());
 
     using MatrixViewType =
         Kokkos::View<typename MatrixType::non_const_value_type **,
@@ -84,10 +85,9 @@ template <typename DeviceType, typename MatrixType, typename VectorType,
           typename AlgoTagType>
 void impl_test_batched_gesv(const int N, const int BlkSize) {
   typedef typename MatrixType::value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
-  using MagnitudeType =
-      typename Kokkos::Details::ArithTraits<value_type>::mag_type;
+  using MagnitudeType = typename Kokkos::ArithTraits<value_type>::mag_type;
   using NormViewType =
       Kokkos::View<MagnitudeType *, Kokkos::LayoutLeft, DeviceType>;
 

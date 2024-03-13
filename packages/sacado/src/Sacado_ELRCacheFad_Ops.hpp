@@ -55,7 +55,6 @@
 #include "Sacado_ELRCacheFad_Expression.hpp"
 #include "Sacado_cmath.hpp"
 #include "Sacado_mpl_disable_if.hpp"
-#include "Sacado_mpl_is_same.hpp"
 #include <ostream>      // for std::ostream
 
 namespace Sacado {
@@ -649,12 +648,10 @@ FAD_UNARYOP_MACRO(atanh,
                   ATanhOp,
                   a = scalar_type(1.0)/(scalar_type(1.0)-v*v),
                   std::atanh(v))
-#ifdef HAVE_SACADO_CXX11
 FAD_UNARYOP_MACRO(cbrt,
                   CbrtOp,
                   a = scalar_type(1.0)/(scalar_type(3.0)*std::cbrt(v*v)),
                   std::cbrt(v))
-#endif
 
 #undef FAD_UNARYOP_MACRO
 

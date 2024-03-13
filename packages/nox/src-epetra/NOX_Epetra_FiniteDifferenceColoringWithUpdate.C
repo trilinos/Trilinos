@@ -146,7 +146,7 @@ bool FiniteDifferenceColoringWithUpdate::computeJacobian(const Epetra_Vector& x,
     std::cerr << "ERROR: NOX::Epetra::FiniteDifferenceColoringWithUpdate::computeJacobian() - "
      << "Jacobian to evaluate is not a FiniteDifferenceColoringWithUpdate object!"
          << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   if(jacobianComputed && use_update){

@@ -54,6 +54,7 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <stdexcept>
 
 namespace Zoltan2{
 
@@ -64,6 +65,16 @@ template <typename scalar_t>
     return ((val < mark-epsilon) || (val > mark+epsilon));
 }
 
+static inline void
+AssertCondition(bool condition, const std::string &message,
+                const char *file = __FILE__, int line = __LINE__) {
+    if (!condition) {
+      std::ostringstream eMsg;
+      eMsg << "Error: " << file << ", " << line << ": " << message
+                << std::endl;
+      throw std::runtime_error(eMsg.str());
+    }
+}
 
 } // namespace Zoltan2
 

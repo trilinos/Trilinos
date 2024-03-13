@@ -992,6 +992,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {return A_->getNumEntriesInLocalRow(localRow);}
     virtual size_t getGlobalMaxNumRowEntries() const {return A_->getGlobalMaxNumRowEntries();}
     virtual size_t getLocalMaxNumRowEntries() const {return A_->getLocalMaxNumRowEntries();}
+    virtual LocalOrdinal getBlockSize() const {return A_->getBlockSize();}
     virtual bool hasColMap() const {return A_->hasColMap();}
     virtual bool isLocallyIndexed() const {return A_->isLocallyIndexed();}
     virtual bool isGloballyIndexed() const {return A_->isGloballyIndexed();}

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -75,6 +75,11 @@ namespace {
         communication_map      = temp.find("c") != std::string::npos;
       }
 
+      if (options_.retrieve("version") != nullptr) {
+        fmt::print(stderr, "Version: {}\n", version);
+        exit(0);
+      }
+
       {
         const char *temp = options_.retrieve("processors");
         if (temp != nullptr) {
@@ -125,21 +130,20 @@ namespace {
             }
           }
           else {
-            for (size_t i = 0; i < stemp.size(); i++) {
-              if (stemp[i] == 'i' || stemp[i] == 'I') {
+            for (char &st : stemp) {
+              if (st == 'i' || st == 'I') {
                 ordinal |= Iocgns::Ordinal::I;
               }
-              else if (stemp[i] == 'j' || stemp[i] == 'J') {
+              else if (st == 'j' || st == 'J') {
                 ordinal |= Iocgns::Ordinal::J;
               }
-              else if (stemp[i] == 'k' || stemp[i] == 'K') {
+              else if (st == 'k' || st == 'K') {
                 ordinal |= Iocgns::Ordinal::K;
               }
               else {
                 fmt::print(
                     stderr,
-                    "\nERROR: Invalid ordinal ('{}') specified.  Must be 'i', 'j', or 'k'.\n",
-                    stemp[i]);
+                    "\nERROR: Invalid ordinal ('{}') specified.  Must be 'i', 'j', or 'k'.\n", st);
                 options_.usage(std::cerr);
                 exit(EXIT_FAILURE);
               }
@@ -181,7 +185,7 @@ namespace {
       return true;
     }
 
-    Interface()
+    explicit Interface(const std::string &app_version) : version(app_version)
     {
       options_.usage("[options] input_file");
       options_.enroll("help", Ioss::GetLongOption::NoValue, "Print this summary and exit", nullptr);
@@ -206,6 +210,7 @@ namespace {
                       "What is printed: z=zone-proc assignment, h=histogram, w=work-per-processor, "
                       "c=comm map, v=verbose.",
                       "zhwc");
+      options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
     }
     Ioss::GetLongOption options_;
     int                 proc_count{0};
@@ -214,6 +219,7 @@ namespace {
     std::string         filename{};
     std::string         filetype{"cgns"};
     std::string         line_decomposition{};
+    std::string         version{};
     bool                verbose{false};
     bool                histogram{true};
     bool                work_per_processor{true};
@@ -367,8 +373,8 @@ namespace {
               if (zgc.is_active()) {
                 int p1 = zgc.m_ownerProcessor;
                 int p2 = zgc.m_donorProcessor;
-                comms.emplace(std::make_pair(std::make_pair(adam_zone->m_name, p1),
-                                             std::make_pair(zgc.m_donorName, p2)));
+                comms.emplace(std::make_pair(adam_zone->m_name, p1),
+                              std::make_pair(zgc.m_donorName, p2));
               }
             }
           }
@@ -632,12 +638,12 @@ namespace {
                        work_width, proc_work[i] / avg_work, stars);
           }
           else if (proc_work[i] == min_work) {
-            fmt::print(fg(fmt::color::green), format, i, proc_width, proc_work[i], work_width,
-                       proc_work[i] / avg_work, stars);
+            fmt::print(fg(fmt::color::green), format, i, proc_width,
+                       fmt::group_digits(proc_work[i]), work_width, proc_work[i] / avg_work, stars);
           }
           else {
-            fmt::print(format, i, proc_width, proc_work[i], work_width, proc_work[i] / avg_work,
-                       stars);
+            fmt::print(format, i, proc_width, fmt::group_digits(proc_work[i]), work_width,
+                       proc_work[i] / avg_work, stars);
           }
           if (verbose) {
             for (const auto &zone : zones) {
@@ -703,7 +709,7 @@ int main(int argc, char *argv[])
 
   Ioss::Utils::set_all_streams(std::cout);
 
-  Interface interFace;
+  Interface interFace(version);
   bool      success = interFace.parse_options(argc, argv);
   if (!success) {
     exit(EXIT_FAILURE);

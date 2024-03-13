@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -93,21 +92,19 @@ namespace
     bool isLine = cellTopo.getKey() == shards::Line<>::key;
     bool isQuad = cellTopo.getKey() == shards::Quadrilateral<>::key;
     bool isHex  = cellTopo.getKey() == shards::Hexahedron<>::key;
-    bool isTri  = cellTopo.getKey() == shards::Triangle<>::key;
-    bool isTet  = cellTopo.getKey() == shards::Tetrahedron<>::key;
     bool isWedge = cellTopo.getKey() == shards::Wedge<>::key;
     int polyOrderDim = -1; // the number of dimensions of p-anisotropy allowed
     if (isLine || isQuad || isHex)
     {
       polyOrderDim = spaceDim;
     }
-    else if (isTri || isTet)
-    {
-      polyOrderDim = 1;
-    }
     else if (isWedge)
     {
       polyOrderDim = 2; // line x tri
+    }
+    else
+    {
+      polyOrderDim = 1;
     }
     auto subBasisDegreeTestCases = getBasisTestCasesUpToDegree(polyOrderDim, minDegree, polyOrder_x, polyOrder_y, polyOrder_z);
     
@@ -358,15 +355,17 @@ namespace
     shards::CellTopology hexTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >() );
     runSubBasisTests(hexTopo, out, success);
   }
-  
-  TEUCHOS_UNIT_TEST( SubBasisInclusion, Tetrahedron )
+
+  TEUCHOS_UNIT_TEST( SubBasisInclusion, Pyramid )
   {
-    shards::CellTopology tetTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
+    shards::CellTopology pyrTopo = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<> >() );
+//    runSubBasisTests(pyrTopo, out, success);
     
-    // so far, only HGRAD implemented for hierarchical tetrahedron.  Once we have full exact sequence, we can
+    // so far, only HGRAD, HVOL implemented for hierarchical pyramid.  Once we have full exact sequence, we can
     // switch to calling runSubBasisTests(tetTopo, out, success).
-    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD};
-    auto cellTopo = tetTopo;
+    // NOTE: due to the way that lower-degree polynomials get added in the higher-degree bases as p increases (combined with the way that the bases are ordered), the strategy within runSubBasisTests for mapping basis ordinals from the "sub-basis" to the full basis WILL NOT WORK for H(curl) and H(div) pyramids.  We could specify the mapping in some fairly manual way (with awareness of implementation details).  Better still would be to provide a mapping within Basis that would specify how one basis is included in the other.  For now, we simply omit these tests.
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD, FUNCTION_SPACE_HVOL};
+    auto cellTopo = pyrTopo;
     
     const int maxDegree = 5;
     const double tol = TEST_TOLERANCE_TIGHT;
@@ -386,10 +385,16 @@ namespace
       {
         for (int degree=1; degree<=maxDegree; degree++)
         {
-          testSubBasis(cellTopo, fs, tol, out, success, degree, -1, -1,continuousBasis);
+          testSubBasis(cellTopo, fs, tol, out, success, degree, -1, -1, continuousBasis);
         }
       }
     }
+  }
+  
+  TEUCHOS_UNIT_TEST( SubBasisInclusion, Tetrahedron )
+  {
+    shards::CellTopology tetTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >() );
+    runSubBasisTests(tetTopo, out, success);
   }
   
   TEUCHOS_UNIT_TEST( SubBasisInclusion, Triangle )

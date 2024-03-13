@@ -370,7 +370,7 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
     utils.out() << "ERROR: NOX::Epetra::Group::setAztecOptions" << std::endl
      << "\"Aztec Solver\" parameter \"" << linearSolver
      <<  "\" is invalid!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Preconditioning where AztecOO inverts the Preconditioning Matrix
@@ -653,7 +653,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
        << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
        << "Please set the \"Write Linear System\" parameter to false."
        << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     EpetraExt::BlockMapToMatrixMarketFile(mapFileName.c_str(),
@@ -1414,7 +1414,7 @@ throwError(const std::string& functionName, const std::string& errorMsg) const
     utils.out() << "NOX::Epetra::LinearSystemAztecOO::" << functionName
      << " - " << errorMsg << std::endl;
   }
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 //***********************************************************************

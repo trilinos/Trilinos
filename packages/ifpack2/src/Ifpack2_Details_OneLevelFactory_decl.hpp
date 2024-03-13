@@ -110,6 +110,7 @@ values:
 <li> "FILDL": returns an instance of Details::Fildl (requires ShyLU FastILU) </li>
 <li> "FILU": returns an instance of Details::Filu (requires ShyLU FastILU) </li>
 <li> "ILUT": returns an instance of ILUT </li>
+<li> "MDF": returns an instance of MDF </li>
 <li> "LOCAL SPARSE TRIDIAGONAL SOLVER": returns an instance of LocalSparseTridiagonalSolver </li>
 <li> "RBILUK": returns an instance of RBILUK (ILK(k) preconditioner for BlockCrsMatrix) </li>
 <li> "RELAXATION": returns an instance of Relaxation </li>

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,7 +8,11 @@
 
 #include <stdio.h> // for fprintf, printf, NULL, FILE, etc
 
-static void reflect_params();
+static void reflect_params(FILE *tempfile,      /* file or stdout */
+                           int   global_method, /* global partitioning algorithm */
+                           int   local_method,  /* local partitioning algorithm */
+                           int   rqi_flag,      /* use RQI/SYMMLQ eigensolver? */
+                           int   ndims);          /* number of eigenvectors to generate */
 
 /* Print out the input options. */
 void reflect_input(int    nvtxs,         /* number of vertices in graph */

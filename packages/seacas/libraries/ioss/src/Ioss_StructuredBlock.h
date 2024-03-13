@@ -335,6 +335,9 @@ namespace Ioss {
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
 
+    int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                       size_t *data_size) const override;
+
   private:
     bool  equal_(const Ioss::StructuredBlock &rhs, bool quiet) const;
     IJK_t m_ijk;

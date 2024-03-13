@@ -4,6 +4,9 @@
 /TriBITS.README.DIRECTORY_CONTENTS.rst.tmp
 /TribitsCommonTPLsList.txt
 /TribitsCommonTPLsList.txt.tmp
+/TribitsExampleProject2_Package1_CMakeLists.raw.external.cmake*
+/TribitsExampleProject2_Package1_CMakeLists.raw.internal.cmake*
+/TribitsExampleProject2_Package1_CMakeLists.raw.tribits_test.cmake*
 /TribitsGitVersion.txt
 /TribitsGitVersion.txt.tmp
 /TribitsHelloWorldDirAndFiles.txt

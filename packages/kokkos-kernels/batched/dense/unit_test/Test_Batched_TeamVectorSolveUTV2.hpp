@@ -35,6 +35,7 @@ namespace Test {
 template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename PivViewType, typename WorkViewType, typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorSolveUTV2 {
+  using execution_space = typename DeviceType::execution_space;
   MatrixViewType _r, _a, _acopy, _u, _v;
   PivViewType _p;
   VectorViewType _x, _b;
@@ -125,7 +126,7 @@ struct Functor_TestBatchedTeamVectorSolveUTV2 {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space> policy(league_size, Kokkos::AUTO);
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
@@ -136,7 +137,7 @@ template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename PivViewType, typename WorkViewType, typename AlgoTagType>
 void impl_test_batched_solve_utv2(const int N, const int BlkSize) {
   typedef typename MatrixViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
   // const value_type one(1);
   /// randomized input testing views
   MatrixViewType r("r", N, BlkSize, 3);

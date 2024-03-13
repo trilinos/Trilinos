@@ -17,8 +17,16 @@
 #ifndef _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 #define _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 
+#include <type_traits>
+#include <sstream>
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-#include "rocsparse/rocsparse.h"
+#if __has_include(<rocm-core/rocm_version.h>)
+#include <rocm-core/rocm_version.h>
+#else
+#include <rocm_version.h>
+#endif
+#include <rocsparse/rocsparse.h>
 
 namespace KokkosSparse {
 namespace Impl {
@@ -98,8 +106,9 @@ inline rocsparse_operation mode_kk_to_rocsparse(const char kk_mode[]) {
       myRocsparseOperation = rocsparse_operation_conjugate_transpose;
       break;
     default: {
-      std::cerr << "Mode " << kk_mode[0] << " invalid for rocSPARSE SpMV.\n";
-      throw std::invalid_argument("Invalid mode");
+      std::ostringstream out;
+      out << "Mode " << kk_mode[0] << " invalid for rocSPARSE SpMV.\n";
+      throw std::invalid_argument(out.str());
     }
   }
   return myRocsparseOperation;
@@ -149,19 +158,48 @@ inline rocsparse_datatype rocsparse_compute_type<Kokkos::complex<double>>() {
   return rocsparse_datatype_f64_c;
 }
 
-template <typename Scalar>
-struct kokkos_to_rocsparse_type {
-  using type = Scalar;
+template <typename T, typename E = void>
+struct kokkos_to_rocsparse_type;
+
+// for floats, rocsparse uses c++ builtin types
+template <typename T>
+struct kokkos_to_rocsparse_type<T,
+                                std::enable_if_t<std::is_floating_point_v<T>>> {
+  using type = T;
 };
 
+// translate complex float
 template <>
 struct kokkos_to_rocsparse_type<Kokkos::complex<float>> {
   using type = rocsparse_float_complex;
 };
 
+// translate complex double
 template <>
 struct kokkos_to_rocsparse_type<Kokkos::complex<double>> {
   using type = rocsparse_double_complex;
+};
+
+// e.g. 5.4 -> 50400
+#define KOKKOSSPARSE_IMPL_ROCM_VERSION \
+  ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
+
+// Set the stream on the given rocSPARSE handle when this object
+// is constructed, and reset to the default stream when this object is
+// destructed.
+struct TemporarySetRocsparseStream {
+  TemporarySetRocsparseStream(rocsparse_handle handle_,
+                              const Kokkos::HIP& exec_)
+      : handle(handle_) {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+        rocsparse_set_stream(handle, exec_.hip_stream()));
+  }
+
+  ~TemporarySetRocsparseStream() {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_stream(handle, NULL));
+  }
+
+  rocsparse_handle handle;
 };
 
 }  // namespace Impl

@@ -188,12 +188,12 @@ namespace { // (anonymous)
           if (actualVal == Tpetra::Details::OrdinalTraits<ValueType>::invalid ()) {
             curBad = true;
             printf("get(key=%lld) = invalid, should have been %d\n",
-                    key, expectedVal);
+                    (long long) key, expectedVal);
           }
           else if (testValues && actualVal != expectedVal) {
             curBad = true;
             printf("get(key=%lld) = %d, should have been %d\n",
-                    key, actualVal, expectedVal);
+                    (long long) key, actualVal, expectedVal);
           }
   
           if (curBad) {

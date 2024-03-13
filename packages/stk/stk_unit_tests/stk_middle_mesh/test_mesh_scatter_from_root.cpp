@@ -1,12 +1,12 @@
-#include "create_mesh.hpp"
-#include "mesh.hpp"
-#include "mesh_entity.hpp"
-#include "mesh_scatter_from_root.hpp"
-#include "parallel_exchange.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
+#include "stk_middle_mesh/mesh_entity.hpp"
+#include "stk_middle_mesh/mesh_scatter_from_root.hpp"
+#include "stk_middle_mesh/parallel_exchange.hpp"
 #include "util/mesh_comparer.hpp"
 #include "util/meshes.hpp"
 #include "gtest/gtest.h"
-#include "variable_size_field.hpp"
+#include "stk_middle_mesh/variable_size_field.hpp"
 
 namespace stk {
 namespace middle_mesh {

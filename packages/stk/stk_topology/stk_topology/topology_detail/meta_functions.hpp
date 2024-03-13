@@ -112,6 +112,19 @@ constexpr topology::topology_t face_topology_()
 }
 
 //------------------------------------------------------------------------------
+
+template <typename Topology, unsigned ShellSideOrdinal>
+STK_INLINE_FUNCTION
+constexpr topology::topology_t shell_side_topology_()
+{
+  if constexpr (Topology::is_shell && Topology::dimension == 3 && ShellSideOrdinal < Topology::num_edges)
+  {
+    return Topology::shell_side_topology_vector[ShellSideOrdinal];
+  }
+  return topology::INVALID_TOPOLOGY;
+}
+
+//------------------------------------------------------------------------------
 template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
 struct edge_node_ordinals_impl_ {
   STK_INLINE_FUNCTION

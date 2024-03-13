@@ -81,9 +81,9 @@ namespace ExoModules {
     this->writtenTets   = 0;
     this->writtenHexes  = 0;
 
-    result &= this->sections.size() > 0;
-    result &= this->gridList.size() >= 4;   // One Tet???
-    result &= this->elementList.size() > 0; // At least one element
+    result &= !this->sections.empty();
+    result &= this->gridList.size() >= 4; // One Tet???
+    result &= !this->elementList.empty(); // At least one element
 
     result &= this->writeFileParams();
     result &= this->writeCoords();

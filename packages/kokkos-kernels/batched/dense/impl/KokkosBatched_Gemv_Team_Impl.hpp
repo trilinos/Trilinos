@@ -20,6 +20,8 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Gemv_Team_Internal.hpp"
+#include "KokkosBlas2_team_gemv.hpp"
+#include <Kokkos_DynRankView.hpp>
 
 namespace KokkosBatched {
 
@@ -45,9 +47,27 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
       const xViewType &x, const ScalarType beta, const yViewType &y) {
-    static_assert(AViewType::Rank == 3,
-                  "Batched TeamGemv requires rank-3 A matrix (use "
-                  "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    if constexpr (Kokkos::is_dyn_rank_view<AViewType>::value) {
+      assert(A.rank_dynamic() == 3 &&
+             "Batched TeamGemv requires rank-3 A matrix (use "
+             "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    } else {
+      static_assert(AViewType::rank == 3,
+                    "Batched TeamGemv requires rank-3 A matrix (use "
+                    "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    }
+
+    if (A.extent(0) == 1) {
+      KokkosBlas::TeamGemv<
+          MemberType, Trans::NoTranspose,
+          Algo::Gemv::Unblocked>::invoke(member, alpha,
+                                         Kokkos::subview(A, 0, Kokkos::ALL,
+                                                         Kokkos::ALL),
+                                         Kokkos::subview(x, 0, Kokkos::ALL),
+                                         beta,
+                                         Kokkos::subview(y, 0, Kokkos::ALL));
+      return 0;
+    }
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
         MemberType, ScalarType, typename AViewType::array_layout,
         typename AViewType::non_const_value_type>(
@@ -67,9 +87,15 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    static_assert(AViewType::Rank == 3,
-                  "Batched TeamGemv requires rank-3 A matrix (use "
-                  "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    /*     if constexpr (Kokkos::is_dyn_rank_view<AViewType>::value) {
+          assert(A.rank_dynamic() == 3 &&
+                 "Batched TeamGemv requires rank-3 A matrix (use "
+                 "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+        } else {
+          static_assert(AViewType::rank == 3,
+                        "Batched TeamGemv requires rank-3 A matrix (use "
+                        "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+        } */
     Kokkos::abort(
         "KokkosBlas::TeamGemv<Algo::Gemv::Blocked> for rank-3 matrix is NOT "
         "implemented");
@@ -87,9 +113,23 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
       const xViewType &x, const ScalarType beta, const yViewType &y) {
-    static_assert(AViewType::Rank == 3,
-                  "Batched TeamGemv requires rank-3 A matrix (use "
-                  "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    if constexpr (Kokkos::is_dyn_rank_view<AViewType>::value) {
+      assert(A.rank_dynamic() == 3 &&
+             "Batched TeamGemv requires rank-3 A matrix (use "
+             "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    } else {
+      static_assert(AViewType::rank == 3,
+                    "Batched TeamGemv requires rank-3 A matrix (use "
+                    "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    }
+    if (A.extent(0) == 1) {
+      KokkosBlas::
+          TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
+              member, alpha, Kokkos::subview(A, 0, Kokkos::ALL, Kokkos::ALL),
+              Kokkos::subview(x, 0, Kokkos::ALL), beta,
+              Kokkos::subview(y, 0, Kokkos::ALL));
+      return 0;
+    }
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
         MemberType, ScalarType, typename AViewType::array_layout,
         typename AViewType::non_const_value_type>(
@@ -109,9 +149,15 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    static_assert(AViewType::Rank == 3,
-                  "Batched TeamGemv requires rank-3 A matrix (use "
-                  "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+    /*     if constexpr (Kokkos::is_dyn_rank_view<AViewType>::value) {
+          assert(A.rank_dynamic() == 3 &&
+                 "Batched TeamGemv requires rank-3 A matrix (use "
+                 "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+        } else {
+          static_assert(AViewType::rank == 3,
+                        "Batched TeamGemv requires rank-3 A matrix (use "
+                        "KokkosBlas::TeamGemv for regular rank-2 matrix)");
+        } */
     Kokkos::abort(
         "KokkosBlas::TeamGemv<Algo::Gemv::Blocked> for rank-3 matrix is NOT "
         "implemented");

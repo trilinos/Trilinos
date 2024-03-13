@@ -14,14 +14,13 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperLeapfrog)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperLeapfrog)
 
-  // Nonmember constructor
-  template Teuchos::RCP<StepperLeapfrog<double> >
-  createStepperLeapfrog(
+// Nonmember constructor
+template Teuchos::RCP<StepperLeapfrog<double> > createStepperLeapfrog(
     const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl);
 
-}
+}  // namespace Tempus
 
 #endif

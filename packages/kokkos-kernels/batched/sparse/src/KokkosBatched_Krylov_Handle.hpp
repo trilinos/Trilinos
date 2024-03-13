@@ -87,7 +87,7 @@ class KrylovHandle {
         batched_size(_batched_size),
         N_team(_N_team),
         monitor_residual(_monitor_residual) {
-    tolerance     = Kokkos::Details::ArithTraits<norm_type>::epsilon();
+    tolerance     = Kokkos::ArithTraits<norm_type>::epsilon();
     max_tolerance = 1e-30;
     if (std::is_same<norm_type, double>::value) max_tolerance = 1e-50;
     if (monitor_residual) {
@@ -409,7 +409,7 @@ class KrylovHandle {
   /// \brief set_norm
   ///   Store the norm of one of the system at one of the iteration
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
   /// \param iteration_id [in]: Iteration ID
   /// \param norm_i [in]: Norm to store
@@ -436,9 +436,8 @@ class KrylovHandle {
   /// \brief set_last_norm
   ///   Store the last norm of one system
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
-  /// \param batched_id [in]: Global batched ID
   /// \param norm_i [in]: Norm to store
 
   KOKKOS_INLINE_FUNCTION
@@ -461,7 +460,7 @@ class KrylovHandle {
   /// \brief set_iteration
   ///   Store the number of iteration after convergence for one system
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
   /// \param iteration_id [in]: Iteration ID
 

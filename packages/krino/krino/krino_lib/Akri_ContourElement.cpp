@@ -81,7 +81,7 @@ ContourElement::debug_output() const
   for (unsigned node_index=0; node_index<npe_coords; ++node_index)
   {
     os << "  Node #" << lnn++;
-    Vector3d coords(Vector3d::ZERO);
+    stk::math::Vector3d coords(stk::math::Vector3d::ZERO);
     for ( int d = 0; d < dim; d++ )
       coords[d] = my_coords(d,coord_counter);
     os << ", coords = (" << coords[0] << ","
@@ -96,17 +96,17 @@ ContourElement::debug_output() const
 }
 
 double
-ContourElement::distance( const Vector3d & p_coords ) const
+ContourElement::distance( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
     double dist;
     my_dist_master_elem.interpolate_point(my_spatial_dim, p_coords.data(), 1, my_dist.ptr(), &dist);
     return dist;
   }
 
-Vector3d
-ContourElement::coordinates( const Vector3d & p_coords ) const
+stk::math::Vector3d
+ContourElement::coordinates( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
-    Vector3d coords(Vector3d::ZERO);
+    stk::math::Vector3d coords(stk::math::Vector3d::ZERO);
     my_coords_master_elem.interpolate_point(my_spatial_dim, p_coords.data(), my_spatial_dim, my_coords.ptr(), coords.data());
     return coords;
   }
@@ -153,7 +153,7 @@ double ContourElement::compute_signed_volume(const int signOfVolume) const
 }
 
 double
-ContourElement::determinant( const Vector3d & p_coords ) const
+ContourElement::determinant( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
     double detJ, detJ_error;
 
@@ -178,8 +178,8 @@ ContourElement::determinant( const Vector3d & p_coords ) const
     return detJ;
   }
 
-Vector3d
-ContourElement::distance_gradient( const Vector3d & p_coords ) const
+stk::math::Vector3d
+ContourElement::distance_gradient( const stk::math::Vector3d & p_coords ) const
   { /* %TRACE% */  /* %TRACE% */
     const int dim = my_spatial_dim;
     const int num_coord_dofs = my_coords.dimension<NPE_COORD>();
@@ -194,7 +194,7 @@ ContourElement::distance_gradient( const Vector3d & p_coords ) const
     d_shapef_coords.resize(dim, num_coord_dofs);
     d_shapef_dist.resize(dim, num_dist_dofs);
     grad_op.resize(dim, num_dist_dofs);
-    Vector3d grad_dist( Vector3d::ZERO );
+    stk::math::Vector3d grad_dist( stk::math::Vector3d::ZERO );
     double det_J;
 
     // pointers to array data
@@ -280,9 +280,9 @@ ContourElement::compute_distance_gradient( const sierra::Array<const double,DIM,
   }
 
 template<int NDIM, int NNODES>
-std::array<Vector3d,NNODES> get_nodal_parametric_coords_array(const MasterElement & me)
+std::array<stk::math::Vector3d,NNODES> get_nodal_parametric_coords_array(const MasterElement & me)
 {
-  std::array<Vector3d,NNODES> paramCoords;
+  std::array<stk::math::Vector3d,NNODES> paramCoords;
   const double * paramCoordsArray = me.nodal_parametric_coordinates();
   int paramCoordsCounter = 0;
   for ( int i = 0; i < NNODES; ++i )
@@ -453,14 +453,14 @@ ContourElement::compute_subelement_decomposition(const double in_length_scale, c
 static double tet_volume(const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords)
 {
   const double * arrayData = coords.ptr();
-  const std::array<Vector3d,4> tetNodeCoords = {Vector3d(arrayData), Vector3d(arrayData+3), Vector3d(arrayData+6), Vector3d(arrayData+9)};
+  const std::array<stk::math::Vector3d,4> tetNodeCoords = {stk::math::Vector3d(arrayData), stk::math::Vector3d(arrayData+3), stk::math::Vector3d(arrayData+6), stk::math::Vector3d(arrayData+9)};
   return compute_tet_volume(tetNodeCoords);
 }
 
 static double tri_volume(const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords)
 {
   const double * arrayData = coords.ptr();
-  const std::array<Vector2d,3> triNodeCoords = {Vector2d(arrayData), Vector2d(arrayData+2), Vector2d(arrayData+4)};
+  const std::array<stk::math::Vector2d,3> triNodeCoords = {stk::math::Vector2d(arrayData), stk::math::Vector2d(arrayData+2), stk::math::Vector2d(arrayData+4)};
   return compute_tri_volume(triNodeCoords);
 }
 
@@ -488,27 +488,6 @@ ContourElement::volume() const
       }
     return vol;
   }
-
-double
-ContourElement::average_edge_length() const
-{ /* %TRACE% */  /* %TRACE% */
-  const stk::topology Top = coord_topology();
-  int num_edges = Top.num_edges();
-
-  double sum_edge_lengths = 0.0;
-
-  for ( int edge = 0; edge < num_edges; edge++ )
-    {
-      const unsigned * const lnn = get_edge_node_ordinals(Top, edge);
-
-      double sqr_length = 0.0;
-      for ( int d = 0; d < my_spatial_dim; d++ ) sqr_length += (my_coords(d,lnn[0]) - my_coords(d,lnn[1])) *
-							       (my_coords(d,lnn[0]) - my_coords(d,lnn[1]));
-      sum_edge_lengths += std::sqrt(sqr_length);
-    }
-
-  return sum_edge_lengths/num_edges;
-}
 
 double
 ContourElement::elem_size() const
@@ -548,7 +527,7 @@ ContourElement::dump_subelement_details() const
   }
 
 void
-ContourElement::build_subelement_facets( Faceted_Surface & facets )
+ContourElement::build_subelement_facets( FacetedSurfaceBase & facets )
 {
   if (my_sign == 0)
   {

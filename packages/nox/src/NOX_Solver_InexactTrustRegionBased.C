@@ -138,7 +138,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
     utils->err() << "NOX::Solver::InexactTrustRegionBased::init - \"" << methodChoice
      << "\" is an invalid choice for \"Method\" key!"
      << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Set default parameter settings using get() if they are not set
@@ -225,7 +225,7 @@ void NOX::Solver::InexactTrustRegionBased::invalid(const std::string& name,
   utils->out() << "NOX::Solver::InexactTrustRegionBased::init - "
        << "Invalid \"" << name << "\" (" << value << ")"
        << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 //*************************************************************************
@@ -236,7 +236,7 @@ void NOX::Solver::InexactTrustRegionBased::throwError(const std::string& methodN
 {
   utils->out() << "NOX::Solver::InexactTrustRegionBased::" << methodName << " - "
        << message << std::endl;
-  throw "NOX Error";
+  throw std::runtime_error("NOX Error");
 }
 
 //*************************************************************************
@@ -479,14 +479,14 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
       if (tmp < 0) {
     utils->err() << "NOX::Solver::InexactTrustRegionBased::iterate - invalid computation" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
       }
 
       // final soln to quadratic equation
       gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
     utils->err() << "NOX::Solver::InexactTrustRegionBased::iterate - invalid trust region step" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
       }
 
       // final direction computation
@@ -515,7 +515,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     {
       utils->err() << "NOX::Solver::InexactTrustRegionBased::iterate - "
        << "unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     // Compute ratio of actual to predicted reduction
@@ -529,7 +529,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       {
     utils->out() << "NOX::Solver::TrustRegionBased::iterate - "
          << "unable to compute F" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
       }
       bVecPtr->update(1.0, oldSolnPtr->getF(), 1.0);
 
@@ -569,7 +569,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     {
       utils->err() << "NOX::Solver::InexactTrustRegionBased::iterate - "
            << "unable to compute F" << std::endl;
-      throw "NOX Error";
+      throw std::runtime_error("NOX Error");
     }
 
     double numerator = oldF - newF;
@@ -868,7 +868,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
        {
      utils->out() << "NOX::Solver::TrustRegionBased::iterate - "
           << "unable to compute F" << std::endl;
-     throw "NOX Error";
+     throw std::runtime_error("NOX Error");
        }
        bVec.update(1.0, oldSoln.getF(), 1.0);
 

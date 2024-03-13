@@ -8,16 +8,14 @@
 
 #include "Tempus_UnitTest_RK_Utils.hpp"
 
-
 namespace Tempus_Unit_Test {
 
+using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
-using Teuchos::ParameterList;
 using Teuchos::sublist;
-
 
 // ************************************************************
 // ************************************************************
@@ -30,7 +28,6 @@ TEUCHOS_UNIT_TEST(SDIRK_3Stage2ndOrder, Default_Construction)
   TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }
 
-
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_3Stage2ndOrder, StepperFactory_Construction)
@@ -39,15 +36,13 @@ TEUCHOS_UNIT_TEST(SDIRK_3Stage2ndOrder, StepperFactory_Construction)
   testFactoryConstruction("SDIRK 3 Stage 2nd order", model);
 }
 
-
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(SDIRK_3Stage2ndOrder, AppAction)
 {
   auto stepper = rcp(new Tempus::StepperSDIRK_3Stage2ndOrder<double>());
-  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  auto model   = rcp(new Tempus_Test::SinCosModel<double>());
   testRKAppAction(stepper, model, out, success);
 }
 
-
-} // namespace Tempus_Test
+}  // namespace Tempus_Unit_Test

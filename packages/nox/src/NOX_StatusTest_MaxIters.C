@@ -64,7 +64,7 @@ MaxIters(int maxIterations, const NOX::Utils* u) :
   if (maxiters < 1)
   {
     utils.err() << "NOX::StatusTest::MaxIters - must choose a number greater than zero" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 }
 

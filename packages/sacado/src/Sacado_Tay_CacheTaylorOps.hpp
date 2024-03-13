@@ -1613,7 +1613,6 @@ TAYLOR_BINARYOP_MACRO(operator/, DivisionOp)
   // can't conflict with the general definition, so we need to use
   // Substitution Failure Is Not An Error
 #include "Sacado_mpl_disable_if.hpp"
-#include "Sacado_mpl_is_same.hpp"
 
 #define TAYLOR_SFINAE_BINARYOP_MACRO(OPNAME,OP)                         \
 namespace Sacado {                                                      \
@@ -1621,7 +1620,7 @@ namespace Sacado {                                                      \
     template <typename T1, typename T2>                                 \
     inline                                                              \
     typename                                                            \
-    mpl::disable_if< mpl::is_same<T1,T2>,                               \
+    mpl::disable_if< std::is_same<T1,T2>,                               \
                      Expr<BinaryExpr<Expr<T1>, Expr<T2>, OP> > >::type  \
     OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)               \
     {                                                                   \

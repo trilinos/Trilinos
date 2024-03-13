@@ -138,7 +138,7 @@ ArrayView<const T>::ArrayView(const ArrayView<const T>& array)
 
 template<class T> inline
 ArrayView<T>::ArrayView(
-  std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  std::vector<typename std::remove_const_t<T>>& vec
   )
   : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
@@ -147,7 +147,7 @@ ArrayView<T>::ArrayView(
 
 template<class T> inline
 ArrayView<const T>::ArrayView(
-  std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  std::vector<typename std::remove_const_t<T>>& vec
   )
   : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
@@ -157,7 +157,7 @@ ArrayView<const T>::ArrayView(
 
 template<class T> inline
 ArrayView<T>::ArrayView(
-  const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  const std::vector<typename std::remove_const_t<T>>& vec
   )
   : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
@@ -166,7 +166,7 @@ ArrayView<T>::ArrayView(
 
 template<class T> inline
 ArrayView<const T>::ArrayView(
-  const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
+  const std::vector<typename std::remove_const_t<T>>& vec
   )
   : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {

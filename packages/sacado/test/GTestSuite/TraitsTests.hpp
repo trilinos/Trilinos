@@ -30,11 +30,12 @@
 #ifndef TRAITSTESTS_HPP
 #define TRAITSTESTS_HPP
 
+#include <type_traits>
+
 // Sacado includes
 #include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Random.hpp"
 #include "Sacado_mpl_apply.hpp"
-#include "Sacado_mpl_is_same.hpp"
 
 // gtest includes
 #include <gtest/gtest.h>
@@ -67,10 +68,10 @@ TYPED_TEST_P(TraitsTests, testScalarType) {
   typedef decltype(this->ad1) ad1_t;
   typedef decltype(this->ad2) ad2_t;
 
-  bool same = Sacado::mpl::is_same< typename Sacado::ScalarType<ad1_t>::type, double >::value;
+  bool same = std::is_same< typename Sacado::ScalarType<ad1_t>::type, double >::value;
   ASSERT_TRUE(same == true);
 
-same = Sacado::mpl::is_same< typename Sacado::ScalarType<ad2_t>::type,double >::value;
+same = std::is_same< typename Sacado::ScalarType<ad2_t>::type,double >::value;
   ASSERT_TRUE(same == true);
 }
 
@@ -78,10 +79,10 @@ TYPED_TEST_P(TraitsTests, testValueType) {
   typedef decltype(this->ad1) ad1_t;
   typedef decltype(this->ad2) ad2_t;
 
-  bool same = Sacado::mpl::is_same< typename Sacado::ValueType<ad1_t>::type,double >::value;
+  bool same = std::is_same< typename Sacado::ValueType<ad1_t>::type,double >::value;
   ASSERT_TRUE(same == true);
 
-  same = Sacado::mpl::is_same< typename Sacado::ValueType<ad2_t>::type,ad1_t >::value;
+  same = std::is_same< typename Sacado::ValueType<ad2_t>::type,ad1_t >::value;
   ASSERT_TRUE(same == true);
 }
 

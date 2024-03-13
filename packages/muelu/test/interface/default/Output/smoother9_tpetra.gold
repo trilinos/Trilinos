@@ -4,10 +4,11 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 20
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
 smoother -> 
- [empty list]
+ timer for apply = 0   [unused]
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
@@ -20,11 +21,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -41,10 +42,11 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 20
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 Setup Smoother (MueLu::Ifpack2Smoother{type = ILUT})
 smoother -> 
- [empty list]
+ timer for apply = 0   [unused]
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
@@ -57,11 +59,11 @@ lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
+BuildAggregatesNonKokkos (Phase - (Dirichlet))
+BuildAggregatesNonKokkos (Phase 1 (main))
+BuildAggregatesNonKokkos (Phase 2a (secondary))
+BuildAggregatesNonKokkos (Phase 2b (expansion))
+BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -86,7 +88,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
-Smoother complexity = 1.78
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

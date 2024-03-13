@@ -53,7 +53,7 @@ struct TeamDot<TeamType, XV, YV, false> {
 
   static KOKKOS_INLINE_FUNCTION dot_type team_dot(const TeamType& team,
                                                   const XV& X, const YV& Y) {
-    dot_type result = 0.0;  // Kokkos::Details::ArithTraits<dot_type>zero();
+    dot_type result = 0.0;  // Kokkos::ArithTraits<dot_type>zero();
     int N           = X.extent(0);
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, N),

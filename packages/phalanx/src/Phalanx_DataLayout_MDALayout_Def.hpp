@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -51,480 +51,79 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_ExtentTraits.hpp"
 
+namespace PHX {
+
 //**********************************************************************
-namespace PHX{
+template<int N, typename CurrentExtent, typename... Extents>
+void setExtentsVariadic(std::vector<PHX::Device::size_type>& e, CurrentExtent ce, Extents... extents)
+{
+  e[N] = ce;
 
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<8,8> {};
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<7,7> {};
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<6,6> {};
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<5,5> {};
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<4,4> {};
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<3,3> {};
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<2,2> {};
-  template<> struct 
-  Check_num_ctor_arguments_equal_to_num_template_arguments<1,1> {};
-}
-//**********************************************************************
-namespace PHX{
-  
-template<typename T0, typename T1, typename T2, typename T3,
-	 typename T4, typename T5, typename T6, typename T7>
-struct DLTagList
-{ enum { Rank = 8 }; };
-
-template<typename T0, typename T1, typename T2, typename T3,
-	 typename T4, typename T5, typename T6>
-struct DLTagList<T0,T1,T2,T3,T4,T5,T6,void>
-{ enum { Rank = 7 }; };
-
-template<typename T0, typename T1, typename T2, typename T3,
-	 typename T4, typename T5>
-struct DLTagList<T0,T1,T2,T3,T4,T5,void,void>
-{ enum { Rank = 6 }; };
-
-template<typename T0, typename T1, typename T2, typename T3,
-	 typename T4>
-struct DLTagList<T0,T1,T2,T3,T4,void,void,void>
-{ enum { Rank = 5 }; };
-
-template<typename T0, typename T1, typename T2, typename T3>
-struct DLTagList<T0,T1,T2,T3,void,void,void,void>
-{ enum { Rank = 4 }; };
-
-template<typename T0, typename T1, typename T2>
-struct DLTagList<T0,T1,T2,void,void,void,void,void>
-{ enum { Rank = 3 }; };
-
-template<typename T0, typename T1>
-struct DLTagList<T0,T1,void,void,void,void,void,void>
-{ enum { Rank = 2 }; };
-
-template<typename T0>
-struct DLTagList<T0,void,void,void,void,void,void,void>
-{ enum { Rank = 1 }; };
+  if constexpr (sizeof...(extents) != 0) {
+    setExtentsVariadic<N+1>(e,extents...);
+  }
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5, size_type size6,
-	  size_type size7, size_type size8)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,8>();
+template<int N, typename CurrentTag, typename... Tags>
+void setTagNames(std::vector<std::string>& names)
+{
+  names.push_back(PHX::print<CurrentTag>());
 
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-  m_dim_size[5] = size6;
-  m_dim_size[6] = size7;
-  m_dim_size[7] = size8;
+  if constexpr (sizeof...(Tags) != 0) {
+    setTagNames<N+1,Tags...>(names);
+  }
+}
 
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-  m_dim_name.push_back(PHX::print<Tag5>());
-  m_dim_name.push_back(PHX::print<Tag6>());
-  m_dim_name.push_back(PHX::print<Tag7>());
+} // namespace PHX
 
-  m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7 * size8;
+//**********************************************************************
+template<typename... Tags>
+template<typename... Extents>
+PHX::MDALayout<Tags...>::MDALayout(Extents... extents)
+{
+  static_assert(Rank == PackSize<Extents...>::value);
+
+  m_dim_size.resize(Rank);
+  setExtentsVariadic<0>(m_dim_size,extents...);
+
+  m_dim_name.clear();
+  setTagNames<0,Tags...>(m_dim_name);
+
+  m_size = 1;
+  for (int i=0; i < Rank; ++i)
+    m_size *= m_dim_size[i];
 
   m_identifier = this->createIdentifier();
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5, size_type size6,
-	  size_type size7)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,7>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-  m_dim_size[5] = size6;
-  m_dim_size[6] = size7;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-  m_dim_name.push_back(PHX::print<Tag5>());
-  m_dim_name.push_back(PHX::print<Tag6>());
-
-  m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7;
-
-  m_identifier = this->createIdentifier();
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5, size_type size6)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,6>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-  m_dim_size[5] = size6;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-  m_dim_name.push_back(PHX::print<Tag5>());
-
-  m_size = size1 * size2 * size3 * size4 * size5 * size6;
-
-  m_identifier = this->createIdentifier();
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,5>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-
-  m_size = size1 * size2 * size3 * size4 * size5;
-
-  m_identifier = this->createIdentifier();
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,4>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-
-  m_size = size1 * size2 * size3 * size4;
-
-  m_identifier = this->createIdentifier();
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2, size_type size3)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,3>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-
-  m_size = size1 * size2 * size3;
-
-  m_identifier = this->createIdentifier();
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,2>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-
-  m_size = size1 * size2;
-
-  m_identifier = this->createIdentifier();
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,1>();
-
-  m_dim_size[0] = size1;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-
-  m_size = size1;
-
-  m_identifier = this->createIdentifier();
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5, size_type size6,
-	  size_type size7, size_type size8)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,8>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-  m_dim_size[5] = size6;
-  m_dim_size[6] = size7;
-  m_dim_size[7] = size8;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-  m_dim_name.push_back(PHX::print<Tag5>());
-  m_dim_name.push_back(PHX::print<Tag6>());
-  m_dim_name.push_back(PHX::print<Tag7>());
-
-  m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7 * size8;
-
+template<typename... Tags>
+template<typename... Extents>
+PHX::MDALayout<Tags...>::
+MDALayout(const std::string& prefix, Extents... extents)
+  : MDALayout<Tags...>::MDALayout(extents...)
+{
   m_identifier = this->createIdentifier(prefix);
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5, size_type size6,
-	  size_type size7)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,7>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-  m_dim_size[5] = size6;
-  m_dim_size[6] = size7;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-  m_dim_name.push_back(PHX::print<Tag5>());
-  m_dim_name.push_back(PHX::print<Tag6>());
-
-  m_size = size1 * size2 * size3 * size4 * size5 * size6 * size7;
-
-  m_identifier = this->createIdentifier(prefix);
+template<typename... Tags>
+template<typename... Extents>
+PHX::MDALayout<Tags...>::
+MDALayout(const char* prefix, Extents... extents)
+  : MDALayout<Tags...>::MDALayout(extents...)
+{
+  m_identifier = this->createIdentifier(std::string(prefix));
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5, size_type size6)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,6>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-  m_dim_size[5] = size6;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-  m_dim_name.push_back(PHX::print<Tag5>());
-
-  m_size = size1 * size2 * size3 * size4 * size5 * size6;
-
-  m_identifier = this->createIdentifier(prefix);
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,5>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-  m_dim_size[4] = size5;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-  m_dim_name.push_back(PHX::print<Tag4>());
-
-  m_size = size1 * size2 * size3 * size4 * size5;
-
-  m_identifier = this->createIdentifier(prefix);
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1, size_type size2, size_type size3, 
-	  size_type size4)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,4>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-  m_dim_size[3] = size4;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-  m_dim_name.push_back(PHX::print<Tag3>());
-
-  m_size = size1 * size2 * size3 * size4;
-
-  m_identifier = this->createIdentifier(prefix);
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1, size_type size2, size_type size3)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,3>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-  m_dim_size[2] = size3;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-  m_dim_name.push_back(PHX::print<Tag2>());
-
-  m_size = size1 * size2 * size3;
-
-  m_identifier = this->createIdentifier(prefix);
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1, size_type size2)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,2>();
-
-  m_dim_size[0] = size1;
-  m_dim_size[1] = size2;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-  m_dim_name.push_back(PHX::print<Tag1>());
-
-  m_size = size1 * size2;
-
-  m_identifier = this->createIdentifier(prefix);
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(const std::string& prefix,
-	  size_type size1)
-{ 
-  PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,1>();
-
-  m_dim_size[0] = size1;
-
-  m_dim_name.push_back(PHX::print<Tag0>());
-
-  m_size = size1;
-
-  m_identifier = this->createIdentifier(prefix);
-}
-
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-bool PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+bool PHX::MDALayout<Tags...>::
 operator==(const PHX::DataLayout& right) const
 {
-  const PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>* tmp = 0;
-  tmp = dynamic_cast< const PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>* >(&right);
+  const PHX::MDALayout<Tags...>* tmp = 0;
+  tmp = dynamic_cast< const PHX::MDALayout<Tags...>* >(&right);
 
   if (tmp == 0)
     return false;
@@ -537,117 +136,113 @@ operator==(const PHX::DataLayout& right) const
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::Device::size_type 
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::rank() const
+template<typename... Tags>
+PHX::Device::size_type
+PHX::MDALayout<Tags...>::rank() const
 { return Rank; }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-void PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+void PHX::MDALayout<Tags...>::
 dimensions(std::vector<PHX::Device::size_type>& dim) const
-{ 
+{
   dim.resize(Rank);
-  for(std::size_t i=0; i < dim.size(); ++i)
+  for(std::size_t i=0; i < Rank; ++i)
     dim[i] = m_dim_size[i];
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-void PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+void PHX::MDALayout<Tags...>::
 names(std::vector<std::string>& names) const
-{ 
+{
   names.resize(Rank);
   for(std::size_t i=0; i < names.size(); ++i)
     names[i] = m_dim_name[i];
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::Device::size_type PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+PHX::Device::size_type PHX::MDALayout<Tags...>::
 size() const
 { return m_size; }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename... Tags>
 PHX::DataLayout::KokkosLayoutType
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDALayout<Tags...>::
 kokkosLayout() const
 {
   return PHX::DataLayout::KokkosLayoutType::Default;
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-std::string PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+std::string PHX::MDALayout<Tags...>::
 identifier() const
-{ 
-  return m_identifier; 
+{
+  return m_identifier;
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::Device::size_type 
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+PHX::Device::size_type
+PHX::MDALayout<Tags...>::
 dimension(size_type ordinal) const
-{ 
+{
+#ifdef PHX_DEBUG
   this->checkForValidRank(ordinal);
+#endif
   return m_dim_size[ordinal];
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-PHX::Device::size_type 
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+PHX::Device::size_type
+PHX::MDALayout<Tags...>::
 extent(size_type ordinal) const
-{ 
+{
+#ifdef PHX_DEBUG
   this->checkForValidRank(ordinal);
+#endif
   return m_dim_size[ordinal];
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-int 
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+int
+PHX::MDALayout<Tags...>::
 extent_int(size_type ordinal) const
 {
+#ifdef PHX_DEBUG
   this->checkForValidRank(ordinal);
+#endif
   return static_cast<int>(m_dim_size[ordinal]);
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename... Tags>
 std::string
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDALayout<Tags...>::
 name(size_type ordinal) const
-{ 
+{
+#ifdef PHX_DEBUG
   this->checkForValidRank(ordinal);
+#endif
   return m_dim_name[ordinal];
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-void PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+void PHX::MDALayout<Tags...>::
 print(std::ostream& os, int /* offset */) const
 {
   os << m_identifier;
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-std::string PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+template<typename... Tags>
+std::string PHX::MDALayout<Tags...>::
 createIdentifier(const std::string& prefix)
 {
   std::ostringstream os;
@@ -664,15 +259,14 @@ createIdentifier(const std::string& prefix)
     os << m_dim_size[i];
   }
   os << ")";
-  
+
   return os.str();
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename... Tags>
 void
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDALayout<Tags...>::
 setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents)
 {
 #ifdef PHX_DEBUG
@@ -685,54 +279,41 @@ setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents)
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename... Tags>
 template<typename IndexType>
 typename std::enable_if<std::is_signed<IndexType>::value>::type
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDALayout<Tags...>::
 checkForValidRank(const IndexType& ordinal) const
 {
-  if (ordinal > Rank-1 || ordinal < 0) {
+  if ( (ordinal >= Rank) || (ordinal < 0) ) {
     std::ostringstream os;
-    os << "Requested Ordinal " << ordinal 
+    os << "Requested Ordinal " << ordinal
        << " is outside the valid range of 0 - " << Rank - 1
        << " in DataLayout object:\n"
        << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal >= Rank || ordinal < 0,
 			       std::runtime_error, os.str());
   }
 }
 
 //**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+template<typename... Tags>
 template<typename IndexType>
 typename std::enable_if<std::is_unsigned<IndexType>::value>::type
-PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDALayout<Tags...>::
 checkForValidRank(const IndexType& ordinal) const
 {
-  if (ordinal > Rank-1) {
+  if (ordinal >= Rank) {
     std::ostringstream os;
-    os << "Requested Ordinal " << ordinal 
+    os << "Requested Ordinal " << ordinal
        << " is outside the valid range of 0 - " << Rank - 1
        << " in DataLayout object:\n"
        << m_identifier << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(ordinal > Rank-1, 
+    TEUCHOS_TEST_FOR_EXCEPTION(ordinal >= Rank,
 			       std::runtime_error, os.str());
   }
 }
 
-//**********************************************************************
-template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-std::ostream& PHX::operator<<(std::ostream& os, 
-			      const PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,
-			      Tag5,Tag6,Tag7>& v)
-{
-  v.print(os,0);
-  return os;
-}
- 
 //**********************************************************************
 
 #endif

@@ -251,12 +251,12 @@ NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeNe
 
   if (!isF()) {
     std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   if (!isJacobian()) {
     std::cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   NOX::Abstract::Group::ReturnType status = applyJacobianInverse(p, *fVector, *newtonVector);

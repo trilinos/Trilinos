@@ -294,7 +294,7 @@ public:
       std::cout << "Adding " << global_fields.size() << " global fields:\n";
     }
 
-    auto io_region = ioBroker.get_input_io_region();
+    auto io_region = ioBroker.get_input_ioss_region();
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);

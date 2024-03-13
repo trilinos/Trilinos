@@ -1,13 +1,13 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
-#include "structs.h" // for scanlink
-#include <stdio.h>   // for NULL
+#include "defs.h"
+#include <stdio.h> // for NULL
 
 /* Assemble eigenvectors, return bounds, etc. */
 void mkeigvecs(struct scanlink *scanlist, /* linked list of fields to do with min ritz vals */
@@ -27,13 +27,9 @@ void mkeigvecs(struct scanlink *scanlist, /* linked list of fields to do with mi
 )
 {
 
-  int              i, k;     /* indcies */
-  double           Sres;     /* how well Tevec calculated eigvec s */
-  struct scanlink *curlnk;   /* for traversing the scanlist */
-  void             setvec(); /* initialize a vector */
-  void             scadd();  /* add scalar multiple of vector to another */
-  double           Tevec(double *, double *, int, double,
-                         double *); /* calc eigenvector of T by linear recurrence */
+  int              i, k;   /* indcies */
+  double           Sres;   /* how well Tevec calculated eigvec s */
+  struct scanlink *curlnk; /* for traversing the scanlist */
 
   /* Scan for some data which is used here or later */
   i      = d;

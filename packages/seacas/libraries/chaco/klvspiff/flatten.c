@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,23 +10,22 @@
 #include "smalloc.h" // for sfree, smalloc
 #include "structs.h" // for vtx_data
 
-int flatten(struct vtx_data ** graph,       /* array of vtx data for graph */
+int flatten(struct vtx_data  **graph,       /* array of vtx data for graph */
             int                nvtxs,       /* number of vertices in graph */
             int                nedges,      /* number of edges in graph */
             struct vtx_data ***pcgraph,     /* coarsened version of graph */
-            int *              pcnvtxs,     /* number of vtxs in coarsened graph */
-            int *              pcnedges,    /* number of edges in coarsened graph */
-            int **             pv2cv,       /* pointer to v2cv */
+            int               *pcnvtxs,     /* number of vtxs in coarsened graph */
+            int               *pcnedges,    /* number of edges in coarsened graph */
+            int              **pv2cv,       /* pointer to v2cv */
             int                using_ewgts, /* are edge weights being used? */
             int                igeom,       /* dimensions of geometric data */
-            float **           coords,      /* coordinates for vertices */
-            float **           ccoords      /* coordinates for coarsened vertices */
+            float            **coords,      /* coordinates for vertices */
+            float            **ccoords      /* coordinates for coarsened vertices */
 )
 {
   double Thresh; /* minimal acceptable size reduction */
-  int *  v2cv;   /* map from vtxs to coarse vtxs */
+  int   *v2cv;   /* map from vtxs to coarse vtxs */
   int    cnvtxs; /* number of vertices in flattened graph */
-  void   find_flat(), makefgraph();
 
   Thresh = .9;
 
@@ -50,8 +49,8 @@ int flatten(struct vtx_data ** graph,       /* array of vtx data for graph */
 
 void find_flat(struct vtx_data **graph,   /* data structure for storing graph */
                int               nvtxs,   /* number of vertices in graph */
-               int *             pcnvtxs, /* number of coarse vertices */
-               int *             v2cv     /* map from vtxs to coarse vtxs */
+               int              *pcnvtxs, /* number of coarse vertices */
+               int              *v2cv     /* map from vtxs to coarse vtxs */
 )
 {
   /* Look for cliques with the same neighbor set.  These are matrix */
@@ -64,7 +63,6 @@ void find_flat(struct vtx_data **graph,   /* data structure for storing graph */
   int  neighbor;  /* neighbor of a vertex */
   int  cnvtxs;    /* number of distinct vertices */
   int  i, j;      /* loop counters */
-  int  SameStructure();
 
   hash    = smalloc((nvtxs + 1) * sizeof(int));
   scatter = smalloc((nvtxs + 1) * sizeof(int));
@@ -110,7 +108,7 @@ void find_flat(struct vtx_data **graph,   /* data structure for storing graph */
 
 int SameStructure(int node1, int node2,     /* two vertices which might have same nonzeros */
                   struct vtx_data **graph,  /* data structure for storing graph */
-                  int *             scatter /* array for checking vertex labelling */
+                  int              *scatter /* array for checking vertex labelling */
 )
 {
   int same; /* are two vertices indistinguisable? */

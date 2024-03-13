@@ -136,6 +136,9 @@ enum class LapackTrans : char
 void matvec(const double alpha, const Matrix<double>& a, const double* x, const double beta, double* y,
             BlasTrans trans = BlasTrans::NoTrans);
 
+// does matrix-vector multiplication for matrix in column major format
+void matvec(BlasTrans trans, int m, int n, double alpha, const double* a, const double* x, double beta, double* y);
+
 // note: B must be max(A.extent0, A.extent1) x nrhs, because it is used
 //       to return the result
 // recommend work be the same size as A
@@ -147,11 +150,34 @@ void solve_least_squares(Matrix<double>& a, Matrix<double>& b, Matrix<double>& w
 // triangle and intermediate results needed to compute Q in the rest.
 void compute_qr_factorization(Matrix<double>& a, Matrix<double>& work, double* tau);
 
+// calls lapack dgeqp3 to compute rank revealing QR
+void compute_rank_revealing_qr(Matrix<double>& a, Matrix<double>& work, double* tau, int* jpvt);
+
+void solve_upper_triangular(Matrix<double>& a, double* rhs);
+
 // given the result of compute_qr_factorization stored in A and tau, solves a linear
 // system.
 void solve_qr_factorization(Matrix<double>& a, Matrix<double>& work, double* tau, double* rhs);
 
-void solve_linear_system(Matrix<double>& a, int* ipiv, double* rhs);
+// solves the qrp (rank-revealing QR) factorization
+void solve_qrp_factorization(Matrix<double>& a, Matrix<double>& work, double* tau, int* jpvt, double* rhs);
+
+// solves the qrp (rank-revealing QR) factorization, using only the first numSingularValues rows/columns of the R factor.
+// this is roughly equivalent to solving a truncated SVD using the first numSingularValues
+void solve_qrp_factorization(Matrix<double>& a, Matrix<double>& work, double* tau, int* jpvt, double* rhs, int numSingularVals);
+
+void solve_linear_system(Matrix<double>& a, int* ipiv, double* rhs, int nrhs=1);
+
+// computes the (full) SVD factorization
+// A is m x n
+// s is min(m, n)
+// u is m x m
+// vt is n x n
+// work is scratch space for Lapack
+// lworks is length of work
+// Note that u and vt are column-major
+void compute_svd_factorization(Matrix<double>& a, double* s, double* u, double* vt, double* work, int lwork);
+
 
 } // namespace impl
 

@@ -61,7 +61,7 @@ namespace {
                          Kokkos::MemoryUnmanaged> blk_type;
     typedef Kokkos::View<IST*, LayoutType, Kokkos::HostSpace,
                          Kokkos::MemoryUnmanaged> vec_type;
-    typedef Kokkos::Details::ArithTraits<IST> KAT;
+    typedef Kokkos::ArithTraits<IST> KAT;
 
     Teuchos::OSTab tab2 (out);
     const IST zero = KAT::zero ();
@@ -119,7 +119,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( LittleBlockOps, GEMV, ST )
   {
-    typedef Kokkos::Details::ArithTraits<ST> KAT;
+    typedef Kokkos::ArithTraits<ST> KAT;
     typedef typename KAT::val_type IST;
 
     out << "Test GEMV" << endl;

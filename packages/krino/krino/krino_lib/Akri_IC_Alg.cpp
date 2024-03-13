@@ -12,9 +12,10 @@
 
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_AuxMetaData.hpp>
+#include <Akri_FieldRef.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_MasterElement.hpp>
-#include <Akri_Vec.hpp>
+#include <stk_math/StkVector.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -23,6 +24,9 @@
 #include <stk_io/IossBridge.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_RefinementSupport.hpp>
+#include <Akri_BoundingBox.hpp>
+#include <Akri_Composite_Surface.hpp>
+#include <Akri_NodalSurfaceDistance.hpp>
 
 namespace krino{
 
@@ -34,6 +38,14 @@ double relative_crossing_position(const double ls0, const double ls1)
 }
 
 //----------------------------------------------------------------
+
+BoundingBox IC_Alg::get_surface_bounding_box()
+{
+  BoundingBox bbox;
+  surface_list.insert_into(bbox);
+  return bbox;
+}
+
 void IC_Alg::execute(const double time)
 { /* %TRACE[ON]% */ Trace trace__("krino::IC_Analytic_Alg::execute()"); /* %TRACE% */
 
@@ -43,42 +55,15 @@ void IC_Alg::execute(const double time)
   }
 
   const stk::mesh::BulkData& mesh = levelSet.mesh();
-  const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  const FieldRef xField = levelSet.get_coordinates_field();
   const FieldRef dField = levelSet.get_distance_field();
-  const int spatial_dim = meta.spatial_dimension();
-
-  BoundingBox node_bbox;
-  levelSet.compute_nodal_bbox( mesh.mesh_meta_data().universal_part(), node_bbox );
-  surface_list.prepare_to_compute(time, node_bbox, levelSet.narrow_band_size());
-
-  stk::mesh::BucketVector const& buckets = mesh.get_buckets( stk::topology::NODE_RANK, stk::mesh::selectField(dField) );
-
-  for ( auto && bucket_ptr : buckets )
-  {
-    const stk::mesh::Bucket & b = *bucket_ptr;
-    const int length = b.size();
-    double *dist = field_data<double>(dField, b);
-    double * coord = field_data<double>(xField, b);
-
-    for (int n = 0; n < length; ++n)
-    {
-      STK_ThrowAssert(&(dist[n]) != NULL);
-
-      const Vector3d x(&coord[spatial_dim*n], spatial_dim);
-
-      dist[n] = surface_list.point_signed_distance_with_narrow_band(x, levelSet.narrow_band_size());
-    }
-  }
-
-  stk::mesh::communicate_field_data(mesh, {&dField.field()});
+  compute_nodal_surface_distance(mesh, levelSet.get_coordinates_field(), dField, surface_list, time, levelSet.narrow_band_size());
 
   if (levelSet.narrow_band_size() > 0. && surface_list.truncated_distance_may_have_wrong_sign())
   {
     DistanceSweeper::fix_sign_by_sweeping(mesh, dField, surface_list.get_signed_narrow_band_size(levelSet.narrow_band_size()));
   }
 
-  if(RefinementSupport::get(meta).get_nonconformal_adapt_target_count() > 0)
+  if(RefinementSupport::get(levelSet.meta()).get_nonconformal_adapt_target_count() > 0)
   {
     compute_IC_error_indicator();
   }
@@ -107,8 +92,8 @@ void IC_Alg::compute_IC_error_indicator()
       mesh.get_buckets(stk::topology::ELEMENT_RANK, meta.locally_owned_part() & fieldSelector);
 
   std::vector<double> nodal_signed_distances;
-  std::vector<Vector3d> nodal_coordinates;
-  std::vector<Vector3d> edge_midpoints;
+  std::vector<stk::math::Vector3d> nodal_coordinates;
+  std::vector<stk::math::Vector3d> edge_midpoints;
   std::vector<double> midpoint_signed_distances, midpoint_interp_signed_distances;
   int edge_nodes[] = {0, 0};
 
@@ -135,7 +120,7 @@ void IC_Alg::compute_IC_error_indicator()
         auto node = nodes[n];
         nodal_signed_distances[n] = *field_data<double>(dField, node);
         const double * coords_data = field_data<double>(xField, node);
-        nodal_coordinates[n] = Vector3d(coords_data, spatial_dim);
+        nodal_coordinates[n] = stk::math::Vector3d(coords_data, spatial_dim);
       }
 
       // Iterate edges, find location of crossing on the edge and compare to location of crossing
@@ -150,8 +135,8 @@ void IC_Alg::compute_IC_error_indicator()
         STK_ThrowAssert(topo.edge_topology(e).num_nodes() == 2);
         topo.edge_node_ordinals(e, edge_nodes);
 
-        const Vector3d & x0 = nodal_coordinates[edge_nodes[0]];
-        const Vector3d & x1 = nodal_coordinates[edge_nodes[1]];
+        const stk::math::Vector3d & x0 = nodal_coordinates[edge_nodes[0]];
+        const stk::math::Vector3d & x1 = nodal_coordinates[edge_nodes[1]];
         edge_midpoints[e] = 0.5*(x0+x1);
         const double edge_length_sqr = (x1-x0).length_squared();
 

@@ -63,13 +63,11 @@
 #endif
 
 #ifdef HAVE_MUELU_TEKO
-#include <Teko_EpetraBlockPreconditioner.hpp>
 #include <Teko_InverseFactory.hpp>
 #include <Teko_InverseLibrary.hpp>
 #include <Teko_InvLSCStrategy.hpp>
 #include <Teko_LSCPreconditionerFactory.hpp>
 #include <Teko_SIMPLEPreconditionerFactory.hpp>
-#include <Teko_StridedEpetraOperator.hpp>
 #include <Teko_Utilities.hpp>
 #endif
 
@@ -103,30 +101,31 @@
 // FIXME
 #include "MueLu_UseDefaultTypes.hpp"
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 ReadBinary(const std::string& fileName, const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
-  typedef Scalar        SC;
-  typedef LocalOrdinal  LO;
+  typedef Scalar SC;
+  typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef Node          NO;
+  typedef Node NO;
   TEUCHOS_TEST_FOR_EXCEPTION(comm->getSize() != 1, MueLu::Exceptions::RuntimeError, "Serial read only");
 
   std::ifstream ifs(fileName.c_str(), std::ios::binary);
   TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), MueLu::Exceptions::RuntimeError, "Can not read \"" << fileName << "\"");
 
   int m, n, nnz;
-  ifs.read(reinterpret_cast<char*>(&m),   sizeof(m));
-  ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
+  ifs.read(reinterpret_cast<char*>(&m), sizeof(m));
+  ifs.read(reinterpret_cast<char*>(&n), sizeof(n));
   ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
-  typedef Tpetra::Map      <LO,GO,NO>       tMap;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>    tCrsMatrix;
+  typedef Tpetra::Map<LO, GO, NO> tMap;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tCrsMatrix;
 
-  GO indexBase = 0;
-  Teuchos::RCP<tMap>       rowMap = rcp(new tMap(m, indexBase, comm)), rangeMap  = rowMap;
-  Teuchos::RCP<tMap>       colMap = rcp(new tMap(n, indexBase, comm)), domainMap = colMap;;
-  Teuchos::RCP<tCrsMatrix> A      = rcp(new tCrsMatrix(rowMap, colMap, 9));
+  GO indexBase              = 0;
+  Teuchos::RCP<tMap> rowMap = rcp(new tMap(m, indexBase, comm)), rangeMap = rowMap;
+  Teuchos::RCP<tMap> colMap = rcp(new tMap(n, indexBase, comm)), domainMap = colMap;
+  ;
+  Teuchos::RCP<tCrsMatrix> A = rcp(new tCrsMatrix(rowMap, colMap, 9));
 
   TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), MueLu::Exceptions::RuntimeError, "Incompatible sizes");
 
@@ -134,7 +133,7 @@ ReadBinary(const std::string& fileName, const Teuchos::RCP<const Teuchos::Comm<i
   Teuchos::Array<SC> vals;
   for (int i = 0; i < m; i++) {
     int row, rownnz;
-    ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+    ifs.read(reinterpret_cast<char*>(&row), sizeof(row));
     ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
     inds.resize(rownnz);
     vals.resize(rownnz);
@@ -156,20 +155,20 @@ ReadBinary(const std::string& fileName, const Teuchos::RCP<const Teuchos::Comm<i
   return A;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ParameterList;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::null;
   using Teuchos::as;
+  using Teuchos::null;
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::TimeMonitor;
-  using Tpetra::MatrixMarket::Reader;
   using Thyra::tpetraVectorSpace;
+  using Tpetra::MatrixMarket::Reader;
 
   // =========================================================================
   // MPI initialization using Teuchos
@@ -192,36 +191,47 @@ int main(int argc, char *argv[]) {
     Xpetra::Parameters xpetraParameters(clp);
 
     // configure problem
-    std::string prefix = "./Q2Q1_9x9_";      clp.setOption("prefix",     &prefix,        "prefix for data files");
-    std::string rhs    = "";                    clp.setOption("rhs",        &rhs,           "rhs");
+    std::string prefix = "./Q2Q1_9x9_";
+    clp.setOption("prefix", &prefix, "prefix for data files");
+    std::string rhs = "";
+    clp.setOption("rhs", &rhs, "rhs");
 
     // configure run
-    std::string xmlFileName  = "driver.xml";    clp.setOption("xml",        &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
-    double      tol          = 1e-8;            clp.setOption("tol",        &tol,           "solver convergence tolerance");
-    std::string type         = "unstructured";  clp.setOption("type",       &type,          "structured/unstructured");
-    int         use9ptPatA   = 1;               clp.setOption("use9pt",     &use9ptPatA,    "use 9-point stencil matrix for velocity prolongator construction");
-    int         useFilters   = 1;               clp.setOption("usefilters", &useFilters,    "use filters on A and BB^T");
+    std::string xmlFileName = "driver.xml";
+    clp.setOption("xml", &xmlFileName, "read parameters from a file [default = 'driver.xml']");
+    double tol = 1e-8;
+    clp.setOption("tol", &tol, "solver convergence tolerance");
+    std::string type = "unstructured";
+    clp.setOption("type", &type, "structured/unstructured");
+    int use9ptPatA = 1;
+    clp.setOption("use9pt", &use9ptPatA, "use 9-point stencil matrix for velocity prolongator construction");
+    int useFilters = 1;
+    clp.setOption("usefilters", &useFilters, "use filters on A and BB^T");
 
-    double      tau_1        = 0.06;            clp.setOption("tau_1",      &tau_1,         "tau_1 parameter from paper (for matrix filtering)");
-    double      tau_2        = sqrt(0.0015);    clp.setOption("tau_2",      &tau_2,         "tau_2 parameter from paper (for mid point detection)");
+    double tau_1 = 0.06;
+    clp.setOption("tau_1", &tau_1, "tau_1 parameter from paper (for matrix filtering)");
+    double tau_2 = sqrt(0.0015);
+    clp.setOption("tau_2", &tau_2, "tau_2 parameter from paper (for mid point detection)");
 
-    int         binary       = 0;               clp.setOption("binary",     &binary,        "read matrix in binary format");
+    int binary = 0;
+    clp.setOption("binary", &binary, "read matrix in binary format");
 
     // configure misc
-    int         printTimings = 0;               clp.setOption("timings",    &printTimings,  "print timings to screen");
+    int printTimings = 0;
+    clp.setOption("timings", &printTimings, "print timings to screen");
 
     switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
 
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO>        tCrsMatrix;
-    typedef Tpetra::Operator<SC,LO,GO,NO>         tOperator;
-    typedef Tpetra::MultiVector<SC,LO,GO,NO>      tMultiVector;
-    typedef Tpetra::Map<LO,GO,NO>                 tMap;
-    typedef Thyra::TpetraVectorSpace<SC,LO,GO,NO> THTP_Vs;
+    typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tCrsMatrix;
+    typedef Tpetra::Operator<SC, LO, GO, NO> tOperator;
+    typedef Tpetra::MultiVector<SC, LO, GO, NO> tMultiVector;
+    typedef Tpetra::Map<LO, GO, NO> tMap;
+    typedef Thyra::TpetraVectorSpace<SC, LO, GO, NO> THTP_Vs;
 
     // Read data from files
     RCP<tOperator> A11, A119Pt, A21, A12;
@@ -232,36 +242,37 @@ int main(int argc, char *argv[]) {
     try {
       if (!binary) {
         filename = prefix + "A.mm";
-        A11     = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
-        A119Pt  = A11;
+        A11      = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
+        A119Pt   = A11;
         if (use9ptPatA) {
           filename = prefix + "AForPat.mm";
-          A119Pt = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
+          A119Pt   = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
         }
       } else {
         filename = prefix + "A.dat";
-        A11     = ReadBinary<SC,LO,GO,NO>(filename.c_str(), comm);
-        A119Pt  = A11;
+        A11      = ReadBinary<SC, LO, GO, NO>(filename.c_str(), comm);
+        A119Pt   = A11;
         if (use9ptPatA) {
           filename = prefix + "AForPat.dat";
-          A119Pt = ReadBinary<SC,LO,GO,NO>(filename.c_str(), comm);
+          A119Pt   = ReadBinary<SC, LO, GO, NO>(filename.c_str(), comm);
         }
       }
       filename = prefix + "B.mm";
-      A21 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
+      A21      = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
       filename = prefix + "Bt.mm";
-      A12 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
+      A12      = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm);
 
       RCP<const tMap> cmap1 = A11->getDomainMap(), cmap2 = A12->getDomainMap();
       filename = prefix + "VelCoords.mm";
-      Vcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(),  comm, cmap1);
+      Vcoords  = Reader<tCrsMatrix>::readDenseFile(filename.c_str(), comm, cmap1);
       filename = prefix + "PresCoords.mm";
-      Pcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(), comm, cmap2);
+      Pcoords  = Reader<tCrsMatrix>::readDenseFile(filename.c_str(), comm, cmap2);
 
       // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
-      filename = prefix + "p2vMap.mm";
-      ArrayRCP<const SC> slop = Xpetra::IO<SC,LO,GO,NO>::ReadMultiVector(filename.c_str(),
-                                                        Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
+      filename                = prefix + "p2vMap.mm";
+      ArrayRCP<const SC> slop = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector(filename.c_str(),
+                                                                            Xpetra::toXpetra(A21->getRangeMap()))
+                                    ->getData(0);
       p2vMap.resize(slop.size());
       for (int i = 0; i < slop.size(); i++)
         p2vMap[i] = as<LO>(slop[i]);
@@ -274,14 +285,14 @@ int main(int argc, char *argv[]) {
     RCP<const THTP_Vs> domain12 = tpetraVectorSpace<SC>(A12->getDomainMap());
     RCP<const THTP_Vs> domain21 = tpetraVectorSpace<SC>(A21->getDomainMap());
 
-    RCP<const THTP_Vs> range11  = tpetraVectorSpace<SC>(A11->getRangeMap());
-    RCP<const THTP_Vs> range12  = tpetraVectorSpace<SC>(A12->getRangeMap());
-    RCP<const THTP_Vs> range21  = tpetraVectorSpace<SC>(A21->getRangeMap());
+    RCP<const THTP_Vs> range11 = tpetraVectorSpace<SC>(A11->getRangeMap());
+    RCP<const THTP_Vs> range12 = tpetraVectorSpace<SC>(A12->getRangeMap());
+    RCP<const THTP_Vs> range21 = tpetraVectorSpace<SC>(A21->getRangeMap());
 
-    Teko::LinearOp thA11        = Thyra::tpetraLinearOp<double>(range11, domain11, A11);
-    Teko::LinearOp thA12        = Thyra::tpetraLinearOp<double>(range12, domain12, A12);
-    Teko::LinearOp thA21        = Thyra::tpetraLinearOp<double>(range21, domain21, A21);
-    Teko::LinearOp thA11_9Pt    = Thyra::tpetraLinearOp<double>(range11, domain11, A119Pt);
+    Teko::LinearOp thA11     = Thyra::tpetraLinearOp<double>(range11, domain11, A11);
+    Teko::LinearOp thA12     = Thyra::tpetraLinearOp<double>(range12, domain12, A12);
+    Teko::LinearOp thA21     = Thyra::tpetraLinearOp<double>(range21, domain21, A21);
+    Teko::LinearOp thA11_9Pt = Thyra::tpetraLinearOp<double>(range11, domain11, A119Pt);
 
     // Bang together the parameter list. Right now, all the MueLu details is
     // hardwired in the MueLu-TpetraQ2Q1 classes. We probably want to switch
@@ -289,65 +300,65 @@ int main(int argc, char *argv[]) {
     // via parameter lists.
 
     RCP<ParameterList> stratimikosList = rcp(new ParameterList);
-    stratimikosList->set("Linear Solver Type",  "Belos");
+    stratimikosList->set("Linear Solver Type", "Belos");
     stratimikosList->set("Preconditioner Type", "MueLu-TpetraQ2Q1");
 
     ParameterList& BelosList = stratimikosList->sublist("Linear Solver Types").sublist("Belos");
-    BelosList.set("Solver Type", "Block GMRES"); // FIXME: should it be "Pseudo Block GMRES"?
-    BelosList.sublist("VerboseObject").set("Verbosity Level", "low"); // this is needed, as otherwise Stratimikos ignores Belos output
+    BelosList.set("Solver Type", "Block GMRES");                       // FIXME: should it be "Pseudo Block GMRES"?
+    BelosList.sublist("VerboseObject").set("Verbosity Level", "low");  // this is needed, as otherwise Stratimikos ignores Belos output
 
     ParameterList& GmresDetails = BelosList.sublist("Solver Types").sublist("Block GMRES");
-    GmresDetails.set("Maximum Iterations",      100);
-    GmresDetails.set("Convergence Tolerance",   tol);
-    GmresDetails.set("Verbosity",               Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    GmresDetails.set("Output Frequency",        1);
-    GmresDetails.set("Output Style",            Belos::Brief);
+    GmresDetails.set("Maximum Iterations", 100);
+    GmresDetails.set("Convergence Tolerance", tol);
+    GmresDetails.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+    GmresDetails.set("Output Frequency", 1);
+    GmresDetails.set("Output Style", Belos::Brief);
 
     ParameterList& Q2Q1List = stratimikosList->sublist("Preconditioner Types").sublist("MueLu-TpetraQ2Q1");
-    Q2Q1List.set("useFilters",  useFilters);
-    Q2Q1List.set("tau_1",       tau_1);
-    Q2Q1List.set("tau_2",       tau_2);
-    Q2Q1List.set("Velcoords",   Vcoords);
-    Q2Q1List.set("Prescoords",  Pcoords);
-    Q2Q1List.set("p2vMap",      p2vMap);
-    Q2Q1List.set("A11",         thA11);
-    Q2Q1List.set("A12",         thA12);
-    Q2Q1List.set("A21",         thA21);
-    Q2Q1List.set("A11_9Pt",     thA11_9Pt);
+    Q2Q1List.set("useFilters", useFilters);
+    Q2Q1List.set("tau_1", tau_1);
+    Q2Q1List.set("tau_2", tau_2);
+    Q2Q1List.set("Velcoords", Vcoords);
+    Q2Q1List.set("Prescoords", Pcoords);
+    Q2Q1List.set("p2vMap", p2vMap);
+    Q2Q1List.set("A11", thA11);
+    Q2Q1List.set("A12", thA12);
+    Q2Q1List.set("A21", thA21);
+    Q2Q1List.set("A11_9Pt", thA11_9Pt);
 
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&Q2Q1List), *comm);
 
     std::cout << "Input parameters: " << *stratimikosList << std::endl;
 
     // Stratimikos vodou
-    typedef Thyra::PreconditionerFactoryBase<SC>             Base;
-    typedef Thyra::LinearOpWithSolveFactoryBase<SC>          LOWSFB;
-    typedef Thyra::LinearOpWithSolveBase<SC>                 LOWSB;
-    typedef Thyra::MultiVectorBase<SC>                       TH_Mvb;
+    typedef Thyra::PreconditionerFactoryBase<SC> Base;
+    typedef Thyra::LinearOpWithSolveFactoryBase<SC> LOWSFB;
+    typedef Thyra::LinearOpWithSolveBase<SC> LOWSB;
+    typedef Thyra::MultiVectorBase<SC> TH_Mvb;
 
     Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
 
-    //Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);
+    // Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);
 
-    Stratimikos::enableMueLu<SC,LO,GO,NO>(linearSolverBuilder);                                          // Epetra
-    Stratimikos::enableMueLuTpetraQ2Q1<SC,LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");  // Tpetra
+    Stratimikos::enableMueLu<SC, LO, GO, NO>(linearSolverBuilder);                                // Epetra
+    Stratimikos::enableMueLuTpetraQ2Q1<SC, LO, GO, NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");  // Tpetra
 
     linearSolverBuilder.setParameterList(stratimikosList);
     RCP<const LOWSFB> lowsFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
-    RCP<LOWSB       > nsA = lowsFactory->createOp();
+    RCP<LOWSB> nsA                = lowsFactory->createOp();
 
     // I've hacked together a big matrix that does not use strided maps by
     // simply reading the data again. Normally, this would be supplied by Eric
     // Cyr and would be Teko operators.
 
-    int numElem = A12->getRangeMap()->getLocalNumElements() + A21->getRangeMap()->getLocalNumElements();
+    int numElem             = A12->getRangeMap()->getLocalNumElements() + A21->getRangeMap()->getLocalNumElements();
     RCP<const tMap> fullMap = Utilities::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
 
     RCP<tOperator> A;
     if (!binary)
       A = Reader<tCrsMatrix>::readSparseFile((prefix + "BigA.mm").c_str(), fullMap, fullMap, fullMap, fullMap, true, true, false);
     else
-      A = ReadBinary<SC,LO,GO,NO>((prefix + "BigA.dat").c_str(), comm);
+      A = ReadBinary<SC, LO, GO, NO>((prefix + "BigA.dat").c_str(), comm);
 
     const RCP<Thyra::LinearOpBase<SC> > thA = Thyra::createLinearOp(A);
     Thyra::initializeOp<SC>(*lowsFactory, thA, nsA.ptr());
@@ -368,8 +379,8 @@ int main(int argc, char *argv[]) {
     // Set the initial guess Dirichlet points to the proper value.
     // This step is pretty important as the preconditioner may return zero at Dirichlet points
     ArrayRCP<const bool> dirBCs = Utilities::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
-    ArrayRCP<SC>         tXdata = tX->getDataNonConst(0);
-    ArrayRCP<const SC>   tBdata = tB->getData(0);
+    ArrayRCP<SC> tXdata         = tX->getDataNonConst(0);
+    ArrayRCP<const SC> tBdata   = tB->getData(0);
     for (LO i = 0; i < tXdata.size(); i++)
       if (dirBCs[i])
         tXdata[i] = tBdata[i];
@@ -391,5 +402,5 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

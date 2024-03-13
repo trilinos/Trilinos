@@ -47,8 +47,6 @@
     name of a type in a portable and readable way.
 */
 
-#include "Teuchos_ConstTypeTraits.hpp"
-
 // mfh 30 Jan 2013: Thanks to Jim Willenbring for reporting this, and
 // to Mike Glass and Paul Lin for updating the fix for dealing with a
 // bug in IBM's XL C++ compiler.  The update was necessary due to a
@@ -63,6 +61,8 @@
 #endif
 
 #include <typeinfo>
+
+#include "Teuchos_ConfigDefs.hpp"
 
 namespace  Teuchos {
 
@@ -114,7 +114,7 @@ public:
 template<typename T>
 std::string typeName( const T &t )
 {
-  typedef typename ConstTypeTraits<T>::NonConstType ncT;
+  typedef typename std::remove_const_t<T> ncT;
 #ifndef TEUCHOS_TYPE_NAME_TRAITS_OLD_IBM
   return TypeNameTraits<ncT>::concreteName(t);
 #else
@@ -137,7 +137,7 @@ std::string typeName( const T &t )
 template<typename T>
 std::string concreteTypeName( const T &t )
 {
-  typedef typename ConstTypeTraits<T>::NonConstType ncT;
+  typedef typename std::remove_const_t<T> ncT;
   return TypeNameTraits<ncT>::concreteName(t);
 }
 

@@ -46,7 +46,7 @@ namespace Ionull {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO() override;
 
-    const std::string get_format() const override { return "Null"; }
+    std::string get_format() const override { return "Null"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed

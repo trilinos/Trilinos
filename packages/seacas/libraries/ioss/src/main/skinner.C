@@ -239,8 +239,7 @@ namespace {
 
     output_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
 
-    Ioss::NodeBlock *nbo =
-        new Ioss::NodeBlock(output_region.get_database(), "nodeblock_1", ref_count, 3);
+    auto *nbo = new Ioss::NodeBlock(output_region.get_database(), "nodeblock_1", ref_count, 3);
 
     // Count number of nodes owned by this processor (owner_out[i] == myProcessor);
     size_t owned = std::count_if(owner_out.begin(), owner_out.end(),

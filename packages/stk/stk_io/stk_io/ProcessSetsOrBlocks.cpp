@@ -55,21 +55,22 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   const  Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
-  stk::mesh::FieldBase * coord_field = nullptr;
   if (meta.is_using_simple_fields()) {
-    coord_field = &meta.declare_field<double>(stk::topology::NODE_RANK, meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
-    stk::io::set_field_output_type(*coord_field, stk::io::FieldOutputType::VECTOR_3D);
+    auto & coord_field = meta.declare_field<double>(stk::topology::NODE_RANK, meta.coordinate_field_name());
+    stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
+    stk::io::set_field_output_type(coord_field, stk::io::FieldOutputType::VECTOR_3D);
+    stk::io::set_field_role(coord_field, Ioss::Field::MESH);
+    meta.set_coordinate_field(&coord_field);
   }
   else {
-    coord_field = &meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK,
-                                                                                      meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(*coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
+    auto & coord_field =
+        stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta,
+                                                                                         stk::topology::NODE_RANK,
+                                                                                         meta.coordinate_field_name());
+    stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(), meta.spatial_dimension(), nullptr);
+    stk::io::set_field_role(coord_field, Ioss::Field::MESH);
+    meta.set_coordinate_field(&coord_field);
   }
-
-  stk::io::set_field_role(*coord_field, Ioss::Field::MESH);
-
-  meta.set_coordinate_field(coord_field);
 
   Ioss::NodeBlock *nb = node_blocks[0];
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), stk::topology::NODE_RANK);
@@ -146,7 +147,7 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
             distribution_factors_field = &meta.declare_field<double>(side_rank, field_name);
           }
           else {
-            distribution_factors_field = &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(side_rank, field_name);
+            distribution_factors_field = &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(meta, side_rank, field_name);
           }
           stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
           stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);

@@ -133,7 +133,7 @@ namespace PHX {
 
     ~Field();
 
-    static const int ArrayRank=array_type::Rank;
+    static const int ArrayRank=array_type::rank;
 
     const PHX::FieldTag& fieldTag() const;
 

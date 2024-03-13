@@ -96,16 +96,6 @@ struct EntityKey
 
 std::ostream & operator << ( std::ostream & out, EntityKey  key);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 2023
-struct STK_DEPRECATED HashValueForEntityKey
-{
-    KOKKOS_FUNCTION
-    size_t operator()(EntityKey k) const
-    {
-      return static_cast<size_t>(k.m_value);
-    }
-};
-#endif
 }} // namespace stk::mesh
 
 #endif /* STK_MESH_ENTITYKEY_HPP */

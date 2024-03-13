@@ -18,6 +18,8 @@ struct FieldShape
     {}
 
     std::array<int, 3> count;
+
+    int get_num_nodes(int dim) const { return count. at(dim); }
 };
 
 inline bool operator==(const FieldShape& lhs, const FieldShape& rhs)

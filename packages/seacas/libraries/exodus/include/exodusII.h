@@ -52,12 +52,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "8.19"
+#define EXODUS_VERSION       "8.23"
 #define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 19
-#define EXODUS_RELEASE_DATE  "September 2, 2022"
+#define EXODUS_VERSION_MINOR 23
+#define EXODUS_RELEASE_DATE  "July 13, 2023"
 
-#define EX_API_VERS       8.19f
+#define EX_API_VERS       8.23f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -91,8 +91,8 @@ extern "C" {
  *@{
  */
 /* Modes for ex_open */
-#define EX_WRITE 0x0001                 /**< ex_open(): open existing file for appending. */
-#define EX_READ  0x0002                 /**< ex_open(): open file for reading (default) */
+#define EX_WRITE 0x0001 /**< ex_open(): open existing file for appending. */
+#define EX_READ  0x0002 /**< ex_open(): open file for reading (default) */
 
 #define EX_NOCLOBBER    0x0004          /**< Don't overwrite existing database, default */
 #define EX_CLOBBER      0x0008          /**< Overwrite existing database if it exists */
@@ -105,8 +105,8 @@ extern "C" {
 #define EX_SHARE        0x0100   /**< Do open netcdf file in "share" mode */
 #define EX_NOCLASSIC    0x0200   /**< Do not force netcdf to classic mode in netcdf4 mode */
 
-#define EX_DISKLESS 0x100000     /**< Experimental */
-#define EX_MMAP     0x200000     /**< Experimental */
+#define EX_DISKLESS 0x100000 /**< Experimental */
+#define EX_MMAP     0x200000 /**< Experimental */
 
 /* Need to distinguish between storage on database (DB in name) and
    passed through the API functions (API in name).
@@ -114,8 +114,8 @@ extern "C" {
 #define EX_MAPS_INT64_DB 0x0400 /**< All maps (id, order, ...) store int64_t values */
 #define EX_IDS_INT64_DB  0x0800 /**< All entity ids (sets, blocks, maps) are int64_t values */
 #define EX_BULK_INT64_DB                                                                           \
-  0x1000                        /**< All integer bulk data (local indices, counts, maps); not ids  \
-                                 */
+  0x1000 /**< All integer bulk data (local indices, counts, maps); not ids                         \
+          */
 #define EX_ALL_INT64_DB                                                                            \
   (EX_MAPS_INT64_DB | EX_IDS_INT64_DB | EX_BULK_INT64_DB) /**< All of the above... */
 
@@ -189,8 +189,8 @@ enum ex_inquiry {
   EX_INQ_DB_MAX_USED_NAME_LENGTH    = 49, /**< size of MAX_NAME_LENGTH dimension on database */
   EX_INQ_MAX_READ_NAME_LENGTH       = 50, /**< client-specified max size of returned names */
 
-  EX_INQ_DB_FLOAT_SIZE    = 51,           /**< size of floating-point values stored on database */
-  EX_INQ_NUM_CHILD_GROUPS = 52,           /**< number of groups contained in this (exoid) group */
+  EX_INQ_DB_FLOAT_SIZE    = 51, /**< size of floating-point values stored on database */
+  EX_INQ_NUM_CHILD_GROUPS = 52, /**< number of groups contained in this (exoid) group */
   EX_INQ_GROUP_PARENT     = 53, /**< id of parent of this (exoid) group; returns exoid if at root */
   EX_INQ_GROUP_ROOT =
       54, /**< id of root group "/" of this (exoid) group; returns exoid if at root */
@@ -267,12 +267,12 @@ enum ex_entity_type {
   EX_ELEM_BLOCK = 1,  /**< element block property code*/
   EX_ELEM_SET   = 10, /**< face set property code     */
 
-  EX_SIDE_SET = 3,    /**< side set property code     */
+  EX_SIDE_SET = 3, /**< side set property code     */
 
-  EX_ELEM_MAP = 4,    /**< element map property code  */
-  EX_NODE_MAP = 5,    /**< node map property code     */
-  EX_EDGE_MAP = 11,   /**< edge map property code     */
-  EX_FACE_MAP = 12,   /**< face map property code     */
+  EX_ELEM_MAP = 4,  /**< element map property code  */
+  EX_NODE_MAP = 5,  /**< node map property code     */
+  EX_EDGE_MAP = 11, /**< edge map property code     */
+  EX_FACE_MAP = 12, /**< face map property code     */
 
   EX_GLOBAL     = 13, /**< global "block" for variables*/
   EX_COORDINATE = 15, /**< kluge so some internal wrapper functions work */
@@ -370,7 +370,7 @@ typedef struct ex_attribute
   ex_entity_type entity_type;
   int64_t        entity_id;
   char           name[NC_MAX_NAME + 1];
-  ex_type        type;   /* int, double, text */
+  ex_type        type; /* int, double, text */
   size_t         value_count;
   void          *values; /* not accessed if NULL */
 } ex_attribute;
@@ -668,12 +668,12 @@ EXODUS_EXPORT int ex_get_init_global(int       exoid,           /* NemesisI file
                                      void_int *num_node_sets_g, /* Number of global node sets */
                                      void_int *num_side_sets_g  /* Number of global side sets */
 );
-EXODUS_EXPORT int ex_put_init_global(int     exoid,             /* NemesisI file ID */
-                                     int64_t num_nodes_g,       /* Number of global FEM nodes */
-                                     int64_t num_elems_g,       /* Number of global FEM elements */
-                                     int64_t num_elem_blks_g,   /* Number of global elem blocks */
-                                     int64_t num_node_sets_g,   /* Number of global node sets */
-                                     int64_t num_side_sets_g    /* Number of global side sets */
+EXODUS_EXPORT int ex_put_init_global(int     exoid,           /* NemesisI file ID */
+                                     int64_t num_nodes_g,     /* Number of global FEM nodes */
+                                     int64_t num_elems_g,     /* Number of global FEM elements */
+                                     int64_t num_elem_blks_g, /* Number of global elem blocks */
+                                     int64_t num_node_sets_g, /* Number of global node sets */
+                                     int64_t num_side_sets_g  /* Number of global side sets */
 );
 
 /*=============================================================================
@@ -1819,9 +1819,9 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
 #define EX_NOENTITY      -1007 /**< no entities of that type on database    */
 #define EX_NOTFOUND      -1008 /**< could not find requested variable on database */
 
-#define EX_FATAL -1            /**< fatal error flag def                     */
-#define EX_NOERR 0             /**< no error flag def                        */
-#define EX_WARN  1             /**< warning flag def                         */
+#define EX_FATAL -1 /**< fatal error flag def                     */
+#define EX_NOERR 0  /**< no error flag def                        */
+#define EX_WARN  1  /**< warning flag def                         */
 /** @} */
 
 #ifdef __cplusplus

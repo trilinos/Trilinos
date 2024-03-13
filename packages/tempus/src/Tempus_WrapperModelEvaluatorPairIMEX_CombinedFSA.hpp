@@ -26,20 +26,21 @@ namespace Tempus {
 template <typename Scalar>
 class WrapperModelEvaluatorPairIMEX_CombinedFSA
   : public SensitivityModelEvaluatorBase<Scalar>,
-    public WrapperModelEvaluatorPairIMEX_Basic<Scalar>
-{
-public:
-
+    public WrapperModelEvaluatorPairIMEX_Basic<Scalar> {
+ public:
   /// Constructor
   WrapperModelEvaluatorPairIMEX_CombinedFSA(
-    const Teuchos::RCP<const WrapperModelEvaluatorPairIMEX_Basic<Scalar> >& forwardModel,
-    const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null)
+      const Teuchos::RCP<const WrapperModelEvaluatorPairIMEX_Basic<Scalar> >&
+          forwardModel,
+      const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null)
   {
-    forwardModel_ = forwardModel;
+    forwardModel_     = forwardModel;
     appExplicitModel_ = forwardModel_->getExplicitModel();
     appImplicitModel_ = forwardModel_->getImplicitModel();
-    fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, appExplicitModel_, appExplicitModel_, pList));
-    fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, appImplicitModel_, appImplicitModel_, pList));
+    fsaExplicitModel_ = rcp(new FSAME(appExplicitModel_, appExplicitModel_,
+                                      appExplicitModel_, pList));
+    fsaImplicitModel_ = rcp(new FSAME(appImplicitModel_, appImplicitModel_,
+                                      appImplicitModel_, pList));
     Base::setup(fsaExplicitModel_, fsaImplicitModel_);
   }
 
@@ -49,32 +50,31 @@ public:
   /// \name Overridden from Tempus::SensitivityModelEvaluatorBase
   //@{
 
-    /// Get the underlying forward model
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-    getForwardModel() const
-    {
-      return forwardModel_;
-    }
+  /// Get the underlying forward model
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getForwardModel()
+      const
+  {
+    return forwardModel_;
+  }
 
   //@}
 
-private:
-
+ private:
   /// Default constructor - not allowed
-  WrapperModelEvaluatorPairIMEX_CombinedFSA(){}
+  WrapperModelEvaluatorPairIMEX_CombinedFSA() {}
 
-protected:
-
+ protected:
   typedef WrapperModelEvaluatorPairIMEX_Basic<Scalar> Base;
   typedef CombinedForwardSensitivityModelEvaluator<Scalar> FSAME;
 
-  Teuchos::RCP<const WrapperModelEvaluatorPairIMEX_Basic<Scalar> > forwardModel_;
+  Teuchos::RCP<const WrapperModelEvaluatorPairIMEX_Basic<Scalar> >
+      forwardModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appExplicitModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appImplicitModel_;
   Teuchos::RCP<FSAME> fsaExplicitModel_;
   Teuchos::RCP<FSAME> fsaImplicitModel_;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_ModelEvaluatorPairIMEX_CombinedFSA_hpp
+#endif  // Tempus_ModelEvaluatorPairIMEX_CombinedFSA_hpp

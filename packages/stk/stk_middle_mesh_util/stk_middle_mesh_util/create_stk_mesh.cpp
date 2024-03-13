@@ -1,7 +1,8 @@
+#include "stk_io/WriteMesh.hpp"
 #ifdef STK_BUILT_IN_SIERRA
 
 #include "create_stk_mesh.hpp"
-#include "field.hpp"
+#include "stk_middle_mesh/field.hpp"
 #include "constants.hpp"
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_topology/topology.hpp>
@@ -11,22 +12,31 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include "Ioss_Property.h"
+
 
 namespace stk {
 namespace middle_mesh {
 namespace stk_interface {
-namespace impl {
+
+std::string StkMeshCreator::vertex_field_name()
+{
+  return impl::NAME_PREFIX + "nonconformal_interface_vert_field";
+}
 
 void StkMeshCreator::declare_stk_vert_field()
 {
-  std::string name = NAME_PREFIX + "nonconformal_interface_vert_field";
   m_metaDataPtr->enable_late_fields();
-  m_stkNodeField = &(m_metaDataPtr->declare_field<FieldScalarType>(stk::topology::NODE_RANK, name));
+  m_stkNodeField = &(m_metaDataPtr->declare_field<VertIdType>(stk::topology::NODE_RANK, vertex_field_name()));
 }
 
 void StkMeshCreator::load_mesh(const std::string& fname)
 {
   stk::io::StkMeshIoBroker reader(m_bulkDataPtr->parallel());
+  if (m_autodecompMethod != "NONE")
+  {
+    reader.property_add(Ioss::Property("DECOMPOSITION_METHOD", m_autodecompMethod));
+  }
   reader.set_bulk_data(*m_bulkDataPtr);
   reader.add_mesh_database(fname, stk::io::READ_MESH);
   reader.create_input_mesh();
@@ -55,7 +65,7 @@ MeshPart StkMeshCreator::create_mesh_from_part(const std::string& name)
 
   setup_edge_sharing(mesh, stkEls);
 
-  return {mesh, stkEls};
+  return {mesh, stkEls, m_stkNodeField, m_part};
 }
 
 // copies the coordinates from the Mesh to the STK mesh
@@ -72,7 +82,7 @@ void StkMeshCreator::write_back_coords(std::shared_ptr<mesh::Mesh> mesh, const s
   for (stk::mesh::Bucket* bucket : buckets)
     for (auto& vert : *bucket)
     {
-      FieldScalarType* vertIdxs = (stk::mesh::field_data(*m_stkNodeField, vert));
+      VertIdType* vertIdxs = (stk::mesh::field_data(*m_stkNodeField, vert));
       mesh::MeshEntityPtr vert2 = meshVerts[vertIdxs[0]];
       utils::Point pt           = vert2->get_point_orig(0);
 
@@ -100,7 +110,7 @@ void StkMeshCreator::create_nodes(std::shared_ptr<mesh::Mesh> mesh)
       auto vert2 = mesh->create_vertex(coordsV[0], coordsV[1], coordsV[2]);
 
       // record relation between meshes
-      FieldScalarType* nodeFieldV = stk::mesh::field_data(*m_stkNodeField, vert);
+      VertIdType* nodeFieldV = stk::mesh::field_data(*m_stkNodeField, vert);
       nodeFieldV[0]               = vert2->get_id();
     }
 }
@@ -121,7 +131,7 @@ void StkMeshCreator::create_faces_from_sideset(std::shared_ptr<mesh::Mesh> mesh,
     int i = 0;
     for (auto it = m_bulkDataPtr->begin_nodes(face); it != m_bulkDataPtr->end_nodes(face); ++it)
     {
-      FieldScalarType* vertIdxs = (stk::mesh::field_data(*m_stkNodeField, *it));
+      VertIdType* vertIdxs = (stk::mesh::field_data(*m_stkNodeField, *it));
       verts.at(i)               = meshVerts[vertIdxs[0]];
       ++i;
     }
@@ -153,7 +163,7 @@ void StkMeshCreator::create_faces_from_shells(std::shared_ptr<mesh::Mesh> mesh, 
       for (auto it = m_bulkDataPtr->begin_nodes(stkEl); it != m_bulkDataPtr->end_nodes(stkEl); ++it)
       {
         assert(idx < verts.size());
-        FieldScalarType* vertIdxs = (stk::mesh::field_data(*m_stkNodeField, *it));
+        VertIdType* vertIdxs = (stk::mesh::field_data(*m_stkNodeField, *it));
         verts[idx]                = meshVerts[vertIdxs[0]];
         ++idx;
       }
@@ -184,7 +194,7 @@ void StkMeshCreator::setup_vert_sharing(std::shared_ptr<mesh::Mesh> mesh)
     for(const stk::mesh::Bucket* bptr : buckets) {
       for(stk::mesh::Entity node : *bptr) {
         bulk.comm_shared_procs(node, sharingProcs);
-        FieldScalarType* vertIdx = (stk::mesh::field_data(stkNodeField, node));
+        VertIdType* vertIdx = (stk::mesh::field_data(stkNodeField, node));
         for(int shProc : sharingProcs) {
           commSparse.send_buffer(shProc).pack<stk::mesh::EntityKey>(bulk.entity_key(node));
           int vertId = *vertIdx;
@@ -206,7 +216,7 @@ void StkMeshCreator::setup_vert_sharing(std::shared_ptr<mesh::Mesh> mesh)
       stk::mesh::Entity node = bulk.get_entity(key);
       STK_ThrowRequireMsg(bulk.is_valid(node), "StkMeshCreator::setup_vert_sharing failed to find local node for "<<key<<" recvd from P"<<p);
 
-      FieldScalarType* localVertId = stk::mesh::field_data(stkNodeField, node);
+      VertIdType* localVertId = stk::mesh::field_data(stkNodeField, node);
       mesh::MeshEntityPtr localVert = verts[*localVertId];
       STK_ThrowRequireMsg(localVert, "StkMeshCreator::setup_vert_sharing null vert for localVertId="<<*localVertId);
 
@@ -339,13 +349,14 @@ void StkMeshCreator::setup_edge_sharing(std::shared_ptr<mesh::Mesh> mesh, MeshFi
       buf.unpack<int>(remoteEdge);
 
       mesh::MeshEntityPtr edge = mesh::get_common_edge(verts[vert1], verts[vert2]);
-      STK_ThrowRequireMsg(edge, "StkMeshCreator::setup_edge_sharing failed to find common edge for verts from P"<<p);
-      edge->add_remote_shared_entity({p, remoteEdge});
+      if (edge)
+      {
+        edge->add_remote_shared_entity({p, remoteEdge});
+      }
     }
   }
 }
 
-} // namespace impl
 } // namespace stk_interface
 } // namespace middle_mesh
 } // namespace stk

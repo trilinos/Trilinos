@@ -379,9 +379,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
     return false;
   }
-  else {
-    return true;
-  }
+  return true;
 }
 
 void SystemInterface::show_version()

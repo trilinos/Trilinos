@@ -12,7 +12,6 @@
 #include "Tempus_config.hpp"
 #include "Tempus_StepperForwardEulerModifierXBase.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default ModifierX for StepperForwardEuler.
@@ -23,40 +22,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperForwardEulerModifierXDefault
-  : virtual public Tempus::StepperForwardEulerModifierXBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperForwardEulerModifierXBase<Scalar> {
+ public:
   /// Constructor
-  StepperForwardEulerModifierXDefault(){}
+  StepperForwardEulerModifierXDefault() {}
 
   /// Destructor
-  virtual ~StepperForwardEulerModifierXDefault(){}
+  virtual ~StepperForwardEulerModifierXDefault() {}
 
   /// Modify solution based on the MODIFIER_TYPE.
   virtual void modify(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
-    const Scalar /* time */, const Scalar /* dt */,
-    const typename StepperForwardEulerModifierXBase<Scalar>::MODIFIER_TYPE modType)
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */, const Scalar /* time */,
+      const Scalar /* dt */,
+      const typename StepperForwardEulerModifierXBase<Scalar>::MODIFIER_TYPE
+          modType)
   {
-    switch(modType) {
+    switch (modType) {
       case StepperForwardEulerModifierXBase<Scalar>::X_BEGIN_STEP:
       case StepperForwardEulerModifierXBase<Scalar>::X_BEFORE_EXPLICIT_EVAL:
-      case StepperForwardEulerModifierXBase<Scalar>::XDOT_END_STEP:
-      {
+      case StepperForwardEulerModifierXBase<Scalar>::XDOT_END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown modifier type.\n");
+                                   "Error - unknown modifier type.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperForwardEulerModifierX_hpp
+#endif  // Tempus_StepperForwardEulerModifierX_hpp

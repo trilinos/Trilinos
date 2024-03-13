@@ -114,8 +114,6 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 # Exclude files for source package.
 #
 
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
 TRIBITS_EXCLUDE_FILES(
   doc/UserGuide
   doc/inout

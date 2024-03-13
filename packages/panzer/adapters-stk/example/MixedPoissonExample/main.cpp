@@ -148,6 +148,7 @@ int main(int argc,char * argv[])
      bool use_shared_mem_for_ad = true;
      bool check_order_for_shared_mem = true;
      bool stacked_timer_output = true;
+     bool time_monitor_output = false;
 
      Teuchos::CommandLineProcessor clp;
      clp.throwExceptions(false);
@@ -165,7 +166,8 @@ int main(int argc,char * argv[])
      clp.setOption("workset-size",&workset_size);
      clp.setOption("use-shared-mem-for-ad","no-use-shared-mem-for-ad",&use_shared_mem_for_ad);
      clp.setOption("check-order","no-check-order",&check_order_for_shared_mem);
-     clp.setOption("stacked-timer-output","time-monitor-output",&stacked_timer_output);
+     clp.setOption("stacked-timer-output","no-stacked-timer-output",&stacked_timer_output);
+     clp.setOption("time-monitor-output","no-time-monitor-output",&time_monitor_output);
 
      // parse commandline argument
      Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -531,7 +533,7 @@ int main(int argc,char * argv[])
        options.num_histogram = 5;
        stackedTimer->report(std::cout, Teuchos::DefaultComm<int>::getComm(), options);
      }
-     else {
+     if (time_monitor_output) {
        Teuchos::TimeMonitor::summarize(out,false,true,false,Teuchos::Union);
      }
 
@@ -616,7 +618,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   belosList.set( "Maximum Iterations", 3000 );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", 1e-9 );         // Relative convergence tolerance requested
-  belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails );
+  // belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails );
+  belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails );
   belosList.set( "Output Frequency", 1 );
   belosList.set( "Output Style", 1 );
 

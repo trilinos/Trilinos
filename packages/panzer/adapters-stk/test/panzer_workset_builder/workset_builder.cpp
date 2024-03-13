@@ -129,10 +129,10 @@ namespace panzer {
     for (std::vector<std::string>::size_type i=0; i < element_blocks.size(); ++i) {
 
       std::vector<std::size_t> local_cell_ids;
-      Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
+      Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates;
 
-      panzer_stk::workset_utils::getIdsAndVertices(*mesh, element_blocks[i], local_cell_ids,
-				cell_vertex_coordinates);
+      panzer_stk::workset_utils::getIdsAndNodes(*mesh, element_blocks[i], local_cell_ids,
+				cell_node_coordinates);
 
       Teuchos::RCP<shards::CellTopology> topo
          = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -140,26 +140,26 @@ namespace panzer {
       Teuchos::RCP<const panzer::PhysicsBlock> pb = panzer::findPhysicsBlock(element_blocks[i],physicsBlocks);
       worksets.push_back(panzer::buildWorksets(pb->getWorksetNeeds(),pb->elementBlockID(),
 					       local_cell_ids,
-					       cell_vertex_coordinates));
+					       cell_node_coordinates));
 
       auto& cur_workset = (*worksets[i])[0];
-      auto workset_cell_vertex_coordinates_view = cur_workset.cell_vertex_coordinates.get_view();
-      auto workset_cell_vertex_coordinates_h = Kokkos::create_mirror_view(workset_cell_vertex_coordinates_view);
-      Kokkos::deep_copy(workset_cell_vertex_coordinates_h, workset_cell_vertex_coordinates_view);
+      auto workset_cell_node_coordinates_view = cur_workset.cell_node_coordinates.get_view();
+      auto workset_cell_node_coordinates_h = Kokkos::create_mirror_view(workset_cell_node_coordinates_view);
+      Kokkos::deep_copy(workset_cell_node_coordinates_h, workset_cell_node_coordinates_view);
 
-      auto cell_vertex_coordinates_h = Kokkos::create_mirror_view(cell_vertex_coordinates);
-      Kokkos::deep_copy(cell_vertex_coordinates_h, cell_vertex_coordinates);
+      auto cell_node_coordinates_h = Kokkos::create_mirror_view(cell_node_coordinates);
+      Kokkos::deep_copy(cell_node_coordinates_h, cell_node_coordinates);
 
-      TEST_EQUALITY(workset_cell_vertex_coordinates_h(0,0,0), cell_vertex_coordinates_h(0,0,0));
-      TEST_EQUALITY(workset_cell_vertex_coordinates_h(2,3,1), cell_vertex_coordinates_h(2,3,1));
+      TEST_EQUALITY(workset_cell_node_coordinates_h(0,0,0), cell_node_coordinates_h(0,0,0));
+      TEST_EQUALITY(workset_cell_node_coordinates_h(2,3,1), cell_node_coordinates_h(2,3,1));
 
       TEST_ASSERT(cur_workset.cell_local_ids==local_cell_ids);
 
-      workset_cell_vertex_coordinates_view = cur_workset(0).cell_vertex_coordinates.get_view();
-      Kokkos::deep_copy(workset_cell_vertex_coordinates_h, workset_cell_vertex_coordinates_view);
+      workset_cell_node_coordinates_view = cur_workset(0).cell_node_coordinates.get_view();
+      Kokkos::deep_copy(workset_cell_node_coordinates_h, workset_cell_node_coordinates_view);
 
-      TEST_EQUALITY(workset_cell_vertex_coordinates_h(0,0,0), cell_vertex_coordinates_h(0,0,0));
-      TEST_EQUALITY(workset_cell_vertex_coordinates_h(2,3,1), cell_vertex_coordinates_h(2,3,1));
+      TEST_EQUALITY(workset_cell_node_coordinates_h(0,0,0), cell_node_coordinates_h(0,0,0));
+      TEST_EQUALITY(workset_cell_node_coordinates_h(2,3,1), cell_node_coordinates_h(2,3,1));
     }
 
 
@@ -245,9 +245,9 @@ namespace panzer {
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
 
-      Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
-      mesh->getElementVertices(local_cell_ids_a,cell_vertex_coordinates_a);
-      mesh->getElementVertices(local_cell_ids_b,cell_vertex_coordinates_b);
+      Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates_a, cell_node_coordinates_b;
+      mesh->getElementNodes(local_cell_ids_a,cell_node_coordinates_a);
+      mesh->getElementNodes(local_cell_ids_b,cell_node_coordinates_b);
 
       Teuchos::RCP<const panzer::PhysicsBlock> pb_a = panzer::findPhysicsBlock(element_blocks[0],physicsBlocks);
       Teuchos::RCP<const panzer::PhysicsBlock> pb_b = panzer::findPhysicsBlock(element_blocks[1],physicsBlocks);
@@ -255,27 +255,27 @@ namespace panzer {
                                  pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
  	                               local_cell_ids_a,
 				                         local_side_ids_a,
-				                         cell_vertex_coordinates_a,
+				                         cell_node_coordinates_a,
                                  pb_b->getWorksetNeeds(),pb_b->elementBlockID(),
 			                           local_cell_ids_b,
 			                           local_side_ids_b,
-			                           cell_vertex_coordinates_b);
+			                           cell_node_coordinates_b);
 
 
       TEST_EQUALITY((*worksets).size(),1);
       TEST_EQUALITY((*worksets)[0].num_cells,2);
       TEST_EQUALITY((*worksets)[0].subcell_dim,1);
 
-      auto cell_vertex_coordinates_0_view = (*worksets)[0].cell_vertex_coordinates.get_view();
-      auto cell_vertex_coordinates_0_h = Kokkos::create_mirror_view(cell_vertex_coordinates_0_view);
-      Kokkos::deep_copy(cell_vertex_coordinates_0_h, cell_vertex_coordinates_0_view);
+      auto cell_node_coordinates_0_view = (*worksets)[0].cell_node_coordinates.get_view();
+      auto cell_node_coordinates_0_h = Kokkos::create_mirror_view(cell_node_coordinates_0_view);
+      Kokkos::deep_copy(cell_node_coordinates_0_h, cell_node_coordinates_0_view);
 
-      auto cell_vertex_coordinates_a_h = Kokkos::create_mirror_view(cell_vertex_coordinates_a);
-      Kokkos::deep_copy(cell_vertex_coordinates_a_h, cell_vertex_coordinates_a);
+      auto cell_node_coordinates_a_h = Kokkos::create_mirror_view(cell_node_coordinates_a);
+      Kokkos::deep_copy(cell_node_coordinates_a_h, cell_node_coordinates_a);
 
       // this is identical to (*worksets)[0](0)
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(0,0,0), cell_vertex_coordinates_a_h(0,0,0));
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(1,3,1), cell_vertex_coordinates_a_h(1,3,1));
+      TEST_EQUALITY(cell_node_coordinates_0_h(0,0,0), cell_node_coordinates_a_h(0,0,0));
+      TEST_EQUALITY(cell_node_coordinates_0_h(1,3,1), cell_node_coordinates_a_h(1,3,1));
       TEST_EQUALITY((*worksets)[0].subcell_index, 1);
       TEST_EQUALITY((*worksets)[0].block_id, "eblock-0_0");
       TEST_EQUALITY((*worksets)[0].cell_local_ids.size(),2);
@@ -286,12 +286,12 @@ namespace panzer {
       TEST_EQUALITY((*worksets)[0].basis_names->size(),2);
       TEST_EQUALITY((*worksets)[0].bases.size(),2);
 
-      cell_vertex_coordinates_0_view = (*worksets)[0](0).cell_vertex_coordinates.get_view();
-      cell_vertex_coordinates_0_h = Kokkos::create_mirror_view(cell_vertex_coordinates_0_view);
-      Kokkos::deep_copy(cell_vertex_coordinates_0_h, cell_vertex_coordinates_0_view);
+      cell_node_coordinates_0_view = (*worksets)[0](0).cell_node_coordinates.get_view();
+      cell_node_coordinates_0_h = Kokkos::create_mirror_view(cell_node_coordinates_0_view);
+      Kokkos::deep_copy(cell_node_coordinates_0_h, cell_node_coordinates_0_view);
 
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(0,0,0), cell_vertex_coordinates_a_h(0,0,0));
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(1,3,1), cell_vertex_coordinates_a_h(1,3,1));
+      TEST_EQUALITY(cell_node_coordinates_0_h(0,0,0), cell_node_coordinates_a_h(0,0,0));
+      TEST_EQUALITY(cell_node_coordinates_0_h(1,3,1), cell_node_coordinates_a_h(1,3,1));
       TEST_EQUALITY((*worksets)[0](0).subcell_index, 1);
       TEST_EQUALITY((*worksets)[0](0).block_id, "eblock-0_0");
       TEST_EQUALITY((*worksets)[0](0).cell_local_ids.size(),2);
@@ -302,15 +302,15 @@ namespace panzer {
       TEST_EQUALITY((*worksets)[0](0).basis_names->size(),2);
       TEST_EQUALITY((*worksets)[0](0).bases.size(),2);
 
-      auto cell_vertex_coordinates_1_view = (*worksets)[0](1).cell_vertex_coordinates.get_view();
-      auto cell_vertex_coordinates_1_h = Kokkos::create_mirror_view(cell_vertex_coordinates_1_view);
-      Kokkos::deep_copy(cell_vertex_coordinates_1_h, cell_vertex_coordinates_1_view);
+      auto cell_node_coordinates_1_view = (*worksets)[0](1).cell_node_coordinates.get_view();
+      auto cell_node_coordinates_1_h = Kokkos::create_mirror_view(cell_node_coordinates_1_view);
+      Kokkos::deep_copy(cell_node_coordinates_1_h, cell_node_coordinates_1_view);
 
-      auto cell_vertex_coordinates_b_h = Kokkos::create_mirror_view(cell_vertex_coordinates_b);
-      Kokkos::deep_copy(cell_vertex_coordinates_b_h, cell_vertex_coordinates_b);
+      auto cell_node_coordinates_b_h = Kokkos::create_mirror_view(cell_node_coordinates_b);
+      Kokkos::deep_copy(cell_node_coordinates_b_h, cell_node_coordinates_b);
 
-      TEST_EQUALITY(cell_vertex_coordinates_1_h(0,0,0), cell_vertex_coordinates_b_h(0,0,0));
-      TEST_EQUALITY(cell_vertex_coordinates_1_h(1,3,1), cell_vertex_coordinates_b_h(1,3,1));
+      TEST_EQUALITY(cell_node_coordinates_1_h(0,0,0), cell_node_coordinates_b_h(0,0,0));
+      TEST_EQUALITY(cell_node_coordinates_1_h(1,3,1), cell_node_coordinates_b_h(1,3,1));
       TEST_EQUALITY((*worksets)[0](1).subcell_index, 3);
       TEST_EQUALITY((*worksets)[0](1).block_id, "eblock-1_0");
       TEST_EQUALITY((*worksets)[0](1).cell_local_ids[0],2);
@@ -399,9 +399,9 @@ namespace panzer {
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
 
-      Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
-      mesh->getElementVertices(local_cell_ids_a,cell_vertex_coordinates_a);
-      mesh->getElementVertices(local_cell_ids_b,cell_vertex_coordinates_b);
+      Kokkos::DynRankView<double,PHX::Device> cell_node_coordinates_a, cell_node_coordinates_b;
+      mesh->getElementNodes(local_cell_ids_a,cell_node_coordinates_a);
+      mesh->getElementNodes(local_cell_ids_b,cell_node_coordinates_b);
 
       TEST_EQUALITY(worksets->size(),1);
       panzer::Workset& workset = worksets->begin()->second;
@@ -410,16 +410,16 @@ namespace panzer {
       TEST_EQUALITY(workset.subcell_dim,1);
       TEST_EQUALITY(workset.numDetails(),2);
 
-      auto cell_vertex_coordinates_0_view = workset.cell_vertex_coordinates.get_view();
-      auto cell_vertex_coordinates_0_h = Kokkos::create_mirror_view(cell_vertex_coordinates_0_view);
-      Kokkos::deep_copy(cell_vertex_coordinates_0_h, cell_vertex_coordinates_0_view);
+      auto cell_node_coordinates_0_view = workset.cell_node_coordinates.get_view();
+      auto cell_node_coordinates_0_h = Kokkos::create_mirror_view(cell_node_coordinates_0_view);
+      Kokkos::deep_copy(cell_node_coordinates_0_h, cell_node_coordinates_0_view);
 
-      auto cell_vertex_coordinates_a_h = Kokkos::create_mirror_view(cell_vertex_coordinates_a);
-      Kokkos::deep_copy(cell_vertex_coordinates_a_h, cell_vertex_coordinates_a);
+      auto cell_node_coordinates_a_h = Kokkos::create_mirror_view(cell_node_coordinates_a);
+      Kokkos::deep_copy(cell_node_coordinates_a_h, cell_node_coordinates_a);
 
       // this is identical to workset(0)
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(0,0,0), cell_vertex_coordinates_a_h(0,0,0));
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(1,3,1), cell_vertex_coordinates_a_h(1,3,1));
+      TEST_EQUALITY(cell_node_coordinates_0_h(0,0,0), cell_node_coordinates_a_h(0,0,0));
+      TEST_EQUALITY(cell_node_coordinates_0_h(1,3,1), cell_node_coordinates_a_h(1,3,1));
       TEST_EQUALITY(workset.subcell_index, 1);
       TEST_EQUALITY(workset.block_id, "eblock-0_0");
       TEST_EQUALITY(workset.cell_local_ids.size(),2);
@@ -430,12 +430,12 @@ namespace panzer {
       TEST_EQUALITY(workset.basis_names->size(),2);
       TEST_EQUALITY(workset.bases.size(),2);
 
-      cell_vertex_coordinates_0_view = workset(0).cell_vertex_coordinates.get_view();
-      cell_vertex_coordinates_0_h = Kokkos::create_mirror_view(cell_vertex_coordinates_0_view);
-      Kokkos::deep_copy(cell_vertex_coordinates_0_h, cell_vertex_coordinates_0_view);
+      cell_node_coordinates_0_view = workset(0).cell_node_coordinates.get_view();
+      cell_node_coordinates_0_h = Kokkos::create_mirror_view(cell_node_coordinates_0_view);
+      Kokkos::deep_copy(cell_node_coordinates_0_h, cell_node_coordinates_0_view);
 
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(0,0,0), cell_vertex_coordinates_a_h(0,0,0));
-      TEST_EQUALITY(cell_vertex_coordinates_0_h(1,3,1), cell_vertex_coordinates_a_h(1,3,1));
+      TEST_EQUALITY(cell_node_coordinates_0_h(0,0,0), cell_node_coordinates_a_h(0,0,0));
+      TEST_EQUALITY(cell_node_coordinates_0_h(1,3,1), cell_node_coordinates_a_h(1,3,1));
       TEST_EQUALITY(workset(0).subcell_index, 1);
       TEST_EQUALITY(workset(0).block_id, "eblock-0_0");
       TEST_EQUALITY(workset(0).cell_local_ids.size(),2);
@@ -446,15 +446,15 @@ namespace panzer {
       TEST_EQUALITY(workset(0).basis_names->size(),2);
       TEST_EQUALITY(workset(0).bases.size(),2);
 
-      auto cell_vertex_coordinates_1_view = workset(1).cell_vertex_coordinates.get_view();
-      auto cell_vertex_coordinates_1_h = Kokkos::create_mirror_view(cell_vertex_coordinates_1_view);
-      Kokkos::deep_copy(cell_vertex_coordinates_1_h, cell_vertex_coordinates_1_view);
+      auto cell_node_coordinates_1_view = workset(1).cell_node_coordinates.get_view();
+      auto cell_node_coordinates_1_h = Kokkos::create_mirror_view(cell_node_coordinates_1_view);
+      Kokkos::deep_copy(cell_node_coordinates_1_h, cell_node_coordinates_1_view);
 
-      auto cell_vertex_coordinates_b_h = Kokkos::create_mirror_view(cell_vertex_coordinates_b);
-      Kokkos::deep_copy(cell_vertex_coordinates_b_h, cell_vertex_coordinates_b);
+      auto cell_node_coordinates_b_h = Kokkos::create_mirror_view(cell_node_coordinates_b);
+      Kokkos::deep_copy(cell_node_coordinates_b_h, cell_node_coordinates_b);
 
-      TEST_EQUALITY(cell_vertex_coordinates_1_h(0,0,0), cell_vertex_coordinates_b_h(0,0,0));
-      TEST_EQUALITY(cell_vertex_coordinates_1_h(1,3,1), cell_vertex_coordinates_b_h(1,3,1));
+      TEST_EQUALITY(cell_node_coordinates_1_h(0,0,0), cell_node_coordinates_b_h(0,0,0));
+      TEST_EQUALITY(cell_node_coordinates_1_h(1,3,1), cell_node_coordinates_b_h(1,3,1));
       TEST_EQUALITY(workset(1).subcell_index, 3);
       TEST_EQUALITY(workset(1).block_id, "eblock-1_0");
       TEST_EQUALITY(workset(1).cell_local_ids[0],2);
@@ -533,32 +533,32 @@ namespace panzer {
       panzer_stk::workset_utils::getSideElements(*mesh, bc.elementBlockID(),
 		      sideEntities,local_side_ids,elements);
 
-      Kokkos::DynRankView<double,PHX::Device> vertices =
-	      Kokkos::createDynRankView(vertices,"vertices",elements.size(),4,dim);
-      auto vertices_h = Kokkos::create_mirror_view(vertices);
+      Kokkos::DynRankView<double,PHX::Device> nodes =
+	      Kokkos::createDynRankView(nodes,"nodes",elements.size(),4,dim);
+      auto nodes_h = Kokkos::create_mirror_view(nodes);
 
       // loop over elements of this block
       for(std::size_t elm=0;elm<elements.size();++elm) {
-	      std::vector<stk::mesh::EntityId> nodes;
+	      std::vector<stk::mesh::EntityId> elem_nodes;
 	      stk::mesh::Entity element = elements[elm];
 
 	      local_cell_ids.push_back(mesh->elementLocalId(element));
-        mesh->getNodeIdsForElement(element,nodes);
+        mesh->getNodeIdsForElement(element,elem_nodes);
 
-	      TEUCHOS_ASSERT(nodes.size()==4);
+	      TEUCHOS_ASSERT(elem_nodes.size()==4);
 
-	      for(std::size_t v=0;v<nodes.size();++v) {
-	        const double * coord = mesh->getNodeCoordinates(nodes[v]);
+	      for(std::size_t v=0;v<elem_nodes.size();++v) {
+	        const double * coord = mesh->getNodeCoordinates(elem_nodes[v]);
 
 	        for(unsigned d=0;d<dim;++d)
-	          vertices_h(elm,v,d) = coord[d];
+	          nodes_h(elm,v,d) = coord[d];
 	      }
       }
 
-      Kokkos::deep_copy(vertices, vertices_h);
+      Kokkos::deep_copy(nodes, nodes_h);
 
       const auto pb = panzer::findPhysicsBlock(bc.elementBlockID(),physicsBlocks);
-      const auto workset = buildBCWorkset(pb->getWorksetNeeds(),bc.elementBlockID(), local_cell_ids, local_side_ids, vertices);
+      const auto workset = buildBCWorkset(pb->getWorksetNeeds(),bc.elementBlockID(), local_cell_ids, local_side_ids, nodes);
 
       bc_worksets.push_back(workset);
     }
@@ -606,11 +606,11 @@ namespace panzer {
 			      workset_bc0[3].cell_local_ids.end(), 0)
 		    );
 
-    auto workset_bc0_3_cell_vertex_coordinates_v = workset_bc0[3].cell_vertex_coordinates.get_view();
-    auto workset_bc0_3_cell_vertex_coordinates_h = Kokkos::create_mirror_view(workset_bc0_3_cell_vertex_coordinates_v);
-    Kokkos::deep_copy(workset_bc0_3_cell_vertex_coordinates_h, workset_bc0_3_cell_vertex_coordinates_v);
+    auto workset_bc0_3_cell_node_coordinates_v = workset_bc0[3].cell_node_coordinates.get_view();
+    auto workset_bc0_3_cell_node_coordinates_h = Kokkos::create_mirror_view(workset_bc0_3_cell_node_coordinates_v);
+    Kokkos::deep_copy(workset_bc0_3_cell_node_coordinates_h, workset_bc0_3_cell_node_coordinates_v);
 
-    TEST_ASSERT(workset_bc0_3_cell_vertex_coordinates_h(cell_index,0,0) == 0.0);
+    TEST_ASSERT(workset_bc0_3_cell_node_coordinates_h(cell_index,0,0) == 0.0);
 
     cell_index =
     std::distance(workset_bc2[2].cell_local_ids.begin(),
@@ -618,11 +618,11 @@ namespace panzer {
 			    workset_bc2[2].cell_local_ids.end(), 47)
 		  );
 
-    auto workset_bc2_2_cell_vertex_coordinates_v = workset_bc2[2].cell_vertex_coordinates.get_view();
-    auto workset_bc2_2_cell_vertex_coordinates_h = Kokkos::create_mirror_view(workset_bc2_2_cell_vertex_coordinates_v);
-    Kokkos::deep_copy(workset_bc2_2_cell_vertex_coordinates_h, workset_bc2_2_cell_vertex_coordinates_v);
+    auto workset_bc2_2_cell_node_coordinates_v = workset_bc2[2].cell_node_coordinates.get_view();
+    auto workset_bc2_2_cell_node_coordinates_h = Kokkos::create_mirror_view(workset_bc2_2_cell_node_coordinates_v);
+    Kokkos::deep_copy(workset_bc2_2_cell_node_coordinates_h, workset_bc2_2_cell_node_coordinates_v);
 
-    TEST_EQUALITY(workset_bc2_2_cell_vertex_coordinates_h(cell_index,2,0), 1.0);
+    TEST_EQUALITY(workset_bc2_2_cell_node_coordinates_h(cell_index,2,0), 1.0);
   }
 
   TEUCHOS_UNIT_TEST(workset_builder, side_element_cascade)

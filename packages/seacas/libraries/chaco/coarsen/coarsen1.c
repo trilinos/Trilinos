@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,9 +29,6 @@ void coarsen1(struct vtx_data  **graph,      /* array of vtx data for graph */
   int          *mflag;   /* flag indicating vtx matched or not */
   int           cnvtxs;  /* number of vtxs in coarse graph */
   int           nmerged; /* number of edges contracted */
-  double        seconds(void);
-  int           maxmatch();
-  void          makev2cv(), makefgraph();
 
   time = seconds();
 

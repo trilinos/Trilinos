@@ -1,3 +1,4 @@
+AdaptiveSaMLParameterListInterpreter
 AggregationExportFactory
 AggregateQualityEstimateFactory
 AmalgamationFactory
@@ -23,6 +24,7 @@ CoalesceDropFactory
 CoalesceDropFactory_kokkos
 CoarseMapFactory
 CoarseningVisualizationFactory
+CombinePFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
@@ -31,7 +33,11 @@ DemoFactory
 DirectSolver
 DropNegativeEntriesFactory
 EminPFactory
+FacadeBGS2x2
+FacadeClassBase
 FacadeClassFactory
+FacadeSimple
+FactoryFactory
 FactoryManager
 FakeSmootherPrototype
 FilteredAFactory
@@ -58,11 +64,13 @@ MapTransferFactory
 MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
+MLParameterListInterpreter - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 MultiVectorTransferFactory
 NotayAggregationFactory
 NullspaceFactory
-NullspaceFactory_kokkos
+NullspaceFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 NullspacePresmoothFactory
+ParameterListInterpreter
 PatternFactory
 PerfUtils
 PerfModels
@@ -90,7 +98,7 @@ RepartitionHeuristicFactory - #ifdef HAVE_MPI
 ReplicatePFactory
 RigidBodyModeFactory
 SaPFactory
-SaPFactory_kokkos
+SaPFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
@@ -138,4 +146,5 @@ NodePartitionInterface - #if defined(HAVE_MPI)
 XpetraOperator
 RefMaxwell
 Maxwell1
+MultiPhys
 Maxwell_Utils

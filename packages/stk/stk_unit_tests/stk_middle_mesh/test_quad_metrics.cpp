@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "mesh.hpp"
+#include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/quad_metrics.hpp"
 #include "stk_middle_mesh/utils.hpp"
 

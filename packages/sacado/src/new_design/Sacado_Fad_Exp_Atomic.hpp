@@ -314,7 +314,7 @@ namespace Sacado {
           desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
           return_type return_val = *dest;
           *dest                  = op.apply(return_val, val);
-          desul:atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+          desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
           if (threadIdx.x == 0)
             desul::Impl::unlock_address_hip((void*)dest_val, scope);
           return return_val;
@@ -339,6 +339,27 @@ namespace Sacado {
         }
       }
 
+#elif defined(KOKKOS_ENABLE_SYCL)
+
+      // Our implementation of Kokkos::atomic_oper_fetch() and
+      // Kokkos::atomic_fetch_oper() for Sacado types on device
+      template <typename Oper, typename DestPtrT, typename ValT, typename T>
+      typename Sacado::BaseExprType< Expr<T> >::type
+      atomic_oper_fetch_device(const Oper& op, DestPtrT dest, ValT* dest_val,
+                               const Expr<T>& x)
+      {
+        Kokkos::abort("Not implemented!");
+        return {};
+      }
+
+      template <typename Oper, typename DestPtrT, typename ValT, typename T>
+      typename Sacado::BaseExprType< Expr<T> >::type
+      atomic_fetch_oper_device(const Oper& op, DestPtrT dest, ValT* dest_val,
+                               const Expr<T>& x)
+      {
+        Kokkos::abort("Not implemented!");
+        return {};
+      }
 #endif
 
       // Overloads of Kokkos::atomic_oper_fetch/Kokkos::atomic_fetch_oper

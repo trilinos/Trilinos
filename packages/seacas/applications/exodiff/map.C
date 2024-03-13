@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -605,12 +605,12 @@ namespace {
     // Check whether sorting needed...
     bool sort1_needed = check_sort(file1_id_map, count);
     if (sort1_needed) {
-      index_qsort(file1_id_map, &id1[0], count);
+      index_qsort(file1_id_map, id1.data(), count);
     }
 
     bool sort2_needed = check_sort(file2_id_map, count);
     if (sort2_needed) {
-      index_qsort(file2_id_map, &id2[0], count);
+      index_qsort(file2_id_map, id2.data(), count);
     }
 
     for (size_t i = 0; i < count; i++) {

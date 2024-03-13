@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,7 +57,8 @@ namespace Iofaodel {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
+                              Ioss_MPI_Comm                communicator,
+                              const Ioss::PropertyManager &properties) const;
   };
 
   class IOFAODEL_EXPORT DatabaseIO : public Ioss::DatabaseIO
@@ -65,7 +66,7 @@ namespace Iofaodel {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
                Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties);
-    DatabaseIO(const DatabaseIO &from) = delete;
+    DatabaseIO(const DatabaseIO &from)            = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
@@ -92,7 +93,7 @@ namespace Iofaodel {
     void compute_block_membership(Ioss::SideBlock          *efblock,
                                   std::vector<std::string> &block_membership) const;
 
-    const std::string get_format() const override;
+    std::string get_format() const override;
 
   private:
     bool put_properties() const;

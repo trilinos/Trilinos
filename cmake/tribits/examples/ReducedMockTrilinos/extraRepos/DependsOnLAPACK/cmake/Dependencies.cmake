@@ -1,3 +1,3 @@
 tribits_package_define_dependencies(
-  LIB_REQUIRED_TPLS  LAPACK
+  LIB_REQUIRED_PACKAGES  LAPACK
   )

@@ -71,7 +71,7 @@
 // Static internal helper functions
 // ========================================================================
 namespace {
-  const size_t max_line_length = MAX_LINE_LENGTH;
+  const size_t                     max_line_length = MAX_LINE_LENGTH;
   const std::array<std::string, 2> complex_suffix{".re", ".im"};
 
   template <typename T>
@@ -147,8 +147,8 @@ namespace Ioexnl {
   int64_t DatabaseIO::write_attribute_field(const Ioss::Field          &field,
                                             const Ioss::GroupingEntity *ge, void *data) const
   {
-    int64_t     num_entity = ge->entity_count();
-    int64_t     fld_offset = field.get_index();
+    int64_t num_entity = ge->entity_count();
+    int64_t fld_offset = field.get_index();
 
     int attribute_count = ge->get_property("attribute_count").get_int();
     assert(fld_offset > 0);
@@ -484,8 +484,8 @@ namespace Ioexnl {
               }
             }
             else {
-              int64_t *data64 = reinterpret_cast<int64_t *>(data);
-              int64_t *comp64 = reinterpret_cast<int64_t *>(component.data());
+              auto *data64 = reinterpret_cast<int64_t *>(data);
+              auto *comp64 = reinterpret_cast<int64_t *>(component.data());
 
               int index = comp;
               for (size_t i = 0; i < my_element_count; i++) {
@@ -744,7 +744,7 @@ namespace Ioexnl {
     // and add suffix to base 'field_name'.  Look up index
     // of this name in 'm_variables[EX_NODE_BLOCK]' map
     int comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
-    int re_im = 1;
+    int re_im      = 1;
     if (ioss_type == Ioss::Field::COMPLEX) {
       re_im = 2;
     }
@@ -1120,8 +1120,7 @@ namespace Ioexnl {
       Ioss::Field::RoleType role         = field.get_role();
 
       if (role == Ioss::Field::MESH) {
-        if (field.get_name() == "side_ids" && fb->name() == "universal_sideset") {
-        }
+        if (field.get_name() == "side_ids" && fb->name() == "universal_sideset") {}
 
         else if (field.get_name() == "side_ids") {
         }

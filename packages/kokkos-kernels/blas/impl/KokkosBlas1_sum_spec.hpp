@@ -29,7 +29,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class RMV, class XMV, int rank = XMV::rank>
+template <class execution_space, class RMV, class XMV, int rank = XMV::rank>
 struct sum_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -46,6 +46,7 @@ struct sum_eti_spec_avail {
 #define KOKKOSBLAS1_SUM_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template <>                                                                 \
   struct sum_eti_spec_avail<                                                  \
+      EXEC_SPACE,                                                             \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace,                         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       Kokkos::View<const SCALAR*, LAYOUT,                                     \
@@ -66,6 +67,7 @@ struct sum_eti_spec_avail {
                                           MEM_SPACE)                  \
   template <>                                                         \
   struct sum_eti_spec_avail<                                          \
+      EXEC_SPACE,                                                     \
       Kokkos::View<SCALAR*, LAYOUT,                                   \
                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace,  \
                                   Kokkos::HostSpace>,                 \
@@ -86,20 +88,22 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class RMV, class XMV, int rank = XMV::rank,
-          bool tpl_spec_avail = sum_tpl_spec_avail<RMV, XMV>::value,
-          bool eti_spec_avail = sum_eti_spec_avail<RMV, XMV>::value>
+template <
+    class execution_space, class RMV, class XMV, int rank = XMV::rank,
+    bool tpl_spec_avail = sum_tpl_spec_avail<execution_space, RMV, XMV>::value,
+    bool eti_spec_avail = sum_eti_spec_avail<execution_space, RMV, XMV>::value>
 struct Sum {
-  static void sum(const RMV& R, const XMV& X);
+  static void sum(const execution_space& space, const RMV& R, const XMV& X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Sum for single vectors (1-D Views).
-template <class RMV, class XMV>
-struct Sum<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class RMV, class XMV>
+struct Sum<execution_space, RMV, XMV, 1, false,
+           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
-  static void sum(const RMV& R, const XMV& X) {
+  static void sum(const execution_space& space, const RMV& R, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Sum<1-D>: RMV is not a Kokkos::View.");
@@ -128,20 +132,21 @@ struct Sum<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     const size_type numRows = X.extent(0);
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
-      V_Sum_Invoke<RMV, XMV, int>(R, X);
+      V_Sum_Invoke<execution_space, RMV, XMV, int>(space, R, X);
     } else {
       typedef std::int64_t index_type;
-      V_Sum_Invoke<RMV, XMV, index_type>(R, X);
+      V_Sum_Invoke<execution_space, RMV, XMV, index_type>(space, R, X);
     }
     Kokkos::Profiling::popRegion();
   }
 };
 
-template <class RV, class XMV>
-struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class RV, class XMV>
+struct Sum<execution_space, RV, XMV, 2, false,
+           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
-  static void sum(const RV& R, const XMV& X) {
+  static void sum(const execution_space& space, const RV& R, const XMV& X) {
     static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "Sum<2-D>: RV is not a Kokkos::View.");
@@ -173,18 +178,20 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       auto R0 = Kokkos::subview(R, 0);
       auto X0 = Kokkos::subview(X, Kokkos::ALL(), 0);
       if (numRows < static_cast<size_type>(INT_MAX)) {
-        V_Sum_Invoke<decltype(R0), decltype(X0), int>(R0, X0);
+        V_Sum_Invoke<execution_space, decltype(R0), decltype(X0), int>(space,
+                                                                       R0, X0);
       } else {
         typedef std::int64_t index_type;
-        V_Sum_Invoke<decltype(R0), decltype(X0), index_type>(R0, X0);
+        V_Sum_Invoke<execution_space, decltype(R0), decltype(X0), index_type>(
+            space, R0, X0);
       }
     } else {
       if (numRows < static_cast<size_type>(INT_MAX) &&
           numRows * numCols < static_cast<size_type>(INT_MAX)) {
-        MV_Sum_Invoke<RV, XMV, int>(R, X);
+        MV_Sum_Invoke<execution_space, RV, XMV, int>(space, R, X);
       } else {
         typedef std::int64_t index_type;
-        MV_Sum_Invoke<RV, XMV, index_type>(R, X);
+        MV_Sum_Invoke<execution_space, RV, XMV, index_type>(space, R, X);
       }
     }
     Kokkos::Profiling::popRegion();
@@ -204,6 +211,7 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 //
 #define KOKKOSBLAS1_SUM_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   extern template struct Sum<                                                \
+      EXEC_SPACE,                                                            \
       Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace,                        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       Kokkos::View<const SCALAR*, LAYOUT,                                    \
@@ -217,7 +225,8 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // use this macro in one or more .cpp files in this directory.
 //
 #define KOKKOSBLAS1_SUM_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)  \
-  template struct Sum<Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace,         \
+  template struct Sum<EXEC_SPACE,                                             \
+                      Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace,         \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                       Kokkos::View<const SCALAR*, LAYOUT,                     \
                                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,     \
@@ -234,6 +243,7 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_SUM_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, \
                                          MEM_SPACE)                  \
   extern template struct Sum<                                        \
+      EXEC_SPACE,                                                    \
       Kokkos::View<SCALAR*, LAYOUT,                                  \
                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace, \
                                   Kokkos::HostSpace>,                \
@@ -251,6 +261,7 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS1_SUM_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, \
                                          MEM_SPACE)                  \
   template struct Sum<                                               \
+      EXEC_SPACE,                                                    \
       Kokkos::View<SCALAR*, LAYOUT,                                  \
                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace, \
                                   Kokkos::HostSpace>,                \
@@ -261,7 +272,5 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       2, false, true>;
 
 #include <KokkosBlas1_sum_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_sum_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_sum_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_SUM_SPEC_HPP_

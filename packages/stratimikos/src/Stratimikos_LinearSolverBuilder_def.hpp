@@ -66,7 +66,7 @@
 #ifdef HAVE_STRATIMIKOS_IFPACK
 #  include "Thyra_IfpackPreconditionerFactory.hpp"
 #endif
-#ifdef HAVE_STRATIMIKOS_IFPACK2
+#if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 #  include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #  include "Tpetra_CrsMatrix.hpp"
 #endif
@@ -178,7 +178,7 @@ void LinearSolverBuilder<Scalar>::setPreconditioningStrategyFactory(
       validPfNames_(), precStrategyName);
   if (existingNameIdx >= 0) {
     validPfNames_[existingNameIdx] = precStrategyName;
-    pfArray_[existingNameIdx] = precStrategyFactory;
+    pfArray_[existingNameIdx-1] = precStrategyFactory; // We offset by -1 since "None" is first!
   }
   else {
     validPfNames_.push_back(precStrategyName);
@@ -541,6 +541,15 @@ void LinearSolverBuilder<Scalar>::initializeDefaults()
     );
 #endif
 
+#if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
+  setPreconditioningStrategyFactory(
+    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
+    Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),
+    "Ifpack2", true
+    );
+#endif
+
+
   // Note: Above, the last PF object set will be the default!
 
 }
@@ -615,7 +624,7 @@ void LinearSolverBuilder<double>::initializeDefaults()
     );
 #endif
 
-#ifdef HAVE_STRATIMIKOS_IFPACK2
+#if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
   setPreconditioningStrategyFactory(
     abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
     Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),

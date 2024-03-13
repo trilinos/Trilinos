@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,7 +12,7 @@
 #include "smalloc.h"
 #include <stdio.h>
 
-#define TRUE 1
+#define TRUE  1
 #define FALSE 0
 
 /*
@@ -23,8 +23,50 @@ n_left+n_right nodes, where node 'i' is adjacent to nodes
 
 */
 
-static void bpmatching(), reachability(), augment();
-static int  touch(), touch2();
+static int match_size(int *matching, int nleft);
+
+void confirm_match(int  n_left,   /* number of vertices on left side */
+                   int  n_right,  /* number of vertices on right side */
+                   int *pointers, /* start/stop of adjacency lists */
+                   int *indices,  /* adjacency list for each vertex */
+                   int *matching, /* array to encode matching */
+                   int  sep_size, /* returned size of separator */
+                   int *sep_nodes /* list of separator nodes */
+);
+
+static void bpmatching(int  n_left,   /* number of vertices on left side */
+                       int  n_right,  /* number of vertices on right side */
+                       int *pointers, /* start/stop of adjacency lists */
+                       int *indices,  /* adjacency list for each vertex */
+                       int *matching, /* array to encode matching */
+                       int *touched   /* flags for each vertex */
+);
+static void reachability(int  n_left,   /* number of vertices on left side */
+                         int  n_right,  /* number of vertices on right side */
+                         int *pointers, /* start/stop of adjacency lists */
+                         int *indices,  /* adjacency list for each vertex */
+                         int *matching, /* array to encode matching */
+                         int *touched   /* flags for each vertex */
+);
+static void augment(int  node,     /* start node in augmenting path */
+                    int *pointers, /* start/stop of adjacency lists */
+                    int *indices,  /* adjacency list for each vertex */
+                    int *matching, /* array to encode matching */
+                    int *touched,  /* flags for each vertex */
+                    int *seen      /* keeps list of vertices encountered */
+);
+static int  touch(int node, int *pointers, /* start/stop of adjacency lists */
+                  int *indices,            /* adjacency list for each vertex */
+                  int *matching,           /* array to encode matching */
+                  int *touched,            /* flags for each vertex */
+                  int *seen,               /* list of vertices encountered */
+                  int *nseen               /* number of vertices encountered */
+ );
+static int  touch2(int node, int *pointers, /* start/stop of adjacency lists */
+                   int *indices,            /* adjacency list for each vertex */
+                   int *matching,           /* array to encode matching */
+                   int *touched             /* flags for each vertex */
+ );
 
 void bpcover(int  n_left,   /* number of vertices on left side */
              int  n_right,  /* number of vertices on right side */
@@ -35,11 +77,9 @@ void bpcover(int  n_left,   /* number of vertices on left side */
 )
 {
   extern int DEBUG_COVER; /* controls debugging output in this routine */
-  int *      matching;    /* array to encode matching */
-  int *      touched;     /* flags for each vertex */
+  int       *matching;    /* array to encode matching */
+  int       *touched;     /* flags for each vertex */
   int        i;           /* loop counter */
-
-  void confirm_match();
 
   if (DEBUG_COVER) {
     printf("-> Entering bpcover, nleft = %d, nright = %d, 2*nedges = %d\n", n_left, n_right,
@@ -252,7 +292,6 @@ void confirm_match(int  n_left,   /* number of vertices on left side */
   int *marked;
   int  neighbor;
   int  i, j; /* loop counter */
-  int  match_size();
 
   marked = smalloc((n_left + n_right) * sizeof(int));
 
@@ -290,7 +329,7 @@ void confirm_match(int  n_left,   /* number of vertices on left side */
   }
 }
 
-int match_size(int *matching, int nleft)
+static int match_size(int *matching, int nleft)
 {
   int i, nmatch;
 

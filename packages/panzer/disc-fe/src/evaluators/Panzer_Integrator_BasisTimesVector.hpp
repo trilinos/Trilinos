@@ -281,7 +281,7 @@ namespace panzer
       void
       operator()(
         const FieldMultTag<NUM_FIELD_MULT>& tag,
-        const std::size_t&                  cell) const;
+        const typename Kokkos::TeamPolicy<FieldMultTag<NUM_FIELD_MULT>,PHX::exec_space>::member_type& team) const;
 
     private:
 
@@ -360,7 +360,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-    PHX::View<Kokkos::View<const ScalarT**, typename PHX::DevLayout<ScalarT>::type, Kokkos::MemoryUnmanaged>*> kokkosFieldMults_;
+      Kokkos::Array<Kokkos::View<const ScalarT**, typename PHX::DevLayout<ScalarT>::type, Kokkos::MemoryUnmanaged>,3> kokkosFieldMults_;
 
       /**
        *  \brief The number of quadrature points for each cell.
@@ -389,8 +389,6 @@ namespace panzer
       PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP,
         panzer::Dim> basis_;
 
-    /// Temporary for caching field multipliers
-    PHX::View<ScalarT*> tmp_;
   }; // end of class Integrator_BasisTimesVector
 
 } // end of namespace panzer

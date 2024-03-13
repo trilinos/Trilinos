@@ -52,17 +52,18 @@
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#include "AnasaziGlobalComm.hpp"
 #else
 #include "Epetra_SerialComm.h"
 #endif
 
 namespace RBGen {
-  
+
   AnasaziPOD::AnasaziPOD() :
     isInitialized_( false ),
     isInner_( true ),
     basis_size_( 16 ),
-    comp_time_( 0.0 ) 
+    comp_time_( 0.0 )
   {
   }
 
@@ -76,8 +77,8 @@ namespace RBGen {
 
     if ( rbmethod_params.get("Basis Size", 16) < ss->NumVectors() ) {
       basis_size_ = rbmethod_params.get("Basis Size", 16);
-    } 
-    else { 
+    }
+    else {
       basis_size_ = ss->NumVectors();
     }
     // Get the inner / outer product form of the operator
@@ -97,20 +98,20 @@ namespace RBGen {
       inner_prod_op_ = fileio->Read( filename );
     }
 
-    // Resize the singular value vector 
-    sv_.resize( basis_size_ );    
+    // Resize the singular value vector
+    sv_.resize( basis_size_ );
 
     // Set the snapshot set
     ss_ = ss;
   }
 
   void AnasaziPOD::computeBasis()
-  {    
+  {
 #ifdef EPETRA_MPI
-    Epetra_MpiComm comm( MPI_COMM_WORLD );
+    Epetra_MpiComm comm( Anasazi::get_global_comm() );
 #else
     Epetra_SerialComm comm;
-#endif    
+#endif
 
     int MyPID = comm.MyPID();
     //
@@ -156,7 +157,7 @@ namespace RBGen {
     MyPL.set( "Block Size", blockSize );
     MyPL.set( "Num Blocks", maxBlocks );
     MyPL.set( "Maximum Restarts", maxRestarts );
-    MyPL.set( "Which", which );        
+    MyPL.set( "Which", which );
     MyPL.set( "Step Size", step );
     MyPL.set( "Convergence Tolerance", tol );
     //
@@ -203,13 +204,13 @@ namespace RBGen {
     // Create the eigenproblem
     Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem =
       Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Amat, ivec) );
-  
+
     // Inform the eigenproblem that the operator A is symmetric
-    MyProblem->setHermitian( true ); 
-    
+    MyProblem->setHermitian( true );
+
     // Set the number of eigenvalues requested
     MyProblem->setNEV( nev );
-    
+
     // Inform the eigenproblem that you are finishing passing it information
     bool boolret = MyProblem->setProblem();
     if (boolret != true) {
@@ -217,10 +218,10 @@ namespace RBGen {
         std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
       }
     }
-    
+
     // Initialize the Block Arnoldi solver
     Anasazi::BlockKrylovSchurSolMgr<double,MV,OP> MySolverMgr(MyProblem, MyPL);
-    
+
     timer.ResetStartTime();
 
     // Solve the problem to the specified tolerances or length
@@ -239,25 +240,25 @@ namespace RBGen {
     if (numev < nev && MyPID==0) {
       std::cout << "RBGen::AnasaziPOD will return " << numev << " singular vectors." << std::endl;
     }
- 
+
     // Resize the singular value vector to the number of computed singular pairs.
-    sv_.resize( numev );    
+    sv_.resize( numev );
 
     if (numev > 0) {
       // Retrieve eigenvectors
       std::vector<int> index(numev);
       for (i=0; i<numev; i++) { index[i] = i; }
-      Teuchos::RCP<const Anasazi::EpetraMultiVec> evecs = Teuchos::rcp_dynamic_cast<const Anasazi::EpetraMultiVec>( 
+      Teuchos::RCP<const Anasazi::EpetraMultiVec> evecs = Teuchos::rcp_dynamic_cast<const Anasazi::EpetraMultiVec>(
         Anasazi::MultiVecTraits<double,MV>::CloneView(*sol.Evecs, index) );
-      // const Anasazi::EpetraMultiVec* evecs = dynamic_cast<const Anasazi::EpetraMultiVec *>(sol.Evecs->CloneView( index )); 
+      // const Anasazi::EpetraMultiVec* evecs = dynamic_cast<const Anasazi::EpetraMultiVec *>(sol.Evecs->CloneView( index ));
       //
       // Compute singular values which are the square root of the eigenvalues
       //
-      for (i=0; i<numev; i++) { 
-        sv_[i] = Teuchos::ScalarTraits<double>::squareroot( Teuchos::ScalarTraits<double>::magnitude(evals[i].realpart) ); 
+      for (i=0; i<numev; i++) {
+        sv_[i] = Teuchos::ScalarTraits<double>::squareroot( Teuchos::ScalarTraits<double>::magnitude(evals[i].realpart) );
       }
       //
-      // If we are using inner product formulation, 
+      // If we are using inner product formulation,
       // then we must compute left singular vectors:
       //             u = Av/sigma
       //
@@ -265,17 +266,17 @@ namespace RBGen {
       if (isInner_) {
         basis_ = Teuchos::rcp( new Epetra_MultiVector(ss_->Map(), numev) );
         Epetra_MultiVector AV( ss_->Map(), numev );
-        
-        /* A*V */   
+
+        /* A*V */
         AV.Multiply( 'N', 'N', 1.0, *ss_, *evecs, 0.0 );
         AV.Norm2( &tempnrm[0] );
-        
+
         /* U = A*V(i)/S(i) */
         Epetra_LocalMap localMap2( numev, 0, ss_->Map().Comm() );
         Epetra_MultiVector S( localMap2, numev );
         for( i=0; i<numev; i++ ) { S[i][i] = 1.0/tempnrm[i]; }
         basis_->Multiply( 'N', 'N', 1.0, AV, S, 0.0 );
-        
+
         /* Compute direct residuals : || Av - sigma*u ||
            for (i=0; i<nev; i++) { S[i][i] = sv_[i]; }
            info = AV.Multiply( 'N', 'N', -1.0, *basis_, S, 1.0 );
@@ -292,19 +293,19 @@ namespace RBGen {
       } else {
         basis_ = Teuchos::rcp( new Epetra_MultiVector( Copy, *evecs, 0, numev ) );
         Epetra_MultiVector ATU( localMap, numev );
-        Epetra_MultiVector V( localMap, numev );      
-        
-        /* A^T*U */   
+        Epetra_MultiVector V( localMap, numev );
+
+        /* A^T*U */
         ATU.Multiply( 'T', 'N', 1.0, *ss_, *evecs, 0.0 );
         ATU.Norm2( &tempnrm[0] );
-        
+
         /* V = A^T*U(i)/S(i) */
         Epetra_LocalMap localMap2( numev, 0, ss_->Map().Comm() );
         Epetra_MultiVector S( localMap2, numev );
         for( i=0; i<numev; i++ ) { S[i][i] = 1.0/tempnrm[i]; }
         V.Multiply( 'N', 'N', 1.0, ATU, S, 0.0 );
-        
-        /* Compute direct residuals : || (A^T)u - sigma*v ||     
+
+        /* Compute direct residuals : || (A^T)u - sigma*v ||
            for (i=0; i<nev; i++) { S[i][i] = sv_[i]; }
            info = ATU.Multiply( 'N', 'N', -1.0, V, S, 1.0 );
            ATU.Norm2( tempnrm );

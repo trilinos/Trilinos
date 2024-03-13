@@ -1,14 +1,17 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "Utst_structured_decomp.h"
+#define DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+#define DOCTEST_CONFIG_NO_MULTITHREADING
 #include <doctest.h>
 
 // Disable these tests on NVCC. It tries to optimize and takes forever to build...
-#ifndef __NVCC__
+#if !defined(__NVCC__) && !defined(__IOSS_WINDOWS__)
 #if defined(__clang__) || (defined(__GNUC__) && !defined(__INTEL_COMPILER))
 #define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #else

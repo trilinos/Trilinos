@@ -53,7 +53,7 @@
 #define NUM_LEVELS 4
 
 MPI_Comm comm[NUM_LEVELS] = {
-MPI_COMM_WORLD,
+zoltan_get_global_comm(),
 MPI_COMM_NODE,
 MPI_COMM_SOCKET,
 MPI_COMM_CACHE
@@ -93,9 +93,9 @@ char *errorstr;
       fprintf(stderr,"(%d) MPI_Comm_size %s : %s\n",me[0],commName[i],errorstr); 
     }
 #ifdef DEBUG_ME
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
     printf("(%d) %s communicator, size %d, my rank %d\n",me[0],commName[i],nprocs[i],me[i]);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(zoltan_get_global_comm());
 #endif
   }
 
@@ -118,14 +118,14 @@ char *errorstr;
   }
 
 #ifdef DEBUG_ME
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
   printf("(%d) ranges: %s (%d %d iam %d) %s (%d %d iam %d) %s (%d %d iam %d) %s (%d %d iam %d) \n",
   me[0],
   commName[0], level_part_range[0][0],  level_part_range[0][1], level_part_range[0][0] + me[0],
   commName[1], level_part_range[1][0],  level_part_range[1][1], level_part_range[1][0] + me[1],
   commName[2], level_part_range[2][0],  level_part_range[2][1], level_part_range[2][0] + me[2],
   commName[3], level_part_range[3][0],  level_part_range[3][1], level_part_range[3][0] + me[3]);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
 #endif
 
   /* Figure out which levels are significant */
@@ -143,7 +143,7 @@ char *errorstr;
       lval=0;   /* meaningful level in hierarchy */
     }
 
-    MPI_Allreduce(&lval, &gval, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&lval, &gval, 1, MPI_INT, MPI_SUM, zoltan_get_global_comm());
 
     if (gval < nprocs[0]){
       /* next level in hierarchy is significant for at least some processes */
@@ -158,10 +158,10 @@ char *errorstr;
 #endif
 
 #ifdef DEBUG_ME
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
   printf("(%d) %d significant levels %d %d %d %d \n",me[0], num_significant_levels,
   level_number[0], level_number[1], level_number[2], level_number[3]);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(zoltan_get_global_comm());
 #endif
 
   last_level = level_number[num_significant_levels-1];
@@ -170,7 +170,7 @@ char *errorstr;
 
   /* Visualize hierarchy */
 
-  MPI_Gather(&my_part_number, 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gather(&my_part_number, 1, MPI_INT, buf, 1, MPI_INT, 0, zoltan_get_global_comm());
 
   if (me[0] == 0){
 
@@ -185,7 +185,7 @@ char *errorstr;
 
     for (i=0; i < num_significant_levels; i++){
       printf("Level %s:\n", commName[level_number[i]]);
-      MPI_Gather(&(level_part_range[level_number[i]][0]), 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
+      MPI_Gather(&(level_part_range[level_number[i]][0]), 1, MPI_INT, buf, 1, MPI_INT, 0, zoltan_get_global_comm());
       memset(classes, 0, sizeof(int) * nprocs[0]);
       for (j=0; j < nprocs[0]; j++){
         classes[buf[j]]++;
@@ -208,7 +208,7 @@ char *errorstr;
   }
   else{
     for (i=0; i < num_significant_levels; i++){
-      MPI_Gather(&(level_part_range[level_number[i]][0]), 1, MPI_INT, buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
+      MPI_Gather(&(level_part_range[level_number[i]][0]), 1, MPI_INT, buf, 1, MPI_INT, 0, zoltan_get_global_comm());
     }
   }
 

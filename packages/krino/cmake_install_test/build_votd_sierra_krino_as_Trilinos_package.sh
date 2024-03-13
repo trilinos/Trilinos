@@ -121,6 +121,7 @@ date_suffix=`date +%F_%H-%M-%S`
 if [ ! -d ${output_dir} ] ; then
   execute mkdir ${output_dir}
 fi
+execute rm -rf ${output_dir}/yaml
 
 setup_trilinos_with_krino
 setup_environment

@@ -82,8 +82,8 @@ namespace {
   {
     using Tpetra::Details::iallreduce;
     using Teuchos::reduceAll;
-    typedef typename Kokkos::Details::ArithTraits<Packet>::val_type val_type;
-    typedef Kokkos::Details::ArithTraits<val_type> STS;
+    typedef typename Kokkos::ArithTraits<Packet>::val_type val_type;
+    typedef Kokkos::ArithTraits<val_type> STS;
     typedef typename STS::mag_type mag_type;
     typedef typename Device::device_type device_type;
 

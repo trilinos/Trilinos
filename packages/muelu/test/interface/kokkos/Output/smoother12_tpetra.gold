@@ -4,22 +4,23 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 1
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -35,22 +36,23 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 5
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 2
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -66,22 +68,23 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 4
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 3
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -97,22 +100,23 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99461
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 4
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -128,22 +132,23 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
 smoother -> 
  chebyshev: ratio eigenvalue = 2.99194
+ timer for apply = 0
  chebyshev: boost factor = 1.1   [unused]
 
 Level 5
-Prolongator smoothing (MueLu::SaPFactory_kokkos)
+Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical": threshold = 0, blocksize = 1
 Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
 BuildAggregatesRandom (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory_kokkos)
+Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
@@ -167,7 +172,7 @@ presmoother ->
 --------------------------------------------------------------------------------
 Number of levels    = 6
 Operator complexity = 1.50
-Smoother complexity = 1.99
+Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs

@@ -1,11 +1,12 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
+#include "prototypes.h"
 #include <stdio.h> // for printf, NULL
 
 /* Finds selected eigenvalues of T using Sturm sequence bisection. Based
@@ -29,7 +30,7 @@ int bisect(double *alpha,        /* vector of Lanczos scalars */
   extern double DOUBLE_MAX;   /* largest double value */
   int           index;        /* index of sturm polynomial */
   int           i;            /* loop index */
-  double *      pntr;         /* pntr to double array */
+  double       *pntr;         /* pntr to double array */
   double        x1, x2;       /* the bracketing interval */
   int           x1cnt, x2cnt; /* Sturm counts at x1 and x2 */
   double        x;            /* the inserted point */
@@ -40,10 +41,8 @@ int bisect(double *alpha,        /* vector of Lanczos scalars */
   int           x1ck;         /* debugging check on x1cnt */
   int           x2ck;         /* debugging check on x2cnt */
   int           numck;        /* debugging check on numbracketed */
-  int           sturmcnt();   /* counts the Sturm sequence */
   double        diff;         /* debugging register */
   int           ii;           /* debugging loop counter */
-  void          cksturmcnt(); /* checks the Sturm sequence count against ql */
 
   /* If space has been allocated for a copy of the ritz values, assume
      we are to check the Sturm sequence counts directly using ql(). */

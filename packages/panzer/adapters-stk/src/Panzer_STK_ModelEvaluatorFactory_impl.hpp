@@ -89,7 +89,6 @@
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_NOXObserverFactory.hpp"
-#include "Panzer_STK_RythmosObserverFactory.hpp"
 #ifdef PANZER_HAVE_TEMPUS
 #include "Panzer_STK_TempusObserverFactory.hpp"
 #endif
@@ -109,7 +108,6 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Piro_NOXSolver.hpp"
 #include "Piro_LOCASolver.hpp"
-#include "Piro_RythmosSolver.hpp"
 #ifdef PANZER_HAVE_TEMPUS
 #include "Piro_TempusSolverForwardOnly.hpp"
 #endif
@@ -300,8 +298,7 @@ namespace panzer_stk {
 
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
-    bool is_transient  = (solncntl_params.get<std::string>("Piro Solver") == "Rythmos" ||
-                          solncntl_params.get<std::string>("Piro Solver") == "Tempus") ? true : false;
+    bool is_transient  = (solncntl_params.get<std::string>("Piro Solver") == "Tempus") ? true : false;
     // for pseudo-transient, we need to enable transient solver support to get time derivatives into fill
     if (solncntl_params.get<std::string>("Piro Solver") == "NOX") {
       if (solncntl_params.sublist("NOX").get<std::string>("Nonlinear Solver") == "Pseudo-Transient")
@@ -1160,12 +1157,6 @@ namespace panzer_stk {
     m_nox_observer_factory = nox_observer_factory;
   }
 
-  template<typename ScalarT>
-  void ModelEvaluatorFactory<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory)
-  {
-    m_rythmos_observer_factory = rythmos_observer_factory;
-  }
-
 #ifdef PANZER_HAVE_TEMPUS
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::setTempusObserverFactory(const Teuchos::RCP<const panzer_stk::TempusObserverFactory>& tempus_observer_factory)
@@ -1193,12 +1184,10 @@ namespace panzer_stk {
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory<ScalarT>::
   buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                   const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                  const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver,
 #ifdef PANZER_HAVE_TEMPUS
                                   const Teuchos::RCP<Piro::TempusSolverForwardOnly<ScalarT> > tempusSolver,
 #endif
-                                  const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory,
-                                  const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory
+                                  const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory
 #ifdef PANZER_HAVE_TEMPUS
                                   , const Teuchos::Ptr<const panzer_stk::TempusObserverFactory> & in_tempus_observer_factory
 #endif
@@ -1215,8 +1204,6 @@ namespace panzer_stk {
                        "Objects are not built yet!  Please call buildObjects() member function.");
     Teuchos::Ptr<const panzer_stk::NOXObserverFactory> nox_observer_factory
         = is_null(in_nox_observer_factory) ? m_nox_observer_factory.ptr() : in_nox_observer_factory;
-    Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> rythmos_observer_factory
-        = is_null(in_rythmos_observer_factory) ? m_rythmos_observer_factory.ptr() : in_rythmos_observer_factory;
 #ifdef PANZER_HAVE_TEMPUS
     Teuchos::Ptr<const panzer_stk::TempusObserverFactory> tempus_observer_factory
         = is_null(in_tempus_observer_factory) ? m_tempus_observer_factory.ptr() : in_tempus_observer_factory;
@@ -1251,42 +1238,6 @@ namespace panzer_stk {
       piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
       piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
       piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
-    }
-    else if (solver=="Rythmos") {
-
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(rythmos_observer_factory), std::runtime_error,
-                                 "No Rythmos observer built! Please call setrythmosObserverFactory() member function if you plan to use a Rythmos solver.");
-
-      // install the nox observer
-      if(rythmos_observer_factory->useNOXObserver()) {
-        Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
-        piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
-      }
-
-      // override printing to use panzer ostream
-      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
-      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
-      piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
-
-      // use the user specfied rythmos solver if they pass one in
-      Teuchos::RCP<Piro::RythmosSolver<double> > piro_rythmos;
-      if(rythmosSolver==Teuchos::null)
-        piro_rythmos = Teuchos::rcp(new Piro::RythmosSolver<double>());
-      else
-        piro_rythmos = rythmosSolver;
-
-      // if you are using explicit RK, make sure to wrap the ME in an explicit model evaluator decorator
-      Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > rythmos_me = thyra_me;
-      const std::string stepper_type = piro_params->sublist("Rythmos").get<std::string>("Stepper Type");
-      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler") {
-        const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
-        bool lumpExplicitMass = assembly_params.get<bool>("Lump Explicit Mass");
-        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,lumpExplicitMass));
-      }
-
-      piro_rythmos->initialize(piro_params, rythmos_me, rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
-
-      piro = piro_rythmos;
     }
 #ifdef PANZER_HAVE_TEMPUS
     else if (solver=="Tempus") {

@@ -1,16 +1,21 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
-#include "defs.h"  // for FALSE, TRUE
+#include "defs.h" // for FALSE, TRUE
+
 #include <stdio.h> // for printf, fclose, fprintf, etc
 
 static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, int *assignment);
-static int input_assign_inv();
+static int input_assign_inv(FILE *finassign,    /* input assignment file */
+                            char *inassignname, /* name of input assignment file */
+                            int   nvtxs,        /* number of vertices to output */
+                            int  *assignment    /* values to be printed */
+);
 
 int input_assign(FILE *finassign, char *inassignname, int nvtxs, int *assignment)
 {
@@ -42,7 +47,6 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
   int          flag;        /* logical conditional */
   int          end_flag;    /* return flag from read_int() */
   int          i, j;        /* loop counter */
-  int          read_int();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering input_assign>\n");
@@ -120,7 +124,7 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
 static int input_assign_inv(FILE *finassign,    /* input assignment file */
                             char *inassignname, /* name of input assignment file */
                             int   nvtxs,        /* number of vertices to output */
-                            int * assignment    /* values to be printed */
+                            int  *assignment    /* values to be printed */
 )
 {
   extern int DEBUG_TRACE; /* trace main execution path */
@@ -130,7 +134,6 @@ static int input_assign_inv(FILE *finassign,    /* input assignment file */
   int        done;        /* have I hit end of file yet? */
   int        end_flag;    /* return flag from read_int() */
   int        i, j, k;     /* loop counter */
-  int        read_int();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering input_assign_inv>\n");

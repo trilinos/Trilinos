@@ -397,10 +397,10 @@ int main(int argc, char* argv[])
     int defaultNumIters = 64;
     int numIters = stk::get_command_line_option(argc, argv, "num-iters", defaultNumIters);
 
-    stk_interface::impl::StkMeshCreator creator1(mesh1FileName);
+    stk_interface::StkMeshCreator creator1(mesh1FileName);
     std::shared_ptr<mesh::Mesh> inputMesh1 = creator1.create_mesh_from_part(partName1).mesh;
 
-    stk_interface::impl::StkMeshCreator creator2(mesh2FileName);
+    stk_interface::StkMeshCreator creator2(mesh2FileName);
     std::shared_ptr<mesh::Mesh> inputMesh2 = creator2.create_mesh_from_part(partName2).mesh;
 
 

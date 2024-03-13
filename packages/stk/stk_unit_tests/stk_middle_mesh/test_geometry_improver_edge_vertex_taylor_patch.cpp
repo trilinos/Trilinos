@@ -1,6 +1,6 @@
-#include "create_mesh.hpp"
-#include "mesh_io.hpp"
-#include "nonconformal4.hpp"
+#include "stk_middle_mesh/create_mesh.hpp"
+#include "stk_middle_mesh/mesh_io.hpp"
+#include "stk_middle_mesh/nonconformal4.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

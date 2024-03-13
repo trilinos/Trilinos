@@ -44,7 +44,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
-#include <stk_mesh/base/MemoryUsage.hpp>
 
 namespace stk {
 namespace performance_tests {

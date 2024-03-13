@@ -113,11 +113,11 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
 
 #ifdef SHYLU_DEBUG
 
-#define ASSERT(A) assert(A)
+#define SHYLU_CORE_ASSERT(A) assert(A)
 
 #else
 
-#define ASSERT(A)
+#define SHYLU_CORE_ASSERT(A)
 
 #endif
 

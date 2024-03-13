@@ -54,7 +54,7 @@ namespace Ioexnl {
   struct CommunicationMetaData;
 
   // Used for variable name index mapping
-  using VariableNameMap = std::map<std::string, int, std::less<std::string>>;
+  using VariableNameMap = std::map<std::string, int, std::less<>>;
   using VNMValuePair    = VariableNameMap::value_type;
 
   // Used to store reduction variables
@@ -80,7 +80,7 @@ namespace Ioexnl {
 
     ~BaseDatabaseIO() override;
 
-    const std::string get_format() const override { return "ExoNull"; }
+    std::string get_format() const override { return "ExoNull"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -183,12 +183,12 @@ namespace Ioexnl {
     void closeDatabase__() const override
     {
       free_file_pointer();
-      closeDW();
+      close_dw();
     }
 
     int get_file_pointer() const override = 0; // Open file and set exodusFilePtr.
 
-    virtual int free_file_pointer() const;     // Close file and set exodusFilePtr.
+    virtual int free_file_pointer() const; // Close file and set exodusFilePtr.
 
     virtual bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
                                     bool overwrite, bool abort_if_error) const = 0;

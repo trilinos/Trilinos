@@ -17,18 +17,13 @@ clear_cache=${CLEAR_CACHE:-ON}
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
+
 if [ ! -d ${output_dir} ] ; then
   exe mkdir -p ${output_dir};
 fi
 
-if [ ! -d ${trilinos_dir} ] ; then
-  exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
-else
-  exe cd "${trilinos_dir}"
-  exe git checkout develop
-  exe git reset --hard origin/develop
-  exe git pull
-fi
+stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+${stk_cmake_testing_source_dir}/create_workspace.sh ${trilinos_dir} ${sierra_proj}
 
 trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_gcc
 exe rm -rf $trilinos_install_dir
@@ -39,14 +34,10 @@ if [ "${clear_cache}" == "ON" ] ; then
   exe mkdir -p $stk_build_dir
 fi
 
-stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
-
 printf "\nUsing sierra project: ${sierra_proj}\n";
 printf "Using build-type: ${build_type}\n";
 printf "CUDA: ${cuda_on_or_off}\n";
 printf "Putting output and logs here: ${output_dir}\n";
-
-exe cd $sierra_proj
 
 bake_log=${output_dir}/bake-stk_balance.out.$date_suffix
 stk_config_log=${output_dir}/stk-config.out.$date_suffix
@@ -55,13 +46,6 @@ stk_install_log=${output_dir}/stk-install.out.$date_suffix
 stk_ctest_log=${output_dir}/stk-ctest.out.$date_suffix
 stk_app_config_log=${output_dir}/stk-test-app-config.out.$date_suffix
 stk_app_make_log=${output_dir}/stk-test-app-make.out.$date_suffix
-
-if [ -d ${trilinos_dir}/packages/stk ] ; then
-  exe rm -rf ${trilinos_dir}/packages/stk;
-fi
-if [ ! -L ${trilinos_dir}/packages/stk ] ; then
-  exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
-fi
 
 exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk ${stk_build_dir}
 exe cd ${stk_build_dir}
@@ -75,11 +59,23 @@ exe "TRILINOS_DIR=${trilinos_dir} \
      CUDA=${cuda_on_or_off} \
      CLEAR_CACHE=${clear_cache} \
      ./run_cmake_stk >& ${stk_config_log}"
+if [ $? -ne 0 ] ; then
+  echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
+  exit 1;
+fi
 
 printf "Now building trilinos/stk using make...\n";
 exe "make VERBOSE=1 -j8 >& ${stk_make_log}";
+if [ $? -ne 0 ] ; then
+  echo "!! error in make, check output in ${stk_make_log} !!";
+  exit 1;
+fi
+
 exe "ctest -j8 >& ${stk_ctest_log}";
+if [ $? -ne 0 ] ; then
+  printf "!! error running ctest, check output in ${stk_ctest_log}\n";
+  exit 1;
+fi
 
 echo "all done, SUCCESS!";
 exit 0;
-

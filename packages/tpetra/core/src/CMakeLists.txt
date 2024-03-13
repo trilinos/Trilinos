@@ -647,6 +647,10 @@ TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+IF (NOT Tpetra_ENABLE_DEPRECATED_CODE OR NOT TpetraCore_ENABLE_Epetra)
+  LIST(REMOVE_ITEM SOURCES ${DIR}/Epetra_TsqrMessenger.cpp)
+  LIST(REMOVE_ITEM SOURCES ${DIR}/Tpetra_EpetraRowMatrix.cpp)
+ENDIF()
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Pull in the Kokkos refactor code.
@@ -937,4 +941,5 @@ SET_PROPERTY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Here's another change, another, and another 
+# Here's another change.  Again.
+

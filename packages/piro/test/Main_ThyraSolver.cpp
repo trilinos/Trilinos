@@ -83,23 +83,13 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-#ifdef HAVE_PIRO_RYTHMOS
-//  int numTests=4;
-  int numTests=3;
-#else
   int numTests=2;
-#endif
-
   for (int iTest=0; iTest<numTests; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Solve_NOX_3.xml"; break;
        case 1: inputFile="input_Solve_LOCA_1.xml"; break;
-       case 2: inputFile="input_Solve_Rythmos_2.xml"; break;
-// This problem fails in Debug with a throw of "!isFullInitialized".
-// Have not successfully debuged this, so disabling. --Andy 5/29/2015
-//       case 3: inputFile="input_Solve_RythmosSolver_2.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }

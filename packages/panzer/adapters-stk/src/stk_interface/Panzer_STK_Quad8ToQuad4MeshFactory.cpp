@@ -47,6 +47,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp" // for plist validation
 #include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 
 // #define ENABLE_UNIFORM
 
@@ -204,7 +205,7 @@ void Quad8ToQuad4MeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach
 {
   if (print_debug_) {
     std::cout << "\n\n**** DEBUG: begin printing source Quad8 exodus file metadata ****\n";
-    quad8Mesh_->getMetaData()->dump_all_meta_info(std::cout);
+    stk::mesh::impl::dump_all_meta_info(*(quad8Mesh_->getMetaData()), std::cout);
     std::cout << "\n\n**** DEBUG: end printing source Quad8 exodus file metadata ****\n";
   }
 
@@ -281,7 +282,7 @@ void Quad8ToQuad4MeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach
 
   if (print_debug_) {
     std::cout << "\n\n**** DEBUG: begin printing source Quad4 exodus file metadata ****\n";
-    mesh.getMetaData()->dump_all_meta_info(std::cout);
+    stk::mesh::impl::dump_all_meta_info(*(mesh.getMetaData()), std::cout);
     std::cout << "\n\n**** DEBUG: end printing source Quad4 exodus file metadata ****\n";
   }
 }

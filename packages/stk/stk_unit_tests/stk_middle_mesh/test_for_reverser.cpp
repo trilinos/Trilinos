@@ -1,4 +1,4 @@
-#include "for_reverser.hpp"
+#include "stk_middle_mesh/for_reverser.hpp"
 #include "gtest/gtest.h"
 
 namespace stk {

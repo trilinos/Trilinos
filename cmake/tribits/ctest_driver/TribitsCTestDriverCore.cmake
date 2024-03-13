@@ -137,6 +137,10 @@ if ("${CTEST_BINARY_DIRECTORY}" STREQUAL "")
   set(CTEST_BINARY_DIRECTORY $ENV{PWD}/BUILD)
 endif()
 
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsConstants.cmake")
+tribits_asesrt_minimum_cmake_version()
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
+
 #
 # Set CMAKE_MODULE_PATH
 #
@@ -144,14 +148,12 @@ set( CMAKE_MODULE_PATH
   "${TRIBITS_PROJECT_ROOT}"
   "${TRIBITS_PROJECT_ROOT}/cmake"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/core/common"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/core/test_support"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   "${${PROJECT_NAME}_TRIBITS_DIR}/ci_support"
   "${${PROJECT_NAME}_TRIBITS_DIR}/ctest_driver"
   )
-
-include(TribitsConstants)
-tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies  NO_POLICY_SCOPE)
 
 include(Split)
 include(PrintVar)
@@ -667,11 +669,11 @@ include(TribitsCTestDriverCoreHelpers)
 # **Setting variables in the inner CMake configure:**
 #
 # It is important to understand that none of the CMake vars that get set in
-# the other CTest -S program that calls ``tribits_ctest_driver()``
+# the outer CTest -S program that calls ``tribits_ctest_driver()``
 # automatically get passed into the inner configure of the TriBITS CMake
 # project using the ``ctest_configure()`` command by CMake.  From the
 # perspective of raw CTest and CMake, these are completely separate programs.
-# However, the ``tribits_ctest_driver()`` function will forward subset of
+# However, the ``tribits_ctest_driver()`` function will forward subset a of
 # variables documented below into the inner CMake configure.  The following
 # variables that are set in the outer CTest -S program will be passed into the
 # inner CMake configure by default (but their values they can be overridden by
@@ -682,7 +684,7 @@ include(TribitsCTestDriverCoreHelpers)
 #
 #     Missing extra repos are always ignored in the inner CMake configure.
 #     This is because any problems reading an extra repo will be caught in the
-#     outer CTest -S drivers script.
+#     outer CTest -S driver script.
 #
 #   ``-D${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON``
 #
@@ -697,7 +699,7 @@ include(TribitsCTestDriverCoreHelpers)
 #     may be disabled.  (This set may be removed in the future for the
 #     all-at-once mode.)
 #
-# The following variables set in the CTest -S driver script will be passed
+# The following variables set in the outer CTest -S driver script will be passed
 # down into the inner CMake configure through the ``OPTIONS`` variable to the
 # ``ctest_configure()`` command:
 #
@@ -756,7 +758,7 @@ include(TribitsCTestDriverCoreHelpers)
 # These configure options are passed into the ``ctest_configure()`` command in
 # the order::
 #
-#  <initial options> ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}} \
+#   <initial options> ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}} \
 #     ${EXTRA_CONFIGURE_OPTIONS} ${${PROJECT_NAME}_EXTRA_CONFIGURE_OPTIONS}
 #
 # **WARNING:** The options listed in ``EXTRA_SYSTEM_CONFIGURE_OPTIONS``,

@@ -147,7 +147,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverse(
     std::cerr << "ERROR: "
      << "LOCA::LAPACK::Group::applyJacobianTransposeInverse()"
      << " - invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   const NOX::LAPACK::Vector& lapack_input =
@@ -173,7 +173,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
     std::cerr << "ERROR: "
      << "LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector()"
      << " - invalid Jacobian" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   // Number of RHS

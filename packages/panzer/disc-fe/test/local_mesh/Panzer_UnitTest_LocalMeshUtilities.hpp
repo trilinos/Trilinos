@@ -102,8 +102,8 @@ generateLocalMeshInfo()
     mesh.num_ghstd_cells = 0;
     mesh.num_virtual_cells = 2;
 
-    // Set vertices
-    mesh.cell_vertices = PHX::View<double***>("vertices",6,2,1);
+    // Set nodes (same as vertices in this case)
+    mesh.cell_nodes = PHX::View<double***>("nodes",6,2,1);
 
     // Set local cells
     mesh.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",6);
@@ -179,8 +179,8 @@ generateLocalMeshInfo()
     block.num_ghstd_cells = 1;
     block.num_virtual_cells = 1;
 
-    // Set vertices
-    block.cell_vertices = PHX::View<double***>("vertices",4,2,1);
+    // Set nodes (same as vertices in this case)
+    block.cell_nodes = PHX::View<double***>("nodes",4,2,1);
 
     // Set local cells
     block.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",4);
@@ -247,8 +247,8 @@ generateLocalMeshInfo()
     block.num_ghstd_cells = 1;
     block.num_virtual_cells = 1;
 
-    // Set vertices
-    block.cell_vertices = PHX::View<double***>("vertices",4,2,1);
+    // Set nodes (same as vertices in this case)
+    block.cell_nodes = PHX::View<double***>("nodes",4,2,1);
 
     // Set local cells
     block.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",4);
@@ -314,8 +314,8 @@ generateLocalMeshInfo()
     sideset.num_ghstd_cells = 0;
     sideset.num_virtual_cells = 1;
 
-    // Set vertices
-    sideset.cell_vertices = PHX::View<double***>("vertices",2,2,1);
+    // Set nodes (same as vertices in this case)
+    sideset.cell_nodes = PHX::View<double***>("nodes",2,2,1);
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
@@ -371,8 +371,8 @@ generateLocalMeshInfo()
     sideset.num_ghstd_cells = 0;
     sideset.num_virtual_cells = 1;
 
-    // Set vertices
-    sideset.cell_vertices = PHX::View<double***>("vertices",2,2,1);
+    // Set nodes (same as vertices in this case)
+    sideset.cell_nodes = PHX::View<double***>("nodes",2,2,1);
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
@@ -428,8 +428,8 @@ generateLocalMeshInfo()
     sideset.num_ghstd_cells = 1;
     sideset.num_virtual_cells = 0;
 
-    // Set vertices
-    sideset.cell_vertices = PHX::View<double***>("vertices",2,2,1);
+    // Set nodes (same as vertices in this case)
+    sideset.cell_nodes = PHX::View<double***>("nodes",2,2,1);
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
@@ -483,8 +483,8 @@ generateLocalMeshInfo()
     sideset.num_ghstd_cells = 1;
     sideset.num_virtual_cells = 0;
 
-    // Set vertices
-    sideset.cell_vertices = PHX::View<double***>("vertices",2,2,1);
+    // Set nodes (same as vertices in this case)
+    sideset.cell_nodes = PHX::View<double***>("nodes",2,2,1);
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
@@ -545,8 +545,8 @@ generateLocalMeshInfoBase()
   block.num_ghstd_cells = 1;
   block.num_virtual_cells = 1;
 
-  // Set vertices
-  block.cell_vertices = PHX::View<double***>("vertices",5,2,1);
+  // Set nodes (same as vertices in this case)
+  block.cell_nodes = PHX::View<double***>("nodes",5,2,1);
 
   // Set local cells
   block.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",5);

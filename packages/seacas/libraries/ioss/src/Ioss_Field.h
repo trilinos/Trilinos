@@ -135,8 +135,8 @@ namespace Ioss {
     }
     bool get_suffices_uppercase() const { return sufficesUppercase_; }
 
-    Field &set_zero_copy_enabled(bool true_false = true);
-    bool   zero_copy_enabled() const { return zeroCopyable_; }
+    const Field &set_zero_copy_enabled(bool true_false = true) const;
+    bool         zero_copy_enabled() const { return zeroCopyable_; }
 
     /** \brief Get the basic data type of the data held in the field.
      *
@@ -150,7 +150,8 @@ namespace Ioss {
     size_t raw_count() const { return rawCount_; }           // Number of items in field
     size_t transformed_count() const { return transCount_; } // Number of items in field
 
-    size_t get_size() const; // data size (in bytes) required to hold entire field
+    size_t get_size() const;       // data size (in bytes) required to hold entire field
+    size_t get_basic_size() const; // data size (in bytes) of the basic type
 
     /** \brief Get the role (MESH, ATTRIBUTE, TRANSIENT, REDUCTION, etc.) of the data in the field.
      *
@@ -211,8 +212,8 @@ namespace Ioss {
 
     std::vector<Transform *> transforms_{};
     char                     suffixSeparator_{1}; // Value = 1 means unset; use database default.
-    bool sufficesUppercase_{false}; // True if the suffices are uppercase on database...
-    bool zeroCopyable_{false};      // True if the field is zero-copyable.
+    bool         sufficesUppercase_{false}; // True if the suffices are uppercase on database...
+    mutable bool zeroCopyable_{false};      // True if the field is zero-copyable.
 
     bool equal_(const Ioss::Field &rhs, bool quiet) const;
   };

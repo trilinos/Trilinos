@@ -142,7 +142,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       utils.err() << "NOX::Direction::Tensor::reset() - The choice of "
        << "\"Line Search\" parameter " << choice
        << " is invalid." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
   //  Copy Method into "Submethod" (temporary hack for data scripts)
   lsParams.set("Submethod", choice);
@@ -161,7 +161,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   {
     utils.err() << "NOX::Solver::TensorBased::reset() - "
      << "Invalid \"Recovery Step Type\"" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 #endif
 
@@ -183,7 +183,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
        << "\"Lambda Selection\" parameter " << choice
        << " is invalid." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   choice = gsParams.get("Sufficient Decrease Condition",
@@ -200,7 +200,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       utils.err() << "NOX::Solver::TensorBased::reset() - The choice of "
        << "\"Sufficient Decrease Condition\" parameter " << choice
        << " is invalid." << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
 
@@ -520,7 +520,7 @@ bool NOX::LineSearch::Tensor::checkConvergence(double newValue, double oldValue,
   default:
 
     utils.err() << "NOX::LineSearch::Tensor::checkConvergence - Unknown convergence criteria" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
 
   }
 }

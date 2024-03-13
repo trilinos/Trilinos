@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,7 +32,7 @@ namespace Ioss {
     NodeBlock(DatabaseIO *io_database, const std::string &my_name, int64_t node_count,
               int64_t degrees_of_freedom);
 
-    NodeBlock(const NodeBlock &);
+    NodeBlock(const NodeBlock &other);
 
     ~NodeBlock() override;
 
@@ -46,12 +46,10 @@ namespace Ioss {
     const GroupingEntity *contained_in() const override
     {
       if (properties.exists("IOSS_INTERNAL_CONTAINED_IN")) {
-        auto ge = properties.get("IOSS_INTERNAL_CONTAINED_IN").get_pointer();
+        auto *ge = properties.get("IOSS_INTERNAL_CONTAINED_IN").get_pointer();
         return static_cast<const GroupingEntity *>(ge);
       }
-      else {
-        return GroupingEntity::contained_in();
-      }
+      return GroupingEntity::contained_in();
     }
 
     // Handle implicit properties -- These are calcuated from data stored
@@ -70,5 +68,8 @@ namespace Ioss {
 
     int64_t internal_put_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
+
+    int64_t internal_get_zc_field_data(const Field &field, void **data,
+                                       size_t *data_size) const override;
   };
 } // namespace Ioss

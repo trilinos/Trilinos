@@ -36,7 +36,7 @@ class Vector<SIMD<T>, l> {
  public:
   using type       = Vector<SIMD<T>, l>;
   using value_type = T;
-  using mag_type   = typename Kokkos::Details::ArithTraits<T>::mag_type;
+  using mag_type   = typename Kokkos::ArithTraits<T>::mag_type;
 
   enum : int { vector_length = l };
 

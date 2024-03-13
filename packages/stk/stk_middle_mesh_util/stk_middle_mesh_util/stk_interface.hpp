@@ -3,7 +3,7 @@
 #ifndef STK_INTERFACE
 #define STK_INTERFACE
 
-#include "mesh_input.hpp"
+#include "stk_middle_mesh/mesh_input.hpp"
 #include <set>
 #include <string>
 #include <vector>
@@ -16,7 +16,7 @@
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_topology/topology.hpp"
 
-#include "nonconformal_standard.hpp"
+#include "stk_middle_mesh/nonconformal_standard.hpp"
 #include "create_stk_mesh.hpp"
 #include "write_stk_mesh.hpp"
 

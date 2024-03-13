@@ -42,6 +42,7 @@
 #include <string>                        // for string, operator==, basic_st...
 #include <utility>                       // for pair
 #include <vector>                        // for vector
+#include <functional>
 
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldState, StateNP1, StateNM1
 #include "stk_mesh/base/Types.hpp"       // for EntityRank
@@ -70,6 +71,8 @@ namespace stk { namespace mesh { struct Entity; } }
 namespace stk {
 namespace transfer {
 
+using FieldTransform = std::function<double(double)>;
+
 struct EntityInterpolationData {
   const stk::mesh::BulkData& sendBulk;
   const stk::mesh::FieldBase* sendField;
@@ -79,11 +82,15 @@ struct EntityInterpolationData {
   stk::mesh::Entity sendEntity;
   const stk::mesh::Part* sendPart;
   const stk::mesh::Selector* sendSelector;
+  FieldTransform  preTransform;
+  FieldTransform postTransform;
 
   EntityInterpolationData(const stk::mesh::BulkData& sendBulk_, const stk::mesh::FieldBase* sendField_,
                           const unsigned sendDataIndex_, const unsigned recvDataIndex_,
                           const stk::mesh::FieldBase* sendNodalCoordField_, stk::mesh::Entity sendEntity_,
-                          const stk::mesh::Part* sendPart_, const stk::mesh::Selector* sendSelector_)
+                          const stk::mesh::Part* sendPart_, const stk::mesh::Selector* sendSelector_,
+                          FieldTransform preTransform_ = [](double value) {return value;},
+                          FieldTransform postTransform_ = [](double value) {return value;})
   : sendBulk(sendBulk_),
     sendField(sendField_),
     sendDataIndex(sendDataIndex_),
@@ -91,7 +98,9 @@ struct EntityInterpolationData {
     sendNodalCoordField(sendNodalCoordField_),
     sendEntity(sendEntity_),
     sendPart(sendPart_),
-    sendSelector(sendSelector_)
+    sendSelector(sendSelector_),
+    preTransform(preTransform_),
+    postTransform(postTransform_)
   { }
 
 private:
@@ -118,8 +127,8 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
   const std::vector<stk::mesh::Entity>& patchEntities = patch.get_patch_entities();
 
   const std::vector<const stk::mesh::FieldBase*> sendFieldList(1, sendField);
-  stk::transfer::EntityCentroidLinearRecoverField fieldInfo(stk::transfer::RecoverField::TRILINEAR, sendFieldList, *sendCoordField,
-                                                            1, sendEntity);
+  stk::transfer::EntityCentroidLinearRecoverField fieldInfo(stk::transfer::RecoverField::TRILINEAR, sendFieldList,
+                                                            *sendCoordField, 1, sendEntity, interpData.preTransform);
 
   const auto basisSize = (unsigned)stk::transfer::RecoverField::TRILINEAR;
   const unsigned totalLength = stk::mesh::field_scalars_per_entity(*sendField, sendEntity);
@@ -167,6 +176,7 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
         for(unsigned k = 0; k < basisSize; k++) {
           result[i] += coeff_comp[k] * basisEval[k];
         }
+        interpData.postTransform(result[i]);
       }
       else {
         result[i] = 0;
@@ -182,6 +192,7 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
           for(unsigned k = 0; k < basisSize; k++) {
             result[i_comp] += coeff_comp[k] * basisEval[k];
           }
+          interpData.postTransform(result[i_comp]);
         }
       }
       else {
@@ -217,7 +228,7 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
 
   const std::vector<const stk::mesh::FieldBase*> sendFieldList(1, sendField);
   stk::transfer::EntityCentroidQuadraticRecoverField fieldInfo(stk::transfer::RecoverField::TRIQUADRATIC, sendFieldList,
-                                                               *sendCoordField, 1, sendEntity);
+                                                               *sendCoordField, 1, sendEntity, interpData.preTransform);
 
   const auto basisSize = (unsigned)stk::transfer::RecoverField::TRIQUADRATIC;
   const unsigned totalLength = stk::mesh::field_scalars_per_entity(*sendField, sendEntity);
@@ -265,6 +276,7 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
         for(unsigned k = 0; k < basisSize; k++) {
           result[i] += coeff_comp[k] * basisEval[k];
         }
+        interpData.postTransform(result[i]);
       }
       else {
         result[i] = 0;
@@ -280,6 +292,7 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
           for(unsigned k = 0; k < basisSize; k++) {
             result[i_comp] += coeff_comp[k] * basisEval[k];
           }
+          interpData.postTransform(result[i_comp]);
         }
       }
       else {
@@ -313,7 +326,7 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
 
   const std::vector<const stk::mesh::FieldBase*> sendFieldList(1, sendField);
   stk::transfer::EntityCentroidCubicRecoverField fieldInfo(stk::transfer::RecoverField::TRICUBIC, sendFieldList,
-                                                           *sendCoordField, 1, sendEntity);
+                                                           *sendCoordField, 1, sendEntity, interpData.preTransform);
 
   const auto basisSize = (unsigned)stk::transfer::RecoverField::TRICUBIC;
   const unsigned totalLength = stk::mesh::field_scalars_per_entity(*sendField, sendEntity);
@@ -361,6 +374,7 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
         for(unsigned k = 0; k < basisSize; k++) {
           result[i] += coeff_comp[k] * basisEval[k];
         }
+        interpData.postTransform(result[i]);
       }
       else {
         result[i] = 0;
@@ -376,6 +390,7 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
           for(unsigned k = 0; k < basisSize; k++) {
             result[i_comp] += coeff_comp[k] * basisEval[k];
           }
+          interpData.postTransform(result[i_comp]);
         }
       }
       else {

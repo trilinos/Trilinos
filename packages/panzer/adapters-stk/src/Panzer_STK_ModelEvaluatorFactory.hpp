@@ -77,7 +77,6 @@
 #endif
 
 namespace Piro {
-  template <typename ScalarT> class RythmosSolver;
 #ifdef PANZER_HAVE_TEMPUS
   template <typename ScalarT> class TempusSolverForwardOnly;
 #endif
@@ -102,7 +101,6 @@ namespace panzer_stk {
 
   class STKConnManager;
   class NOXObserverFactory;
-  class RythmosObserverFactory;
 #ifdef PANZER_HAVE_TEMPUS
   class TempusObserverFactory;
 #endif
@@ -141,8 +139,6 @@ namespace panzer_stk {
 
     void setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory);
 
-    void setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory);
-
 #ifdef PANZER_HAVE_TEMPUS
     void setTempusObserverFactory(const Teuchos::RCP<const panzer_stk::TempusObserverFactory>& tempus_observer_factory);
 #endif
@@ -159,12 +155,10 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> >
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                     const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
 #ifdef PANZER_HAVE_TEMPUS
                                     const Teuchos::RCP<Piro::TempusSolverForwardOnly<ScalarT> > tempusSolver = Teuchos::null,
 #endif
-                                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
-                                    const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null
+                                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null
 #ifdef PANZER_HAVE_TEMPUS
                                     , const Teuchos::Ptr<const panzer_stk::TempusObserverFactory> & in_tempus_observer_factory=Teuchos::null
 #endif
@@ -345,7 +339,6 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
 
     Teuchos::RCP<const panzer_stk::NOXObserverFactory> m_nox_observer_factory;
-    Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;
 #ifdef PANZER_HAVE_TEMPUS
     Teuchos::RCP<const panzer_stk::TempusObserverFactory> m_tempus_observer_factory;
 #endif

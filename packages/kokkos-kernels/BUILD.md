@@ -192,7 +192,7 @@ endif()
   * Whether to pre instantiate kernels for the scalar type double.  This option is KokkosKernels_INST_DOUBLE=ON by default.  Disabling this may increase build times.
   * Default: ON
 * KokkosKernels_INST_EXECSPACE_OPENMP: BOOL
-  * Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OpenMP is enabled may increase build times.
+  * Whether to pre instantiate kernels for the execution space Kokkos::OpenMP.  Disabling this when Kokkos_ENABLE_OPENMP is enabled may increase build times.
   * Default: ON if Kokkos is OpenMP-enabled, OFF otherwise.
 * KokkosKernels_INST_EXECSPACE_SERIAL: BOOL
   * Whether to build kernels for the execution space Kokkos::Serial.  If explicit template instantiation (ETI) is enabled in Trilinos, disabling this when Kokkos_ENABLE_SERIAL is enabled may increase build times.

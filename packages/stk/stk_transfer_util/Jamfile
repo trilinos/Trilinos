@@ -143,6 +143,7 @@ lib stk_transfer_util_base
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_diag
     /sierra/stk_search_util//stk_search_util_base
+    /tpl/lapack//lapack_interface
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

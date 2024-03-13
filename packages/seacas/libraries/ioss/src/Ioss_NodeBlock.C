@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -90,6 +90,12 @@ int64_t Ioss::NodeBlock::internal_put_field_data(const Ioss::Field &field, void 
                                                  size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);
+}
+
+int64_t Ioss::NodeBlock::internal_get_zc_field_data(const Field &field, void **data,
+                                                    size_t *data_size) const
+{
+  return get_database()->get_zc_field(this, field, data, data_size);
 }
 
 Ioss::AxisAlignedBoundingBox Ioss::NodeBlock::get_bounding_box() const

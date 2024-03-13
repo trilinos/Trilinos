@@ -47,12 +47,12 @@
 #define XPETRA_IMPORTFACTORY_FWD_HPP
 
 namespace Xpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ImportFactory;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class ImportFactory;
 }
 
 #ifndef XPETRA_IMPORTFACTORY_SHORT
 #define XPETRA_IMPORTFACTORY_SHORT
 #endif
 
-#endif // XPETRA_IMPORTFACTORY_FWD_HPP
+#endif  // XPETRA_IMPORTFACTORY_FWD_HPP

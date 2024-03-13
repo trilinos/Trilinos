@@ -41,6 +41,20 @@
 #include <Shards_Array.hpp>             // for ArrayDimTag::size_type, etc
 #include <string>                       // for string
 
+#define DEPRECATED_SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ADT ) \
+  class ADT : public shards::ArrayDimTag { \
+  public: \
+    const char * name() const { static const char n[] = # ADT; return n; } \
+    const ADT & tag() { static const ADT self ; return self ; } \
+  private: \
+  ~ADT() {} \
+  ADT() { \
+    std::cerr << "Warning: The stk::mesh::" #ADT " type is deprecated and will soon be removed." << std::endl; \
+  } \
+    ADT( const ADT & ); \
+    ADT & operator = ( const ADT & ); \
+  };
+
 namespace stk {
 namespace mesh {
 
@@ -57,7 +71,7 @@ namespace mesh {
  *   stk::mesh::Field<double, stk::mesh::Cartesian>
  */
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( SimpleArrayTag )
+DEPRECATED_SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( SimpleArrayTag )
 
 /**
  *   \brief Implement an shards::ArrayDimTag for Cartesian coordinate dimensions.
@@ -70,11 +84,20 @@ struct Cartesian3d : public shards::ArrayDimTag {
 
   enum { X = 0 , Y = 1 , Z = 2 };       ///< Identifiers for each dimension
 
-  const char * name() const ;
-  static const Cartesian3d & tag();       ///< Singleton
+  const char * name() const {
+    static const char n[] = "Cartesian3d";
+    return n;
+  }
+
+  static const Cartesian3d & tag() {
+    static const Cartesian3d self;
+    return self;
+  }
 
 private:
-  Cartesian3d() {}
+  Cartesian3d() {
+    std::cerr << "Warning: The stk::mesh::Cartesian3d type is deprecated and will soon be removed." << std::endl;
+  }
   Cartesian3d( const Cartesian3d & );
   Cartesian3d & operator = ( const Cartesian3d & );
 };
@@ -90,11 +113,20 @@ struct Cartesian2d: public shards::ArrayDimTag {
 
   enum { X = 0 , Y = 1 };       ///< Identifiers for each dimension
 
-  const char * name() const ;
-  static const Cartesian2d & tag();       ///< Singleton
+  const char * name() const {
+    static const char n[] = "Cartesian2d";
+    return n;
+  }
+
+  static const Cartesian2d & tag() {
+    static const Cartesian2d self;
+    return self;
+  }
 
 private:
-  Cartesian2d() {}
+  Cartesian2d() {
+    std::cerr << "Warning: The stk::mesh::Cartesian2d type is deprecated and will soon be removed." << std::endl;
+  }
   Cartesian2d( const Cartesian2d & );
   Cartesian2d & operator = ( const Cartesian2d & );
 };
@@ -112,11 +144,20 @@ struct Cylindrical : public shards::ArrayDimTag {
          Angle = 1 ,  A = 1 ,
          Z = 2 };
 
-  const char * name() const ;
-  static const Cylindrical & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "Cylindrical";
+    return n;
+  }
+
+  static const Cylindrical & tag() {
+    static const Cylindrical self;
+    return self;
+  }
 
 private:
-  Cylindrical() {}
+  Cylindrical() {
+    std::cerr << "Warning: The stk::mesh::Cylindrical type is deprecated and will soon be removed." << std::endl;
+  }
   Cylindrical( const Cylindrical & );
   Cylindrical & operator = ( const Cylindrical & );
 };
@@ -146,11 +187,20 @@ struct FullTensor36 : public shards::ArrayDimTag {
          YX = 6 , YY = 1 , YZ = 4 ,
          ZX = 5 , ZY = 7 , ZZ = 2 };
 
-  const char * name() const ;
-  static const FullTensor36 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "FullTensor36";
+    return n;
+  }
+
+  static const FullTensor36 & tag() {
+    static const FullTensor36 self;
+    return self;
+  }
 
 private:
-  FullTensor36() {}
+  FullTensor36() {
+    std::cerr << "Warning: The stk::mesh::FullTensor36 type is deprecated and will soon be removed." << std::endl;
+  }
   FullTensor36( const FullTensor36 & );
   FullTensor36 & operator = ( const FullTensor36 & );
 };
@@ -167,11 +217,20 @@ struct FullTensor22 : public shards::ArrayDimTag {
   enum { XX = 0 , XY = 2 , 
          YX = 3 , YY = 1};
 
-  const char * name() const ;
-  static const FullTensor22 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "FullTensor22";
+    return n;
+  }
+
+  static const FullTensor22 & tag() {
+    static const FullTensor22 self;
+    return self;
+  }
 
 private:
-  FullTensor22() {}
+  FullTensor22() {
+    std::cerr << "Warning: The stk::mesh::FullTensor22 type is deprecated and will soon be removed." << std::endl;
+  }
   FullTensor22( const FullTensor22 & );
   FullTensor22 & operator = ( const FullTensor22 & );
 };
@@ -192,11 +251,20 @@ struct SymmetricTensor33 : public shards::ArrayDimTag {
          YX = 3 , YY = 1,  YZ = 4, 
          ZX = 5 , ZY = 4,  ZZ = 2};
 
-  const char * name() const  ;
-  static const SymmetricTensor33 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "SymmetricTensor33";
+    return n;
+  }
+
+  static const SymmetricTensor33 & tag() {
+    static const SymmetricTensor33 self;
+    return self;
+  }
 
 private:
-  SymmetricTensor33() {}
+  SymmetricTensor33() {
+    std::cerr << "Warning: The stk::mesh::SymmetricTensor33 type is deprecated and will soon be removed." << std::endl;
+  }
   SymmetricTensor33( const SymmetricTensor33 & );
   SymmetricTensor33 & operator = ( const SymmetricTensor33 & );
 };
@@ -217,11 +285,20 @@ struct SymmetricTensor31 : public shards::ArrayDimTag {
   enum { rr = 0 , rz = 2 , 
          zr = 3 , zz = 1};
 
-  const char * name() const  ;
-  static const SymmetricTensor31 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "SymmetricTensor31";
+    return n;
+  }
+
+  static const SymmetricTensor31 & tag() {
+    static const SymmetricTensor31 self;
+    return self;
+  }
 
 private:
-  SymmetricTensor31() {}
+  SymmetricTensor31() {
+    std::cerr << "Warning: The stk::mesh::SymmetricTensor31 type is deprecated and will soon be removed." << std::endl;
+  }
   SymmetricTensor31( const SymmetricTensor31 & );
   SymmetricTensor31 & operator = ( const SymmetricTensor31 & );
 };
@@ -236,11 +313,20 @@ struct SymmetricTensor21 : public shards::ArrayDimTag {
   enum { XX = 0 , XY = 2 , 
          YX = 2 , YY = 1 };
 
-  const char * name() const  ;
-  static const SymmetricTensor21 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "SymmetricTensor21";
+    return n;
+  }
+
+  static const SymmetricTensor21 & tag() {
+    static const SymmetricTensor21 self;
+    return self;
+  }
 
 private:
-  SymmetricTensor21() {}
+  SymmetricTensor21() {
+    std::cerr << "Warning: The stk::mesh::SymmetricTensor21 type is deprecated and will soon be removed." << std::endl;
+  }
   SymmetricTensor21( const SymmetricTensor21 & );
   SymmetricTensor21 & operator = ( const SymmetricTensor21 & );
 };
@@ -262,11 +348,20 @@ struct AsymmetricTensor03 : public shards::ArrayDimTag {
              YX = 0 ,/* YY = 0 */  YZ = 1 , 
              ZX = 2 ,   ZY = 1  /* ZZ=0 */ };
 
-  const char * name() const  ;
-  static const AsymmetricTensor03 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "AsymmetricTensor03";
+    return n;
+  }
+
+  static const AsymmetricTensor03 & tag() {
+    static const AsymmetricTensor03 self;
+    return self;
+  }
 
 private:
-  AsymmetricTensor03() {}
+  AsymmetricTensor03() {
+    std::cerr << "Warning: The stk::mesh::AsymmetricTensor03 type is deprecated and will soon be removed." << std::endl;
+  }
   AsymmetricTensor03( const AsymmetricTensor03 & );
   AsymmetricTensor03 & operator = ( const AsymmetricTensor03 & );
 };
@@ -283,11 +378,20 @@ struct Matrix22 : public shards::ArrayDimTag {
   enum { XX = 0 , XY = 2 , 
          YX = 1,  YY = 3 };
 
-  const char * name() const  ;
-  static const Matrix22 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "Matrix22";
+    return n;
+  }
+
+  static const Matrix22 & tag() {
+    static const Matrix22 self;
+    return self;
+  }
 
 private:
-  Matrix22() {}
+  Matrix22() {
+    std::cerr << "Warning: The stk::mesh::Matrix22 type is deprecated and will soon be removed." << std::endl;
+  }
   Matrix22( const Matrix22 & );
   Matrix22 & operator = ( const Matrix22 & );
 };
@@ -303,11 +407,20 @@ struct Matrix33 : public shards::ArrayDimTag {
          YX = 1 , YY = 4 , YZ = 7 ,
          ZX = 2 , ZY = 5 , ZZ = 8 };
 
-  const char * name() const  ;
-  static const Matrix33 & tag(); ///< Singleton
+  const char * name() const {
+    static const char n[] = "Matrix33";
+    return n;
+  }
+
+  static const Matrix33 & tag() {
+    static const Matrix33 self;
+    return self;
+  }
 
 private:
-  Matrix33() {}
+  Matrix33() {
+    std::cerr << "Warning: The stk::mesh::Matrix33 type is deprecated and will soon be removed." << std::endl;
+  }
   Matrix33( const Matrix33 & );
   Matrix33 & operator = ( const Matrix33 & );
 };

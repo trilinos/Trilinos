@@ -35,19 +35,17 @@ import path ;
 
 local stk_middle_mesh_util-root-inc ;
 if $(RTenv-arg) = "user" {
-  stk_middle_mesh_util-root-inc = $(stk_middle_mesh_util-root)/stk_middle_mesh_util ;
+  stk_middle_mesh_util-root-inc = $(stk_middle_mesh_util-root) ;
 } else {
-  stk_middle_mesh_util-root-inc = $(stk_middle_mesh_util-root)/stk_middle_mesh_util ;
+  stk_middle_mesh_util-root-inc = $(stk_middle_mesh_util-root) ;
 }
 
 project votd
   : requirements
     $(sierra-warnings)
-    <include>$(stk_middle_mesh_util-root)
     <include>$(stk_middle_mesh_util-root-inc)
     <define>STK_BUILT_IN_SIERRA
   : usage-requirements
-    <include>$(stk_middle_mesh_util-root)
     <include>$(stk_middle_mesh_util-root-inc)
   : build-dir $(stk_middle_mesh_util-builddir)
   ;

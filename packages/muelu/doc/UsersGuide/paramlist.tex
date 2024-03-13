@@ -66,6 +66,8 @@
           
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
           
+\cbb{aggregation: use ml scaling of drop tol}{bool}{false}{Enables ML-style scaling of drop tol, where the drop tol halves with each successive level.}
+          
 \cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
           
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
@@ -231,6 +233,8 @@
           
 \cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
           
+\cbb{repartition: explicit via new copy rebalance P and R}{bool}{false}{Fully explicit rebalancing of R and P during setup that makes new copy and invokes fill copy.  Slowest rebalancing option, but needed by combine mg algo.}
+          
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
           
 \cbb{maxwell1: mode}{string}{"standard"}{Specifying the order of solve of the block system. Allowed values are: "standard" (default), "refmaxwell"}
@@ -240,6 +244,8 @@
 \cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
           
 \cbb{maxwell1: dump matrices}{bool}{false}{Dump matrices to disk.}
+          
+\cbb{maxwell1: nodal smoother fix zero diagonal threshold}{double}{1e-10}{Specifies the fix zero diagonals threshold to be used for the nodal smoothing matrices.}
           
 \cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
           

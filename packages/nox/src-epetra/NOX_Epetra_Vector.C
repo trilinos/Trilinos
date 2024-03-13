@@ -260,7 +260,7 @@ NOX::Epetra::Vector::createMultiVector(
   if (numVecs < 0) {
     std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
      << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   double** v = new double*[numVecs+1];
@@ -291,7 +291,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
   if (numVecs <= 0) {
     std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
      << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
+    throw std::runtime_error("NOX Error");
   }
 
   const Epetra_BlockMap& map = epetraVec->Map();
@@ -329,7 +329,7 @@ double NOX::Epetra::Vector::norm(const NOX::Abstract::Vector& weights) const
 double NOX::Epetra::Vector::norm(const NOX::Epetra::Vector& /* weights */) const
 {
     std::cerr << "NOX::Epetra::Vector - Weighted norm not supported" << std::endl;
-    throw "NOX-Epetra Error";
+    throw std::runtime_error("NOX-Epetra Error");
 }
 
 double NOX::Epetra::Vector::innerProduct(const NOX::Abstract::Vector& y) const

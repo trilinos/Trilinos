@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -19,7 +19,7 @@ namespace Ioss {
   {
   public:
     NullEntity() : Ioss::GroupingEntity(nullptr, "null_entity", 0) {}
-    ~NullEntity();
+    ~NullEntity() override;
 
     std::string type_string() const override { return "NullEntity"; }
     std::string short_type_string() const override { return "null"; }
@@ -38,5 +38,10 @@ namespace Ioss {
     int64_t internal_get_field_data(const Field &, void *, size_t) const override { return 0; }
 
     int64_t internal_put_field_data(const Field &, void *, size_t) const override { return 0; }
+
+    int64_t internal_get_zc_field_data(const Field &, void **, size_t *) const override
+    {
+      return 0;
+    }
   };
 } // namespace Ioss

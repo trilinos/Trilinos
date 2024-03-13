@@ -139,6 +139,7 @@ TEST_F(TestOutputStreams, LogToFile)
   std::string log_string;
   getline(log_stream, log_string);
   ASSERT_EQ((log_result.str() == log_string), true);
+  unlink("logfile");
 }
 
 TEST_F(TestOutputStreams, LogViaOutputP0)

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,10 +29,6 @@ void refine_map(struct vtx_data **graph,        /* graph data structure */
   double            maxdesire = 0.0;  /* largest possible desire to flip an edge */
   int               error     = 0;    /* out of space? */
   int               i;                /* loop counter */
-
-  double find_maxdeg();
-  void   free_graph(), strout(char *msg);
-  int    make_comm_graph(), refine_mesh(), refine_cube();
 
   if (cube_or_mesh == 0) {
     nsets_tot = 1 << ndims_tot;

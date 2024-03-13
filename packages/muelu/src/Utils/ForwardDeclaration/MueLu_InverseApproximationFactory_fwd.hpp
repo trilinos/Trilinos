@@ -46,18 +46,13 @@
 #ifndef MUELU_INVERSEAPPROXIMATIONFACTORY_FWD_HPP
 #define MUELU_INVERSEAPPROXIMATIONFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class InverseApproximationFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class InverseApproximationFactory;
 }
 
 #ifndef MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
 #define MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_INVERSEAPPROXIMATIONFACTORY_FWD_HPP
+#endif  // MUELU_INVERSEAPPROXIMATIONFACTORY_FWD_HPP

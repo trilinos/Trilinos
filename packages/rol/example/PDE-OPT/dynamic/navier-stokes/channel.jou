@@ -45,3 +45,5 @@ Sideset 2 add curve 10 # right
 Sideset 3 add curve 3,9 # bottom
 Sideset 4 add curve 2 # left
 Sideset 5 add curve 6 # circle
+
+export mesh "channel.exo" overwrite

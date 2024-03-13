@@ -1,7 +1,0 @@
-WHICH_FEI new_fei
-SOLVER_LIBRARY Trilinos
-PARAM_FILE pll_RemEssBCs.Aztec.parameters
-INPUT_FILE pll_RemEssBCs.in
-SOLN_FILE pll_RemEssBCs.soln
-CHECK_FILE pll_RemEssBCs.soln
-NUM_SOLVES 1

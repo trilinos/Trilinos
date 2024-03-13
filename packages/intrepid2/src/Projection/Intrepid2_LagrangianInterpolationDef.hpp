@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_LagrangianInterpolationDef.hpp
-    \brief  Header file for the Intrepid2::Experimental::LagrangianInterpolation containing definitions.
+    \brief  Header file for the Intrepid2::LagrangianInterpolation containing definitions.
     \author Created by Mauro Perego
  */
 
@@ -54,77 +54,59 @@
 
 
 namespace Intrepid2 {
-namespace Experimental {
 
 
-
+namespace FunctorsLagrangianTools {
 template<typename CoordsViewType,
-typename CoeffsViewType,
 typename ortViewType,
 typename t2oViewType,
 typename subcellParamViewType,
 typename intViewType,
 typename ScalarViewType>
-struct computeDofCoordsAndCoeffs {
+struct computeDofCoords {
   typedef typename ScalarViewType::value_type value_type;
 
   CoordsViewType dofCoords_;
-  CoeffsViewType dofCoeffs_;
   const ortViewType orts_;
   const t2oViewType tagToOrdinal_;
   const subcellParamViewType edgeParam_, faceParam_;
   const intViewType edgesInternalDofOrdinals_, facesInternalDofOrdinals_;
-  const ScalarViewType edgesInternalDofCoords_, edgeDofCoeffs_;
-  const ScalarViewType facesInternalDofCoords_, faceDofCoeffs_;
+  const ScalarViewType edgesInternalDofCoords_;
+  const ScalarViewType facesInternalDofCoords_;
   ScalarViewType edgeWorkView_, faceWorkView_;
   const ordinal_type cellDim_, numEdges_, numFaces_;
   const intViewType edgeTopoKey_, numEdgesInternalDofs_;
   const intViewType faceTopoKey_, numFacesInternalDofs_;
-  const bool isBasisHCURL_, isBasisHDIV_;
 
-  computeDofCoordsAndCoeffs( CoordsViewType dofCoords,
-      CoeffsViewType dofCoeffs,
+  computeDofCoords( CoordsViewType dofCoords,
       const ortViewType orts,
       const t2oViewType tagToOrdinal,
       const subcellParamViewType edgeParam,
       const subcellParamViewType faceParam,
-      const intViewType edgesInternalDofOrdinals,
-      const intViewType facesInternalDofOrdinals,
       const ScalarViewType edgesInternalDofCoords,
-      const ScalarViewType edgeDofCoeffs,
       const ScalarViewType facesInternalDofCoords,
-      const ScalarViewType faceDofCoeffs,
       const ordinal_type cellDim,
       const ordinal_type numEdges,
       const ordinal_type numFaces,
       const intViewType edgeTopoKey,
       const intViewType numEdgesInternalDofs,
       const intViewType faceTopoKey,
-      const intViewType numFacesInternalDofs,
-      const bool isBasisHCURL,
-      const bool isBasisHDIV
+      const intViewType numFacesInternalDofs
   )
   : dofCoords_(dofCoords),
-    dofCoeffs_(dofCoeffs),
     orts_(orts),
     tagToOrdinal_(tagToOrdinal),
     edgeParam_(edgeParam),
     faceParam_(faceParam),
-    edgesInternalDofOrdinals_(edgesInternalDofOrdinals),
-    facesInternalDofOrdinals_(facesInternalDofOrdinals),
     edgesInternalDofCoords_(edgesInternalDofCoords),
-    edgeDofCoeffs_(edgeDofCoeffs),
     facesInternalDofCoords_(facesInternalDofCoords),
-    faceDofCoeffs_(faceDofCoeffs),
     cellDim_(cellDim),
     numEdges_(numEdges),
     numFaces_(numFaces),
     edgeTopoKey_(edgeTopoKey),
     numEdgesInternalDofs_(numEdgesInternalDofs),
     faceTopoKey_(faceTopoKey),
-    numFacesInternalDofs_(numFacesInternalDofs),
-    isBasisHCURL_(isBasisHCURL),
-    isBasisHDIV_(isBasisHDIV)
+    numFacesInternalDofs_(numFacesInternalDofs)
   {
     if(numEdges > 0)
       edgeWorkView_ = ScalarViewType("edgeWorkView", dofCoords.extent(0), edgesInternalDofCoords.extent(1), cellDim);
@@ -156,44 +138,6 @@ struct computeDofCoordsAndCoeffs {
             dofCoords_(cell,idof,d) = cellDofCoordsOriented(j,d);
         }
       }
-
-      //compute coefficients associated to edge DoFs
-      if(isBasisHCURL_) {
-        value_type tmp[3];
-        ScalarViewType tangents(tmp,1,cellDim_);
-        for (ordinal_type iedge=0; iedge < numEdges_; ++iedge) {
-          Impl::OrientationTools::getRefSubcellTangents(tangents, edgeParam_,edgeTopoKey_(iedge), iedge, eOrt[iedge]);
-          for(ordinal_type j=0; j<numEdgesInternalDofs_(iedge); ++j) {
-            auto idof = tagToOrdinal_(1, iedge, j);
-            auto jdof = edgesInternalDofOrdinals_(iedge, j);
-            for(ordinal_type d=0; d <cellDim_; ++d) {
-              dofCoeffs_(cell,idof,d) = 0;
-                  dofCoeffs_(cell,idof,d) += tangents(0,d)*edgeDofCoeffs_(iedge,jdof);
-            }
-          }
-        }
-      } else if(isBasisHDIV_) {
-        value_type tmp[9];
-        ScalarViewType tangentsAndNormal(tmp,cellDim_,cellDim_);
-        for (ordinal_type iedge=0; iedge < numEdges_; ++iedge) {
-          Impl::OrientationTools::getRefSideTangentsAndNormal(tangentsAndNormal, edgeParam_,edgeTopoKey_(iedge), iedge, eOrt[iedge]);
-          for(ordinal_type j=0; j<numEdgesInternalDofs_(iedge); ++j) {
-            auto idof = tagToOrdinal_(1, iedge, j);
-            auto jdof = edgesInternalDofOrdinals_(iedge, j);
-            for(ordinal_type d=0; d <cellDim_; ++d)
-              dofCoeffs_(cell,idof,d) = tangentsAndNormal(cellDim_-1, d)*edgeDofCoeffs_(iedge,jdof);
-          }
-        }
-      } else {
-        for (ordinal_type iedge=0; iedge < numEdges_; ++iedge) {
-          for(ordinal_type j=0; j<numEdgesInternalDofs_(iedge); ++j) {
-            auto idof = tagToOrdinal_(1, iedge, j);
-            auto jdof = edgesInternalDofOrdinals_(iedge, j);
-            dofCoeffs_(cell,idof,0) = edgeDofCoeffs_(iedge,jdof);
-          }
-        }
-
-      }
     }
 
     if(numFaces_ > 0) {
@@ -215,56 +159,19 @@ struct computeDofCoordsAndCoeffs {
             dofCoords_(cell,idof,d) = cellDofCoordsOriented(j,d);
         }
       }
-      //compute coefficients associated to face DoFs
-      if(isBasisHCURL_) {
-        value_type tmp[6];
-        ScalarViewType tangents(tmp,2,cellDim_);
-        for (ordinal_type iface=0; iface < numFaces_; ++iface) {
-          Impl::OrientationTools::getRefSubcellTangents(tangents, faceParam_,faceTopoKey_(iface), iface, fOrt[iface]);
-          for(ordinal_type j=0; j<numFacesInternalDofs_(iface); ++j) {
-            auto idof = tagToOrdinal_(2, iface, j);
-            auto jdof = facesInternalDofOrdinals_(iface, j);
-            for(ordinal_type d=0; d <cellDim_; ++d) {
-              dofCoeffs_(cell,idof,d) = 0;
-              for(ordinal_type k=0; k <2; ++k)
-                dofCoeffs_(cell,idof,d) += tangents(k,d)*faceDofCoeffs_(iface,jdof,k);
-            }
-          }
-        }
-      } else if(isBasisHDIV_) {
-        value_type tmp[9];
-        ScalarViewType tangentsAndNormal(tmp,cellDim_,cellDim_);
-        for (ordinal_type iface=0; iface < numFaces_; ++iface) {
-          Impl::OrientationTools::getRefSideTangentsAndNormal(tangentsAndNormal, faceParam_,faceTopoKey_(iface), iface, fOrt[iface]);
-          for(ordinal_type j=0; j<numFacesInternalDofs_(iface); ++j) {
-            auto idof = tagToOrdinal_(2, iface, j);
-            auto jdof = facesInternalDofOrdinals_(iface, j);
-            for(ordinal_type d=0; d <cellDim_; ++d)
-              dofCoeffs_(cell,idof,d) = tangentsAndNormal(cellDim_-1,d)*faceDofCoeffs_(iface,jdof);
-          }
-        }
-      } else {
-
-        for (ordinal_type iface=0; iface < numFaces_; ++iface) {
-          for(ordinal_type j=0; j<numFacesInternalDofs_(iface); ++j) {
-            auto idof = tagToOrdinal_(2, iface, j);
-            auto jdof = facesInternalDofOrdinals_(iface, j);
-            dofCoeffs_(cell,idof,0) = faceDofCoeffs_(iface,jdof);
-          }
-        }
-      }
     }
   }
 };
+}  // FunctorsLagrangianTools namespace
+
 
 template<typename DeviceType>
 template<typename BasisType,
-class ...coordsProperties, class ...coeffsProperties,
+class ...coordsProperties,
 typename ortValueType, class ...ortProperties>
 void
-LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
+LagrangianTools<DeviceType>::getOrientedDofCoords(
     Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
-    Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
     const BasisType* basis,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
 
@@ -273,13 +180,9 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
   using ScalarViewType = Kokkos::DynRankView<scalarType, DeviceType>;
   using ScalarViewTypeHost = Kokkos::DynRankView<scalarType, HostSpaceType>;
   using intViewType = Kokkos::DynRankView<ordinal_type, DeviceType>;
-  using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
 
   const auto topo = basis->getBaseCellTopology();
   const std::string name(basis->getName());
-
-  bool isBasisHCURL = (basis->getFunctionSpace()==FUNCTION_SPACE_HCURL);
-  bool isBasisHDIV = (basis->getFunctionSpace()==FUNCTION_SPACE_HDIV);
 
   ordinal_type numEdges = (basis->getDofCount(1, 0) > 0) ? topo.getEdgeCount() : 0;
   ordinal_type numFaces = (basis->getDofCount(2, 0) > 0) ? topo.getFaceCount() : 0;
@@ -295,18 +198,9 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
 
   const ordinal_type dim = topo.getDimension();
 
-  const ordinal_type numCells = dofCoeffs.extent(0);
-
-  ScalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2)), refDofCoeffs;
+  ScalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2));
   basis->getDofCoords(refDofCoords);
   RealSpaceTools<DeviceType>::clone(dofCoords,refDofCoords);
-
-  if(dofCoeffs.rank() == 3) //vector basis
-    refDofCoeffs = ScalarViewType("refDofCoeffs", dofCoeffs.extent(1), dofCoeffs.extent(2));
-  else //scalar basis
-    refDofCoeffs = ScalarViewType("refDofCoeffs",dofCoeffs.extent(1));
-  basis->getDofCoeffs(refDofCoeffs);
-  RealSpaceTools<DeviceType>::clone(dofCoeffs,refDofCoeffs);
 
   if((numFaces == 0) && (numEdges == 0)) 
     return;
@@ -317,7 +211,6 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
   intViewType numEdgesInternalDofs("numEdgesInternalDofs", numEdges);
   ScalarViewType  edgesInternalDofCoords;
   intViewType  edgesInternalDofOrdinals;
-  ScalarViewType  edgeDofCoeffs;
 
   ordinal_type maxNumEdgesInternalDofs=0;
   ordinal_type edgeBasisMaxCardinality=0;
@@ -332,7 +225,6 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
   }
   Kokkos::deep_copy(numEdgesInternalDofs,hostNumEdgesInternalDofs);
 
-  edgeDofCoeffs = ScalarViewType("edgeDofCoeffs", numEdges, edgeBasisMaxCardinality);
   edgesInternalDofCoords = ScalarViewType("edgeInternalDofCoords", numEdges, maxNumEdgesInternalDofs,1);
   edgesInternalDofOrdinals = intViewType("edgeInternalDofCoords", numEdges, maxNumEdgesInternalDofs);
   auto hostEdgesInternalDofCoords = Kokkos::create_mirror_view(edgesInternalDofCoords);
@@ -348,12 +240,8 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
       hostEdgesInternalDofOrdinals(iedge, i) = hostEdgeBasisPtr->getDofOrdinal(1, 0, i);
       hostEdgesInternalDofCoords(iedge, i,0) = edgeDofCoords(hostEdgesInternalDofOrdinals(iedge, i),0);
     }
-    auto edgeBasisPtr = edgeBases[iedge];
-    auto dofRange = range_type(0, edgeBasisPtr->getCardinality());
-    edgeBasisPtr->getDofCoeffs(Kokkos::subview(edgeDofCoeffs, iedge, dofRange));
   }
   Kokkos::deep_copy(edgesInternalDofCoords,hostEdgesInternalDofCoords);
-  Kokkos::deep_copy(edgesInternalDofOrdinals,hostEdgesInternalDofOrdinals);
   Kokkos::deep_copy(edgeTopoKey,hostEdgeTopoKey);
 
   auto edgeParam = RefSubcellParametrization<DeviceType>::get(1, topo.getKey());
@@ -364,7 +252,6 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
   intViewType numFacesInternalDofs("numFacesInternalDofs", numFaces);
   ScalarViewType  facesInternalDofCoords;
   intViewType  facesInternalDofOrdinals;
-  ScalarViewType  faceDofCoeffs;
 
   ordinal_type maxNumFacesInternalDofs=0;
   ordinal_type faceBasisMaxCardinality=0;
@@ -382,11 +269,6 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
   facesInternalDofCoords = ScalarViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs, 2);
   facesInternalDofOrdinals = intViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs);
 
-  if(isBasisHCURL)
-    faceDofCoeffs = ScalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality,2);
-  else
-    faceDofCoeffs = ScalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality);
-
   auto hostFacesInternalDofCoords = Kokkos::create_mirror_view(facesInternalDofCoords);
   auto hostFacesInternalDofOrdinals = Kokkos::create_mirror_view(facesInternalDofOrdinals);
   auto hostFaceTopoKey = Kokkos::create_mirror_view(faceTopoKey);
@@ -401,12 +283,8 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
       for(ordinal_type d=0; d <2; ++d)
         hostFacesInternalDofCoords(iface, i,d) = faceDofCoords(hostFacesInternalDofOrdinals(iface, i),d);
     }
-    auto faceBasisPtr = faceBases[iface];
-    auto dofRange = range_type(0, faceBasisPtr->getCardinality());
-    faceBasisPtr->getDofCoeffs(Kokkos::subview(faceDofCoeffs, iface, dofRange, Kokkos::ALL()));
   }
   Kokkos::deep_copy(facesInternalDofCoords,hostFacesInternalDofCoords);
-  Kokkos::deep_copy(facesInternalDofOrdinals,hostFacesInternalDofOrdinals);
   Kokkos::deep_copy(faceTopoKey,hostFaceTopoKey);
 
   typename RefSubcellParametrization<DeviceType>::ConstViewType faceParam;
@@ -416,40 +294,69 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
 
   //*** Loop over cells ***
 
-  const Kokkos::RangePolicy<typename DeviceType::execution_space> policy(0, numCells);
-  typedef computeDofCoordsAndCoeffs
-      <decltype(dofCoords),
-      decltype(dofCoeffs),
+  const Kokkos::RangePolicy<typename DeviceType::execution_space> policy(0, dofCoords.extent(0));
+  using FunctorType = FunctorsLagrangianTools::computeDofCoords<decltype(dofCoords),
       decltype(orts),
       decltype(tagToOrdinal),
       decltype(edgeParam),
       intViewType,
-      ScalarViewType> FunctorType;
+      ScalarViewType>;
   Kokkos::parallel_for(policy,
-      FunctorType(dofCoords, dofCoeffs,
+      FunctorType(dofCoords,
           orts, tagToOrdinal, edgeParam, faceParam,
-          edgesInternalDofOrdinals, facesInternalDofOrdinals,
-          edgesInternalDofCoords, edgeDofCoeffs,
-          facesInternalDofCoords, faceDofCoeffs,
+          edgesInternalDofCoords, facesInternalDofCoords,
           dim, numEdges, numFaces,
           edgeTopoKey, numEdgesInternalDofs,
-          faceTopoKey, numFacesInternalDofs,
-          isBasisHCURL, isBasisHDIV));
+          faceTopoKey, numFacesInternalDofs));
+}
+
+
+template<typename DeviceType>
+template<typename BasisType, 
+class ...coeffsProperties,
+typename ortValueType, class ...ortProperties>
+void
+LagrangianTools<DeviceType>::getOrientedDofCoeffs(
+    Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
+    const BasisType* basis,
+    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
+
+  using ScalarViewType = Kokkos::DynRankView<typename BasisType::scalarType, DeviceType>;
+  ScalarViewType refDofCoeffs;
+  if(dofCoeffs.rank() == 3) //vector basis
+    refDofCoeffs = ScalarViewType("refDofCoeffs", dofCoeffs.extent(1), dofCoeffs.extent(2));
+  else //scalar basis
+    refDofCoeffs = ScalarViewType("refDofCoeffs",dofCoeffs.extent(1));
+  basis->getDofCoeffs(refDofCoeffs); 
+
+  OrientationTools<DeviceType>::modifyBasisByOrientationInverse(dofCoeffs, refDofCoeffs, orts, basis, true);
 }
 
 
 template<typename DeviceType>
 template<typename basisCoeffsViewType,
 typename funcViewType,
-typename dofCoeffViewType>
+typename BasisType,
+typename ortViewType>
 void
 LagrangianInterpolation<DeviceType>::getBasisCoeffs(basisCoeffsViewType basisCoeffs,
     const funcViewType functionValsAtDofCoords,
-    const dofCoeffViewType dofCoeffs){
-  ArrayTools<DeviceType>::dotMultiplyDataData(basisCoeffs,functionValsAtDofCoords,dofCoeffs);
+    const BasisType* cellBasis,
+    const ortViewType  orts){
+  using scalarType = typename BasisType::scalarType;
+  using ScalarViewType = Kokkos::DynRankView<scalarType, DeviceType>;
+  auto dofCoeffs = (functionValsAtDofCoords.rank() == 3) ? 
+                   ScalarViewType("dofCoeffs", basisCoeffs.extent(0), cellBasis->getCardinality(), functionValsAtDofCoords.extent(2)) : 
+                   ScalarViewType("dofCoeffs", basisCoeffs.extent(0), cellBasis->getCardinality()); 
+  auto dofCoeffs0 = Kokkos::subview(dofCoeffs, 0, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+  cellBasis->getDofCoeffs(dofCoeffs0);
+  RealSpaceTools<DeviceType>::clone(dofCoeffs,dofCoeffs0);
+  Kokkos::DynRankView<typename basisCoeffsViewType::value_type, DeviceType> basisCoeffsRef("basisCoeffsRef", basisCoeffs.extent(0), basisCoeffs.extent(1));
+  ArrayTools<DeviceType>::dotMultiplyDataData(basisCoeffsRef,functionValsAtDofCoords,dofCoeffs);
+  OrientationTools<DeviceType>::modifyBasisByOrientationInverse(basisCoeffs, basisCoeffsRef, orts, cellBasis, true);
 }
-}
-}
+
+} // Intrepid2 namespace
 
 #endif
 

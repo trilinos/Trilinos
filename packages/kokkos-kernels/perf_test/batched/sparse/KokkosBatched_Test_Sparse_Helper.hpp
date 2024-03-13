@@ -141,9 +141,9 @@ void readCRSFromMM(std::string name, const VType &V, const IntType &r,
       r_h(tmp_row) = i;
     current_row = read_row;
 
-    // if (VType::Rank == 1)
+    // if (VType::rank == 1)
     //  input >> V_h(i);
-    if (VType::Rank == 2)
+    if (VType::rank == 2)
       for (size_t j = 0; j < V_h.extent(0); ++j) input >> V_h(j, i);
   }
 

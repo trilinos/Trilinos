@@ -101,7 +101,8 @@ namespace Intrepid2 {
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
-      getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues( const typename DeviceType::execution_space& space,
+                       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
 
@@ -156,15 +157,16 @@ namespace Intrepid2 {
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
     using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
-    
-    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename BasisBase::OrdinalTypeArray3DHost;
-    
-    using OutputViewType = typename BasisBase::OutputViewType;
-    using PointViewType  = typename BasisBase::PointViewType ;
-    using ScalarViewType = typename BasisBase::ScalarViewType;
-      
+    using typename BasisBase::ExecutionSpace;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType ;
+    using typename BasisBase::ScalarViewType;
+
     /** \brief  Constructor.
      */
     Basis_HGRAD_LINE_C1_FEM();
@@ -173,7 +175,8 @@ namespace Intrepid2 {
 
     virtual
     void
-    getValues(       OutputViewType outputValues,
+    getValues( const ExecutionSpace& space,
+                     OutputViewType outputValues,
                const PointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -185,9 +188,10 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       Impl::Basis_HGRAD_LINE_C1_FEM::
-        getValues<DeviceType>( outputValues,
-                                  inputPoints,
-                                  operatorType );
+        getValues<DeviceType>(space,
+                              outputValues,
+                              inputPoints,
+                              operatorType );
     }
 
     virtual

@@ -264,7 +264,7 @@ NOX::Epetra::MultiVector::operator [] (int i)
   if ( i < 0 || i > (int) noxEpetraVectors.size() ) {
     std::cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index "
      << i << std::endl;
-    throw "NOX::Epetra Error";
+    throw std::runtime_error("NOX::Epetra Error");
   }
   if (noxEpetraVectors[i] == NULL) {
     Teuchos::RCP<Epetra_Vector> epetra_vec =
@@ -281,7 +281,7 @@ NOX::Epetra::MultiVector::operator [] (int i) const
   if ( i < 0 || i > (int) noxEpetraVectors.size() ) {
     std::cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index "
      << i << std::endl;
-    throw "NOX::Epetra Error";
+    throw std::runtime_error("NOX::Epetra Error");
   }
   if (noxEpetraVectors[i] == NULL) {
     Teuchos::RCP<Epetra_Vector> epetra_vec =
@@ -488,6 +488,6 @@ void NOX::Epetra::MultiVector::checkIndex(int idx) const
 {
   if ( idx < 0 || idx >= epetraMultiVec->NumVectors() ) {
     std::cerr << "NOX::Epetra::MultiVector:  Error!  Invalid index " << idx << std::endl;
-    throw "NOX::Epetra Error";
+    throw std::runtime_error("NOX::Epetra Error");
   }
 }

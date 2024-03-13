@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,7 +37,7 @@ namespace Ioss {
   };
 
   using ElementShapeMap    = std::map<ElementShape, std::string>;
-  using ElementTopologyMap = std::map<std::string, ElementTopology *, std::less<std::string>>;
+  using ElementTopologyMap = std::map<std::string, ElementTopology *, std::less<>>;
   using ETM_VP             = ElementTopologyMap::value_type;
 
   class IOSS_EXPORT ETRegistry

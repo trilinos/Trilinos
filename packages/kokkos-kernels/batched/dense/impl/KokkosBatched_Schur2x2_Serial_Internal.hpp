@@ -37,7 +37,7 @@ struct SerialSchur2x2Internal {
                                            Kokkos::complex<RealType>* lambda2,
                                            bool* is_complex) {
     typedef RealType real_type;
-    typedef Kokkos::Details::ArithTraits<real_type> ats;
+    typedef Kokkos::ArithTraits<real_type> ats;
     const real_type zero(0), one(1), half(0.5), minus_one(-1);
     /// compute G = [ gamma -sigma;
     ///               sigma  gamma ];

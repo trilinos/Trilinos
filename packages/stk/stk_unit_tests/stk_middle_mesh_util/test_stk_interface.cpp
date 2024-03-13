@@ -1,8 +1,8 @@
 #ifdef STK_BUILT_IN_SIERRA
 
-#include "constants.hpp"
-#include "stk_interface.hpp"
-#include "utils.hpp"
+#include "stk_middle_mesh_util/constants.hpp"
+#include "stk_middle_mesh_util/stk_interface.hpp"
+#include "stk_middle_mesh/utils.hpp"
 #include "gtest/gtest.h"
 
 #include <ostream>

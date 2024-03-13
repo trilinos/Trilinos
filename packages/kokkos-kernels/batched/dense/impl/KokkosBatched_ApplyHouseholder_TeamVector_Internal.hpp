@@ -59,7 +59,7 @@ struct TeamVectorApplyLeftHouseholderInternal {
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(member, m),
           [&](const int &i, value_type &val) {
-            val += Kokkos::Details::ArithTraits<value_type>::conj(u2[i * u2s]) *
+            val += Kokkos::ArithTraits<value_type>::conj(u2[i * u2s]) *
                    A2[i * as0 + j * as1];
           },
           tmp);
@@ -146,8 +146,7 @@ struct TeamVectorApplyRightHouseholderInternal {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, m), [&](const int &i) {
                   A2[i * as0 + j * as1] -=
-                      w1[i] * Kokkos::Details::ArithTraits<ValueType>::conj(
-                                  u2[j * u2s]);
+                      w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
                 });
           });
     } else {
@@ -156,8 +155,7 @@ struct TeamVectorApplyRightHouseholderInternal {
             Kokkos::parallel_for(
                 Kokkos::TeamThreadRange(member, m), [&](const int &i) {
                   A2[i * as0 + j * as1] -=
-                      w1[i] * Kokkos::Details::ArithTraits<ValueType>::conj(
-                                  u2[j * u2s]);
+                      w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
                 });
           });
     }

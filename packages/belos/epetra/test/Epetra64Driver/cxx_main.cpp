@@ -144,6 +144,7 @@ int main(int narg, char *arg[])
       if (MyPID == 0) std::cout << "Input matrix:  " << std::endl;
       A->Print(std::cout);
     }
+    Teuchos::RCP<Epetra_CrsMatrix> rcpA = Teuchos::rcp( A );
 
     // Set Belos verbosity level
     if (MyPID == 0) std::cout << "Setting up the problem..." << std::endl;
@@ -182,9 +183,9 @@ int main(int narg, char *arg[])
     // Create the linear problem to be solved.
 
     Teuchos::RCP<Epetra_MultiVector> X =
-      Teuchos::rcp(new Epetra_MultiVector(A->Map(), numrhs));
+      Teuchos::rcp(new Epetra_MultiVector(rcpA->Map(), numrhs));
     Teuchos::RCP<Epetra_MultiVector> B =
-      Teuchos::rcp(new Epetra_MultiVector(A->Map(), numrhs));
+      Teuchos::rcp(new Epetra_MultiVector(rcpA->Map(), numrhs));
 
     Teuchos::RCP<Belos::LinearProblem<double, MV, OP> > MyProblem;
     MyProblem =
@@ -199,7 +200,7 @@ int main(int narg, char *arg[])
     // Set random seed to have consistent initial vectors between experiments.
     X->SetSeed(2*(MyPID) +1); // Odd seed
     MVT::MvRandom( *X );
-    OPT::Apply( *A, *X, *B );
+    OPT::Apply( *rcpA, *X, *B );
     MVT::MvInit( *X, 0. );
 
     // Inform the linear problem that you are finished passing it information
@@ -244,8 +245,8 @@ int main(int narg, char *arg[])
     bool badRes = false;
     std::vector<double> actual_resids( numrhs );
     std::vector<double> rhs_norm( numrhs );
-    Epetra_MultiVector resid(A->Map(), numrhs);
-    OPT::Apply( *A, *X, resid );
+    Epetra_MultiVector resid(rcpA->Map(), numrhs);
+    OPT::Apply( *rcpA, *X, resid );
     MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
     MVT::MvNorm( resid, actual_resids );
     MVT::MvNorm( *B, rhs_norm );

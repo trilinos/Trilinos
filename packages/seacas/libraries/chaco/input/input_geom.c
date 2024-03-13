@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,10 +10,10 @@
 #include "smalloc.h" // for smalloc
 #include <stdio.h>   // for printf, fclose, fscanf, EOF, etc
 
-int input_geom(FILE *  fingeom,                /* geometry input file */
-               char *  geomname,               /* name of geometry file */
+int input_geom(FILE   *fingeom,                /* geometry input file */
+               char   *geomname,               /* name of geometry file */
                int     nvtxs,                  /* number of coordinates to read */
-               int *   igeom,                  /* dimensionality of geometry */
+               int    *igeom,                  /* dimensionality of geometry */
                float **x, float **y, float **z /* coordinates of vertices */
 )
 {
@@ -27,7 +27,6 @@ int input_geom(FILE *  fingeom,                /* geometry input file */
   int        end_flag;    /* return conditional */
   int        ndims;       /* number of values in an input line */
   int        i = 0;       /* loop counter */
-  double     read_val();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering input_geom>\n");
