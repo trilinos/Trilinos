@@ -1471,6 +1471,9 @@ template <
 #if KOKKOSKERNELS_VERSION >= 40199
           typename ExecutionSpace,
 #endif
+#if KOKKOSKERNELS_VERSION >= 40299
+          typename Handle,
+#endif
           typename AlphaType,
           typename BetaType,
           typename MatrixType,
@@ -1481,19 +1484,30 @@ template <
 typename std::enable_if<
   Kokkos::is_view_uq_pce< Kokkos::View< InputType, InputP... > >::value &&
   Kokkos::is_view_uq_pce< Kokkos::View< OutputType, OutputP... > >::value
+#if KOKKOSKERNELS_VERSION >= 40299
+  && KokkosSparse::is_crs_matrix_v<MatrixType>
+  && (Kokkos::View< OutputType, OutputP... >::rank() == 1)
+#endif
   >::type
 spmv(
 #if KOKKOSKERNELS_VERSION >= 40199
   const ExecutionSpace& space,
 #endif
+#if KOKKOSKERNELS_VERSION < 40299
   KokkosKernels::Experimental::Controls,
+#else
+  Handle* handle,
+#endif
   const char mode[],
   const AlphaType& a,
   const MatrixType& A,
   const Kokkos::View< InputType, InputP... >& x,
   const BetaType& b,
-  const Kokkos::View< OutputType, OutputP... >& y,
-  const RANK_ONE)
+  const Kokkos::View< OutputType, OutputP... >& y
+#if KOKKOSKERNELS_VERSION < 40299
+  , const RANK_ONE
+#endif
+  )
 {
   typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
   typedef Kokkos::View< InputType, InputP... > InputVectorType;
@@ -1532,6 +1546,9 @@ template <
 #if KOKKOSKERNELS_VERSION >= 40199
           typename ExecutionSpace,
 #endif
+#if KOKKOSKERNELS_VERSION >= 40299
+          typename Handle,
+#endif
           typename AlphaType,
           typename BetaType,
           typename MatrixType,
@@ -1542,19 +1559,30 @@ template <
 typename std::enable_if<
   Kokkos::is_view_uq_pce< Kokkos::View< InputType, InputP... > >::value &&
   Kokkos::is_view_uq_pce< Kokkos::View< OutputType, OutputP... > >::value
+#if KOKKOSKERNELS_VERSION >= 40299
+  && KokkosSparse::is_crs_matrix_v<MatrixType>
+  && (Kokkos::View< OutputType, OutputP... >::rank() == 2)
+#endif
   >::type
 spmv(
 #if KOKKOSKERNELS_VERSION >= 40199
   const ExecutionSpace& space,
 #endif
+#if KOKKOSKERNELS_VERSION < 40299
   KokkosKernels::Experimental::Controls,
+#else
+  Handle* handle,
+#endif
   const char mode[],
   const AlphaType& a,
   const MatrixType& A,
   const Kokkos::View< InputType, InputP... >& x,
   const BetaType& b,
-  const Kokkos::View< OutputType, OutputP... >& y,
-  const RANK_TWO)
+  const Kokkos::View< OutputType, OutputP... >& y
+#if KOKKOSKERNELS_VERSION < 40299
+  , const RANK_TWO
+#endif
+  )
 {
 #if KOKKOSKERNELS_VERSION >= 40199
   if(space != ExecutionSpace()) {
@@ -1569,7 +1597,9 @@ spmv(
   if (y.extent(1) == 1) {
     auto y_1D = subview(y, Kokkos::ALL(), 0);
     auto x_1D = subview(x, Kokkos::ALL(), 0);
-#if KOKKOSKERNELS_VERSION >= 40199
+#if KOKKOSKERNELS_VERSION >= 40299
+    spmv(space, handle, mode, a, A, x_1D, b, y_1D);
+#elif (KOKKOSKERNELS_VERSION < 40299) && (KOKKOSKERNELS_VERSION >= 40199)
     spmv(space, KokkosKernels::Experimental::Controls(), mode, a, A, x_1D, b, y_1D, RANK_ONE());
 #else
     spmv(KokkosKernels::Experimental::Controls(), mode, a, A, x_1D, b, y_1D, RANK_ONE());
