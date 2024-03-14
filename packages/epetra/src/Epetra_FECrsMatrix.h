@@ -857,3 +857,10 @@ template<> inline std::vector<std::vector<long long> >& Epetra_FECrsMatrix::nonl
 
 
 #endif /* EPETRA_FECRSMATRIX_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

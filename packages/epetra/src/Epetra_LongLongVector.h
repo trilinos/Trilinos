@@ -307,3 +307,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
 #endif // EPETRA_NO_64BIT_GLOBAL_INDICES
 
 #endif /* EPETRA_LONGLONGVECTOR_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

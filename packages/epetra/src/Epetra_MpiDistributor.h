@@ -388,3 +388,10 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     int lastRoundBytesRecv_;
 };
 #endif /* EPETRA_MPIDISTRIBUTOR_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
