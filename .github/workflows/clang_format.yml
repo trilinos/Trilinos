@@ -32,7 +32,7 @@ jobs:
 
     # This does not work for PRs from forks.
     - name: Post artifact in issue comment
-      uses: mshick/add-pr-comment@7c0890544fb33b0bdd2e59467fbacb62e028a096 # v2.8.1
+      uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
       if: ${{ (hashFiles('format_patch.txt') != '') && (github.event.pull_request.head.repo.full_name == github.repository) }}
       with:
         message: |
