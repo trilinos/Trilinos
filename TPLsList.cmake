@@ -66,6 +66,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   ROCBLAS         "cmake/TPLs/"    PT
   ROCSPARSE       "cmake/TPLs/"    PT
   ROCSOLVER       "cmake/TPLs/"    PT
+  ROCTHRUST       "cmake/TPLs/"    PT
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    PT
   HWLOC           "cmake/TPLs/"    ST
