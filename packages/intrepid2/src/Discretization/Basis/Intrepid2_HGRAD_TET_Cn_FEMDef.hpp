@@ -246,7 +246,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
   // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
   INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
-  
+
   // Basis-dependent initializations
   constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
   constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
@@ -403,7 +403,11 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   work("Hgrad::Tet::Cn::work", lwork),
   ipiv("Hgrad::Tet::Cn::ipiv", card);
 
-  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
+  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                     vmat,
+                                                                                                                     dofCoords,
+                                                                                                                     order,
+                                                                                                                     OPERATOR_VALUE);
 
   ordinal_type info = 0;
   Teuchos::LAPACK<ordinal_type,scalarType> lapack;

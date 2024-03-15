@@ -65,8 +65,13 @@ namespace Intrepid2 {
 
   namespace Test {
 
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+
     template<typename ValueType, typename DeviceType>
     int HGRAD_LINE_Cn_FEM_JACOBI_Test01(const bool verbose) {
+
+      //! Create an execution space instance.
+      const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
       Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
         verbose, "Basis_HGRAD_LINE_Cn_FEM_JACOBI", {
@@ -322,7 +327,7 @@ namespace Intrepid2 {
         {
           *outStream << " -- Comparing OPERATOR_VALUE -- \n\n"; 
           DynRankView ConstructWithLabel(vals, numFields, numPoints);
-          lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
+          lineBasis.getValues(space, vals, lineNodes, OPERATOR_VALUE);
 
           // host mirror for comparison
           auto valsHost = Kokkos::create_mirror_view(vals);
@@ -352,7 +357,7 @@ namespace Intrepid2 {
         {
           *outStream << " -- Comparing OPERATOR_D1 -- \n\n"; 
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          lineBasis.getValues(vals, lineNodes, OPERATOR_D1);
+          lineBasis.getValues(space, vals, lineNodes, OPERATOR_D1);
 
           // host mirror for comparison
           auto valsHost = Kokkos::create_mirror_view(vals);
@@ -382,7 +387,7 @@ namespace Intrepid2 {
         {
           *outStream << " -- Comparing OPERATOR_D2 -- \n\n"; 
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          lineBasis.getValues(vals, lineNodes, OPERATOR_D2);
+          lineBasis.getValues(space, vals, lineNodes, OPERATOR_D2);
 
           // host mirror for comparison
           auto valsHost = Kokkos::create_mirror_view(vals);
@@ -412,7 +417,7 @@ namespace Intrepid2 {
         {
           *outStream << " -- Comparing OPERATOR_D3 -- \n\n"; 
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-          lineBasis.getValues(vals, lineNodes, OPERATOR_D3);
+          lineBasis.getValues(space, vals, lineNodes, OPERATOR_D3);
 
           // host mirror for comparison
           auto valsHost = Kokkos::create_mirror_view(vals);
