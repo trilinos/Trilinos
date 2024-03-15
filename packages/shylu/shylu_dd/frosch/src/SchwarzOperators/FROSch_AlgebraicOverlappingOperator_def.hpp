@@ -322,8 +322,11 @@ namespace FROSch {
             FROSCH_DETAILTIMER_START_LEVELID(AlgebraicOverlappin_extractLocalSubdomainMatrix_SymbolicTime,"AlgebraicOverlappinOperator::extractLocalSubdomainMatrix_Symbolic");
             // buid sudomain matrix
             this->subdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(this->OverlappingMap_, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
-            this->subdomainScatter_ = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
-            this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *(this->subdomainScatter_), ADD);
+            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
+            this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *scatter, ADD);
+
+            // Used to Map original K_ to overlapping suubdomainMatrix
+            this->subdomainScatter_ = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), this->OverlappingMap_);
 
             // build local subdomain matrix
             RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
