@@ -280,7 +280,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
 //
 // nrhs - Number of rhs to generate. (First interface produces vectors, so nrhs is not needed
 //
-// comm    (In) - an Epetra_Comm object describing the parallel machine (numProcs and my proc ID)
 // map    (Out) - Map<LO,GO> describing distribution of matrix and vectors/multivectors
 // A      (Out) - CrsMatrix<Scalar,LO,GO> constructed for nx by ny grid using prescribed stencil
 //                Off-diagonal values are random between 0 and 1.  If diagonal is part of stencil,

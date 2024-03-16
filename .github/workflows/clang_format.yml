@@ -32,13 +32,13 @@ jobs:
 
     # This does not work for PRs from forks.
     - name: Post artifact in issue comment
-      uses: mshick/add-pr-comment@7c0890544fb33b0bdd2e59467fbacb62e028a096 # v2.8.1
+      uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
       if: ${{ (hashFiles('format_patch.txt') != '') && (github.event.pull_request.head.repo.full_name == github.repository) }}
       with:
         message: |
           Your PR updated files that did not respect package clang formatting settings.  Please apply the patch found [here](${{ steps.upload-artf.outputs.artifact-url }})
 
-    - uses: actions/github-script@ffc2c79a5b2490bd33e0a41c1de74b877714d736 # v3.2.0
+    - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
         script: |

@@ -52,10 +52,11 @@
 ///   time to fix their build systems later.
 ///
 
-#include <Epetra_TsqrMessenger.hpp>
+#include "TpetraCore_config.h"
 
 #if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
+#include <Epetra_TsqrMessenger.hpp>
 #include <Epetra_ConfigDefs.h> // EPETRA_MPI
 #include <Teuchos_ConfigDefs.hpp> // HAVE_TEUCHOS_MPI
 
