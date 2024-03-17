@@ -77,6 +77,7 @@ public:
   static KrinoRefinement & get(const stk::mesh::MetaData & meta);
   static KrinoRefinement & create(stk::mesh::MetaData & meta);
   static KrinoRefinement & create(stk::mesh::MetaData & meta, stk::diag::Timer & timer);
+  static KrinoRefinement & get_or_create(stk::mesh::MetaData & meta);
   static bool is_created(const stk::mesh::MetaData & meta);
   static void register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::MetaData & meta);
 

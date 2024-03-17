@@ -11,7 +11,7 @@
 #include "stk_util/diag/Timer.hpp"
 
 namespace stk { namespace mesh { class MetaData; } }
-namespace stk { class topology; }
+namespace stk { struct topology; }
 
 namespace krino {
 

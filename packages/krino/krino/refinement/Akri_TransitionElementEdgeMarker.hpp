@@ -17,7 +17,7 @@
 namespace krino {
 
 class Refinement;
-class Edge;
+struct Edge;
 class NodeRefiner;
 
 class EdgeMarkerInterface
