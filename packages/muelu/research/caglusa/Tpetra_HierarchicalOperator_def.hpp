@@ -881,6 +881,8 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   // select subset of transfer matrices for coarse operator
   std::vector<Teuchos::RCP<blocked_matrix_type> > newTransferMatrices;
   {
+    Teuchos::TimeMonitor tM_basis_transfer(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse basis and transfers")));
+
     auto comm = getComm();
 
     RCP<vec_type> v_temp          = rcp(new vec_type(newKernelBlockGraph->getDomainMap()));
@@ -916,26 +918,40 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   // Coarse near field
   RCP<matrix_type> newNearField;
   {
+    Teuchos::TimeMonitor tM_near(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field")));
+
     // transfer = newBasisMatrix * (identity + newTransferMatrices[K-1]^T) * ... * (identity + newTransferMatrices[0])^T
     Teuchos::RCP<matrix_type> transfer = rcp(new matrix_type(*newBasisMatrix));
-    for (int i = Teuchos::as<int>(newTransferMatrices.size()) - 1; i >= 0; i--) {
-      Teuchos::RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *newTransferMatrices[i]->pointA_);
-      Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-      MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
-      transfer = temp2;
+    {
+      Teuchos::TimeMonitor tM_near_1(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 1")));
+      for (int i = Teuchos::as<int>(newTransferMatrices.size()) - 1; i >= 0; i--) {
+        Teuchos::RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *newTransferMatrices[i]->pointA_);
+        Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
+        MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
+        transfer = temp2;
+      }
     }
 
     // diffFarField = transfer * diffKernelApprox * transfer^T
     RCP<matrix_type> diffFarField;
     {
+      Teuchos::TimeMonitor tM_near2(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2")));
+
       Teuchos::RCP<matrix_type> temp = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-      MatrixMatrix::Multiply(*transfer, false, *diffKernelApprox, false, *temp);
-      diffFarField = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-      MatrixMatrix::Multiply(*temp, false, *transfer, true, *diffFarField);
+      {
+        Teuchos::TimeMonitor tM_near2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2a")));
+        MatrixMatrix::Multiply(*transfer, false, *diffKernelApprox, false, *temp);
+      }
+      {
+        Teuchos::TimeMonitor tM_near2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2b")));
+        diffFarField = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
+        MatrixMatrix::Multiply(*temp, false, *transfer, true, *diffFarField);
+      }
     }
 
     // newNearField = P^T * nearField * P + diffFarField
     {
+      Teuchos::TimeMonitor tM_near3(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 3")));
       RCP<matrix_type> temp = rcp(new matrix_type(nearField_->getRowMap(), 0));
       MatrixMatrix::Multiply(*nearField_, false, *P, false, *temp);
       RCP<matrix_type> temp2 = rcp(new matrix_type(P->getDomainMap(), 0));
