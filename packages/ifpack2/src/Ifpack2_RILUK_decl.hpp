@@ -646,6 +646,7 @@ protected:
   std::vector< Teuchos::RCP<kk_handle_type> > KernelHandle_v_;
   bool isKokkosKernelsStream_;
   int num_streams_;
+  int block_size_;
   std::vector<execution_space> exec_space_instances_;
   bool hasStreamReordered_;
   std::vector<typename lno_nonzero_view_t::non_const_type> perm_v_;

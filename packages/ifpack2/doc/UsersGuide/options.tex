@@ -502,6 +502,11 @@ The following parameters are used in the ILU($k$) method:
      these streams can run concurrently, the total time can be faster. When
      this option is not set (i.e. not using stream), the entire sub-domain is
      used instead.}
+\ccc{fact: kspiluk block size}
+    {int|global\_ordinal}
+    {0}
+    {If >0, enables BSR (block sparse matrix) for kspiluk. This is the block size
+     of the BSR.}
 \ccc{fact: kspiluk reordering in streams}
     {bool}
     {\false}

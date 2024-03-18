@@ -92,6 +92,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
     num_streams_(0),
+    block_size_(0),
     hasStreamReordered_(false)
 {
   allocateSolvers();
@@ -118,6 +119,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
     num_streams_(0),
+    block_size_(0),
     hasStreamReordered_(false)
 {
   allocateSolvers();
@@ -125,7 +127,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
 
 
 template<class MatrixType>
-RILUK<MatrixType>::~RILUK() 
+RILUK<MatrixType>::~RILUK()
 {
   if (!isKokkosKernelsStream_) {
     if (Teuchos::nonnull (KernelHandle_)) {
@@ -315,12 +317,12 @@ void RILUK<MatrixType>::allocate_L_and_U ()
       for (int i = 0; i < num_streams_; i++) {
         L_v_[i] = null;
         U_v_[i] = null;
-	  
+
         L_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getL_Graph ()));
         U_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getU_Graph ()));
         L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
         U_v_[i]->setAllToScalar (STS::zero ());
-	  
+
         L_v_[i]->fillComplete ();
         U_v_[i]->fillComplete ();
       }
@@ -348,6 +350,7 @@ setParameters (const Teuchos::ParameterList& params)
   magnitude_type relaxValue = STM::zero ();
   double overalloc = 2.;
   int nstreams = 0;
+  int block_size = 0;
 
   // "fact: iluk level-of-fill" parsing is more complicated, because
   // we want to allow as many types as make sense.  int is the native
@@ -415,6 +418,12 @@ setParameters (const Teuchos::ParameterList& params)
       (nstreams, params, paramName, prefix);
   }
 
+  {
+    const std::string paramName ("fact: kspiluk block size");
+    getParamTryingTypes<int, int, global_ordinal_type>
+      (block_size, params, paramName, prefix);
+  }
+
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
@@ -426,6 +435,7 @@ setParameters (const Teuchos::ParameterList& params)
   LevelOfFill_ = fillLevel;
   Overalloc_ = overalloc;
   num_streams_ = nstreams;
+  block_size_ = block_size;
 
   if (num_streams_ >= 1) {
     this->isKokkosKernelsStream_ = true;
@@ -620,19 +630,20 @@ void RILUK<MatrixType>::initialize ()
     if (this->isKokkosKernelsSpiluk_) {
       if (!isKokkosKernelsStream_) {
         this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
-        KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
+        KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                              A_local_->getLocalNumRows(),
-                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1), 
-                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1) );
+                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1),
+                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1),
+                                             block_size_);
         Graph_->initialize (KernelHandle_); // this calls spiluk_symbolic
       }
       else {
         KernelHandle_v_ = std::vector< Teuchos::RCP<kk_handle_type> >(num_streams_);
         for (int i = 0; i < num_streams_; i++) {
           KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
-          KernelHandle_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
+          KernelHandle_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                                     A_local_diagblks[i].numRows(),
-                                                    2*A_local_diagblks[i].nnz()*(LevelOfFill_+1), 
+                                                    2*A_local_diagblks[i].nnz()*(LevelOfFill_+1),
                                                     2*A_local_diagblks[i].nnz()*(LevelOfFill_+1) );
           Graph_v_[i]->initialize (KernelHandle_v_[i]); // this calls spiluk_symbolic
         }
@@ -655,7 +666,7 @@ void RILUK<MatrixType>::initialize ()
       L_solver_->setMatrices (L_v_);
     }
     L_solver_->initialize ();
-    //NOTE (Nov-09-2022): 
+    //NOTE (Nov-09-2022):
     //For Cuda >= 11.3 (using cusparseSpSV), skip trisolve computes here.
     //Instead, call trisolve computes within RILUK compute
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
@@ -925,7 +936,7 @@ void RILUK<MatrixType>::compute ()
 
       nonconst_local_inds_host_view_type InI_sub(InI.data()+NumL+1,MaxNumEntries-NumL-1);
       nonconst_values_host_view_type     InV_sub(reinterpret_cast<IST*>(InV.data())+NumL+1,MaxNumEntries-NumL-1);
-  
+
       U_->getLocalRowCopy (local_row, InI_sub,InV_sub, NumU);
       NumIn = NumL+NumU+1;
 
@@ -939,12 +950,12 @@ void RILUK<MatrixType>::compute ()
       for (size_t jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
         IST multiplier = InV[jj]; // current_mults++;
-        
+
         InV[jj] *= static_cast<scalar_type>(DV(j));
-        
+
         U_->getLocalRowView(j, UUI, UUV); // View of row above
         NumUU = UUI.size();
-        
+
         if (RelaxValue_ == STM::zero ()) {
           for (size_t k = 0; k < NumUU; ++k) {
             const int kk = colflag[UUI[k]];
@@ -1001,7 +1012,7 @@ void RILUK<MatrixType>::compute ()
       }
 
       if (NumU) {
-        // Replace current row of L and U        
+        // Replace current row of L and U
         U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
       }
 
@@ -1087,7 +1098,7 @@ void RILUK<MatrixType>::compute ()
       for(int i = 0; i < num_streams_; i++) {
         L_v_[i]->resumeFill ();
         U_v_[i]->resumeFill ();
-	    
+
         if (L_v_[i]->isStaticGraph () || L_v_[i]->isLocallyIndexed ()) {
           L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
           U_v_[i]->setAllToScalar (STS::zero ());
@@ -1108,8 +1119,8 @@ void RILUK<MatrixType>::compute ()
       auto U_entries = lclU.graph.entries;
       auto U_values  = lclU.values;
 
-      KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
-                                                  A_local_rowmap_, A_local_entries_, A_local_values_, 
+      KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_,
+                                                  A_local_rowmap_, A_local_entries_, A_local_values_,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
 
       L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
@@ -1131,7 +1142,7 @@ void RILUK<MatrixType>::compute ()
         L_rowmap_v[i]  = lclL.graph.row_map;
         L_entries_v[i] = lclL.graph.entries;
         L_values_v[i]  = lclL.values;
-	  
+
         auto lclU = U_v_[i]->getLocalMatrixDevice();
         U_rowmap_v[i]  = lclU.graph.row_map;
         U_entries_v[i] = lclU.graph.entries;
@@ -1210,7 +1221,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
   const scalar_type one = STS::one ();
   const scalar_type zero = STS::zero ();
-  
+
   Teuchos::Time timer ("RILUK::apply");
   double startTime = timer.wallTime();
   { // Start timing
@@ -1301,7 +1312,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
 #endif
         }
-        else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).          
+        else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
           //NOTE (Nov-15-2022):
           //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
@@ -1425,8 +1436,8 @@ std::string RILUK<MatrixType>::description () const
   os << "Level-of-fill: " << getLevelOfFill() << ", ";
 
  if(isKokkosKernelsSpiluk_) os<<"KK-SPILUK, ";
- if(isKokkosKernelsStream_) os<<"KK-Stream, ";	
-    
+ if(isKokkosKernelsStream_) os<<"KK-Stream, ";
+
   if (A_.is_null ()) {
     os << "Matrix: null";
   }
