@@ -85,7 +85,7 @@ namespace Intrepid2 {
           break;
         }
       }
-      
+
       typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
       auto vcprop = Kokkos::common_view_alloc_prop(work);
       auto ptr = work.data();
@@ -210,7 +210,7 @@ namespace Intrepid2 {
     // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
     // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
     INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
-    
+
     // Basis-dependent initializations
     constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
     constexpr ordinal_type maxCard = CardinalityHCurlTri(Parameters::MaxOrder);
@@ -257,7 +257,11 @@ namespace Intrepid2 {
 
     // tabulate the scalar orthonormal basis at cubature points
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hcurl::Tri::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
-    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtCubPoints, cubPoints, order, OPERATOR_VALUE);
+    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       phisAtCubPoints,
+                                                                                                                       cubPoints,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE);
 
     // now do the integration
     for (ordinal_type i=0;i<order;i++) {
@@ -315,7 +319,11 @@ namespace Intrepid2 {
                                                                             edge ,
                                                                             this->basisCellTopology_ );
 
-      Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtEdgePoints , edgePts, order, OPERATOR_VALUE);
+      Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                         phisAtEdgePoints,
+                                                                                                                         edgePts,
+                                                                                                                         order,
+                                                                                                                         OPERATOR_VALUE);
 
       // loop over points (rows of V2)
       for (ordinal_type j=0;j<numPtsPerEdge;j++) {
@@ -365,7 +373,11 @@ namespace Intrepid2 {
 
       Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
         phisAtInternalPoints("Hcurl::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );
-      Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>( phisAtInternalPoints , internalPoints , order, OPERATOR_VALUE );
+      Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                         phisAtInternalPoints,
+                                                                                                                         internalPoints,
+                                                                                                                         order,
+                                                                                                                         OPERATOR_VALUE);
 
       // copy values into right positions of V2
       for (ordinal_type j=0;j<numPtsPerCell;j++) {

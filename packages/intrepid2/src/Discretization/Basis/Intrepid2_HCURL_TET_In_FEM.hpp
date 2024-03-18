@@ -59,14 +59,14 @@
 namespace Intrepid2 {
 
 /** \class  Intrepid2::Basis_HCURL_TET_In_FEM
-    \brief  Implementation of the default H(curl)-compatible Nedelec (first kind) 
-            basis of arbitrary degree  on Tetrahedron cell.  
+    \brief  Implementation of the default H(curl)-compatible Nedelec (first kind)
+            basis of arbitrary degree  on Tetrahedron cell.
 
             The lowest order space
             is indexted with 1 rather than 0.
             Implements nodal basis of degree n (n>=1) on the reference Tetrahedron cell. The basis has
             cardinality n*(n+2)*(n+3)/2 and spans an INCOMPLETE
-            polynomial space of degree n. Basis functions are dual 
+            polynomial space of degree n. Basis functions are dual
             to a unisolvent set of degrees-of-freedom (DoF) defined by
 
             \li The tangential component of the vector field at n
@@ -136,7 +136,9 @@ public:
   typename inputPointValueType,  class ...inputPointProperties,
   typename vinvValueType,        class ...vinvProperties>
   static void
-  getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+  getValues(
+      const typename DeviceType::execution_space& space,
+            Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
       const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
       const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
       const EOperator operatorType);
@@ -204,30 +206,34 @@ template<typename DeviceType = void,
     typename pointValueType = double>
 class Basis_HCURL_TET_In_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
-    public:
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
+  public:
+  using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+  using typename BasisBase::ExecutionSpace;
+
+  using typename BasisBase::OrdinalTypeArray1DHost;
+  using typename BasisBase::OrdinalTypeArray2DHost;
+  using typename BasisBase::OrdinalTypeArray3DHost;
+
+  using typename BasisBase::OutputViewType;
+  using typename BasisBase::PointViewType ;
+  using typename BasisBase::ScalarViewType;
 
   /** \brief  Constructor.
    */
   Basis_HCURL_TET_In_FEM(const ordinal_type order,
       const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-
-  using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-  using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-  using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
-
   typedef typename Basis<DeviceType,outputValueType,pointValueType>::scalarType  scalarType;
 
-  using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+  using BasisBase::getValues;
 
   virtual
   void
-  getValues(       OutputViewType outputValues,
-      const PointViewType  inputPoints,
-      const EOperator operatorType = OPERATOR_VALUE) const override {
+  getValues(
+      const ExecutionSpace& space,
+            OutputViewType  outputValues,
+      const PointViewType   inputPoints,
+      const EOperator       operatorType = OPERATOR_VALUE) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HCURL_Args(outputValues,
         inputPoints,
@@ -237,10 +243,11 @@ class Basis_HCURL_TET_In_FEM
 #endif
     constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
     Impl::Basis_HCURL_TET_In_FEM::
-    getValues<DeviceType,numPtsPerEval>( outputValues,
-        inputPoints,
-        this->coeffs_,
-        operatorType);
+    getValues<DeviceType,numPtsPerEval>(space,
+                                        outputValues,
+                                        inputPoints,
+                                        this->coeffs_,
+                                        operatorType);
   }
 
   virtual
@@ -259,7 +266,7 @@ class Basis_HCURL_TET_In_FEM
 #endif
     Kokkos::deep_copy(dofCoords, this->dofCoords_);
   }
-  
+
   virtual
   void
   getDofCoeffs( ScalarViewType dofCoeffs ) const override {
@@ -321,7 +328,7 @@ class Basis_HCURL_TET_In_FEM
   BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
   getHostBasis() const override{
     return Teuchos::rcp(new Basis_HCURL_TET_In_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_, pointType_));
-  }  
+  }
 
     private:
 

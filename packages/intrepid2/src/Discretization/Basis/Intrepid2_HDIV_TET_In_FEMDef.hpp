@@ -258,7 +258,11 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
 
   // tabulate the scalar orthonormal basis at cubature points
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hdiv::Tet::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
-  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtCubPoints, cubPoints, order, OPERATOR_VALUE);
+  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                     phisAtCubPoints,
+                                                                                                                     cubPoints,
+                                                                                                                     order,
+                                                                                                                     OPERATOR_VALUE);
 
   // now do the integration
   for (ordinal_type i=0;i<dim_PkH;i++) {
@@ -317,7 +321,11 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
         this->basisCellTopology_ );
 
     // get phi values at face points
-    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtFacePoints, facePts, order, OPERATOR_VALUE);
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       phisAtFacePoints,
+                                                                                                                       facePts,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE);
 
     // loop over points (rows of V2)
     for (ordinal_type j=0;j<numPtsPerFace;j++) {
@@ -364,7 +372,11 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
 
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     phisAtInternalPoints("Hdiv::Tet::In::phisAtInternalPoints", cardPn , numPtsPerCell );
-    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>( phisAtInternalPoints , internalPoints , order, OPERATOR_VALUE );
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       phisAtInternalPoints,
+                                                                                                                       internalPoints,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE );
 
     // copy values into right positions of V2
     for (ordinal_type j=0;j<numPtsPerCell;j++) {

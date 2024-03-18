@@ -56,48 +56,29 @@
 #include "Teuchos_RCP.hpp"
 
 #include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
   namespace Test {
 
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+
     template<typename ValueType, typename DeviceType>
     int HGRAD_HEX_C1_FEM_Test01(const bool verbose) {
 
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
+      //! Create an execution space instance.
+      const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs,       false);
+      //! Setup test output stream.
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "Basis_HGRAD_HEX_C1_FEM", {
+          "1) Conversion of Dof tags into Dof ordinals and back",
+          "2) Basis values for VALUE, GRAD, CURL, and Dk operators"
+      });
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-
-      using DeviceSpaceType = typename DeviceType::execution_space;
-      typedef typename
-        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
-
-      *outStream
-        << "===============================================================================\n"
-        << "|                                                                             |\n"
-        << "|                 Unit Test (Basis_HGRAD_HEX_C1_FEM)                          |\n"
-        << "|                                                                             |\n"
-        << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
-        << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n"
-        << "|                                                                             |\n"
-        << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-        << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-        << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n"
-        << "|                                                                             |\n"
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-        << "|                                                                             |\n"
-        << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
@@ -502,7 +483,7 @@ namespace Intrepid2 {
             {  0.00000,   0.00000,   0.12500,   0.00000,   0.12500,   0.00000 },
             {  0.00000,   0.00000,  -0.12500,   0.00000,   0.12500,   0.00000 } }
         };
-        
+
         // the only nonzeros for D3 are in the "4" slot of the operator column, with values ±1/8, as indicated below:
         const ValueType basisD3Nonzeros[8] = { -0.125, 0.125,-0.125, 0.125, 0.125,-0.125,0.125,-0.125  };
 
@@ -549,7 +530,7 @@ namespace Intrepid2 {
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints);
-          hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
+          hexBasis.getValues(space, vals, hexNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
@@ -575,7 +556,7 @@ namespace Intrepid2 {
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
             DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
-            hexBasis.getValues(vals, hexNodes, op);
+            hexBasis.getValues(space, vals, hexNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
             for (auto i=0;i<numFields;++i)
@@ -598,7 +579,7 @@ namespace Intrepid2 {
         // Check D2 of basis function
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints, D2Cardin);
-          hexBasis.getValues(vals, hexNodes, OPERATOR_D2);
+          hexBasis.getValues(space, vals, hexNodes, OPERATOR_D2);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
@@ -615,11 +596,11 @@ namespace Intrepid2 {
                              << " but reference D2 component: " << basisD2[j][i][k] << "\n";
                 }
         }
-        
+
         // Check D3 of basis function
-        { 
+        {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints, D3Cardin);
-          hexBasis.getValues(vals, hexNodes, OPERATOR_D3);
+          hexBasis.getValues(space, vals, hexNodes, OPERATOR_D3);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
@@ -656,7 +637,7 @@ namespace Intrepid2 {
             const auto DkCardin  = getDkCardinality(op, spaceDim);
             DynRankView vals = DynRankView(work.data(), numFields, numPoints, DkCardin);
 
-            hexBasis.getValues(vals, hexNodes, op);
+            hexBasis.getValues(space, vals, hexNodes, op);
             auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
             for (auto i1=0;i1<numFields;++i1)
@@ -718,7 +699,7 @@ namespace Intrepid2 {
 
         // Check mathematical correctness.
         hexBasis.getDofCoords(cvals_dev);
-        hexBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
+        hexBasis.getValues(space, bvals_dev, cvals_dev, OPERATOR_VALUE);
 
         auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
         Kokkos::deep_copy(bvals, bvals_dev);
@@ -753,14 +734,14 @@ namespace Intrepid2 {
       << "===============================================================================\n"
       << "| TEST 5: Function Space is Correct                                           |\n"
       << "===============================================================================\n";
-      
+
       try {
         const EFunctionSpace fs = hexBasis.getFunctionSpace();
-        
+
         if (fs != FUNCTION_SPACE_HGRAD)
         {
           *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
-          
+
           // Output the multi-index of the value where the error is:
           *outStream << " Expected a function space of FUNCTION_SPACE_HGRAD (enum value " << FUNCTION_SPACE_HGRAD << "),";
           *outStream << " but got " << fs << "\n";
@@ -776,7 +757,7 @@ namespace Intrepid2 {
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       }
-      
+
       if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
       else

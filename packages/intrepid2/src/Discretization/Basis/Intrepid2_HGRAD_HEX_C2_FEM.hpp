@@ -57,8 +57,8 @@ namespace Intrepid2 {
   /** \class  Intrepid2::Basis_HGRAD_HEX_DEG2_FEM
       \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Hexahedron cell
 
-      Implements Lagrangian basis of degree 2 on the reference Hexahedron cell. 
-      
+      Implements Lagrangian basis of degree 2 on the reference Hexahedron cell.
+
       When the serendipity template argument is false, the basis has
       cardinality 27 and spans a COMPLETE tri-quadratic polynomial space.
       Note, Basis_HGRAD_HEX_C2_FEM = Basis_HGRAD_HEX_DEG2_FEM<false>
@@ -164,17 +164,18 @@ namespace Intrepid2 {
         static void
         getValues(       OutputViewType output,
                    const inputViewType input );
-        
+
       };
-      
-      template<typename DeviceType, 
+
+      template<typename DeviceType,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
-      getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues( const typename DeviceType::execution_space& space,
+                       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
-      
+
       /**
         \brief See Intrepid2::Basis_HGRAD_HEX_DEG2_FEM
       */
@@ -184,12 +185,12 @@ namespace Intrepid2 {
       struct Functor {
               outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
-        
+
         KOKKOS_INLINE_FUNCTION
         Functor(       outputValueViewType outputValues_,
                        inputPointViewType  inputPoints_ )
           : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
-        
+
         KOKKOS_INLINE_FUNCTION
         void operator()(const ordinal_type pt) const {
           switch (opType) {
@@ -225,50 +226,56 @@ namespace Intrepid2 {
       };
     };
   }
-      
+
   template<bool serendipity,
            typename DeviceType,
            typename outputValueType,
            typename pointValueType>
   class Basis_HGRAD_HEX_DEG2_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    using typename BasisBase::ExecutionSpace;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType ;
+    using typename BasisBase::ScalarViewType;
 
     /** \brief  Constructor.
      */
     Basis_HGRAD_HEX_DEG2_FEM();
 
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
-
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
-    getValues(       OutputViewType outputValues,
-               const PointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const override {
+    getValues( const ExecutionSpace& space,
+                     OutputViewType  outputValues,
+               const PointViewType   inputPoints,
+               const EOperator       operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify arguments
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
                                       operatorType,
                                       this->getBaseCellTopology(),
-                                      this->getCardinality() );
+                                      this->getCardinality());
 #endif
       if constexpr (serendipity)
         Impl::Basis_HGRAD_HEX_DEG2_FEM<true>::
-          getValues<DeviceType>( outputValues,
-                                    inputPoints,
-                                    operatorType );
-      else 
+          getValues<DeviceType>(space,
+                                outputValues,
+                                inputPoints,
+                                operatorType);
+      else
         Impl::Basis_HGRAD_HEX_DEG2_FEM<false>::
-          getValues<DeviceType>( outputValues,
-                                    inputPoints,
-                                    operatorType );
+          getValues<DeviceType>(space,
+                                outputValues,
+                                inputPoints,
+                                operatorType);
     }
 
     virtual
