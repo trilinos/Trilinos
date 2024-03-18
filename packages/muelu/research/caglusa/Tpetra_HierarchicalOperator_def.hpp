@@ -749,8 +749,6 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 
     bool dropContiguousRange = (static_cast<size_t>(maxDrop + 1 - minDrop) == blidsToDrop.size());
 
-    std::cout << "dropContiguousRange: " << dropContiguousRange << std::endl;
-
     // number of cluster pairs dropped
     int dropped = 0;
     // number of cluster pairs we kept
@@ -920,43 +918,46 @@ Teuchos::RCP<HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   {
     Teuchos::TimeMonitor tM_near(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field")));
 
-    // transfer = newBasisMatrix * (identity + newTransferMatrices[K-1]^T) * ... * (identity + newTransferMatrices[0])^T
-    Teuchos::RCP<matrix_type> transfer = rcp(new matrix_type(*newBasisMatrix));
+    // diffKernelApprox := (identity + newTransferMatrices[K-1])^T * ... * (identity + newTransferMatrices[0])^T
+    //                      * diffKernelApprox
+    //                      * (identity + newTransferMatrices[0]) * ... * (identity + newTransferMatrices[K-1])
     {
       Teuchos::TimeMonitor tM_near_1(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 1")));
-      for (int i = Teuchos::as<int>(newTransferMatrices.size()) - 1; i >= 0; i--) {
+      for (int i = 0; i < Teuchos::as<int>(newTransferMatrices.size()); ++i) {
+        // diffKernelApprox := (I + newTransferMatrices[i])^T * diffKernelApprox * (I + newTransferMatrices[i])
         Teuchos::RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *newTransferMatrices[i]->pointA_);
-        Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-        MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
-        transfer = temp2;
+        Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(clusterCoeffMap_, 0));
+        MatrixMatrix::Multiply(*temp, true, *diffKernelApprox, false, *temp2);
+        MatrixMatrix::Multiply(*temp2, false, *temp, false, *diffKernelApprox);
       }
     }
 
-    // diffFarField = transfer * diffKernelApprox * transfer^T
-    RCP<matrix_type> diffFarField;
+    // diffKernelApprox := (newBasisMatrix * diffKernelApprox) * newBasisMatrix^T
     {
       Teuchos::TimeMonitor tM_near2(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2")));
 
       Teuchos::RCP<matrix_type> temp = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
       {
         Teuchos::TimeMonitor tM_near2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2a")));
-        MatrixMatrix::Multiply(*transfer, false, *diffKernelApprox, false, *temp);
+        MatrixMatrix::Multiply(*newBasisMatrix, false, *diffKernelApprox, false, *temp);
       }
+
       {
         Teuchos::TimeMonitor tM_near2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 2b")));
-        diffFarField = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
-        MatrixMatrix::Multiply(*temp, false, *transfer, true, *diffFarField);
+        diffKernelApprox = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
+        MatrixMatrix::Multiply(*temp, false, *newBasisMatrix, true, *diffKernelApprox);
       }
     }
 
-    // newNearField = P^T * nearField * P + diffFarField
+    // newNearField = (P^T * nearField * P) + diffKernelApprox
     {
       Teuchos::TimeMonitor tM_near3(*Teuchos::TimeMonitor::getNewTimer(std::string("Coarse near field 3")));
       RCP<matrix_type> temp = rcp(new matrix_type(nearField_->getRowMap(), 0));
       MatrixMatrix::Multiply(*nearField_, false, *P, false, *temp);
       RCP<matrix_type> temp2 = rcp(new matrix_type(P->getDomainMap(), 0));
       MatrixMatrix::Multiply(*P, true, *temp, false, *temp2);
-      newNearField = MatrixMatrix::add(ONE, false, *temp2, ONE, false, *diffFarField);
+      newNearField     = MatrixMatrix::add(ONE, false, *temp2, ONE, false, *diffKernelApprox);
+      diffKernelApprox = Teuchos::null;
       // newNearField = removeSmallEntries(newNearField, Teuchos::ScalarTraits<MagnitudeType>::eps());
     }
   }
