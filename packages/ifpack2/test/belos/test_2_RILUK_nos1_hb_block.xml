@@ -9,10 +9,12 @@
     <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="Ifpack2::Preconditioner" type="string" value="RILUK"/>
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="RBILUK"/>
   <ParameterList name="Ifpack2">
     <Parameter name="fact: iluk level-of-fill" type="int" value="2"/>
-    <Parameter name="fact: kspiluk block size" type="int" value="4"/>
+    <Parameter name="fact: type" type="string" value="KSPILUK"/>
+    <Parameter name="fact: block size" type="int" value="4"/>
+    <Parameter name="trisolver: type" type="string" value="KSPTRSV"/>
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="12"/>

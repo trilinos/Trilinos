@@ -360,6 +360,15 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
+  NAME RILUK_hb_belos_block_serial
+  ARGS "--xml_file=test_2_RILUK_nos1_hb_block.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
   NAME RILUK_hb_belos
   ARGS "--xml_file=test_4_RILUK_nos1_hb.xml"
   COMM serial mpi

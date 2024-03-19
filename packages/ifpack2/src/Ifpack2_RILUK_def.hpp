@@ -92,7 +92,6 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
     num_streams_(0),
-    block_size_(0),
     hasStreamReordered_(false)
 {
   allocateSolvers();
@@ -119,7 +118,6 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
     num_streams_(0),
-    block_size_(0),
     hasStreamReordered_(false)
 {
   allocateSolvers();
@@ -350,7 +348,6 @@ setParameters (const Teuchos::ParameterList& params)
   magnitude_type relaxValue = STM::zero ();
   double overalloc = 2.;
   int nstreams = 0;
-  int block_size = 0;
 
   // "fact: iluk level-of-fill" parsing is more complicated, because
   // we want to allow as many types as make sense.  int is the native
@@ -418,12 +415,6 @@ setParameters (const Teuchos::ParameterList& params)
       (nstreams, params, paramName, prefix);
   }
 
-  {
-    const std::string paramName ("fact: kspiluk block size");
-    getParamTryingTypes<int, int, global_ordinal_type>
-      (block_size, params, paramName, prefix);
-  }
-
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
@@ -435,7 +426,6 @@ setParameters (const Teuchos::ParameterList& params)
   LevelOfFill_ = fillLevel;
   Overalloc_ = overalloc;
   num_streams_ = nstreams;
-  block_size_ = block_size;
 
   if (num_streams_ >= 1) {
     this->isKokkosKernelsStream_ = true;
@@ -633,8 +623,7 @@ void RILUK<MatrixType>::initialize ()
         KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                              A_local_->getLocalNumRows(),
                                              2*A_local_->getLocalNumEntries()*(LevelOfFill_+1),
-                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1),
-                                             block_size_);
+                                             2*A_local_->getLocalNumEntries()*(LevelOfFill_+1) );
         Graph_->initialize (KernelHandle_); // this calls spiluk_symbolic
       }
       else {

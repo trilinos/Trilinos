@@ -163,7 +163,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
       local_ordinal_type,
       global_ordinal_type,
       node_type> crs_matrix_type;
-  
+
   using crs_graph_type = Tpetra::CrsGraph<local_ordinal_type,
                                           global_ordinal_type,
                                           node_type>;
@@ -175,10 +175,14 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   template <class NewMatrixType> friend class RBILUK;
 
+  typedef typename block_crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename block_crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename block_crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
   //@}
   //! \name Implementation of KK ILU(k).
   //@{
-  
+
   typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
   typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
   typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
