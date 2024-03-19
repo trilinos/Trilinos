@@ -45,7 +45,9 @@
 
 #include "Tpetra_BlockMultiVector.hpp"
 #include "Tpetra_BlockView.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
 #include "Ifpack2_OverlappingRowMatrix.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_RILUK.hpp"
@@ -383,9 +385,6 @@ void RBILUK<MatrixType>::initialize ()
     this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (matrixCrsGraph,
         this->LevelOfFill_, 0));
 
-    this->Graph_->initialize ();
-    allocate_L_and_U_blocks ();
-
     if (this->isKokkosKernelsSpiluk_) {
       this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
       KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
@@ -393,7 +392,13 @@ void RBILUK<MatrixType>::initialize ()
                                            2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                            2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                            blockSize_);
+      this->Graph_->initialize(KernelHandle_); // this calls spiluk_symbolic
     }
+    else {
+      this->Graph_->initialize ();
+    }
+
+    allocate_L_and_U_blocks ();
 
 #ifdef IFPACK2_RBILUK_INITIAL
     initAllValues ();
@@ -589,6 +594,7 @@ template<class MatrixType>
 void RBILUK<MatrixType>::compute ()
 {
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::Array;
 
   typedef impl_scalar_type IST;
@@ -907,50 +913,61 @@ void RBILUK<MatrixType>::compute ()
       }
     } // !this->isKokkosKernelsSpiluk_
     else {
-      RCP<const block_crs_matrix_type> A_local_crs = Details::getBrsMatrix(this->A_local_);
-      if (A_local_crs.is_null()) {
-        local_ordinal_type numRows = this->A_local_->getLocalNumRows();
-        Array<size_t> entriesPerRow(numRows);
-        for(local_ordinal_type i = 0; i < numRows; i++) {
-          entriesPerRow[i] = this->A_local_->getNumEntriesInLocalRow(i);
+      RCP<const block_crs_matrix_type> A_local_bcrs = Details::getBcrsMatrix(this->A_local_);
+      RCP<const crs_matrix_type> A_local_crs = Details::getCrsMatrix(this->A_local_);
+      if (A_local_bcrs.is_null()) {
+        if (A_local_crs.is_null()) {
+          local_ordinal_type numRows = this->A_local_->getLocalNumRows();
+          Array<size_t> entriesPerRow(numRows);
+          for(local_ordinal_type i = 0; i < numRows; i++) {
+            entriesPerRow[i] = this->A_local_->getNumEntriesInLocalRow(i);
+          }
+          RCP<crs_matrix_type> A_local_crs_nc =
+            rcp (new crs_matrix_type (this->A_local_->getRowMap (),
+                                      this->A_local_->getColMap (),
+                                      entriesPerRow()));
+          // copy entries into A_local_crs
+          nonconst_local_inds_host_view_type indices("indices",this->A_local_->getLocalMaxNumRowEntries());
+          nonconst_values_host_view_type values("values",this->A_local_->getLocalMaxNumRowEntries());
+          for(local_ordinal_type i = 0; i < numRows; i++) {
+            size_t numEntries = 0;
+            this->A_local_->getLocalRowCopy(i, indices, values, numEntries);
+            A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
+          }
+          A_local_crs_nc->fillComplete (this->A_local_->getDomainMap (), this->A_local_->getRangeMap ());
+          A_local_crs = Teuchos::rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
         }
-        RCP<block_crs_matrix_type> A_local_crs_nc =
-          Teuchos::rcp (new block_crs_matrix_type (this->A_local_->getRowMap (),
-                                                   this->A_local_->getColMap (),
-                                                   entriesPerRow(), blockSize_));
-        // copy entries into A_local_crs
-        nonconst_local_inds_host_view_type indices("indices", this->A_local_->getLocalMaxNumRowEntries());
-        nonconst_values_host_view_type values("values", this->A_local_->getLocalMaxNumRowEntries());
-        for(local_ordinal_type i = 0; i < numRows; i++) {
-          size_t numEntries = 0;
-          this->A_local_->getLocalRowCopy(i, indices, values, numEntries);
-          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
-        }
-        A_local_crs_nc->fillComplete (this->A_local_->getDomainMap (), this->A_local_->getRangeMap ());
-        A_local_crs = Teuchos::rcp_const_cast<const block_crs_matrix_type> (A_local_crs_nc);
+        // Create bcrs from crs
+        // We can skip fillLogicalBlocks if we know the input is already filled
+        auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_local_crs, blockSize_);
+        A_local_bcrs = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize_);
       }
-      auto lclMtx = A_local_crs->getLocalMatrixDevice();
-      assert(!this->isKokkosKernelsStream_); // Not yet supported
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        this->isKokkosKernelsStream_, std::runtime_error, "Ifpack2::RBILUK::compute: "
+        "streams are not yet supported.");
+
+      auto lclMtx = A_local_bcrs->getLocalMatrixDevice();
       this->A_local_rowmap_  = lclMtx.graph.row_map;
       this->A_local_entries_ = lclMtx.graph.entries;
       this->A_local_values_  = lclMtx.values;
 
-      this->L_->resumeFill ();
-      this->U_->resumeFill ();
+      // L_block_->resumeFill ();
+      // U_block_->resumeFill ();
 
-      if (this->L_->isStaticGraph () || this->L_->isLocallyIndexed ()) {
-        this->L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
-        this->U_->setAllToScalar (STS::zero ());
+      if (L_block_->isLocallyIndexed ()) {
+        L_block_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+        U_block_->setAllToScalar (STS::zero ());
       }
 
       using row_map_type = typename block_crs_matrix_type::local_matrix_device_type::row_map_type;
 
-      auto lclL = this->L_->getLocalMatrixDevice();
+      auto lclL = L_block_->getLocalMatrixDevice();
       row_map_type L_rowmap  = lclL.graph.row_map;
       auto L_entries = lclL.graph.entries;
       auto L_values  = lclL.values;
 
-      auto lclU = this->U_->getLocalMatrixDevice();
+      auto lclU = U_block_->getLocalMatrixDevice();
       row_map_type U_rowmap  = lclU.graph.row_map;
       auto U_entries = lclU.graph.entries;
       auto U_values  = lclU.values;
@@ -959,14 +976,8 @@ void RBILUK<MatrixType>::compute ()
                                                   this->A_local_rowmap_, this->A_local_entries_, this->A_local_values_,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
 
-      this->L_->fillComplete (this->L_->getColMap (), this->A_local_->getRangeMap ());
-      this->U_->fillComplete (this->A_local_->getDomainMap (), this->U_->getRowMap ());
-
-      this->L_solver_->setMatrix (this->L_);
-      this->U_solver_->setMatrix (this->U_);
-
-      this->L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
-      this->U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+      // L_block_->fillComplete (L_block_->getColMap (), this->A_local_->getRangeMap ());
+      // U_block_->fillComplete (this->A_local_->getDomainMap (), U_block_->getRowMap ());
     }
   } // Stop timing
 

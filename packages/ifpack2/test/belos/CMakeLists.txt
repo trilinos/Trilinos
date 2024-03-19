@@ -69,7 +69,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   bcsstk14.hb
   test_2_ILUT_nos1_hb.xml
   test_2_RILUK_nos1_hb.xml
-  test_2_RILUK_nos1_hb_block.xml
+  test_RBILUK_nos1_hb_block.xml
   test_2_RILUK_HTS_nos1_hb.xml
   test_2_RILUK_2streams_nos1_hb.xml
   test_2_RILUK_4streams_nos1_hb.xml
@@ -351,8 +351,8 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
-  NAME RILUK_hb_belos_block
-  ARGS "--xml_file=test_2_RILUK_nos1_hb_block.xml"
+  NAME RBILUK_hb_belos_block
+  ARGS "--xml_file=test_RBILUK_nos1_hb_block.xml"
   COMM serial mpi
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
@@ -360,8 +360,8 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
-  NAME RILUK_hb_belos_block_serial
-  ARGS "--xml_file=test_2_RILUK_nos1_hb_block.xml"
+  NAME RBILUK_hb_belos_block_serial
+  ARGS "--xml_file=test_RBILUK_nos1_hb_block.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

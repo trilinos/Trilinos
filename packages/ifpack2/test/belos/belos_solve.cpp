@@ -53,6 +53,7 @@
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
 
 #include "build_problem.hpp"
 #include "build_solver.hpp"
@@ -95,6 +96,7 @@ int main (int argc, char* argv[])
   typedef Tpetra::MultiVector<Scalar,LO,GO>    TMV;
   typedef Tpetra::Operator<Scalar,LO,GO>       TOP;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
   typedef Belos::LinearProblem<Scalar,TMV,TOP> BLinProb;
   typedef Belos::SolverManager<Scalar,TMV,TOP> BSolverMgr;
   using Teuchos::RCP;
@@ -171,8 +173,21 @@ int main (int argc, char* argv[])
     std::string prec_side("Left");
     Ifpack2::getParameter (test_params, "Preconditioner Side", prec_side);
     if (tifpack_precond != "not specified") {
-      auto A = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
-      RCP<TOP> precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+      RCP<TOP> precond;
+      if (tifpack_precond == "RBILUK") {
+        int blockSize = 0;
+        Teuchos::ParameterList& prec_params = test_params.sublist("Ifpack2");
+        Ifpack2::getParameter (prec_params, "fact: block size", blockSize);
+        assert(blockSize > 1);
+        auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
+        auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_crs, blockSize);
+        auto A = Teuchos::rcp_const_cast<const block_crs_matrix_type>(Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize));
+        precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+      }
+      else {
+        auto A = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
+        precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+      }
       if (prec_side == "Left")
         problem->setLeftPrec (precond);
       else if (prec_side == "Right")

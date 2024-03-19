@@ -13,7 +13,7 @@
   <ParameterList name="Ifpack2">
     <Parameter name="fact: iluk level-of-fill" type="int" value="2"/>
     <Parameter name="fact: type" type="string" value="KSPILUK"/>
-    <Parameter name="fact: block size" type="int" value="4"/>
+    <Parameter name="fact: block size" type="int" value="3"/>
     <Parameter name="trisolver: type" type="string" value="KSPTRSV"/>
   </ParameterList>
 
