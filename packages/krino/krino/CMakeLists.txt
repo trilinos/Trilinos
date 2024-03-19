@@ -11,7 +11,7 @@ add_subdirectory(krino_lib)
 add_subdirectory(region)
 add_subdirectory(rebalance_utils)
 add_subdirectory(parser)
-add_subdirectory(unit_tests)
+TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
 
 SET(SOURCES_MAIN Apps_krino.cpp)
 

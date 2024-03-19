@@ -47,6 +47,7 @@
 #include <utility>                          // for pair
 #include <vector>                           // for vector
 #include <functional>
+#include <limits>
 #include "Ioss_EntityType.h"                // for EntityType, SIDEBLOCK
 #include "Ioss_GroupingEntity.h"            // for GroupingEntity
 #include "SidesetTranslator.hpp"            // for fill_element_and_side_ids
@@ -94,6 +95,17 @@ namespace stk {
  * control over the mesh reading and results/restart writing.
  */
 namespace io {
+
+struct FieldReadStatus {
+    bool possiblyCorrupt;
+    bool fieldRead;
+    double timeRead;
+
+    FieldReadStatus()
+    : possiblyCorrupt(false)
+    , fieldRead(false)
+    , timeRead(std::numeric_limits<double>::max()) {}
+};
 
 using TopologyErrorHandler = std::function<void(stk::mesh::Part &part)>;
 

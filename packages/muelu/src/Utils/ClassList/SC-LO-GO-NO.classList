@@ -68,7 +68,7 @@ MLParameterListInterpreter - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 MultiVectorTransferFactory
 NotayAggregationFactory
 NullspaceFactory
-NullspaceFactory_kokkos
+NullspaceFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 NullspacePresmoothFactory
 ParameterListInterpreter
 PatternFactory
@@ -98,7 +98,7 @@ RepartitionHeuristicFactory - #ifdef HAVE_MPI
 ReplicatePFactory
 RigidBodyModeFactory
 SaPFactory
-SaPFactory_kokkos
+SaPFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory

@@ -55,8 +55,8 @@ GeneratedMeshToFileWithTransientFields::GeneratedMeshToFileWithTransientFields(s
                                                                                stk::topology::rank_t rank)
   : GeneratedMeshToFile(comm, auraOption),
     fieldRank(rank),
-    scalarField(meta.declare_field<stk::mesh::Field<double                      > >(fieldRank, fieldBaseName+"_scalar", 1)),
-    vectorField(meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(fieldRank, fieldBaseName+"_vector", 1))
+    scalarField(stk::mesh::legacy::declare_field<stk::mesh::Field<double                      > >(meta, fieldRank, fieldBaseName+"_scalar", 1)),
+    vectorField(stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(meta, fieldRank, fieldBaseName+"_vector", 1))
 {
   stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(), nullptr);
   stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3, nullptr);

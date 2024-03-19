@@ -56,5 +56,5 @@
 find_package(CUDAToolkit REQUIRED)  # Will abort if not found!
 tribits_extpkg_create_imported_all_libs_target_and_config_file( CUDA
   INNER_FIND_PACKAGE_NAME  CUDAToolkit
-  IMPORTED_TARGETS_FOR_ALL_LIBS  CUDA::cufft  CUDA::cublas  CUDA::cudart )
+  IMPORTED_TARGETS_FOR_ALL_LIBS  CUDA::cufft  CUDA::cublas  CUDA::cudart CUDA::cuda_driver )
 # Above, we could add more dependencies if we need

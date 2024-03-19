@@ -1,0 +1,22 @@
+<ParameterList name="test_params">
+  <Parameter name="hb_file" type="string" value="nos1.rsa"/>
+
+  <Parameter name="solver_type" type="string" value="Block Gmres"/>
+  <ParameterList name="Belos">
+    <Parameter name="Num Blocks" type="int" value="300"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="RILUK"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="fact: iluk level-of-fill" type="int" value="2"/>
+    <Parameter name="fact: type" type="string" value="KSPILUK"/>
+    <Parameter name="fact: kspiluk number-of-streams" type="int" value="2"/>
+    <Parameter name="fact: kspiluk reordering in streams" type="bool" value="true"/>
+    <Parameter name="trisolver: type" type="string" value="KSPTRSV"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="50"/>
+</ParameterList>

@@ -61,13 +61,13 @@ TEST(SingleElementFixture, LS_Element_Tet4)
   const double length_scale = 1.0; // Used for snapping facets to vertices of element when distance is small compared to length_scale
   ls_elem.compute_subelement_decomposition(length_scale);
 
-  Faceted_Surface faceted_surface("tmp");
+  Faceted_Surface<Facet3d> faceted_surface;
   ls_elem.build_subelement_facets(faceted_surface);
-  const auto & facets = faceted_surface.get_facets();
+  const auto & facets = faceted_surface.get_facets_3d();
 
   ASSERT_EQ(1u, facets.size());
 
-  Facet & facet = *facets[0];
+  const Facet3d & facet = facets[0];
 
   EXPECT_EQ(2.0, facet.facet_vertex(0)[2]);
   EXPECT_EQ(2.0, facet.facet_vertex(1)[2]);
@@ -111,18 +111,18 @@ public:
       *dist = nodalLevelset[n];
     }
   }
-  void build_facets_in_element(const stk::mesh::Entity elem, Faceted_Surface & facetedSurface)
+  void build_facets_in_element(const stk::mesh::Entity elem, FacetedSurfaceBase & facetedSurface)
   {
     facetedSurface.clear();
     ContourElement contourElement(mMesh, elem, myLs.get_coordinates_field(), myLs.get_distance_field(), 0.);
     contourElement.compute_subelement_decomposition(avgElemSize);
     contourElement.build_subelement_facets(facetedSurface);
   }
-  void expect_num_facets_in_element(const stk::mesh::Entity elem, const size_t goldNumFacets)
+  void expect_num_facets_in_element(const int dim, const stk::mesh::Entity elem, const size_t goldNumFacets)
   {
-    Faceted_Surface facetedSurface("tmp");
-    build_facets_in_element(elem, facetedSurface);
-    EXPECT_EQ(goldNumFacets, facetedSurface.size());
+    std::unique_ptr<FacetedSurfaceBase> facetedSurface = FacetedSurfaceBase::build(dim);
+    build_facets_in_element(elem, *facetedSurface);
+    EXPECT_EQ(goldNumFacets, facetedSurface->size());
   }
 
 protected:
@@ -142,8 +142,8 @@ TEST_F(ContourElementTwoTri306090, twoElementsWhereSnappedSignPatternIsDifferent
     const std::vector<stk::mesh::Entity> & elems = get_owned_elements();
     ASSERT_EQ(2u, elems.size());
 
-    expect_num_facets_in_element(elems[0], 0);
-    expect_num_facets_in_element(elems[1], 1);
+    expect_num_facets_in_element(2, elems[0], 0);
+    expect_num_facets_in_element(2, elems[1], 1);
   }
 }
 
@@ -158,8 +158,8 @@ TEST_F(ContourElementTwoQuads, twoQuadElementsWithSmallVariationAcrossElementAnd
     const std::vector<stk::mesh::Entity> & elems = get_owned_elements();
     ASSERT_EQ(2u, elems.size());
 
-    expect_num_facets_in_element(elems[0], 1);
-    expect_num_facets_in_element(elems[1], 0);
+    expect_num_facets_in_element(2, elems[0], 1);
+    expect_num_facets_in_element(2, elems[1], 0);
   }
 }
 

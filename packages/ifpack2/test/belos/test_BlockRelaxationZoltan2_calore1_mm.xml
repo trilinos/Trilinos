@@ -1,0 +1,27 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file"     type="string" value="calore1.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="calore1_rhs.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="Block Gmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="50"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="SCHWARZ"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="schwarz: overlap level" type="int"    value="1"/>
+    <Parameter name="schwarz: combine mode"  type="string" value="ZERO"/>
+    <Parameter name="subdomain solver name"  type="string" value="BLOCK_RELAXATION"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name="partitioner: local parts" type="int"      value="2"/>
+      <Parameter name="partitioner: overlap"     type="int"      value="1"/>
+      <Parameter name="partitioner: type"        type="string"   value="zoltan2"/>
+    </ParameterList>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="11"/>
+</ParameterList>

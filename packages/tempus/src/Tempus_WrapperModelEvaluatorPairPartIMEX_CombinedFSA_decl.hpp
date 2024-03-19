@@ -31,17 +31,16 @@ namespace Tempus {
 template <typename Scalar>
 class WrapperModelEvaluatorPairPartIMEX_CombinedFSA
   : public SensitivityModelEvaluatorBase<Scalar>,
-    public WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>
-{
-public:
-
+    public WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> {
+ public:
   /// Constructor
   WrapperModelEvaluatorPairPartIMEX_CombinedFSA(
-    const Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >& forwardModel,
-    const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
+      const Teuchos::RCP<
+          const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >& forwardModel,
+      const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
 
   /// Destructor
-  virtual ~WrapperModelEvaluatorPairPartIMEX_CombinedFSA(){}
+  virtual ~WrapperModelEvaluatorPairPartIMEX_CombinedFSA() {}
 
   /// Initialize after setting member data.
   virtual void initialize();
@@ -49,68 +48,62 @@ public:
   /// \name Methods that apply to both explicit and implicit terms.
   //@{
 
-    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-    get_p_space(int i) const;
+  virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(
+      int i) const;
 
   //@}
 
   //@{ \name Accessors
 
-    /// Extract IMEX vector from a full solution vector
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> >
-    getIMEXVector(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract IMEX vector from a full solution vector
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getIMEXVector(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& full) const;
 
-    /// Extract IMEX vector for reading
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-    getIMEXVector(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract IMEX vector for reading
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getIMEXVector(
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& full) const;
 
-    /// Extract explicit-only vector from a full solution vector
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> >
-    getExplicitOnlyVector(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract explicit-only vector from a full solution vector
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getExplicitOnlyVector(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& full) const;
 
-    /// Extract explicit-only vector for reading
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> >
-    getExplicitOnlyVector(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const;
+  /// Extract explicit-only vector for reading
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getExplicitOnlyVector(
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& full) const;
 
   //@}
 
   /// \name Overridden from Tempus::SensitivityModelEvaluatorBase
   //@{
 
-    /// Get the underlying forward model
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-    getForwardModel() const;
+  /// Get the underlying forward model
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getForwardModel()
+      const;
 
   //@}
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
   //@{
 
-   virtual Thyra::ModelEvaluatorBase::InArgs<Scalar>
-   createInArgs() const;
+  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
-    virtual void
-    evalModelImpl(
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar>  & inArgs,
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & outArgs) const;
+  virtual void evalModelImpl(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
 
   //@}
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-protected:
-
+ protected:
   typedef WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> Base;
   typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   typedef Thyra::ProductMultiVectorBase<Scalar> PMVB;
   typedef CombinedForwardSensitivityModelEvaluator<Scalar> FSAME;
 
-  Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> > forwardModel_;
+  Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >
+      forwardModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appExplicitModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appImplicitModel_;
   Teuchos::RCP<const FSAME> fsaExplicitModel_;
@@ -125,9 +118,8 @@ protected:
 
   mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dfdp_mv_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdp_op_;
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_ModelEvaluatorPairPartIMEX_Basic_decl_hpp
+#endif  // Tempus_ModelEvaluatorPairPartIMEX_Basic_decl_hpp

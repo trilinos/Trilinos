@@ -18,17 +18,7 @@ namespace krino {
 
 template<class T>
 inline size_t
-storage_size(const std::vector<T*> & vec) {return (sizeof(std::vector<T*>) + vec.size()*sizeof(T*)); }
-
-// linear cost, requires T::storage_size
-template<class T>
-inline size_t
-storage_size(const std::vector<std::unique_ptr<T>> & autovec)
-{
-  size_t store_size = sizeof(std::vector<std::unique_ptr<T>>) + autovec.size()*sizeof(std::unique_ptr<T>);
-  for (auto && entry : autovec) store_size += entry->storage_size();
-  return store_size;
-}
+storage_size(const std::vector<T> & vec) {return (sizeof(std::vector<T>) + vec.capacity()*sizeof(T)); }
 
 class Transformation;
 
@@ -42,7 +32,8 @@ enum Surface_Type
   PLANE,
   RANDOM,
   STRING_FUNCTION,
-  FACETED_SURFACE,
+  FACETED_SURFACE_2D,
+  FACETED_SURFACE_3D,
   // Never, ever, ever add an entry after MAX_SURFACE_TYPE.  Never.
   MAX_SURFACE_TYPE
 };

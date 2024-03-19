@@ -44,11 +44,16 @@ void run_mat_vec_hierarchical_dfad(const ViewTypeA& A, const ViewTypeB& b,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const unsigned vector_size = is_hip ? 64 : 1;
+  const unsigned team_size = is_hip ? 128 / vector_size : 1;
+#else
+  const unsigned vector_size = 1;
+  const unsigned team_size = 1;
+#endif
 
   const int m = A.extent(0);
   const int n = A.extent(1);
@@ -81,11 +86,16 @@ void run_mat_vec_hierarchical_dfad_scratch(
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
   const unsigned VectorSize = is_cuda ? 32 : 1;
   const unsigned TeamSize = is_cuda ? 128 / VectorSize : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const unsigned VectorSize = is_hip ? 64 : 1;
+  const unsigned TeamSize = is_hip ? 128 / VectorSize : 1;
+#else
+  const unsigned VectorSize = 1;
+  const unsigned TeamSize = 1;
+#endif
 
   const int m = A.extent(0);
   const int n = A.extent(1);
@@ -164,11 +174,15 @@ do_time_fad_hierarchical_dfad(const size_t m, const size_t n, const size_t p,
 
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
-#else
-  const bool is_cuda = false;
-#endif
-  const size_t concurrency = execution_space().concurrency();
   const size_t warp_dim = is_cuda ? 32 : 1;
+#elif defined (KOKKOS_ENABLE_HIP)
+  const bool is_hip = std::is_same<execution_space, Kokkos::HIP>::value;
+  const size_t warp_dim = is_hip ? 64 : 1;
+#else
+  const size_t warp_dim = 1;
+#endif
+
+  const size_t concurrency = execution_space().concurrency();
   const size_t block_size = p*sizeof(double);
   const size_t nkernels = concurrency / warp_dim;
   const size_t mem_pool_size =
@@ -282,4 +296,8 @@ INST_FUNC_DEV(Kokkos::Threads)
 
 #ifdef KOKKOS_ENABLE_CUDA
 INST_FUNC_DEV(Kokkos::Cuda)
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+INST_FUNC_DEV(Kokkos::HIP)
 #endif

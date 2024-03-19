@@ -13,7 +13,7 @@
 #include "Tempus_StaggeredForwardSensitivityModelEvaluator_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StaggeredForwardSensitivityModelEvaluator)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StaggeredForwardSensitivityModelEvaluator)
 }
 
 #endif

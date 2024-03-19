@@ -104,14 +104,14 @@ namespace TeuchosTests
         );
   }
 
-  TEUCHOS_UNIT_TEST(YAML, PR1805)
+  TEUCHOS_UNIT_TEST(YAML, PR1805) // "\t" has been removed since yaml does not support tabs
   {
     RCP<ParameterList> params = Teuchos::getParametersFromYamlString(
         "My Awesome Problem:\n"
-        "\tMesh:\n"
-        "\t\tInline:\n"
-        "\t\t\tType: Quad\n"
-        "\t\t\tElements: [     10,     10 ]\n"
+        "  Mesh:\n"
+        "    Inline:\n"
+        "      Type: Quad\n"
+        "      Elements: [     10,     10 ]\n"
         "...\n"
         );
   }
@@ -279,10 +279,46 @@ namespace TeuchosTests
     auto pl = Teuchos::getParametersFromYamlString(
       "List:\n"
       " small number: 54\n"
-      " big number: 72057594037927936\n");
+      " small double: 3.0\n"
+      " scientific: 3.123e02\n"
+      " big number: 72057594037927936\n"
+    );
     TEST_EQUALITY(pl->isType<int>("small number"), true);
+    TEST_EQUALITY(pl->isType<double>("small double"), true);
+    TEST_EQUALITY(pl->isType<double>("scientific"), true);
     TEST_EQUALITY(pl->isType<long long>("big number"), true);
     TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, bools)
+  {
+    auto pl = Teuchos::getParametersFromYamlString(
+      "List:\n"
+      " input_true: true\n"
+      " input_false: false\n"
+      " input_TRUE: TRUE\n"
+      " input_FALSE: FALSE\n"
+      " input_True: True\n"
+      " input_False: False\n"
+      " input_yes: yes\n"
+      " input_no: no\n"
+    );
+    TEST_EQUALITY(pl->isType<bool>("input_true"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_false"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_yes"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_no"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_TRUE"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_True"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_FALSE"), true);
+    TEST_EQUALITY(pl->isType<bool>("input_False"), true);
+    TEST_EQUALITY(pl->get<bool>("input_true"), true);
+    TEST_EQUALITY(pl->get<bool>("input_false"), false);
+    TEST_EQUALITY(pl->get<bool>("input_yes"), true);
+    TEST_EQUALITY(pl->get<bool>("input_no"), false);
+    TEST_EQUALITY(pl->get<bool>("input_TRUE"), true);
+    TEST_EQUALITY(pl->get<bool>("input_True"), true);
+    TEST_EQUALITY(pl->get<bool>("input_FALSE"), false);
+    TEST_EQUALITY(pl->get<bool>("input_False"), false);
   }
 
   TEUCHOS_UNIT_TEST(YAML, flow_map)
@@ -309,5 +345,86 @@ namespace TeuchosTests
     TEST_EQUALITY(sublist.name(), "mycode->sublist");
   }
 
-} //namespace TeuchosTests
+  TEUCHOS_UNIT_TEST(YAML, null_node)
+  {
+    RCP<ParameterList> pl = Teuchos::getParametersFromYamlString(
+        "mycode:\n"
+        "  empty_node:\n"
+    );
+    TEST_EQUALITY(pl->isSublist("empty_node"), true);
+  }
 
+#ifdef HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+  TEUCHOS_UNIT_TEST(YAML, yamlcpp_parser)
+  {
+    RCP<ParameterList> pl = Teuchos::getParametersFromYamlString(
+        "mycode:\n"
+        "  list_of_2d_arrays:\n"
+        "    - [[1,2,3], [4,5,6]]\n"
+        "    - [[7,8,9], [10,11,12]]\n"
+        "  ragged_array:\n"
+        "    - [1,2,3]\n"
+        "    - [1,2,3,4]\n"
+        "  line_continuation: [\n"
+        "    1,2,3,\n"
+        "    4,5,6\n"
+        "  ]\n"
+        "  # allow unicode comments: ±\n"
+    );
+
+    using threeDarr_t = Teuchos::Array<Teuchos::Array<Teuchos::Array<int>>>;
+    threeDarr_t& list_of_arrs = pl->get<threeDarr_t>("list_of_2d_arrays");
+    threeDarr_t correct_list_of_arrs = {
+      {{1, 2, 3}, {4, 5, 6}},
+      {{7, 8, 9}, {10, 11, 12}}
+    };
+    for (int i=0; i<list_of_arrs.size(); i++) {
+      for (int j=0; j<list_of_arrs[i].size(); j++) {
+        for (int k=0; k<list_of_arrs[i][j].size(); k++) {
+          TEST_EQUALITY(correct_list_of_arrs[i][j][k], list_of_arrs[i][j][k]);
+        }
+      }
+    }
+
+    using twoDarr_t = Teuchos::Array<Teuchos::Array<int>>;
+    twoDarr_t ragged_arr = pl->get<twoDarr_t>("ragged_array");
+    twoDarr_t correct_ragged_arr = {
+      {1, 2, 3},
+      {1, 2, 3, 4}
+    };
+    for (int i=0; i<ragged_arr.size(); i++) {
+      for (int j=0; j<ragged_arr[i].size(); j++) {
+        TEST_EQUALITY(correct_ragged_arr[i][j], ragged_arr[i][j]);
+      }
+    }
+
+    using arr_t   = Teuchos::Array<int>;
+    arr_t arr = pl->get<arr_t>("line_continuation");
+    arr_t correct_arr = {1, 2, 3, 4, 5, 6};
+    for (int i=0; i<arr.size(); i++) {
+      TEST_EQUALITY(correct_arr[i], arr[i]);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, yaml_throws)
+  {
+  TEST_THROW(Teuchos::getParametersFromYamlString(
+    "Foo:\n"
+    "  [60,2,3]: 1\n"),
+    Teuchos::YamlKeyError)
+  TEST_THROW(Teuchos::getParametersFromYamlString(
+    "Foo:\n"
+    "  Array:\n"
+    "  - 1.3e0.2\n"
+    "  - [1,2,3]"),
+    Teuchos::YamlSequenceError)
+  TEST_THROW(Teuchos::getParametersFromYamlString(
+    "Foo: 1\n"),
+    Teuchos::YamlStructureError)
+  }
+  // It is not clear how to test Teuchos::YamlUndefinedNode, but the throw
+  // is left in the source code to protect against any unforeseen cases.
+
+#endif // HAVE_TEUCHOSPARAMETERLIST_YAMLCPP
+
+} //namespace TeuchosTests

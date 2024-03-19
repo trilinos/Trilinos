@@ -13,7 +13,6 @@
 #include "Tempus_Stepper_ErrorNorm_impl.hpp"
 
 namespace Tempus {
-    TEMPUS_INSTANTIATE_TEMPLATE_CLASS(Stepper_ErrorNorm)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(Stepper_ErrorNorm)
 }
 #endif
-

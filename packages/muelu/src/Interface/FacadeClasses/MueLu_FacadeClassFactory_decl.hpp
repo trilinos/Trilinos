@@ -56,51 +56,47 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class FacadeClassFactory
-  : public virtual BaseClass{
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class FacadeClassFactory
+  : public virtual BaseClass {
 #undef MUELU_FACADECLASSFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors
-    //@{
+ public:
+  //! @name Constructors/Destructors
+  //@{
 
-    //! Constructor.
-    FacadeClassFactory();
+  //! Constructor.
+  FacadeClassFactory();
 
-    //! Destructor.
-    virtual ~FacadeClassFactory() { }
+  //! Destructor.
+  virtual ~FacadeClassFactory() {}
 
-    //@}
+  //@}
 
-    /*! @brief Set parameter list for FacadeClassFactory interpreter.
+  /*! @brief Set parameter list for FacadeClassFactory interpreter.
 
-       @param[in] paramList: ParameterList containing the MueLu parameters.
-    */
-    Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
+     @param[in] paramList: ParameterList containing the MueLu parameters.
+  */
+  Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList);
 
-    /*! @brief Register new facade class
-     *
-     * Register new externally provided facade class in FacadeClassFactory
-     *
-     * @param[in] name: name that is used to access Facade class
-     * @param[in] facadeclass: RCP pointer to facade class instance
-     */
-    void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase> facadeclass) {
-      facadeClasses_[name] = facadeclass;
-    }
+  /*! @brief Register new facade class
+   *
+   * Register new externally provided facade class in FacadeClassFactory
+   *
+   * @param[in] name: name that is used to access Facade class
+   * @param[in] facadeclass: RCP pointer to facade class instance
+   */
+  void RegisterFacadeClass(std::string name, Teuchos::RCP<FacadeClassBase> facadeclass) {
+    facadeClasses_[name] = facadeclass;
+  }
 
-  private:
+ private:
+  std::map<std::string, Teuchos::RCP<FacadeClassBase> > facadeClasses_;
+};
 
-    std::map<std::string, Teuchos::RCP<FacadeClassBase> > facadeClasses_;
-
-  };
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_FACADECLASSFACTORY_SHORT
-
-
 
 #endif /* PACKAGES_MUELU_SRC_INTERFACE_FACADECLASSES_MUELU_FACADECLASSFACTORY_DECL_HPP_ */

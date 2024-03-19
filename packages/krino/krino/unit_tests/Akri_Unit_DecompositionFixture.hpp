@@ -151,7 +151,7 @@ void check_nonfatal_error(const std::string & baseName, const int iteration)
 void decompose_mesh()
 {
   NodeToCapturedDomainsMap nodesToSnappedDomains;
-  std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(cdmesh->get_active_part(), cdfem_support(), Phase_Support::get(mMesh.mesh_meta_data()), levelset_fields());
+  std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(mMesh.mesh_meta_data().spatial_dimension(), cdmesh->get_active_part(), cdfem_support(), Phase_Support::get(mMesh.mesh_meta_data()), levelset_fields());
   if (cdfem_support().get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
   {
     const double minIntPtWeightForEstimatingCutQuality = cdfem_support().get_snapper().get_edge_tolerance();

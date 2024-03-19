@@ -558,3 +558,7 @@ INST_FUNC_DEV(Kokkos::Threads)
 #ifdef KOKKOS_ENABLE_CUDA
 INST_FUNC_DEV(Kokkos::Cuda)
 #endif
+
+#ifdef KOKKOS_ENABLE_HIP
+INST_FUNC_DEV(Kokkos::HIP)
+#endif

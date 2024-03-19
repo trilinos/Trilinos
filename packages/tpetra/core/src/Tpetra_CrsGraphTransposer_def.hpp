@@ -294,7 +294,11 @@ namespace Tpetra {
       global_col_inds_array globalColindsSym;
 
       KokkosSparse::Experimental::spadd_symbolic
-        (&handle, rowptrs, colindsConverted, rowptrsT, colindsTConverted, rowptrsSym);
+        (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+         nrows, graph->getGlobalNumCols(),
+#endif
+         rowptrs, colindsConverted, rowptrsT, colindsTConverted, rowptrsSym);
       globalColindsSym = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("global colinds sym"), addHandle->get_c_nnz());
 
       UnsortedNumericIndicesOnlyFunctor<
@@ -325,7 +329,11 @@ namespace Tpetra {
       auto addHandle = handle.get_spadd_handle();
 
       KokkosSparse::Experimental::spadd_symbolic
-        (&handle, rowptrs, colinds, rowptrsT, colindsT, rowptrsSym);
+        (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+         nrows, graph->getGlobalNumCols(),
+#endif
+         rowptrs, colinds, rowptrsT, colindsT, rowptrsSym);
       colindsSym = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 
       if (sorted) {

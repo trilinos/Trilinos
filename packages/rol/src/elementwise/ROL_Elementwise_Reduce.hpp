@@ -42,6 +42,10 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_VECTOR_H
+#include "ROL_Vector.hpp"
+#else
+
 #ifndef ROL_ELEMENTWISE_REDUCE_H
 #define ROL_ELEMENTWISE_REDUCE_H
 
@@ -190,3 +194,4 @@ public:
 } // namespace ROL
 
 #endif 
+#endif

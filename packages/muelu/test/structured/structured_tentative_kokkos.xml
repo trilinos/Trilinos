@@ -51,7 +51,7 @@
     </ParameterList>
 
     <ParameterList name="myNullspaceFact">
-      <Parameter name="factory"                             type="string" value="NullspaceFactory_kokkos"/>
+      <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
       <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
       <Parameter name="CoarseMap"                           type="string" value="myCoarseMapFact"/>
     </ParameterList>

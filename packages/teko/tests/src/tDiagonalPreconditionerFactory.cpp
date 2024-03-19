@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -76,8 +76,6 @@
 // TriUtils includes
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
-
-
 #include <vector>
 
 #include <math.h>
@@ -89,162 +87,160 @@ using namespace Teuchos;
 using namespace Thyra;
 
 tDiagonalPreconditionerFactory::~tDiagonalPreconditionerFactory() {
-  delete fact; delete pstate; delete [] block_starts; delete [] block_gids;
+  delete fact;
+  delete pstate;
+  delete[] block_starts;
+  delete[] block_gids;
 }
 
-void tDiagonalPreconditionerFactory::initializeTest()
-{
-   const Epetra_Comm & comm = *GetComm();
+void tDiagonalPreconditionerFactory::initializeTest() {
+  const Epetra_Comm &comm = *GetComm();
 
-   tolerance_ = 1.0e-14;
+  tolerance_ = 1.0e-14;
 
-   int nx = 39; // essentially random values
-   int ny = 53;
+  int nx = 39;  // essentially random values
+  int ny = 53;
 
-   // create some big blocks to play with
-   Trilinos_Util::CrsMatrixGallery FGallery("laplace_2d",comm, false); // CJ TODO FIXME: change for Epetra64
-   FGallery.Set("nx",nx);
-   FGallery.Set("ny",ny);
-   epetraF = rcp(new Epetra_CrsMatrix(*FGallery.GetMatrix()));
-   epetraF->FillComplete(true);
-   F_ = Thyra::epetraLinearOp(epetraF);
-
+  // create some big blocks to play with
+  Trilinos_Util::CrsMatrixGallery FGallery("laplace_2d", comm,
+                                           false);  // CJ TODO FIXME: change for Epetra64
+  FGallery.Set("nx", nx);
+  FGallery.Set("ny", ny);
+  epetraF = rcp(new Epetra_CrsMatrix(*FGallery.GetMatrix()));
+  epetraF->FillComplete(true);
+  F_ = Thyra::epetraLinearOp(epetraF);
 }
 
-
-void tDiagonalPreconditionerFactory::buildParameterList(int blocksize){
-  const Epetra_CrsMatrix *F=&*epetraF;
+void tDiagonalPreconditionerFactory::buildParameterList(int blocksize) {
+  const Epetra_CrsMatrix *F = &*epetraF;
   TEUCHOS_ASSERT(F);
 
   // Cleanup of last run
-  delete [] block_starts;
-  delete [] block_gids;
+  delete[] block_starts;
+  delete[] block_gids;
 
   // Allocs
-  int Nr=F->NumMyRows();
-  int Nb=(int)ceil(((double)Nr)/((double)blocksize));
-  block_starts=new int[Nb+1];
-  block_gids=new int[Nr];
+  int Nr       = F->NumMyRows();
+  int Nb       = (int)ceil(((double)Nr) / ((double)blocksize));
+  block_starts = new int[Nb + 1];
+  block_gids   = new int[Nr];
 
   // Fill out block data structures
-  block_starts[0]=0;
-  for(int i=0;i<Nb;i++)
-    block_starts[i+1]=block_starts[i]+blocksize;
-  block_starts[Nb]=Nr;
+  block_starts[0] = 0;
+  for (int i = 0; i < Nb; i++) block_starts[i + 1] = block_starts[i] + blocksize;
+  block_starts[Nb] = Nr;
 
-  for(int i=0;i<Nr;i++)
-    block_gids[i]=F->GRID(i);
+  for (int i = 0; i < Nr; i++) block_gids[i] = F->GRID(i);
 
   // Set the list
   Teuchos::ParameterList sublist;
-  List_.set("number of local blocks",Nb);
-  List_.set("block start index",block_starts);
-  List_.set("block entry gids",block_gids);
-  sublist.set("apply mode","invert");
-  List_.set("blockdiagmatrix: list",sublist);
+  List_.set("number of local blocks", Nb);
+  List_.set("block start index", block_starts);
+  List_.set("block entry gids", block_gids);
+  sublist.set("apply mode", "invert");
+  List_.set("blockdiagmatrix: list", sublist);
 }
 
+int tDiagonalPreconditionerFactory::runTest(int verbosity, std::ostream &stdstrm,
+                                            std::ostream &failstrm, int &totalrun) {
+  bool allTests = true;
+  bool status;
+  int failcount = 0;
 
-int tDiagonalPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
-{
-   bool allTests = true;
-   bool status;
-   int failcount = 0;
+  failstrm << "tDiagonalPreconditionerFactory";
 
-   failstrm << "tDiagonalPreconditionerFactory";
+  status = test_createPrec(verbosity, failstrm, 2);
+  Teko_TEST_MSG(stdstrm, 1, "   \"createPrec\" ... PASSED", "   \"createPrec\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   status = test_createPrec(verbosity,failstrm,2);
-   Teko_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+  status = test_initializePrec(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"initializePrec\" ... PASSED", "   \"initializePrec\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   status = test_initializePrec(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+  status = test_canApply(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"canApply\" ... PASSED", "   \"canApply\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
-   status = test_canApply(verbosity,failstrm);
-   Teko_TEST_MSG(stdstrm,1,"   \"canApply\" ... PASSED","   \"canApply\" ... FAILED");
-   allTests &= status;
-   failcount += status ? 0 : 1;
-   totalrun++;
+  status = allTests;
+  if (verbosity >= 10) {
+    Teko_TEST_MSG(failstrm, 0, "tDiagonalPreconditionedFactory...PASSED",
+                  "tDiagonalPreconditionedFactory...FAILED");
+  } else {  // Normal Operatoring Procedures (NOP)
+    Teko_TEST_MSG(failstrm, 0, "...PASSED", "tDiagonalPreconditionedFactory...FAILED");
+  }
 
-   status = allTests;
-   if(verbosity >= 10) {
-      Teko_TEST_MSG(failstrm,0,"tDiagonalPreconditionedFactory...PASSED","tDiagonalPreconditionedFactory...FAILED");
-   }
-   else {// Normal Operatoring Procedures (NOP)
-      Teko_TEST_MSG(failstrm,0,"...PASSED","tDiagonalPreconditionedFactory...FAILED");
-   }
-
-   return failcount;
+  return failcount;
 }
 
-bool tDiagonalPreconditionerFactory::test_initializePrec(int verbosity,std::ostream & os)
-{
+bool tDiagonalPreconditionerFactory::test_initializePrec(int verbosity, std::ostream &os) {
   delete pstate;
 
-  pstate=new DiagonalPrecondState();
-  pop=fact->buildPreconditionerOperator(F_,*pstate);
-  
+  pstate = new DiagonalPrecondState();
+  pop    = fact->buildPreconditionerOperator(F_, *pstate);
+
   // const DiagonalPreconditionerOp *dop=dynamic_cast<const DiagonalPreconditionerOp*>(&*pop);
   // if(!dop) return false;
-  if(Thyra::get_Epetra_Operator(*pop)==Teuchos::null) 
-     return false;
+  if (Thyra::get_Epetra_Operator(*pop) == Teuchos::null) return false;
 
   //  pstate->BDP_->Print(std::cout);
   return true;
 }
 
-bool tDiagonalPreconditionerFactory::test_createPrec(int verbosity,std::ostream & os,int blocksize)
-{
+bool tDiagonalPreconditionerFactory::test_createPrec(int verbosity, std::ostream &os,
+                                                     int blocksize) {
   buildParameterList(blocksize);
- 
+
   // Cleanup
   delete fact;
 
   // New preconditioner
-  fact=new DiagonalPreconditionerFactory();
+  fact = new DiagonalPreconditionerFactory();
   fact->initializeFromParameterList(List_);
-  if(!fact) return false;
+  if (!fact) return false;
 
   return true;
 }
 
-bool tDiagonalPreconditionerFactory::test_canApply(int verbosity,std::ostream & os)
-{
-  const Epetra_Map &domain_= epetraF->DomainMap(),&range_=epetraF->RangeMap();
+bool tDiagonalPreconditionerFactory::test_canApply(int verbosity, std::ostream &os) {
+  const Epetra_Map &domain_ = epetraF->DomainMap(), &range_ = epetraF->RangeMap();
 
-  RCP<Epetra_Vector> X=rcp(new Epetra_Vector(domain_)),Y=rcp(new Epetra_Vector(range_));
+  RCP<Epetra_Vector> X = rcp(new Epetra_Vector(domain_)), Y = rcp(new Epetra_Vector(range_));
   Epetra_Vector Z(range_);
-  X->PutScalar(1.0);Y->PutScalar(0.0);Z.PutScalar(-5.0);
+  X->PutScalar(1.0);
+  Y->PutScalar(0.0);
+  Z.PutScalar(-5.0);
 
   // Build Thyra wrappers
-  MultiVector tX=Thyra::create_Vector(X,F_->domain());
-  MultiVector tY=Thyra::create_Vector(Y,F_->range());
-  
+  MultiVector tX = Thyra::create_Vector(X, F_->domain());
+  MultiVector tY = Thyra::create_Vector(Y, F_->range());
+
   // Do the apply via thrya
   //   const DiagonalPreconditionerOp *dop=dynamic_cast<const DiagonalPreconditionerOp*>(&*pop);
   //   dop->implicitApply(tX,tY,1.0,0.0);
-  Teko::applyOp(pop,tX,tY,1.0,0.0);
-  
+  Teko::applyOp(pop, tX, tY, 1.0, 0.0);
+
   // Do the apply via epetra
-  pstate->BDP_->ApplyInverse(*X,Z);
+  pstate->BDP_->ApplyInverse(*X, Z);
 
   // Compare solutions
-  double znrm,ynrm,dnrm;
+  double znrm, ynrm, dnrm;
   Y->Norm2(&ynrm);
   Z.Norm2(&znrm);
-  Z.Update(-1.0,*Y,1.0);
+  Z.Update(-1.0, *Y, 1.0);
   Z.Norm2(&dnrm);
 
-  if(!epetraF->Comm().MyPID())
-    std::cout << "||Z-Y||/||Z|| = " << dnrm/znrm << std::endl;
-  if(dnrm/znrm > 1e-12) return false;
-  else return true;
+  if (!epetraF->Comm().MyPID()) std::cout << "||Z-Y||/||Z|| = " << dnrm / znrm << std::endl;
+  if (dnrm / znrm > 1e-12)
+    return false;
+  else
+    return true;
 }
 
-} // end namespace Test
-} // end namespace Teko
+}  // end namespace Test
+}  // end namespace Teko

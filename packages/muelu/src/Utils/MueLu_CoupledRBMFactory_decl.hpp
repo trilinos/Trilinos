@@ -58,83 +58,80 @@
 
 namespace MueLu {
 
-  /*!
-    @class CoupledRBMFactory
-    @ingroup MueLuTransferClasses
-    @brief Nullspace Factory for coupled acoustic-elastic problems.
+/*!
+  @class CoupledRBMFactory
+  @ingroup MueLuTransferClasses
+  @brief Nullspace Factory for coupled acoustic-elastic problems.
 
-     Combines standard nullspace with rigid body modes.
-     Assumes that acoustic pressure DOFs are padded with 2 extra DOFs
-     (so that there are 3 DOFs at each mesh grid point)
-  */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class CoupledRBMFactory : public SingleLevelFactoryBase {
+   Combines standard nullspace with rigid body modes.
+   Assumes that acoustic pressure DOFs are padded with 2 extra DOFs
+   (so that there are 3 DOFs at each mesh grid point)
+*/
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class CoupledRBMFactory : public SingleLevelFactoryBase {
 #undef MUELU_COUPLEDRBMFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-    //! Constructor
-    CoupledRBMFactory(const int numPDEs)
-      : nspName_("Nullspace"),
-        numPDEs_(numPDEs)
-    { }
-    //! Constructor
-    CoupledRBMFactory(const std::string & nspName = "Nullspace")
-      : nspName_(nspName),
-        numPDEs_(3)
-    { }
+ public:
+  //! @name Constructors/Destructors.
+  //@{
+  //! Constructor
+  CoupledRBMFactory(const int numPDEs)
+    : nspName_("Nullspace")
+    , numPDEs_(numPDEs) {}
+  //! Constructor
+  CoupledRBMFactory(const std::string& nspName = "Nullspace")
+    : nspName_(nspName)
+    , numPDEs_(3) {}
 
-    //! Destructor.
-    virtual ~CoupledRBMFactory();
+  //! Destructor.
+  virtual ~CoupledRBMFactory();
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &currentLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level &currentLevel) const;
+  //! Build an object with this factory.
+  void Build(Level& currentLevel) const;
 
-    void BuildRBM(RCP<Matrix>& A, RCP<MultiVector>& Coords, RCP<MultiVector>& nullspace) const;
+  void BuildRBM(RCP<Matrix>& A, RCP<MultiVector>& Coords, RCP<MultiVector>& nullspace) const;
 
-    //@}
-    void setNumPDEs(int numPDEs) {
-      numPDEs_=numPDEs;
-    }
+  //@}
+  void setNumPDEs(int numPDEs) {
+    numPDEs_ = numPDEs;
+  }
 
-    void setLastAcousticDOF(int lastDOF) {
-      lastAcousticDOF_=lastDOF;
-    }
+  void setLastAcousticDOF(int lastDOF) {
+    lastAcousticDOF_ = lastDOF;
+  }
 
-  private:
+ private:
+  //! name of nullspace vector on finest level
+  std::string nspName_;
 
-    //! name of nullspace vector on finest level
-    std::string nspName_;
+  int numPDEs_;
 
-    int numPDEs_;
+  int lastAcousticDOF_;
 
-    int lastAcousticDOF_;
+};  // class CoupledRBMFactory
 
-  }; // class CoupledRBMFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_COUPLEDRBMFACTORY_SHORT
-#endif // MUELU_COUPLEDRBMFACTORY_DECL_HPP
+#endif  // MUELU_COUPLEDRBMFACTORY_DECL_HPP

@@ -62,26 +62,27 @@ namespace Teko {
 namespace Test {
 
 class tBlockJacobiPreconditionerFactory_tpetra : public UnitTest {
-public:
-   virtual ~tBlockJacobiPreconditionerFactory_tpetra() {}
+ public:
+  virtual ~tBlockJacobiPreconditionerFactory_tpetra() {}
 
-   virtual void initializeTest();
-   virtual int runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun);
-   virtual bool isParallel() const { return true; }
+  virtual void initializeTest();
+  virtual int runTest(int verbosity, std::ostream& stdstrm, std::ostream& failstrm, int& totalrun);
+  virtual bool isParallel() const { return true; }
 
-   bool test_createPrec(int verbosity,std::ostream & os);
-   bool test_initializePrec(int verbosity,std::ostream & os);
-   bool test_uninitializePrec(int verbosity,std::ostream & os);
-   bool test_isCompatible(int verbosity,std::ostream & os);
+  bool test_createPrec(int verbosity, std::ostream& os);
+  bool test_initializePrec(int verbosity, std::ostream& os);
+  bool test_uninitializePrec(int verbosity, std::ostream& os);
+  bool test_isCompatible(int verbosity, std::ostream& os);
+  bool test_iterativeSolves(int verbosity, std::ostream& os);
 
-protected:
-   double tolerance_;
+ protected:
+  double tolerance_;
 
-   Teuchos::RCP<const Thyra::LinearOpBase<ST> > F_,C_,B_,Bt_;
-   Teuchos::RCP<const Thyra::LinearOpBase<ST> > invF_,invC_;
+  Teuchos::RCP<const Thyra::LinearOpBase<ST> > F_, C_, B_, Bt_;
+  Teuchos::RCP<const Thyra::LinearOpBase<ST> > invF_, invC_;
 };
 
-} // end namespace Tests
-} // end namespace Teko
+}  // namespace Test
+}  // end namespace Teko
 
 #endif

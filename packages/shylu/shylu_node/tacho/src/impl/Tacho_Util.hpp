@@ -54,8 +54,8 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
-#include "rocblas.h"
-#include "rocsolver.h"
+#include "rocblas/rocblas.h"
+#include "rocsolver/rocsolver.h"
 #endif
 
 #include "Tacho.hpp"
@@ -99,7 +99,7 @@ inline constexpr bool run_tacho_on_host_v = !std::is_same_v<ExecutionSpace, Kokk
 
 #define TACHO_TEST_FOR_ABORT(ierr, msg)                                                                                \
   if ((ierr) != 0) {                                                                                                   \
-    printf(">> Error in file %s, line %d, error %d \n   %s\n", __FILE__, __LINE__, ierr, msg);                         \
+    Kokkos::printf(">> Error in file %s, line %d, error %d \n   %s\n", __FILE__, __LINE__, ierr, msg);                         \
     Kokkos::abort(">> Tacho abort\n");                                                                                 \
   }
 

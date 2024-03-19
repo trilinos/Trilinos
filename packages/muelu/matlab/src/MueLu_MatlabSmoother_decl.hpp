@@ -58,155 +58,150 @@
 
 namespace MueLu {
 
-  /*!
-    @class MatlabSmoother
-    @ingroup MueMexClasses
-    @brief Class that encapsulates Matlab smoothers.
+/*!
+  @class MatlabSmoother
+  @ingroup MueMexClasses
+  @brief Class that encapsulates Matlab smoothers.
 
-    //   This class creates an Matlab preconditioner factory. The factory creates a smoother based on the
-    //   type and ParameterList passed into the constructor. See the constructor for more information.
-    */
+  //   This class creates an Matlab preconditioner factory. The factory creates a smoother based on the
+  //   type and ParameterList passed into the constructor. See the constructor for more information.
+  */
 
-  template <class Scalar = SmootherPrototype<>::scalar_type,
-            class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class MatlabSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node>
-  {
+template <class Scalar        = SmootherPrototype<>::scalar_type,
+          class LocalOrdinal  = typename SmootherPrototype<Scalar>::local_ordinal_type,
+          class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node          = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class MatlabSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_MATLABSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
+ public:
+  //! @name Constructors / destructors
+  //@{
+  // TODO: update doc for Matlab.
+  /*! @brief Constructor
 
-    //! @name Constructors / destructors
-    //@{
-    //TODO: update doc for Matlab.
-    /*! @brief Constructor
+    ADD DOCUMENTATION HERE
 
-      ADD DOCUMENTATION HERE
-
-    */
+  */
 
 #ifndef _MSC_VER
-    // Avoid error C3772: invalid friend template declaration
-    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
-    friend class MatlabSmoother;
+  // Avoid error C3772: invalid friend template declaration
+  template <class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
+  friend class MatlabSmoother;
 #endif
 
-    MatlabSmoother(const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
+  MatlabSmoother(const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
 
-    //! Destructor
-    virtual ~MatlabSmoother() { }
+  //! Destructor
+  virtual ~MatlabSmoother() {}
 
-    //@}
+  //@}
 
-    void SetParameterList(const Teuchos::ParameterList& paramList);
+  void SetParameterList(const Teuchos::ParameterList& paramList);
 
-    //! Input
-    //@{
+  //! Input
+  //@{
 
-    void DeclareInput(Level &currentLevel) const;
+  void DeclareInput(Level& currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Computational methods.
-    //@{
+  //! @name Computational methods.
+  //@{
 
-    /*! @brief Set up the smoother.
+  /*! @brief Set up the smoother.
 
-    This creates the underlying Matlab smoother object, copies any parameter list options
-    supplied to the constructor to the Matlab object, and computes the preconditioner.
+  This creates the underlying Matlab smoother object, copies any parameter list options
+  supplied to the constructor to the Matlab object, and computes the preconditioner.
 
-    TODO The eigenvalue estimate should come from A_, not the Matlab parameter list.
-    */
-    void Setup(Level &currentLevel);
+  TODO The eigenvalue estimate should come from A_, not the Matlab parameter list.
+  */
+  void Setup(Level& currentLevel);
 
-    /*! @brief Apply the preconditioner.
+  /*! @brief Apply the preconditioner.
 
-    Solves the linear system <tt>AX=B</tt> using the constructed smoother.
+  Solves the linear system <tt>AX=B</tt> using the constructed smoother.
 
-    @param X initial guess
-    @param B right-hand side
-    @param InitialGuessIsZero (optional) If false, some work can be avoided. Whether this actually saves any work depends on the underlying Matlab implementation.
-    */
-    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
+  @param X initial guess
+  @param B right-hand side
+  @param InitialGuessIsZero (optional) If false, some work can be avoided. Whether this actually saves any work depends on the underlying Matlab implementation.
+  */
+  void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
-    //@}
+  //@}
 
-    //! @name Utilities
-    //@{
+  //! @name Utilities
+  //@{
 
-    RCP<SmootherPrototype> Copy() const;
+  RCP<SmootherPrototype> Copy() const;
 
-    //@}
+  //@}
 
-    //! Clone the smoother to a different node type
-    template<typename Node2>
-    RCP<MueLu::MatlabSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-    clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const;
+  //! Clone the smoother to a different node type
+  template <typename Node2>
+  RCP<MueLu::MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >& A_newnode) const;
 
-    //! @name Overridden from Teuchos::Describable
-    //@{
+  //! @name Overridden from Teuchos::Describable
+  //@{
 
-    //! Return a simple one-line description of this object.
-    std::string description() const;
+  //! Return a simple one-line description of this object.
+  std::string description() const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
-    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+  //! Print the object with some verbosity level to an FancyOStream object.
+  // using MueLu::Describable::describe; // overloading, not hiding
+  // void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
+  void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
-    size_t getNodeSmootherComplexity() const {return Teuchos::OrdinalTraits<size_t>::invalid();}
+  size_t getNodeSmootherComplexity() const { return Teuchos::OrdinalTraits<size_t>::invalid(); }
 
+  //@}
 
-    //@}
+ private:
+  //! List of arguments to the MATLAB setup function besides "A", in order
+  mutable std::string needsSetup_;
 
-  private:
+  //! Amount of solve data (besides A, LHS & RHS)
+  size_t solveDataSize_;
 
-    //! List of arguments to the MATLAB setup function besides "A", in order
-    mutable std::string needsSetup_;
+  //! List of data generated by setup which will be sent to solve after "A", "LHS" and "RHS"
+  std::vector<Teuchos::RCP<MuemexArg> > solveData_;
 
-    //! Amount of solve data (besides A, LHS & RHS)
-    size_t solveDataSize_;
+  //! Matlab setup function
+  std::string setupFunction_;
 
-    //! List of data generated by setup which will be sent to solve after "A", "LHS" and "RHS"
-    std::vector<Teuchos::RCP<MuemexArg> > solveData_;
-    
-    //! Matlab setup function
-    std::string setupFunction_;
+  //! Matlab solve function
+  std::string solveFunction_;
 
-    //! Matlab solve function
-    std::string solveFunction_;
+  //! Matrix, (maybe) used in apply
+  mutable RCP<Matrix> A_;
 
-    //! Matrix, (maybe) used in apply
-    mutable RCP<Matrix> A_;
-    
-  }; // class MatlabSmoother
+};  // class MatlabSmoother
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  template<typename Node2>
-  RCP<MueLu::MatlabSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
-  MatlabSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2>& node2, const RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const {
-    const ParameterList& paramList = this->GetParameterList();
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <typename Node2>
+RCP<MueLu::MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2>& node2, const RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >& A_newnode) const {
+  const ParameterList& paramList = this->GetParameterList();
 
-    RCP<MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother =
+  RCP<MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother =
       rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(paramList));
 
-    cloneSmoother->needsSetup_    = needsSetup_;
-    cloneSmoother->setupFunction_ = setupFunction_;
-    cloneSmoother->solveFunction_  = solveFunction_;
-    cloneSmoother->A_             = A_;
-    
-    for(size_t i=0; i< solveData_.size(); i++)
-      cloneSmoother->solveData_->push_back(solveData_[i]);
-    cloneSmoother->SetParameterList(paramList);
-    cloneSmoother->IsSetup(this->IsSetup());
-    return cloneSmoother;
-  }
+  cloneSmoother->needsSetup_    = needsSetup_;
+  cloneSmoother->setupFunction_ = setupFunction_;
+  cloneSmoother->solveFunction_ = solveFunction_;
+  cloneSmoother->A_             = A_;
 
+  for (size_t i = 0; i < solveData_.size(); i++)
+    cloneSmoother->solveData_->push_back(solveData_[i]);
+  cloneSmoother->SetParameterList(paramList);
+  cloneSmoother->IsSetup(this->IsSetup());
+  return cloneSmoother;
+}
 
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_MATLABSMOOTHER_SHORT
-#endif // HAVE_MUELU_MATLAB
-#endif // MUELU_MATLABSMOOTHER_DECL_HPP
+#endif  // HAVE_MUELU_MATLAB
+#endif  // MUELU_MATLABSMOOTHER_DECL_HPP

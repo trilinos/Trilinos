@@ -11,11 +11,11 @@
 extern "C" {
 #endif
 
-unsigned long init_rand_port(unsigned long seed);
-unsigned long get_init_rand_port(void);
-unsigned long genr_rand_port(unsigned long init_rand);
-unsigned long rand_port(void);
-double        rand_rect_port(void);
+long   init_rand_port(long seed);
+long   get_init_rand_port(void);
+long   genr_rand_port(long init_rand);
+long   rand_port(void);
+double rand_rect_port(void);
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */

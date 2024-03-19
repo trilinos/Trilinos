@@ -59,261 +59,245 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
- const RCP<Map<LocalOrdinal,GlobalOrdinal,Node> > toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map);
 
-  template <class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
-  class TpetraMap
-    : public virtual Map<LocalOrdinal,GlobalOrdinal,Node> {
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class TpetraMap
+  : public virtual Map<LocalOrdinal, GlobalOrdinal, Node> {
+ public:
+  typedef typename Map<LocalOrdinal, GlobalOrdinal, Node>::global_indices_array_device_type global_indices_array_device_type;
 
-  public:
-    typedef typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_device_type global_indices_array_device_type;
+  //! @name Constructors and destructor
+  //@{
 
-    //! @name Constructors and destructor
-    //@{
+  //! Constructor with Tpetra-defined contiguous uniform distribution.
 
+  TpetraMap(global_size_t numGlobalElements,
+            GlobalOrdinal indexBase,
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+            LocalGlobal lg = GloballyDistributed);
 
-    //! Constructor with Tpetra-defined contiguous uniform distribution.
+  //! Constructor with a user-defined contiguous distribution.
 
+  TpetraMap(global_size_t numGlobalElements,
+            size_t numLocalElements,
+            GlobalOrdinal indexBase,
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
-    TpetraMap (global_size_t numGlobalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg=GloballyDistributed);
+  //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
 
-
-    //! Constructor with a user-defined contiguous distribution.
-
-
-    TpetraMap (global_size_t numGlobalElements,
-               size_t numLocalElements,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-
-
-    //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
-
-
-    TpetraMap (global_size_t numGlobalElements,
-               const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
-
+  TpetraMap(global_size_t numGlobalElements,
+            const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+            GlobalOrdinal indexBase,
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
 #ifdef HAVE_XPETRA_TPETRA
-    //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution passed as a Kokkos::View.
-    TpetraMap (global_size_t numGlobalElements,
-               const Kokkos::View<const GlobalOrdinal*, typename Node::device_type>& indexList,
-               GlobalOrdinal indexBase,
-               const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution passed as a Kokkos::View.
+  TpetraMap(global_size_t numGlobalElements,
+            const Kokkos::View<const GlobalOrdinal *, typename Node::device_type> &indexList,
+            GlobalOrdinal indexBase,
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 #endif
 
-    //! Destructor
-    ~TpetraMap();
+  //! Destructor
+  ~TpetraMap();
 
+  //! @name Attributes
+  //@{
 
-    //! @name Attributes
-    //@{
+  //! The number of elements in this Map.
+  global_size_t getGlobalNumElements() const;
 
-    //! The number of elements in this Map.
-    global_size_t getGlobalNumElements() const;
+  //! The number of elements belonging to the calling node.
+  size_t getLocalNumElements() const;
 
-    //! The number of elements belonging to the calling node.
-    size_t getLocalNumElements() const;
+  //! The index base for this Map.
+  GlobalOrdinal getIndexBase() const;
 
-    //! The index base for this Map.
-    GlobalOrdinal getIndexBase() const;
+  //! The minimum local index.
+  LocalOrdinal getMinLocalIndex() const;
 
-    //! The minimum local index.
-    LocalOrdinal getMinLocalIndex() const;
+  //! The maximum local index on the calling process.
+  LocalOrdinal getMaxLocalIndex() const;
 
-    //! The maximum local index on the calling process.
-    LocalOrdinal getMaxLocalIndex() const;
+  //! The minimum global index owned by the calling process.
+  GlobalOrdinal getMinGlobalIndex() const;
 
-    //! The minimum global index owned by the calling process.
-    GlobalOrdinal getMinGlobalIndex() const;
+  //! The maximum global index owned by the calling process.
+  GlobalOrdinal getMaxGlobalIndex() const;
 
-    //! The maximum global index owned by the calling process.
-    GlobalOrdinal getMaxGlobalIndex() const;
+  //! The minimum global index over all processes in the communicator.
+  GlobalOrdinal getMinAllGlobalIndex() const;
 
-    //! The minimum global index over all processes in the communicator.
-    GlobalOrdinal getMinAllGlobalIndex() const;
+  //! The maximum global index over all processes in the communicator.
+  GlobalOrdinal getMaxAllGlobalIndex() const;
 
-    //! The maximum global index over all processes in the communicator.
-    GlobalOrdinal getMaxAllGlobalIndex() const;
+  //! The local index corresponding to the given global index.
+  LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
 
-    //! The local index corresponding to the given global index.
-    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
+  //! The global index corresponding to the given local index.
+  GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
 
-    //! The global index corresponding to the given local index.
-    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
+  //! Return the process IDs and corresponding local IDs for the given global IDs.
+  LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> &GIDList, const Teuchos::ArrayView<int> &nodeIDList, const Teuchos::ArrayView<LocalOrdinal> &LIDList) const;
 
-    //! Return the process IDs and corresponding local IDs for the given global IDs.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const;
+  //! Return the process IDs for the given global IDs.
+  LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> &GIDList, const Teuchos::ArrayView<int> &nodeIDList) const;
 
-    //! Return the process IDs for the given global IDs.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const;
+  //! Return a view of the global indices owned by this node.
+  Teuchos::ArrayView<const GlobalOrdinal> getLocalElementList() const;
 
-    //! Return a view of the global indices owned by this node.
-    Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const;
+  //! Return a view of the global indices owned by this process.
+  global_indices_array_device_type getMyGlobalIndicesDevice() const;
 
-    //! Return a view of the global indices owned by this process.
-    global_indices_array_device_type getMyGlobalIndicesDevice() const;
-    
-    //@}
+  //@}
 
-    //! @name Boolean tests
-    //@{
+  //! @name Boolean tests
+  //@{
 
-    //! True if the local index is valid for this Map on this node, else false.
-    bool isNodeLocalElement(LocalOrdinal localIndex) const;
+  //! True if the local index is valid for this Map on this node, else false.
+  bool isNodeLocalElement(LocalOrdinal localIndex) const;
 
-    //! True if the global index is found in this Map on this node, else false.
-    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
+  //! True if the global index is found in this Map on this node, else false.
+  bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
 
-    //! True if this Map is distributed contiguously, else false.
-    bool isContiguous() const;
+  //! True if this Map is distributed contiguously, else false.
+  bool isContiguous() const;
 
-    //! Whether this Map is globally distributed or locally replicated.
-    bool isDistributed() const;
+  //! Whether this Map is globally distributed or locally replicated.
+  bool isDistributed() const;
 
-    //! True if and only if map is compatible with this Map.
-    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const;
+  //! True if and only if map is compatible with this Map.
+  bool isCompatible(const Map<LocalOrdinal, GlobalOrdinal, Node> &map) const;
 
-    //! True if and only if map is identical to this Map.
-    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const;
+  //! True if and only if map is identical to this Map.
+  bool isSameAs(const Map<LocalOrdinal, GlobalOrdinal, Node> &map) const;
 
-    //@}
+  //@}
 
-    //! @name
-    //@{
+  //! @name
+  //@{
 
-    //! Get this Map's Comm object.
-    Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const;
+  //! Get this Map's Comm object.
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
+  //@}
 
-    //@}
+  //! @name
+  //@{
 
-    //! @name
-    //@{
+  //! Return a simple one-line description of this object.
+  std::string description() const;
 
-    //! Return a simple one-line description of this object.
-    std::string description() const;
+  //! Print this object with the given verbosity level to the given FancyOStream.
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
-    //! Print this object with the given verbosity level to the given FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses() const;
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset(const Teuchos::RCP<const Teuchos::Comm<int> > &newComm) const;
 
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const;
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
+  //@}
 
-//@}
+  //! @name Xpetra specific
+  //@{
 
-    //! @name Xpetra specific
-    //@{
+  //! TpetraMap constructor to wrap a Tpetra::Map object
+  TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map);
 
-    //! TpetraMap constructor to wrap a Tpetra::Map object
-    TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map);
+  //! Get the library used by this object (Tpetra or Epetra?)
+  UnderlyingLib lib() const;
 
-    //! Get the library used by this object (Tpetra or Epetra?)    
-    UnderlyingLib lib() const;
-
-    //! Get the underlying Tpetra map
-    RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const;
+  //! Get the underlying Tpetra map
+  RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Map() const;
 
 #ifdef HAVE_XPETRA_TPETRA
-    using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
-    /// \brief Get the local Map for Kokkos kernels.
-    local_map_type getLocalMap () const;
+  using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
+  /// \brief Get the local Map for Kokkos kernels.
+  local_map_type getLocalMap() const;
 #endif
 
-    //@}
+  //@}
 
-  protected:
+ protected:
+  RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map_;
 
-    RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
+};  // TpetraMap class
 
-  }; // TpetraMap class
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> &toTpetra(const Map<LocalOrdinal, GlobalOrdinal, Node> &map) {
+  // TODO: throw exception
+  const TpetraMap<LocalOrdinal, GlobalOrdinal, Node> &tpetraMap = dynamic_cast<const TpetraMap<LocalOrdinal, GlobalOrdinal, Node> &>(*map.getMap());
+  return *tpetraMap.getTpetra_Map();
+}
 
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Map<LocalOrdinal,GlobalOrdinal,Node> &map) {
-    // TODO: throw exception
-    const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> & tpetraMap = dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &>(*map.getMap());
-    return *tpetraMap.getTpetra_Map();
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
-    if (map != Teuchos::null) {
-      XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map->getMap(), tpetraMap, "toTpetra");
-      return tpetraMap->getTpetra_Map();
-    }
-    return Teuchos::null;
-  }
-
-  // In some cases (for instance, in MueLu adapter to Tpetra operator), we need to return a reference. This is only possible if
-  // we assume that the map argument is nonzero
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > toTpetraNonZero(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
-    TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::invalid_argument, "map must be nonzero");
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > toTpetra(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map) {
+  typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+  if (map != Teuchos::null) {
     XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map->getMap(), tpetraMap, "toTpetra");
     return tpetraMap->getTpetra_Map();
   }
+  return Teuchos::null;
+}
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
-    if (!map.is_null())
-      return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
+// In some cases (for instance, in MueLu adapter to Tpetra operator), we need to return a reference. This is only possible if
+// we assume that the map argument is nonzero
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > toTpetraNonZero(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map) {
+  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::invalid_argument, "map must be nonzero");
+  typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+  XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map->getMap(), tpetraMap, "toTpetra");
+  return tpetraMap->getTpetra_Map();
+}
 
-    return Teuchos::null;
-  }
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > toXpetra(const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map) {
+  if (!map.is_null())
+    return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP<Map<LocalOrdinal,GlobalOrdinal,Node> > toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
-    if (!map.is_null())
-      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(map));
+  return Teuchos::null;
+}
 
-    return Teuchos::null;
-  }
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+const RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map) {
+  if (!map.is_null())
+    return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
 
+  return Teuchos::null;
+}
 
-  namespace useTpetra {
+namespace useTpetra {
 
-    //! Non-member function to create a locally replicated Map with a specified node.
-    template <class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
-    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
-    {
-      XPETRA_MONITOR("useTpetra::createLocalMapWithNode");
+//! Non-member function to create a locally replicated Map with a specified node.
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >
+createLocalMapWithNode(size_t numElements, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
+  XPETRA_MONITOR("useTpetra::createLocalMapWithNode");
 
-      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm)));
-    }
+  return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createLocalMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, comm)));
+}
 
-    //! Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
-    template <class LocalOrdinal, class GlobalOrdinal>
-    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal, typename Tpetra::Map<>::node_type> >
-    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-      XPETRA_MONITOR("useTpetra::createContigMap");
+//! Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
+template <class LocalOrdinal, class GlobalOrdinal>
+Teuchos::RCP<const TpetraMap<LocalOrdinal, GlobalOrdinal, typename Tpetra::Map<>::node_type> >
+createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
+  XPETRA_MONITOR("useTpetra::createContigMap");
 
-      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, typename Tpetra::Map<>::node_type>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal, typename Tpetra::Map<>::node_type>(numElements, localNumElements, comm)));
-    }
+  return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, typename Tpetra::Map<>::node_type>(Tpetra::createContigMap<LocalOrdinal, GlobalOrdinal, typename Tpetra::Map<>::node_type>(numElements, localNumElements, comm)));
+}
 
-    //! Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
-    template <class LocalOrdinal, class GlobalOrdinal, class Node>
-    Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
-    createContigMapWithNode(global_size_t numElements, size_t localNumElements,
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
-    {
-      XPETRA_MONITOR("useTpetra::createContigMap");
-      return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm)));
-    }
-  } // useTpetra namespace
+//! Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >
+createContigMapWithNode(global_size_t numElements, size_t localNumElements,
+                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
+  XPETRA_MONITOR("useTpetra::createContigMap");
+  return rcp(new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(Tpetra::createContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(numElements, localNumElements, comm)));
+}
+}  // namespace useTpetra
 
 #define XPETRA_TPETRAMAP_SHORT
-} // Xpetra namespace
-#endif // XPETRA_TPETRAMAP_DECL_HPP
-
+}  // namespace Xpetra
+#endif  // XPETRA_TPETRAMAP_DECL_HPP

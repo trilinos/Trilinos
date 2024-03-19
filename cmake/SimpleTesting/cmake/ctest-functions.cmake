@@ -82,8 +82,14 @@ macro(submit_upload_config_files)
         if( NOT (skip_single_submit AND skip_by_parts_submit) )
             message(">>> ctest_upload(FILES ${configure_command_file}")
             message("                 ${configure_file}")
-            message("                 ${package_enables_file} )")
-            ctest_upload(FILES ${configure_command_file} ${configure_file} ${package_enables_file})
+            message("                 ${package_enables_file}")
+            message("                 ${genconfig_build_name_file})")
+
+            ctest_upload(FILES ${configure_command_file}
+                               ${configure_file}
+                               ${package_enables_file}
+                               ${genconfig_build_name_file})
+
             message(">>> ctest_submit(PARTS upload")
             message("                 RETRY_COUNT  ${ctest_submit_retry_count}")
             message("                 RETRY_DELAY  ${ctest_submit_retry_delay}")
@@ -127,6 +133,7 @@ macro(print_options_list)
     message(">>> subproject_count         = ${subproject_count}")
     message(">>> dashboard_model          = ${dashboard_model}")
     message(">>> dashboard_track          = ${dashboard_track}")
+    message(">>> genconfig_build_name_file= ${genconfig_build_name_file}")
     message(">>> configure_command_file   = ${configure_command_file}")
     message(">>> configure_file           = ${configure_file}")
     message(">>> build_root               = ${build_root}")

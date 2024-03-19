@@ -470,6 +470,7 @@ namespace {
    typedef Tpetra::Map<LO,GO> M;
    using Teuchos::ArrayView;
    GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+   using MemSpace = typename Tpetra::KokkosClassic::DefaultNode::DefaultNodeType::memory_space;
 
    out << "Test: Map, KokkosViewConstructor" << std::endl;
 
@@ -485,7 +486,7 @@ namespace {
 
    // View in default space
    int N = 10;
-   Kokkos::View<GO*> myview("DeviceView",N);
+   Kokkos::View<GO*,MemSpace> myview("DeviceView",N);
    auto myview_h = Kokkos::create_mirror_view(myview);
 
    int RANK_BASE = rank*100;
@@ -540,6 +541,7 @@ namespace {
    typedef Tpetra::Map<LO,GO> M;
    using Teuchos::ArrayView;
    GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+   using MemSpace = typename Tpetra::KokkosClassic::DefaultNode::DefaultNodeType::memory_space;
 
    out << "Test: Map, KokkosViewConstructor2" << std::endl;
 
@@ -554,7 +556,7 @@ namespace {
    // View in default space.  Here we make sure we have a value *below* the 
    // value in entry zero.  
    int N = 3;
-   Kokkos::View<GO*> myview("DeviceView",N);
+   Kokkos::View<GO*,MemSpace> myview("DeviceView",N);
    auto myview_h = Kokkos::create_mirror_view(myview);
    myview_h(0) = 101;
    myview_h(1) = 99;

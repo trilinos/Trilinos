@@ -85,6 +85,8 @@ class FastICPrec
         typedef typename OrdinalArray::host_mirror_type OrdinalArrayMirror;
         typedef typename ScalarArray::host_mirror_type  ScalarArrayMirror;
 
+        typedef Kokkos::RangePolicy<ExecSpace> RangePolicy;
+
         using STS = Kokkos::ArithTraits<Scalar>;
         using RTS = Kokkos::ArithTraits<Real>;
 
@@ -218,7 +220,7 @@ class FastICPrec
 
             //Make sure all memory resides on the device
             ExecSpace().fence();
-            Kokkos::parallel_for(nRows, copyFunc1);
+            Kokkos::parallel_for(RangePolicy(0, nRows), copyFunc1);
 
             //Note that the following is a temporary measure
             //to ensure that memory resides on the device.
@@ -229,9 +231,9 @@ class FastICPrec
             MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace> copyFunc3(lColIdx, lVal);
 
             ExecSpace().fence();
-            Kokkos::parallel_for(nRows, copyFunc1);
-            Kokkos::parallel_for(nnzA, copyFunc2);
-            Kokkos::parallel_for(nnzL, copyFunc3);
+            Kokkos::parallel_for(RangePolicy(0, nRows), copyFunc1);
+            Kokkos::parallel_for(RangePolicy(0, nnzA), copyFunc2);
+            Kokkos::parallel_for(RangePolicy(0, nnzL), copyFunc3);
             #endif
             double t = timer.seconds();
 
@@ -301,7 +303,7 @@ class FastICPrec
                     ltVal_[rowPtrs[row]] = value;
                     ltColIdx_[rowPtrs[row]] = i;
                     rowPtrs[row]++;
-                    assert(rowPtrs[row] <= ltRowMap[row + 1]);
+                    assert(rowPtrs[row] <= ltRowMap_[row + 1]);
                 }
             }
             Kokkos::deep_copy(ltRowMap, ltRowMap_);
@@ -594,7 +596,7 @@ class FastICPrec
                 }
             }
             Kokkos::deep_copy(diagElems, diagElems_);
-            assert(lPtr == lRowMap[nRows]);
+            assert(lPtr == lRowMap_[nRows]);
 
             if ((level > 0) && (guessFlag !=0))
             {
@@ -703,7 +705,7 @@ class FastICPrec
         {
             ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> parScal(x, y, diagElemsInv);
             ExecSpace().fence();
-            Kokkos::parallel_for(nRows, parScal);
+            Kokkos::parallel_for(RangePolicy(0, nRows), parScal);
             ExecSpace().fence();
 
         }
@@ -711,14 +713,14 @@ class FastICPrec
         {
             ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(x, y, diagFact);
             ExecSpace().fence();
-            Kokkos::parallel_for(nRows, parScal);
+            Kokkos::parallel_for(RangePolicy(0, nRows), parScal);
             ExecSpace().fence();
 
         }
         void applyLIC(ScalarArray &x, ScalarArray &y)
         {
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
-            Kokkos::parallel_for(nRows, parInitZero);
+            Kokkos::parallel_for(RangePolicy(0, nRows), parInitZero);
             ExecSpace().fence();
 #if 0
             JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, lRowMap, lColIdx, lVal,
@@ -736,9 +738,9 @@ class FastICPrec
             ExecSpace().fence();
             for (Ordinal i = 0; i < nTrisol; i++)
             {
-                Kokkos::parallel_for(extent, jacIter);
+                Kokkos::parallel_for(RangePolicy(0, extent), jacIter);
                 ExecSpace().fence();
-                Kokkos::parallel_for(nRows, parCopy);
+                Kokkos::parallel_for(RangePolicy(0, nRows), parCopy);
                 ExecSpace().fence();
             }
             return;
@@ -747,7 +749,7 @@ class FastICPrec
         void applyLT(ScalarArray &x, ScalarArray &y)
         {
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(xOld);
-            Kokkos::parallel_for(nRows, parInitZero);
+            Kokkos::parallel_for(RangePolicy(0, nRows), parInitZero);
             ExecSpace().fence();
 #if 0
             JacobiIterFunctor<Ordinal, Scalar, ExecSpace> jacIter(nRows, ltRowMap, ltColIdx, ltVal,
@@ -764,9 +766,9 @@ class FastICPrec
             ExecSpace().fence();
             for (Ordinal i = 0; i < nTrisol; i++)
             {
-                Kokkos::parallel_for(extent, jacIter);
+                Kokkos::parallel_for(RangePolicy(0, extent), jacIter);
                 ExecSpace().fence();
-                Kokkos::parallel_for(nRows, parCopy);
+                Kokkos::parallel_for(RangePolicy(0, nRows), parCopy);
                 ExecSpace().fence();
             }
             return;
@@ -778,7 +780,7 @@ class FastICPrec
         {
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero1(nRows, y);
-            Kokkos::parallel_for(nRows, parInitZero);
+            Kokkos::parallel_for(RangePolicy(0, nRows), parInitZero);
             ExecSpace().fence();
             //Transpose Jacobi implementation
             JacobiIterFunctorT<Ordinal, Scalar, ExecSpace> jacIterT(nRows, lRowMap, lColIdx, lVal, x, y, xOld, onesVector);
@@ -788,11 +790,11 @@ class FastICPrec
 
             for (Ordinal i = 0; i < nTrisol; i++)
             {
-                Kokkos::parallel_for(nRows, parInitZero1);
+                Kokkos::parallel_for(RangePolicy(0, nRows), parInitZero1);
                 ExecSpace().fence();
-                Kokkos::parallel_for(nRows, jacIterT);
+                Kokkos::parallel_for(RangePolicy(0, nRows), jacIterT);
                 ExecSpace().fence();
-                Kokkos::parallel_for(nRows, parCopy);
+                Kokkos::parallel_for(RangePolicy(0, nRows), parCopy);
                 ExecSpace().fence();
             }
 
@@ -830,7 +832,7 @@ class FastICPrec
             //Ordinal extent = aRowMap[nRows];
             for (int i = 0; i < nFact; i++)
             {
-                Kokkos::parallel_for(extent, icFunctor);
+                Kokkos::parallel_for(RangePolicy(0, extent), icFunctor);
             }
             ExecSpace().fence();
 
@@ -871,11 +873,10 @@ class FastICPrec
 
         void apply(ScalarArray &x, ScalarArray &y)
         {
-
             Kokkos::Timer timer;
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(xTemp, x);
             ExecSpace().fence();
-            Kokkos::parallel_for(nRows, parCopyFunctor);
+            Kokkos::parallel_for(RangePolicy(0, nRows), parCopyFunctor);
             ExecSpace().fence();
 
             applyD(x, xTemp);
@@ -893,7 +894,7 @@ class FastICPrec
 
 //            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor2(nRows, y, xTemp);
 //            ExecSpace().fence();
-//            Kokkos::parallel_for(nRows, parCopyFunctor2);
+//            Kokkos::parallel_for(RangePolicy(0, nRows), parCopyFunctor2);
 //            ExecSpace().fence();
 
             double t = timer.seconds();

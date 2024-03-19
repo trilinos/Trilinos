@@ -105,4 +105,26 @@ std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mes
   return edges;
 }
 
+std::vector<Edge> get_edges_of_elements(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & elements)
+{
+  std::vector<Edge> edges;
+
+  if (!elements.empty())
+  {
+    const stk::topology elemTopology = mesh.bucket(elements[0]).topology(); // Assume all elements have same topology and check later in debug
+    const size_t edgeCount = elements.size() * elemTopology.num_edges();
+    edges.reserve(edgeCount);
+
+    for (const auto elem : elements)
+    {
+      STK_ThrowAssert(elemTopology == mesh.bucket(elem).topology());
+      append_entity_edges(mesh, elemTopology, elem, edges);
+    }
+
+    stk::util::sort_and_unique(edges);
+  }
+
+  return edges;
+}
+
 }

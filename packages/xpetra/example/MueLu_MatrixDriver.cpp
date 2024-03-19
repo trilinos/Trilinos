@@ -56,7 +56,7 @@
 #include <Teuchos_FancyOStream.hpp>
 
 // Gallery
-#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
+#define XPETRA_ENABLED  // == Gallery have to be build with the support of Xpetra matrices.
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
@@ -78,12 +78,11 @@
   Use the "--help" option to get verbose help.
 */
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   using Teuchos::RCP;
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   /**********************************************************************************/
@@ -92,13 +91,13 @@ int main(int argc, char* argv[])
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
 
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
-  Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
+  MueLu::Gallery::Parameters<GO> matrixParameters(clp);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);              // manage parameters of xpetra
 
-  switch (clp.parse(argc,argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
   matrixParameters.check();
@@ -108,14 +107,14 @@ int main(int argc, char* argv[])
     std::cout << xpetraParameters << matrixParameters;
   }
 
-//   std::cout << "#threads = " << numThreads << std::endl;
-//   std::cout << "problem size = " << nx*ny << std::endl;
-//   std::cout << "matrix type = " << matrixType << std::endl;
+  //   std::cout << "#threads = " << numThreads << std::endl;
+  //   std::cout << "problem size = " << nx*ny << std::endl;
+  //   std::cout << "matrix type = " << matrixType << std::endl;
 
-//   Teuchos::ParameterList pl;
-//   pl.set("Num Threads",numThreads);
+  //   Teuchos::ParameterList pl;
+  //   pl.set("Num Threads",numThreads);
 
-  //typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
+  // typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
 
   const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
@@ -124,13 +123,15 @@ int main(int argc, char* argv[])
 
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     if (comm->getRank() == 0)
-      std::cout << "\n================ MAP =====================================================\n" << std::endl;
+      std::cout << "\n================ MAP =====================================================\n"
+                << std::endl;
     map->describe(*out, Teuchos::VERB_EXTREME);
     comm->barrier();
     //    sleep(1);
 
     if (comm->getRank() == 0)
-      std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
+      std::cout << "\n================ MATRIX ==================================================\n"
+                << std::endl;
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
 

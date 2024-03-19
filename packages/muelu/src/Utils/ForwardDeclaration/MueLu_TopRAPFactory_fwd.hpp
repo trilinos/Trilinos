@@ -46,18 +46,13 @@
 #ifndef MUELU_TOPRAPFACTORY_FWD_HPP
 #define MUELU_TOPRAPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TopRAPFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class TopRAPFactory;
 }
 
 #ifndef MUELU_TOPRAPFACTORY_SHORT
 #define MUELU_TOPRAPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_TOPRAPFACTORY_FWD_HPP
+#endif  // MUELU_TOPRAPFACTORY_FWD_HPP

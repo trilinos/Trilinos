@@ -55,6 +55,7 @@ APPEND_SET(SOURCES
   RAPShiftFactory.cpp
   RebalanceAcFactory.cpp
   ReitzingerPFactory.cpp
+  Regression.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp
   SegregatedAFactory.cpp

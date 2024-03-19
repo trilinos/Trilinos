@@ -9,48 +9,46 @@
 #ifndef Tempus_TimeEventListIndex_impl_hpp
 #define Tempus_TimeEventListIndex_impl_hpp
 
-
 namespace Tempus {
 
-template<class Scalar>
+template <class Scalar>
 TimeEventListIndex<Scalar>::TimeEventListIndex()
 {
   this->setType("List Index");
   this->setName("TimeEventListIndex");
 }
 
-
-template<class Scalar>
-TimeEventListIndex<Scalar>::TimeEventListIndex(
-  std::vector<int> indexList, std::string name)
+template <class Scalar>
+TimeEventListIndex<Scalar>::TimeEventListIndex(std::vector<int> indexList,
+                                               std::string name)
 {
   this->setType("List Index");
   if (name == "" && !indexList.empty()) {
     std::ostringstream oss;
     oss << "TimeEventListIndex (" << indexList_.front() << ", ... ,"
-                                  << indexList_.back() << ")";
+        << indexList_.back() << ")";
     this->setName(oss.str());
-  } else {
+  }
+  else {
     this->setName(name);
   }
 
   this->setIndexList(indexList);
 }
 
-
-template<class Scalar>
-void TimeEventListIndex<Scalar>::setIndexList(std::vector<int> indexList, bool sort)
+template <class Scalar>
+void TimeEventListIndex<Scalar>::setIndexList(std::vector<int> indexList,
+                                              bool sort)
 {
   indexList_ = indexList;
   if (sort) {
     std::sort(indexList_.begin(), indexList_.end());
-    indexList_.erase(std::unique(
-      indexList_.begin(), indexList_.end()), indexList_.end());
+    indexList_.erase(std::unique(indexList_.begin(), indexList_.end()),
+                     indexList_.end());
   }
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void TimeEventListIndex<Scalar>::addIndex(int index)
 {
   if (indexList_.size() == 0) {
@@ -67,22 +65,20 @@ void TimeEventListIndex<Scalar>::addIndex(int index)
   indexList_.insert(it, index);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 bool TimeEventListIndex<Scalar>::isIndex(int index) const
 {
-  return (std::find(indexList_.begin(), indexList_.end(), index) != indexList_.end() );
+  return (std::find(indexList_.begin(), indexList_.end(), index) !=
+          indexList_.end());
 }
 
-
-template<class Scalar>
+template <class Scalar>
 int TimeEventListIndex<Scalar>::indexToNextEvent(int index) const
 {
   return indexOfNextEvent(index) - index;  // Neg. indicating in the past.
 }
 
-
-template<class Scalar>
+template <class Scalar>
 int TimeEventListIndex<Scalar>::indexOfNextEvent(int index) const
 {
   if (indexList_.size() == 0) return this->getDefaultIndex();
@@ -94,19 +90,18 @@ int TimeEventListIndex<Scalar>::indexOfNextEvent(int index) const
   if (index >= indexList_.back()) return this->getDefaultIndex();
 
   std::vector<int>::const_iterator it =
-    std::upper_bound(indexList_.begin(), indexList_.end(), index);
+      std::upper_bound(indexList_.begin(), indexList_.end(), index);
 
   return int(*it);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 bool TimeEventListIndex<Scalar>::eventInRangeIndex(int index1, int index2) const
 {
   if (index1 > index2) {
     int tmp = index1;
-    index1 = index2;
-    index2 = tmp;
+    index1  = index2;
+    index2  = tmp;
   }
 
   if (indexList_.size() == 0) return false;
@@ -125,35 +120,35 @@ bool TimeEventListIndex<Scalar>::eventInRangeIndex(int index1, int index2) const
   return false;
 }
 
-
-template<class Scalar>
-void TimeEventListIndex<Scalar>::describe(Teuchos::FancyOStream          &out,
-                                const Teuchos::EVerbosityLevel verbLevel) const
+template <class Scalar>
+void TimeEventListIndex<Scalar>::describe(
+    Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
 {
-  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  auto l_out = Teuchos::fancyOStream(out.getOStream());
   Teuchos::OSTab ostab(*l_out, 2, "TimeEventListIndex");
   l_out->setOutputToRootOnly(0);
 
-  *l_out << "TimeEventListIndex:" << "\n"
+  *l_out << "TimeEventListIndex:"
+         << "\n"
          << "  name       = " << this->getName() << "\n"
          << "  Type       = " << this->getType() << "\n"
          << "  IndexList_ = ";
   if (!indexList_.empty()) {
-    for (auto it = indexList_.begin(); it != indexList_.end()-1; ++it)
+    for (auto it = indexList_.begin(); it != indexList_.end() - 1; ++it)
       *l_out << *it << ", ";
-    *l_out << *(indexList_.end()-1) << std::endl;
-  } else {
+    *l_out << *(indexList_.end() - 1) << std::endl;
+  }
+  else {
     *l_out << "<empty>" << std::endl;
   }
 }
 
-
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 TimeEventListIndex<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl =
-    Teuchos::parameterList("Time Event List Index");
+      Teuchos::parameterList("Time Event List Index");
 
   pl->setName(this->getName());
   pl->set("Name", this->getName());
@@ -161,36 +156,35 @@ TimeEventListIndex<Scalar>::getValidParameters() const
 
   std::ostringstream list;
   if (!indexList_.empty()) {
-    for (std::size_t i = 0; i < indexList_.size()-1; ++i)
+    for (std::size_t i = 0; i < indexList_.size() - 1; ++i)
       list << indexList_[i] << ", ";
-    list << indexList_[indexList_.size()-1];
+    list << indexList_[indexList_.size() - 1];
   }
   pl->set<std::string>("Index List", list.str(),
-    "Comma deliminated list of indices");
+                       "Comma deliminated list of indices");
 
   return pl;
 }
 
-
 // Nonmember constructors.
 // ------------------------------------------------------------------------
 
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<TimeEventListIndex<Scalar> > createTimeEventListIndex(
-  Teuchos::RCP<Teuchos::ParameterList> pl)
+    Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto teli = Teuchos::rcp(new TimeEventListIndex<Scalar>());
   if (pl == Teuchos::null) return teli;  // Return default TimeEventListIndex.
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    pl->get<std::string>("Type", "List Index") != "List Index",
-    std::logic_error,
-    "Error - Time Event Type != 'List Index'.  (='"
-    + pl->get<std::string>("Type")+"')\n");
+      pl->get<std::string>("Type", "List Index") != "List Index",
+      std::logic_error,
+      "Error - Time Event Type != 'List Index'.  (='" +
+          pl->get<std::string>("Type") + "')\n");
 
   pl->validateParametersAndSetDefaults(*teli->getValidParameters());
 
-  teli->setName          (pl->get("Name",    "From createTimeEventListIndex"));
+  teli->setName(pl->get("Name", "From createTimeEventListIndex"));
 
   std::vector<int> indexList;
   indexList.clear();
@@ -199,18 +193,17 @@ Teuchos::RCP<TimeEventListIndex<Scalar> > createTimeEventListIndex(
   std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
   std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
   while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
-    std::string token = str.substr(lastPos,pos-lastPos);
+    std::string token = str.substr(lastPos, pos - lastPos);
     indexList.push_back(int(std::stoi(token)));
-    if(pos==std::string::npos) break;
+    if (pos == std::string::npos) break;
 
     lastPos = str.find_first_not_of(delimiters, pos);
-    pos = str.find_first_of(delimiters, lastPos);
+    pos     = str.find_first_of(delimiters, lastPos);
   }
   teli->setIndexList(indexList);
 
   return teli;
 }
 
-
-} // namespace Tempus
-#endif // Tempus_TimeEventListIndex_impl_hpp
+}  // namespace Tempus
+#endif  // Tempus_TimeEventListIndex_impl_hpp

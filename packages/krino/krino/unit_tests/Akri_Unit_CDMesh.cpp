@@ -319,7 +319,7 @@ public:
   void decompose_mesh()
   {
     NodeToCapturedDomainsMap nodesToSnappedDomains;
-    std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), levelset_fields());
+    std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(fixture.meta_data().spatial_dimension(), krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), levelset_fields());
     if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
     {
       const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();

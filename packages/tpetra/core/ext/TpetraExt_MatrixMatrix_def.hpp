@@ -589,21 +589,17 @@ void Add(
   if (scalarB != Teuchos::ScalarTraits<SC>::one())
     B.scale(scalarB);
 
-  bool bFilled = B.isFillComplete();
   size_t numMyRows = B.getLocalNumRows();
   if (scalarA != Teuchos::ScalarTraits<SC>::zero()) {
     for (LO i = 0; (size_t)i < numMyRows; ++i) {
       row = B.getRowMap()->getGlobalElement(i);
       Aprime->getGlobalRowCopy(row, a_inds, a_vals, a_numEntries);
 
-      if (scalarA != Teuchos::ScalarTraits<SC>::one())
+      if (scalarA != Teuchos::ScalarTraits<SC>::one()) {
         for (size_t j = 0; j < a_numEntries; ++j)
           a_vals[j] *= scalarA;
-
-      if (bFilled)
-        B.sumIntoGlobalValues(row, a_numEntries, reinterpret_cast<Scalar *>(a_vals.data()), a_inds.data());
-      else
-        B.insertGlobalValues(row,  a_numEntries, reinterpret_cast<Scalar *>(a_vals.data()), a_inds.data());
+      }
+      B.insertGlobalValues(row,  a_numEntries, reinterpret_cast<Scalar *>(a_vals.data()), a_inds.data());
     }
   }
 }
@@ -915,7 +911,11 @@ add (const Scalar& alpha,
            << "Call AddKern::addSorted(...)" << std::endl;
         std::cerr << os.str ();
       }
+#if KOKKOSKERNELS_VERSION >= 40299
+      AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, Aprime->getGlobalNumCols(), vals, rowptrs, colinds);
+#else
       AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, vals, rowptrs, colinds);
+#endif
     }
     else
     {
@@ -974,6 +974,8 @@ add (const Scalar& alpha,
   }
 }
 
+// This version of Add takes C as RCP&, so C may be null on input (in this case,
+// it is allocated and constructed in this function).
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -985,7 +987,7 @@ void Add(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   bool transposeB,
   Scalar scalarB,
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C)
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& C)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -1007,12 +1009,18 @@ void Add(
 
   std::string prefix = "TpetraExt::MatrixMatrix::Add(): ";
 
-  TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
-    prefix << "The case C == null does not actually work. Fixing this will require an interface change.");
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! A.isFillComplete () || ! B.isFillComplete (), std::invalid_argument,
-    prefix << "Both input matrices must be fill complete before calling this function.");
+    prefix << "A and B must both be fill complete before calling this function.");
+
+  if(C.is_null()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.haveGlobalConstants(), std::logic_error,
+        prefix << "C is null (must be allocated), but A.haveGlobalConstants() is false. "
+        "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!B.haveGlobalConstants(), std::logic_error,
+        prefix << "C is null (must be allocated), but B.haveGlobalConstants() is false. "
+        "Please report this bug to the Tpetra developers.");
+  }
 
 #ifdef HAVE_TPETRA_DEBUG
   {
@@ -1066,14 +1074,35 @@ void Add(
     prefix << "Failed to compute Op(B). Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
+  bool CwasFillComplete = false;
+
   // Allocate or zero the entries of the result matrix.
   if (! C.is_null ()) {
+    CwasFillComplete = C->isFillComplete();
+    if(CwasFillComplete)
+      C->resumeFill();
     C->setAllToScalar (STS::zero ());
   } else {
     // FIXME (mfh 08 May 2013) When I first looked at this method, I
     // noticed that C was being given the row Map of Aprime (the
     // possibly transposed version of A).  Is this what we want?
-    C = rcp (new crs_matrix_type (Aprime->getRowMap (), 0));
+
+    // It is a precondition that Aprime and Bprime have the same domain and range maps.
+    // However, they may have different row maps. In this case, it's difficult to
+    // get a precise upper bound on the number of entries in each local row of C, so
+    // just use the looser upper bound based on the max number of entries in any row of Aprime and Bprime.
+    if(Aprime->getRowMap()->isSameAs(*Bprime->getRowMap())) {
+      LocalOrdinal numLocalRows = Aprime->getLocalNumRows();
+      Array<size_t> CmaxEntriesPerRow(numLocalRows);
+      for(LocalOrdinal i = 0; i < numLocalRows; i++) {
+        CmaxEntriesPerRow[i] = Aprime->getNumEntriesInLocalRow(i) + Bprime->getNumEntriesInLocalRow(i);
+      }
+      C = rcp (new crs_matrix_type (Aprime->getRowMap (), CmaxEntriesPerRow()));
+    }
+    else {
+      // Note: above we checked that Aprime and Bprime have global constants, so it's safe to ask for max entries per row.
+      C = rcp (new crs_matrix_type (Aprime->getRowMap (), Aprime->getGlobalMaxNumRowEntries() + Bprime->getGlobalMaxNumRowEntries()));
+    }
   }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -1115,8 +1144,10 @@ void Add(
       const GlobalOrdinal globalRow = curRowMap->getGlobalElement (i);
       size_t numEntries = Mat[k]->getNumEntriesInGlobalRow (globalRow);
       if (numEntries > 0) {
-        Kokkos::resize(Indices,numEntries);
-        Kokkos::resize(Values,numEntries);
+        if(numEntries > Indices.extent(0)) {
+          Kokkos::resize(Indices, numEntries);
+          Kokkos::resize(Values, numEntries);
+        }
         Mat[k]->getGlobalRowCopy (globalRow, Indices, Values, numEntries);
 
         if (scalar[k] != STS::one ()) {
@@ -1125,9 +1156,11 @@ void Add(
           }
         }
 
-        if (C->isFillComplete ()) {
-          C->sumIntoGlobalValues (globalRow, numEntries, 
+        if (CwasFillComplete) {
+          size_t result = C->sumIntoGlobalValues (globalRow, numEntries, 
                                   reinterpret_cast<Scalar *>(Values.data()), Indices.data());
+          TEUCHOS_TEST_FOR_EXCEPTION(result != numEntries, std::logic_error,
+              prefix << "sumIntoGlobalValues failed to add entries from A or B into C.");
         } else {
           C->insertGlobalValues (globalRow,  numEntries, 
                                  reinterpret_cast<Scalar *>(Values.data()), Indices.data());
@@ -1135,6 +1168,34 @@ void Add(
       }
     }
   }
+  if(CwasFillComplete) {
+    C->fillComplete(C->getDomainMap (),
+                    C->getRangeMap ());
+  }
+}
+
+// This version of Add takes C as const RCP&, so C must not be null on input. Otherwise, its behavior is identical
+// to the above version where C is RCP&.
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void Add(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+  bool transposeA,
+  Scalar scalarA,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+  bool transposeB,
+  Scalar scalarB,
+  const Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& C)
+{
+  std::string prefix = "TpetraExt::MatrixMatrix::Add(): ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::invalid_argument,
+    prefix << "C must not be null");
+
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C_ = C;
+  Add(A, transposeA, scalarA, B, transposeB, scalarB, C_);
 }
 
 } //End namespace MatrixMatrix
@@ -3651,6 +3712,9 @@ addSorted(
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+#if KOKKOSKERNELS_VERSION >= 40299
+  GO numGlobalCols,
+#endif
   typename MMdetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -3667,7 +3731,11 @@ addSorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-    (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
+    (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+     nrows, numGlobalCols,
+#endif
+     Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //KokkosKernels requires values to be zeroed
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
@@ -3676,6 +3744,9 @@ addSorted(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+     nrows, numGlobalCols,
+#endif
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
     Crowptrs, Ccolinds, Cvals);
@@ -3692,7 +3763,11 @@ addUnsorted(
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+#if KOKKOSKERNELS_VERSION >= 40299
+  GO numGlobalCols,
+#else
   GO /* numGlobalCols */,
+#endif
   typename MMdetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -3710,7 +3785,11 @@ addUnsorted(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
-      (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
+      (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+       nrows, numGlobalCols,
+#endif
+       Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //Cvals must be zeroed out
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
@@ -3719,6 +3798,9 @@ addUnsorted(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: unsorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+    nrows, numGlobalCols,
+#endif
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
     Crowptrs, Ccolinds, Cvals);
@@ -3792,7 +3874,11 @@ convertToGlobalAndAdd(
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   KokkosSparse::Experimental::spadd_symbolic
-    (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
+    (&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+     nrows, A.numCols(),
+#endif
+     Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -3800,6 +3886,9 @@ convertToGlobalAndAdd(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
+#if KOKKOSKERNELS_VERSION >= 40299
+    nrows, A.numCols(),
+#endif
     Arowptrs, AcolindsConverted, Avals, scalarA,
     Browptrs, BcolindsConverted, Bvals, scalarB,
     Crowptrs, Ccolinds, Cvals);
@@ -3858,7 +3947,17 @@ template \
     const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
     bool transposeB, \
     SCALAR scalarB, \
-    Teuchos::RCP<CrsMatrix< SCALAR , LO , GO , NODE > > C); \
+    Teuchos::RCP<CrsMatrix< SCALAR , LO , GO , NODE > >& C); \
+\
+  template \
+  void MatrixMatrix::Add( \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& A, \
+    bool transposeA, \
+    SCALAR scalarA, \
+    const CrsMatrix< SCALAR , LO , GO , NODE >& B, \
+    bool transposeB, \
+    SCALAR scalarB, \
+    const Teuchos::RCP<CrsMatrix< SCALAR , LO , GO , NODE > >& C); \
 \
   template \
   void MatrixMatrix::Add( \

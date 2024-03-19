@@ -38,7 +38,7 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
+#include <stk_mesh/base/LegacyFieldTraits.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include <iomanip>

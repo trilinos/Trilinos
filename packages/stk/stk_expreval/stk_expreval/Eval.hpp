@@ -123,7 +123,17 @@ public:
 
   Node *newNode(int op);
 
-  Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max());
+  Eval &bindVariable(const std::string &name, const double &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
+
+  Eval &bindVariable(const std::string &name, double &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
+
+  Eval &bindVariable(const std::string &name, const int &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
+
+  Eval &bindVariable(const std::string &name, int &value_ref,
+                     int definedLength=std::numeric_limits<int>::max());
 
   Eval &unbindVariable(const std::string &name);
 

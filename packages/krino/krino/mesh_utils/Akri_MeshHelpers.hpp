@@ -46,6 +46,8 @@ struct StkMeshEntities
 
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds);
 stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta);
+double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
+double & get_scalar_field(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen);
 bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B);
@@ -74,7 +76,7 @@ void attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::Entit
 void attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 void unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
-void unpack_shared_entities(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & sharedEntities, stk::CommSparse &commSparse);
+std::vector<stk::mesh::Entity> unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, stk::CommSparse &commSparse);
 void activate_selected_entities_touching_active_elements(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Selector & entitySelector, stk::mesh::Part & activePart);
 void activate_all_entities(stk::mesh::BulkData & mesh, stk::mesh::Part & active_part);
 void destroy_custom_ghostings(stk::mesh::BulkData & mesh);
@@ -163,6 +165,8 @@ void batch_create_sides(stk::mesh::BulkData & mesh, const std::vector< SideDescr
 void make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh);
 
 void communicate_owned_entities_to_ghosting_procs(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & entities);
+void communicate_shared_nodes_to_sharing_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & nodes);
+void communicate_shared_nodes_to_sharing_procs_and_sort_and_unique(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & nodes);
 
 double compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Entity element, const stk::mesh::Field<double> * const coords_field);
 

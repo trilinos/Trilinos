@@ -63,7 +63,26 @@ void GraphTools_Metis::setVerbose(const bool verbose) { _verbose = verbose; }
 void GraphTools_Metis::setOption(const int id, const idx_t value) { _options[id] = value; }
 
 ///
-/// reorder by metis
+/// reorder by amd
+///
+template <typename ordering_type>
+ordering_type GraphTools_Metis::amd_order (ordering_type n, const ordering_type *xadj, const ordering_type *adjncy, ordering_type *perm, double *control, double *info) {
+  if constexpr (std::is_same_v<ordering_type, long>) {
+    // trilinos_amd_l_order requires integral type UF_long==long
+    return trilinos_amd_l_order(n, xadj, adjncy, perm, control, info);
+  }
+  else if (std::is_same_v<ordering_type, int>) {
+    // trilinos_amd_order requires integral type int
+    return trilinos_amd_order(n, xadj, adjncy, perm, control, info);
+  }
+  else {
+    // integral types different from int and long are not currently supported
+    return TRILINOS_AMD_INVALID;
+  }
+}
+
+///
+/// reorder by metis or amd
 ///
 
 void GraphTools_Metis::reorder(const ordinal_type verbose) {
@@ -81,10 +100,11 @@ void GraphTools_Metis::reorder(const ordinal_type verbose) {
     double amd_info[TRILINOS_AMD_INFO];
 
     timer.reset();
-    ierr = trilinos_amd_order(_nvts, _xadj.data(), _adjncy.data(), _perm.data(), NULL, amd_info);
+    ierr = GraphTools_Metis::amd_order(_nvts, _xadj.data(), _adjncy.data(), _perm_t.data(), NULL, amd_info);
     t_metis = timer.seconds();
 
     for (idx_t i = 0; i < _nvts; ++i) {
+      _perm(i) = _perm_t(i);
       _peri(_perm(i)) = i;
     }
 

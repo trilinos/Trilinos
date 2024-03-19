@@ -14,7 +14,6 @@
 #include "Tempus_StepperSubcyclingAppAction.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
-
 namespace Tempus {
 
 /** \brief Subcycling time stepper.
@@ -41,152 +40,147 @@ namespace Tempus {
  *    {\bf Algorithm} Subcycling \\
  *    \rule{5in}{0.4pt} \vspace{-15pt}
  *    \begin{enumerate}
- *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
- *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *      \item {\bf Advance solution, $x_{n}$ from $x_{n-1}$, by cycling substeppers.}
- *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *    \end{enumerate}
- *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt}
+ * \setlength{\parsep}{0pt} \item {\it appAction.execute(solutionHistory,
+ * stepper, BEGIN\_STEP)} \item {\bf Advance solution, $x_{n}$ from $x_{n-1}$,
+ * by cycling substeppers.} \item {\it appAction.execute(solutionHistory,
+ * stepper, END\_STEP)} \end{enumerate} \vspace{-10pt} \rule{5in}{0.4pt}
  *    }
  *  \f}
  */
-template<class Scalar>
-class StepperSubcycling : virtual public Tempus::Stepper<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperSubcycling : virtual public Tempus::Stepper<Scalar> {
+ public:
   /** \brief Default constructor.
    *
    *  - Requires subsequent setModel() and initialize() call before
    *    calling takeStep().
-  */
+   */
   StepperSubcycling();
 
   /// Constructor
   StepperSubcycling(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<IntegratorBasic<Scalar> >& integrator,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >& stepperSCAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      const Teuchos::RCP<IntegratorBasic<Scalar> >& integrator, bool useFSAL,
+      std::string ICConsistency, bool ICConsistencyCheck,
+      const Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >&
+          stepperSCAppAction);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
+  virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setNonConstModel(
+  virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel() const {return scIntegrator_->getStepper()->getModel();}
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
+  {
+    return scIntegrator_->getStepper()->getModel();
+  }
 
-    virtual void setAppAction(
-      Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > appAction = Teuchos::null);
+  virtual void setAppAction(Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >
+                                appAction = Teuchos::null);
 
-    virtual Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > getAppAction() const
-      { return stepperSCAppAction_; }
+  virtual Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > getAppAction() const
+  {
+    return stepperSCAppAction_;
+  }
 
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+  /// Initialize during construction and after changing input parameters.
+  virtual void initialize();
 
-    virtual Scalar getInitTimeStep(
+  virtual Scalar getInitTimeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
 
-    /// Set the initial conditions, make them consistent, and set needed memory.
-    virtual void setInitialConditions (
+  /// Set the initial conditions, make them consistent, and set needed memory.
+  virtual void setInitialConditions(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-    //  thus a no-op for explicit steppers.
-    virtual void setInitialGuess(
+  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
+  //  thus a no-op for explicit steppers.
+  virtual void setInitialGuess(
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess);
 
-    virtual void setSolver(
+  virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
 
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const;
+  virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const;
 
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  /// Get a default (initial) StepperState
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
 
-    virtual bool isExplicit()         const;
-    virtual bool isImplicit()         const;
-    virtual bool isExplicitImplicit() const;
-    virtual bool isOneStepMethod()    const;
-    virtual bool isMultiStepMethod()  const;
+  virtual bool isExplicit() const;
+  virtual bool isImplicit() const;
+  virtual bool isExplicitImplicit() const;
+  virtual bool isOneStepMethod() const;
+  virtual bool isMultiStepMethod() const;
 
-    virtual Scalar getOrder() const;
-    virtual Scalar getOrderMin() const;
-    virtual Scalar getOrderMax() const;
-    virtual OrderODE getOrderODE()   const;
+  virtual Scalar getOrder() const;
+  virtual Scalar getOrderMin() const;
+  virtual Scalar getOrderMax() const;
+  virtual OrderODE getOrderODE() const;
   //@}
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
   /// \name Functions to set the subcycling stepper values.
   //@{
-    virtual void setSubcyclingStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
-    virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
-    virtual void setSubcyclingInitTimeStep(Scalar InitTimeStep);
-    virtual void setSubcyclingMaxTimeStep(Scalar MaxTimeStep);
-    virtual void setSubcyclingMaxFailures(int MaxFailures);
-    virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
-    virtual void setSubcyclingScreenOutputIndexInterval(int i);
-    virtual void setSubcyclingScreenOutputIndexList(std::string s);
-    virtual void setSubcyclingTimeStepControlStrategy(
+  virtual void setSubcyclingStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+  virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
+  virtual void setSubcyclingInitTimeStep(Scalar InitTimeStep);
+  virtual void setSubcyclingMaxTimeStep(Scalar MaxTimeStep);
+  virtual void setSubcyclingMaxFailures(int MaxFailures);
+  virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
+  virtual void setSubcyclingScreenOutputIndexInterval(int i);
+  virtual void setSubcyclingScreenOutputIndexList(std::string s);
+  virtual void setSubcyclingTimeStepControlStrategy(
       Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs);
-    virtual void setSubcyclingIntegratorObserver(
+  virtual void setSubcyclingIntegratorObserver(
       Teuchos::RCP<IntegratorObserver<Scalar> > obs);
-    virtual void setSubcyclingPrintDtChanges(bool printDtChanges);
+  virtual void setSubcyclingPrintDtChanges(bool printDtChanges);
   //@}
 
   /// \name Functions to get the subcycling stepper values.
   //@{
-    virtual Teuchos::RCP<const Stepper<Scalar> > getSubcyclingStepper() const;
-    virtual Scalar getSubcyclingMinTimeStep() const;
-    virtual Scalar getSubcyclingInitTimeStep() const;
-    virtual Scalar getSubcyclingMaxTimeStep() const;
-    virtual std::string getSubcyclingStepType() const;
-    virtual int getSubcyclingMaxFailures() const;
-    virtual int getSubcyclingMaxConsecFailures() const;
-    virtual int getSubcyclingScreenOutputIndexInterval() const;
-    virtual std::string getSubcyclingScreenOutputIndexList() const;
-    virtual Teuchos::RCP<TimeStepControlStrategy<Scalar> >
-      getSubcyclingTimeStepControlStrategy() const;
-    virtual Teuchos::RCP<IntegratorObserver<Scalar> >
-      getSubcyclingIntegratorObserver() const;
-    virtual bool getSubcyclingPrintDtChanges() const;
+  virtual Teuchos::RCP<const Stepper<Scalar> > getSubcyclingStepper() const;
+  virtual Scalar getSubcyclingMinTimeStep() const;
+  virtual Scalar getSubcyclingInitTimeStep() const;
+  virtual Scalar getSubcyclingMaxTimeStep() const;
+  virtual std::string getSubcyclingStepType() const;
+  virtual int getSubcyclingMaxFailures() const;
+  virtual int getSubcyclingMaxConsecFailures() const;
+  virtual int getSubcyclingScreenOutputIndexInterval() const;
+  virtual std::string getSubcyclingScreenOutputIndexList() const;
+  virtual Teuchos::RCP<TimeStepControlStrategy<Scalar> >
+  getSubcyclingTimeStepControlStrategy() const;
+  virtual Teuchos::RCP<IntegratorObserver<Scalar> >
+  getSubcyclingIntegratorObserver() const;
+  virtual bool getSubcyclingPrintDtChanges() const;
   //@}
 
-protected:
-
+ protected:
   Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > stepperSCAppAction_;
-  Teuchos::RCP<IntegratorBasic<Scalar> >            scIntegrator_;
-
+  Teuchos::RCP<IntegratorBasic<Scalar> > scIntegrator_;
 };
-
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
-template<class Scalar>
-Teuchos::RCP<StepperSubcycling<Scalar> >
-createStepperSubcycling(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl);
+template <class Scalar>
+Teuchos::RCP<StepperSubcycling<Scalar> > createStepperSubcycling(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
+}  // namespace Tempus
 
-} // namespace Tempus
-
-#endif // Tempus_StepperSubcycling_decl_hpp
+#endif  // Tempus_StepperSubcycling_decl_hpp

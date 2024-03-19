@@ -454,6 +454,8 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 Teuchos::RCP<panzer::LocalMeshInfo>
 generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
 {
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("panzer_stk::generateLocalMeshInfo",GenerateLocalMeshInfo);
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -473,8 +475,6 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
   TEUCHOS_ASSERT(typeid(panzer::LocalOrdinal) == typeid(int));
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = mesh.getComm();
-
-  TEUCHOS_FUNC_TIME_MONITOR_DIFF("panzer_stk::generateLocalMeshInfo",GenerateLocalMeshInfo);
 
   // This horrible line of code is required since the connection manager only takes rcps of a mesh
   RCP<const panzer_stk::STK_Interface> mesh_rcp = Teuchos::rcpFromRef(mesh);

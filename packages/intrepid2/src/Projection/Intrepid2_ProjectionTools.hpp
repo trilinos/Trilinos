@@ -802,12 +802,6 @@ public:
   
 };
 
-//Temporary fix to allow application keep using the Experimental namespace. It will be removed soon.
-namespace Experimental {
-template<typename DeviceType>
-class ProjectionTools: public Intrepid2::ProjectionTools<DeviceType>{};
-}
-
 } //Intrepid2
 
 

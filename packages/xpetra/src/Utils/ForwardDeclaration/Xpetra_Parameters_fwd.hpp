@@ -47,11 +47,11 @@
 #define XPETRA_PARAMETERS_FWD_HPP
 
 namespace Xpetra {
-  class Parameters;
+class Parameters;
 }
 
 #ifndef XPETRA_PARAMETERS_SHORT
 #define XPETRA_PARAMETERS_SHORT
 #endif
 
-#endif // XPETRA_PARAMETERS_FWD_HPP
+#endif  // XPETRA_PARAMETERS_FWD_HPP

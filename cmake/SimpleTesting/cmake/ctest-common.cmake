@@ -158,6 +158,7 @@ set(CTEST_BUILD_FLAGS "-j${PARALLEL_LEVEL} -k 0")
 # * REQUIRES `CTEST_BINARY_DIRECTORY` to be set.
 if(NOT skip_upload_config_files)
     set(configure_command_file ${CTEST_BINARY_DIRECTORY}/configure_command.txt)
+    set(genconfig_build_name_file ${CTEST_BINARY_DIRECTORY}/genconfig_build_name.txt)
 endif()
 
 

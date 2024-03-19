@@ -13,7 +13,7 @@
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(WrapperModelEvaluatorPairIMEX_Basic)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(WrapperModelEvaluatorPairIMEX_Basic)
 }
 
 #endif

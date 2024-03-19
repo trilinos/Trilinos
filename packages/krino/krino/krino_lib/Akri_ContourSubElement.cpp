@@ -43,7 +43,7 @@ ContourSubElement::ContourSubElement( const ContourElement *in_owner,
 }
 
 int
-ContourSubElement::build_facets( Faceted_Surface & facets )
+ContourSubElement::build_facets( FacetedSurfaceBase & facets )
 {
   int start_size = facets.size();
 
@@ -118,7 +118,7 @@ ContourSubElement::dump_details() const
 }
 
 int
-ContourSubElement::side_facets( Faceted_Surface & facets, int side ) const
+ContourSubElement::side_facets( FacetedSurfaceBase & facets, int side ) const
 {
   const std::string & owner_type = my_owner->dist_topology().name();
   const std::string & sub_type = topology().name();
@@ -1094,7 +1094,7 @@ ContourSubElement_Tri_3::is_degenerate( const std::array<int,6> & edge_node_ids,
 }
 
 int
-ContourSubElement_Tri_3::side_facets( Faceted_Surface & facets,
+ContourSubElement_Tri_3::side_facets( FacetedSurfaceBase & facets,
 			       int side ) const
 {
   STK_ThrowAssert( get_side_ids()[side] == -2 );
@@ -1105,15 +1105,9 @@ ContourSubElement_Tri_3::side_facets( Faceted_Surface & facets,
   const unsigned * const lnn = get_side_node_ordinals(topology(), side);
 
   if ( LevelSet::sign_change(0.0, (double) my_sign) )
-    {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]) );
-      facets.add( std::move(facet) );
-    }
+    facets.emplace_back_2d( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]) );
   else
-    {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet2d>( my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[0]]) );
-      facets.add( std::move(facet) );
-    }
+    facets.emplace_back_2d( my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[0]]) );
 
   return( num_facets );
 }
@@ -2086,7 +2080,7 @@ ContourSubElement_Tet_4::is_degenerate( const std::array<int,10> & edge_node_ids
 }
 
 int
-ContourSubElement_Tet_4::side_facets( Faceted_Surface & facets,
+ContourSubElement_Tet_4::side_facets( FacetedSurfaceBase & facets,
 			       int side ) const
 {
   STK_ThrowAssert( mySideIds[side] == -2 );
@@ -2097,15 +2091,9 @@ ContourSubElement_Tet_4::side_facets( Faceted_Surface & facets,
   const unsigned * const lnn = get_side_node_ordinals(topology(), side);
 
   if ( LevelSet::sign_change(0.0, (double) my_sign) )
-    {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[2]]) );
-      facets.add( std::move(facet) );
-    }
+    facets.emplace_back_3d( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[2]]) );
   else
-    {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[2]]), my_owner->coordinates(myCoords[lnn[1]]) );
-      facets.add( std::move(facet) );
-    }
+    facets.emplace_back_3d( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[2]]), my_owner->coordinates(myCoords[lnn[1]]) );
 
   return( num_facets );
 }

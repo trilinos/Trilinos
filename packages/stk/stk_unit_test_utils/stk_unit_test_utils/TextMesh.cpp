@@ -84,7 +84,7 @@ private:
        distributionFactorsFieldPerNodeset = &m_meta.declare_field<double>(stk::topology::NODE_RANK, nodesetDistFieldName);
      }
      else {
-       distributionFactorsFieldPerNodeset = &m_meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, nodesetDistFieldName);
+       distributionFactorsFieldPerNodeset = &stk::mesh::legacy::declare_field<stk::mesh::Field<double>>(m_meta, stk::topology::NODE_RANK, nodesetDistFieldName);
      }
 
      stk::io::set_field_role(*distributionFactorsFieldPerNodeset, Ioss::Field::MESH);
@@ -124,7 +124,7 @@ private:
      std::string fieldName = sidesetData.name + "_df";
 
      distributionFactorsField =
-         &m_meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(m_meta.side_rank(), fieldName);
+         &stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::ElementNode>>(m_meta, m_meta.side_rank(), fieldName);
 
      stk::io::set_field_role(*distributionFactorsField, Ioss::Field::MESH);
      stk::io::set_distribution_factor_field(*sidesetPart, *distributionFactorsField);
@@ -353,7 +353,7 @@ private:
   template<typename F>
   void declare_coordinate_field_with_type()
   {
-    F& coordsField = m_meta.declare_field<F>(stk::topology::NODE_RANK, m_meta.coordinate_field_name());
+    F& coordsField = stk::mesh::legacy::declare_field<F>(m_meta, stk::topology::NODE_RANK, m_meta.coordinate_field_name());
     stk::mesh::put_field_on_mesh(coordsField, m_meta.universal_part(), m_data.spatialDim, nullptr);
   }
 

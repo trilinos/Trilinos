@@ -58,73 +58,70 @@
 
 namespace MueLu {
 
-  /*!
-    @class RigidBodyModeFactory class.
-    @brief Nullspace Factory for building rigid body modes.
-    @ingroup MueLuTransferClasses
-  */
+/*!
+  @class RigidBodyModeFactory class.
+  @brief Nullspace Factory for building rigid body modes.
+  @ingroup MueLuTransferClasses
+*/
 
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class RigidBodyModeFactory : public SingleLevelFactoryBase {
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+class RigidBodyModeFactory : public SingleLevelFactoryBase {
 #undef MUELU_RIGIDBODYMODEFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+ public:
+  //! @name Constructors/Destructors.
+  //@{
 
-    //! Constructor
-    RigidBodyModeFactory(const int numPDEs)
-      : nspName_("Nullspace"),
-        numPDEs_(numPDEs)
-    { }
-    //! Constructor
-    RigidBodyModeFactory(const std::string & nspName = "Nullspace")
-      : nspName_(nspName),
-        numPDEs_(3)
-    { }
+  //! Constructor
+  RigidBodyModeFactory(const int numPDEs)
+    : nspName_("Nullspace")
+    , numPDEs_(numPDEs) {}
+  //! Constructor
+  RigidBodyModeFactory(const std::string &nspName = "Nullspace")
+    : nspName_(nspName)
+    , numPDEs_(3) {}
 
-    //! Destructor.
-    virtual ~RigidBodyModeFactory();
+  //! Destructor.
+  virtual ~RigidBodyModeFactory();
 
-    //@}
+  //@}
 
-    //! @name Input
-    //@{
+  //! @name Input
+  //@{
 
-    /*! @brief Specifies the data that this class needs, and the factories that generate that data.
+  /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
-        If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
-        will fall back to the settings in FactoryManager.
-    */
-    void DeclareInput(Level &currentLevel) const;
+      If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
+      will fall back to the settings in FactoryManager.
+  */
+  void DeclareInput(Level &currentLevel) const;
 
-    //@}
+  //@}
 
-    //! @name Build methods.
-    //@{
+  //! @name Build methods.
+  //@{
 
-    //! Build an object with this factory.
-    void Build(Level &currentLevel) const;
+  //! Build an object with this factory.
+  void Build(Level &currentLevel) const;
 
-    //@}
-    void setNumPDEs(int numPDEs) {
-      numPDEs_=numPDEs;
-    }
+  //@}
+  void setNumPDEs(int numPDEs) {
+    numPDEs_ = numPDEs;
+  }
 
-  private:
+ private:
+  //! name of nullspace vector on finest level
+  std::string nspName_;
 
-    //! name of nullspace vector on finest level
-    std::string nspName_;
+  int numPDEs_;
 
-    int numPDEs_;
+};  // class RigidBodyModeFactory
 
-  }; // class RigidBodyModeFactory
-
-} // namespace MueLu
+}  // namespace MueLu
 
 #define MUELU_RIGIDBODYMODEFACTORY_SHORT
-#endif // MUELU_RIGIDBODYMODEFACTORY_DECL_HPP
+#endif  // MUELU_RIGIDBODYMODEFACTORY_DECL_HPP

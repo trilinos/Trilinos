@@ -14,9 +14,7 @@
 #include "Tempus_Stepper.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
 
-
 namespace Tempus {
-
 
 /** \brief Thyra Base interface for implicit time steppers.
  *
@@ -194,93 +192,103 @@ namespace Tempus {
  *  stepper.
  *
  */
-template<class Scalar>
-class StepperImplicit : virtual public Tempus::Stepper<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperImplicit : virtual public Tempus::Stepper<Scalar> {
+ public:
   /// \name Basic implicit stepper methods
   //@{
-    /// Set the model
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) override;
+  /// Set the model
+  virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+      override;
 
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const override
-    {
-      Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
-      if (wrapperModel_ != Teuchos::null) model = wrapperModel_->getAppModel();
-      return model;
-    }
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
+      const override
+  {
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
+    if (wrapperModel_ != Teuchos::null) model = wrapperModel_->getAppModel();
+    return model;
+  }
 
-    virtual Teuchos::RCP<const WrapperModelEvaluator<Scalar> >
-      getWrapperModel(){return wrapperModel_;}
+  virtual Teuchos::RCP<const WrapperModelEvaluator<Scalar> > getWrapperModel()
+  {
+    return wrapperModel_;
+  }
 
-    virtual void setDefaultSolver();
+  virtual void setDefaultSolver();
 
-    /// Set solver.
-    virtual void setSolver(
+  /// Set solver.
+  virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) override;
 
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const override
-      { return solver_; }
+  virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver()
+      const override
+  {
+    return solver_;
+  }
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
 
-    /// Return alpha = d(xDot)/dx.
-    virtual Scalar getAlpha(const Scalar dt) const = 0;
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const = 0;
 
-    /// Return beta  = d(x)/dx.
-    virtual Scalar getBeta (const Scalar dt) const = 0;
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta(const Scalar dt) const = 0;
 
-    /// Solve implicit ODE, f(x, xDot, t, p) = 0.
-    const Thyra::SolveStatus<Scalar> solveImplicitODE(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
-      const Scalar time,
-      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y = Teuchos::null,
-      const int index = -1    /* index and y are for IMEX_RK_Partition */ );
+  /// Solve implicit ODE, f(x, xDot, t, p) = 0.
+  const Thyra::SolveStatus<Scalar> solveImplicitODE(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> >& p,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& y = Teuchos::null,
+      const int index                                   = -1 /* index and y are for IMEX_RK_Partition */);
 
-    /// Evaluate implicit ODE residual, f(x, xDot, t, p).
-    void evaluateImplicitODE(
-            Teuchos::RCP<Thyra::VectorBase<Scalar> > & f,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
-      const Scalar time,
-      const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p );
+  /// Evaluate implicit ODE residual, f(x, xDot, t, p).
+  void evaluateImplicitODE(
+      Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
+      const Teuchos::RCP<ImplicitODEParameters<Scalar> >& p);
 
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-    virtual void setInitialGuess(
+  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
+  virtual void setInitialGuess(
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > initialGuess) override
-    {
-      initialGuess_ = initialGuess;
-      this->isInitialized_ = false;
-    }
+  {
+    initialGuess_        = initialGuess;
+    this->isInitialized_ = false;
+  }
 
-    /// Set parameter so that the initial guess is set to zero (=True) or use last timestep (=False).
-    virtual void setZeroInitialGuess(bool zIG) {
-      zeroInitialGuess_ = zIG;
-      this->isInitialized_ = false;
-    }
+  /// Set parameter so that the initial guess is set to zero (=True) or use last
+  /// timestep (=False).
+  virtual void setZeroInitialGuess(bool zIG)
+  {
+    zeroInitialGuess_    = zIG;
+    this->isInitialized_ = false;
+  }
 
-    virtual bool getZeroInitialGuess() const { return zeroInitialGuess_; }
+  virtual bool getZeroInitialGuess() const { return zeroInitialGuess_; }
 
-    virtual Scalar getInitTimeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const override
-    {return Scalar(1.0e+99);}
+  virtual Scalar getInitTimeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */)
+      const override
+  {
+    return Scalar(1.0e+99);
+  }
   //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const override;
+  virtual void describe(
+      Teuchos::FancyOStream& out,
+      const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const override;
 
-  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
+      const override;
 
   Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicImplicit() const;
 
@@ -295,15 +303,13 @@ public:
   /// Get the Solver Name.
   std::string getSolverName() const { return solverName_; }
 
-protected:
-
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initialGuess_;
+ protected:
+  Teuchos::RCP<WrapperModelEvaluator<Scalar> > wrapperModel_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > initialGuess_;
   bool zeroInitialGuess_;
   std::string solverName_;
-
 };
 
-} // namespace Tempus
-#endif // Tempus_StepperImplicit_decl_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperImplicit_decl_hpp

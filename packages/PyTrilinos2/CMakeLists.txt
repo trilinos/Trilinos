@@ -140,6 +140,8 @@ foreach(all_include_dir IN LISTS all_include_dirs)
   IF(${IS_KOKKOS_ALGORITHMS_SRC} GREATER -1)
     list(APPEND all_include_dirs "${all_include_dir}/std_algorithms")
     list(APPEND all_include_dirs "${all_include_dir}/std_algorithms/impl")
+    list(APPEND all_include_dirs "${all_include_dir}/sorting")
+    list(APPEND all_include_dirs "${all_include_dir}/sorting/impl")
   ENDIF()
 endforeach()
 
@@ -377,7 +379,7 @@ ADD_SUBDIRECTORY( src )
 file(COPY ${PyTrilinos2PyFiles} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos2/.)
 #file(COPY ${PyTrilinos2PyFilesSo} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos2/.)
 
-SET(PyTrilinos2_PYTHONPATH "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}")
+SET(PyTrilinos2_PYTHONPATH "${CMAKE_CURRENT_BINARY_DIR}:$ENV{PYTHONPATH}")
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 

@@ -13,6 +13,9 @@ on:
     - develop
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   triloamd01-gcc:
     runs-on: [self-hosted, triloamd01]
@@ -28,7 +31,7 @@ jobs:
           bash -l -c "module list"
           printenv PATH
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
         with:
           access_token: ${{ github.token }}
       - name: make dirs
@@ -37,7 +40,7 @@ jobs:
           mkdir -p /home/Trilinos/src/Trilinos
           mkdir -p /home/Trilinos/build
       - name: Clone trilinos
-        uses: actions/checkout@v4
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
         with:
           fetch-depth: 0
       - name: Repo status

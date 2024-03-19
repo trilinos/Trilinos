@@ -87,13 +87,13 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr SchwarzOperator<SC,LO,GO,NO>::getDomainMap() const
+    const typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr SchwarzOperator<SC,LO,GO,NO>::getDomainMap() const
     {
         return K_->getDomainMap();
     }
 
     template<class SC,class LO,class GO,class NO>
-    typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr SchwarzOperator<SC,LO,GO,NO>::getRangeMap() const
+    const typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr SchwarzOperator<SC,LO,GO,NO>::getRangeMap() const
     {
         return K_->getRangeMap();
     }

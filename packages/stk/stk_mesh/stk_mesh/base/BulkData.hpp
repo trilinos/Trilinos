@@ -870,6 +870,16 @@ public:
   unsigned get_initial_bucket_capacity() const { return m_bucket_repository.get_initial_bucket_capacity(); }
   unsigned get_maximum_bucket_capacity() const { return m_bucket_repository.get_maximum_bucket_capacity(); }
 
+  virtual bool does_entity_have_orphan_protection(stk::mesh::Entity entity) const
+  {
+      bool hasOrphanProtection = false;
+      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
+      {
+          hasOrphanProtection = true;
+      }
+      return hasOrphanProtection;
+  }
+
 protected: //functions
   BulkData(std::shared_ptr<MetaData> mesh_meta_data,
            ParallelMachine parallel,
@@ -1295,16 +1305,6 @@ private:
       const bool isOwned = bucket(entity).owned();
       const bool isCreatedState = (stk::mesh::Created == state(entity));
       return isNode && isNotConnected && isCreatedState && isOwned;
-  }
-
-  virtual bool does_entity_have_orphan_protection(stk::mesh::Entity entity) const
-  {
-      bool hasOrphanProtection = false;
-      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
-      {
-          hasOrphanProtection = true;
-      }
-      return hasOrphanProtection;
   }
 
   // Only to be called from add_node_sharing
@@ -2432,13 +2432,6 @@ EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
 {
   const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
   return lhs_key < rhs ;
-}
-
-inline EntityLess&
-EntityLess::operator=(const EntityLess& rhs)
-{
-  m_mesh = rhs.m_mesh;
-  return *this;
 }
 
 

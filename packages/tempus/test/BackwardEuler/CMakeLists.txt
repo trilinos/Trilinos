@@ -8,12 +8,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BackwardEuler_CDR
-  SOURCES Tempus_Test_BackwardEuler_CDR.cpp ${TEMPUS_UNIT_TEST_MAIN}
-  TESTONLYLIBS tempus_test_models
-  NUM_MPI_PROCS 1
-  )
+IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BackwardEuler_CDR
+    SOURCES Tempus_Test_BackwardEuler_CDR.cpp ${TEMPUS_UNIT_TEST_MAIN}
+    TESTONLYLIBS tempus_test_models
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BackwardEuler_VanDerPol
@@ -62,10 +64,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_SinCos_CopyFiles
   EXEDEPS BackwardEuler_SinCos
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_CDR_CopyFiles
-  DEST_FILES Tempus_BackwardEuler_CDR.xml
-  EXEDEPS BackwardEuler_CDR
-  )
+IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_CDR_CopyFiles
+    DEST_FILES Tempus_BackwardEuler_CDR.xml
+    EXEDEPS BackwardEuler_CDR
+    )
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_VanDerPol_CopyFiles
   DEST_FILES Tempus_BackwardEuler_VanDerPol.xml

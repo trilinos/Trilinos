@@ -46,18 +46,13 @@
 #ifndef MUELU_BLOCKEDRAPFACTORY_FWD_HPP
 #define MUELU_BLOCKEDRAPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class BlockedRAPFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlockedRAPFactory;
 }
 
 #ifndef MUELU_BLOCKEDRAPFACTORY_SHORT
 #define MUELU_BLOCKEDRAPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_BLOCKEDRAPFACTORY_FWD_HPP
+#endif  // MUELU_BLOCKEDRAPFACTORY_FWD_HPP

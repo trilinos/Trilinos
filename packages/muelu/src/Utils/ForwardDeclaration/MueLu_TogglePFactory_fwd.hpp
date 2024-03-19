@@ -46,18 +46,13 @@
 #ifndef MUELU_TOGGLEPFACTORY_FWD_HPP
 #define MUELU_TOGGLEPFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TogglePFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class TogglePFactory;
 }
 
 #ifndef MUELU_TOGGLEPFACTORY_SHORT
 #define MUELU_TOGGLEPFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_TOGGLEPFACTORY_FWD_HPP
+#endif  // MUELU_TOGGLEPFACTORY_FWD_HPP

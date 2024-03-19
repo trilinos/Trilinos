@@ -171,9 +171,9 @@ def merge_branch(source_url, target_branch, sourceSHA):
 
     if sha_exists_as_branch_on_remote:
         print_wrapper("REMARK: Detected ref as a remote branch, will merge as such")
-        check_call_wrapper(['git', 'merge', '--no-edit', "source_remote/" + sourceSHA])
+        check_call_wrapper(['git', 'merge', '--no-ff', '--no-edit', "source_remote/" + sourceSHA])
     else:
-        check_call_wrapper(['git', 'merge', '--no-edit', sourceSHA])
+        check_call_wrapper(['git', 'merge', '--no-ff', '--no-edit', sourceSHA])
 
     return 0
 

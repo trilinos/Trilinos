@@ -24,7 +24,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
-SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.2.00")
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.2.1")
 
 
 # Option to allow developers to ignore incompatible Kokkos versions
@@ -338,6 +338,24 @@ ELSE () # NOT Tpetra_INST_SYCL
     MESSAGE(STATUS "NOTE: Kokkos::SYCL is ON (the CMake option Kokkos_ENABLE_SYCL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, please also set the CMake option Tpetra_INST_SYCL:BOOL=ON.  If you use the Kokkos::SYCL version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_SYCL
+
+############################################################
+# Shared/Managed Memory Default Allocation
+############################################################
+# Normally we allocate Tpetra objects to the basic space by default,
+# but some apps might want to allocate memory to the "shared" host/device
+# space. This might be CudaUVMSpace, HIPManagedSpace or SYCLSharedUSMSpace.
+# These options allow us to do that sort of thing, changing
+# core/compat/Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ALLOCATE_IN_SHARED_SPACE
+  HAVE_TPETRA_SHARED_ALLOCS
+  "Have Tpetra allocate memory in shared/managed space by default"
+  OFF
+  )
+IF(Tpetra_ALLOCATE_IN_SHARED_SPACE)
+  MESSAGE(STATUS "- Tpetra: Allocating the shared/managed space by default.")
+ENDIF()
 
 
 ############################################################
@@ -934,11 +952,17 @@ IF (DEFINED HAVE_COMPLEX_BLAS  AND  HAVE_COMPLEX_BLAS)
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+    IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+      MESSAGE(WARNING "Trilinos_ENABLE_COMPLEX_DOUBLE=ON, but Tpetra_INST_DOUBLE=OFF. Disabling Scalar=std::complex<double> in Tpetra by default.")
+    ENDIF()
   ENDIF()
   IF (Tpetra_INST_FLOAT AND Trilinos_ENABLE_COMPLEX_FLOAT)
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+    IF (Trilinos_ENABLE_COMPLEX_FLOAT)
+      MESSAGE(WARNING "Trilinos_ENABLE_COMPLEX_FLOAT=ON, but Tpetra_INST_FLOAT=OFF. Disabling Scalar=std::complex<float> in Tpetra by default.")
+    ENDIF()
   ENDIF()
 ELSE()
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
@@ -967,6 +991,9 @@ ENDIF ()
 # case.
 IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Tpetra_INST_DOUBLE)
   MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>.  However, Tpetra_INST_DOUBLE is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
+ENDIF ()
+IF (Tpetra_INST_COMPLEX_FLOAT AND NOT Tpetra_INST_FLOAT)
+  MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>.  However, Tpetra_INST_FLOAT is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
 ENDIF ()
 
 # Tpetra requires that the BLAS work for Scalar, as long as Scalar is

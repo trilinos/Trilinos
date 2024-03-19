@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <Akri_StkMeshBuilder.hpp>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
@@ -33,6 +34,7 @@ public:
     std::vector<stk::mesh::EntityId> get_ids_of_nodes_with_given_indices(const std::vector<unsigned> & nodeIndices) const { return mBuilder.get_ids_of_nodes_with_given_indices(nodeIndices); }
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mBuilder.get_owned_elements(); }
     stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const { return mBuilder.get_node_coordinates(node); }
+    const stk::mesh::FieldBase & get_coordinates_field() const { return mBuilder.get_coordinates_field(); }
 
     template <typename MeshSpecType>
     void build_full_np1_mesh(const MeshSpecType &meshSpec)

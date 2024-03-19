@@ -59,9 +59,16 @@ namespace panzer {
  * TemplateManager.
  */
 template <typename TypeSeq, typename BaseT, typename ObjectT>
-class VectorTemplateIterator : public std::iterator<std::input_iterator_tag,
-                                              std::vector<Teuchos::RCP<BaseT> > > {
+class VectorTemplateIterator {
 public:
+
+  // Iterator requirements
+  using iterator_category = std::input_iterator_tag;
+  using value_type = std::vector<Teuchos::RCP<BaseT>>;
+  using differnce_type = std::ptrdiff_t;
+  using pointer = value_type*;
+  using reference = value_type&;
+  
    //! Constructor
    VectorTemplateIterator(panzer::VectorTemplateManager<TypeSeq,BaseT,ObjectT> & m,
                     typename std::vector<std::vector< Teuchos::RCP<BaseT> > >::iterator p) 
@@ -106,10 +113,17 @@ private:
 };
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
-class ConstVectorTemplateIterator : public std::iterator<std::input_iterator_tag,
-                                                         const std::vector<Teuchos::RCP<BaseT> > > {
+class ConstVectorTemplateIterator {
 public:
-   //! Constructor
+
+  // Iterator requirements
+  using iterator_category = std::input_iterator_tag;
+  using value_type = const std::vector<Teuchos::RCP<BaseT>>;
+  using differnce_type = std::ptrdiff_t;
+  using pointer = value_type*;
+  using reference = value_type&;
+
+  //! Constructor
    ConstVectorTemplateIterator(const panzer::VectorTemplateManager<TypeSeq,BaseT,ObjectT> & m,
                     typename std::vector<std::vector< Teuchos::RCP<BaseT> > >::const_iterator p) 
       : manager_(&m), object_iterator_(p) {}

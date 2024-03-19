@@ -63,7 +63,9 @@
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 #include "Thyra_BelosTpetrasSolverAdapter.hpp"
+#endif
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -106,6 +108,8 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::BiCGStab_name = "BiCGStab";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::FixedPoint_name = "Fixed Point";
+
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmres_name = "TPETRA GMRES";
 template<class Scalar>
@@ -114,6 +118,7 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmresSingleReduce_name = "TPETRA GMRES SINGLE REDUCE";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::TpetraGmresSstep_name = "TPETRA GMRES S-STEP";
+#endif
 
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
@@ -413,11 +418,13 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "MINRES",
         "TFQMR",
         "BiCGStab",
-        "Fixed Point",
-        "TPETRA GMRES",
+        "Fixed Point"
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
+        ,"TPETRA GMRES",
         "TPETRA GMRES PIPELINE",
         "TPETRA GMRES SINGLE REDUCE",
         "TPETRA GMRES S-STEP"
+#endif
         ),
       tuple<std::string>(
         "Block GMRES solver for nonsymmetric linear systems.  It can also solve "
@@ -462,15 +469,17 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
 
         "BiCGStab solver for nonsymmetric linear systems.",
 
-        "Fixed point iteration",
+        "Fixed point iteration"
 
-        "Native Tpetra implementation of GMRES",
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
+        ,"Native Tpetra implementation of GMRES",
 
         "Native Tpetra implementation of pipeline GMRES",
 
         "Native Tpetra implementation of single-reduce GMRES",
 
         "Native Tpetra implementation of s-step GMRES"
+#endif
         ),
       tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,
@@ -483,11 +492,13 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         SOLVER_TYPE_MINRES,
         SOLVER_TYPE_TFQMR,
         SOLVER_TYPE_BICGSTAB,
-        SOLVER_TYPE_FIXEDPOINT,
-        SOLVER_TYPE_TPETRA_GMRES,
+        SOLVER_TYPE_FIXEDPOINT
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
+        ,SOLVER_TYPE_TPETRA_GMRES,
         SOLVER_TYPE_TPETRA_GMRES_PIPELINE,
         SOLVER_TYPE_TPETRA_GMRES_SINGLE_REDUCE,
         SOLVER_TYPE_TPETRA_GMRES_SSTEP
+#endif
         ),
       &*validParamList
       );
@@ -572,6 +583,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
     {
       Thyra::BelosTpetraGmres<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(TpetraGmres_name).setParameters(
@@ -596,6 +608,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
+#endif
   }
   return validParamList;
 }
@@ -994,6 +1007,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       break;
     }
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
     case SOLVER_TYPE_TPETRA_GMRES:
     {
       // Get the PL
@@ -1054,7 +1068,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       iterativeSolver->setParameters( solverPL );
       break;
     }
-
+#endif
     default:
     {
       TEUCHOS_TEST_FOR_EXCEPT(true);

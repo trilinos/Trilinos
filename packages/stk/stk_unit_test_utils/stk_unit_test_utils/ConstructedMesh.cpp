@@ -75,7 +75,8 @@ void ConstructedMesh::populate_bulk_data(stk::mesh::BulkData& bulk)
     meta.set_part_id(block, elemBlock.id);
   }
 
-  stk::mesh::Field<double, stk::mesh::Cartesian> & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
+  stk::mesh::Field<double, stk::mesh::Cartesian> & coordsField =
+      stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta, stk::topology::NODE_RANK, "coordinates", 1);
   stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), m_spatialDimension, nullptr);
 
   bulk.modification_begin();

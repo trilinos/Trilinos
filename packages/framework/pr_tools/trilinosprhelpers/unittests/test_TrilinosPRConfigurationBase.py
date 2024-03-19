@@ -212,6 +212,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
             genconfig_build_name="rhel7_sems-gnu-7.2.0-openmpi-1.10.1-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables",
+            dashboard_build_name="gnu-7.2.0-openmpi-1.10.1_release_static_openmp",
             jenkins_job_number=99,
             pullrequest_number='0000',
             pullrequest_cdash_track="Pull Request",
@@ -350,11 +351,27 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
 
     def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
         args = self.dummy_args_non_pr_track()
+
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
         build_name = pr_config.pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
-        expected_build_name = args.genconfig_build_name
+        expected_build_name = args.dashboard_build_name
         self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseBuildNameDefaultDashboardName(self):
+        """
+        Test the build name output when dashboard_build_name contains
+        the default Jenkins parameter value, '__UNKNOWN__'.
+        """
+        args = self.dummy_args_non_pr_track()
+        args.dashboard_build_name = "__UNKNOWN__"
+
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        result_build_name = pr_config.pullrequest_build_name
+        expected_build_name = args.genconfig_build_name
+        self.assertEqual(expected_build_name, result_build_name)
 
 
     def test_TrilinosPRConfigurationBaseDashboardModelPRTrack(self):

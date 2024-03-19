@@ -50,19 +50,24 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
-namespace Teuchos { class Time; }
-namespace Teuchos { template <typename Ordinal> class Comm; }
+namespace Teuchos {
+class Time;
+}
+namespace Teuchos {
+template <typename Ordinal>
+class Comm;
+}
 
 namespace MueLu {
 
-  namespace MemUtils {
+namespace MemUtils {
 
-    std::string PrintMemoryUsage();
-    std::string PrintMemoryInfo();
-    void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm);
+std::string PrintMemoryUsage();
+std::string PrintMemoryInfo();
+void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm);
 
-  } //namespace MemUtils
+}  // namespace MemUtils
 
-} //namespace MueLu
+}  // namespace MueLu
 
-#endif //ifndef MUELU_MEMORY_HPP
+#endif  // ifndef MUELU_MEMORY_HPP

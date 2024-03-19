@@ -763,7 +763,17 @@ namespace Belos {
               "nor reached the maximum number of iterations " << maxIters_
               << ".  That means something went wrong.");
           }
-        } catch (const std::exception &e) {
+        }
+        catch (const StatusTestNaNError& e) {
+          // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          achievedTol_ = MST::one();
+          Teuchos::RCP<MV> X = problem_->getLHS();
+          MVT::MvInit( *X, SCT::zero() );
+          printer_->stream(Warnings) << "Belos::MinresSolMgr::solve(): Warning! NaN has been detected!" 
+                                     << std::endl;
+          return Unconverged; 
+        }
+        catch (const std::exception &e) {
           printer_->stream (Errors)
             << "Error! Caught std::exception in MinresIter::iterate() at "
             << "iteration " << minres_iter->getNumIters() << endl

@@ -243,10 +243,7 @@ public:
         {{4,5,6}}, {{4,6,7}}
       }};
     for (auto && facetVerts : facetsVerts)
-    {
-      std::unique_ptr<Facet> facet = std::make_unique<Facet3d>( cubeVerts[facetVerts[0]], cubeVerts[facetVerts[1]], cubeVerts[facetVerts[2]] );
-      myCube.add( std::move(facet) );
-    }
+      myCube.emplace_back_3d( cubeVerts[facetVerts[0]], cubeVerts[facetVerts[1]], cubeVerts[facetVerts[2]] );
 
     myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
@@ -259,7 +256,7 @@ protected:
     return domain;
   }
   double get_mesh_size() const { return 1./6.; }
-  Faceted_Surface myCube{"test cube"};
+  Faceted_Surface<Facet3d> myCube;
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> myCubeGeometry;
 };
 

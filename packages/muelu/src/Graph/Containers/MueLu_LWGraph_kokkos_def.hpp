@@ -46,47 +46,10 @@
 #ifndef MUELU_LWGRAPH_KOKKOS_DEF_HPP
 #define MUELU_LWGRAPH_KOKKOS_DEF_HPP
 
-#include <Kokkos_Core.hpp>
-
-#include <Teuchos_ArrayView.hpp>
-#include <Xpetra_Map.hpp>
-
 #include "MueLu_LWGraph_kokkos_decl.hpp"
 
 namespace MueLu {
 
-  template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosDeviceWrapperNode<DeviceType>>::
-  print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+}  // namespace MueLu
 
-    if (verbLevel & Debug) {
-      auto graph = lclLWGraph_.getGraph();
-      RCP<const Map> col_map = importMap_.is_null() ? domainMap_ : importMap_;
-      int mypid = col_map->getComm()->getRank();
-
-      {
-      std::ostringstream ss;
-      ss << "[pid " << mypid << "] num entries=" << graph.entries.size();
-      out << ss.str() << std::endl;
-      }
-
-      const size_t numRows = graph.numRows();
-      auto rowPtrs = graph.row_map;
-      auto columns = graph.entries;
-      for (size_t i=0; i < numRows; ++i) {
-        std::ostringstream ss;
-        ss << "[pid " << mypid << "] row " << domainMap_->getGlobalElement(i) << ":";
-        ss << " (numEntries=" << rowPtrs(i+1)-rowPtrs(i) << ")";
-
-        auto rowView = graph.rowConst(i);
-        for (LO j = 0; j < rowView.length; j++) {
-          ss << " " << col_map->getGlobalElement(rowView.colidx(j));
-        }
-        out << ss.str() << std::endl;
-      }
-    }
-  }
-
-} //namespace MueLu
-
-#endif // MUELU_LWGRAPH_KOKKOS_DEF_HPP
+#endif  // MUELU_LWGRAPH_KOKKOS_DEF_HPP

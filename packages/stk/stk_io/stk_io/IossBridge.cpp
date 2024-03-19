@@ -559,7 +559,7 @@ stk::mesh::FieldBase* add_stk_field(stk::mesh::MetaData& meta,
                                     size_t numComponents)
 {
   using StkField = stk::mesh::Field<double, ArrayTag>;
-  StkField& field = meta.declare_field<StkField>(entityRank, fieldName);
+  StkField& field = stk::mesh::legacy::declare_field<StkField>(meta, entityRank, fieldName);
   stk::mesh::put_field_on_mesh(field, part, numComponents, nullptr);
   return &field;
 }
@@ -618,18 +618,18 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
       if (fieldType == "scalar" || numComponents == 1) {
         if (!use_cartesian_for_scalar) {
-          stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entityRank, name);
+          stk::mesh::Field<double> & field = meta.declare_field<double>(entityRank, name);
           stk::mesh::put_field_on_mesh(field, part, nullptr);
           fieldPtr = &field;
         } else {
           stk::mesh::Field<double, stk::mesh::Cartesian> & field =
-              meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(entityRank, name);
+              stk::mesh::legacy::declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(meta, entityRank, name);
           stk::mesh::put_field_on_mesh(field, part, 1, nullptr);
           fieldPtr = &field;
         }
       }
       else if (stk::string_starts_with(sierra::make_lower(fieldType), "real[")) {
-        stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entityRank, name);
+        stk::mesh::Field<double> & field = meta.declare_field<double>(entityRank, name);
         stk::mesh::put_field_on_mesh(field, part, numComponents, nullptr);
         fieldPtr = &field;
       }
@@ -1003,8 +1003,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
       const int scalarsPerEntity = res.num_scalars_per_entity();
       const int firstDimension = res.dimension();
-      const int legacyFieldArrayRank = meta.is_using_simple_fields() ? 0 : field->field_array_rank();
-      const shards::ArrayDimTag * const * const tags = meta.is_using_simple_fields() ? nullptr : field->dimension_tags();
+      const int legacyFieldArrayRank = meta.is_using_simple_fields() ? 0 : stk::mesh::legacy::field_array_rank(*field);
+      const shards::ArrayDimTag * const * const tags = meta.is_using_simple_fields() ? nullptr
+                                                                                     : stk::mesh::legacy::dimension_tags(*field);
 
       result->copies = 1;
 

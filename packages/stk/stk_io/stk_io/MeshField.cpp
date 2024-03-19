@@ -70,7 +70,9 @@ MeshField::MeshField(stk::mesh::FieldBase *field,
     m_timeMatch(tmo),
     m_oneTimeOnly(false),
     m_singleState(true),
-    m_isActive(false)
+    m_isActive(false),
+    m_fieldRestored(false),
+    m_timeRestored(std::numeric_limits<double>::max())
 {
   if (db_name == "") {
     m_dbName = field->name();
@@ -90,7 +92,9 @@ MeshField::MeshField(stk::mesh::FieldBase &field,
     m_timeMatch(tmo),
     m_oneTimeOnly(false),
     m_singleState(true),
-    m_isActive(false)
+    m_isActive(false),
+    m_fieldRestored(false),
+    m_timeRestored(std::numeric_limits<double>::max())
 {
   if (db_name == "") {
     m_dbName = field.name();
@@ -233,6 +237,9 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
                                      bool ignore_missing_fields,
                                      std::vector<std::string>* multiStateSuffixes)
 {
+  m_fieldRestored = false;
+  m_timeRestored = std::numeric_limits<double>::max();
+
   double time_read = -1.0;
   if (!is_active())
     return time_read;
@@ -270,17 +277,17 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       m_field->sync_to_host();
       m_field->modify_on_host();
       for (size_t i=0; i < entity_list.size(); ++i) {
-	if (bulk.is_valid(entity_list[i])) {
-	  double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));
-	  if (fld_data != nullptr) {
-	    for(size_t j=0; j<field_component_count; ++j) {
-	      fld_data[j] = values[i*field_component_count+j];
-	    }
-	  }
-	}
+        if (bulk.is_valid(entity_list[i])) {
+          double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));
+          if (fld_data != nullptr) {
+            for(size_t j=0; j<field_component_count; ++j) {
+              fld_data[j] = values[i*field_component_count+j];
+            }
+          }
+        }
       }
       if (m_oneTimeOnly) {
-	field_part.release_field_data();
+        field_part.release_field_data();
       }
     }
     time_read = sti.t_analysis;
@@ -288,6 +295,10 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
   if (m_oneTimeOnly) {
     set_inactive();
   }
+
+  m_fieldRestored = true;
+  m_timeRestored = time_read;
+
   return time_read;
 }
 

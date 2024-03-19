@@ -46,18 +46,13 @@
 #ifndef MUELU_LOWPRECISIONFACTORY_FWD_HPP
 #define MUELU_LOWPRECISIONFACTORY_FWD_HPP
 
-
-
-
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class LowPrecisionFactory;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class LowPrecisionFactory;
 }
 
 #ifndef MUELU_LOWPRECISIONFACTORY_SHORT
 #define MUELU_LOWPRECISIONFACTORY_SHORT
 #endif
 
-
-
-#endif // MUELU_LOWPRECISIONFACTORY_FWD_HPP
+#endif  // MUELU_LOWPRECISIONFACTORY_FWD_HPP
