@@ -21,13 +21,6 @@ IF (Tpetra_ENABLE_CUDA AND BUILD_SHARED_LIBS AND Tpetra_ENABLE_KokkosIntegration
   )
 
   TRIBITS_ADD_EXECUTABLE(
-    KokkosUVM
-    SOURCES KokkosUVM.cpp 
-    TESTONLYLIBS ApiTest
-    COMM serial mpi
-  )
-
-  TRIBITS_ADD_EXECUTABLE(
     KokkosDeepcopy
     SOURCES KokkosDeepcopy.cpp
     TESTONLYLIBS ApiTest
