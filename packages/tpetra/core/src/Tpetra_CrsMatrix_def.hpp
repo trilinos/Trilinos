@@ -64,7 +64,6 @@
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_ScalarViewTraits.hpp"
-#include "KokkosSparse_getDiagCopy.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
 #include "Tpetra_Details_iallreduce.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
@@ -75,7 +74,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
-#include "KokkosBlas.hpp"
+#include "KokkosBlas1_scal.hpp"
+#include "KokkosSparse_getDiagCopy.hpp"
+#include "KokkosSparse_spmv.hpp"
 
 #include <memory>
 #include <sstream>
@@ -1028,6 +1029,7 @@ namespace Tpetra {
                                 staticGraph_->getLocalGraphHost());
   }
 
+#if KOKKOSKERNELS_VERSION < 40299
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
@@ -1035,10 +1037,8 @@ namespace Tpetra {
   getLocalMultiplyOperator () const
   {
     auto localMatrix = getLocalMatrixDevice();
-#ifdef HAVE_TPETRACORE_CUDA
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    if(this->getLocalNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()) &&
-       std::is_same<Node, Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+    if(this->getLocalNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()))
     {
       if(this->ordinalRowptrs.data() == nullptr)
       {
@@ -1060,11 +1060,11 @@ namespace Tpetra {
           std::make_shared<local_matrix_device_type>(localMatrix), this->ordinalRowptrs);
     }
 #endif
-#endif
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
     return std::make_shared<local_multiply_op_type>(
                            std::make_shared<local_matrix_device_type>(localMatrix));
   }
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -4307,6 +4307,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (! isStaticGraph ()) { // Don't resume fill of a nonowned graph.
       myGraph_->resumeFill (params);
     }
+#if KOKKOSKERNELS_VERSION >= 40299
+    // Delete the apply helper (if it exists)
+    applyHelper.reset();
+#endif
     fillComplete_ = false;
   }
 
@@ -4899,6 +4903,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       return;
     }
+    else if (beta == ZERO) {
+      //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
+      //when bets==0. This was not the case with transpose in a multithreaded
+      //environment where a multiplication with subsequent atomic_adds is used
+      //since 0 is effectively not special cased. Doing the explicit set to zero here
+      //This catches cases where Y is nan or inf.
+      Y_in.putScalar (ZERO);
+    }
 
     const size_t numVectors = X_in.getNumVectors ();
 
@@ -5018,7 +5030,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
     auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
-    auto matrix_lcl = getLocalMultiplyOperator();
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {
@@ -5079,10 +5090,51 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if(nrows != 0)
       maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
 
+#if KOKKOSKERNELS_VERSION >= 40299
+    auto A_lcl = getLocalMatrixDevice();
+    if(!applyHelper.get()) {
+      // The apply helper does not exist, so create it.
+      // This is when we can choose the spmv algorithm.
+      bool exceedsImbalanceThreshold = size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold();
+      KokkosSparse::SPMVAlgorithm algo =
+        exceedsImbalanceThreshold ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT;
+      applyHelper.assign(new ApplyHelper(A_lcl.nnz(), A_lcl.graph.row_map, algo));
+    }
+
+    // Translate mode (Teuchos enum) to KokkosKernels (1-character string)
+    const char* modeKK = nullptr;
+    switch(mode)
+    {
+      case Teuchos::NO_TRANS:
+        modeKK = KokkosSparse::NoTranspose;        break;
+      case Teuchos::TRANS:
+        modeKK = KokkosSparse::Transpose;          break;
+      case Teuchos::CONJ_TRANS:
+        modeKK = KokkosSparse::ConjugateTranspose; break;
+      default:
+        throw std::invalid_argument("Tpetra::CrsMatrix::localApply: invalid mode");
+    }
+
+    if(applyHelper->shouldUseIntRowptrs())
+    {
+      auto A_lcl_int_rowptrs = applyHelper->getIntRowptrMatrix(A_lcl);
+      KokkosSparse::spmv(
+          &applyHelper->handle_int, modeKK,
+          impl_scalar_type(alpha), A_lcl_int_rowptrs, X_lcl, impl_scalar_type(beta), Y_lcl);
+    }
+    else
+    {
+      KokkosSparse::spmv(
+          &applyHelper->handle, modeKK,
+          impl_scalar_type(alpha), A_lcl, X_lcl, impl_scalar_type(beta), Y_lcl);
+    }
+#else
+    auto matrix_lcl = getLocalMultiplyOperator();
     if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
       matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
     else
       matrix_lcl->apply (X_lcl, Y_lcl, mode, alpha, beta);
+#endif
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5108,16 +5160,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     else {
       ProfilingRegion regionTranspose ("Tpetra::CrsMatrix::apply (transpose)");
-
-      //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
-      //when bets==0. This was not the case with transpose in a multithreaded
-      //environment where a multiplication with subsequent atomic_adds is used
-      //since 0 is effectively not special cased. Doing the explicit set to zero here
-      //This catches cases where Y is nan or inf.
-      const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
-      if (beta == ZERO) {
-        Y.putScalar (ZERO);
-      }
       this->applyTranspose (X, Y, mode, alpha, beta);
     }
   }

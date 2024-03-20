@@ -51,6 +51,10 @@
 
 #include "KokkosSparse_BsrMatrix.hpp"
 
+#if KOKKOSKERNELS_VERSION >= 40299
+#include "Tpetra_Details_MatrixApplyHelper.hpp"
+#endif
+
 namespace Tpetra {
 
 template<class BlockCrsMatrixType>
@@ -255,12 +259,42 @@ public:
 
   using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
 
-  using  local_matrix_device_type =
+  using local_matrix_device_type =
     KokkosSparse::Experimental::BsrMatrix<impl_scalar_type,
                           local_ordinal_type,
                           device_type,
                           void,
                           typename local_graph_device_type::size_type>;
+
+#if KOKKOSKERNELS_VERSION >= 40299
+private:
+  // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
+  // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
+  using local_matrix_int_rowptrs_device_type =
+    KokkosSparse::Experimental::BsrMatrix<impl_scalar_type,
+                          local_ordinal_type,
+                          device_type,
+                          void,
+                          int>;
+
+  /// The specialization of Details::MatrixApplyHelper used by this class in apply().
+  using ApplyHelper = Details::MatrixApplyHelper<
+    local_matrix_device_type,
+    local_matrix_int_rowptrs_device_type,
+    typename mv_type::device_view_type>;
+
+  /// The apply helper is lazily created in apply(). BlockCrsMatrix has no resumeFill method, so we assume that its
+  /// values view and graph never change after the first call to apply().
+  ///
+  /// It performs 3 functions:
+  /// - Decides whether a version of the local matrix with int-typed rowptrs can and should be used to enable spmv TPLs
+  /// - Keeps SPMVHandles for both the regular local matrix, and the int-typed version
+  /// - Stores the int-typed rowptrs (if they can all be represented by int)
+  mutable Details::LazyUniquePtr<ApplyHelper> applyHelper;
+
+public:
+#endif
+
   using local_matrix_host_type =
     typename local_matrix_device_type::HostMirror;
 
