@@ -56,6 +56,8 @@
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
+SET(CTEST_DROP_SITE "sems-cdash-son.sandia.gov")
+
 #
 # Platform/compiler specific options for geminga using gcc
 #
