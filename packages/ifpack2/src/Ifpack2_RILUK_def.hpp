@@ -1117,7 +1117,7 @@ void RILUK<MatrixType>::compute ()
 
       L_solver_->setMatrix (L_);
       U_solver_->setMatrix (U_);
-	}
+    }
     else {
       std::vector<lno_row_view_t>        L_rowmap_v(num_streams_);
       std::vector<lno_nonzero_view_t>    L_entries_v(num_streams_);

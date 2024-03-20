@@ -51,6 +51,7 @@
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_RILUK.hpp"
+#include "KokkosSparse_trsv.hpp"
 
 //#define IFPACK2_RBILUK_INITIAL
 #define IFPACK2_RBILUK_INITIAL_NOKK
@@ -647,9 +648,8 @@ void RBILUK<MatrixType>::compute ()
 
 //    const scalar_type MinDiagonalValue = STS::rmin ();
 //    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
+    initAllValues ();
     if (!this->isKokkosKernelsSpiluk_) {
-      initAllValues ();
-
       size_t NumIn;
       LO NumL, NumU, NumURead;
 
@@ -975,9 +975,6 @@ void RBILUK<MatrixType>::compute ()
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
                                                   this->A_local_rowmap_, this->A_local_entries_, this->A_local_values_,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
-
-      // L_block_->fillComplete (L_block_->getColMap (), this->A_local_->getRangeMap ());
-      // U_block_->fillComplete (this->A_local_->getDomainMap (), U_block_->getRowMap ());
     }
   } // Stop timing
 
@@ -1051,89 +1048,105 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
-      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
-        // Start by solving L C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since our
-        // implementation of triangular solves does not allow its
-        // input and output to alias one another.
-        //
-        // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
-        const LO numVectors = xBlock.getNumVectors();
-        BMV cBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
-        BMV rBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
-        for (LO imv = 0; imv < numVectors; ++imv)
-        {
-          for (size_t i = 0; i < D_block_->getLocalNumRows(); ++i)
+      if (!this->isKokkosKernelsSpiluk_) {
+        if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
+          // Start by solving L C = X for C.  C must have the same Map
+          // as D.  We have to use a temp multivector, since our
+          // implementation of triangular solves does not allow its
+          // input and output to alias one another.
+          //
+          // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
+          const LO numVectors = xBlock.getNumVectors();
+          BMV cBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
+          BMV rBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
+          for (LO imv = 0; imv < numVectors; ++imv)
           {
-            LO local_row = i;
-            const_host_little_vec_type xval =
-                   xBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type cval =
-                   cBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
-            //cval.assign(xval);
-            Tpetra::COPY (xval, cval);
-
-            local_inds_host_view_type colValsL;
-            values_host_view_type valsL;
-            L_block_->getLocalRowView(local_row, colValsL, valsL);
-            LO NumL = (LO) colValsL.size();
-
-            for (LO j = 0; j < NumL; ++j)
+            for (size_t i = 0; i < D_block_->getLocalNumRows(); ++i)
             {
-              LO col = colValsL[j];
-              const_host_little_vec_type prevVal =
-                    cBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
+              LO local_row = i;
+              const_host_little_vec_type xval =
+                xBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
+              little_host_vec_type cval =
+                cBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
+              //cval.assign(xval);
+              Tpetra::COPY (xval, cval);
 
-              const LO matOffset = blockMatSize*j;
-              little_block_host_type lij((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+              local_inds_host_view_type colValsL;
+              values_host_view_type valsL;
+              L_block_->getLocalRowView(local_row, colValsL, valsL);
+              LO NumL = (LO) colValsL.size();
 
-              //cval.matvecUpdate(-one, lij, prevVal);
-              Tpetra::GEMV (-one, lij, prevVal, cval);
+              for (LO j = 0; j < NumL; ++j)
+              {
+                LO col = colValsL[j];
+                const_host_little_vec_type prevVal =
+                  cBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
+
+                const LO matOffset = blockMatSize*j;
+                little_block_host_type lij((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+
+                //cval.matvecUpdate(-one, lij, prevVal);
+                Tpetra::GEMV (-one, lij, prevVal, cval);
+              }
+            }
+          }
+
+          // Solve D R = C. Note that D has been replaced by D^{-1} at this point.
+          D_block_->applyBlock(cBlock, rBlock);
+
+          // Solve U Y = R.
+          for (LO imv = 0; imv < numVectors; ++imv)
+          {
+            const LO numRows = D_block_->getLocalNumRows();
+            for (LO i = 0; i < numRows; ++i)
+            {
+              LO local_row = (numRows-1)-i;
+              const_host_little_vec_type rval =
+                rBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
+              little_host_vec_type yval =
+                yBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
+              //yval.assign(rval);
+              Tpetra::COPY (rval, yval);
+
+              local_inds_host_view_type colValsU;
+              values_host_view_type valsU;
+              U_block_->getLocalRowView(local_row, colValsU, valsU);
+              LO NumU = (LO) colValsU.size();
+
+              for (LO j = 0; j < NumU; ++j)
+              {
+                LO col = colValsU[NumU-1-j];
+                const_host_little_vec_type prevVal =
+                  yBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
+
+                const LO matOffset = blockMatSize*(NumU-1-j);
+                little_block_host_type uij((typename little_block_host_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
+
+                //yval.matvecUpdate(-one, uij, prevVal);
+                Tpetra::GEMV (-one, uij, prevVal, yval);
+              }
             }
           }
         }
-
-        // Solve D R = C. Note that D has been replaced by D^{-1} at this point.
-        D_block_->applyBlock(cBlock, rBlock);
-
-        // Solve U Y = R.
-        for (LO imv = 0; imv < numVectors; ++imv)
-        {
-          const LO numRows = D_block_->getLocalNumRows();
-          for (LO i = 0; i < numRows; ++i)
-          {
-            LO local_row = (numRows-1)-i;
-            const_host_little_vec_type rval =
-                   rBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type yval =
-                   yBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
-            //yval.assign(rval);
-            Tpetra::COPY (rval, yval);
-
-            local_inds_host_view_type colValsU;
-            values_host_view_type valsU;
-            U_block_->getLocalRowView(local_row, colValsU, valsU);
-            LO NumU = (LO) colValsU.size();
-
-            for (LO j = 0; j < NumU; ++j)
-            {
-              LO col = colValsU[NumU-1-j];
-              const_host_little_vec_type prevVal =
-                   yBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
-
-              const LO matOffset = blockMatSize*(NumU-1-j);
-              little_block_host_type uij((typename little_block_host_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
-
-              //yval.matvecUpdate(-one, uij, prevVal);
-              Tpetra::GEMV (-one, uij, prevVal, yval);
-            }
-          }
+        else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::runtime_error,
+            "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm without KokkosKernels. ");
         }
       }
-      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::runtime_error,
-          "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm. ");
+      else {
+        // Kokkos kernels impl
+        auto X_view = X.template getLocalView<typename Kokkos::DefaultHostExecutionSpace>(Tpetra::Access::ReadOnly);
+        auto Y_view = Y.template getLocalView<typename Kokkos::DefaultHostExecutionSpace>(Tpetra::Access::ReadWrite);
+
+        if (mode == Teuchos::NO_TRANS) {
+          KokkosSparse::trsv("L", "N", "N", L_block_->getLocalMatrixDevice(), X_view, Y_view);
+          KokkosSparse::trsv("U", "N", "N", U_block_->getLocalMatrixDevice(), Y_view, Y_view);
+        }
+        else {
+          KokkosSparse::trsv("U", "T", "N", U_block_->getLocalMatrixDevice(), X_view, Y_view);
+          KokkosSparse::trsv("L", "T", "N", B_block_->getLocalMatrixDevice(), Y_view, Y_view);
+        }
       }
     }
     else { // alpha != 1 or beta != 0
