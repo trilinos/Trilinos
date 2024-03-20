@@ -37,6 +37,7 @@ namespace krino { class AuxMetaData; }
 namespace krino { class IC_Alg; }
 namespace krino { class ParallelErrorMessage; }
 namespace krino { class ContourElement; }
+namespace krino { class String_Function_Expression; }
 
 namespace krino {
 
@@ -73,7 +74,7 @@ public:
 
   void register_fields();
 
-  void advance_semilagrangian(const double deltaTime);
+  void advance_semilagrangian(const double timeN, const double timeNP1);
 
   static void gather_nodal_field(
     const stk::mesh::BulkData& stk_mesh,
@@ -92,9 +93,6 @@ public:
   double CDFEM_gradient_magnitude_error();
   double gradient_magnitude_error();
   void compute_continuous_gradient() const;
-
-  void compute_distance( stk::mesh::Entity n,
-			 const double & deltaTime ) const;
 
   void increment_distance(const double increment, const bool enforce_sign = false, const double & signChangePurtubationTol = 0.5);
 
@@ -124,8 +122,8 @@ public:
   const FieldRef & get_old_distance_field() const { return my_old_distance_field; }
   void set_old_distance_field( const FieldRef & ref ) { my_old_distance_field = ref; }
 
-  void set_extension_velocity( const stk::math::Vector3d & extension_velocity ) { my_extension_velocity = extension_velocity; }
-  const stk::math::Vector3d & get_extension_velocity() const { return my_extension_velocity; }
+  void set_interface_velocity( const std::vector<std::string> & interfaceVelocity );
+  const std::vector<String_Function_Expression> & get_interface_velocity() const { return myInterfaceVelocity; }
 
   const FieldRef & get_coordinates_field() const { return my_coordinates_field; }
 
@@ -203,6 +201,7 @@ public:
   void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
   void interface_conforming_redistance();
   void fast_marching_interface_conforming_redistance_using_existing_facets();
+  static void extend_interface_velocity_using_closest_point_projection(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const FieldRef interfaceVelocity, const FieldRef extendedVelocity, const Surface_Identifier lsIdentifier);
 
   std::pair<double,double> get_conserved_negative_volume_and_time() const;
   void set_conserved_negative_volume_and_time(const double vol, const double time);
@@ -211,10 +210,6 @@ public:
   void set_initial_volume(const double v) { myConservedNegVolume = v; }
   double constrained_redistance(const bool use_initial_vol = false, const double & signChangePurtubationTol = 0.5);
   void locally_conserved_redistance();
-
-  void compute_nodal_bbox( const stk::mesh::Selector & selector,
-    BoundingBox & node_bbox,
-    const stk::math::Vector3d & displacement = stk::math::Vector3d::ZERO ) const;
 
   double find_redistance_correction( const double start_area,
 				   const double start_neg_vol,
@@ -236,7 +231,6 @@ private:
   void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector);
   void redistance_nodes_using_existing_facets(const std::vector<stk::mesh::Entity> & nodesToRedistance);
   void append_facets_from_side(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side);
-  void build_interface_conforming_facets();
 
   stk::mesh::MetaData & my_meta;
   AuxMetaData & my_aux_meta;
@@ -290,13 +284,13 @@ private:
     // vector of current facets
   std::unique_ptr<FacetedSurfaceBase> facets;
 
-  stk::math::Vector3d my_extension_velocity;
+  std::vector<String_Function_Expression> myInterfaceVelocity;
   const double epsilon;
 
   bool trackIsoSurface;
 
   // used to increment file name for facet exoii database hack
-  int my_facetFileIndex;
+  int my_facetFileIndex{0};
 
   double myConservedNegVolume{0.0};
   double myConservedNegVolumeTime{0.0};
@@ -313,9 +307,10 @@ private:
 
   void time_integrate(const double deltaTime);
 
-  void prepare_to_compute_distance( const double & deltaTime, const stk::mesh::Selector & selector );
+  void prepare_to_compute_distance_to_stationary_facets( const stk::mesh::Selector & selector );
 
-  void compute_distance_semilagrangian(const double & deltaTime, const stk::mesh::Selector & selector );
+  void compute_signed_distance_at_selected_nodes( const stk::mesh::Selector & selector );
+  void compute_distance_semilagrangian( const double & timeN, const double & timeNp1, const stk::mesh::Selector & selector );
 
   double distance( const stk::math::Vector3d & x,
 		 const int previous_sign,

@@ -12,6 +12,7 @@
 #include <Akri_Facet.hpp>
 #include <Akri_FacetedSurfaceCalcs.hpp>
 #include <Akri_Sign.hpp>
+#include <Akri_String_Function_Expression.hpp>
 #include <Akri_SurfaceIntersectionFromSignedDistance.hpp>
 #include <krino/mesh_utils/Akri_AllReduce.hpp>
 
@@ -49,13 +50,7 @@ static void unpack_and_append_facets_from_proc(stk::CommSparse & commSparse, con
       krinolog << "P" << stk::EnvData::parallel_rank() << ":" << " Receiving " << numProcFacets << " facets from proc#" << recvProc << stk::diag::dendl;
 
     for ( size_t n = 0; n < numProcFacets; ++n )
-    {
-      FACET::unpack_facet_data_from_buffer(b, facetCoords);
-      if constexpr (FACET::DIM == 3)
-        facetVec.emplace_back(facetCoords[0], facetCoords[1], facetCoords[2]);
-      else
-        facetVec.emplace_back(facetCoords[0], facetCoords[1]);
-    }
+      facetVec.emplace_back(b);
     STK_ThrowAssert( 0 == b.remaining() );
   }
 }
@@ -282,7 +277,7 @@ void Faceted_Surface<FACET>::prepare_to_compute(const double time, const Boundin
 
   my_facet_tree = std::make_unique<SearchTree<const FACET*>>( myAllFacetPtrs, FACET::get_centroid, FACET::insert_into_bounding_box );
 
-  if ( krinolog.shouldPrint(LOG_DEBUG) )
+  if (krinolog.shouldPrint(LOG_DEBUG))
     krinolog << "P" << stk::EnvData::parallel_rank() << ": After building search tree, storage size is " << storage_size()/(1024.*1024.) << " Mb." << stk::diag::dendl;
 }
 
@@ -300,6 +295,35 @@ double Faceted_Surface<FACET>::point_distance(const stk::math::Vector3d &x, cons
 }
 
 template<class FACET>
+static const FACET * find_closest_facet(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets)
+{
+  const FACET* nearest = nullptr;
+  double minSqrDist = std::numeric_limits<double>::max();
+  for ( auto&& facet : nearestFacets )
+  {
+    const double sqrDist = facet->point_distance_squared(x);
+    if (sqrDist < minSqrDist)
+    {
+      minSqrDist = sqrDist;
+      nearest = facet;
+    }
+  }
+  return nearest;
+}
+
+template<class FACET>
+const FACET * Faceted_Surface<FACET>::get_closest_facet(const stk::math::Vector3d &x) const
+{
+  STK_ThrowAssertMsg(my_facet_tree, "ERROR: Empty facet tree");
+
+  std::vector<const FACET*> nearestFacets;
+  my_facet_tree->find_closest_entities( x, nearestFacets );
+  STK_ThrowRequire( !nearestFacets.empty() || my_facet_tree->empty() );
+
+  return find_closest_facet(x, nearestFacets);
+}
+
+template<class FACET>
 stk::math::Vector3d Faceted_Surface<FACET>::pseudo_normal_at_closest_point(const stk::math::Vector3d &x) const
 {
   if (my_facet_tree->empty())
@@ -310,6 +334,19 @@ stk::math::Vector3d Faceted_Surface<FACET>::pseudo_normal_at_closest_point(const
   STK_ThrowRequire( !nearestFacets.empty() );
 
   return compute_pseudo_normal(x, nearestFacets);
+}
+
+template<class FACET>
+stk::math::Vector3d Faceted_Surface<FACET>::closest_point(const stk::math::Vector3d &x) const
+{
+  if (my_facet_tree->empty())
+    return stk::math::Vector3d::ZERO;
+
+  std::vector<const FACET*> nearestFacets;
+  my_facet_tree->find_closest_entities( x, nearestFacets, 0. );
+  STK_ThrowRequire( !nearestFacets.empty() );
+
+  return compute_closest_point(x, nearestFacets);
 }
 
 template<class FACET>
@@ -403,5 +440,7 @@ std::string Faceted_Surface<FACET>::print_sizes() const
 // Explicit template instantiation
 template class Faceted_Surface<Facet3d>;
 template class Faceted_Surface<Facet2d>;
+template class Faceted_Surface<FacetWithVelocity2d>;
+template class Faceted_Surface<FacetWithVelocity3d>;
 
 } // namespace krino

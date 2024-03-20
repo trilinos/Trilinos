@@ -28,6 +28,7 @@ public:
   { STK_ThrowRequire(myDim==2 || myDim==3); }
 
   static std::unique_ptr<FacetedSurfaceBase> build(const int dim);
+  static std::unique_ptr<FacetedSurfaceBase> build_with_velocity(const int dim);
 
   virtual Surface_Type type() const override { return (myDim == 3) ? FACETED_SURFACE_3D : FACETED_SURFACE_2D; }
 
@@ -38,6 +39,7 @@ public:
   virtual double point_distance(const stk::math::Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const = 0;
   virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) = 0;
   virtual std::string print_sizes() const = 0;
+  virtual stk::math::Vector3d closest_point(const stk::math::Vector3d &x) const = 0;
 
   void prepare_to_compute(const BoundingBox & point_bbox, const double truncation_length)
   {
@@ -106,8 +108,11 @@ public:
   const std::vector<FACET> & get_facets() const { return myLocalFacets; }
   std::vector<FACET> & get_facets() { return myLocalFacets; }
 
+  virtual stk::math::Vector3d closest_point(const stk::math::Vector3d &x) const override;
+
 public:
   stk::math::Vector3d pseudo_normal_at_closest_point(const stk::math::Vector3d &x) const;
+  const FACET * get_closest_facet(const stk::math::Vector3d &x) const;
 
 private:
   virtual void build_local_facets(const BoundingBox & proc_bbox) {}
@@ -125,6 +130,13 @@ inline std::unique_ptr<FacetedSurfaceBase> FacetedSurfaceBase::build(const int d
   if (dim == 2)
     return std::make_unique<Faceted_Surface<Facet2d>>();
   return std::make_unique<Faceted_Surface<Facet3d>>();
+}
+
+inline std::unique_ptr<FacetedSurfaceBase> FacetedSurfaceBase::build_with_velocity(const int dim)
+{
+  if (dim == 2)
+    return std::make_unique<Faceted_Surface<FacetWithVelocity2d>>();
+  return std::make_unique<Faceted_Surface<FacetWithVelocity3d>>();
 }
 
 } // namespace krino

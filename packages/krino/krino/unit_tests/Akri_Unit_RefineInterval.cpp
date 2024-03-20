@@ -77,7 +77,8 @@ TEST(RefineWithinDistanceOfLevelSets, twoIntersectingLevelSets_correctElementsGe
   const std::array<double,2> refinementDistanceInterval{-0.02,0.05};
   const unsigned numRefinementLevels = 6;
 
-  krino::refine_elements_that_intersect_distance_interval_from_levelsets(mesh, activePart, levelSetFields, initialize_levelsets, refinementDistanceInterval, numRefinementLevels);
+  for (auto & levelSetField : levelSetFields)
+    krino::refine_elements_that_intersect_distance_interval_from_levelset(mesh, activePart, *levelSetField, initialize_levelsets, refinementDistanceInterval, numRefinementLevels);
 
   const bool doWriteMesh = false;
   if (doWriteMesh)

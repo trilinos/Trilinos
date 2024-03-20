@@ -64,13 +64,23 @@ void output_composed_mesh_with_fields(const stk::mesh::BulkData & mesh, const st
 {
   Ioss::PropertyManager properties;
   properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
+  properties.add(Ioss::Property(stk::io::s_ignoreDisconnectedNodes, true));
   output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
 }
 
 void output_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose)
 {
   Ioss::PropertyManager properties;
+  properties.add(Ioss::Property(stk::io::s_ignoreDisconnectedNodes, true));
   output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
+}
+
+std::string create_filename_from_base_filename(const std::string & baseFileName, const int numFileRevisions)
+{
+  size_t lastIndex = baseFileName.find_last_of(".");
+  STK_ThrowRequire(lastIndex != std::string::npos);
+  const std::string fileBaseName = baseFileName.substr(0, lastIndex);
+  return create_file_name(fileBaseName, numFileRevisions);
 }
 
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex)
