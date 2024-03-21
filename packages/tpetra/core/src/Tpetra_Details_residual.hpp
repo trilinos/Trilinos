@@ -339,9 +339,10 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        std::runtime_error, "X, Y and R may not alias one another.");
   }
       
-  SC one = Teuchos::ScalarTraits<SC>::one();
 #ifdef TPETRA_DETAILS_USE_REFERENCE_RESIDUAL
-  SC negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
+  SC one = Teuchos::ScalarTraits<SC>::one();
+  SC negone = -one;
+  SC zero = Teuchos::ScalarTraits<SC>::zero();
   // This is currently a "reference implementation" waiting until Kokkos Kernels provides
   // a residual kernel.
   A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
