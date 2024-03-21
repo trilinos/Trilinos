@@ -880,7 +880,9 @@ TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults_default )
   TEST_EQUALITY(default_entry.isDefault(), true);
   TEST_EQUALITY(default_entry.isUsed(), false);
   // Make sure the value is stored as an integer after validation
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
   TEST_NOTHROW(Teuchos::any_cast<int>(default_entry.getAny()));
+#endif
 }
 
 
