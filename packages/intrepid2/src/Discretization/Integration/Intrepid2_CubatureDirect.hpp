@@ -141,10 +141,10 @@ namespace Intrepid2 {
                          const CubatureData cubData) const {
 #ifdef HAVE_INTREPID2_DEBUG
       // check size of cubPoints and cubWeights
-      INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 2, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(cubPoints) != 2, std::invalid_argument,
                                     ">>> ERROR (CubatureDirect): cubPoints must be rank 2." );
 
-      INTREPID2_TEST_FOR_EXCEPTION( cubWeights.rank() != 1, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(cubWeights) != 1, std::invalid_argument,
                                     ">>> ERROR (CubatureDirect): cubPoints must be rank 1." );
 
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(cubPoints.extent(0))  < this->getNumPoints() ||

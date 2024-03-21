@@ -225,7 +225,7 @@ namespace Intrepid2 {
     getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoords) != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HCURL_TRI_I1_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->basisCardinality_, std::invalid_argument,
@@ -242,7 +242,7 @@ namespace Intrepid2 {
   getDofCoeffs( ScalarViewType dofCoeffs ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 2, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoeffs) != 2, std::invalid_argument,
         ">>> ERROR: (Intrepid2::Basis_HCURL_TRI_I1_FEM::getDofCoeffs) rank = 2 required for dofCoeffs array");
     // Verify 0th dimension of output array.
     INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,
