@@ -290,7 +290,7 @@ private:
   /// - Decides whether a version of the local matrix with int-typed rowptrs can and should be used to enable spmv TPLs
   /// - Keeps SPMVHandles for both the regular local matrix, and the int-typed version
   /// - Stores the int-typed rowptrs (if they can all be represented by int)
-  mutable Details::LazyUniquePtr<ApplyHelper> applyHelper;
+  mutable std::shared_ptr<ApplyHelper> applyHelper;
 
 public:
 #endif

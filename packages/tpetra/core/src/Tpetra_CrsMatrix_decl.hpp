@@ -4034,6 +4034,8 @@ protected:
 #if KOKKOSKERNELS_VERSION >= 40299
     // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
     // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
+    //
+    // At that point the ApplyHelper can be replaced with just a SPMVHandle.
     using local_matrix_int_rowptrs_device_type =
       KokkosSparse::CrsMatrix<impl_scalar_type,
                               local_ordinal_type,
@@ -4047,12 +4049,12 @@ protected:
       local_matrix_int_rowptrs_device_type, 
       typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_view_type>;
 
-    /// The apply helper is lazily created in apply(), and reset (destructed) when resumeFill is called.
+    /// The apply helper is lazily created in apply(), and reset when resumeFill is called.
     /// It performs 3 functions:
     /// - Decides whether a version of the local matrix with int-typed rowptrs can and should be used to enable spmv TPLs
     /// - Keeps SPMVHandles for both the regular local matrix, and the int-typed version
     /// - Stores the int-typed rowptrs (if they can all be represented by int)
-    mutable Details::LazyUniquePtr<ApplyHelper> applyHelper;
+    mutable std::shared_ptr<ApplyHelper> applyHelper;
 #endif
 
   public:

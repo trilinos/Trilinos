@@ -5098,7 +5098,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       bool exceedsImbalanceThreshold = size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold();
       KokkosSparse::SPMVAlgorithm algo =
         exceedsImbalanceThreshold ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT;
-      applyHelper.assign(new ApplyHelper(A_lcl.nnz(), A_lcl.graph.row_map, algo));
+      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map, algo);
     }
 
     // Translate mode (Teuchos enum) to KokkosKernels (1-character string)

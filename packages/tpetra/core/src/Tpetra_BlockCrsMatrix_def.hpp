@@ -1117,7 +1117,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
   auto A_lcl = getLocalMatrixDevice();
   if(!applyHelper.get()) {
     // The apply helper does not exist, so create it
-    applyHelper.assign(new ApplyHelper(A_lcl.nnz(), A_lcl.graph.row_map));
+    applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
   }
   if(applyHelper->shouldUseIntRowptrs())
   {

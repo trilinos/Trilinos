@@ -50,35 +50,6 @@
 namespace Tpetra {
 namespace Details {
 
-// Class that works pretty much like std::unique_ptr, except it has
-// operator= and copy-constructor that leave the new object null.
-//
-// unique_ptr would force CrsMatrix and BlockCrsMatrix to have deleted operator=,
-// but this version doesn't.
-template<typename T>
-struct LazyUniquePtr
-{
-  LazyUniquePtr() : ptr(nullptr) {}
-  LazyUniquePtr(T* ptr_) : ptr(ptr_) {}
-  LazyUniquePtr(const LazyUniquePtr<T>&) {ptr = nullptr;}
-  void operator=(const LazyUniquePtr<T>&) {ptr = nullptr;}
-  ~LazyUniquePtr() {if(ptr) delete ptr;}
-  T* operator->(){return ptr;}
-  T* get() {return ptr;}
-  void assign(T* ptr_)
-  {
-    reset();
-    ptr = ptr_;
-  }
-  void reset()
-  {
-    if(ptr)
-      delete ptr;
-    ptr = nullptr;
-  }
-  T* ptr;
-};
-
 /// Helper for CrsMatrix::apply and BlockCrsMatrix::apply. Converts rowptrs
 /// of the local matrix to int if it's not already int-valued, and overflow won't occur.
 /// This enables TPLs to be used in KokkosSparse::spmv.
