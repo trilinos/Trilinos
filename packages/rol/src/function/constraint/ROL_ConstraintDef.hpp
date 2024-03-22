@@ -216,19 +216,19 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   v1.zero(); v2.zero();
 
   // Allocate static memory.
-  ROL::Ptr<Vector<Real> > r1 = b1.clone();
-  ROL::Ptr<Vector<Real> > r2 = b2.clone();
-  ROL::Ptr<Vector<Real> > z1 = v1.clone();
-  ROL::Ptr<Vector<Real> > z2 = v2.clone();
-  ROL::Ptr<Vector<Real> > w1 = b1.clone();
-  ROL::Ptr<Vector<Real> > w2 = b2.clone();
-  std::vector<ROL::Ptr<Vector<Real> > > V1;
-  std::vector<ROL::Ptr<Vector<Real> > > V2;
-  ROL::Ptr<Vector<Real> > V2temp = b2.clone();
-  std::vector<ROL::Ptr<Vector<Real> > > Z1;
-  std::vector<ROL::Ptr<Vector<Real> > > Z2;
-  ROL::Ptr<Vector<Real> > w1temp = b1.clone();
-  ROL::Ptr<Vector<Real> > Z2temp = v2.clone();
+  Ptr<Vector<Real>> r1 = b1.clone();
+  Ptr<Vector<Real>> r2 = b2.clone();
+  Ptr<Vector<Real>> z1 = v1.clone();
+  Ptr<Vector<Real>> z2 = v2.clone();
+  Ptr<Vector<Real>> w1 = b1.clone();
+  Ptr<Vector<Real>> w2 = b2.clone();
+  std::vector<Ptr<Vector<Real>>> V1;
+  std::vector<Ptr<Vector<Real>>> V2;
+  Ptr<Vector<Real>> V2temp = b2.clone();
+  std::vector<Ptr<Vector<Real>>> Z1;
+  std::vector<Ptr<Vector<Real>>> Z2;
+  Ptr<Vector<Real>> w1temp = b1.clone();
+  Ptr<Vector<Real>> Z2temp = v2.clone();
 
   std::vector<Real> res(m+1, zero); 
   LA::Matrix<Real> H(m+1,m);
@@ -237,13 +237,14 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   LA::Vector<Real> s(m+1);
   LA::Vector<Real> y(m+1);
   LA::Vector<Real> cnorm(m);
-  ROL::LAPACK<int, Real> lapack;
+  LAPACK<int, Real> lapack;
 
   // Compute initial residual.
-  applyAdjointJacobian(*r1, v2, x, zerotol);
-  r1->scale(-one); r1->axpy(-one, v1.dual()); r1->plus(b1);
-  applyJacobian(*r2, v1, x, zerotol);
-  r2->scale(-one); r2->plus(b2);
+  //applyAdjointJacobian(*r1, v2, x, zerotol);
+  //r1->scale(-one); r1->axpy(-one, v1.dual()); r1->plus(b1);
+  //applyJacobian(*r2, v1, x, zerotol);
+  //r2->scale(-one); r2->plus(b2);
+  r1->set(b1); r2->set(b2);
   res[0] = std::sqrt(r1->dot(*r1) + r2->dot(*r2));
 
   // Check if residual is identically zero.
@@ -336,12 +337,13 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     if (res[i+1] <= tol) {
 //      std::cout << "  solved in " << i+1 << " iterations to " << res[i+1] << " (" << res[i+1]/res[0] << ")" << std::endl;
       // Update solution vector.
-      v1.plus(*z1);
-      v2.plus(*z2);
+      //v1.plus(*z1);
+      //v2.plus(*z2);
       break;
     }
 
   } // for (int i=0; i++; i<m)
+  v1.set(*z1); v2.set(*z2);
 
   res.resize(i+2);
 
