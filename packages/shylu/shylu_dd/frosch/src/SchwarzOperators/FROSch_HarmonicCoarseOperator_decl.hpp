@@ -154,6 +154,122 @@ namespace FROSch {
             UN          j_out;
             SCView      data_out;
         };
+
+
+        struct ScaleTag {};
+        struct CountNnzTag {};
+        struct TotalNnzTag {};
+        struct FillNzEntriesTag {};
+        template<class indicesView, class SCView, class localRowMapType, class localMVBasisType, class RowptrType, class IndicesType, class ValuesType>
+        struct detectLinearDependenciesFunctor
+        {
+            using Real = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+            using STS = Kokkos::ArithTraits<SC>;
+            using RTS = Kokkos::ArithTraits<Real>;
+
+            UN numRows;
+            UN numCols;
+            SCView scale;
+            localMVBasisType localMVBasis;
+
+            SC tresholdDropping;
+            indicesView indicesGammaDofsAll;
+            localRowMapType localRowMap;
+            localRowMapType localRepeatedMap;
+
+            RowptrType  Rowptr;
+            IndicesType Indices;
+            ValuesType  Values;
+
+            // Constructor for ScaleTag
+            detectLinearDependenciesFunctor(UN numRows_, UN numCols_, SCView scale_, localMVBasisType localMVBasis_) :
+            numRows (numRows_),
+            numCols (numCols_),
+            scale (scale_),
+            localMVBasis (localMVBasis_)
+            {}
+
+            // Constructor for CountNnzTag
+            detectLinearDependenciesFunctor(UN numRows_, UN numCols_, localMVBasisType localMVBasis_, SC tresholdDropping_, 
+                                            indicesView indicesGammaDofsAll_, localRowMapType localRowMap_, localRowMapType localRepeatedMap_,
+                                            RowptrType Rowptr_) :
+            numRows (numRows_),
+            numCols (numCols_),
+            scale (),
+            localMVBasis (localMVBasis_),
+            tresholdDropping (tresholdDropping_),
+            indicesGammaDofsAll (indicesGammaDofsAll_),
+            localRowMap (localRowMap_),
+            localRepeatedMap (localRepeatedMap_),
+            Rowptr (Rowptr_)
+            {}
+
+            // Constructor for FillNzEntriesTag
+            detectLinearDependenciesFunctor(UN numRows_, UN numCols_, SCView scale_, localMVBasisType localMVBasis_,
+                                            SC tresholdDropping_, indicesView indicesGammaDofsAll_,
+                                            localRowMapType localRowMap_, localRowMapType localRepeatedMap_,
+                                            RowptrType Rowptr_, IndicesType Indices_, ValuesType Values_) :
+            numRows (numRows_),
+            numCols (numCols_),
+            scale (scale_),
+            localMVBasis (localMVBasis_),
+            tresholdDropping (tresholdDropping_),
+            indicesGammaDofsAll (indicesGammaDofsAll_),
+            localRowMap (localRowMap_),
+            localRepeatedMap (localRepeatedMap_),
+            Rowptr (Rowptr_),
+            Indices (Indices_),
+            Values (Values_)
+            {}
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const ScaleTag &, const int j) const {
+                scale(j) = STS::zero();
+                for (UN i = 0; i < numRows; i++) {
+                    scale(j) += localMVBasis(i,j)*localMVBasis(i,j);
+                }
+                scale(j) = RTS::one()/RTS::sqrt(STS::abs(scale(j)));
+            }
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const CountNnzTag &, const int i) const {
+                LO rowID = indicesGammaDofsAll[i];
+                GO iGlobal = localRepeatedMap.getGlobalElement(rowID);
+                LO iLocal = localRowMap.getLocalElement(iGlobal);
+                if (iLocal!=-1) { // This should prevent duplicate entries on the interface
+                    for (UN j=0; j<numCols; j++) {
+                        SC valueTmp=localMVBasis(i,j);
+                        if (fabs(valueTmp)>tresholdDropping) {
+                            Rowptr(iLocal+1) ++;
+                        }
+                    }
+                }
+            }
+
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const TotalNnzTag&, const size_t i, UN &lsum) const {
+                 lsum += Rowptr[i];
+            }
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const FillNzEntriesTag &, const int i) const {
+                LO rowID = indicesGammaDofsAll[i];
+                GO iGlobal = localRepeatedMap.getGlobalElement(rowID);
+                LO iLocal = localRowMap.getLocalElement(iGlobal);
+                if (iLocal!=-1) { // This should prevent duplicate entries on the interface
+                    UN nnz_i = Rowptr(iLocal);
+                    for (UN j=0; j<numCols; j++) {
+                        SC valueTmp=localMVBasis(i,j);
+                        if (fabs(valueTmp)>tresholdDropping) {
+                            Indices(nnz_i) = j; //localBasisMap.getGlobalElement(j);
+                            Values(nnz_i) = valueTmp*scale(j);
+                            nnz_i ++;
+                        }
+                    }
+                }
+            }
+        };
         #endif
 
     protected:

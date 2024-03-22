@@ -123,11 +123,20 @@ namespace FROSch {
                                              RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
                                              RCP<      Matrix<SC,LO,GO,NO> > localSubdomainMatrix)
     {
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(), subdomainMatrix->getRowMap());
+        ExtractLocalSubdomainMatrix_Compute(scatter, globalMatrix, subdomainMatrix, localSubdomainMatrix);
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    void ExtractLocalSubdomainMatrix_Compute(RCP<      Import<LO,GO,NO> >    scatter,
+                                             RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > localSubdomainMatrix)
+    {
         FROSCH_DETAILTIMER_START(extractLocalSubdomainMatrixTime_compute, "ExtractLocalSubdomainMatrix_Compute");
         const SC zero = ScalarTraits<SC>::zero();
         auto subdomainRowMap = subdomainMatrix->getRowMap();
 
-        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),subdomainRowMap);
         subdomainMatrix->setAllToScalar(zero);
         subdomainMatrix->resumeFill();
         subdomainMatrix->doImport(*globalMatrix, *scatter, ADD);
@@ -314,10 +323,10 @@ namespace FROSch {
             UN numRowsI = indI.size();
             UN numRowsJ = indJ.size();
 
-            rowptr_type RowptrII ("RowptrII", numRowsI+1);
-            rowptr_type RowptrIJ ("RowptrIJ", numRowsI+1);
-            rowptr_type RowptrJI ("RowptrJI", numRowsJ+1);
-            rowptr_type RowptrJJ ("RowptrJJ", numRowsJ+1);
+            rowptr_type RowptrII (Kokkos::ViewAllocateWithoutInitializing("RowptrII"), numRowsI+1);
+            rowptr_type RowptrIJ (Kokkos::ViewAllocateWithoutInitializing("RowptrIJ"), numRowsI+1);
+            rowptr_type RowptrJI (Kokkos::ViewAllocateWithoutInitializing("RowptrJI"), numRowsJ+1);
+            rowptr_type RowptrJJ (Kokkos::ViewAllocateWithoutInitializing("RowptrJJ"), numRowsJ+1);
 
             // count nnz on each blocks
             Kokkos::deep_copy(RowptrII, 0);
@@ -399,17 +408,17 @@ namespace FROSch {
 #endif
 
             // allocate kII block
-            indices_type IndicesII ("IndicesII", nnzII);
-            values_type  ValuesII  ("ValuesII",  nnzII);
+            indices_type IndicesII (Kokkos::ViewAllocateWithoutInitializing("IndicesII"), nnzII);
+            values_type  ValuesII  (Kokkos::ViewAllocateWithoutInitializing("ValuesII"),  nnzII);
             // allocate kIJ block
-            indices_type IndicesIJ ("IndicesIJ", nnzIJ);
-            values_type  ValuesIJ  ("ValuesIJ",  nnzIJ);
+            indices_type IndicesIJ (Kokkos::ViewAllocateWithoutInitializing("IndicesIJ"), nnzIJ);
+            values_type  ValuesIJ  (Kokkos::ViewAllocateWithoutInitializing("ValuesIJ"),  nnzIJ);
             // allocate kJI block
-            indices_type IndicesJI ("IndicesJI", nnzJI);
-            values_type  ValuesJI  ("ValuesJI",  nnzJI);
+            indices_type IndicesJI (Kokkos::ViewAllocateWithoutInitializing("IndicesJI"), nnzJI);
+            values_type  ValuesJI  (Kokkos::ViewAllocateWithoutInitializing("ValuesJI"),  nnzJI);
             // allocate kJJ block
-            indices_type IndicesJJ ("IndicesJJ", nnzJJ);
-            values_type  ValuesJJ  ("ValuesJJ",  nnzJJ);
+            indices_type IndicesJJ (Kokkos::ViewAllocateWithoutInitializing("IndicesJJ"), nnzJJ);
+            values_type  ValuesJJ  (Kokkos::ViewAllocateWithoutInitializing("ValuesJJ"),  nnzJJ);
 
             // fill in all the blocks
             Kokkos::parallel_for(
