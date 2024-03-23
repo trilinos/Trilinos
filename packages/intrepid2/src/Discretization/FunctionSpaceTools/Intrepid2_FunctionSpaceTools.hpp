@@ -595,13 +595,13 @@ namespace Intrepid2 {
         \param  inputVals        [in]  - Input array of reference HGRAD gradients.
 
     */
-    template<typename outputValValueType,       class ...outputValProperties,
-             typename jacobianInverseValueType, class ...jacobianInverseProperties,
-             typename inputValValueType,        class ...inputValProperties>
+    template<typename OutputValViewType,
+             typename JacobianInverseViewType,
+             typename InputValViewType>
     static void 
-    HGRADtransformGRAD(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
-                        const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                        const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals );
+    HGRADtransformGRAD(       OutputValViewType       outputVals,
+                        const JacobianInverseViewType jacobianInverse,
+                        const InputValViewType        inputVals );
 
     /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -1185,13 +1185,13 @@ namespace Intrepid2 {
         \param  inputDet      [in] - Input array containing determinants of cell Jacobians.
         \param  inputWeights  [in] - Input integration weights.
     */
-    template<typename outputValValueType,   class ...outputValProperties,
-             typename inputDetValueType,    class ...inputDetPropertes,
-             typename inputWeightValueType, class ...inputWeightPropertes>
+    template<typename OutputValViewType,
+             typename InputDetViewType,
+             typename InputWeightViewType>
     static bool 
-    computeCellMeasure(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
-                        const Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    inputDet,
-                        const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights );
+    computeCellMeasure(       OutputValViewType   outputVals,
+                        const InputDetViewType    inputDet,
+                        const InputWeightViewType inputWeights );
     
     /** \brief   Returns the weighted integration measures \a <b>outputVals</b> with dimensions
         (C,P) used for the computation of face integrals, based on the provided

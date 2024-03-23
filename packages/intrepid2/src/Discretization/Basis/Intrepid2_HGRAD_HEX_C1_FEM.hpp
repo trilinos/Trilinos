@@ -115,7 +115,8 @@ namespace Intrepid2 {
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
-      getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues( const typename DeviceType::execution_space& space,
+                       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
 
@@ -171,37 +172,42 @@ namespace Intrepid2 {
            typename pointValueType = double>
   class Basis_HGRAD_HEX_C1_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    using typename BasisBase::ExecutionSpace;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType ;
+    using typename BasisBase::ScalarViewType;
 
     /** \brief  Constructor.
      */
     Basis_HGRAD_HEX_C1_FEM();
 
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
-
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
-    getValues(       OutputViewType outputValues,
-               const PointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const override {
+    getValues( const ExecutionSpace& space,
+                     OutputViewType  outputValues,
+               const PointViewType   inputPoints,
+               const EOperator       operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify arguments
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
                                       operatorType,
                                       this->getBaseCellTopology(),
-                                      this->getCardinality() );
+                                      this->getCardinality());
 #endif
       Impl::Basis_HGRAD_HEX_C1_FEM::
-        getValues<DeviceType>( outputValues,
-                                  inputPoints,
-                                  operatorType );
+        getValues<DeviceType>(space,
+                              outputValues,
+                              inputPoints,
+                              operatorType);
     }
 
     virtual
@@ -209,7 +215,7 @@ namespace Intrepid2 {
     getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoords) != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->getCardinality(), std::invalid_argument,
@@ -226,7 +232,7 @@ namespace Intrepid2 {
     getDofCoeffs( ScalarViewType dofCoeffs ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoeffs) != 1, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::getdofCoeffs) rank = 1 required for dofCoeffs array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,

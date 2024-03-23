@@ -71,6 +71,9 @@ namespace Intrepid2 {
     template<typename ValueType, typename DeviceType>
     int HGRAD_TET_COMP12_FEM_Test01(const bool verbose) {
       
+      //! Create an execution space instance.
+      const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
+      
       Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
         verbose, "Basis_HGRAD_TET_COMP12_FEM", {
           "1) Evaluation of Basis Function Values"
@@ -302,7 +305,7 @@ namespace Intrepid2 {
         {
           *outStream << " check VALUE of basis functions at nodes\n";
           DynRankView vals = DynRankView("vals", numFields, numNodes);
-          tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
+          tetBasis.getValues(space, vals, tetNodes, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
 
@@ -329,7 +332,7 @@ namespace Intrepid2 {
         {
           *outStream << " check VALUE of basis functions at points\n";
           DynRankView vals = DynRankView("vals", numFields, numPoints);
-          tetBasis.getValues(vals, tetPoints, OPERATOR_VALUE);
+          tetBasis.getValues(space, vals, tetPoints, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
 
@@ -380,7 +383,7 @@ namespace Intrepid2 {
 
           DynRankView vals = DynRankView("vals", numFields, numRandomPoints);
         
-          tetBasis.getValues(vals, tetRandomPoints, OPERATOR_VALUE);
+          tetBasis.getValues(space, vals, tetRandomPoints, OPERATOR_VALUE);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
         
@@ -405,7 +408,7 @@ namespace Intrepid2 {
         // Check GRAD of basis functions at points: resize vals to rank-3 container:\n";
         {
           DynRankView vals = DynRankView("vals", numFields, numPoints, spaceDim);
-          tetBasis.getValues(vals, tetPoints, OPERATOR_GRAD);
+          tetBasis.getValues(space, vals, tetPoints, OPERATOR_GRAD);
           auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (ordinal_type i=0;i<numFields;++i) {

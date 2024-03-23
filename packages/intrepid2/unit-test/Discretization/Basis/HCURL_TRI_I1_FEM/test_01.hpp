@@ -59,48 +59,29 @@
 #include "Teuchos_RCP.hpp"
 
 #include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
   namespace Test {
 
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+
     template<typename ValueType, typename DeviceType>
     int HCURL_TRI_I1_FEM_Test01(const bool verbose) {
-      
-      Teuchos::RCP<std::ostream> outStream;
-      Teuchos::oblackholestream bhs; // outputs nothing
 
-      if (verbose)
-        outStream = Teuchos::rcp(&std::cout, false);
-      else
-        outStream = Teuchos::rcp(&bhs, false);
-      
+      //! Create an execution space instance.
+      const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
+
+      //! Setup test output stream.
+      Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+        verbose, "Basis_HCURL_TRI_I1_FEM", {
+          "1) Conversion of Dof tags into Dof ordinals and back",
+          "2) Basis values for VALUE and CURL operators"
+      });
+
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-      using DeviceSpaceType = typename DeviceType::execution_space;       
-      typedef typename
-        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
-      
-      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
-  
-  *outStream 
-    << "===============================================================================\n" 
-    << "|                                                                             |\n" 
-    << "|                 Unit Test (Basis_HCURL_TRI_I1_FEM)                          |\n" 
-    << "|                                                                             |\n" 
-    << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" 
-    << "|     2) Basis values for VALUE and CURL operators                            |\n" 
-    << "|                                                                             |\n" 
-    << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" 
-    << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" 
-    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" 
-    << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
-    << "|                                                                             |\n" 
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" 
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" 
-    << "|                                                                             |\n" 
-    << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
@@ -135,14 +116,14 @@ namespace Intrepid2 {
     vals = DynRankView("vals", cardinality, numPoints);
 
     {
-    // exception #1: GRAD cannot be applied to HCURL functions 
+    // exception #1: GRAD cannot be applied to HCURL functions
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_GRAD) );
     }
     {
     // exception #2: DIV cannot be applied to HCURL functions
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_DIV) );
     }
-    // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
+    // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
     // getDofTag() to access invalid array elements thereby causing bounds check exception
     {
     // exception #3
@@ -165,17 +146,17 @@ namespace Intrepid2 {
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
     {
       DynRankView ConstructWithLabel(badPoints2, 4, triBasis.getBaseCellTopology().getDimension() + 1);
-      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, badPoints2, OPERATOR_VALUE) ); 
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, badPoints2, OPERATOR_VALUE) );
     }
     {
     // exception #10 output values must be of rank-3 for OPERATOR_VALUE in 2D
       DynRankView ConstructWithLabel(badVals1, 4, 3);
-      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals1, triNodes, OPERATOR_VALUE) ); 
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals1, triNodes, OPERATOR_VALUE) );
     }
     {
     // exception #11 output values must be of rank-2 for OPERATOR_CURL
       DynRankView ConstructWithLabel(badCurls1,4,3,2);
-      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badCurls1, triNodes, OPERATOR_CURL) ); 
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badCurls1, triNodes, OPERATOR_CURL) );
     }
     {
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
@@ -191,13 +172,13 @@ namespace Intrepid2 {
     // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
       DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality(), triNodes.extent(0), triBasis.getBaseCellTopology().getDimension() - 1);
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals4, triNodes, OPERATOR_VALUE) ) ;
-    } 
-    // exception #15: D2 cannot be applied to HCURL functions 
+    }
+    // exception #15: D2 cannot be applied to HCURL functions
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
-//    vals.resize(triBasis.getCardinality(), 
-//                triNodes.extent(0),  
+//    vals.resize(triBasis.getCardinality(),
+//                triNodes.extent(0),
 //                Intrepid2::getDkCardinality(OPERATOR_D2, triBasis.getBaseCellTopology().getDimension()));
-//    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_D2) ); 
+//    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_D2) );
 #endif
   // Check if number of thrown exceptions matches the one we expect
     if (nthrow != ncatch) {
@@ -211,22 +192,22 @@ namespace Intrepid2 {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   }
-  
+
   *outStream
     << "\n"
     << "===============================================================================\n"
     << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"
     << "===============================================================================\n";
-  
+
   // all tags are on host space
   try{
     const auto allTags = triBasis.getAllDofTags();
-    
+
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
     const ordinal_type dofTagSize = allTags.extent(0);
     for (ordinal_type i = 0; i < dofTagSize; ++i) {
       const auto bfOrd  = triBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
-      
+
       const auto myTag = triBasis.getDofTag(bfOrd);
        if( !( (myTag(0) == allTags(i,0)) &&
               (myTag(1) == allTags(i,1)) &&
@@ -234,19 +215,19 @@ namespace Intrepid2 {
               (myTag(3) == allTags(i,3)) ) ) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << " getDofOrdinal( {" 
-          << allTags(i,0) << ", " 
-          << allTags(i,1) << ", " 
-          << allTags(i,2) << ", " 
-          << allTags(i,3) << "}) = " << bfOrd <<" but \n";   
+        *outStream << " getDofOrdinal( {"
+          << allTags(i,0) << ", "
+          << allTags(i,1) << ", "
+          << allTags(i,2) << ", "
+          << allTags(i,3) << "}) = " << bfOrd <<" but \n";
         *outStream << " getDofTag(" << bfOrd << ") = { "
-          << myTag(0) << ", " 
-          << myTag(1) << ", " 
-          << myTag(2) << ", " 
-          << myTag(3) << "}\n";        
+          << myTag(0) << ", "
+          << myTag(1) << ", "
+          << myTag(2) << ", "
+          << myTag(3) << "}\n";
       }
     }
-    
+
     // Now do the same but loop over basis functions
     for( ordinal_type bfOrd = 0; bfOrd < triBasis.getCardinality(); bfOrd++) {
       const auto myTag  = triBasis.getDofTag(bfOrd);
@@ -255,13 +236,13 @@ namespace Intrepid2 {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " getDofTag(" << bfOrd << ") = { "
-          << myTag(0) << ", " 
-          << myTag(1) << ", " 
-          << myTag(2) << ", " 
-          << myTag(3) << "} but getDofOrdinal({" 
-          << myTag(0) << ", " 
-          << myTag(1) << ", " 
-          << myTag(2) << ", " 
+          << myTag(0) << ", "
+          << myTag(1) << ", "
+          << myTag(2) << ", "
+          << myTag(3) << "} but getDofOrdinal({"
+          << myTag(0) << ", "
+          << myTag(1) << ", "
+          << myTag(2) << ", "
           << myTag(3) << "} ) = " << myBfOrd << "\n";
       }
     }
@@ -270,15 +251,15 @@ namespace Intrepid2 {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
-  
+
   *outStream
     << "\n"
     << "===============================================================================\n"
     << "| TEST 3: correctness of basis function values                                |\n"
     << "===============================================================================\n";
-  
+
   outStream -> precision(20);
-  
+
   // VALUE: correct values in (P,F,D) layout
   const ValueType basisValues[] = {
     2.0, 0, 0, 0, 0, -2.0, 2.0, 2.0, 0, 2.0, 0, 0, 0, 0, \
@@ -286,9 +267,9 @@ namespace Intrepid2 {
     1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 0, \
     -1.0, 0, -1.0, -2.0, 1.5, 0.5, -0.5, 0.5, \
     -0.5, -1.5};
-  
+
   // CURL: correct values in (P,F) layout
-  const ValueType basisCurls[] = {   
+  const ValueType basisCurls[] = {
     4.0,  4.0,  4.0,
     4.0,  4.0,  4.0,
     4.0,  4.0,  4.0,
@@ -297,18 +278,18 @@ namespace Intrepid2 {
     4.0,  4.0,  4.0,
     4.0,  4.0,  4.0
   };
-  
+
   try{
     DynRankViewHost ConstructWithLabel(triNodesHost, 7, 2);
-    triNodesHost(0,0) =  0.0;  triNodesHost(0,1) =  0.0;  
-    triNodesHost(1,0) =  1.0;  triNodesHost(1,1) =  0.0;  
-    triNodesHost(2,0) =  0.0;  triNodesHost(2,1) =  1.0;  
+    triNodesHost(0,0) =  0.0;  triNodesHost(0,1) =  0.0;
+    triNodesHost(1,0) =  1.0;  triNodesHost(1,1) =  0.0;
+    triNodesHost(2,0) =  0.0;  triNodesHost(2,1) =  1.0;
     // edge midpoints
-    triNodesHost(3,0) =  0.5;  triNodesHost(3,1) =  0.0;  
-    triNodesHost(4,0) =  0.5;  triNodesHost(4,1) =  0.5;  
-    triNodesHost(5,0) =  0.0;  triNodesHost(5,1) =  0.5;  
+    triNodesHost(3,0) =  0.5;  triNodesHost(3,1) =  0.0;
+    triNodesHost(4,0) =  0.5;  triNodesHost(4,1) =  0.5;
+    triNodesHost(5,0) =  0.0;  triNodesHost(5,1) =  0.5;
     // Inside Triangle
-    triNodesHost(6,0) =  0.25; triNodesHost(6,1) =  0.25;  
+    triNodesHost(6,0) =  0.25; triNodesHost(6,1) =  0.25;
 
     auto triNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), triNodesHost);
     Kokkos::deep_copy(triNodes, triNodesHost);
@@ -317,17 +298,17 @@ namespace Intrepid2 {
     const ordinal_type cardinality = triBasis.getCardinality();
     const ordinal_type numPoints = triNodes.extent(0);
     const ordinal_type spaceDim  = triBasis.getBaseCellTopology().getDimension();
-    
+
     {
     // Check VALUE of basis functions: resize vals to rank-3 container:
     DynRankView ConstructWithLabel(vals, cardinality, numPoints, spaceDim);
-    triBasis.getValues(vals, triNodes, OPERATOR_VALUE);
+    triBasis.getValues(space, vals, triNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
     for (ordinal_type i = 0; i < cardinality; ++i) {
       for (ordinal_type j = 0; j < numPoints; ++j) {
         for (ordinal_type k = 0; k < spaceDim; ++k) {
-          
+
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
            ordinal_type l = k + i * spaceDim + j * spaceDim * cardinality;
            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
@@ -343,12 +324,12 @@ namespace Intrepid2 {
          }
       }
     }
-    } 
-    
+    }
+
     {
     // Check CURL of basis function: resize vals to rank-2 container
     DynRankView ConstructWithLabel(vals, cardinality, numPoints);
-    triBasis.getValues(vals, triNodes, OPERATOR_CURL);
+    triBasis.getValues(space, vals, triNodes, OPERATOR_CURL);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
     for (ordinal_type i = 0; i < cardinality; ++i) {
@@ -357,7 +338,7 @@ namespace Intrepid2 {
         if (std::abs(vals_host(i,j) - basisCurls[l]) > tol) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          
+
           // Output the multi-index of the value where the error is:
           *outStream << " At multi-index { ";
           *outStream << i << " ";*outStream << j << " ";
@@ -365,17 +346,17 @@ namespace Intrepid2 {
             << " but reference curl component: " << basisCurls[l] << "\n";
         }
       }
-    }  
+    }
     }
   } //end try
-   
+
   // Catch unexpected errors
   catch (std::logic_error &err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
- 
-  *outStream 
+
+  *outStream
     << "\n"
     << "===============================================================================\n"
     << "| TEST 4: correctness of DoF locations                                        |\n"
@@ -414,7 +395,7 @@ namespace Intrepid2 {
     DynRankView ConstructWithLabel(dofCoeffs, cardinality, spaceDim);
     triBasis.getDofCoeffs(dofCoeffs);
     triBasis.getDofCoords(cvals);
-    triBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+    triBasis.getValues(space, bvals, cvals, OPERATOR_VALUE);
 
     auto cvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals);
     Kokkos::deep_copy(cvals_host, cvals);
@@ -455,14 +436,14 @@ namespace Intrepid2 {
   << "===============================================================================\n"
   << "| TEST 5: Function Space is Correct                                           |\n"
   << "===============================================================================\n";
-  
+
   try {
     const EFunctionSpace fs = triBasis.getFunctionSpace();
-    
+
     if (fs != FUNCTION_SPACE_HCURL)
     {
       *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
-      
+
       // Output the multi-index of the value where the error is:
       *outStream << " Expected a function space of FUNCTION_SPACE_HCURL (enum value " << FUNCTION_SPACE_HCURL << "),";
       *outStream << " but got " << fs << "\n";
@@ -478,12 +459,12 @@ namespace Intrepid2 {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   }
-      
+
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
- 
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
   return errorFlag;

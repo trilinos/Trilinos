@@ -9,7 +9,7 @@
 
 namespace krino {
 
-class Edge;
+struct Edge;
 class FieldRef;
 class EdgeMarkerInterface;
 

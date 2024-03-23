@@ -2013,6 +2013,11 @@ public:
       return underlyingMatchesLogical_;
     }
   };
+
+  template<class DataScalar, typename DeviceType>
+  KOKKOS_INLINE_FUNCTION constexpr unsigned rank(const Data<DataScalar, DeviceType>& D) {
+    return D.rank();
+  }
 }
 
 // we do ETI for doubles and default ExecutionSpace's device_type

@@ -84,7 +84,7 @@ getValues( /* */ OutputViewType output,
       break;
     }
   }
-  
+
   typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
   auto vcprop = Kokkos::common_view_alloc_prop(work);
   auto ptr = work.data();
@@ -254,7 +254,11 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
   // tabulate the scalar orthonormal basis at cubature points
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hdiv::Tri::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
-  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtCubPoints, cubPoints, order, OPERATOR_VALUE);
+  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                     phisAtCubPoints,
+                                                                                                                     cubPoints,
+                                                                                                                     order,
+                                                                                                                     OPERATOR_VALUE);
 
   // now do the integration
   for (ordinal_type i=0;i<order;i++) {
@@ -310,7 +314,11 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
         edge ,
         this->basisCellTopology_ );
 
-    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtEdgePoints , edgePts, order, OPERATOR_VALUE);
+    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       phisAtEdgePoints,
+                                                                                                                       edgePts,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE);
 
     // loop over points (rows of V2)
     for (ordinal_type j=0;j<numPtsPerEdge;j++) {
@@ -362,7 +370,11 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     phisAtInternalPoints("Hdiv::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );
-    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>( phisAtInternalPoints , internalPoints , order, OPERATOR_VALUE );
+    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       phisAtInternalPoints,
+                                                                                                                       internalPoints,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE);
 
     // copy values into right positions of V2
     for (ordinal_type j=0;j<numPtsPerCell;j++) {

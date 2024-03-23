@@ -362,10 +362,10 @@ namespace Intrepid2 {
   \subsection fst_qs_sec Step 7: Apply function space tools
 
   \code
-      FunctionSpaceTools::computeCellMeasure<double>(weighted_measure,                      // compute weighted cell measure
+      FunctionSpaceTools::computeCellMeasure(weighted_measure,                              // compute weighted cell measure
                                                      jacobian_det,
                                                      cub_weights);
-      FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_grad_at_cub_points,        // transform reference gradients into physical space
+      FunctionSpaceTools::HGRADtransformGRAD(transformed_grad_at_cub_points,                // transform reference gradients into physical space
                                                      jacobian_inv,
                                                      grad_at_cub_points);
       FunctionSpaceTools::multiplyMeasure<double>(weighted_transformed_grad_at_cub_points,  // multiply with weighted measure

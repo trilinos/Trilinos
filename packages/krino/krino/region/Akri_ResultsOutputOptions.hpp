@@ -22,7 +22,6 @@ namespace stk { namespace mesh { class MetaData; } }
 
 namespace krino {
 
-  typedef std::pair<int, int> StepIncrement;
   typedef std::pair<std::string, std::string> FieldName_OutputName_Pair;
 
   class ResultsOutputOptions {
@@ -49,7 +48,6 @@ namespace krino {
     const std::string & get_filename() const { return my_filename; }
 
     void add_step_increment(int start, int increment) {
-      StepIncrement aStep(start, increment);
       my_scheduler.add_interval(start, increment);
       my_numStepIncrements++;
     }

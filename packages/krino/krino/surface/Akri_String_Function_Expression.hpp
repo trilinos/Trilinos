@@ -20,10 +20,13 @@ public:
   String_Function_Expression(const std::string & expression);
   void resolve(stk::expreval::VariableMap::iterator & varIt) override;
   double evaluate(const stk::math::Vector3d &coords) const;
+  double evaluate(const double time, const stk::math::Vector3d &coord) const;
 private:
   void parse(const std::string & expression);
   stk::expreval::Eval myEvaluator;
-  mutable stk::math::Vector3d myQueryCoords;
+  mutable bool myDoesUseTime{false};
+  mutable double myTime{0.0};
+  mutable stk::math::Vector3d myQueryCoords{stk::math::Vector3d::ZERO};
 };
 
 }
