@@ -192,6 +192,8 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   defaultParams.set("keepTransfers", -1);
   defaultParams.set("treeCoarseningFactor", 2.0);
   defaultParams.set("leftOverFactor", 1.0);
+  defaultParams.set("batchSize", 50);
+  defaultParams.set("numBatches", 36);
   if (params_.is_null())
     params_ = Teuchos::rcp(new Teuchos::ParameterList(""));
   params_->validateParametersAndSetDefaults(defaultParams);
@@ -984,29 +986,100 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
 
   if (hasFarField()) {
-    // transfer = basisMatrix_ * (identity + transferMatrices_[K-1]) * ... * (identity + transferMatrices_[0])
-    RCP<matrix_type> transfer = rcp(new matrix_type(*basisMatrix_));
+    RCP<matrix_type> kernelApproximations;
 
     if (hasTransferMatrices()) {
+      kernelApproximations = rcp(new matrix_type(*kernelApproximations_->pointA_));
+
       // construct identity on clusterCoeffMap_
       Teuchos::RCP<matrix_type> identity = buildIdentityMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(clusterCoeffMap_);
 
-      for (int i = Teuchos::as<int>(transferMatrices_.size()) - 1; i >= 0; i--) {
-        RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
-        RCP<matrix_type> temp2 = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-        MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
-        transfer = temp2;
+      Teuchos::TimeMonitor tM_near_1(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 1")));
+      for (int i = 0; i < Teuchos::as<int>(transferMatrices_.size()); ++i) {
+        // kernelApproximations := (I + newTransferMatrices[i])^T * kernelApproximations * (I + newTransferMatrices[i])
+        Teuchos::RCP<matrix_type> temp  = MatrixMatrix::add(ONE, false, *identity, ONE, false, *transferMatrices_[i]->pointA_);
+        Teuchos::RCP<matrix_type> temp2 = rcp(new matrix_type(clusterCoeffMap_, 0));
+        MatrixMatrix::Multiply(*temp, true, *kernelApproximations, false, *temp2);
+        Teuchos::RCP<matrix_type> temp3 = rcp(new matrix_type(clusterCoeffMap_, 0));
+        MatrixMatrix::Multiply(*temp2, false, *temp, false, *temp3);
+        kernelApproximations = temp3;
+      }
+    } else {
+      kernelApproximations = kernelApproximations_->pointA_;
+    }
+
+    // farField = (basisMatrix_ * kernelApproximations) * basisMatrix_^T
+    RCP<matrix_type> farField;
+    {
+      Teuchos::TimeMonitor tM_near_2(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2")));
+      int rank       = getComm()->getRank();
+      int size       = getComm()->getSize();
+      int numBatches = params_->get<int>("numBatches");
+      if (numBatches < 0) {
+        int batchSize = params_->get<int>("batchSize");
+        numBatches    = size / batchSize;
+      }
+      numBatches = std::max(numBatches, 1);
+      for (int batchNo = 0; batchNo < numBatches; ++batchNo) {
+        RCP<matrix_type> kernelApproximationsSlice;
+        {
+          Teuchos::TimeMonitor tM_near_2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2 0")));
+
+          using local_matrix_type = typename matrix_type::local_matrix_device_type;
+          local_matrix_type lclKernelApproximationsSlice;
+
+          if (rank % numBatches == batchNo) {
+            lclKernelApproximationsSlice = kernelApproximations->getLocalMatrixDevice();
+
+          } else {
+            using local_graph_type = typename matrix_type::local_graph_device_type;
+            using row_ptr_type     = typename local_graph_type::row_map_type::non_const_type;
+            using col_idx_type     = typename local_graph_type::entries_type::non_const_type;
+            using vals_type        = typename local_matrix_type::values_type;
+
+            auto lclKernelApproximations = kernelApproximations->getLocalMatrixDevice();
+            auto rowptr                  = row_ptr_type("rowptr", lclKernelApproximations.numRows() + 1);
+            auto idx                     = col_idx_type("colidx", 0);
+            auto vals                    = vals_type("vals", 0);
+
+            auto lclKernelApproximationsSliceGraph = local_graph_type(idx, rowptr);
+            lclKernelApproximationsSlice           = local_matrix_type("slice", lclKernelApproximations.numCols(), vals, lclKernelApproximationsSliceGraph);
+          }
+          kernelApproximationsSlice = rcp(new matrix_type(lclKernelApproximationsSlice,
+                                                          kernelApproximations->getRowMap(),
+                                                          kernelApproximations->getColMap(),
+                                                          kernelApproximations->getDomainMap(),
+                                                          kernelApproximations->getRangeMap()));
+        }
+        {
+          RCP<matrix_type> temp;
+          {
+            Teuchos::TimeMonitor tM_near_2a(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2a")));
+            temp = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
+            MatrixMatrix::Multiply(*basisMatrix_, false, *kernelApproximationsSlice, false, *temp);
+          }
+
+          {
+            Teuchos::TimeMonitor tM_near_2b(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 2b")));
+            auto temp2 = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
+            MatrixMatrix::Multiply(*temp, false, *basisMatrix_, true, *temp2);
+            temp = Teuchos::null;
+            if (batchNo == 0)
+              farField = temp2;
+            else
+              farField = MatrixMatrix::add(ONE, false, *farField, ONE, false, *temp2);
+          }
+        }
       }
     }
 
-    // farField = transfer * kernelApproximations_ * transfer^T
-    RCP<matrix_type> temp = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-    MatrixMatrix::Multiply(*transfer, false, *kernelApproximations_->pointA_, false, *temp);
-    RCP<matrix_type> farField = rcp(new matrix_type(basisMatrix_->getRowMap(), 0));
-    MatrixMatrix::Multiply(*temp, false, *transfer, true, *farField);
-
     // nearField_ + farField
-    return MatrixMatrix::add(ONE, false, *nearField_, ONE, false, *farField);
+    RCP<matrix_type> dense;
+    {
+      Teuchos::TimeMonitor tM_near_3(*Teuchos::TimeMonitor::getNewTimer(std::string("Densify far field 3")));
+      dense = MatrixMatrix::add(ONE, false, *nearField_, ONE, false, *farField);
+    }
+    return dense;
 
   } else
 
