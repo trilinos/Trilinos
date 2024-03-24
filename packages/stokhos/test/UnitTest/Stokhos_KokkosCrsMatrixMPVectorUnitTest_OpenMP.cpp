@@ -114,19 +114,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
 CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE(int, double, OpenMP)
 
 int main( int argc, char* argv[] ) {
+  // Setup the MPI session
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Initialize threads
-  num_cores =
-    Kokkos::hwloc::get_available_numa_count() *
-    Kokkos::hwloc::get_available_cores_per_numa();
-  num_hyper_threads =
-    Kokkos::hwloc::get_available_threads_per_core();
-
-  Kokkos::InitializationSettings init_args;
-  init_args.set_num_threads(num_cores*num_hyper_threads);
-  Kokkos::initialize( init_args );
-  //Kokkos::print_configuration(std::cout);
+  // Initialize Kokkos
+  Kokkos::initialize(argc, argv);
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
