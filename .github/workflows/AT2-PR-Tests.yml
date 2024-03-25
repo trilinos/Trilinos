@@ -19,6 +19,7 @@ permissions:
 jobs:
   triloamd01-gcc:
     runs-on: [self-hosted, triloamd01]
+    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
     steps:
       - name: env
         env:
