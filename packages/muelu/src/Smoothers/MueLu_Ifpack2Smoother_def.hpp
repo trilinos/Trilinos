@@ -586,6 +586,12 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupLineSmooth
       myparamList.set("partitioner: map", TVertLineIdSmoo);
       myparamList.set("partitioner: local parts", maxPart + 1);
     } else {
+      if(myparamList.isParameter("partitioner: block size") &&
+         myparamList.get<int>("partitioner: block size") != -1) {
+        int block_size = myparamList.get<int>("partitioner: block size");
+        numLocalRows /= block_size;
+      }
+
       // we assume a constant number of DOFs per node
       size_t numDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
 

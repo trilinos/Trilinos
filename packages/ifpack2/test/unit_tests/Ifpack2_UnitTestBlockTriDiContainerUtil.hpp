@@ -52,6 +52,7 @@
 #include <Ifpack2_BlockRelaxation.hpp>
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #include <Ifpack2_BlockTriDiContainer_decl.hpp>
+#include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
 
 namespace tif_utest {
 
@@ -149,6 +150,39 @@ struct BlockTriDiContainerTester {
     }
   }
 
+  // Make BlockRelaxation smoother with BlockTriDiContainer
+  // with a pointwise matrix.
+  // N.B. Modifies A if nonuniform_lines is true.
+  static Teuchos::RCP<Ifpack2::BlockRelaxation<Tpetra_RowMatrix> >
+  make_BR_BTDC_PW (const StructuredBlock& sb, const StructuredBlockPart& sbp,
+                const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
+                const bool nonuniform_lines = false,
+                const bool zero_starting_soln = true,
+                const int num_sweeps = 1,
+                const bool jacobi = false) {
+    Teuchos::Array<Teuchos::ArrayRCP<LO> > parts;
+    // make_parts modifies entries of A so the call to convertToCrsMatrix
+    // needs to happen after make_parts
+    make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
+    auto A_pw = Tpetra::convertToCrsMatrix(*A);
+    const auto T = Teuchos::rcp(new Ifpack2::BlockRelaxation<Tpetra_RowMatrix>(A_pw));
+    {
+      Teuchos::ParameterList p;
+      p.set("relaxation: container", "BlockTriDi");
+      p.set("relaxation: type", "MT Split Jacobi");
+      p.set("relaxation: sweeps", 1);
+      p.set("partitioner: type", "user");
+      p.set("relaxation: zero starting solution", zero_starting_soln);
+      p.set<int>("relaxation: sweeps", num_sweeps);
+      p.set<LO>("partitioner: local parts", parts.size());
+      p.set("partitioner: parts", parts);
+      p.set("partitioner: subparts per part", 1);
+      p.set("partitioner: block size", A->getBlockSize());
+      T->setParameters(p);
+    }
+    return T;
+  }
+
   // Make BlockRelaxation smoother with BlockTriDiContainer.
   // N.B. Modifies A if nonuniform_lines is true.
   static Teuchos::RCP<Ifpack2::BlockRelaxation<Tpetra_RowMatrix> >
@@ -172,9 +206,28 @@ struct BlockTriDiContainerTester {
       p.set<LO>("partitioner: local parts", parts.size());
       p.set("partitioner: parts", parts);
       p.set("partitioner: subparts per part", 1);
+      p.set("partitioner: block size", -1);
       T->setParameters(p);
     }
     return T;
+  }
+
+  // Make a bare BlockTriDiContainer
+  // with a pointwise matrix.
+  // N.B. Modifies A if nonuniform_lines is true.
+  static Teuchos::RCP<Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix> >
+  make_BTDC_PW (const StructuredBlock& sb, const StructuredBlockPart& sbp,
+             const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
+             const bool overlap_comm = false, const bool nonuniform_lines = false,
+             const bool jacobi = false, const bool seq_method = false) {
+    Teuchos::Array<Teuchos::Array<LO> > parts;
+    // make_parts modifies entries of A so the call to convertToCrsMatrix
+    // needs to happen after make_parts
+    make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
+    auto A_pw = Tpetra::convertToCrsMatrix(*A);
+
+    return Teuchos::rcp(new Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>(
+                          A_pw, parts, 1, overlap_comm, seq_method, A->getBlockSize()));
   }
 
   // Make a bare BlockTriDiContainer.
@@ -195,7 +248,7 @@ struct BlockTriDiContainerTester {
                 const StructuredBlock& sb, const StructuredBlockPart& sbp,
                 const Int bs, const Int nvec, const bool nonuniform_lines,
                 const bool different_maps, const bool jacobi, const bool overlap_comm,
-                const bool seq_method, const std::string& details) {
+                const bool seq_method, const bool pointwise, const std::string& details) {
 #define TEST_BR_BTDC_FAIL(msg) do {             \
       ++nerr;                                   \
       if (comm->getRank() == 0) {               \
@@ -232,10 +285,16 @@ struct BlockTriDiContainerTester {
       const bool use_br = ! (overlap_comm || seq_method);
       const Magnitude tol = 1e-3;
       const auto T_br = use_br ?
-        make_BR_BTDC(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi) :
+        ( pointwise ?
+          make_BR_BTDC_PW(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi): 
+          make_BR_BTDC(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi) 
+        ):
         Teuchos::null;
       const auto T_bare = use_br ? Teuchos::null :
-        make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method);
+        ( pointwise ?
+          make_BTDC_PW(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method): 
+          make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method) 
+        );
       if ( ! T_br.is_null()) {
         T_br->initialize();
         T_br->compute();
