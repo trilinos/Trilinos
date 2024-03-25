@@ -609,14 +609,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILU_5w_schwarz
-    ARGS "--xml_file=5w_bel_tif_FILU_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILU_5w_schwarz
+      ARGS "--xml_file=5w_bel_tif_FILU_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FIC_5w
@@ -633,14 +635,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FIC_5w_schwarz
-    ARGS "--xml_file=5w_bel_tif_FIC_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FIC_5w_schwarz
+      ARGS "--xml_file=5w_bel_tif_FIC_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FILDL_5w
@@ -657,14 +661,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILDL_5w_schwarz
-    ARGS "--xml_file=5w_bel_tif_FILDL_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILDL_5w_schwarz
+      ARGS "--xml_file=5w_bel_tif_FILDL_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   #small_sym
   TRIBITS_ADD_TEST(
     tif_belos
@@ -682,14 +688,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILU_small_sym_schwarz
-    ARGS "--xml_file=test_FILU_tfqmr_small_sym_mm_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILU_small_sym_schwarz
+      ARGS "--xml_file=test_FILU_tfqmr_small_sym_mm_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FIC_small_sym
@@ -706,14 +714,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FIC_small_sym_schwarz
-    ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FIC_small_sym_schwarz
+      ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   TRIBITS_ADD_TEST(
     tif_belos
     NAME FILDL_small_sym
@@ -730,14 +740,16 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
-  TRIBITS_ADD_TEST(
-    tif_belos
-    NAME FILDL_small_sym_schwarz
-    ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm_schwarz.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  )
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      tif_belos
+      NAME FILDL_small_sym_schwarz
+      ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm_schwarz.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
   #small_sym_sing
   TRIBITS_ADD_TEST(
     tif_belos
