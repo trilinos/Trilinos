@@ -52,10 +52,10 @@ jobs:
           git status
           git branch -vv
           git branch -a
-      - name: Get GenConfig
+      - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "git clone https://gitlab-ex.sandia.gov/sebrown/GenConfig.git"
+          bash -l -c "./get_dependencies.sh --container"
       - name: Generate PR cmake fragment
         working-directory: /home/Trilinos/build
         run: |
