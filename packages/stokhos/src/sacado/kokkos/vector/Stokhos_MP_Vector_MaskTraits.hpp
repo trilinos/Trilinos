@@ -95,7 +95,7 @@ public:
             data = st_array[0];
         else
             data = st_array[1];
-        
+
         return *this;
     }
 
@@ -116,7 +116,7 @@ public:
             data = st_array[0]+st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 
@@ -136,7 +136,7 @@ public:
             data = st_array[0]-st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 
@@ -156,7 +156,7 @@ public:
             data = st_array[0]*st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 
@@ -176,12 +176,29 @@ public:
             data = st_array[0]/st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 };
 
 template<typename scalar> class Mask;
+
+namespace traits
+{
+    template <typename>
+    struct is_mask : public std::false_type {};
+
+    template <typename scalar_t>
+    struct is_mask<Mask<scalar_t>> : public std::true_type {};
+
+    template <typename scalar_t>
+    struct is_mask<const Mask<scalar_t>> : public std::true_type {};
+
+    template <typename T>
+    inline constexpr bool is_mask_v = is_mask<T>::value;
+
+    #define CONCEPT_TRAITS_IS_MASK(M) std::enable_if_t<traits::is_mask_v<std::decay_t<M>>>
+}
 
 template<typename S> class MaskedAssign< Sacado::MP::Vector<S> >
 {
@@ -208,7 +225,7 @@ public:
         for(std::size_t i=0; i<size; ++i)
             if(m.get(i))
                 data[i] = s[i];
-        
+
         return *this;
     }
 
@@ -229,7 +246,7 @@ public:
                 data[i] = st_array[0][i];
             else
                 data[i] = st_array[1][i];
-        
+
         return *this;
     }
 
@@ -248,7 +265,7 @@ public:
         for(std::size_t i=0; i<size; ++i)
             if(m.get(i))
                 data[i] += s[i];
-        
+
         return *this;
     }
 
@@ -269,7 +286,7 @@ public:
                 data[i] = st_array[0][i]+st_array[1][i];
             else
                 data[i] = st_array[2][i];
-        
+
         return *this;
     }
 
@@ -287,7 +304,7 @@ public:
         for(std::size_t i=0; i<size; ++i)
             if(m.get(i))
                 data[i] -= s[i];
-        
+
         return *this;
     }
 
@@ -308,7 +325,7 @@ public:
                 data[i] = st_array[0][i]-st_array[1][i];
             else
                 data[i] = st_array[2][i];
-        
+
         return *this;
     }
 
@@ -326,7 +343,7 @@ public:
         for(std::size_t i=0; i<size; ++i)
             if(m.get(i))
                 data[i] *= s[i];
-        
+
         return *this;
     }
 
@@ -347,7 +364,7 @@ public:
                 data[i] = st_array[0][i]*st_array[1][i];
             else
                 data[i] = st_array[2][i];
-        
+
         return *this;
     }
 
@@ -365,7 +382,7 @@ public:
         for(std::size_t i=0; i<size; ++i)
             if(m.get(i))
                 data[i] /= s[i];
-        
+
         return *this;
     }
 
@@ -386,7 +403,7 @@ public:
                 data[i] = st_array[0][i]/st_array[1][i];
             else
                 data[i] = st_array[2][i];
-        
+
         return *this;
     }
 };
@@ -406,19 +423,19 @@ public:
     {
         if(m.get(0))
             data = s;
-        
+
         return *this;
     }
 
     KOKKOS_INLINE_FUNCTION MaskedAssign<scalar>& operator = (const std::initializer_list<scalar> & KOKKOS_RESTRICT st)
     {
         auto st_array = st.begin();
-        
+
         if(m.get(0))
             data = st_array[0];
         else
             data = st_array[1];
-        
+
         return *this;
     }
 
@@ -427,7 +444,7 @@ public:
     {
         if(m.get(0))
             data += s;
-        
+
         return *this;
     }
 
@@ -439,7 +456,7 @@ public:
             data = st_array[0]+st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 
@@ -447,7 +464,7 @@ public:
     {
         if(m.get(0))
             data -= s;
-        
+
         return *this;
     }
 
@@ -459,7 +476,7 @@ public:
             data = st_array[0]-st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 
@@ -467,7 +484,7 @@ public:
     {
         if(m.get(0))
             data *= s;
-        
+
         return *this;
     }
 
@@ -479,7 +496,7 @@ public:
             data = st_array[0]*st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 
@@ -487,7 +504,7 @@ public:
     {
         if(m.get(0))
             data /= s;
-        
+
         return *this;
     }
 
@@ -499,7 +516,7 @@ public:
             data = st_array[0]/st_array[1];
         else
             data = st_array[2];
-        
+
         return *this;
     }
 };
@@ -603,7 +620,7 @@ public:
     {
         return !(this==m2);
     }
-  
+
     KOKKOS_INLINE_FUNCTION Mask<scalar> operator&& (const Mask<scalar> &m2)
     {
         Mask<scalar> m3;
@@ -611,7 +628,7 @@ public:
             m3.set(i,(this->get(i) && m2.get(i)));
         return m3;
     }
-      
+
     KOKKOS_INLINE_FUNCTION Mask<scalar> operator|| (const Mask<scalar> &m2)
     {
         Mask<scalar> m3;
@@ -665,7 +682,7 @@ public:
 
         return v2;
     }
-    
+
     KOKKOS_INLINE_FUNCTION bool get (int i) const
     {
         return this->data[i];
@@ -675,7 +692,7 @@ public:
     {
         this->data[i] = b;
     }
-    
+
     KOKKOS_INLINE_FUNCTION Mask<scalar> operator! ()
     {
         Mask<scalar> m2;
@@ -683,7 +700,7 @@ public:
             m2.set(i,!(this->get(i)));
         return m2;
     }
-    
+
     KOKKOS_INLINE_FUNCTION operator bool() const
     {
         return this->get(0);
@@ -794,9 +811,9 @@ namespace Sacado {
         template <typename S> KOKKOS_INLINE_FUNCTION Vector<S> copysign(const Vector<S> &a1, const Vector<S> &a2)
         {
             typedef EnsembleTraits_m< Vector<S> > ET;
-            
+
             Vector<S> a_out;
-            
+
             using std::copysign;
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -810,7 +827,7 @@ namespace Sacado {
             for(std::size_t i=0; i<ET::size; ++i){
                 ET::coeff(a_out,i) = copysign(ET::coeff(a1,i),ET::coeff(a2,i));
             }
-            
+
             return a_out;
         }
     }
@@ -821,7 +838,7 @@ template<typename S> KOKKOS_INLINE_FUNCTION Mask<Sacado::MP::Vector<S> > signbit
 {
     typedef EnsembleTraits_m<Sacado::MP::Vector<S> > ET;
     using std::signbit;
-    
+
     Mask<Sacado::MP::Vector<S> > mask;
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -935,32 +952,37 @@ template<typename S> KOKKOS_INLINE_FUNCTION Mask<Sacado::MP::Vector<S> > signbit
 
 #endif
 
-namespace MaskLogic{
-
-    template<typename T> KOKKOS_INLINE_FUNCTION bool OR(Mask<T> m){
-        return (((double) m)!=0.);
+namespace MaskLogic
+{
+    template <typename M, typename = CONCEPT_TRAITS_IS_MASK(M)>
+    KOKKOS_INLINE_FUNCTION
+    bool OR(M&& m) {
+        return m.operator double() != 0.;
     }
 
     KOKKOS_INLINE_FUNCTION bool OR(bool m){
         return m;
     }
 
-    template<typename T> KOKKOS_INLINE_FUNCTION bool XOR(Mask<T> m){
-        return (((double) m)==1./m.getSize());
+    template <typename M, typename = CONCEPT_TRAITS_IS_MASK(M)>
+    KOKKOS_INLINE_FUNCTION
+    bool XOR(M&& m) {
+        return m.operator double() == 1. / m.getSize();
     }
 
     KOKKOS_INLINE_FUNCTION bool XOR(bool m){
         return m;
     }
 
-    template<typename T> KOKKOS_INLINE_FUNCTION bool AND(Mask<T> m){
-        return (((double) m)==1.);
+    template <typename M, typename = CONCEPT_TRAITS_IS_MASK(M)>
+    KOKKOS_INLINE_FUNCTION
+    bool AND(M&& m) {
+        return m.operator double() == 1.;
     }
 
     KOKKOS_INLINE_FUNCTION bool AND(bool m){
         return m;
     }
-
 }
 
 #endif // STOKHOS_MP_VECTOR_MASKTRAITS_HPP
