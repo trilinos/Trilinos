@@ -54,16 +54,19 @@ struct ODE_params {
 enum newton_solver_status : int {
   NLS_SUCCESS    = 0,
   MAX_ITER       = 1,
-  LIN_SOLVE_FAIL = 2
+  LIN_SOLVE_FAIL = 2,
+  NLS_DIVERGENCE = 3,
 };
 
 struct Newton_params {
-  int max_iters;
+  int max_iters, iters = 0;
   double abs_tol, rel_tol;
 
-  // Constructor that only specify the desired number of steps.
-  // In this case no adaptivity is provided, the time step will
-  // be constant such that dt = (tend - tstart) / num_steps;
+  // Constructor that sets basic solver parameters
+  // used while solving the nonlinear system
+  // int max_iters_  [in]: maximum number of iterations allowed
+  // double abs_tol_ [in]: absolute tolerance to reach for successful solve
+  // double rel_tol_ [in]: relative tolerance to reach for successful solve
   KOKKOS_FUNCTION
   Newton_params(const int max_iters_, const double abs_tol_,
                 const double rel_tol_)

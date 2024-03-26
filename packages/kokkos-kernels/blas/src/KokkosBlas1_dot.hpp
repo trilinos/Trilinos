@@ -96,25 +96,37 @@ dot(const execution_space& space, const XVector& x, const YVector& y) {
       Kokkos::View<result_type, default_layout, Kokkos::HostSpace,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  result_type result{};
-  RVector_Result R   = RVector_Result(&result);
   XVector_Internal X = x;
   YVector_Internal Y = y;
 
-  // Even though RVector is the template parameter, Dot::dot has an overload
-  // that accepts RVector_Internal (with the special accumulator, if dot_type is
-  // 32-bit precision). Impl::Dot needs to support both cases, and it's easier
-  // to do this with overloading than by extending the ETI to deal with two
-  // different scalar types.
-  Impl::DotSpecialAccumulator<execution_space, RVector_Internal,
-                              XVector_Internal, YVector_Internal>::dot(space, R,
-                                                                       X, Y);
-  space.fence();
-  // mfh 22 Jan 2020: We need the line below because
-  // Kokkos::complex<T> lacks a constructor that takes a
-  // Kokkos::complex<U> with U != T.
-  return Kokkos::Details::CastPossiblyComplex<dot_type, result_type>::cast(
-      result);
+  bool useFallback = false;
+  if (useFallback) {
+    // Even though RVector is the template parameter, Dot::dot has an overload
+    // that accepts RVector_Internal (with the special accumulator, if dot_type
+    // is 32-bit precision). Impl::Dot needs to support both cases, and it's
+    // easier to do this with overloading than by extending the ETI to deal with
+    // two different scalar types.
+    result_type result{};
+    RVector_Result R = RVector_Result(&result);
+    Impl::DotSpecialAccumulator<execution_space, RVector_Internal,
+                                XVector_Internal, YVector_Internal>::dot(space,
+                                                                         R, X,
+                                                                         Y);
+    space.fence();
+    // mfh 22 Jan 2020: We need the line below because
+    // Kokkos::complex<T> lacks a constructor that takes a
+    // Kokkos::complex<U> with U != T.
+    return Kokkos::Details::CastPossiblyComplex<dot_type, result_type>::cast(
+        result);
+  } else {
+    dot_type result{};
+    RVector_Internal R = RVector_Internal(&result);
+    Impl::Dot<execution_space, RVector_Internal, XVector_Internal,
+              YVector_Internal>::dot(space, R, X, Y);
+    space.fence();
+    return Kokkos::Details::CastPossiblyComplex<dot_type, result_type>::cast(
+        result);
+  }
 }
 
 /// \brief Return the dot product of the two vectors x and y.

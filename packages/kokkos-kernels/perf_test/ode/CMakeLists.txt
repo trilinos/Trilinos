@@ -5,4 +5,8 @@ if(KOKKOSKERNELS_ENABLE_BENCHMARK)
   KOKKOSKERNELS_ADD_BENCHMARK(
     ode_runge_kutta SOURCES KokkosODE_RK.cpp
   )
+
+  KOKKOSKERNELS_ADD_BENCHMARK(
+    ode_bdf_solver SOURCES KokkosODE_BDF.cpp
+  )
 endif()

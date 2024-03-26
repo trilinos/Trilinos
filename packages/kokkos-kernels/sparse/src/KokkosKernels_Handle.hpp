@@ -605,18 +605,18 @@ class KokkosKernelsHandle {
   // clang-format off
   /**
    * @brief Create a gauss seidel handle object
-   * 
+   *
    * @param handle_exec_space The execution space instance to execute kernels on.
    * @param num_streams The number of streams to allocate memory for.
    * @param gs_algorithm Specifies which algorithm to use:
-   * 
+   *
    *                     KokkosSpace::GS_DEFAULT  PointGaussSeidel
    *                     KokkosSpace::GS_PERMUTED ??
    *                     KokkosSpace::GS_TEAM     ??
    *                     KokkosSpace::GS_CLUSTER  ??
    *                     KokkosSpace::GS_TWOSTAGE ??
    * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
-   * 
+   *
    *                           KokkosGraph::COLORING_DEFAULT  ??
    *                           KokkosGraph::COLORING_SERIAL   Serial Greedy Coloring
    *                           KokkosGraph::COLORING_VB       Vertex Based Coloring
@@ -649,9 +649,9 @@ class KokkosKernelsHandle {
   // clang-format off
   /**
    * @brief Create a gauss seidel handle object
-   * 
+   *
    * @param gs_algorithm Specifies which algorithm to use:
-   * 
+   *
    *                     KokkosSpace::GS_DEFAULT  PointGaussSeidel or BlockGaussSeidel, depending on matrix type.
    *                     KokkosSpace::GS_PERMUTED Reorders rows/cols into colors to improve locality. Uses RangePolicy over rows.
    *                     KokkosSpace::GS_TEAM     Uses TeamPolicy over batches of rows with ThreadVector within rows.
@@ -660,7 +660,7 @@ class KokkosKernelsHandle {
    *                     KokkosSpace::GS_TWOSTAGE Uses spmv to parallelize inner sweeps of x.
    *                                              For more information, see: https://arxiv.org/pdf/2104.01196.pdf.
    * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
-   * 
+   *
    *                           KokkosGraph::COLORING_DEFAULT  Depends on execution space:
    *                                                            COLORING_SERIAL on Kokkos::Serial;
    *                                                            COLORING_EB on GPUs;
@@ -744,16 +744,16 @@ class KokkosKernelsHandle {
   // clang-format off
   /**
    * @brief Create a gs handle object
-   * 
+   *
    * @param clusterAlgo Specifies which clustering algorithm to use:
-   * 
-   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_DEFAULT           ??
-   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_MIS2              ??
-   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_BALLOON           ??
-   *                    KokkosSparse::ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS ??
+   *
+   *                    KokkosSparse::CLUSTER_DEFAULT           ??
+   *                    KokkosSparse::CLUSTER_MIS2              ??
+   *                    KokkosSparse::CLUSTER_BALLOON           ??
+   *                    KokkosSparse::NUM_CLUSTERING_ALGORITHMS ??
    * @param hint_verts_per_cluster Hint how many verticies to use per cluster
    * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
-   * 
+   *
    *                           KokkosGraph::COLORING_DEFAULT  ??
    *                           KokkosGraph::COLORING_SERIAL   Serial Greedy Coloring
    *                           KokkosGraph::COLORING_VB       Vertex Based Coloring
@@ -821,10 +821,11 @@ class KokkosKernelsHandle {
   // ---------------------------------------- //
 
   SPADDHandleType *get_spadd_handle() { return this->spaddHandle; }
-  void create_spadd_handle(bool input_sorted) {
+  void create_spadd_handle(bool input_sorted = false,
+                           bool input_merged = false) {
     this->destroy_spadd_handle();
     this->is_owner_of_the_spadd_handle = true;
-    this->spaddHandle                  = new SPADDHandleType(input_sorted);
+    this->spaddHandle = new SPADDHandleType(input_sorted, input_merged);
   }
   void destroy_spadd_handle() {
     if (is_owner_of_the_spadd_handle && this->spaddHandle != NULL) {
@@ -947,11 +948,13 @@ class KokkosKernelsHandle {
 
   SPILUKHandleType *get_spiluk_handle() { return this->spilukHandle; }
   void create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm algm,
-                            size_type nrows, size_type nnzL, size_type nnzU) {
+                            size_type nrows, size_type nnzL, size_type nnzU,
+                            size_type block_size = 0) {
     this->destroy_spiluk_handle();
     this->is_owner_of_the_spiluk_handle = true;
-    this->spilukHandle = new SPILUKHandleType(algm, nrows, nnzL, nnzU);
-    this->spilukHandle->reset_handle(nrows, nnzL, nnzU);
+    this->spilukHandle =
+        new SPILUKHandleType(algm, nrows, nnzL, nnzU, block_size);
+    this->spilukHandle->reset_handle(nrows, nnzL, nnzU, block_size);
     this->spilukHandle->set_team_size(this->team_work_size);
     this->spilukHandle->set_vector_size(this->vector_size);
   }

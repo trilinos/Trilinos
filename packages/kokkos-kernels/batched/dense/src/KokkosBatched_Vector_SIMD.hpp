@@ -513,6 +513,11 @@ class Vector<SIMD<double>, 4> {
 
 #if defined(__KOKKOSBATCHED_ENABLE_AVX__)
 #if defined(__AVX__) || defined(__AVX2__)
+
+#if CUDA_VERSION < 12022
+#undef _Float16
+#endif
+
 #include <immintrin.h>
 
 namespace KokkosBatched {
@@ -668,6 +673,9 @@ class Vector<SIMD<Kokkos::complex<double> >, 2> {
 #endif /* #if defined(__AVX__) || defined(__AVX2__) */
 
 #if defined(__AVX512F__)
+#if CUDA_VERSION < 12022
+#undef _Float16
+#endif
 #include <immintrin.h>
 
 namespace KokkosBatched {

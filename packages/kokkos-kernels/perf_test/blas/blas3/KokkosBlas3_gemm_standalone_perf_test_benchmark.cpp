@@ -142,7 +142,19 @@ void run(const blas3_gemm_params& params) {
 int main(int argc, char** argv) {
   const auto params     = blas3_gemm_params::get_params(argc, argv);
   const int num_threads = params.use_openmp;
-  const int device_id   = params.use_cuda - 1;
+
+  // the common parameter parser takes the requested device ID and
+  // adds 1 to it (e.g. --cuda 0 -> params.use_cuda = 1)
+  // this is presumably so that 0 can be a sentinel value,
+  // even though device ID 0 is valid
+  // here, we use CUDA, SYCL, or HIP, whichever is set first, to
+  // choose which device Kokkos should initialize on
+  // or -1, for no such selection
+  const int device_id =
+      params.use_cuda
+          ? params.use_cuda - 1
+          : (params.use_sycl ? params.use_sycl - 1
+                             : (params.use_hip ? params.use_hip - 1 : -1));
 
   Kokkos::initialize(Kokkos::InitializationSettings()
                          .set_num_threads(num_threads)

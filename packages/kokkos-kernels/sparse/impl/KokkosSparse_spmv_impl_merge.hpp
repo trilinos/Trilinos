@@ -165,7 +165,7 @@ struct SpmvMergeHierarchical {
             pathLengthTeamChunk * sizeof(A_ordinal_type));
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(thread, teamNnzBegin, teamNnzEnd),
-            [=](const A_ordinal_type& i) {
+            [&](const A_ordinal_type& i) {
               valuesS[i - teamNnzBegin]  = A.values(i);
               entriesS[i - teamNnzBegin] = A.graph.entries(i);
             });

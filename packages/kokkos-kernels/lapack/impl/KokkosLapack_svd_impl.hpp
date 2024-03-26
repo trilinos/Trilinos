@@ -14,11 +14,21 @@
 //
 //@HEADER
 
-#ifndef KOKKOSPARSE_SPADD_TPL_SPEC_DECL_HPP_
-#define KOKKOSPARSE_SPADD_TPL_SPEC_DECL_HPP_
+#ifndef KOKKOSLAPACK_IMPL_SVD_HPP_
+#define KOKKOSLAPACK_IMPL_SVD_HPP_
 
-namespace KokkosSparse {
-namespace Impl {}
-}  // namespace KokkosSparse
+/// \file KokkosLapack_svd_impl.hpp
+/// \brief Implementation(s) of singular value decomposition of a dense matrix.
 
-#endif
+#include <KokkosKernels_config.h>
+#include <Kokkos_ArithTraits.hpp>
+
+namespace KokkosLapack {
+namespace Impl {
+
+// NOTE: Might add the implementation of KokkosLapack::svd later
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+
+#endif  // KOKKOSLAPACK_IMPL_SVD_HPP
