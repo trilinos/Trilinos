@@ -12,15 +12,16 @@
 #include <string>
 #include <stdexcept>
 #include <vector>
-#include "Intrepid_FieldContainer.hpp"
+#include <Kokkos_Core.hpp>
+#include <Kokkos_DynRankView.hpp>
 #include <percept/Util.hpp>
 
   namespace percept
   {
 
-    typedef Intrepid::FieldContainer<double> MDArray;
-    typedef Intrepid::FieldContainer<int> MDArrayInt;
-    typedef Intrepid::FieldContainer<unsigned> MDArrayUInt;
+    typedef Kokkos::DynRankView<double,Kokkos::HostSpace> MDArray;
+    typedef Kokkos::DynRankView<int,Kokkos::HostSpace> MDArrayInt;
+    typedef Kokkos::DynRankView<unsigned,Kokkos::HostSpace> MDArrayUInt;
 
     template<class MDA>
     inline std::string
@@ -33,19 +34,19 @@
       if (mda.rank() == 1)
         {
           str << "{";
-          for (int i=0; i < mda.dimension(0); ++i)
+          for (int i=0; i < mda.extent_int(0); ++i)
             {
               if (convert)
-                str << Util::convert_to_mm(mda(i),precision) << (i == mda.dimension(0) - 1 ?  "}" : ",");
+                str << Util::convert_to_mm(mda(i),precision) << (i == mda.extent_int(0) - 1 ?  "}" : ",");
               else
-                str << mda(i) << (i == mda.dimension(0) - 1 ?  "}" : ",");
+                str << mda(i) << (i == mda.extent_int(0) - 1 ?  "}" : ",");
             }
           return str.str();
         }
       else if (mda.rank() == 2)
         {
           str << "{";
-          int nij[2] = {mda.dimension(0), mda.dimension(1)};
+          int nij[2] = {mda.extent_int(0), mda.extent_int(1)};
           int ind[2] = {0,0};
           for (ind[0]=0; ind[0] < nij[0]; ++ind[0])
             {
@@ -63,6 +64,64 @@
         }
       else
         return "not ready";
+    }
+
+    template<class MDA>
+    inline std::string printContainer(const MDA& mda) {
+
+      // Save the format state of the original ostream os.
+      std::ostringstream os;
+
+      os.setf(std::ios_base::scientific, std::ios_base::floatfield);
+      os.setf(std::ios_base::right);
+      int myprec = os.precision();
+
+      int size = mda.size();
+      int rank = mda.rank();
+      Teuchos::Array<int> multiIndex(rank);
+
+      os<< "===============================================================================\n"\
+        << "\t Container size = " << size << "\n"
+        << "\t Container rank = " << rank << "\n" ;
+
+      if( (rank == 0 ) && (size == 0) ) {
+        os<< "====================================================================================\n"\
+          << "|                        *** This is an empty container ****                       |\n";
+      }
+      else {
+        os<< "\t extents     = ";
+
+        for(int r = 0; r < rank; r++){
+          os << " (" << mda.extent_int(r) <<") ";
+        }
+        os << "\n";
+
+        os<< "============================================================\n"\
+          << "|              Multi-index          Value                  |\n"\
+          << "============================================================\n";
+      }
+
+      for(int i=0; i< mda.extent_int(0); ++i ) 
+      {
+        for(int j=0; j< mda.extent_int(1); ++j )
+          for(int k=0; k< mda.extent_int(2); ++k )
+            for(int l=0; l< mda.extent_int(3); ++l ) 
+            {
+              std::ostringstream mistring;
+              mistring << i << std::dec << " ";
+              if(rank > 1) mistring << j << std::dec << " ";
+              if(rank > 2) mistring << k << std::dec << " ";
+              if(rank > 3) mistring << l << std::dec << " ";
+              os.setf(std::ios::right, std::ios::adjustfield);
+              os << std::setw(27) << mistring.str();
+              os.setf(std::ios::left, std::ios::adjustfield);
+              os << std::setw(myprec+8) << mda.access(i,j,k,l) << "\n";
+            }
+      }
+
+      os<< "====================================================================================\n\n";
+
+      return os.str();
     }
 
 
@@ -83,7 +142,7 @@
           }
         else
           {
-            int dim0 = mda.dimension(0);
+            int dim0 = mda.extent_int(0);
             this->m_array_2.resize(dim0);
             for (int j = 0; j < dim0; j++)
               {
@@ -159,7 +218,29 @@
         return m_array_2[i1][i2];
       }
 
-      int dimension(int i1) const {
+      inline std::string& access(int i1) {
+        return (*this)(i1);
+      }
+
+      inline std::string& access(int i1, int i2) {
+        return (*this)(i1,i2);
+      }
+
+      inline std::string& access(int i1, int i2, int i3) {
+        if (i3==0) 
+          return access(i1,i2);
+        else
+          throw std::runtime_error("MDArrayString:: Rank at most 2 but requiring a rank 3 container");
+      }
+
+      inline std::string& access(int i1, int i2, int i3, int i4) {
+        if (i4==0) 
+          return access(i1,i2,i3);
+        else
+          throw std::runtime_error("MDArrayString:: Rank at most 2 but requiring a rank 4 container");
+      }
+
+      int extent_int(int i1) const {
         if (m_rank==1 && i1 > 0) throw std::runtime_error("MDArrayString:: rank 1 but asking for 2nd dim");
         if (m_rank == 1)
           {

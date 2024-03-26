@@ -32,7 +32,7 @@
   namespace percept
   {
 
-    class FunctionWithIntrepidRequest : public Function
+    class FunctionWithIntrepid2Request : public Function
     {
       Function *m_function;
     public:
@@ -45,21 +45,21 @@
       Request m_order_gradient;
       Request m_order_higherDerivs;
 
-      FunctionWithIntrepidRequest() : Function("noname") {}
-      FunctionWithIntrepidRequest(Function *func,
+      FunctionWithIntrepid2Request() : Function("noname") {}
+      FunctionWithIntrepid2Request(Function *func,
                                   Request values = Request(),
                                   Request gradient = Request(),
                                   Request higherDerivs = Request()) : Function(*func),
                                                                       m_function(func), m_order_values(values), m_order_gradient(gradient), m_order_higherDerivs(higherDerivs) {}
     };
 
-    class ExampleFunctionWithIntrepidRequest : public FunctionWithIntrepidRequest
+    class ExampleFunctionWithIntrepidRequest : public FunctionWithIntrepid2Request
     {
       MDArray m_pressure_array;
       MDArray m_pressure_grad_array;
     public:
 
-      ExampleFunctionWithIntrepidRequest(BulkData& bulkData) : FunctionWithIntrepidRequest()
+      ExampleFunctionWithIntrepid2Request(BulkData& bulkData) : FunctionWithIntrepid2Request()
       {
         stk::mesh::MetaData& metaData = stk::mesh::MetaData::get(bulkData);
         FieldBase *pressure =  metaData.get_field(stk::topology::NODE_RANK, "pressure");
@@ -100,14 +100,14 @@
       }
     };
 
-    // This one uses the basis functions passed in from Intrepid
-    class Example2FunctionWithIntrepidRequest : public FunctionWithIntrepidRequest
+    // This one uses the basis functions passed in from Intrepid2
+    class Example2FunctionWithIntrepid2Request : public FunctionWithIntrepid2Request
     {
       MDArray m_pressure_array;
       MDArray m_pressure_grad_array;
     public:
 
-      Example2FunctionWithIntrepidRequest(BulkData& bulkData) : FunctionWithIntrepidRequest()
+      Example2FunctionWithIntrepid2Request(BulkData& bulkData) : FunctionWithIntrepid2Request()
       {
         stk::mesh::MetaData& metaData = stk::mesh::MetaData::get(bulkData);
         FieldBase *pressure = metaData.get_field(stk::topology::NODE_RANK, "pressure");
@@ -150,13 +150,13 @@
     };
 
 
-    class l2NormOpScalar : public FunctionWithIntrepidRequest
+    class l2NormOpScalar : public FunctionWithIntrepid2Request
     {
       MDArray m_field_array;
       //MDArray m_field_grad_array;
     public:
 
-      l2NormOpScalar( FieldBase *field) : FunctionWithIntrepidRequest()
+      l2NormOpScalar( FieldBase *field) : FunctionWithIntrepid2Request()
       {
         //MetaData& metaData = MetaData::get(BulkData);
 
@@ -201,14 +201,14 @@
 
     };
 
-    class l2NormOpScalarFunction : public FunctionWithIntrepidRequest
+    class l2NormOpScalarFunction : public FunctionWithIntrepid2Request
     {
       Function& m_f;
     public:
 
-      l2NormOpScalarFunction(Function& f ) : FunctionWithIntrepidRequest(), m_f(f)
+      l2NormOpScalarFunction(Function& f ) : FunctionWithIntrepid2Request(), m_f(f)
       {
-        // request nothing to be computed by Intrepid, just integrate this function
+        // request nothing to be computed by Intrepid2, just integrate this function
         m_order_values.clear();
         //m_order_gradient.resize(0);
       }

@@ -27,7 +27,7 @@
       using Function::operator();
       virtual void operator()(MDArray& domain, MDArray& codomain, double time )
       {
-        codomain.initialize(1.0);
+        Kokkos::deep_copy(codomain,1.0);
       }
     };
 
@@ -118,16 +118,12 @@
       // the last dimensions must match
       for (int idomain = 0; idomain < domain_rank; idomain++)
         {
-          VERIFY_OP_ON(inp.dimension(idomain+inp_offset), ==,  m_domain_dimensions[idomain], 
+          VERIFY_OP_ON(inp.extent_int(idomain+inp_offset), ==,  m_domain_dimensions[idomain], 
                        join("Function::argsAreValid: inp dimensions are inconsistent with function's domain dimensions. \nFunction.name= ",getName()) );
         }
       for (int icodomain = 0; icodomain < codomain_rank; icodomain++)
         {
-          if(out.dimension(icodomain+out_offset) != m_codomain_dimensions[icodomain])
-            {
-              std::cout << "out= " << out << "\n" << " m_codomain_dimensions= " << m_codomain_dimensions << std::endl;
-            }
-          VERIFY_OP_ON(out.dimension(icodomain+out_offset), ==,  m_codomain_dimensions[icodomain], 
+          VERIFY_OP_ON(out.extent_int(icodomain+out_offset), ==,  m_codomain_dimensions[icodomain], 
                        join("Function::argsAreValid: in dimensions are inconsistent with function's codomain dimensions. \nFunction.name= ", getName()) );
         }
       return true;
@@ -184,8 +180,8 @@
 
     double eval(double x, double y, double z, double t, Function& func)
     {
-      MDArray val(1);
-      MDArray pt(3);
+      MDArray val("val",1);
+      MDArray pt("pt",3);
       pt(0)=x;
       pt(1)=y;
       pt(2)=z;
@@ -200,8 +196,8 @@
     }
     double eval2(double x, double y, double t, Function& func)
     {
-      MDArray val(1);
-      MDArray pt(2);
+      MDArray val("val",1);
+      MDArray pt("pt",2);
       pt(0)=x;
       pt(1)=y;
 
@@ -211,16 +207,16 @@
 
     void eval_print(double x, double y, double z, double t, Function& func)
     {
-      MDArray pt(3);
+      MDArray pt("pt",3);
       pt(0)=x;
       pt(1)=y;
       pt(2)=z;
-      std::cout << "eval_print:: pt=\n" << pt << " val= " << eval(x,y,z,t,func) << std::endl;
+      std::cout << "eval_print:: pt=\n" << printContainer(pt) << " val= " << eval(x,y,z,t,func) << std::endl;
     }
 
     void eval_print2(double x, double y, double t, Function& func)
     {
-      MDArray pt(2);
+      MDArray pt("pt",2);
       pt(0)=x;
       pt(1)=y;
       //std::cout << "eval_print:: pt=\n" << pt << " val= " << eval2(x,y,t,func) << std::endl;
@@ -229,8 +225,8 @@
 
     MDArray eval_vec3(double x, double y, double z, double t, Function& func)
     {
-      MDArray pt(3);
-      MDArray val(3);
+      MDArray pt("pt",3);
+      MDArray val("val",3);
       pt(0)=x;
       pt(1)=y;
       pt(2)=z;
@@ -240,11 +236,11 @@
 
     void eval_vec3_print(double x, double y, double z, double t, Function& func)
     {
-      MDArray pt(3);
+      MDArray pt("pt",3);
       pt(0)=x;
       pt(1)=y;
       pt(2)=z;
-      std::cout << "eval_vec3_print:: pt= \n" << pt << " val= \n" << eval_vec3(x,y,z,t,func) << std::endl;
+      std::cout << "eval_vec3_print:: pt= \n" << printContainer(pt)  << " val= \n" << printContainer(eval_vec3(x,y,z,t,func)) << std::endl;
     }
 
   }

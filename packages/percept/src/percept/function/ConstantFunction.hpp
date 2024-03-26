@@ -28,7 +28,7 @@
       virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
       {
         // set all values (regardless of rank of codomain) to m_value
-        codomain.initialize(m_value);
+        Kokkos::deep_copy(codomain, m_value);
       }
 
       double& getValue() { return m_value; }
@@ -53,7 +53,7 @@
           {
             throw std::runtime_error("ConstantFunctionVec::operator() codomain rank is <= 0");
           }
-        int stride = codomain.dimension(codomain.rank()-1);
+        int stride = codomain.extent_int(codomain.rank()-1);
         if (stride <= 0)
           {
             throw std::runtime_error("ConstantFunctionVec::operator() codomain stride is <= 0");

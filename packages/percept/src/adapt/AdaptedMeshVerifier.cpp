@@ -46,7 +46,7 @@
 
 #define LTRACE 0
 
-using namespace Intrepid;
+using namespace Intrepid2;
 
 namespace percept
 {

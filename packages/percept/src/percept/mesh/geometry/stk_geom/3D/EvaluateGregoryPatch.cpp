@@ -86,7 +86,6 @@ namespace percept {
         field = sideset_field;
       }
     VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");
-    Teuchos::Array<int> dim(1, FitGregoryPatches::MaxControlPoints());
     double *Cp = stk::mesh::field_data( *field , face);
     if (Cp == 0)
       {
@@ -95,9 +94,11 @@ namespace percept {
         return true;
       }
     VERIFY_OP_ON(Cp, !=, 0, "Null GregoryControlPointsType field_data");
-    MDArray Cpx(dim, Cp),
-      Cpy(dim, Cp+FitGregoryPatches::MaxControlPoints()),
-      Cpz(dim, Cp+2*FitGregoryPatches::MaxControlPoints());
+
+    int dim = FitGregoryPatches::MaxControlPoints();
+    MDArray Cpx(Cp, 1, dim),
+      Cpy(Cp+dim, 1, dim),
+      Cpz(Cp+2*dim, 1, dim);
 
     // std::cout << "Cpx= \n" << Cpx
     //           << "Cpy= \n" << Cpy
@@ -142,12 +143,13 @@ namespace percept {
         field = sideset_field;
       }
     VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");
-    Teuchos::Array<int> dim(1, FitGregoryPatches::MaxControlPoints());
     double *Cp = stk::mesh::field_data( *field , face);
     VERIFY_OP_ON(Cp, !=, 0, "Null GregoryControlPointsType field_data");
-    MDArray Cpx(dim, Cp),
-      Cpy(dim, Cp+FitGregoryPatches::MaxControlPoints()),
-      Cpz(dim, Cp+2*FitGregoryPatches::MaxControlPoints());
+
+    int dim = FitGregoryPatches::MaxControlPoints();
+    MDArray Cpx(Cp, 1, dim),
+      Cpy(Cp+dim, 1, dim),
+      Cpz(Cp+2*dim, 1, dim);
 
     // std::cout << "Cpx= \n" << Cpx
     //           << "Cpy= \n" << Cpy
@@ -530,7 +532,6 @@ namespace percept {
           field = f.m_eMesh.m_gregory_control_points_field;
         }
       VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");
-      Teuchos::Array<int> dim(1, FitGregoryPatches::MaxControlPoints());
       double *Cp = stk::mesh::field_data( *field , face);
       if (!Cp)
         {
@@ -538,9 +539,11 @@ namespace percept {
                     << " parts= " << f.m_eMesh.print_entity_parts_string(face) << std::endl;
         }
       VERIFY_OP_ON(Cp, !=, 0, "Null GregoryControlPointsType field_data");
-      MDArray Cpx(dim, Cp),
-        Cpy(dim, Cp+FitGregoryPatches::MaxControlPoints()),
-        Cpz(dim, Cp+2*FitGregoryPatches::MaxControlPoints());
+
+    int dim = FitGregoryPatches::MaxControlPoints();
+    MDArray Cpx(Cp, 1, dim),
+      Cpy(Cp+dim, 1, dim),
+      Cpz(Cp+2*dim, 1, dim);
 
       double G[3][2];
 
@@ -610,12 +613,14 @@ namespace percept {
           field = f.m_eMesh.m_gregory_control_points_field;
         }
       VERIFY_OP_ON(field, !=, 0, "Null GregoryControlPointsType field");
-      Teuchos::Array<int> dim(1, FitGregoryPatches::MaxControlPoints());
+      
       double *Cp = stk::mesh::field_data( *field , face);
       VERIFY_OP_ON(Cp, !=, 0, "Null GregoryControlPointsType field_data");
-      MDArray Cpx(dim, Cp),
-        Cpy(dim, Cp+FitGregoryPatches::MaxControlPoints()),
-        Cpz(dim, Cp+2*FitGregoryPatches::MaxControlPoints());
+
+      int dim = FitGregoryPatches::MaxControlPoints();
+      MDArray Cpx(Cp, 1, dim),
+        Cpy(Cp+dim, 1, dim),
+        Cpz(Cp+2*dim, 1, dim);
 
       double G[3][2];
       double H[3][2][2];

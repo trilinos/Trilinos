@@ -25,7 +25,6 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
-//using namespace Intrepid;
 using namespace shards;
 
 

@@ -13,21 +13,19 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 #include <Shards_CellTopology.hpp>
+#include <Intrepid2_Basis.hpp>
 #include <percept/function/MDArray.hpp>
 
 
-namespace Intrepid {
-	template<class Scalar, class ArrayScalar>
-	class Basis;
-}
+
 
   namespace percept {
     class BasisTable
     {
     public:
-      typedef Intrepid::Basis<double, MDArray > BasisType;
-      typedef Teuchos::RCP<BasisType>           BasisTypeRCP;
-      typedef std::map<unsigned, BasisTypeRCP > BasisTableMap;
+      using BasisType = Intrepid2::Basis<Kokkos::HostSpace, double, double >;
+      using BasisTypeRCP =  Intrepid2::BasisPtr<Kokkos::HostSpace, double, double >;
+      using BasisTableMap = std::map<unsigned, BasisTypeRCP >;
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
 

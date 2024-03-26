@@ -133,10 +133,10 @@
 
     /** Evaluate the function at this input point (or points) returning value(s) in output_field_values
      *
-     *   In the following, the arrays are dimensioned using the notation (from Intrepid's doc):
+     *   In the following, the arrays are dimensioned using the notation (from Intrepid2's doc):
      *
      *   [C]         - num. integration domains (cells/elements)
-     *   [F]         - num. Intrepid "fields" (number of bases within an element == num. nodes typically)
+     *   [F]         - num. Intrepid2 "fields" (number of bases within an element == num. nodes typically)
      *   [P]         - num. integration (or interpolation) points within the element
      *   [D]         - spatial dimension
      *   [D1], [D2]  - spatial dimension
@@ -163,25 +163,25 @@
       unsigned found_it = 0;
 
       int D_ = last_dimension(input_phy_points);
-      MDArray found_parametric_coordinates_one(1, D_);
+      MDArray found_parametric_coordinates_one("found_parametric_coordinates_one", 1, D_);
       setup_searcher(D_);
 
       MDArray output_field_values_local = output_field_values;
       int R_output = output_field_values.rank();
 
       int R_input = input_phy_points.rank();
-      int P_ = (R_input == 1 ? 1 : input_phy_points.dimension(R_input-2));
+      int P_ = (R_input == 1 ? 1 : input_phy_points.extent_int(R_input-2));
 
       // FIXME for tensor valued fields
       int DOF_ = last_dimension(output_field_values_local);
 
-      MDArray input_phy_points_one(1,D_);
-      MDArray output_field_values_one(1,DOF_);
+      MDArray input_phy_points_one("input_phy_points_one",1,D_);
+      MDArray output_field_values_one("output_field_values_one",1,DOF_);
 
       int C_ = 1;
       if (R_input == 3)
         {
-          C_ = input_phy_points.dimension(0);
+          C_ = input_phy_points.extent_int(0);
         }
       for (int iC = 0; iC < C_; iC++)
         {
@@ -231,13 +231,13 @@
                   if (!m_parallelEval)
                     {
                       std::cout << "P[" << Util::get_rank() << "] FieldFunction::operator() found_it = " << found_it << " points= "
-                                << input_phy_points_one
+                                << printContainer(input_phy_points_one)
                                 << std::endl;
 
                       throw std::runtime_error("FieldFunction::operator() in local eval mode and didn't find element - logic error");
                     }
                   double max_val = std::numeric_limits<double>::max();
-                  output_field_values_local.initialize(max_val);
+                  Kokkos::deep_copy(output_field_values_local,max_val);
                 }
 
               // make sure it is found somewhere
@@ -287,8 +287,8 @@
       EXCEPTWATCH;
 #ifndef NDEBUG
       int num_elements_in_bucket   = bucket.size();
-      VERIFY_OP(input_phy_points.dimension(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
-      VERIFY_OP(output_field_values.dimension(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
+      VERIFY_OP(input_phy_points.extent_int(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
+      VERIFY_OP(output_field_values.extent_int(0), ==, num_elements_in_bucket, "FieldFunction::operator() mismatch in input_phy_points and num_elements_in_bucket");
 #endif
       helper(*m_bulkData, input_phy_points, output_field_values, bucket, parametric_coordinates, time_value_optional);
     }
