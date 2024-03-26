@@ -229,7 +229,7 @@ public:
 };
 
 /**
- * \brief A string visual depdencies says the following about the
+ * \brief A string visual dependency says the following about the
  * relationship between two elements in a Parameter List:
  * Depending on whether or not the dependee has a particular value,
  * the dependent may or may not be displayed to the user in a UI.

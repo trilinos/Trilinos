@@ -173,11 +173,8 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
   validParams.set("Constraint Object",Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>(Teuchos::null));
   validParams.set("Constraint Parameter Names",Teuchos::RCP<std::vector<std::string>>(Teuchos::null));
   validParams.set("Scale Augmented Rows", true);
-  Teuchos::setStringToIntegralParameter<int>("Preconditioner Method",
-                                             "Jacobian",
-                                             "Matrix to use for Preconditioning",
-                                             Teuchos::tuple<std::string> ("Jacobian","SWM"),
-                                             &validParams);
+  validParams.set("Preconditioner Method", "Jacobian", "Matrix to use for Preconditioning",
+    rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Jacobian","SWM"))));
   validParams.set("Include UV In Preconditioner", false);
   validParams.set("Use P For Preconditioner", false);
   solverParams->validateParametersAndSetDefaults(validParams);

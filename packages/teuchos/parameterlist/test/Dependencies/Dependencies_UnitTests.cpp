@@ -472,7 +472,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 
 
 	/*
-	 * Testing the StringVisualDepenency
+	 * Testing the StringVisualDependency
 	 */
 	ParameterList&
     stringVisDepList = My_deplist->sublist(

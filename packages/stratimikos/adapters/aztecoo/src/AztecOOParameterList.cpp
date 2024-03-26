@@ -68,7 +68,6 @@ inline std::istream& operator>>(std::istream& is, EAztecPreconditioner& prec){
   prec = (EAztecPreconditioner)intval;
   return is;
 }
-  
 
 const std::string Overlap_name = "Overlap";
 
@@ -122,14 +121,18 @@ void setAztecOOParameters(
       )
     )
   {
+    // This is the only place that EAztecPreconditioner is used.  Everywhere
+    // else the code expects a string value.
     case AZTEC_PREC_NONE:
       solver->SetAztecOption(AZ_precond,AZ_none);
+      pl->set(AztecPreconditioner_name, "none");
       break;
     case AZTEC_PREC_ILU:
       solver->SetAztecOption(AZ_precond,AZ_dom_decomp);
       solver->SetAztecOption(AZ_overlap,getParameter<int>(*pl,Overlap_name));
       solver->SetAztecOption(AZ_subdomain_solve,AZ_ilu);
       solver->SetAztecOption(AZ_graph_fill,getParameter<int>(*pl,GraphFill_name));
+      pl->set(AztecPreconditioner_name, "ilu");
       break;
     case AZTEC_PREC_ILUT:
       solver->SetAztecOption(AZ_precond,AZ_dom_decomp);
@@ -137,22 +140,27 @@ void setAztecOOParameters(
       solver->SetAztecOption(AZ_subdomain_solve,AZ_ilut);
       solver->SetAztecParam(AZ_drop,getParameter<double>(*pl,DropTolerance_name));
       solver->SetAztecParam(AZ_ilut_fill,getParameter<double>(*pl,FillFactor_name));
+      pl->set(AztecPreconditioner_name, "ilut");
       break;
     case AZTEC_PREC_JACOBI:
       solver->SetAztecOption(AZ_precond,AZ_Jacobi);
       solver->SetAztecOption(AZ_poly_ord,getParameter<int>(*pl,Steps_name));
+      pl->set(AztecPreconditioner_name, "Jacobi");
       break;
     case AZTEC_PREC_SYMMGS:
       solver->SetAztecOption(AZ_precond,AZ_sym_GS);
       solver->SetAztecOption(AZ_poly_ord,getParameter<int>(*pl,Steps_name));
+      pl->set(AztecPreconditioner_name, "Symmetric Gauss-Seidel");
       break;
     case AZTEC_PREC_POLY:
       solver->SetAztecOption(AZ_precond,AZ_Neumann);
       solver->SetAztecOption(AZ_poly_ord,getParameter<int>(*pl,PolynomialOrder_name));
+      pl->set(AztecPreconditioner_name, "Polynomial");
       break;
     case AZTEC_PREC_LSPOLY:
       solver->SetAztecOption(AZ_precond,AZ_ls);
       solver->SetAztecOption(AZ_poly_ord,getParameter<int>(*pl,PolynomialOrder_name));
+      pl->set(AztecPreconditioner_name, "Least-squares Polynomial");
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!

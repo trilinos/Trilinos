@@ -98,8 +98,7 @@ RCP<const ParameterList> SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, Global
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("aggregation: drop scheme");
   {
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-    validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("unsupported vector smoothing"), "aggregation: drop scheme")));
+    validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("classical", "distance laplacian", "unsupported vector smoothing"))));
   }
   SET_VALID_ENTRY("aggregation: number of random vectors");
   SET_VALID_ENTRY("aggregation: number of times to pre or post smooth");

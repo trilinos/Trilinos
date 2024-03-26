@@ -87,13 +87,12 @@ RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal
   // Aggregation parameters (used in aggregation algorithms)
   // TODO introduce local member function for each aggregation algorithm such that each aggregation algorithm can define its own parameters
 
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("aggregation: max agg size");
   SET_VALID_ENTRY("aggregation: min agg size");
   SET_VALID_ENTRY("aggregation: max selected neighbors");
   SET_VALID_ENTRY("aggregation: ordering");
-  validParamList->getEntry("aggregation: ordering").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
+  validParamList->getEntry("aggregation: ordering").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("natural", "graph", "random"))));
   SET_VALID_ENTRY("aggregation: deterministic");
   SET_VALID_ENTRY("aggregation: coloring algorithm");
   SET_VALID_ENTRY("aggregation: enable phase 1");

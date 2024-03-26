@@ -100,8 +100,7 @@ RCP<const ParameterList> ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
   // To know if we need BlockNumber
   SET_VALID_ENTRY("aggregation: drop scheme");
   {
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-    validParamList->getEntry("aggregation: classical scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("direct", "ext+i", "classical modified"), "aggregation: classical scheme")));
+    validParamList->getEntry("aggregation: classical scheme").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("direct", "ext+i", "classical modified"))));
   }
 
 #undef SET_VALID_ENTRY

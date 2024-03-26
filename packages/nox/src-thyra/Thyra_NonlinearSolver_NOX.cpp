@@ -411,21 +411,17 @@ validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_options_su
 
   ParameterList validParams;
   {
-    Teuchos::setStringToIntegralParameter<int>(
-      "Function Scaling",
-      "None",
+    validParams.set(
+      "Function Scaling", "None",
       "Determines if function scaling of residual, Jacobian, etc. should be used.",
-      Teuchos::tuple<std::string>("None","Row Sum", "User Defined"),
-      &validParams
-      );
+      rcp(new Teuchos::StringValidator(
+          Teuchos::tuple<std::string>("None", "Row Sum", "User Defined"))));
 
-    Teuchos::setStringToIntegralParameter<int>(
-      "Update Row Sum Scaling",
-      "Before Each Nonlinear Solve",
+    validParams.set(
+      "Update Row Sum Scaling", "Before Each Nonlinear Solve",
       "Determines if function scaling of residual, Jacobian, etc. should be used.",
-      Teuchos::tuple<std::string>("Before Each Nonlinear Solve","Before Each Nonlinear Iteration"),
-      &validParams
-      );
+      rcp(new Teuchos::StringValidator(
+          Teuchos::tuple<std::string>("Before Each Nonlinear Solve","Before Each Nonlinear Iteration"))));
 
     validParams.set<Teuchos::RCP< ::Thyra::VectorBase<double> > >("User Defined Scaling", Teuchos::null);
     validParams.set<bool >("Do Right Scaling First", false);

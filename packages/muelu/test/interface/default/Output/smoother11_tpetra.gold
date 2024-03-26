@@ -5,10 +5,12 @@ Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 3
  timer for apply = 0
+ relaxation: type = Jacobi
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 0
  timer for apply = 0
+ relaxation: type = Jacobi
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
@@ -43,10 +45,12 @@ Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 3
  timer for apply = 0
+ relaxation: type = Jacobi
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 0
  timer for apply = 0
+ relaxation: type = Jacobi
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)

@@ -316,11 +316,6 @@ void Environment::commitParameters()
   
     params_.validateParametersAndSetDefaults(validParams, 0);
 
-    // For all of the string to integer parameters, convert
-    // them to the integer.  I would have
-    // expected validateAndModify() to do this.
-  
-    convertStringToInt(params_);
   }
 
   /////////////////////////////////////////////////////////////////////
@@ -418,46 +413,6 @@ void Environment::commitParameters()
   errorCheckLevel_ = static_cast<AssertionLevel>( 
     params_.get<int>("error_check_level", BASIC_ASSERTION));
 #endif
-}
-  
-void Environment::convertStringToInt(Teuchos::ParameterList &params)
-{
-  using Teuchos::ParameterList;
-  using Teuchos::ParameterEntry;
-  using Teuchos::RCP;
-  using Teuchos::rcp_dynamic_cast;
-  ParameterList::ConstIterator next = params.begin();
-
-  // Data type of these parameters will now change from string to int
-
-  std::string validatorNameInt("StringIntegralValidator(int)");
-  std::string validatorNameBool("StringIntegralValidator(bool)");
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2int_t;
-
-  while (next != params.end()){
-
-    const std::string &name = next->first;
-    ParameterEntry &entry = params.getEntry(name);
-
-    if (entry.isList()){
-      ParameterList *dummy = NULL;
-      ParameterList &pl = entry.getValue<ParameterList>(dummy);
-      convertStringToInt(pl);
-    }
-    else{
-      if ((entry.validator()).get()){
-        if (entry.validator()->getXMLTypeName() == validatorNameInt){
-          std::string dummy("");
-          std::string &entryValue = entry.getValue<std::string>(&dummy);
-          RCP<const s2int_t> s2int =
-            Teuchos::rcp_dynamic_cast<const s2int_t>(entry.validator(), true);
-          int val = s2int->getIntegralValue(entryValue);
-          entry.setValue<int>(val);
-        }
-      }
-    }
-    ++next;
-  }
 }
 
 }  //namespace Zoltan2

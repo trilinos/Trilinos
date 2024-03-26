@@ -82,8 +82,8 @@ RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOr
 #undef SET_VALID_ENTRY
 
   {
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-    RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("Interpolation", "Restriction"), "type"));
+    typedef Teuchos::StringValidator validatorType;
+    RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("Interpolation", "Restriction")));
     validParamList->set("type", "Interpolation", "Type of the transfer operator that need to be rebalanced (Interpolation or Restriction)", typeValidator);
   }
 

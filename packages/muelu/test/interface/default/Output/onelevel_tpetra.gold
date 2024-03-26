@@ -4,6 +4,7 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  timer for apply = 0
+ relaxation: type = Jacobi
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

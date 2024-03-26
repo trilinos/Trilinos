@@ -54,8 +54,8 @@ class MyFactory : public ParameterListAcceptorAdvImpl {
   RCP<const ParameterList> GetValidParameterListSimple() const {
     RCP<ParameterList> validParamList = Teuchos::rcp(new ParameterList());  // output list
 
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
-    validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"), "Solver")));
+    typedef Teuchos::StringValidator validator_type;
+    validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"))));
 
     AddILUTParameters(*validParamList);
     AddILUKParameters(*validParamList);
