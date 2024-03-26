@@ -81,19 +81,11 @@ TEUCHOS_UNIT_TEST( Kokkos_SG_SpMv, double_OpenMP_CrsMatrixFree_MKL ) {
 #endif
 
 int main( int argc, char* argv[] ) {
+  // Setup the MPI session
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  const size_t team_count =
-  Kokkos::hwloc::get_available_numa_count() *
-    Kokkos::hwloc::get_available_cores_per_numa();
-  const size_t threads_per_team =
-    Kokkos::hwloc::get_available_threads_per_core();
-
-  // Initialize openmp
-  Kokkos::InitializationSettings init_args;
-  init_args.set_num_threads(team_count*threads_per_team);
-  Kokkos::initialize( init_args );
-  //Kokkos::print_configuration( std::cout );
+  // Initialize Kokkos
+  Kokkos::initialize(argc, argv);
 
   // Setup (has to happen after initialization)
   setup.setup();
