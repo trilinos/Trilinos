@@ -164,6 +164,8 @@ class CoalesceDropFactory_kokkos
   //@}
 
   void Build(Level& currentLevel) const;
+
+  void BuildNew(Level& currentLevel) const;
 };
 
 }  // namespace MueLu
