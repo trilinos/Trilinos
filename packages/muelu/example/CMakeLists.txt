@@ -1,4 +1,5 @@
 INCLUDE(MueluAddSerialAndMpiTest)
+INCLUDE(MueLuInstall)
 
 ADD_SUBDIRECTORY(advanced)
 ADD_SUBDIRECTORY(basic)

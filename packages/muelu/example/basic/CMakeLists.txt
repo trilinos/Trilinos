@@ -68,14 +68,23 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
   ENDIF()
 
 
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(advanced_stratimikos_cp
-    SOURCE_FILES stratimikos_ParameterList.xml stratimikos_ParameterList.yaml stratimikos_ParameterList2.xml
+  SET(XML_INPUTS
+    stratimikos_ParameterList.xml stratimikos_ParameterList.yaml stratimikos_ParameterList2.xml
     set1-gmres.xml set1-cg.xml
     set2-sgs1.xml set2-sgs3.xml
     set3-mg-jacobi.xml set3-mg-sgs.xml set3-mg-gs.xml set3-mg-chebyshev.xml set3-mg-sgs-reuse.xml
     mg-gpu.xml
+  )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(advanced_stratimikos_cp
+    SOURCE_FILES
+    ${XML_INPUTS}
     )
+
+  MUELU_INSTALL(Stratimikos
+    ADDITIONAL_FILES
+    ${XML_INPUTS}
+  )
 
   IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
@@ -98,7 +107,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
-    
+
   ENDIF()
 
 ENDIF()
