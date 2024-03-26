@@ -110,13 +110,13 @@ namespace Belos {
     {}
   };
 
-  template <class ScalarType, class MV, class OP>
-  class PseudoBlockTFQMRIter : public Iteration<ScalarType,MV,OP> { 
+  template<class ScalarType, class MV, class OP, class DM>
+  class PseudoBlockTFQMRIter : public Iteration<ScalarType,MV,OP,DM> { 
   public:
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -127,7 +127,7 @@ namespace Belos {
     //! %Belos::PseudoBlockTFQMRIter constructor.
     PseudoBlockTFQMRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 	       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-	       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+	       const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 	       Teuchos::ParameterList &params );
     
     //! %Belos::PseudoBlockTFQMRIter destructor.
@@ -263,7 +263,7 @@ namespace Belos {
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
     
     //
     // Algorithmic parameters
@@ -306,10 +306,10 @@ namespace Belos {
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template <class ScalarType, class MV, class OP>
-  PseudoBlockTFQMRIter<ScalarType,MV,OP>::PseudoBlockTFQMRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::PseudoBlockTFQMRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 					 const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-					 const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+					 const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 					 Teuchos::ParameterList &/* params */ 
 					 ) : 
     lp_(problem), 
@@ -323,9 +323,9 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute native residual from TFQMR recurrence.
-  template <class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<const MV> 
-  PseudoBlockTFQMRIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
+  PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::getNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
     if (normvec) {
@@ -344,8 +344,8 @@ namespace Belos {
 	
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockTFQMRIter<ScalarType,MV,OP>::initializeTFQMR(const PseudoBlockTFQMRIterState<ScalarType,MV> & newstate)
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::initializeTFQMR(const PseudoBlockTFQMRIterState<ScalarType,MV> & newstate)
   {
     // Create convenience variables for zero and one.
     const ScalarType STone = Teuchos::ScalarTraits<ScalarType>::one();
@@ -427,8 +427,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockTFQMRIter<ScalarType,MV,OP>::iterate() 
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::iterate() 
   {
     //
     // Allocate/initialize data structures

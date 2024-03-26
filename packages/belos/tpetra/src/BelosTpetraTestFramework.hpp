@@ -187,7 +187,7 @@ namespace Belos {
           }
 
           // Clean up.
-          free( svals );
+          delete[] svals;
           free( dvals );
           free( colptr );
           free( rowind );

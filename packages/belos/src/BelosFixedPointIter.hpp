@@ -56,8 +56,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -73,15 +71,15 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP>
-class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM>
+class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP,DM> {
 
   public:
 
   //
   // Convenience typedefs
   //
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
@@ -96,7 +94,7 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
    */
   FixedPointIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                   Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -212,7 +210,7 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
   //
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
 
   // Algorithmic parameters
   //
@@ -249,11 +247,11 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  FixedPointIter<ScalarType,MV,OP>::FixedPointIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                                                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                                   Teuchos::ParameterList &params ):
+  template<class ScalarType, class MV, class OP, class DM>
+  FixedPointIter<ScalarType,MV,OP,DM>::FixedPointIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                                                      const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                                                      const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+                                                      Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
@@ -267,8 +265,8 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.
-  template <class ScalarType, class MV, class OP>
-  void FixedPointIter<ScalarType,MV,OP>::setStateSize ()
+  template<class ScalarType, class MV, class OP, class DM>
+  void FixedPointIter<ScalarType,MV,OP,DM>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
       // Check if there is any multivector to clone from.
@@ -299,8 +297,8 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
-  template <class ScalarType, class MV, class OP>
-  void FixedPointIter<ScalarType,MV,OP>::setBlockSize(int blockSize)
+  template<class ScalarType, class MV, class OP, class DM>
+  void FixedPointIter<ScalarType,MV,OP,DM>::setBlockSize(int blockSize)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -327,8 +325,8 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void FixedPointIter<ScalarType,MV,OP>::initializeFixedPoint(FixedPointIterationState<ScalarType,MV>& newstate)
+  template<class ScalarType, class MV, class OP, class DM>
+  void FixedPointIter<ScalarType,MV,OP,DM>::initializeFixedPoint(FixedPointIterationState<ScalarType,MV>& newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_)
@@ -373,8 +371,8 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void FixedPointIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void FixedPointIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures

@@ -64,11 +64,11 @@
 namespace Belos {
 
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class StatusTest;
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
 class SolverManager : virtual public Teuchos::Describable {
 
   public:
@@ -85,7 +85,7 @@ class SolverManager : virtual public Teuchos::Describable {
   /// \brief clone the solver manager.
   ///
   /// Implements the DII inversion and injection pattern
-  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const = 0;
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const = 0;
   //@}
 
   //! @name Accessor methods
@@ -145,9 +145,9 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set user-defined convergence status test.
   virtual void setUserConvStatusTest(
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &/* userConvStatusTest */,
-    const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &/* comboType */ =
-        StatusTestCombo<ScalarType,MV,OP>::SEQ
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &/* userConvStatusTest */,
+    const typename StatusTestCombo<ScalarType,MV,OP,DM>::ComboType &/* comboType */ =
+        StatusTestCombo<ScalarType,MV,OP,DM>::SEQ
     )
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setUserConvStatusTest() has not been"
@@ -156,7 +156,7 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set user-defined debug status test.
   virtual void setDebugStatusTest(
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &/* debugStatusTest */
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &/* debugStatusTest */
     )
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setDebugStatusTest() has not been"
@@ -220,13 +220,14 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
+           class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
            const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
   class RealSolverManager;
 
   // Specialization for isComplex = true adds nothing to SolverManager.
-  template<class ScalarType, class MV, class OP>
-  class RealSolverManager<ScalarType, MV, OP, false> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM> 
+  class RealSolverManager<ScalarType, MV, OP, DM, false> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     RealSolverManager () {}
     virtual ~RealSolverManager () {}
@@ -239,9 +240,9 @@ namespace Details {
   // The complex version (isComplex = true) needs to implement all the
   // pure virtual methods in SolverManager, even though they can never
   // actually be called, since the constructor throws.
-  template<class ScalarType, class MV, class OP>
-  class RealSolverManager<ScalarType, MV, OP, true> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class RealSolverManager<ScalarType, MV, OP, DM, true> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     RealSolverManager () {
       // Do not throw on constructor. The DII system registers all class types
@@ -339,6 +340,7 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
+           class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
            const bool lapackSupportsScalarType =
            Belos::Details::LapackSupportsScalar<ScalarType>::value>
   class SolverManagerRequiresLapack;
@@ -347,9 +349,9 @@ namespace Details {
   ///   Teuchos::LAPACK has a valid implementation.
   ///
   /// This specialization adds nothing to SolverManager.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresLapack<ScalarType, MV, OP, true> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresLapack<ScalarType, MV, OP, DM, true> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresLapack () {}
     virtual ~SolverManagerRequiresLapack () {}
@@ -361,9 +363,9 @@ namespace Details {
   /// This is a stub specialization whose constructor always throws
   /// std::logic_error.  Subclasses must always call the base class
   /// constructor.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresLapack<ScalarType, MV, OP, false> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresLapack<ScalarType, MV, OP, DM, false> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresLapack () {
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -436,6 +438,7 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
+           class DM = Teuchos::SerialDenseMatrix<int, ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value &&
              ! Teuchos::ScalarTraits<ScalarType>::isComplex>
@@ -448,9 +451,9 @@ namespace Details {
   /// SolverManager subclass that has the actual specific solver
   /// implementation gets to implement any virtual methods of
   /// SolverManager.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, true> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM, true> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresRealLapack () {}
     virtual ~SolverManagerRequiresRealLapack () {}
@@ -463,9 +466,9 @@ namespace Details {
   /// This is a stub specialization whose constructor always throws
   /// std::logic_error.  Subclasses must always call the base class
   /// constructor.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, false> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM, false> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresRealLapack () {
       // Do not throw on constructor. The DII system registers all class types

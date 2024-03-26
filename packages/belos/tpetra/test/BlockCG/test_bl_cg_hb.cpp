@@ -92,6 +92,7 @@ int run(int argc, char *argv[])
     
     // Get test parameters from command-line processor
     bool proc_verbose = false;
+    bool use_single_red = false;
     bool debug = false;
     int frequency = -1;  // how often residuals are printed by solver
     int numrhs = 1;      // total number of right-hand sides to solve for
@@ -109,7 +110,8 @@ int run(int argc, char *argv[])
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
-    if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    cmdp.setOption("use-single-red","use-standard-red",&use_single_red,"Use single-reduction CG iteration.");
+    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
     if (debug) {
@@ -140,7 +142,7 @@ int run(int argc, char *argv[])
     // Other information used by block solver (can be user specified)
     const int NumGlobalElements = B->getGlobalLength();
     if (maxiters == -1) {
-      maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+      maxiters = NumGlobalElements - 1; // maximum number of iterations to run
     }
 
     //
@@ -148,6 +150,8 @@ int run(int argc, char *argv[])
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    if ((blocksize==1) && use_single_red)
+      belosList.set( "Use Single Reduction", use_single_red ); // Use single reduction CG iteration
     int verbLevel = Belos::Errors + Belos::Warnings;
     if (debug) {
       verbLevel += Belos::Debug;
