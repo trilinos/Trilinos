@@ -85,6 +85,12 @@ class ProjectCiFileChangeLogic:
       # Changes under packages/framework/ likely impact the GenConfig PR build
       # configurations and therefore to be safe, everything needs to be tested.
       return True
+    elif lenPathArray >= 2 and modifiedFileFullPathArray[0] == '.github' and \
+      modifiedFileFullPathArray[1] == 'workflows' \
+      :
+      # Changes under .github/workflows/ impact CI-type runs on GitHub Actions
+      # and therefore to be safe, everything needs to be tested.
+      return True
     # Any other files not already covered above should *not* trigger a global
     # build
     return False
