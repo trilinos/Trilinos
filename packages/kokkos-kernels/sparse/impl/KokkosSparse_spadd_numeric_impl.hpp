@@ -174,24 +174,23 @@ struct UnsortedNumericSumFunctor {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
-template <typename KernelHandle, typename alno_row_view_t,
-          typename alno_nnz_view_t, typename ascalar_t,
-          typename ascalar_nnz_view_t, typename blno_row_view_t,
-          typename blno_nnz_view_t, typename bscalar_t,
-          typename bscalar_nnz_view_t, typename clno_row_view_t,
-          typename clno_nnz_view_t, typename cscalar_nnz_view_t>
+template <
+    typename execution_space, typename KernelHandle, typename alno_row_view_t,
+    typename alno_nnz_view_t, typename ascalar_t, typename ascalar_nnz_view_t,
+    typename blno_row_view_t, typename blno_nnz_view_t, typename bscalar_t,
+    typename bscalar_nnz_view_t, typename clno_row_view_t,
+    typename clno_nnz_view_t, typename cscalar_nnz_view_t>
 void spadd_numeric_impl(
-    KernelHandle* kernel_handle, const alno_row_view_t a_rowmap,
-    const alno_nnz_view_t a_entries, const ascalar_nnz_view_t a_values,
-    const ascalar_t alpha, const blno_row_view_t b_rowmap,
-    const blno_nnz_view_t b_entries, const bscalar_nnz_view_t b_values,
-    const bscalar_t beta, const clno_row_view_t c_rowmap,
-    clno_nnz_view_t c_entries, cscalar_nnz_view_t c_values) {
+    const execution_space& exec, KernelHandle* kernel_handle,
+    const alno_row_view_t a_rowmap, const alno_nnz_view_t a_entries,
+    const ascalar_nnz_view_t a_values, const ascalar_t alpha,
+    const blno_row_view_t b_rowmap, const blno_nnz_view_t b_entries,
+    const bscalar_nnz_view_t b_values, const bscalar_t beta,
+    const clno_row_view_t c_rowmap, clno_nnz_view_t c_entries,
+    cscalar_nnz_view_t c_values) {
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_lno_t ordinal_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_type;
-  typedef
-      typename KernelHandle::SPADDHandleType::execution_space execution_space;
   // Check that A/B/C data types match KernelHandle types, and that C data types
   // are nonconst (doesn't matter if A/B types are const)
   static_assert(SAME_TYPE(ascalar_t, scalar_type),
@@ -252,7 +251,7 @@ void spadd_numeric_impl(
         sortedNumeric(a_rowmap, b_rowmap, c_rowmap, a_entries, b_entries,
                       c_entries, a_values, b_values, c_values, alpha, beta);
     Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputSorted",
-                         range_type(0, nrows), sortedNumeric);
+                         range_type(exec, 0, nrows), sortedNumeric);
   } else {
     // use a_pos and b_pos (set in the handle by symbolic) to quickly compute C
     // entries and values
@@ -265,7 +264,7 @@ void spadd_numeric_impl(
                         c_entries, a_values, b_values, c_values, alpha, beta,
                         addHandle->get_a_pos(), addHandle->get_b_pos());
     Kokkos::parallel_for("KokkosSparse::SpAdd:Numeric::InputNotSorted",
-                         range_type(0, nrows), unsortedNumeric);
+                         range_type(exec, 0, nrows), unsortedNumeric);
   }
   addHandle->set_call_numeric();
 }

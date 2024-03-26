@@ -227,7 +227,7 @@ endif()
 * KokkosKernels_LAPACK_ROOT: PATH
   * Location of LAPACK install root.
   * Default: None or the value of the environment variable LAPACK_ROOT if set
-* KokkosKernels_LINALG_OPT_LEVEL: BOOL
+* KokkosKernels_LINALG_OPT_LEVEL: BOOL **DEPRECATED**
   * Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems.
   * Default: 1
 * KokkosKernels_MAGMA_ROOT: PATH

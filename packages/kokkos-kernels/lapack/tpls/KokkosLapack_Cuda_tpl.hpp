@@ -16,6 +16,29 @@
 #ifndef KOKKOSLAPACK_CUDA_TPL_HPP_
 #define KOKKOSLAPACK_CUDA_TPL_HPP_
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+#include "KokkosLapack_cusolver.hpp"
+
+namespace KokkosLapack {
+namespace Impl {
+
+CudaLapackSingleton::CudaLapackSingleton() {
+  cusolverStatus_t stat = cusolverDnCreate(&handle);
+  if (stat != CUSOLVER_STATUS_SUCCESS)
+    Kokkos::abort("CUSOLVER initialization failed\n");
+
+  Kokkos::push_finalize_hook([&]() { cusolverDnDestroy(handle); });
+}
+
+CudaLapackSingleton& CudaLapackSingleton::singleton() {
+  static CudaLapackSingleton s;
+  return s;
+}
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+#endif  // defined (KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
 #include <KokkosLapack_magma.hpp>
 

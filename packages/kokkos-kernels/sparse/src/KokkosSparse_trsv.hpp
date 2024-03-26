@@ -68,11 +68,15 @@ void trsv(const char uplo[], const char trans[], const char diag[],
                              typename XMV::non_const_value_type>::value,
                 "KokkosBlas::trsv: The output x must be nonconst.");
 
+  static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value ||
+                    KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value,
+                "KokkosBlas::trsv: A is not a CRS or BSR matrix.");
+
   // The following three code lines have been moved up by Massimiliano Lupo
   // Pasini
   typedef typename BMV::size_type size_type;
-  const size_type numRows = static_cast<size_type>(A.numRows());
-  const size_type numCols = static_cast<size_type>(A.numCols());
+  const size_type numRows = static_cast<size_type>(A.numPointRows());
+  const size_type numCols = static_cast<size_type>(A.numPointCols());
   const size_type zero    = static_cast<size_type>(0);
 
   if (zero != numRows && uplo[0] != 'U' && uplo[0] != 'u' && uplo[0] != 'L' &&
@@ -117,13 +121,21 @@ void trsv(const char uplo[], const char trans[], const char diag[],
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  typedef KokkosSparse::CrsMatrix<
+  using AMatrix_Bsr_Internal = KokkosSparse::Experimental::BsrMatrix<
       typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      typename AMatrix::const_size_type>
-      AMatrix_Internal;
+      typename AMatrix::const_size_type>;
 
-  AMatrix_Internal A_i = A;
+  using AMatrix_Internal = std::conditional_t<
+      KokkosSparse::is_crs_matrix<AMatrix>::value,
+      KokkosSparse::CrsMatrix<typename AMatrix::const_value_type,
+                              typename AMatrix::const_ordinal_type,
+                              typename AMatrix::device_type,
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                              typename AMatrix::const_size_type>,
+      AMatrix_Bsr_Internal>;
+
+  AMatrix_Internal A_i(A);
 
   typedef Kokkos::View<
       typename BMV::const_value_type**, typename BMV::array_layout,

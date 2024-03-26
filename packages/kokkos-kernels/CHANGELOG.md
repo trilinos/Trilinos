@@ -403,7 +403,6 @@
 
 ### Bug Fixes:
 
-- Use CRS matrix sort, instead of Kokkos::sort on each row [\#1553](https://github.com/kokkos/kokkos-kernels/pull/1553)
 - Change template type for StaticCrsGraph in BsrMatrix [\#1531](https://github.com/kokkos/kokkos-kernels/pull/1531)
 - Remove listing of undefined TPL deps [\#1568](https://github.com/kokkos/kokkos-kernels/pull/1568)
 - Fix using SpGEMM with nonstandard scalar type, with MKL enabled [\#1591](https://github.com/kokkos/kokkos-kernels/pull/1591)
@@ -864,13 +863,6 @@
 
 - Nightly test failure: spgemm unit tests failing on White \(Power8\) [\#780](https://github.com/kokkos/kokkos-kernels/issues/780)
 - supernodal does not build with UVM enabled [\#633](https://github.com/kokkos/kokkos-kernels/issues/633)
-
-## [3.1.01](https://github.com/kokkos/kokkos-kernels/tree/3.1.01) (2020-05-04)
-[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.1.00...3.1.01)
-
-** Fixed bugs:** 
-
-- KokkosBatched QR PR breaking nightly tests [\#691](https://github.com/kokkos/kokkos-kernels/issues/691)
 
 ## [3.1.00](https://github.com/kokkos/kokkos-kernels/tree/3.1.00) (2020-04-14)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.0.00...3.1.00)

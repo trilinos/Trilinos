@@ -159,18 +159,22 @@ int test_bsr_matrix_single_vec(
     y_vector_type ycrs("crs_product_result", nRow);
     auto h_ycrs = Kokkos::create_mirror_view(ycrs);
 
-    KokkosKernels::Experimental::Controls controls;
+    KokkosSparse::SPMVAlgorithm algo = KokkosSparse::SPMV_DEFAULT;
+
     switch (static_cast<details::Implementation>(test)) {
       case Implementation::KokkosKernels: {
-        controls.setParameter("algorithm", "native");
+        algo = KokkosSparse::SPMV_NATIVE;
       } break;
       default: break;
     }
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, crsMat_type,
+                             x_vector_type, y_vector_type>
+        handle_crs(algo);
 
     // Do the multiplication for warming up
     for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir) = h_y0(ir);
     Kokkos::deep_copy(ycrs, h_ycrs);
-    KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
+    KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
 
     // Time a series of multiplications with the CrsMatrix
     double time_crs = 0.0;
@@ -178,7 +182,7 @@ int test_bsr_matrix_single_vec(
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir) = h_y0(ir);
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
+      KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
       time_crs += timer.seconds();
       Kokkos::fence();
     }
@@ -192,10 +196,14 @@ int test_bsr_matrix_single_vec(
         scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int>
         Absr(Acrs, blockSize);
 
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, decltype(Absr),
+                             x_vector_type, y_vector_type>
+        handle_bsr(algo);
+
     // Do the multiplication for warming up
     for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
     Kokkos::deep_copy(ybsr, h_ybsr);
-    KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+    KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
 
     // Time a series of multiplications with the BsrMatrix
     double time_bsr = 0.0;
@@ -203,7 +211,7 @@ int test_bsr_matrix_single_vec(
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
       Kokkos::deep_copy(ybsr, h_ybsr);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+      KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
       time_bsr += timer.seconds();
       Kokkos::fence();
     }
@@ -316,19 +324,23 @@ int test_bsr_matrix_vec(
     block_vector_t ycrs("crs_product_result", nRow, nvec);
     auto h_ycrs = Kokkos::create_mirror_view(ycrs);
 
-    KokkosKernels::Experimental::Controls controls;
+    KokkosSparse::SPMVAlgorithm algo = KokkosSparse::SPMV_DEFAULT;
+
     switch (static_cast<details::Implementation>(test)) {
       case Implementation::KokkosKernels: {
-        controls.setParameter("algorithm", "native");
+        algo = KokkosSparse::SPMV_NATIVE;
       } break;
       default: break;
     }
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, crsMat_type,
+                             block_vector_t, block_vector_t>
+        handle_crs(algo);
 
     // Do the multiplication for warming up
     for (Ordinal jc = 0; jc < nvec; ++jc)
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
     Kokkos::deep_copy(ycrs, h_ycrs);
-    KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
+    KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
 
     // Time a series of multiplications with the CrsMatrix format
     double time_crs = 0.0;
@@ -337,7 +349,7 @@ int test_bsr_matrix_vec(
         for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
+      KokkosSparse::spmv(&handle_crs, fOp, alpha, Acrs, xref, beta, ycrs);
       time_crs += timer.seconds();
       Kokkos::fence();
     }
@@ -347,6 +359,10 @@ int test_bsr_matrix_vec(
         scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int>
         Absr(Acrs, blockSize);
 
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, decltype(Absr),
+                             block_vector_t, block_vector_t>
+        handle_bsr(algo);
+
     block_vector_t ybsr("bsr_product_result", nRow, nvec);
     auto h_ybsr = Kokkos::create_mirror_view(ybsr);
 
@@ -354,7 +370,7 @@ int test_bsr_matrix_vec(
     for (Ordinal jc = 0; jc < nvec; ++jc)
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
     Kokkos::deep_copy(ybsr, h_ybsr);
-    KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+    KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
 
     // Time a series of multiplications with the BsrMatrix
     double time_bsr = 0.0;
@@ -363,7 +379,7 @@ int test_bsr_matrix_vec(
         for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
       Kokkos::deep_copy(ybsr, h_ybsr);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+      KokkosSparse::spmv(&handle_bsr, fOp, alpha, Absr, xref, beta, ybsr);
       time_bsr += timer.seconds();
       Kokkos::fence();
     }

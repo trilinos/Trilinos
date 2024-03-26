@@ -17,6 +17,8 @@
 #ifndef KOKKOSBLAS2_GER_HPP_
 #define KOKKOSBLAS2_GER_HPP_
 
+#include "KokkosKernels_helpers.hpp"
+
 #include <KokkosBlas2_ger_spec.hpp>
 
 namespace KokkosBlas {
@@ -42,15 +44,6 @@ template <class ExecutionSpace, class XViewType, class YViewType,
 void ger(const ExecutionSpace& space, const char trans[],
          const typename AViewType::const_value_type& alpha, const XViewType& x,
          const YViewType& y, const AViewType& A) {
-  static_assert(
-      Kokkos::SpaceAccessibility<typename AViewType::memory_space,
-                                 typename XViewType::memory_space>::assignable,
-      "AViewType memory space must be assignable from XViewType");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename AViewType::memory_space,
-                                 typename YViewType::memory_space>::assignable,
-      "AViewType memory space must be assignable from YViewType");
-
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AViewType::memory_space>::accessible,

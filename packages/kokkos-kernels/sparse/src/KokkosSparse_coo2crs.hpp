@@ -16,11 +16,6 @@
 
 #ifndef _KOKKOSSPARSE_COO2CRS_HPP
 #define _KOKKOSSPARSE_COO2CRS_HPP
-// The unorderedmap changes necessary for this to work
-// have not made it into Kokkos 4.0.00 pr 4.0.01 will
-// need to see if it happens in 4.1.00 to have a final
-// version check here.
-#if KOKKOS_VERSION >= 40099 || defined(DOXY)
 
 #include "KokkosSparse_CooMatrix.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -99,5 +94,4 @@ auto coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType,
                  cooMatrix.col, cooMatrix.data);
 }
 }  // namespace KokkosSparse
-#endif  // KOKKOS_VERSION >= 40099 || defined(DOXY)
 #endif  //  _KOKKOSSPARSE_COO2CRS_HPP

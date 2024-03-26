@@ -581,7 +581,9 @@ int main(int argc, char** argv) {
       const double alpha = 1.0, beta = 1.0;
       size_t bufferSize = 0;
       void* dBuffer     = NULL;
-#if CUSPARSE_VERSION >= 11201
+
+// CUSPARSE_MM_ALG_DEFAULT was deprecated in CUDA 11.2.1 a.k.a cuSPARSE 11.4.0
+#if CUSPARSE_VERSION >= 11400
       cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
       cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;

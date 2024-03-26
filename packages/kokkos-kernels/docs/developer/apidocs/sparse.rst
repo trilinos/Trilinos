@@ -94,3 +94,16 @@ par_ilut
 gmres
 -----
 .. doxygenfunction:: gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Preconditioner<AMatrix>* precond)
+
+sptrsv
+------
+.. doxygenfunction:: sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries)
+.. doxygenfunction:: sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries)
+.. doxygenfunction:: sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values)
+.. doxygenfunction:: sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values)
+.. doxygenfunction:: sptrsv_solve(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, BType b, XType x)
+.. doxygenfunction:: sptrsv_solve(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, BType b, XType x)
+.. doxygenfunction:: sptrsv_solve(ExecutionSpace &space, KernelHandle *handle, XType x, XType b)
+.. doxygenfunction:: sptrsv_solve(KernelHandle *handle, XType x, XType b)
+.. doxygenfunction:: sptrsv_solve(ExecutionSpace &space, KernelHandle *handleL, KernelHandle *handleU, XType x, XType b)
+.. doxygenfunction:: sptrsv_solve(KernelHandle *handleL, KernelHandle *handleU, XType x, XType b)

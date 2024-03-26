@@ -60,20 +60,20 @@ namespace Impl {
       Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS," #SCALAR_TYPE \
                                     "]");                                     \
       const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');              \
-      const int M    = C.extent(0);                                           \
-      const int N    = C.extent(1);                                           \
-      const int K    = A.extent(A_t ? 0 : 1);                                 \
+      const KK_INT M = C.extent(0);                                           \
+      const KK_INT N = C.extent(1);                                           \
+      const KK_INT K = A.extent(A_t ? 0 : 1);                                 \
                                                                               \
       bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;       \
       bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;       \
       bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;       \
                                                                               \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                    \
-                LDA = AST == 0 ? 1 : AST;                                     \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                    \
-                LDB = BST == 0 ? 1 : BST;                                     \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                    \
-                LDC = CST == 0 ? 1 : CST;                                     \
+      const KK_INT AST = A_is_lr ? A.stride(0) : A.stride(1),                 \
+                   LDA = AST == 0 ? 1 : AST;                                  \
+      const KK_INT BST = B_is_lr ? B.stride(0) : B.stride(1),                 \
+                   LDB = BST == 0 ? 1 : BST;                                  \
+      const KK_INT CST = C_is_lr ? C.stride(0) : C.stride(1),                 \
+                   LDC = CST == 0 ? 1 : CST;                                  \
                                                                               \
       const BASE_SCALAR_TYPE alpha_val = alpha, beta_val = beta;              \
       if (!A_is_lr && !B_is_lr && !C_is_lr)                                   \

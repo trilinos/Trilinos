@@ -23,6 +23,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 // Include the actual functors
@@ -81,10 +82,15 @@ template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
           bool eti_spec_avail = gmres_eti_spec_avail<
               KernelHandle, AT, AO, AD, AM, AS, BType, XType>::value>
 struct GMRES {
-  using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
+  using AMatrix  = CrsMatrix<AT, AO, AD, AM, AS>;
+  using BAMatrix = KokkosSparse::Experimental::BsrMatrix<AT, AO, AD, AM, AS>;
   static void gmres(
       KernelHandle *handle, const AMatrix &A, const BType &B, XType &X,
       KokkosSparse::Experimental::Preconditioner<AMatrix> *precond = nullptr);
+
+  static void gmres(
+      KernelHandle *handle, const BAMatrix &A, const BType &B, XType &X,
+      KokkosSparse::Experimental::Preconditioner<BAMatrix> *precond = nullptr);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -98,6 +104,17 @@ struct GMRES<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false,
   static void gmres(
       KernelHandle *handle, const AMatrix &A, const BType &B, XType &X,
       KokkosSparse::Experimental::Preconditioner<AMatrix> *precond = nullptr) {
+    auto gmres_handle = handle->get_gmres_handle();
+    using Gmres       = Experimental::GmresWrap<
+        typename std::remove_pointer<decltype(gmres_handle)>::type>;
+
+    Gmres::gmres(*gmres_handle, A, B, X, precond);
+  }
+
+  using BAMatrix = KokkosSparse::Experimental::BsrMatrix<AT, AO, AD, AM, AS>;
+  static void gmres(
+      KernelHandle *handle, const BAMatrix &A, const BType &B, XType &X,
+      KokkosSparse::Experimental::Preconditioner<BAMatrix> *precond = nullptr) {
     auto gmres_handle = handle->get_gmres_handle();
     using Gmres       = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;

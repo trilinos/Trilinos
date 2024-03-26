@@ -196,8 +196,9 @@ namespace Impl {
               reinterpret_cast<const cuDoubleComplex*>(X.data()), one,         \
               reinterpret_cast<cuDoubleComplex*>(A.data()), LDA));             \
         } else {                                                               \
-          throw std::runtime_error(                                            \
-              "Error: cublasZgerc() requires LayoutLeft views.");              \
+          /* cublasZgerc() + ~A_ll => call kokkos-kernels' implementation */   \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,              \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);              \
         }                                                                      \
       }                                                                        \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
@@ -266,8 +267,9 @@ namespace Impl {
               reinterpret_cast<const cuComplex*>(X.data()), one,               \
               reinterpret_cast<cuComplex*>(A.data()), LDA));                   \
         } else {                                                               \
-          throw std::runtime_error(                                            \
-              "Error: cublasCgerc() requires LayoutLeft views.");              \
+          /* cublasCgerc() + ~A_ll => call kokkos-kernels' implementation */   \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,              \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);              \
         }                                                                      \
       }                                                                        \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \

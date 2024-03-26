@@ -22,10 +22,11 @@
 namespace KokkosSparse {
 namespace Impl {
 
-template <typename KernelHandle, typename ain_row_index_view_type,
+template <typename ExecutionSpace, typename KernelHandle,
+          typename ain_row_index_view_type,
           typename ain_nonzero_index_view_type,
           typename ain_values_scalar_view_type>
-void sptrsvcuSPARSE_symbolic(KernelHandle *sptrsv_handle,
+void sptrsvcuSPARSE_symbolic(ExecutionSpace &space, KernelHandle *sptrsv_handle,
                              typename KernelHandle::nnz_lno_t nrows,
                              ain_row_index_view_type row_map,
                              ain_nonzero_index_view_type entries,
@@ -60,6 +61,9 @@ void sptrsvcuSPARSE_symbolic(KernelHandle *sptrsv_handle,
 
     typename KernelHandle::SPTRSVcuSparseHandleType *h =
         sptrsv_handle->get_cuSparseHandle();
+
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetStream(h->handle, space.cuda_stream()));
 
     int64_t nnz = static_cast<int64_t>(entries.extent(0));
     size_t pBufferSize;
@@ -98,13 +102,13 @@ void sptrsvcuSPARSE_symbolic(KernelHandle *sptrsv_handle,
         CUSPARSE_INDEX_BASE_ZERO, cudaValueType));
 
     // Create dummy dense vector B (RHS)
-    nnz_scalar_view_t b_dummy("b_dummy", nrows);
+    nnz_scalar_view_t b_dummy(Kokkos::view_alloc(space, "b_dummy"), nrows);
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseCreateDnVec(&(h->vecBDescr_dummy), static_cast<int64_t>(nrows),
                             b_dummy.data(), cudaValueType));
 
     // Create dummy dense vector X (LHS)
-    nnz_scalar_view_t x_dummy("x_dummy", nrows);
+    nnz_scalar_view_t x_dummy(Kokkos::view_alloc(space, "x_dummy"), nrows);
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseCreateDnVec(&(h->vecXDescr_dummy), static_cast<int64_t>(nrows),
                             x_dummy.data(), cudaValueType));
@@ -155,16 +159,19 @@ void sptrsvcuSPARSE_symbolic(KernelHandle *sptrsv_handle,
       std::is_same<memory_space, Kokkos::CudaUVMSpace>::value ||
       std::is_same<memory_space, Kokkos::CudaHostPinnedSpace>::value;
 
-  if (!is_cuda_space) {
+  if constexpr (!is_cuda_space) {
     throw std::runtime_error(
         "KokkosKernels sptrsvcuSPARSE_symbolic: MEMORY IS NOT ALLOCATED IN GPU "
         "DEVICE for CUSPARSE\n");
-  } else if (std::is_same<idx_type, int>::value) {
+  } else if constexpr (std::is_same<idx_type, int>::value) {
     bool is_lower = sptrsv_handle->is_lower_tri();
     sptrsv_handle->create_cuSPARSE_Handle(trans, is_lower);
 
-    typename KernelHandle::SPTRSVcuSparseHandleType* h =
+    typename KernelHandle::SPTRSVcuSparseHandleType *h =
         sptrsv_handle->get_cuSparseHandle();
+
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetStream(h->handle, space.cuda_stream()));
 
     cusparseStatus_t status;
     status = cusparseCreateCsrsv2Info(&(h->info));
@@ -178,85 +185,86 @@ void sptrsvcuSPARSE_symbolic(KernelHandle *sptrsv_handle,
 
     if (!std::is_same<size_type, int>::value)
       sptrsv_handle->allocate_tmp_int_rowmap(row_map.extent(0));
-    const int* rm = !std::is_same<size_type, int>::value
+    const int *rm = !std::is_same<size_type, int>::value
                         ? sptrsv_handle->get_int_rowmap_ptr_copy(row_map)
-                        : (const int*)row_map.data();
-    const int* ent          = (const int*)entries.data();
-    const scalar_type* vals = values.data();
+                        : (const int *)row_map.data();
+    const int *ent          = (const int *)entries.data();
+    const scalar_type *vals = values.data();
 
     if (std::is_same<scalar_type, double>::value) {
       cusparseDcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-                                 (double*)vals, (int*)rm, (int*)ent, h->info,
+                                 (double *)vals, (int *)rm, (int *)ent, h->info,
                                  &pBufferSize);
 
       // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
       cudaError_t my_error;
-      my_error = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
+      my_error = cudaMalloc((void **)&(h->pBuffer), pBufferSize);
 
       if (cudaSuccess != my_error)
         std::cout << "cudmalloc pBuffer error_t error name "
                   << cudaGetErrorString(my_error) << std::endl;
 
       status = cusparseDcsrsv2_analysis(
-          h->handle, h->transpose, nrows, nnz, h->descr, (double*)vals,
-          (int*)rm, (int*)ent, h->info, h->policy, h->pBuffer);
+          h->handle, h->transpose, nrows, nnz, h->descr, (double *)vals,
+          (int *)rm, (int *)ent, h->info, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "analysis status error name " << (status) << std::endl;
     } else if (std::is_same<scalar_type, float>::value) {
       cusparseScsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-                                 (float*)vals, (int*)rm, (int*)ent, h->info,
+                                 (float *)vals, (int *)rm, (int *)ent, h->info,
                                  &pBufferSize);
 
       // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
       cudaError_t my_error;
-      my_error = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
+      my_error = cudaMalloc((void **)&(h->pBuffer), pBufferSize);
 
       if (cudaSuccess != my_error)
         std::cout << "cudmalloc pBuffer error_t error name "
                   << cudaGetErrorString(my_error) << std::endl;
 
       status = cusparseScsrsv2_analysis(
-          h->handle, h->transpose, nrows, nnz, h->descr, (float*)vals, (int*)rm,
-          (int*)ent, h->info, h->policy, h->pBuffer);
+          h->handle, h->transpose, nrows, nnz, h->descr, (float *)vals,
+          (int *)rm, (int *)ent, h->info, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "analysis status error name " << (status) << std::endl;
     } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
       cusparseZcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-                                 (cuDoubleComplex*)vals, (int*)rm, (int*)ent,
+                                 (cuDoubleComplex *)vals, (int *)rm, (int *)ent,
                                  h->info, &pBufferSize);
 
       // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
       cudaError_t my_error;
-      my_error = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
+      my_error = cudaMalloc((void **)&(h->pBuffer), pBufferSize);
 
       if (cudaSuccess != my_error)
         std::cout << "cudmalloc pBuffer error_t error name "
                   << cudaGetErrorString(my_error) << std::endl;
 
-      status = cusparseZcsrsv2_analysis(
-          h->handle, h->transpose, nrows, nnz, h->descr, (cuDoubleComplex*)vals,
-          (int*)rm, (int*)ent, h->info, h->policy, h->pBuffer);
+      status =
+          cusparseZcsrsv2_analysis(h->handle, h->transpose, nrows, nnz,
+                                   h->descr, (cuDoubleComplex *)vals, (int *)rm,
+                                   (int *)ent, h->info, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "analysis status error name " << (status) << std::endl;
     } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
       cusparseCcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
-                                 (cuComplex*)vals, (int*)rm, (int*)ent, h->info,
-                                 &pBufferSize);
+                                 (cuComplex *)vals, (int *)rm, (int *)ent,
+                                 h->info, &pBufferSize);
 
       // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
       cudaError_t my_error;
-      my_error = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
+      my_error = cudaMalloc((void **)&(h->pBuffer), pBufferSize);
 
       if (cudaSuccess != my_error)
         std::cout << "cudmalloc pBuffer error_t error name "
                   << cudaGetErrorString(my_error) << std::endl;
 
       status = cusparseCcsrsv2_analysis(
-          h->handle, h->transpose, nrows, nnz, h->descr, (cuComplex*)vals,
-          (int*)rm, (int*)ent, h->info, h->policy, h->pBuffer);
+          h->handle, h->transpose, nrows, nnz, h->descr, (cuComplex *)vals,
+          (int *)rm, (int *)ent, h->info, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "analysis status error name " << (status) << std::endl;
@@ -269,6 +277,7 @@ void sptrsvcuSPARSE_symbolic(KernelHandle *sptrsv_handle,
   }
 #endif
 #else
+  (void)space;
   (void)sptrsv_handle;
   (void)nrows;
   (void)row_map;
@@ -281,10 +290,11 @@ void sptrsvcuSPARSE_symbolic(KernelHandle *sptrsv_handle,
 }
 
 template <
-    typename KernelHandle, typename ain_row_index_view_type,
-    typename ain_nonzero_index_view_type, typename ain_values_scalar_view_type,
-    typename b_values_scalar_view_type, typename x_values_scalar_view_type>
-void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
+    typename ExecutionSpace, typename KernelHandle,
+    typename ain_row_index_view_type, typename ain_nonzero_index_view_type,
+    typename ain_values_scalar_view_type, typename b_values_scalar_view_type,
+    typename x_values_scalar_view_type>
+void sptrsvcuSPARSE_solve(ExecutionSpace &space, KernelHandle *sptrsv_handle,
                           typename KernelHandle::nnz_lno_t nrows,
                           ain_row_index_view_type row_map,
                           ain_nonzero_index_view_type entries,
@@ -323,6 +333,9 @@ void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
     typename KernelHandle::SPTRSVcuSparseHandleType *h =
         sptrsv_handle->get_cuSparseHandle();
 
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetStream(h->handle, space.cuda_stream()));
+
     const scalar_type alpha = scalar_type(1.0);
 
     cudaDataType cudaValueType = cuda_data_type_from<scalar_type>();
@@ -354,18 +367,23 @@ void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
   if (std::is_same<idx_type, int>::value) {
     cusparseStatus_t status;
 
-    typename KernelHandle::SPTRSVcuSparseHandleType* h =
+    typename KernelHandle::SPTRSVcuSparseHandleType *h =
         sptrsv_handle->get_cuSparseHandle();
+
+    if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetStream(h->handle, space.cuda_stream()));
+    }
 
     int nnz = entries.extent_int(0);
 
-    const int* rm = !std::is_same<size_type, int>::value
+    const int *rm = !std::is_same<size_type, int>::value
                         ? sptrsv_handle->get_int_rowmap_ptr()
-                        : (const int*)row_map.data();
-    const int* ent          = (const int*)entries.data();
-    const scalar_type* vals = values.data();
-    const scalar_type* bv   = rhs.data();
-    scalar_type* xv         = lhs.data();
+                        : (const int *)row_map.data();
+    const int *ent          = (const int *)entries.data();
+    const scalar_type *vals = values.data();
+    const scalar_type *bv   = rhs.data();
+    scalar_type *xv         = lhs.data();
 
     if (std::is_same<scalar_type, double>::value) {
       if (h->pBuffer == nullptr) {
@@ -373,10 +391,10 @@ void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
       }
       const double alpha = double(1);
 
-      status = cusparseDcsrsv2_solve(h->handle, h->transpose, nrows, nnz,
-                                     &alpha, h->descr, (double*)vals, (int*)rm,
-                                     (int*)ent, h->info, (double*)bv,
-                                     (double*)xv, h->policy, h->pBuffer);
+      status = cusparseDcsrsv2_solve(
+          h->handle, h->transpose, nrows, nnz, &alpha, h->descr, (double *)vals,
+          (int *)rm, (int *)ent, h->info, (double *)bv, (double *)xv, h->policy,
+          h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
@@ -387,9 +405,9 @@ void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
       const float alpha = float(1);
 
       status = cusparseScsrsv2_solve(h->handle, h->transpose, nrows, nnz,
-                                     &alpha, h->descr, (float*)vals, (int*)rm,
-                                     (int*)ent, h->info, (float*)bv, (float*)xv,
-                                     h->policy, h->pBuffer);
+                                     &alpha, h->descr, (float *)vals, (int *)rm,
+                                     (int *)ent, h->info, (float *)bv,
+                                     (float *)xv, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
@@ -399,8 +417,8 @@ void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
       cualpha.y = 0.0;
       status    = cusparseZcsrsv2_solve(
           h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-          (cuDoubleComplex*)vals, (int*)rm, (int*)ent, h->info,
-          (cuDoubleComplex*)bv, (cuDoubleComplex*)xv, h->policy, h->pBuffer);
+          (cuDoubleComplex *)vals, (int *)rm, (int *)ent, h->info,
+          (cuDoubleComplex *)bv, (cuDoubleComplex *)xv, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
@@ -410,8 +428,8 @@ void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
       cualpha.y = 0.0;
       status    = cusparseCcsrsv2_solve(
           h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-          (cuComplex*)vals, (int*)rm, (int*)ent, h->info, (cuComplex*)bv,
-          (cuComplex*)xv, h->policy, h->pBuffer);
+          (cuComplex *)vals, (int *)rm, (int *)ent, h->info, (cuComplex *)bv,
+          (cuComplex *)xv, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
@@ -425,6 +443,7 @@ void sptrsvcuSPARSE_solve(KernelHandle *sptrsv_handle,
   }
 #endif
 #else
+  (void)space;
   (void)sptrsv_handle;
   (void)nrows;
   (void)row_map;
@@ -539,13 +558,13 @@ void sptrsvcuSPARSE_solve_streams(
         "CUSPARSE requires local ordinals to be integer.\n");
   } else {
     const scalar_type alpha = scalar_type(1.0);
-    std::vector<sptrsvHandleType*> sptrsv_handle_v(nstreams);
-    std::vector<sptrsvCuSparseHandleType*> h_v(nstreams);
-    std::vector<const int*> rm_v(nstreams);
-    std::vector<const int*> ent_v(nstreams);
-    std::vector<const scalar_type*> vals_v(nstreams);
-    std::vector<const scalar_type*> bv_v(nstreams);
-    std::vector<scalar_type*> xv_v(nstreams);
+    std::vector<sptrsvHandleType *> sptrsv_handle_v(nstreams);
+    std::vector<sptrsvCuSparseHandleType *> h_v(nstreams);
+    std::vector<const int *> rm_v(nstreams);
+    std::vector<const int *> ent_v(nstreams);
+    std::vector<const scalar_type *> vals_v(nstreams);
+    std::vector<const scalar_type *> bv_v(nstreams);
+    std::vector<scalar_type *> xv_v(nstreams);
 
     for (int i = 0; i < nstreams; i++) {
       sptrsv_handle_v[i] = handle_v[i].get_sptrsv_handle();
@@ -560,8 +579,8 @@ void sptrsvcuSPARSE_solve_streams(
       }
       rm_v[i] = !std::is_same<size_type, int>::value
                     ? sptrsv_handle_v[i]->get_int_rowmap_ptr()
-                    : reinterpret_cast<const int*>(row_map_v[i].data());
-      ent_v[i]  = reinterpret_cast<const int*>(entries_v[i].data());
+                    : reinterpret_cast<const int *>(row_map_v[i].data());
+      ent_v[i]  = reinterpret_cast<const int *>(entries_v[i].data());
       vals_v[i] = values_v[i].data();
       bv_v[i]   = rhs_v[i].data();
       xv_v[i]   = lhs_v[i].data();
@@ -573,42 +592,42 @@ void sptrsvcuSPARSE_solve_streams(
       if (std::is_same<scalar_type, double>::value) {
         KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz,
-            reinterpret_cast<const double*>(&alpha), h_v[i]->descr,
-            reinterpret_cast<const double*>(vals_v[i]),
-            reinterpret_cast<const int*>(rm_v[i]),
-            reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info,
-            reinterpret_cast<const double*>(bv_v[i]),
-            reinterpret_cast<double*>(xv_v[i]), h_v[i]->policy,
+            reinterpret_cast<const double *>(&alpha), h_v[i]->descr,
+            reinterpret_cast<const double *>(vals_v[i]),
+            reinterpret_cast<const int *>(rm_v[i]),
+            reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info,
+            reinterpret_cast<const double *>(bv_v[i]),
+            reinterpret_cast<double *>(xv_v[i]), h_v[i]->policy,
             h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, float>::value) {
         KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz,
-            reinterpret_cast<const float*>(&alpha), h_v[i]->descr,
-            reinterpret_cast<const float*>(vals_v[i]),
-            reinterpret_cast<const int*>(rm_v[i]),
-            reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info,
-            reinterpret_cast<const float*>(bv_v[i]),
-            reinterpret_cast<float*>(xv_v[i]), h_v[i]->policy,
+            reinterpret_cast<const float *>(&alpha), h_v[i]->descr,
+            reinterpret_cast<const float *>(vals_v[i]),
+            reinterpret_cast<const int *>(rm_v[i]),
+            reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info,
+            reinterpret_cast<const float *>(bv_v[i]),
+            reinterpret_cast<float *>(xv_v[i]), h_v[i]->policy,
             h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
         KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz,
-            reinterpret_cast<const cuDoubleComplex*>(&alpha), h_v[i]->descr,
-            reinterpret_cast<const cuDoubleComplex*>(vals_v[i]),
-            reinterpret_cast<const int*>(rm_v[i]),
-            reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info,
-            reinterpret_cast<const cuDoubleComplex*>(bv_v[i]),
-            reinterpret_cast<cuDoubleComplex*>(xv_v[i]), h_v[i]->policy,
+            reinterpret_cast<const cuDoubleComplex *>(&alpha), h_v[i]->descr,
+            reinterpret_cast<const cuDoubleComplex *>(vals_v[i]),
+            reinterpret_cast<const int *>(rm_v[i]),
+            reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info,
+            reinterpret_cast<const cuDoubleComplex *>(bv_v[i]),
+            reinterpret_cast<cuDoubleComplex *>(xv_v[i]), h_v[i]->policy,
             h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
         KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz,
-            reinterpret_cast<const cuComplex*>(&alpha), h_v[i]->descr,
-            reinterpret_cast<const cuComplex*>(vals_v[i]),
-            reinterpret_cast<const int*>(rm_v[i]),
-            reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info,
-            reinterpret_cast<const cuComplex*>(bv_v[i]),
-            reinterpret_cast<cuComplex*>(xv_v[i]), h_v[i]->policy,
+            reinterpret_cast<const cuComplex *>(&alpha), h_v[i]->descr,
+            reinterpret_cast<const cuComplex *>(vals_v[i]),
+            reinterpret_cast<const int *>(rm_v[i]),
+            reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info,
+            reinterpret_cast<const cuComplex *>(bv_v[i]),
+            reinterpret_cast<cuComplex *>(xv_v[i]), h_v[i]->policy,
             h_v[i]->pBuffer));
       } else {
         throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");

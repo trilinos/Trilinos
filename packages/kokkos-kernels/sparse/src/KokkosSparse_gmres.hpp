@@ -89,8 +89,9 @@ void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X,
       "gmres: A size type must match KernelHandle entry "
       "type (aka size_type, and const doesn't matter)");
 
-  static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value,
-                "gmres: A is not a CRS matrix.");
+  static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value ||
+                    KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value,
+                "gmres: A is not a CRS or BSR matrix.");
   static_assert(Kokkos::is_view<BType>::value,
                 "gmres: B is not a Kokkos::View.");
   static_assert(Kokkos::is_view<XType>::value,
@@ -120,8 +121,10 @@ void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X,
   using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
 
   if ((X.extent(0) != B.extent(0)) ||
-      (static_cast<size_t>(A.numCols()) != static_cast<size_t>(X.extent(0))) ||
-      (static_cast<size_t>(A.numRows()) != static_cast<size_t>(B.extent(0)))) {
+      (static_cast<size_t>(A.numPointCols()) !=
+       static_cast<size_t>(X.extent(0))) ||
+      (static_cast<size_t>(A.numPointRows()) !=
+       static_cast<size_t>(B.extent(0)))) {
     std::ostringstream os;
     os << "KokkosSparse::gmres: Dimensions do not match: "
        << ", A: " << A.numRows() << " x " << A.numCols()
@@ -135,10 +138,19 @@ void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X,
 
   const_handle_type tmp_handle(*handle);
 
-  using AMatrix_Internal = KokkosSparse::CrsMatrix<
+  using AMatrix_Bsr_Internal = KokkosSparse::Experimental::BsrMatrix<
       typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
       typename AMatrix::const_size_type>;
+
+  using AMatrix_Internal = std::conditional_t<
+      KokkosSparse::is_crs_matrix<AMatrix>::value,
+      KokkosSparse::CrsMatrix<typename AMatrix::const_value_type,
+                              typename AMatrix::const_ordinal_type,
+                              typename AMatrix::device_type,
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                              typename AMatrix::const_size_type>,
+      AMatrix_Bsr_Internal>;
 
   using B_Internal = Kokkos::View<
       typename BType::const_value_type*,
@@ -154,9 +166,9 @@ void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X,
 
   using Precond_Internal = Preconditioner<AMatrix_Internal>;
 
-  AMatrix_Internal A_i = A;
-  B_Internal b_i       = B;
-  X_Internal x_i       = X;
+  AMatrix_Internal A_i(A);
+  B_Internal b_i = B;
+  X_Internal x_i = X;
 
   Precond_Internal* precond_i = reinterpret_cast<Precond_Internal*>(precond);
 

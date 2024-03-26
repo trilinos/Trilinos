@@ -32,8 +32,46 @@ class SPADDHandle {
   typedef typename lno_row_view_t_::non_const_value_type size_type;
   typedef ExecutionSpace execution_space;
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  struct SpaddCusparseData {
+    size_t nbytes;
+    void* workspace;
+    cusparseMatDescr_t descrA, descrB, descrC;
+
+    SpaddCusparseData()
+        : nbytes(0),
+          workspace(nullptr),
+          descrA(nullptr),
+          descrB(nullptr),
+          descrC(nullptr) {}
+
+    ~SpaddCusparseData() {
+      Kokkos::kokkos_free<MemorySpace>(workspace);
+      cusparseDestroyMatDescr(descrA);
+      cusparseDestroyMatDescr(descrB);
+      cusparseDestroyMatDescr(descrC);
+    }
+  };
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  struct SpaddRocsparseData {
+    rocsparse_mat_descr descrA, descrB, descrC;
+
+    SpaddRocsparseData() : descrA(nullptr), descrB(nullptr), descrC(nullptr) {}
+
+    ~SpaddRocsparseData() {
+      rocsparse_destroy_mat_descr(descrA);
+      rocsparse_destroy_mat_descr(descrB);
+      rocsparse_destroy_mat_descr(descrC);
+    }
+  };
+#endif
+
  private:
-  bool input_sorted;
+  // if both are true, the input matrices are strict CRS
+  bool input_sorted;  // column indices in a row are sorted
+  bool input_merged;  // column indices in a row are unique (i.e., merged)
 
   size_type result_nnz_size;
 
@@ -76,11 +114,20 @@ class SPADDHandle {
 
   int get_sort_option() { return this->sort_option; }
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  SpaddCusparseData cusparseData;
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  SpaddRocsparseData rocsparseData;
+#endif
+
   /**
    * \brief Default constructor.
    */
-  SPADDHandle(bool input_is_sorted)
+  SPADDHandle(bool input_is_sorted, bool input_is_merged = false)
       : input_sorted(input_is_sorted),
+        input_merged(input_is_merged),
         result_nnz_size(0),
         called_symbolic(false),
         called_numeric(false) {}
@@ -95,6 +142,8 @@ class SPADDHandle {
   void set_call_numeric(bool call = true) { this->called_numeric = call; }
 
   bool is_input_sorted() { return input_sorted; }
+  bool is_input_merged() { return input_merged; }
+  bool is_input_strict_crs() { return input_sorted && input_merged; }
 };
 
 }  // namespace KokkosSparse

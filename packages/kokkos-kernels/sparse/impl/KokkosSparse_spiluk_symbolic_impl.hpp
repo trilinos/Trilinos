@@ -229,9 +229,7 @@ void iluk_symbolic(IlukHandle& thandle,
                    LEntriesType& L_entries_d, URowMapType& U_row_map_d,
                    UEntriesType& U_entries_d, int nstreams = 1) {
   if (thandle.get_algorithm() ==
-          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP ||
-      thandle.get_algorithm() ==
-          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1)
+      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1)
   /*   || thandle.get_algorithm() ==
      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHED_TP2 )*/
   {
@@ -379,7 +377,7 @@ void iluk_symbolic(IlukHandle& thandle,
         std::ostringstream os;
         os << "KokkosSparse::Experimental::spiluk_symbolic: U_entries's extent "
               "must be larger than "
-           << U_entries_d.extent(0);
+           << U_entries_d.extent(0) << ", must be at least " << cntU + lenu + 1;
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
       // U diag entry
@@ -394,29 +392,23 @@ void iluk_symbolic(IlukHandle& thandle,
       U_row_map(i + 1) = cntU;
 
       // Copy L part
-#ifdef KEEP_DIAG
       if (cntL + lenl + 1 > static_cast<size_type>(L_entries_d.extent(0))) {
-#else
-      if (cntL + lenl > static_cast<size_type>(L_entries_d.extent(0))) {
-#endif
         // size_type newsize = (size_type) (L_entries_d.extent(0)*EXPAND_FACT);
         // Kokkos::resize(L_entries, newsize);
         // Kokkos::resize(L_entries_d, newsize);
         std::ostringstream os;
         os << "KokkosSparse::Experimental::spiluk_symbolic: L_entries's extent "
               "must be larger than "
-           << L_entries_d.extent(0);
+           << L_entries_d.extent(0) << ", must be at least " << cntL + lenl + 1;
         KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
       for (size_type k = 0; k < lenl; ++k) {
         L_entries(cntL) = h_iL(k);
         cntL++;
       }
-#ifdef KEEP_DIAG
       // L diag entry
       L_entries(cntL) = i;
       cntL++;
-#endif
       L_row_map(i + 1) = cntL;
     }  // End main loop i
 

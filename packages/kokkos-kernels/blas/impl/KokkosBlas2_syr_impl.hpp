@@ -94,7 +94,7 @@ void threadParallelSyr(const ExecutionSpace& space,
                                                                A.extent(0));
     ThreadParallelSYR<XViewType, AViewType, IndexType, tJustTranspose, tJustUp>
         functor(alpha, x, A);
-    Kokkos::parallel_for("KokkosBlas::syr[thredParallel]", rangePolicy,
+    Kokkos::parallel_for("KokkosBlas::syr[threadParallel]", rangePolicy,
                          functor);
   }
 }

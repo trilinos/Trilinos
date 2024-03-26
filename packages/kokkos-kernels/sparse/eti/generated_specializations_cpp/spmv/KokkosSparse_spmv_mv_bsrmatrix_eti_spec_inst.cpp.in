@@ -19,11 +19,9 @@
 #include "KokkosSparse_spmv_bsrmatrix_spec.hpp"
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 // clang-format off
 @SPARSE_SPMV_MV_BSRMATRIX_ETI_INST_BLOCK@
 /// // clang-format on
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse

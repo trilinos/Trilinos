@@ -22,5 +22,6 @@
 
 // Implicit integrators
 #include "Test_ODE_Newton.hpp"
+#include "Test_ODE_BDF.hpp"
 
 #endif  // TEST_ODE_HPP

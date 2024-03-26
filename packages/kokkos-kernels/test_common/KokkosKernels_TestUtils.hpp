@@ -776,9 +776,11 @@ class RandCsMatrix {
   MapViewTypeD get_map() { return __getter_copy_helper(__map_d); }
 };
 
-/// \brief Randomly shuffle the entries in each row (col) of a Crs (Ccs) matrix.
+/// \brief Randomly shuffle the entries in each row (col) of a Crs (Ccs) or Bsr
+/// matrix.
 template <typename Rowptrs, typename Entries, typename Values>
-void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values) {
+void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values,
+                          const size_t block_size = 1) {
   using size_type    = typename Rowptrs::non_const_value_type;
   using ordinal_type = typename Entries::value_type;
   auto rowptrsHost =
@@ -789,6 +791,7 @@ void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values) {
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), values);
   ordinal_type numRows =
       rowptrsHost.extent(0) ? (rowptrsHost.extent(0) - 1) : 0;
+  const size_t block_items = block_size * block_size;
   for (ordinal_type i = 0; i < numRows; i++) {
     size_type rowBegin = rowptrsHost(i);
     size_type rowEnd   = rowptrsHost(i + 1);
@@ -796,7 +799,9 @@ void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values) {
       ordinal_type swapRange = rowEnd - j;
       size_type swapOffset   = j + (rand() % swapRange);
       std::swap(entriesHost(j), entriesHost(swapOffset));
-      std::swap(valuesHost(j), valuesHost(swapOffset));
+      std::swap_ranges(valuesHost.data() + j * block_items,
+                       valuesHost.data() + (j + 1) * block_items,
+                       valuesHost.data() + swapOffset * block_items);
     }
   }
   Kokkos::deep_copy(entries, entriesHost);

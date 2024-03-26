@@ -62,8 +62,14 @@ inline void mkl_internal_safe_call(sparse_status_t mkl_status, const char *name,
   }
 }
 
+}  // namespace Impl
+}  // namespace KokkosSparse
+
 #define KOKKOSKERNELS_MKL_SAFE_CALL(call) \
   KokkosSparse::Impl::mkl_internal_safe_call(call, #call, __FILE__, __LINE__)
+
+namespace KokkosSparse {
+namespace Impl {
 
 inline sparse_operation_t mode_kk_to_mkl(char mode_kk) {
   switch (toupper(mode_kk)) {
@@ -88,11 +94,58 @@ struct mkl_is_supported_value_type<Kokkos::complex<float>> : std::true_type {};
 template <>
 struct mkl_is_supported_value_type<Kokkos::complex<double>> : std::true_type {};
 
+// Helper to:
+//  - define the MKL type equivalent to a given Kokkos scalar type
+//  - provide an easy implicit conversion to that MKL type
+template <typename Scalar>
+struct KokkosToMKLScalar {
+  static_assert(mkl_is_supported_value_type<Scalar>::value,
+                "Scalar type not supported by MKL");
+  using type = Scalar;
+  KokkosToMKLScalar(Scalar val_) : val(val_) {}
+  operator Scalar() const { return val; }
+  Scalar val;
+};
+
+template <>
+struct KokkosToMKLScalar<Kokkos::complex<float>> {
+  using type = MKL_Complex8;
+  KokkosToMKLScalar(Kokkos::complex<float> val_) : val(val_) {}
+  operator MKL_Complex8() const { return {val.real(), val.imag()}; }
+  Kokkos::complex<float> val;
+};
+
+template <>
+struct KokkosToMKLScalar<Kokkos::complex<double>> {
+  using type = MKL_Complex16;
+  KokkosToMKLScalar(Kokkos::complex<double> val_) : val(val_) {}
+  operator MKL_Complex16() const { return {val.real(), val.imag()}; }
+  Kokkos::complex<double> val;
+};
+
+template <typename Scalar>
+struct KokkosToOneMKLScalar {
+  // Note: we happen to use the same set of types in classic MKL and OneMKL.
+  // If that changes, update this logic.
+  static_assert(mkl_is_supported_value_type<Scalar>::value,
+                "Scalar type not supported by OneMKL");
+  using type = Scalar;
+};
+
+template <typename Mag>
+struct KokkosToOneMKLScalar<Kokkos::complex<Mag>> {
+  static_assert(mkl_is_supported_value_type<Kokkos::complex<Mag>>::value,
+                "Scalar type not supported by OneMKL");
+  using type = std::complex<Mag>;
+};
+
 // MKLSparseMatrix provides thin wrapper around MKL matrix handle
 // (sparse_matrix_t) and encapsulates MKL call dispatches related to details
 // like value_type, allowing simple client code in kernels.
 template <typename value_type>
 class MKLSparseMatrix {
+  static_assert(mkl_is_supported_value_type<value_type>::value,
+                "Provided value_type type not supported by MKL");
   sparse_matrix_t mtx;
 
  public:
@@ -100,11 +153,7 @@ class MKLSparseMatrix {
 
   // Constructs MKL sparse matrix from KK sparse views (m rows x n cols)
   inline MKLSparseMatrix(const MKL_INT num_rows, const MKL_INT num_cols,
-                         MKL_INT *xadj, MKL_INT *adj, value_type *values) {
-    throw std::runtime_error(
-        "Scalar type used in MKLSparseMatrix<value_type> is NOT "
-        "supported by MKL");
-  }
+                         MKL_INT *xadj, MKL_INT *adj, value_type *values) {}
 
   // Allows using MKLSparseMatrix directly in MKL calls
   inline operator sparse_matrix_t() const { return mtx; }
@@ -112,11 +161,7 @@ class MKLSparseMatrix {
   // Exports MKL sparse matrix contents into KK views
   inline void export_data(MKL_INT &num_rows, MKL_INT &num_cols,
                           MKL_INT *&rows_start, MKL_INT *&columns,
-                          value_type *&values) {
-    throw std::runtime_error(
-        "Scalar type used in MKLSparseMatrix<value_type> is NOT "
-        "supported by MKL");
-  }
+                          value_type *&values) {}
 
   inline void destroy() {
     KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(mtx));

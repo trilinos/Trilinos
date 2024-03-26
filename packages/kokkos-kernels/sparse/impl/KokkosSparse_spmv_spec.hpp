@@ -21,7 +21,7 @@
 #include <Kokkos_ArithTraits.hpp>
 
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosKernels_Controls.hpp"
+#include "KokkosSparse_spmv_handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosSparse_spmv_impl.hpp>
@@ -30,11 +30,13 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector>
 struct spmv_eti_spec_avail {
   enum : bool { value = false };
 };
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector,
           const bool integerScalarType =
               std::is_integral_v<typename AMatrix::non_const_value_type>>
 struct spmv_mv_eti_spec_avail {
@@ -50,6 +52,9 @@ struct spmv_mv_eti_spec_avail {
   template <>                                                                  \
   struct spmv_eti_spec_avail<                                                  \
       EXEC_SPACE_TYPE,                                                         \
+      KokkosSparse::Impl::SPMVHandleImpl<EXEC_SPACE_TYPE, MEM_SPACE_TYPE,      \
+                                         SCALAR_TYPE, OFFSET_TYPE,             \
+                                         ORDINAL_TYPE>,                        \
       KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
@@ -70,6 +75,9 @@ struct spmv_mv_eti_spec_avail {
   template <>                                                                  \
   struct spmv_mv_eti_spec_avail<                                               \
       EXEC_SPACE_TYPE,                                                         \
+      KokkosSparse::Impl::SPMVHandleImpl<EXEC_SPACE_TYPE, MEM_SPACE_TYPE,      \
+                                         SCALAR_TYPE, OFFSET_TYPE,             \
+                                         ORDINAL_TYPE>,                        \
       KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
@@ -100,17 +108,16 @@ namespace Impl {
 ///
 /// For the implementation of KokkosSparse::spmv for multivectors (2-D
 /// Views), see the SPMV_MV struct below.
-template <
-    class ExecutionSpace, class AMatrix, class XVector, class YVector,
-    bool tpl_spec_avail =
-        spmv_tpl_spec_avail<ExecutionSpace, AMatrix, XVector, YVector>::value,
-    bool eti_spec_avail =
-        spmv_eti_spec_avail<ExecutionSpace, AMatrix, XVector, YVector>::value>
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector,
+          bool tpl_spec_avail = spmv_tpl_spec_avail<
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value,
+          bool eti_spec_avail = spmv_eti_spec_avail<
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value>
 struct SPMV {
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv(const ExecutionSpace& space,
-                   const KokkosKernels::Experimental::Controls& controls,
+  static void spmv(const ExecutionSpace& space, Handle* handle,
                    const char mode[], const coefficient_type& alpha,
                    const AMatrix& A, const XVector& x,
                    const coefficient_type& beta, const YVector& y);
@@ -140,18 +147,18 @@ struct SPMV {
 /// matrix's entries have integer type.  Per Github Issue #700, we
 /// don't optimize as heavily for that case, in order to reduce build
 /// times and library sizes.
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector,
           const bool integerScalarType =
               std::is_integral_v<typename AMatrix::non_const_value_type>,
-          bool tpl_spec_avail = spmv_mv_tpl_spec_avail<ExecutionSpace, AMatrix,
-                                                       XVector, YVector>::value,
-          bool eti_spec_avail = spmv_mv_eti_spec_avail<ExecutionSpace, AMatrix,
-                                                       XVector, YVector>::value>
+          bool tpl_spec_avail = spmv_mv_tpl_spec_avail<
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value,
+          bool eti_spec_avail = spmv_mv_eti_spec_avail<
+              ExecutionSpace, Handle, AMatrix, XVector, YVector>::value>
 struct SPMV_MV {
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const ExecutionSpace& space,
-                      const KokkosKernels::Experimental::Controls& controls,
+  static void spmv_mv(const ExecutionSpace& space, Handle* handle,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y);
@@ -160,90 +167,114 @@ struct SPMV_MV {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of spmv for single vectors (1-D Views).
 // Unification layer
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
-struct SPMV<ExecutionSpace, AMatrix, XVector, YVector, false,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector>
+struct SPMV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv(const ExecutionSpace& space,
-                   const KokkosKernels::Experimental::Controls& controls,
+  static void spmv(const ExecutionSpace& space, Handle* handle,
                    const char mode[], const coefficient_type& alpha,
                    const AMatrix& A, const XVector& x,
                    const coefficient_type& beta, const YVector& y) {
     typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
-    if (alpha == KAT::zero()) {
-      if (beta != KAT::one()) {
-        KokkosBlas::scal(space, y, beta, y);
-      }
-      return;
-    }
-
     if (beta == KAT::zero()) {
-      spmv_beta<ExecutionSpace, AMatrix, XVector, YVector, 0>(
-          space, controls, mode, alpha, A, x, beta, y);
+      spmv_beta<ExecutionSpace, Handle, AMatrix, XVector, YVector, 0>(
+          space, handle, mode, alpha, A, x, beta, y);
     } else if (beta == KAT::one()) {
-      spmv_beta<ExecutionSpace, AMatrix, XVector, YVector, 1>(
-          space, controls, mode, alpha, A, x, beta, y);
+      spmv_beta<ExecutionSpace, Handle, AMatrix, XVector, YVector, 1>(
+          space, handle, mode, alpha, A, x, beta, y);
     } else if (beta == -KAT::one()) {
-      spmv_beta<ExecutionSpace, AMatrix, XVector, YVector, -1>(
-          space, controls, mode, alpha, A, x, beta, y);
+      spmv_beta<ExecutionSpace, Handle, AMatrix, XVector, YVector, -1>(
+          space, handle, mode, alpha, A, x, beta, y);
     } else {
-      spmv_beta<ExecutionSpace, AMatrix, XVector, YVector, 2>(
-          space, controls, mode, alpha, A, x, beta, y);
+      spmv_beta<ExecutionSpace, Handle, AMatrix, XVector, YVector, 2>(
+          space, handle, mode, alpha, A, x, beta, y);
     }
   }
 };
 
 //! Full specialization of spmv_mv for single vectors (2-D Views).
 // Unification layer
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
-struct SPMV_MV<ExecutionSpace, AMatrix, XVector, YVector, false, false,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector>
+struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, false,
                KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const ExecutionSpace& space,
-                      const KokkosKernels::Experimental::Controls& /*controls*/,
+  static void spmv_mv(const ExecutionSpace& space, Handle* handle,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
     typedef Kokkos::ArithTraits<coefficient_type> KAT;
-
-    if (alpha == KAT::zero()) {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 0>(
-          space, mode, alpha, A, x, beta, y);
-    } else if (alpha == KAT::one()) {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 1>(
-          space, mode, alpha, A, x, beta, y);
-    } else if (alpha == -KAT::one()) {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, -1>(
-          space, mode, alpha, A, x, beta, y);
+    // Intercept special case: if x/y have only 1 column and both are
+    // contiguous, use the more efficient single-vector impl.
+    //
+    // We cannot do this if x or y is noncontiguous, because the column subview
+    // must be LayoutStride which is not ETI'd.
+    //
+    // Do not use a TPL even if one is available for the types:
+    // we don't want the same handle being used in both TPL and non-TPL versions
+    if (x.extent(1) == size_t(1) && x.span_is_contiguous() &&
+        y.span_is_contiguous()) {
+      Kokkos::View<typename XVector::const_value_type*, default_layout,
+                   typename XVector::device_type>
+          x0(x.data(), x.extent(0));
+      Kokkos::View<typename YVector::non_const_value_type*, default_layout,
+                   typename YVector::device_type>
+          y0(y.data(), y.extent(0));
+      if (beta == KAT::zero()) {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  0>(space, handle, mode, alpha, A, x0, beta, y0);
+      } else if (beta == KAT::one()) {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  1>(space, handle, mode, alpha, A, x0, beta, y0);
+      } else if (beta == -KAT::one()) {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  -1>(space, handle, mode, alpha, A, x0, beta, y0);
+      } else {
+        spmv_beta<ExecutionSpace, Handle, AMatrix, decltype(x0), decltype(y0),
+                  2>(space, handle, mode, alpha, A, x0, beta, y0);
+      }
     } else {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 2>(
-          space, mode, alpha, A, x, beta, y);
+      if (alpha == KAT::zero()) {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 0>(
+            space, mode, alpha, A, x, beta, y);
+      } else if (alpha == KAT::one()) {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 1>(
+            space, mode, alpha, A, x, beta, y);
+      } else if (alpha == -KAT::one()) {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, -1>(
+            space, mode, alpha, A, x, beta, y);
+      } else {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 2>(
+            space, mode, alpha, A, x, beta, y);
+      }
     }
   }
 };
 
-template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
-struct SPMV_MV<ExecutionSpace, AMatrix, XVector, YVector, true, false,
+template <class ExecutionSpace, class Handle, class AMatrix, class XVector,
+          class YVector>
+struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, true, false,
                KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const ExecutionSpace& space,
-                      const KokkosKernels::Experimental::Controls& /*controls*/,
+  static void spmv_mv(const ExecutionSpace& space, Handle* handle,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
     static_assert(std::is_integral_v<typename AMatrix::non_const_value_type>,
                   "This implementation is only for integer Scalar types.");
     KokkosKernels::Experimental::Controls defaultControls;
-    for (typename AMatrix::non_const_size_type j = 0; j < x.extent(1); ++j) {
+    for (size_t j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview(x, Kokkos::ALL(), j);
       auto y_j = Kokkos::subview(y, Kokkos::ALL(), j);
-      typedef SPMV<ExecutionSpace, AMatrix, decltype(x_j), decltype(y_j)>
+      typedef SPMV<ExecutionSpace, Handle, AMatrix, decltype(x_j),
+                   decltype(y_j)>
           impl_type;
-      impl_type::spmv(space, defaultControls, mode, alpha, A, x_j, beta, y_j);
+      impl_type::spmv(space, handle, mode, alpha, A, x_j, beta, y_j);
     }
   }
 };
@@ -264,6 +295,9 @@ struct SPMV_MV<ExecutionSpace, AMatrix, XVector, YVector, true, false,
                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE)       \
   extern template struct SPMV<                                                 \
       EXEC_SPACE_TYPE,                                                         \
+      KokkosSparse::Impl::SPMVHandleImpl<EXEC_SPACE_TYPE, MEM_SPACE_TYPE,      \
+                                         SCALAR_TYPE, OFFSET_TYPE,             \
+                                         ORDINAL_TYPE>,                        \
       KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
@@ -282,6 +316,9 @@ struct SPMV_MV<ExecutionSpace, AMatrix, XVector, YVector, true, false,
                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE)       \
   template struct SPMV<                                                        \
       EXEC_SPACE_TYPE,                                                         \
+      KokkosSparse::Impl::SPMVHandleImpl<EXEC_SPACE_TYPE, MEM_SPACE_TYPE,      \
+                                         SCALAR_TYPE, OFFSET_TYPE,             \
+                                         ORDINAL_TYPE>,                        \
       KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
@@ -300,6 +337,9 @@ struct SPMV_MV<ExecutionSpace, AMatrix, XVector, YVector, true, false,
                                            EXEC_SPACE_TYPE, MEM_SPACE_TYPE)    \
   extern template struct SPMV_MV<                                              \
       EXEC_SPACE_TYPE,                                                         \
+      KokkosSparse::Impl::SPMVHandleImpl<EXEC_SPACE_TYPE, MEM_SPACE_TYPE,      \
+                                         SCALAR_TYPE, OFFSET_TYPE,             \
+                                         ORDINAL_TYPE>,                        \
       KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
@@ -318,6 +358,9 @@ struct SPMV_MV<ExecutionSpace, AMatrix, XVector, YVector, true, false,
                                            EXEC_SPACE_TYPE, MEM_SPACE_TYPE)    \
   template struct SPMV_MV<                                                     \
       EXEC_SPACE_TYPE,                                                         \
+      KokkosSparse::Impl::SPMVHandleImpl<EXEC_SPACE_TYPE, MEM_SPACE_TYPE,      \
+                                         SCALAR_TYPE, OFFSET_TYPE,             \
+                                         ORDINAL_TYPE>,                        \
       KokkosSparse::CrsMatrix<const SCALAR_TYPE, const ORDINAL_TYPE,           \
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \

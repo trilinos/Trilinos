@@ -34,28 +34,50 @@ namespace KokkosLapack {
 
 /// \brief Solve the dense linear equation system A*X = B.
 ///
+/// \tparam ExecutionSpace the space where the kernel will run.
 /// \tparam AMatrix Input matrix/Output LU, as a 2-D Kokkos::View.
 /// \tparam BXMV Input (right-hand side)/Output (solution) (multi)vector, as a
-/// 1-D or 2-D Kokkos::View. \tparam IPIVV Output pivot indices, as a 1-D
-/// Kokkos::View
+/// 1-D or 2-D Kokkos::View.
+/// \tparam IPIVV Output pivot indices, as a 1-D Kokkos::View
 ///
+/// \param space [in] execution space instance used to specified how to execute
+///   the gesv kernels.
 /// \param A [in,out] On entry, the N-by-N matrix to be solved. On exit, the
 /// factors L and U from
 ///   the factorization A = P*L*U; the unit diagonal elements of L are not
 ///   stored.
 /// \param B [in,out] On entry, the right hand side (multi)vector B. On exit,
-/// the solution (multi)vector X. \param IPIV [out] On exit, the pivot indices
-/// (for partial pivoting). If the View extents are zero and
-///   its data pointer is NULL, pivoting is not used.
+/// the solution (multi)vector X.
+/// \param IPIV [out] On exit, the pivot indices (for partial pivoting).
+/// If the View extents are zero and its data pointer is NULL, pivoting is not
+/// used.
 ///
-template <class AMatrix, class BXMV, class IPIVV>
-void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
-  // NOTE: Currently, KokkosLapack::gesv only supports for MAGMA TPL and LAPACK
-  // TPL.
-  //       MAGMA TPL should be enabled to call the MAGMA GPU interface for
-  //       device views LAPACK TPL should be enabled to call the LAPACK
-  //       interface for host views
+template <class ExecutionSpace, class AMatrix, class BXMV, class IPIVV>
+void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
+          const IPIVV& IPIV) {
+  // NOTE: Currently, KokkosLapack::gesv only supports LAPACK, MAGMA and
+  // rocSOLVER TPLs.
+  //       MAGMA/rocSOLVER TPL should be enabled to call the MAGMA/rocSOLVER GPU
+  //       interface for device views LAPACK TPL should be enabled to call the
+  //       LAPACK interface for host views
 
+  static_assert(
+      Kokkos::SpaceAccessibility<ExecutionSpace,
+                                 typename AMatrix::memory_space>::accessible);
+  static_assert(
+      Kokkos::SpaceAccessibility<ExecutionSpace,
+                                 typename BXMV::memory_space>::accessible);
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+  if constexpr (!std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
+    static_assert(
+        Kokkos::SpaceAccessibility<ExecutionSpace,
+                                   typename IPIVV::memory_space>::accessible);
+  }
+#else
+  static_assert(
+      Kokkos::SpaceAccessibility<ExecutionSpace,
+                                 typename IPIVV::memory_space>::accessible);
+#endif
   static_assert(Kokkos::is_view<AMatrix>::value,
                 "KokkosLapack::gesv: A must be a Kokkos::View.");
   static_assert(Kokkos::is_view<BXMV>::value,
@@ -137,13 +159,36 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
 
   if (BXMV::rank == 1) {
     auto B_i = BXMV_Internal(B.data(), B.extent(0), 1);
-    KokkosLapack::Impl::GESV<AMatrix_Internal, BXMV_Internal,
-                             IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
+    KokkosLapack::Impl::GESV<ExecutionSpace, AMatrix_Internal, BXMV_Internal,
+                             IPIVV_Internal>::gesv(space, A_i, B_i, IPIV_i);
   } else {  // BXMV::rank == 2
     auto B_i = BXMV_Internal(B.data(), B.extent(0), B.extent(1));
-    KokkosLapack::Impl::GESV<AMatrix_Internal, BXMV_Internal,
-                             IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
+    KokkosLapack::Impl::GESV<ExecutionSpace, AMatrix_Internal, BXMV_Internal,
+                             IPIVV_Internal>::gesv(space, A_i, B_i, IPIV_i);
   }
+}
+
+/// \brief Solve the dense linear equation system A*X = B.
+///
+/// \tparam AMatrix Input matrix/Output LU, as a 2-D Kokkos::View.
+/// \tparam BXMV Input (right-hand side)/Output (solution) (multi)vector, as a
+/// 1-D or 2-D Kokkos::View.
+/// \tparam IPIVV Output pivot indices, as a 1-D Kokkos::View
+///
+/// \param A [in,out] On entry, the N-by-N matrix to be solved. On exit, the
+/// factors L and U from
+///   the factorization A = P*L*U; the unit diagonal elements of L are not
+///   stored.
+/// \param B [in,out] On entry, the right hand side (multi)vector B. On exit,
+/// the solution (multi)vector X.
+/// \param IPIV [out] On exit, the pivot indices (for partial pivoting).
+/// If the View extents are zero and its data pointer is NULL, pivoting is not
+/// used.
+///
+template <class AMatrix, class BXMV, class IPIVV>
+void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
+  typename AMatrix::execution_space space{};
+  gesv(space, A, B, IPIV);
 }
 
 }  // namespace KokkosLapack

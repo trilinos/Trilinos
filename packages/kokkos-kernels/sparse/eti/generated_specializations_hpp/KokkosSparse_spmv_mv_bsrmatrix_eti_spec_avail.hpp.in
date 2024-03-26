@@ -18,12 +18,10 @@
 #define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_ETI_SPEC_AVAIL_HPP_
 
 namespace KokkosSparse {
-namespace Experimental {
 namespace Impl {
 // clang-format off
 @SPARSE_SPMV_MV_BSRMATRIX_ETI_AVAIL_BLOCK@
 // clang-format on
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosSparse
 #endif

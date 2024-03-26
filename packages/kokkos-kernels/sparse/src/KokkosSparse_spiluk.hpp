@@ -530,7 +530,6 @@ void spiluk_numeric(KernelHandle* handle,
                                         A_entries_i, A_values_i, L_rowmap_i,
                                         L_entries_i, L_values_i, U_rowmap_i,
                                         U_entries_i, U_values_i);
-
 }  // spiluk_numeric
 
 template <class ExecutionSpace, typename KernelHandle, typename ARowMapType,

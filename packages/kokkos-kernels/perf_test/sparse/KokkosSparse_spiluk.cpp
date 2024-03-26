@@ -144,12 +144,6 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
 
       // std::cout << "Create handle" << std::endl;
       switch (test) {
-        case LVLSCHED_RP:
-          kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_RP, nrows,
-                                  EXPAND_FACT * nnz * (fill_lev + 1),
-                                  EXPAND_FACT * nnz * (fill_lev + 1));
-          kh.get_spiluk_handle()->print_algorithm();
-          break;
         case LVLSCHED_TP1:
           kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows,
                                   EXPAND_FACT * nnz * (fill_lev + 1),

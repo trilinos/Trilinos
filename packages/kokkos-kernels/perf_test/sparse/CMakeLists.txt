@@ -145,4 +145,9 @@ if (KokkosKernels_ENABLE_BENCHMARK)
   if (Kokkos_CXX_COMPILER_ID STREQUAL HIPCC AND Kokkos_CXX_COMPILER_VERSION VERSION_LESS 5.3)
     target_link_libraries(KokkosKernels_sparse_spmv_bsr_benchmark PRIVATE -lstdc++fs)
   endif()
+  # IntelLLVM < 2023.1.0 (and possible higher versions too) have an underlying clang that has the std::filesystem
+  # in an experimental namespace and a different library
+  if (Kokkos_CXX_COMPILER_ID STREQUAL IntelLLVM AND Kokkos_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 2023.1.0)
+    target_link_libraries(KokkosKernels_sparse_spmv_bsr_benchmark PRIVATE -lstdc++fs)
+  endif()
 endif()

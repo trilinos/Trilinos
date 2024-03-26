@@ -199,8 +199,9 @@ namespace Impl {
               reinterpret_cast<const rocblas_double_complex*>(X.data()), one, \
               reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));     \
         } else {                                                              \
-          throw std::runtime_error(                                           \
-              "Error: rocblasZgerc() requires LayoutLeft views.");            \
+          /* rocblas_zgerc() + ~A_ll => call k-kernels' implementation */     \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,             \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);             \
         }                                                                     \
       }                                                                       \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));      \
@@ -273,8 +274,9 @@ namespace Impl {
               reinterpret_cast<const rocblas_float_complex*>(X.data()), one, \
               reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));     \
         } else {                                                             \
-          throw std::runtime_error(                                          \
-              "Error: rocblasCgec() requires LayoutLeft views.");            \
+          /* rocblas_cgerc() + ~A_ll => call k-kernels' implementation */    \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,            \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);            \
         }                                                                    \
       }                                                                      \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));     \

@@ -99,6 +99,36 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose,
   }
 };
 
+template <typename MemberType, typename ArgDiag>
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
+                Algo::Trsm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
+                                           const ScalarType alpha,
+                                           const AViewType &A,
+                                           const BViewType &B) {
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        member, ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha,
+        A.data(), A.stride_0(), A.stride_1(), B.data(), B.stride_1(),
+        B.stride_0());
+  }
+};
+
+template <typename MemberType, typename ArgDiag>
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
+                Algo::Trsm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
+                                           const ScalarType alpha,
+                                           const AViewType &A,
+                                           const BViewType &B) {
+    return TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
+        member, ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha,
+        A.data(), A.stride_0(), A.stride_1(), B.data(), B.stride_1(),
+        B.stride_0());
+  }
+};
+
 ///
 /// L/U/NT
 ///

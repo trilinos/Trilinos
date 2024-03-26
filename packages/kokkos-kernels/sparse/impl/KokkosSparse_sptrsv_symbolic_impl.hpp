@@ -147,9 +147,10 @@ void symbolic_chain_phase(TriSolveHandle& thandle,
 #endif
 }  // end symbolic_chain_phase
 
-template <class TriSolveHandle, class RowMapType, class EntriesType>
-void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
-                        const EntriesType dentries) {
+template <class ExecSpaceIn, class TriSolveHandle, class RowMapType,
+          class EntriesType>
+void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
+                        const RowMapType drow_map, const EntriesType dentries) {
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_lowertri_total;
   Kokkos::Timer timer;
@@ -177,10 +178,10 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     size_type nrows = drow_map.extent(0) - 1;
 
     auto row_map = Kokkos::create_mirror_view(drow_map);
-    Kokkos::deep_copy(row_map, drow_map);
+    Kokkos::deep_copy(space, row_map, drow_map);
 
     auto entries = Kokkos::create_mirror_view(dentries);
-    Kokkos::deep_copy(entries, dentries);
+    Kokkos::deep_copy(space, entries, dentries);
 
     // get device view - will deep_copy to it at end of this host routine
     DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level();
@@ -193,11 +194,12 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
 
     DeviceSignedEntriesType dlevel_list = thandle.get_level_list();
     HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
-    Kokkos::deep_copy(level_list, dlevel_list);
+    Kokkos::deep_copy(space, level_list, dlevel_list);
 
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
+    space.fence();  // wait for deep copy write to land
     typename DeviceEntriesType::HostMirror level_ptr(
         "lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
@@ -227,9 +229,9 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
 
     // Create the chain now
     if (thandle.algm_requires_symb_chain()) {
+      // No need to pass in space, chain phase runs on the host
       symbolic_chain_phase(thandle, nodes_per_level);
     }
-
     thandle.set_symbolic_complete();
 
     // Output check
@@ -257,9 +259,9 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
 #endif
 
     // Deep copy to device views
-    Kokkos::deep_copy(dnodes_grouped_by_level, nodes_grouped_by_level);
-    Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
-    Kokkos::deep_copy(dlevel_list, level_list);
+    Kokkos::deep_copy(space, dnodes_grouped_by_level, nodes_grouped_by_level);
+    Kokkos::deep_copy(space, dnodes_per_level, nodes_per_level);
+    Kokkos::deep_copy(space, dlevel_list, level_list);
 
     // Extra check:
 #ifdef LVL_OUTPUT_INFO
@@ -279,6 +281,7 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
           check_count);
       std::cout << "  host check_count= " << check_count << std::endl;
 
+      space.fence();    // wait for deep copy writes to land
       check_count = 0;  // reset
       Kokkos::parallel_reduce(
           "check_count device",
@@ -568,20 +571,21 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     thandle.set_workspace_size(max_lwork);
     // workspace offset initialized to be zero
     integer_view_t work_offset = thandle.get_work_offset();
-    Kokkos::deep_copy(work_offset, work_offset_host);
+    Kokkos::deep_copy(space, work_offset, work_offset_host);
 
     // kernel types
     // > off-diagonal
     integer_view_t dkernel_type_by_level = thandle.get_kernel_type();
-    Kokkos::deep_copy(dkernel_type_by_level, kernel_type_by_level);
+    Kokkos::deep_copy(space, dkernel_type_by_level, kernel_type_by_level);
     // > diagonal
     integer_view_t ddiag_kernel_type_by_level = thandle.get_diag_kernel_type();
-    Kokkos::deep_copy(ddiag_kernel_type_by_level, diag_kernel_type_by_level);
+    Kokkos::deep_copy(space, ddiag_kernel_type_by_level,
+                      diag_kernel_type_by_level);
 
     // deep copy to device (of scheduling info)
-    Kokkos::deep_copy(dnodes_grouped_by_level, nodes_grouped_by_level);
-    Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
-    Kokkos::deep_copy(dlevel_list, level_list);
+    Kokkos::deep_copy(space, dnodes_grouped_by_level, nodes_grouped_by_level);
+    Kokkos::deep_copy(space, dnodes_per_level, nodes_per_level);
+    Kokkos::deep_copy(space, dlevel_list, level_list);
 
 #ifdef TRISOLVE_SYMB_TIMERS
     std::cout << "   + workspace  time = " << timer.seconds() << std::endl;
@@ -598,9 +602,10 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
 #endif
 }  // end lower_tri_symbolic
 
-template <class TriSolveHandle, class RowMapType, class EntriesType>
-void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
-                        const EntriesType dentries) {
+template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
+          class EntriesType>
+void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
+                        const RowMapType drow_map, const EntriesType dentries) {
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_uppertri_total;
   Kokkos::Timer timer;
@@ -626,10 +631,10 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     size_type nrows = drow_map.extent(0) - 1;
 
     auto row_map = Kokkos::create_mirror_view(drow_map);
-    Kokkos::deep_copy(row_map, drow_map);
+    Kokkos::deep_copy(space, row_map, drow_map);
 
     auto entries = Kokkos::create_mirror_view(dentries);
-    Kokkos::deep_copy(entries, dentries);
+    Kokkos::deep_copy(space, entries, dentries);
 
     // get device view - will deep_copy to it at end of this host routine
     DeviceEntriesType dnodes_per_level = thandle.get_nodes_per_level();
@@ -642,11 +647,12 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
 
     DeviceSignedEntriesType dlevel_list = thandle.get_level_list();
     HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
-    Kokkos::deep_copy(level_list, dlevel_list);
+    Kokkos::deep_copy(space, level_list, dlevel_list);
 
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
+    space.fence();  // Wait for deep copy writes to land
     typename DeviceEntriesType::HostMirror level_ptr(
         "lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
@@ -708,9 +714,9 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
 #endif
 
     // Deep copy to device views
-    Kokkos::deep_copy(dnodes_grouped_by_level, nodes_grouped_by_level);
-    Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
-    Kokkos::deep_copy(dlevel_list, level_list);
+    Kokkos::deep_copy(space, dnodes_grouped_by_level, nodes_grouped_by_level);
+    Kokkos::deep_copy(space, dnodes_per_level, nodes_per_level);
+    Kokkos::deep_copy(space, dlevel_list, level_list);
 
     // Extra check:
 #ifdef LVL_OUTPUT_INFO
@@ -730,6 +736,7 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
           check_count);
       std::cout << "  host check_count= " << check_count << std::endl;
 
+      space.fence();    // wait for deep copy writes to land
       check_count = 0;  // reset
       Kokkos::parallel_reduce(
           "check_count device",

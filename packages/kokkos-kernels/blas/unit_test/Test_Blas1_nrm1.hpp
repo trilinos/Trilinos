@@ -22,10 +22,10 @@
 namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm1(int N) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
-  typedef typename AT::mag_type mag_type;
-  typedef Kokkos::ArithTraits<mag_type> MAT;
+  using ScalarA  = typename ViewTypeA::value_type;
+  using AT       = Kokkos::ArithTraits<ScalarA>;
+  using mag_type = typename AT::mag_type;
+  using MAT      = Kokkos::ArithTraits<mag_type>;
 
   view_stride_adapter<ViewTypeA> a("a", N);
 

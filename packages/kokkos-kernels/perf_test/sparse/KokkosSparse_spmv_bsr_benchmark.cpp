@@ -207,9 +207,10 @@ struct SpmvNative {
             typename YView>
   static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs,
                    const XView &x, const Beta &beta, const YView &y) {
-    KokkosKernels::Experimental::Controls controls;
-    controls.setParameter("algorithm", "native");
-    return KokkosSparse::spmv(controls, mode, alpha, crs, x, beta, y);
+    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView,
+                             YView>
+        handle(KokkosSparse::SPMV_NATIVE);
+    return KokkosSparse::spmv(&handle, mode, alpha, crs, x, beta, y);
   }
 
   static std::string name() { return "native"; }
@@ -221,9 +222,10 @@ struct SpmvV41 {
             typename YView>
   static void spmv(const char *mode, const Alpha &alpha, const Matrix &crs,
                    const XView &x, const Beta &beta, const YView &y) {
-    KokkosKernels::Experimental::Controls controls;
-    controls.setParameter("algorithm", "v4.1");
-    return KokkosSparse::spmv(controls, mode, alpha, crs, x, beta, y);
+    KokkosSparse::SPMVHandle<typename Matrix::execution_space, Matrix, XView,
+                             YView>
+        handle(KokkosSparse::SPMV_BSR_V41);
+    return KokkosSparse::spmv(&handle, mode, alpha, crs, x, beta, y);
   }
 
   static std::string name() { return "v4.1"; }

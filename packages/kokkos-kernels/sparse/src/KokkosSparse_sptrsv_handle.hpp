@@ -476,6 +476,22 @@ class SPTRSVHandle {
     this->set_if_algm_require_symb_lvlsched();
     this->set_if_algm_require_symb_chain();
 
+    // Check a few prerequisites before allowing users
+    // to run with the cusparse implementation of sptrsv.
+    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+      throw(
+          std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
+                             "cuSPARSE TPL not enabled."));
+#else
+      if (!std::is_same_v<HandleExecSpace, Kokkos::Cuda>) {
+        throw(
+            std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
+                               "HandleExecSpace is not Kokkos::CUDA."));
+      }
+#endif
+    }
+
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     if (lower_tri) {
       // lower-triangular is stored in CSC

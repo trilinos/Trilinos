@@ -356,7 +356,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
         // Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
         run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric,
-                         apply_type, clusterSizes[csize],
+                         apply_type, clusterSizes[csize], false,
                          (ClusteringAlgorithm)algo);
         Kokkos::deep_copy(x_host, x_vector);
         for (lno_t i = 0; i < numVecs; i++) {
@@ -752,17 +752,8 @@ void test_gauss_seidel_streams_rank1(
   }
 #endif  // KOKKOS_ENABLE_OPENMP
 
-  std::vector<execution_space> instances;
-  if (nstreams == 1)
-    instances = Kokkos::Experimental::partition_space(execution_space(), 1);
-  else if (nstreams == 2)
-    instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
-  else if (nstreams == 3)
-    instances =
-        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
-  else
-    instances =
-        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
+  auto instances = Kokkos::Experimental::partition_space(
+      execution_space(), std::vector<int>(nstreams, 1));
 
   std::vector<KernelHandle> kh_v(nstreams);
   std::vector<crsMat_t> input_mat_v(nstreams);
