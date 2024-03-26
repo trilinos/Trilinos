@@ -2074,7 +2074,7 @@ macro(tribits_configure_enabled_packages)
 	    (NOT TARGET ${PACKAGE_NAME}::all_libs)
           )
           tribits_report_invalid_tribits_usage(
-            "ERROR: Forgot to call tribits_package_postprocess() in"
+            "ERROR: Forgot to call tribits_package_postprocess() for in"
             " ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         endif()
 
