@@ -61,10 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#endif
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
@@ -101,13 +98,11 @@ namespace panzer_stk {
                           Teuchos::ParameterList & closure_models,
                           Teuchos::ParameterList & user_data);
 
-#ifdef PANZER_HAVE_EPETRA_STACK
   std::pair<RCP<panzer::ResponseLibrary<panzer::Traits> >,RCP<panzer::LinearObjFactory<panzer::Traits> > > buildResponseLibrary(
                                                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                                                            panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                                            Teuchos::ParameterList & closure_models,
                                                            Teuchos::ParameterList & user_data);
-#endif // PANZER_HAVE_EPETRA_STACK
 
   struct RespFactoryFunc_Builder {
     MPI_Comm comm;
@@ -271,7 +266,6 @@ namespace panzer_stk {
     }
   }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_eval)
   {
 
@@ -358,7 +352,6 @@ namespace panzer_stk {
     //    is computed. Essentially each element is included three times
     //    in the workset.
   }
-#endif // PANZER_HAVE_EPETRA_STACK
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
@@ -508,7 +501,6 @@ namespace panzer_stk {
     }
   }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
   std::pair<RCP<panzer::ResponseLibrary<panzer::Traits> >,RCP<panzer::LinearObjFactory<panzer::Traits> > > buildResponseLibrary(
                                                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                                                            panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -598,10 +590,10 @@ namespace panzer_stk {
           = indexerFactory->buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof
-          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tcomm.getConst(),dofManager));
+    Teuchos::RCP<panzer::TpetraLinearObjFactory<panzer::Traits, double, int, panzer::GlobalOrdinal>> tlof
+      = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits, double, int, panzer::GlobalOrdinal>(tcomm, dofManager));
 
-    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = tlof;
 
     // setup field manager builder
     /////////////////////////////////////////////
@@ -628,6 +620,5 @@ namespace panzer_stk {
 
     return std::make_pair(rLibrary,lof);
   }
-#endif // PANZER_HAVE_EPETRA_STACK
 
 }
