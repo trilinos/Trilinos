@@ -58,7 +58,8 @@ namespace mini_em {
                                                            Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,
                                                            Teuchos::RCP<Teuchos::FancyOStream> &out,
                                                            std::string &xml,
-                                                           int basis_order);
+                                                           int basis_order,
+                                                           const bool truncateMueLuHierarchy = false);
 
   void setClosureParameters(physicsType physics,
                             Teuchos::ParameterList &physicsEqSet,
