@@ -449,6 +449,11 @@ public:
       "Invalid 'mode' argument.  Valid values are Teuchos::NO_TRANS, "
       "Teuchos::TRANS, and Teuchos::CONJ_TRANS.");
 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !X.isConstantStride() || !Y.isConstantStride(),
+      std::invalid_argument, "Tpetra::BlockCrsMatrix::apply: "
+      "X and Y must both be constant stride");
+
     BMV X_view;
     BMV Y_view;
     const LO blockSize = getBlockSize ();
@@ -1103,14 +1108,35 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
   const impl_scalar_type alpha_impl = alpha;
   const auto graph = this->graph_.getLocalGraphDevice();
 
-  auto X_mv = X.getMultiVectorView();
-  auto Y_mv = Y.getMultiVectorView();
+  mv_type X_mv = X.getMultiVectorView();
+  mv_type Y_mv = Y.getMultiVectorView();
   auto X_lcl = X_mv.getLocalViewDevice(Access::ReadOnly);
   auto Y_lcl = Y_mv.getLocalViewDevice(Access::ReadWrite);
 
+#if KOKKOSKERNELS_VERSION >= 40299
+  auto A_lcl = getLocalMatrixDevice();
+  if(!applyHelper.get()) {
+    // The apply helper does not exist, so create it
+    applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
+  }
+  if(applyHelper->shouldUseIntRowptrs())
+  {
+    auto A_lcl_int_rowptrs = applyHelper->getIntRowptrMatrix(A_lcl);
+    KokkosSparse::spmv(
+        &applyHelper->handle_int, KokkosSparse::NoTranspose,
+        alpha_impl, A_lcl_int_rowptrs, X_lcl, beta, Y_lcl);
+  }
+  else
+  {
+    KokkosSparse::spmv(
+        &applyHelper->handle, KokkosSparse::NoTranspose,
+        alpha_impl, A_lcl, X_lcl, beta, Y_lcl);
+  }
+#else
   auto A_lcl = getLocalMatrixDevice();
   KokkosSparse::spmv(KokkosSparse::NoTranspose, alpha_impl, A_lcl, X_lcl, beta,
                      Y_lcl);
+#endif
 }
 // clang-format off
 
