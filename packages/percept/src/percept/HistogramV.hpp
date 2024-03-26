@@ -13,6 +13,7 @@
 #include <sstream>
 #include <iomanip>
 #include <stk_util/diag/PrintTable.hpp>
+#include <percept/Percept_GlobalComm.hpp>
 
 namespace percept
 {
@@ -173,8 +174,8 @@ protected:
 #if defined( STK_HAS_MPI )
     T minv=m_ranges[0];
     T maxv=m_ranges[1];
-    my_all_reduce_min( MPI_COMM_WORLD , &minv , &m_ranges[0] , 1);
-    my_all_reduce_max( MPI_COMM_WORLD , &maxv , &m_ranges[1] , 1);
+    my_all_reduce_min( percept::get_global_comm() , &minv , &m_ranges[0] , 1);
+    my_all_reduce_max( percept::get_global_comm() , &maxv , &m_ranges[1] , 1);
 #endif
   }
 
@@ -196,7 +197,7 @@ protected:
       }
 #if defined( STK_HAS_MPI )
     std::vector<unsigned> cc(m_counts);
-    my_all_reduce_sum( MPI_COMM_WORLD , &cc[0] , &m_counts[0] , m_counts.size());
+    my_all_reduce_sum( percept::get_global_comm() , &cc[0] , &m_counts[0] , m_counts.size());
 #endif
 
     unsigned max_count = m_counts[0];

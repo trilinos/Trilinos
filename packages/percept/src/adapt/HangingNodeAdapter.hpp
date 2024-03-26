@@ -16,6 +16,7 @@
 #include <adapt/PredicateBasedElementAdapter.hpp>
 #include <percept/SetOfEntities.hpp>
 #include <stk_mesh/base/HashEntityAndEntityKey.hpp>
+#include <percept/Percept_GlobalComm.hpp>
 
 #include <percept/pooled_alloc.h>
 
@@ -367,7 +368,7 @@
 
         if (0 && m_debug_print)
           {
-            MPI_Barrier( MPI_COMM_WORLD );
+            MPI_Barrier( percept::get_global_comm() );
             std::ostringstream ostr;
             stk::mesh::EntityId id[]={12,13};
             unsigned nid=1;
