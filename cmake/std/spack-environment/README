@@ -1,0 +1,6 @@
+This is a very simple spack environment to build trilinos.  It is built off of the v0.16.2 tag in the spack repository.
+
+1) install spack at v0.16.2
+2) go into a director containing the spack.yaml
+3) spack env activate .
+4) spack install
