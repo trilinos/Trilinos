@@ -54,18 +54,26 @@
 
 #include "Epetra_Export.h"
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/Export/Xpetra_EpetraExport.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/Export/Xpetra_EpetraExport.hpp is deprecated."
+#endif
+
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
 namespace Xpetra {
 
 // TODO: move that elsewhere
 template <class GlobalOrdinal, class Node>
-const Epetra_Export &toEpetra(const Export<int, GlobalOrdinal, Node> &);
+XPETRA_DEPRECATED const Epetra_Export &toEpetra(const Export<int, GlobalOrdinal, Node> &);
 template <class GlobalOrdinal, class Node>
-RCP<const Export<int, GlobalOrdinal, Node> > toXpetra(const Epetra_Export *exp);
+XPETRA_DEPRECATED RCP<const Export<int, GlobalOrdinal, Node> > toXpetra(const Epetra_Export *exp);
 
 template <class EpetraGlobalOrdinal, class Node>
-class EpetraExportT
+class XPETRA_DEPRECATED EpetraExportT
   : public Export<int, EpetraGlobalOrdinal, Node> {
   typedef int LocalOrdinal;
   typedef EpetraGlobalOrdinal GlobalOrdinal;
