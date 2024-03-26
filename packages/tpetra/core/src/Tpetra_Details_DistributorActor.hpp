@@ -42,6 +42,7 @@
 #define TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
 
 #include "Tpetra_Details_DistributorPlan.hpp"
+#include "Tpetra_TypeTraits.hpp"
 #include "Tpetra_Util.hpp"
 
 #include "Teuchos_Array.hpp"
@@ -51,6 +52,8 @@
 #include "Teuchos_Time.hpp"
 
 #include "Kokkos_TeuchosCommAdapters.hpp"
+
+#include <algorithm>
 
 #ifdef HAVE_TPETRA_MPI
 #include "mpi.h"
@@ -195,7 +198,19 @@ packOffset(const DstViewType& dst,
            const size_t src_offset,
            const size_t size)
 {
-  memcpy(dst.data()+dst_offset, src.data()+src_offset, size*sizeof(typename DstViewType::value_type));
+  using DstScalar = typename DstViewType::value_type;
+  using SrcScalar = typename SrcViewType::value_type;
+
+  if constexpr (Tpetra::okay_to_memcpy_v<DstScalar> && Tpetra::okay_to_memcpy_v<SrcScalar>) {
+    // these types may not actually be trivially-copyable according to c++, which may issue a warning.
+    // If they're not trivially-copyable, that means our users have opted in, so cast to void* to
+    // silence the warning
+    const void* srcp = reinterpret_cast<const void*>(src.data()+src_offset);
+    void* dstp = reinterpret_cast<void *>(dst.data()+dst_offset);
+    memcpy(dstp, srcp, size * sizeof(DstScalar));
+  } else {
+    std::copy(src.data() + src_offset, src.data() + src_offset + size, dst.data() + dst_offset);
+  }
 }
 
 template <typename DstViewType, typename SrcViewType>
