@@ -48,6 +48,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
+#include <tuple>
 
 #include "Xpetra_Matrix.hpp"
 
@@ -60,6 +61,9 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_BoundaryDetection.hpp"
+#include "MueLu_ClassicalDropping.hpp"
+#include "MueLu_DistanceLaplacianDropping.hpp"
 
 namespace MueLu {
 
@@ -515,6 +519,11 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
   LO blkSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
+  if (blkSize == 1) {
+    BuildNew(currentLevel);
+    return;
+  }
+
   auto amalInfo = Get<RCP<AmalgamationInfo>>(currentLevel, "UnAmalgamationInfo");
 
   const ParameterList& pL = GetParameterList();
@@ -936,5 +945,315 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Set(currentLevel, "Graph", graph);
   Set(currentLevel, "A", filteredA);
 }
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    BuildNew(Level& currentLevel) const {
+  FactoryMonitor m(*this, "Build", currentLevel);
+
+  using MatrixType        = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using GraphType         = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type = typename MatrixType::local_matrix_type;
+  using local_graph_type  = typename GraphType::local_graph_type;
+  using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
+  using entries_type      = typename local_graph_type::entries_type::non_const_type;
+  using values_type       = typename local_matrix_type::values_type::non_const_type;
+  using device_type       = typename Node::device_type;
+  using memory_space      = typename device_type::memory_space;
+  typedef typename LWGraph_kokkos::boundary_nodes_type boundary_nodes_type;
+
+  typedef Teuchos::ScalarTraits<SC> STS;
+  typedef typename STS::magnitudeType MT;
+  const MT zero = Teuchos::ScalarTraits<MT>::zero();
+
+  auto A = Get<RCP<Matrix>>(currentLevel, "A");
+
+  /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
+     blkSize is the number of storage blocks that must kept together during the amalgamation process.
+
+     Both of these quantities may be different than numPDEs (from GetFixedBlockSize()), but the following must always hold:
+
+     numPDEs = blkSize * storageblocksize.
+
+     If numPDEs==1
+       Matrix is point storage (classical CRS storage).  storageblocksize=1 and  blkSize=1
+       No other values makes sense.
+
+     If numPDEs>1
+       If matrix uses point storage, then storageblocksize=1  and blkSize=numPDEs.
+       If matrix uses block storage, with block size of n, then storageblocksize=n, and blkSize=numPDEs/n.
+       Thus far, only storageblocksize=numPDEs and blkSize=1 has been tested.
+    */
+
+  TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
+  LO blkSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
+
+  auto amalInfo = Get<RCP<AmalgamationInfo>>(currentLevel, "UnAmalgamationInfo");
+
+  //////////////////////////////////////////////////////////////////////
+  // Process parameterlist
+  const ParameterList& pL = GetParameterList();
+
+  // Boundary detection
+  const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
+  // const typename STS::magnitudeType rowSumTol          = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
+  const typename STS::magnitudeType rowSumTol  = -1.0;
+  const LocalOrdinal dirichletNonzeroThreshold = 1;
+
+  // Dropping
+  const std::string algo = pL.get<std::string>("aggregation: drop scheme");
+  // std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");
+  // std::string classicalAlgoStr         = pL.get<std::string>("aggregation: classical algo");
+  Scalar threshold;
+  // If we're doing the ML-style halving of the drop tol at each level, we do that here.
+  if (pL.get<bool>("aggregation: use ml scaling of drop tol"))
+    threshold = pL.get<double>("aggregation: drop tol") / pow(2.0, currentLevel.GetLevelID());
+  else
+    threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
+  const bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
+
+  // Fill
+  const bool lumping = pL.get<bool>("filtered matrix: use lumping");
+
+  GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold
+                       << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+
+  //////////////////////////////////////////////////////////////////////
+  // We perform three sweeps over the rows of A:
+  // Pass 1: detection of boundary nodes
+  // Pass 2: drop decision for each entry and construction of the rowptr of the filtered matrix
+  // Pass 3: fill of the filtered matrix
+  //
+  // Pass 1 and 2 apply a sequence of criteria to each row of the matrix.
+
+  auto crsA  = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A, true)->getCrsMatrix();
+  auto lclA  = crsA->getLocalMatrixDevice();
+  auto range = range_type(0, lclA.numRows());
+
+  //////////////////////////////////////////////////////////////////////
+  // Pass 1: Detect boundary nodes
+  //
+  // The following criteria are available:
+  // - BoundaryDetection::DirichletFunctor
+  //   Marks rows as Dirichlet based on value threshold and number of off-diagonal entries
+  // - BoundaryDetection::RowSumFunctor
+  //   Marks rows as Dirichlet bases on row-sum criterion
+
+  // Dirichlet nodes
+  auto boundaryNodes = boundary_nodes_type("boundaryNodes", lclA.numRows());  // initialized to false
+  {
+    SubFactoryMonitor mBoundary(*this, "Boundary detection", currentLevel);
+    auto dirichlet_detection = BoundaryDetection::DirichletFunctor(lclA, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
+
+    if (rowSumTol <= 0.) {
+      auto criteria = std::make_tuple(
+          dirichlet_detection);
+
+      auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, criteria);
+      Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries);
+    } else {
+      auto apply_rowsum = BoundaryDetection::RowSumFunctor(lclA, boundaryNodes, rowSumTol);
+
+      auto criteria = std::make_tuple(
+          dirichlet_detection,
+          apply_rowsum);
+
+      auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, criteria);
+      Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries);
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  // Pass 2: Determine dropping and construct rowptr of filtered matrix
+  //
+  // The following criteria are available:
+  // - Misc::DropBoundaryFunctor
+  //   Drop all rows that have been marked as Dirichlet
+  // - ClassicalDropping::DropFunctor
+  //   Classical dropping
+  // - DistanceLaplacian::DropFunctor
+  //   Distance Laplacian dropping
+  // - Misc::KeepDiagonalFunctor
+  //   Mark diagonal as KEEP
+  // - Misc::MarkSingletonFunctor
+  //   Mark singletons after dropping as Dirichlet
+
+  // rowptr of filtered A
+  auto rowptr = rowptr_type("rowptr", lclA.numRows() + 1);
+  // Number of nonzeros of filtered A
+  LocalOrdinal nnz_filtered = 0;
+  // dropping decisions for each entry
+  auto results = Kokkos::View<DecisionType*, memory_space>("results", lclA.nnz());  // initialized to UNDECIDED
+  {
+    SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
+
+    std::string functorLabel = "MueLu::CoalesceDrop::CountEntries";
+
+    auto drop_boundary_nodes = Misc::DropBoundaryFunctor(lclA, boundaryNodes, results);
+
+    auto preserve_diagonals = Misc::KeepDiagonalFunctor(lclA, results);
+
+    if (threshold != zero) {
+      if (algo == "classical") {
+        // Construct ghosted matrix diagonal
+        auto diag      = Utilities::GetMatrixOverlappedDiagonal(*A);
+        auto lclDiag2d = diag->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        auto lclDiag1d = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+
+        auto classical_dropping = ClassicalDropping::DropFunctor(lclA, threshold, lclDiag1d, boundaryNodes, results);
+
+        if (aggregationMayCreateDirichlet) {
+          auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
+
+          auto criteria = std::make_tuple(
+              drop_boundary_nodes,
+              classical_dropping,
+              preserve_diagonals,
+              mark_singletons_as_boundary);
+
+          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
+          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+        } else {
+          auto criteria = std::make_tuple(
+              drop_boundary_nodes,
+              classical_dropping,
+              preserve_diagonals);
+
+          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
+          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+        }
+      } else if (algo == "distanceLaplacian") {
+        using doubleMultiVector = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>;
+        auto coords             = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
+        auto lclCoords          = coords->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        auto dist2              = DistanceLaplacian::DistanceFunctor<decltype(lclCoords), LocalOrdinal>(lclCoords);
+        // Construct ghosted distance Laplacian diagonal
+        auto diag      = DistanceLaplacian::getDiagonal(A, dist2);
+        auto lclDiag2d = diag->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        auto lclDiag1d = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+
+        auto dist_laplacian_dropping = DistanceLaplacian::DropFunctor(lclA, threshold, lclDiag1d, dist2, boundaryNodes, results);
+
+        if (!aggregationMayCreateDirichlet) {
+          auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
+
+          auto criteria = std::make_tuple(
+              drop_boundary_nodes,
+              dist_laplacian_dropping,
+              preserve_diagonals,
+              mark_singletons_as_boundary);
+
+          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
+          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+        } else {
+          auto criteria = std::make_tuple(
+              drop_boundary_nodes,
+              dist_laplacian_dropping,
+              preserve_diagonals);
+
+          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
+          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+        }
+      }
+    } else {
+      Kokkos::deep_copy(results, KEEP);
+      auto criteria = std::make_tuple(
+          drop_boundary_nodes);
+
+      auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
+      Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+    }
+  }
+  GO numTotal   = lclA.nnz();
+  GO numDropped = numTotal - nnz_filtered;
+  // We now know the number of entries of filtered A and have the final rowptr.
+
+  //////////////////////////////////////////////////////////////////////
+  // Pass 3: Create local matrix for filtered A
+  //
+  // Dropped entries are optionally lumped to the diagonal.
+
+  RCP<Matrix> filteredA;
+  RCP<LWGraph_kokkos> graph;
+  {
+    SubFactoryMonitor mFill(*this, "Filtered matrix fill", currentLevel);
+
+    auto colidx       = entries_type("entries", nnz_filtered);
+    auto values       = values_type("values", nnz_filtered);
+    auto lclFilteredA = local_matrix_type("filteredA",
+                                          lclA.numRows(), lclA.numCols(),
+                                          nnz_filtered,
+                                          values, rowptr, colidx);
+
+    if (lumping) {
+      auto fillFunctor = MatrixConstruction::PointwiseFillFunctor<local_matrix_type, true>(lclA, results, lclFilteredA);
+      Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped", range, fillFunctor);
+    } else {
+      auto fillFunctor = MatrixConstruction::PointwiseFillFunctor<local_matrix_type, false>(lclA, results, lclFilteredA);
+      Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped", range, fillFunctor);
+    }
+
+    filteredA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclFilteredA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap());
+    filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
+
+    if (pL.get<bool>("filtered matrix: reuse eigenvalue")) {
+      // Reuse max eigenvalue from A
+      // It is unclear what eigenvalue is the best for the smoothing, but we already may have
+      // the D^{-1}A estimate in A, may as well use it.
+      // NOTE: ML does that too
+      filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+    } else {
+      filteredA->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+    }
+
+    auto lclGraph = filteredA->getCrsGraph()->getLocalGraphDevice();
+    graph         = rcp(new MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>(lclGraph,
+                                                                             filteredA->getRowMap(),
+                                                                             filteredA->getColMap(),
+                                                                             "amalgamated graph of A"));
+    graph->SetBoundaryNodeMap(boundaryNodes);
+  }
+
+  // Done with computations.
+
+  if (GetVerbLevel() & Statistics1) {
+    GO numLocalBoundaryNodes  = 0;
+    GO numGlobalBoundaryNodes = 0;
+
+    Kokkos::parallel_reduce(
+        "MueLu:CoalesceDropF:Build:bnd", range_type(0, boundaryNodes.extent(0)),
+        KOKKOS_LAMBDA(const LO i, GO& n) {
+          if (boundaryNodes(i))
+            n++;
+        },
+        numLocalBoundaryNodes);
+
+    auto comm = A->getRowMap()->getComm();
+    MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+    GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+  }
+
+  if ((GetVerbLevel() & Statistics1) && threshold != zero) {
+    auto comm = A->getRowMap()->getComm();
+
+    GO numGlobalTotal;
+    GO numGlobalDropped;
+    MueLu_sumAll(comm, numTotal, numGlobalTotal);
+    MueLu_sumAll(comm, numDropped, numGlobalDropped);
+
+    if (numGlobalTotal != 0) {
+      GetOStream(Statistics1) << "Number of dropped entries: "
+                              << numGlobalDropped << "/" << numGlobalTotal
+                              << " (" << 100 * Teuchos::as<double>(numGlobalDropped) / Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+    }
+  }
+
+  LO dofsPerNode = 1;
+
+  Set(currentLevel, "DofsPerNode", dofsPerNode);
+  Set(currentLevel, "Graph", graph);
+  Set(currentLevel, "A", filteredA);
+}
+
 }  // namespace MueLu
 #endif  // MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
