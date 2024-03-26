@@ -805,3 +805,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntMultiVector: public Epetra_DistObject, pub
 };
 
 #endif /* EPETRA_INTMULTIVECTOR_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

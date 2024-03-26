@@ -299,3 +299,10 @@ inline const int& Epetra_IntSerialDenseVector::operator [] (int Index) const {
 //=========================================================================
 
 #endif /* EPETRA_INTSERIALDENSEVECTOR_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

@@ -212,3 +212,10 @@ inline std::ostream& operator<<(std::ostream& os, const Epetra_Object& obj)
 }
 
 #endif /* EPETRA_OBJECT_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

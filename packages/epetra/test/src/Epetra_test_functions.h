@@ -72,3 +72,10 @@ EPETRA_LIB_DLL_EXPORT bool compare_matrices(const Epetra_CrsMatrix& A, const Epe
 
 #endif
 
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

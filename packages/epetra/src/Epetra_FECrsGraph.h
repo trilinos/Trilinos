@@ -239,3 +239,10 @@ template<> inline std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long l
 #endif
 
 #endif
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

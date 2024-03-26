@@ -361,3 +361,10 @@ template<> inline std::vector<long long>& Epetra_FEVector::nonlocalIDs<long long
 
 #endif
 
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

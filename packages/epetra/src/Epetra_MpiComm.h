@@ -539,3 +539,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual
 
 };
 #endif /* EPETRA_MPICOMM_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

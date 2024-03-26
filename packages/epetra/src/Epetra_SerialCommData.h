@@ -75,3 +75,10 @@ class Epetra_SerialCommData : public Epetra_Data {
 
 };
 #endif /* EPETRA_SERIALCOMMDATA_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

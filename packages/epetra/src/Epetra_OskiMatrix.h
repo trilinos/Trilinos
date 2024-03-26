@@ -799,3 +799,10 @@ available hints are grouped by section, and only one hint from each section can 
 	bool Copy_Created_;
 };
 #endif /* EPETRA_OSKIMATRIX_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

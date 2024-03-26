@@ -183,3 +183,10 @@ inline Epetra_BLAS::Epetra_BLAS(const Epetra_BLAS& BLAS){(void)BLAS;}
 inline Epetra_BLAS::~Epetra_BLAS(){}
 
 #endif /* EPETRA_BLAS_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+
