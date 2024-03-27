@@ -558,7 +558,8 @@ namespace Ifpack2 {
                   &reqs.recv[i]);
           }
           else {
-            const auto buffer_recv_host = Kokkos::create_mirror_view(buffer.recv);
+            const auto buffer_recv_host = Kokkos::create_mirror_view(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing), buffer.recv);
             irecv(comm,
                   reinterpret_cast<char*>(buffer_recv_host.data() + offset_host.recv[i]*mv_blocksize),
                   (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
@@ -597,7 +598,8 @@ namespace Ifpack2 {
                   &reqs.send[i]);
           }
           else {
-            const auto buffer_send_host = Kokkos::create_mirror_view(buffer.send);
+            const auto buffer_send_host = Kokkos::create_mirror_view(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing), buffer.send);
             Kokkos::deep_copy(buffer_send_host, buffer.send);
             isend(comm,
                   reinterpret_cast<const char*>(buffer_send_host.data() + offset_host.send[i]*mv_blocksize),
@@ -729,7 +731,8 @@ namespace Ifpack2 {
                   &reqs.recv[i]);
           }
           else {
-            const auto buffer_recv_host = Kokkos::create_mirror_view(buffer.recv);
+            const auto buffer_recv_host = Kokkos::create_mirror_view(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing), buffer.recv);
             irecv(comm,
                   reinterpret_cast<char*>(buffer_recv_host.data() + offset_host.recv[i]*mv_blocksize),
                   (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
@@ -754,7 +757,8 @@ namespace Ifpack2 {
                   &reqs.send[i]);
           }
           else {
-            const auto buffer_send_host = Kokkos::create_mirror_view(buffer.send);
+            const auto buffer_send_host = Kokkos::create_mirror_view(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing), buffer.send);
             Kokkos::deep_copy(buffer_send_host, buffer.send);
             isend(comm,
                   reinterpret_cast<const char*>(buffer_send_host.data() + offset_host.send[i]*mv_blocksize),
