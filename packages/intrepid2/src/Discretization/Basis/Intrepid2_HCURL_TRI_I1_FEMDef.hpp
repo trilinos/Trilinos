@@ -99,7 +99,8 @@ namespace Intrepid2 {
               typename inputPointValueType,  class ...inputPointProperties>
     void 
     Basis_HCURL_TRI_I1_FEM::
-    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues( const typename DT::execution_space& space,
+                     Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
@@ -108,7 +109,7 @@ namespace Intrepid2 {
 
       // Number of evaluation points = dim 0 of inputPoints
       const auto loopSize = inputPoints.extent(0);
-      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
   
       switch (operatorType) {
       case OPERATOR_VALUE: {

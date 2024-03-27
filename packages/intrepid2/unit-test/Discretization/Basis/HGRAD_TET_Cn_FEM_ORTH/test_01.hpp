@@ -69,6 +69,9 @@ namespace Test {
 template<typename ValueType, typename DeviceType>
 int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
 
+  //! Create an execution space instance.
+  const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
+
   Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
     verbose, "HGRAD_TET_Cn_FEM_ORTH", {
       "1) Tests orthogonality of tetrahedral orthogonal basis"
@@ -115,7 +118,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
     // Tabulate the basis functions at the cubature points
     DynRankView ConstructWithLabel(basisAtCubPts, polydim, npts);
 
-    tetBasis.getValues(basisAtCubPts, cubPoints, OPERATOR_VALUE);
+    tetBasis.getValues(space, basisAtCubPts, cubPoints, OPERATOR_VALUE);
 
     auto h_basisAtCubPts = Kokkos::create_mirror_view(basisAtCubPts);
     Kokkos::deep_copy(h_basisAtCubPts, basisAtCubPts);
@@ -159,7 +162,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
     PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
 
     DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , dim);
-    tetBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D1);
+    tetBasis.getValues(space, dBasisAtLattice, lattice, OPERATOR_D1);
 
     auto h_dBasisAtLattice = Kokkos::create_mirror_view(dBasisAtLattice);
     Kokkos::deep_copy(h_dBasisAtLattice, dBasisAtLattice);
@@ -598,17 +601,17 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
   << "===============================================================================\n"
   << "| TEST 2: Function Space is Correct                                           |\n"
   << "===============================================================================\n";
-  
+
   try {
     const ordinal_type order = std::min(3, maxOrder);
     tetBasisType tetBasis(order);
-    
+
     const EFunctionSpace fs = tetBasis.getFunctionSpace();
-    
+
     if (fs != FUNCTION_SPACE_HGRAD)
     {
       *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
-      
+
       // Output the multi-index of the value where the error is:
       *outStream << " Expected a function space of FUNCTION_SPACE_HGRAD (enum value " << FUNCTION_SPACE_HGRAD << "),";
       *outStream << " but got " << fs << "\n";
@@ -626,7 +629,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
   }
 
   // second order derivatives test missing!!
-  
+
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else

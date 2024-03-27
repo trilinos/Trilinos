@@ -23,7 +23,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   darcyTetAnalytic.xml darcyHexAnalytic.xml
   solverCG.xml solverGMRES.xml
   solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
-  solverMueLuOpenMP.xml solverMueLuCuda.xml
+  solverMueLuOpenMP.xml solverMueLuCuda.xml solverMueLuTruncated.xml
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
   solverML.xml
@@ -94,6 +94,7 @@ TRIBITS_ADD_TEST(
    # POSTFIX_AND_ARGS_ "order3,2_matrixFree" --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1" --matrixFree
    POSTFIX_AND_ARGS_4 "2D"                  --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=maxwell2D.xml
    POSTFIX_AND_ARGS_5 "order1_analytic"     --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-analyticSolution.xml
+   POSTFIX_AND_ARGS_6 "order1_truncated"    --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --truncateMueLuHierarchy
    NUM_MPI_PROCS 4
    )
 

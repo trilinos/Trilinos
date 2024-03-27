@@ -335,7 +335,9 @@ typename outputValueValueType, class ...outputValueProperties,
 typename inputPointValueType,  class ...inputPointProperties>
 void
 Basis_HGRAD_TRI_Cn_FEM_ORTH::
-getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+getValues(
+    const typename DT::execution_space& space,
+          Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
     const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
     const ordinal_type order,
     const EOperator operatorType ) {
@@ -347,7 +349,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
   const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
   const ordinal_type cardinality = outputValues.extent(0);
@@ -365,7 +367,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.extent(0), spaceDim+1);
+    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.extent(0), spaceDim+1);
     typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
     break;

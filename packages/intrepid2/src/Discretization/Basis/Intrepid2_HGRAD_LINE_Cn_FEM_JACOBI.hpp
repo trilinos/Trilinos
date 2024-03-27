@@ -153,11 +153,12 @@ namespace Intrepid2 {
                    const ordinal_type   opDn = 0 );
       };
       
-      template<typename ExecSpaceType, ordinal_type numPtsPerEval,
+      template<typename DeviceType, ordinal_type numPtsPerEval,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
-      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues(  const typename DeviceType::execution_space& space,
+                        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const ordinal_type order,
                   const double alpha,
@@ -232,27 +233,32 @@ namespace Intrepid2 {
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
     typedef double value_type;
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    using typename BasisBase::ExecutionSpace;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType ;
+    using typename BasisBase::ScalarViewType;
     
     /** \brief  Constructor.
      */
     Basis_HGRAD_LINE_Cn_FEM_JACOBI( const ordinal_type order, 
                                     const double alpha = 0, 
-                                    const double beta = 0 );  
-
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
+                                    const double beta = 0 );
    
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
  
     virtual
     void
-    getValues(       OutputViewType outputValues,
-               const PointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const override {
+    getValues( const ExecutionSpace& space,
+                     OutputViewType  outputValues,
+               const PointViewType   inputPoints,
+               const EOperator       operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
@@ -262,12 +268,13 @@ namespace Intrepid2 {
 #endif
       constexpr ordinal_type numPtsPerEval = 1;
       Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
-        getValues<DeviceType,numPtsPerEval>( outputValues, 
-                                                inputPoints, 
-                                                this->getDegree(),
-                                                this->alpha_, 
-                                                this->beta_,
-                                                operatorType );
+        getValues<DeviceType,numPtsPerEval>(space,
+                                            outputValues, 
+                                            inputPoints, 
+                                            this->getDegree(),
+                                            this->alpha_, 
+                                            this->beta_,
+                                            operatorType);
     }
     
   private:

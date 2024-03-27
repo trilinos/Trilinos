@@ -17,6 +17,7 @@ class IntersectionPointFromNodalLevelsetInterfaceGeometry : public InterfaceGeom
 public:
   virtual ~IntersectionPointFromNodalLevelsetInterfaceGeometry() {}
   virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override {}
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh) const override {}
   virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override {}
   virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
@@ -24,8 +25,8 @@ public:
 
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override
     { STK_ThrowRequireMsg(false, "Unimplemented"); std::vector<stk::mesh::Entity> empty; return empty; }
-  virtual std::vector<stk::mesh::Entity> get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const override
-    { STK_ThrowRequireMsg(false, "Unimplemented"); std::vector<stk::mesh::Entity> empty; return empty; }
+  virtual void fill_elements_that_intersect_distance_interval(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval) const override
+    { STK_ThrowRequireMsg(false, "Unimplemented"); }
 
   virtual bool might_have_interior_or_face_intersections() const override { STK_ThrowRequireMsg(false, "Unimplemented"); return false; }
   virtual bool snapped_elements_may_have_new_intersections() const override { return false; }

@@ -236,6 +236,7 @@ namespace FROSch {
         bool ExtractLocalSubdomainMatrix_Symbolic_Done_ = false;
         XMatrixPtr subdomainMatrix_;
         XMatrixPtr localSubdomainMatrix_;
+        XImportPtr subdomainScatter_;
 
         bool Verbose_ = false;
 

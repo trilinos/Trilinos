@@ -45,7 +45,13 @@
 /// \brief Declaration of the Tpetra::CrsMatrix class
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "KokkosSparse_Utils.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#if KOKKOSKERNELS_VERSION >= 40299
+#include "Tpetra_Details_MatrixApplyHelper.hpp"
+#else
 #include "Tpetra_LocalCrsMatrixOperator.hpp"
+#endif
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -53,8 +59,6 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "Tpetra_Details_ExecutionSpacesUser.hpp"
-#include "KokkosSparse_Utils.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
 #include "Teuchos_DataAccess.hpp"
 
 #include <memory> // std::shared_ptr
@@ -506,12 +510,13 @@ private:
     using local_matrix_host_type = 
           typename local_matrix_device_type::HostMirror;
 
-
+#if KOKKOSKERNELS_VERSION < 40299
     /// \brief The type of the local matrix-vector operator (a wrapper of \c KokkosSparse::CrsMatrix )
     using local_multiply_op_type =
       LocalCrsMatrixOperator<scalar_type,
                              scalar_type,
                              device_type>;
+#endif
 
     using row_ptrs_device_view_type = 
           typename row_matrix_type::row_ptrs_device_view_type;
@@ -2323,12 +2328,14 @@ private:
     local_matrix_device_type getLocalMatrixDevice () const;
     local_matrix_host_type getLocalMatrixHost () const;
 
+#if KOKKOSKERNELS_VERSION < 40299
     /// \brief The local sparse matrix operator 
     ///   (a wrapper of \c getLocalMatrixDevice()
     ///   that supports local matrix-vector multiply)
     ///
     /// \warning It is only valid to call this method if this->isFillComplete().
     std::shared_ptr<local_multiply_op_type> getLocalMultiplyOperator () const;
+#endif
 
     /// \brief Number of global elements in the row map of this matrix.
     ///
@@ -2546,6 +2553,7 @@ protected:
     values_wdv_type valuesUnpacked_wdv;
     mutable values_wdv_type valuesPacked_wdv;
 
+#if KOKKOSKERNELS_VERSION < 40299
     using ordinal_rowptrs_type = typename local_multiply_op_type::ordinal_view_type;
     /// \brief local_ordinal typed version of local matrix's rowptrs.
     ///   This allows the LocalCrsMatrixOperator to have rowptrs and entries be the same type,
@@ -2555,6 +2563,7 @@ protected:
     ///     - the cuSPARSE TPL is enabled
     ///     - local_ordinal_type can represent getLocalNumEntries()
     mutable ordinal_rowptrs_type ordinalRowptrs;
+#endif
 
 public:
 
@@ -4020,6 +4029,33 @@ protected:
     ///   to their owning processes.
     std::map<GlobalOrdinal, std::pair<Teuchos::Array<GlobalOrdinal>,
                                       Teuchos::Array<Scalar> > > nonlocals_;
+
+  private:
+#if KOKKOSKERNELS_VERSION >= 40299
+    // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
+    // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
+    //
+    // At that point the ApplyHelper can be replaced with just a SPMVHandle.
+    using local_matrix_int_rowptrs_device_type =
+      KokkosSparse::CrsMatrix<impl_scalar_type,
+                              local_ordinal_type,
+                              device_type,
+                              void,
+                              int>;
+
+    /// The specialization of Details::MatrixApplyHelper used by this class in apply().
+    using ApplyHelper = Details::MatrixApplyHelper<
+      local_matrix_device_type,
+      local_matrix_int_rowptrs_device_type, 
+      typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_view_type>;
+
+    /// The apply helper is lazily created in apply(), and reset when resumeFill is called.
+    /// It performs 3 functions:
+    /// - Decides whether a version of the local matrix with int-typed rowptrs can and should be used to enable spmv TPLs
+    /// - Keeps SPMVHandles for both the regular local matrix, and the int-typed version
+    /// - Stores the int-typed rowptrs (if they can all be represented by int)
+    mutable std::shared_ptr<ApplyHelper> applyHelper;
+#endif
 
   public:
     // FIXME (mfh 24 Feb 2014) Is it _really_ necessary to make this a

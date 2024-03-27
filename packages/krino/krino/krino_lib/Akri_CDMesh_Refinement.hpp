@@ -20,13 +20,6 @@ class RefinementSupport;
 class Phase_Support;
 
 void
-mark_given_elements(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
-      const RefinementSupport & refinementSupport,
-      const std::vector<stk::mesh::Entity> elementsToMark,
-      const int refinementIterCount);
-
-void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
@@ -37,8 +30,9 @@ void
 mark_elements_that_intersect_interval(const stk::mesh::BulkData& mesh,
       const RefinementInterface & refinement,
       const InterfaceGeometry & interfaceGeometry,
-      const RefinementSupport & refinementSupport,
-      const int numRefinements);
+      const std::array<double,2> refinementInterval,
+      const int numRefineLevels,
+      const bool isDefaultCoarsen);
 
 void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,

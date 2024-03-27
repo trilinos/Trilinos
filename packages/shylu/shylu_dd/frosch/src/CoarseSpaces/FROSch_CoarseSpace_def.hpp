@@ -238,7 +238,7 @@ namespace FROSch {
 
             // count number of nonzeros per row
             UN numLocalRows = rowMap->getLocalNumElements();
-            rowptr_type Rowptr ("Rowptr", numLocalRows+1);
+            rowptr_type Rowptr (Kokkos::ViewAllocateWithoutInitializing("Rowptr"), numLocalRows+1);
             Kokkos::deep_copy(Rowptr, 0);
             Kokkos::parallel_for(
                 "FROSch_CoarseSpace::countGlobalBasisMatrix", policy_row,
@@ -273,8 +273,8 @@ namespace FROSch {
 #endif
 
             // fill into the local matrix
-            indices_type Indices ("Indices", nnz);
-            values_type  Values  ("Values",  nnz);
+            indices_type Indices (Kokkos::ViewAllocateWithoutInitializing("Indices"), nnz);
+            values_type  Values  (Kokkos::ViewAllocateWithoutInitializing("Values"),  nnz);
             auto AssembledBasisLocalMap = AssembledBasisMap_->getLocalMap();
             Kokkos::parallel_for(
                 "FROSch_CoarseSpace::fillGlobalBasisMatrix", policy_row,

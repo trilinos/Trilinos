@@ -90,6 +90,7 @@ public:
 
   virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
+  virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh) const override;
   virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
   virtual void prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
@@ -97,7 +98,7 @@ public:
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
 
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
-  virtual std::vector<stk::mesh::Entity> get_elements_that_intersect_interval(const stk::mesh::BulkData & mesh, const std::array<double,2> loAndHi) const override;
+  virtual void fill_elements_that_intersect_distance_interval(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval) const override;
 
   virtual bool snapped_elements_may_have_new_intersections() const override;
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
@@ -127,7 +128,7 @@ public:
 
   const std::vector<Surface_Identifier> & get_surface_identifiers() const override { return mySurfaceIdentifiers; }
   static std::vector<stk::mesh::Entity> get_active_elements_that_may_be_cut_by_levelsets(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::vector<LS_Field> & LSFields);
-  static std::vector<stk::mesh::Entity> get_active_elements_that_intersect_levelset_interval(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::vector<LS_Field> & LSFields, const std::array<double,2> loAndHi);
+  static void fill_active_elements_that_intersect_levelset_interval(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const LS_Field & lsField, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval);
 
 private:
   void set_parent_element_selector();
@@ -137,6 +138,7 @@ private:
   void build_parent_edges_for_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
+  const LS_Field & get_ls_field_with_identifier(const Surface_Identifier surfaceIdentifier) const;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;

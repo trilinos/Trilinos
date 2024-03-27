@@ -89,7 +89,7 @@ namespace Intrepid2 {
                            iter );
               auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
 
-        const auto valRank = _basisVals.rank();
+        const auto valRank = rank(_basisVals);
         const auto val = ( valRank == 2 ? Kokkos::subdynrankview( _basisVals,       Kokkos::ALL(), pt) :
                                           Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
 
@@ -162,15 +162,15 @@ namespace Intrepid2 {
   }
 
   template<typename DeviceType>
-  template<typename physPointValueType,   class ...physPointProperties,
-           typename refPointValueType,    class ...refPointProperties,
+  template<typename PhysPointViewType,
+           typename RefPointViewType,
            typename WorksetType,
            typename HGradBasisPtrType>
   void
   CellTools<DeviceType>::
-  mapToPhysicalFrame(      Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
-                     const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
-                     const WorksetType worksetCell,
+  mapToPhysicalFrame(      PhysPointViewType physPoints,
+                     const RefPointViewType  refPoints,
+                     const WorksetType       worksetCell,
                      const HGradBasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_mapToPhysicalFrameArgs( physPoints, refPoints, worksetCell, basis->getBaseCellTopology() );
@@ -192,7 +192,6 @@ namespace Intrepid2 {
     const auto basisCardinality = basis->getCardinality();
     auto vcprop = Kokkos::common_view_alloc_prop(physPoints);
 
-    using physPointViewType =Kokkos::DynRankView<physPointValueType,physPointProperties...>;
     using valViewType = Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),DeviceType>;
 
     valViewType vals;
@@ -218,7 +217,7 @@ namespace Intrepid2 {
     }
     }
     
-    using FunctorType    = FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,WorksetType,valViewType>;
+    using FunctorType    = FunctorCellTools::F_mapToPhysicalFrame<PhysPointViewType,WorksetType,valViewType>;
 
     const auto loopSize = physPoints.extent(0)*physPoints.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
