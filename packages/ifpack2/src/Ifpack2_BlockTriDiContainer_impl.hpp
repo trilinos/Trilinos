@@ -549,12 +549,24 @@ namespace Ifpack2 {
 
         // 0. post receive async
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
-          irecv(comm,
-                reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
-                (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.recv[i],
-                42,
-                &reqs.recv[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+          }
+          else {
+            const auto buffer_recv_host = Kokkos::create_mirror_view(buffer.recv);
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer_recv_host.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+            Kokkos::deep_copy(buffer.recv, buffer_recv_host);
+          }
         }
 
         /// this is necessary to pass unit test. somewhere overlapped using the default execution space
@@ -576,12 +588,24 @@ namespace Ifpack2 {
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.send.extent(0));++i) {
           // 1.1. sync the stream and isend
           if (i<8)  exec_instances[i%8].fence();
-          isend(comm,
-                reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
-                (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.send[i],
-                42,
-                &reqs.send[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);
+          }
+          else {
+            const auto buffer_send_host = Kokkos::create_mirror_view(buffer.send);
+            Kokkos::deep_copy(buffer_send_host, buffer.send);
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer_send_host.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);
+          }
         }
 
         // 2. poke communication
@@ -696,12 +720,24 @@ namespace Ifpack2 {
 
         // receive async
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
-          irecv(comm,
-                reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
-                (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.recv[i],
-                42,
-                &reqs.recv[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+          }
+          else {
+            const auto buffer_recv_host = Kokkos::create_mirror_view(buffer.recv);
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer_recv_host.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+            Kokkos::deep_copy(buffer.recv, buffer_recv_host);
+          }
         }
 
         // send async
@@ -709,12 +745,24 @@ namespace Ifpack2 {
           copy<ToBuffer>(lids.send, buffer.send, offset_host.send(i), offset_host.send(i+1),
                          mv, blocksize);
           Kokkos::fence();
-          isend(comm,
-                reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
-                (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.send[i],
-                42,
-                &reqs.send[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);
+          }
+          else {
+            const auto buffer_send_host = Kokkos::create_mirror_view(buffer.send);
+            Kokkos::deep_copy(buffer_send_host, buffer.send);
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer_send_host.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);            
+          }
         }
 
         // I find that issuing an Iprobe seems to nudge some MPIs into action,
