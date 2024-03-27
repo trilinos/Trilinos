@@ -24,7 +24,7 @@
  *
  */
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex__id_lkup, etc
+#include "exodusII_int.h" // for EX_FATAL, exi_id_lkup, etc
 
 int ex_get_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, void_int *nodeconn,
                 void_int *edgeconn, void_int *faceconn)
@@ -53,7 +53,7 @@ int ex_get_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, void_in
   const char *vfaceconn  = NULL;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -67,7 +67,7 @@ int ex_get_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, void_in
 
   /* Locate index of element block id in VAR_ID_EL_BLK array */
 
-  blk_id_ndx = ex__id_lkup(exoid, blk_type, blk_id);
+  blk_id_ndx = exi_id_lkup(exoid, blk_type, blk_id);
   if (blk_id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {

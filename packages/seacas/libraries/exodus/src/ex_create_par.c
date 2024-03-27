@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -164,19 +164,19 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  char *canon_path = ex__canonicalize_filename(path);
+  char *canon_path = exi_canonicalize_filename(path);
 
   /* Verify that this file is not already open for read or write...
      In theory, should be ok for the file to be open multiple times
      for read, but bad things can happen if being read and written
      at the same time...
   */
-  if (ex__check_multiple_open(canon_path, EX_WRITE, __func__)) {
+  if (exi_check_multiple_open(canon_path, EX_WRITE, __func__)) {
     free(canon_path);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  nc_mode = ex__handle_mode(my_mode, is_parallel, run_version);
+  nc_mode = exi_handle_mode(my_mode, is_parallel, run_version);
 
 #if defined NC_NOATTCREORD
   /* Disable attribute creation order tracking if available... */
@@ -227,7 +227,7 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  status = ex__populate_header(exoid, canon_path, my_mode, is_parallel, comp_ws, io_ws);
+  status = exi_populate_header(exoid, canon_path, my_mode, is_parallel, comp_ws, io_ws);
   if (status != EX_NOERR) {
     free(canon_path);
     EX_FUNC_LEAVE(status);
@@ -240,5 +240,5 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
  * Prevent warning in some versions of ranlib(1) because the object
  * file has no symbols.
  */
-const char exodus_unused_symbol_dummy_ex_create_par;
+extern const char exodus_unused_symbol_dummy_ex_create_par;
 #endif

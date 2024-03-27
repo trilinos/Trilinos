@@ -29,7 +29,7 @@ static int ex_get_nonstandard_ids(int exoid, ex_entity_type obj_type, void_int *
 {
 
   int64_t               count = 0;
-  struct ex__file_item *file  = ex__find_file_item(exoid);
+  struct exi_file_item *file  = exi_find_file_item(exoid);
   if (file) {
     if (obj_type == EX_ASSEMBLY) {
       count = file->assembly_count;
@@ -100,7 +100,7 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   const char *varidobj;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -133,7 +133,7 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   }
 
   /* Determine if there are any 'obj-type' objects */
-  if ((status = nc_inq_dimid(exoid, ex__dim_num_objects(obj_type), &varid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(obj_type), &varid)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s defined in file id %d",
              ex_name_of_object(obj_type), exoid);

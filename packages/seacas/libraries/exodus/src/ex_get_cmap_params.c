@@ -47,7 +47,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -134,7 +134,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               cmap_id = ((int *)node_cmap_ids)[cnt];
             }
 
-            if ((map_idx = ne__id_lkup(exoid, VAR_N_COMM_IDS, cmap_info_idx, cmap_id)) < 0) {
+            if ((map_idx = nei_id_lkup(exoid, VAR_N_COMM_IDS, cmap_info_idx, cmap_id)) < 0) {
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to find nodal comm map with ID %" PRId64 " in file ID %d",
                        cmap_id, exoid);
@@ -207,10 +207,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               ((int *)node_cmap_node_cnts)[cnt] = 0;
             }
           } /* "for(cnt=0; cnt < num_n_comm_maps; cnt++)" */
-        }   /* "if (node_cmap_node_cnts != NULL)" */
-      }     /* "if (node_cmap_ids != NULL)" */
-    }       /* "if (num_n_comm_maps > 0)" */
-  }         /* End "if ((dimid = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS)) != -1)" */
+        } /* "if (node_cmap_node_cnts != NULL)" */
+      } /* "if (node_cmap_ids != NULL)" */
+    } /* "if (num_n_comm_maps > 0)" */
+  } /* End "if ((dimid = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS)) != -1)" */
 
   /*****************************************************************************/
   /*****************************************************************************/
@@ -295,7 +295,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               cmap_id = ((int *)elem_cmap_ids)[cnt];
             }
 
-            if ((map_idx = ne__id_lkup(exoid, VAR_E_COMM_IDS, cmap_info_idx, cmap_id)) < 0) {
+            if ((map_idx = nei_id_lkup(exoid, VAR_E_COMM_IDS, cmap_info_idx, cmap_id)) < 0) {
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to find elemental comm map with ID %" PRId64 " in file ID %d",
                        cmap_id, exoid);
@@ -368,10 +368,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               ((int *)elem_cmap_elem_cnts)[cnt] = 0;
             }
           } /* "for(cnt=0; cnt < num_e_comm_maps; cnt++)" */
-        }   /* "if (elem_cmap_elem_cnts != NULL)" */
-      }     /* "if (elem_cmap_ids != NULL)" */
-    }       /* "if (num_e_comm_maps > 0)" */
-  }         /* End "if ((dimid = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS(processor))) !=
-               -1)" */
+        } /* "if (elem_cmap_elem_cnts != NULL)" */
+      } /* "if (elem_cmap_ids != NULL)" */
+    } /* "if (num_e_comm_maps > 0)" */
+  } /* End "if ((dimid = nc_inq_dimid(exoid, DIM_NUM_E_CMAPS(processor))) !=
+       -1)" */
   EX_FUNC_LEAVE(EX_NOERR);
 }

@@ -38,7 +38,7 @@ int ex_put_ns_param_global(int exoid, const void_int *global_ids, const void_int
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

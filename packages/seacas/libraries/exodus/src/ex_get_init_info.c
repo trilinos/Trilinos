@@ -39,7 +39,7 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -48,7 +48,7 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
   *num_proc_in_f = 1;
 
   /* Get the file type */
-  if (ex__get_file_type(exoid, ftype) != EX_NOERR) {
+  if (exi_get_file_type(exoid, ftype) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get file type for file ID %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
 

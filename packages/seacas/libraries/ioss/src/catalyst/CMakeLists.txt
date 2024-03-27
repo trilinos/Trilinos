@@ -17,16 +17,10 @@ TRIBITS_ADD_LIBRARY(
 	Iocatalyst
 	HEADERS	${HEADERS}
 	SOURCES ${SOURCES}
-	DEPLIBS Ioss ${DEPLIBS}
+	DEPLIBS Ioss
 )
 
 generate_export_header(Iocatalyst)
 target_include_directories(Iocatalyst
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
-
-#IF (BUILD_TESTING)
-#  ENABLE_TESTING()
-#ENDIF (BUILD_TESTING)
-#
-#TRIBITS_ADD_TEST_DIRECTORIES(utest)

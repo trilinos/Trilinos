@@ -141,6 +141,23 @@ class TestExodus(unittest.TestCase):
                 self.assertEqual(3.14159, temp_exofile.get_elem_attr_values(elem_id, "Scale")[0])
                 self.assertEqual(1.0, temp_exofile.get_elem_attr_values(elem_id, "Units")[0])
 
+    def test_get_variable_values(self):
+        with exo.exodus(self.temp_exo_path, 'a') as temp_exofile:
+            elem_ids = temp_exofile.get_ids("EX_ELEM_BLOCK")
+            exo.add_variables(temp_exofile, element_vars=[('fake_variable', elem_ids)])
+            for elem_id in elem_ids:
+                temp_exofile.put_variable_values("EX_ELEM_BLOCK", elem_id, "fake_variable", 1, [3.14159])
+                self.assertEqual(3.14159, temp_exofile.get_variable_values("EX_ELEM_BLOCK", elem_id, "fake_variable", 1)[0])
+
+    def test_get_variable_values_time(self):
+        with exo.exodus(self.temp_exo_path, 'a') as temp_exofile:
+            elem_ids = temp_exofile.get_ids("EX_ELEM_BLOCK")
+            exo.add_variables(temp_exofile, element_vars=[('fake_variable', elem_ids)])
+            for elem_id in elem_ids:
+                for time_step, val in enumerate([1, 2, 3.14159]):
+                    temp_exofile.put_variable_values("EX_ELEM_BLOCK", elem_id, "fake_variable", time_step + 1, [val])
+            self.assertEqual([1.0, 2.0, 3.14159], list(temp_exofile.get_variable_values_time("EX_ELEM_BLOCK", 1, "fake_variable", 1, 3)))
+
     def test_get_assemblies(self):
         with exo.exodus(self.temp_exo_path) as temp_exofile:
             assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
