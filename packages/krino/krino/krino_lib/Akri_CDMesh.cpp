@@ -287,8 +287,7 @@ void CDMesh::prepare_for_resnapping(const stk::mesh::BulkData & mesh, const Inte
         cdfemSnapField.field().rotate_multistate_data();
 
       interfaceGeometry.set_do_update_geometry_when_mesh_changes(true);
-      krino::NodeToCapturedDomainsMap nodesToCapturedDomains;
-      interfaceGeometry.prepare_to_intersect_elements(mesh, nodesToCapturedDomains);
+      interfaceGeometry.prepare_to_intersect_elements(mesh);
       interfaceGeometry.set_do_update_geometry_when_mesh_changes(false);
 
       undo_previous_snaps_without_interpolation(mesh, cdfemSupport.get_coords_field(), cdfemSnapField);
@@ -633,11 +632,13 @@ CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coord
   {
     markerFunction = [&mesh, &refinementSupport, &interfaceGeometry](int num_refinements)
     {
+      constexpr bool isDefaultCoarsen = true;
       mark_elements_that_intersect_interval(mesh,
           refinementSupport.get_non_interface_conforming_refinement(),
           interfaceGeometry,
-          refinementSupport,
-          num_refinements);
+          refinementSupport.get_refinement_interval(),
+          refinementSupport.get_interface_minimum_refinement_level(),
+          isDefaultCoarsen);
     };
   }
   else

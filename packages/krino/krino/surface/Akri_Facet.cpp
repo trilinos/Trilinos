@@ -17,18 +17,31 @@ namespace krino{
 //
 //--------------------------------------------------------------------------------
 
-static void unpack_vector3d_from_buffer( stk::CommBuffer & b, stk::math::Vector3d & coords )
+static void unpack_vector3d_from_buffer( stk::math::Vector3d & vec, stk::CommBuffer & b )
 {
-  b.unpack(coords[0]);
-  b.unpack(coords[1]);
-  b.unpack(coords[2]);
+  b.unpack(vec[0]);
+  b.unpack(vec[1]);
+  b.unpack(vec[2]);
 }
 
-static void unpack_vector2d_from_buffer( stk::CommBuffer & b, stk::math::Vector3d & coords )
+static void unpack_vector2d_from_buffer( stk::math::Vector3d & vec, stk::CommBuffer & b )
 {
-  b.unpack(coords[0]);
-  b.unpack(coords[1]);
-  coords[2] = 0.;
+  b.unpack(vec[0]);
+  b.unpack(vec[1]);
+  vec[2] = 0.;
+}
+
+static void unpack_vectors_from_buffer( std::array<stk::math::Vector3d,3> & vecs, stk::CommBuffer & b )
+{
+  unpack_vector3d_from_buffer(vecs[0], b);
+  unpack_vector3d_from_buffer(vecs[1], b);
+  unpack_vector3d_from_buffer(vecs[2], b);
+}
+
+static void unpack_vectors_from_buffer( std::array<stk::math::Vector3d,2> & vecs, stk::CommBuffer & b )
+{
+  unpack_vector2d_from_buffer(vecs[0], b);
+  unpack_vector2d_from_buffer(vecs[1], b);
 }
 
 //--------------------------------------------------------------------------------
@@ -37,36 +50,73 @@ void
 Facet2d::pack_into_buffer(stk::CommBuffer & b) const
 {
   for (int n = 0; n < 2; ++n )
-  {
-    b.pack(myCoords[n][0]);
-    b.pack(myCoords[n][1]);
-  }
+    for (int d = 0; d < 2; ++d )
+      b.pack(myCoords[n][d]);
 }
 
-void
-Facet2d::unpack_facet_data_from_buffer( stk::CommBuffer & b, std::array<stk::math::Vector3d,2> & facetCoords)
+Facet2d::Facet2d( stk::CommBuffer & b )
 {
-  unpack_vector2d_from_buffer(b, facetCoords[0]);
-  unpack_vector2d_from_buffer(b, facetCoords[1]);
+  unpack_vectors_from_buffer(myCoords, b);
 }
 
 void
 Facet3d::pack_into_buffer(stk::CommBuffer & b) const
 {
   for (int n = 0; n < 3; ++n )
-  {
-    b.pack(myCoords[n][0]);
-    b.pack(myCoords[n][1]);
-    b.pack(myCoords[n][2]);
-  }
+    for (int d = 0; d < 3; ++d )
+      b.pack(myCoords[n][d]);
+}
+
+Facet3d::Facet3d( stk::CommBuffer & b )
+{
+  unpack_vectors_from_buffer(myCoords, b);
 }
 
 void
-Facet3d::unpack_facet_data_from_buffer( stk::CommBuffer & b, std::array<stk::math::Vector3d,3> & facetCoords)
+FacetWithVelocity2d::pack_into_buffer(stk::CommBuffer & b) const
 {
-  unpack_vector3d_from_buffer(b, facetCoords[0]);
-  unpack_vector3d_from_buffer(b, facetCoords[1]);
-  unpack_vector3d_from_buffer(b, facetCoords[2]);
+  Facet2d::pack_into_buffer(b);
+  for (int n = 0; n < 2; ++n )
+    for (int d = 0; d < 2; ++d )
+      b.pack(myVelocity[n][d]);
+}
+
+FacetWithVelocity2d::FacetWithVelocity2d( stk::CommBuffer & b )
+: Facet2d(b)
+{
+  unpack_vectors_from_buffer(myVelocity, b);
+}
+
+void
+FacetWithVelocity3d::pack_into_buffer(stk::CommBuffer & b) const
+{
+  Facet3d::pack_into_buffer(b);
+  for (int n = 0; n < 3; ++n )
+    for (int d = 0; d < 3; ++d )
+      b.pack(myVelocity[n][d]);
+}
+
+FacetWithVelocity3d::FacetWithVelocity3d( stk::CommBuffer & b )
+: Facet3d(b)
+{
+  unpack_vectors_from_buffer(myVelocity, b);
+}
+
+stk::math::Vector3d FacetWithVelocity2d::velocity_at_closest_point( const stk::math::Vector3d & queryPt ) const
+{
+  stk::math::Vector3d closestPt;
+  stk::math::Vector2d paramAtClosestPt;
+  closest_point(queryPt, closestPt, paramAtClosestPt);
+  return (1.-paramAtClosestPt[0]) * myVelocity[0] + paramAtClosestPt[0] * myVelocity[1];
+}
+
+stk::math::Vector3d FacetWithVelocity3d::velocity_at_closest_point( const stk::math::Vector3d & queryPt ) const
+{
+  stk::math::Vector3d closestPt;
+  stk::math::Vector2d paramAtClosestPt;
+  closest_point(queryPt, closestPt, paramAtClosestPt);
+  return myVelocity[0] * (1.-paramAtClosestPt[0]) + myVelocity[1] * paramAtClosestPt[0];
+  return (1.0-paramAtClosestPt[0]-paramAtClosestPt[1]) * myVelocity[0] + paramAtClosestPt[0] * myVelocity[1] + paramAtClosestPt[1] * myVelocity[2];
 }
 
 std::ostream & Facet3d::put( std::ostream & os ) const

@@ -148,6 +148,23 @@ class CalcTriangle3 {
     closest_point_projection<ClosestPointLocation>(p0, p1, p2, queryPt, closestPt);
   }
 
+  static Vec3d closest_point(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2, const Vec3d& queryPt)
+  {
+    Vec3d closestPt(stk::math::MemberInit::NONE);
+    closest_point(p0, p1, p2, queryPt, closestPt);
+    return closestPt;
+  }
+
+  static void closest_point(const std::array<Vec3d,3> & triCoords, const Vec3d& queryPt, Vec3d& closestPt)
+  {
+    closest_point(triCoords[0], triCoords[1], triCoords[2], queryPt, closestPt);
+  }
+
+  static Vec3d closest_point(const std::array<Vec3d,3> & triCoords, const Vec3d& queryPt)
+  {
+    return closest_point(triCoords[0], triCoords[1], triCoords[2], queryPt);
+  }
+
   static void closest_point_and_parametric_coords(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2, const Vec3d& queryPt, Vec3d& closestPt, Vec2d & paramPt)
   {
     closest_point_projection<ClosestPointLocationAndParametricCoords>(p0, p1, p2, queryPt, std::tie(closestPt, paramPt));
@@ -169,9 +186,7 @@ class CalcTriangle3 {
 template<typename REAL>
 inline REAL CalcTriangle3<REAL>::distance_squared(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2, const Vec3d& queryPt)
 {
-  Vec3d closestPt(stk::math::MemberInit::NONE);
-  closest_point(p0,p1,p2, queryPt, closestPt);
-  return (queryPt-closestPt).length_squared();
+  return (queryPt-closest_point(p0,p1,p2, queryPt)).length_squared();
 }
 
 template<typename REAL>

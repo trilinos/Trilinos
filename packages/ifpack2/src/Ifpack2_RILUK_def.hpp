@@ -91,7 +91,8 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
-    num_streams_(0)
+    num_streams_(0),
+    hasStreamReordered_(false)
 {
   allocateSolvers();
 }
@@ -116,7 +117,8 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
     isKokkosKernelsSpiluk_(false),
     isKokkosKernelsStream_(false),
-    num_streams_(0)
+    num_streams_(0),
+    hasStreamReordered_(false)
 {
   allocateSolvers();
 }
@@ -412,7 +414,7 @@ setParameters (const Teuchos::ParameterList& params)
     getParamTryingTypes<int, int, global_ordinal_type>
       (nstreams, params, paramName, prefix);
   }
-  
+
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
@@ -427,6 +429,9 @@ setParameters (const Teuchos::ParameterList& params)
 
   if (num_streams_ >= 1) {
     this->isKokkosKernelsStream_ = true;
+    // Will we do reordering in streams?
+    if (params.isParameter("fact: kspiluk reordering in streams"))
+      hasStreamReordered_ = params.get<bool> ("fact: kspiluk reordering in streams");
   }
   else {
     this->isKokkosKernelsStream_ = false;
@@ -524,7 +529,7 @@ void RILUK<MatrixType>::initialize ()
      "matrix until the matrix is fill complete.  If your matrix is a "
      "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
      "range Maps, if appropriate) before calling this method.");
-  
+
   Teuchos::Time timer ("RILUK::initialize");
   double startTime = timer.wallTime();
   { // Start timing
@@ -592,8 +597,10 @@ void RILUK<MatrixType>::initialize ()
       }
       else {
         auto lclMtx = A_local_crs->getLocalMatrixDevice();
-        KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
-
+        if (!hasStreamReordered_)
+          KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
+        else
+          perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
         for(int i = 0; i < num_streams_; i++) {
           Teuchos::RCP<const crs_map_type> A_local_diagblks_RowMap = rcp (new crs_map_type(A_local_diagblks[i].numRows(),
                                                                                            A_local_diagblks[i].numRows(),
@@ -654,6 +661,7 @@ void RILUK<MatrixType>::initialize ()
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
     L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
 #endif
+
     if (!isKokkosKernelsStream_) {
       U_solver_->setMatrix (U_);
     }
@@ -1050,7 +1058,11 @@ void RILUK<MatrixType>::compute ()
         A_local_values_  = lclMtx.values;
       }
       else {
-        KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
+        if (!hasStreamReordered_)
+          KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
+        else
+          perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
+
         A_local_diagblks_rowmap_v_  = std::vector<lno_row_view_t>(num_streams_);
         A_local_diagblks_entries_v_ = std::vector<lno_nonzero_view_t>(num_streams_);
         A_local_diagblks_values_v_  = std::vector<scalar_nonzero_view_t>(num_streams_);
@@ -1198,77 +1210,133 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
   const scalar_type one = STS::one ();
   const scalar_type zero = STS::zero ();
-
+  
   Teuchos::Time timer ("RILUK::apply");
   double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
-      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
-        //NOTE (Nov-15-2022):
-        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
-        //since cusparseSpSV_solve() does not support in-place computation
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-
-        // Start by solving L Y_tmp = X for Y_tmp.
-        L_solver_->apply (X, Y_tmp, mode);
-
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
-          // write "solve D Y = Y for Y."
-          Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+      if (isKokkosKernelsSpiluk_ && isKokkosKernelsStream_ && hasStreamReordered_) {
+        MV ReorderedX (X.getMap(), X.getNumVectors());
+        MV ReorderedY (Y.getMap(), Y.getNumVectors());
+        for (size_t j = 0; j < X.getNumVectors(); j++) {
+          auto X_j = X.getVector(j);
+          auto ReorderedX_j = ReorderedX.getVectorNonConst(j);
+          auto X_lcl = X_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto ReorderedX_lcl = ReorderedX_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
+          local_ordinal_type stream_begin = 0;
+          local_ordinal_type stream_end;
+          for(int i = 0; i < num_streams_; i++) {
+            auto perm_i = perm_v_[i];
+            stream_end = stream_begin + perm_i.extent(0);
+            auto X_lcl_sub = Kokkos::subview (X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            auto ReorderedX_lcl_sub = Kokkos::subview (ReorderedX_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+              ReorderedX_lcl_sub(perm_i(ii)) = X_lcl_sub(ii);
+            });
+            stream_begin = stream_end;
+          }
+        }
+        Kokkos::fence(); // Make sure X is completely reordered
+        if (mode == Teuchos::NO_TRANS) { // Solve L (U Y) = X for Y.
+          // Solve L Y = X for Y.
+          L_solver_->apply (ReorderedX, Y, mode);
+          // Solve U Y = Y for Y.
+          U_solver_->apply (Y, ReorderedY, mode);
+        }
+        else { // Solve U^P (L^P Y) = X for Y (where P is * or T).
+          // Solve U^P Y = X for Y.
+          U_solver_->apply (ReorderedX, Y, mode);
+          // Solve L^P Y = Y for Y.
+          L_solver_->apply (Y, ReorderedY, mode);
         }
 
-        U_solver_->apply (Y_tmp, Y, mode); // Solve U Y = Y_tmp.
-#else
-        // Start by solving L Y = X for Y.
-        L_solver_->apply (X, Y, mode);
-
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
-          // write "solve D Y = Y for Y."
-          Y.elementWiseMultiply (one, *D_, Y, zero);
+        for (size_t j = 0; j < Y.getNumVectors(); j++) {
+          auto Y_j = Y.getVectorNonConst(j);
+          auto ReorderedY_j = ReorderedY.getVector(j);
+          auto Y_lcl = Y_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
+          auto ReorderedY_lcl = ReorderedY_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          local_ordinal_type stream_begin = 0;
+          local_ordinal_type stream_end;
+          for(int i = 0; i < num_streams_; i++) {
+            auto perm_i = perm_v_[i];
+            stream_end = stream_begin + perm_i.extent(0);
+            auto Y_lcl_sub = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            auto ReorderedY_lcl_sub = Kokkos::subview (ReorderedY_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+              Y_lcl_sub(ii) = ReorderedY_lcl_sub(perm_i(ii));
+            });
+            stream_begin = stream_end;
+          }
         }
-
-        U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
-#endif
       }
-      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).          
+      else {
+        if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
-        //NOTE (Nov-15-2022):
-        //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
-        //since cusparseSpSV_solve() does not support in-place computation
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          //NOTE (Nov-15-2022):
+          //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+          //since cusparseSpSV_solve() does not support in-place computation
+          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
 
-        // Start by solving U^P Y_tmp = X for Y_tmp.
-        U_solver_->apply (X, Y_tmp, mode);
+          // Start by solving L Y_tmp = X for Y_tmp.
+          L_solver_->apply (X, Y_tmp, mode);
 
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D^P Y = Y.
-          //
-          // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
-          // need to do an elementwise multiply with the conjugate of
-          // D_, not just with D_ itself.
-          Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
-	    }
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
+            // write "solve D Y = Y for Y."
+            Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+          }
 
-        L_solver_->apply (Y_tmp, Y, mode); // Solve L^P Y = Y_tmp.
+          U_solver_->apply (Y_tmp, Y, mode); // Solve U Y = Y_tmp.
 #else
-        // Start by solving U^P Y = X for Y.
-        U_solver_->apply (X, Y, mode);
+          // Start by solving L Y = X for Y.
+          L_solver_->apply (X, Y, mode);
 
-        if (!this->isKokkosKernelsSpiluk_) {
-          // Solve D^P Y = Y.
-          //
-          // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
-          // need to do an elementwise multiply with the conjugate of
-          // D_, not just with D_ itself.
-          Y.elementWiseMultiply (one, *D_, Y, zero);
-	    }
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
+            // write "solve D Y = Y for Y."
+            Y.elementWiseMultiply (one, *D_, Y, zero);
+          }
 
-        L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+          U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
 #endif
+        }
+        else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).          
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+          //NOTE (Nov-15-2022):
+          //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
+          //since cusparseSpSV_solve() does not support in-place computation
+          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+
+          // Start by solving U^P Y_tmp = X for Y_tmp.
+          U_solver_->apply (X, Y_tmp, mode);
+
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D^P Y = Y.
+            //
+            // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
+            // need to do an elementwise multiply with the conjugate of
+            // D_, not just with D_ itself.
+            Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+	      }
+
+          L_solver_->apply (Y_tmp, Y, mode); // Solve L^P Y = Y_tmp.
+#else
+          // Start by solving U^P Y = X for Y.
+          U_solver_->apply (X, Y, mode);
+
+          if (!this->isKokkosKernelsSpiluk_) {
+            // Solve D^P Y = Y.
+            //
+            // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
+            // need to do an elementwise multiply with the conjugate of
+            // D_, not just with D_ itself.
+            Y.elementWiseMultiply (one, *D_, Y, zero);
+	      }
+
+          L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+#endif
+        }
       }
     }
     else { // alpha != 1 or beta != 0

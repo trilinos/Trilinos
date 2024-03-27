@@ -693,7 +693,7 @@ namespace Intrepid2 {
                         leftInputViewType  leftInput_,
                         rightInputViewType rightInput_)
       : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
-        _iend(output_.extent_int(output_.rank()-1)), _jend(rightInput_.extent_int(rightInputRank-1))
+        _iend(output_.extent_int(rank(output_)-1)), _jend(rightInput_.extent_int(rightInputRank-1))
     {}
     
     //  ****** hasField == true cases ******

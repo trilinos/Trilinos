@@ -52,12 +52,12 @@
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
-  
+
   /** \class  Intrepid2::Basis_HGRAD_TET_COMP12_FEM
       \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Tetrahedron cell
-  
+
       Implements Lagrangian basis of degree 2 on the reference Tetrahedron cell. The basis has
-      cardinality 10 and spans a COMPLETE quadratic polynomial space. Basis functions are dual 
+      cardinality 10 and spans a COMPLETE quadratic polynomial space. Basis functions are dual
       to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
 
       \verbatim
@@ -90,8 +90,8 @@ namespace Intrepid2 {
       |   MAX   |  maxScDim=0  |  maxScOrd=3  |  maxDfOrd=0  |     -       |                           |
       |=========|==============|==============|==============|=============|===========================|
       \endverbatim
-  
-      \remark   Ordering of DoFs follows the node order in Tetrahedron<10> topology. Note that node order 
+
+      \remark   Ordering of DoFs follows the node order in Tetrahedron<10> topology. Note that node order
       in this topology follows the natural order of k-subcells where the nodes are located, i.e.,
       L_0 to L_3 correspond to 0-subcells (vertices) 0 to 3 and L_4 to L_9 correspond to
       1-subcells (edges) 0 to 5.
@@ -115,7 +115,7 @@ namespace Intrepid2 {
       getLocalSubTet( const pointValueType x,
                       const pointValueType y,
                       const pointValueType z );
-      
+
       /**
         \brief See Intrepid2::Basis_HGRAD_TET_COMP12_FEM
       */
@@ -127,17 +127,18 @@ namespace Intrepid2 {
         static void
         getValues(       outputValueViewType outputValues,
                    const inputPointViewType  inputPoints );
-        
+
       };
-      
-      template<typename DeviceType, 
+
+      template<typename DeviceType,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
-      getValues(        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+      getValues(  const typename DeviceType::execution_space& space,
+                        Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const EOperator operatorType );
-      
+
       /**
         \brief See Intrepid2::Basis_HGRAD_TET_COMP12_FEM
       */
@@ -147,12 +148,12 @@ namespace Intrepid2 {
       struct Functor {
               outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
-        
+
         KOKKOS_INLINE_FUNCTION
         Functor(      outputValueViewType outputValues_,
                       inputPointViewType  inputPoints_ )
           : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
-        
+
         KOKKOS_INLINE_FUNCTION
         void operator()(const ordinal_type pt) const {
           switch (opType) {
@@ -186,37 +187,41 @@ namespace Intrepid2 {
            typename pointValueType = double>
   class Basis_HGRAD_TET_COMP12_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    using typename BasisBase::ExecutionSpace;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType ;
+    using typename BasisBase::ScalarViewType;
 
     /** \brief  Constructor.
      */
     Basis_HGRAD_TET_COMP12_FEM();
-    
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
 
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
-    /** \brief  FEM basis evaluation on a <strong>reference Tetrahedron</strong> cell. 
-    
+    /** \brief  FEM basis evaluation on a <strong>reference Tetrahedron</strong> cell.
+
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-        points in the <strong>reference Tetrahedron</strong> cell. For rank and dimensions of 
+        points in the <strong>reference Tetrahedron</strong> cell. For rank and dimensions of
         I/O array arguments see Section \ref basis_md_array_sec .
-  
+
         \param  outputValues      [out] - rank-2 or 3 array with the computed basis values
-        \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points  
-        \param  operatorType      [in]  - operator applied to basis functions    
-        
+        \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points
+        \param  operatorType      [in]  - operator applied to basis functions
+
         For rank and dimension specifications of <var>ArrayScalar</var> arguments see \ref basis_array_specs
     */
     virtual
     void
-    getValues(       OutputViewType outputValues,
-               const PointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const override {
+    getValues( const ExecutionSpace& space,
+                     OutputViewType  outputValues,
+               const PointViewType   inputPoints,
+               const EOperator       operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       Intrepid2::getValues_HGRAD_Args(outputValues,
                                       inputPoints,
@@ -225,9 +230,10 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       Impl::Basis_HGRAD_TET_COMP12_FEM::
-        getValues<DeviceType>( outputValues,
-                                  inputPoints,
-                                  operatorType );
+        getValues<DeviceType>(space,
+                              outputValues,
+                              inputPoints,
+                              operatorType);
     }
 
     /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
@@ -241,7 +247,7 @@ namespace Intrepid2 {
     getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoords) != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_COMP12_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->getCardinality(), std::invalid_argument,

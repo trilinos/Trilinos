@@ -25,6 +25,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
 #include "Kokkos_Bitset.hpp"
+#include "KokkosGraph_RCM.hpp"
 
 #ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
 #include <parallel/algorithm>
@@ -2415,15 +2416,23 @@ void kk_extract_subblock_crsmatrix_sequential(
  * @tparam crsMat_t The type of the CRS matrix.
  * @param A [in] The square CrsMatrix. It is expected that column indices are
  * in ascending order
+ * @param UseRCMReordering [in] Boolean indicating whether applying (true) RCM
+ * reordering to diagonal blocks or not (false) (default: false)
  * @param DiagBlk_v [out] The vector of the extracted the CRS diagonal blocks
  * (1 <= the number of diagonal blocks <= A_nrows)
+ * @return a vector of lists of vertices in RCM order (a list per a diagonal
+ * block) if UseRCMReordering is true, or an empty vector if UseRCMReordering is
+ * false
  *
  * Usage Example:
- *    kk_extract_diagonal_blocks_crsmatrix_sequential(A_in, diagBlk_in_b);
+ *    perm = kk_extract_diagonal_blocks_crsmatrix_sequential(A_in, diagBlk_out,
+ * UseRCMReordering);
  */
 template <typename crsMat_t>
-void kk_extract_diagonal_blocks_crsmatrix_sequential(
-    const crsMat_t &A, std::vector<crsMat_t> &DiagBlk_v) {
+std::vector<typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type>
+kk_extract_diagonal_blocks_crsmatrix_sequential(
+    const crsMat_t &A, std::vector<crsMat_t> &DiagBlk_v,
+    bool UseRCMReordering = false) {
   using row_map_type     = typename crsMat_t::row_map_type;
   using entries_type     = typename crsMat_t::index_type;
   using values_type      = typename crsMat_t::values_type;
@@ -2437,6 +2446,7 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
 
   using ordinal_type = typename crsMat_t::non_const_ordinal_type;
   using size_type    = typename crsMat_t::non_const_size_type;
+  using value_type   = typename crsMat_t::non_const_value_type;
   using offset_view1d_type =
       Kokkos::View<size_type *, Kokkos::LayoutLeft, Kokkos::HostSpace>;
 
@@ -2463,8 +2473,12 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
     throw std::runtime_error(os.str());
   }
 
+  std::vector<out_entries_type> perm_v;
+  std::vector<out_entries_hostmirror_type> perm_h_v;
+
   if (n_blocks == 1) {
     // One block case: simply shallow copy A to DiagBlk_v[0]
+    // Note: always not applying RCM reordering, for now
     DiagBlk_v[0] = crsMat_t(A);
   } else {
     // n_blocks > 1
@@ -2487,12 +2501,10 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
                                         ? (A_nrows / n_blocks)
                                         : (A_nrows / n_blocks + 1);
 
-      std::vector<out_row_map_type> row_map_v(n_blocks);
-      std::vector<out_entries_type> entries_v(n_blocks);
-      std::vector<out_values_type> values_v(n_blocks);
-      std::vector<out_row_map_hostmirror_type> row_map_h_v(n_blocks);
-      std::vector<out_entries_hostmirror_type> entries_h_v(n_blocks);
-      std::vector<out_values_hostmirror_type> values_h_v(n_blocks);
+      if (UseRCMReordering) {
+        perm_v.resize(n_blocks);
+        perm_h_v.resize(n_blocks);
+      }
 
       ordinal_type blk_row_start = 0;  // first row index of i-th diagonal block
       ordinal_type blk_col_start = 0;  // first col index of i-th diagonal block
@@ -2509,37 +2521,110 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
         // First round: count i-th non-zeros or size of entries_v[i] and find
         // the first and last column indices at each row
         size_type blk_nnz = 0;
-        offset_view1d_type first("first", blk_nrows);  // first position per row
-        offset_view1d_type last("last", blk_nrows);    // last position per row
+        offset_view1d_type first(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "first"),
+            blk_nrows);  // first position per row
+        offset_view1d_type last(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "last"),
+            blk_nrows);  // last position per row
 
         kk_find_nnz_first_last_indices_subblock_crsmatrix_sequential(
             A_row_map_h, A_entries_h, blk_row_start, blk_col_start, blk_nrows,
             blk_ncols, blk_nnz, first, last);
 
         // Second round: extract
-        row_map_v[i] = out_row_map_type("row_map_v", blk_nrows + 1);
-        entries_v[i] = out_entries_type("entries_v", blk_nnz);
-        values_v[i]  = out_values_type("values_v", blk_nnz);
-        row_map_h_v[i] =
-            out_row_map_hostmirror_type("row_map_h_v", blk_nrows + 1);
-        entries_h_v[i] = out_entries_hostmirror_type("entries_h_v", blk_nnz);
-        values_h_v[i]  = out_values_hostmirror_type("values_h_v", blk_nnz);
+        out_row_map_type row_map(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map"),
+            blk_nrows + 1);
+        out_entries_type entries(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"),
+            blk_nnz);
+        out_values_type values(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), blk_nnz);
+        out_row_map_hostmirror_type row_map_h(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map_h"),
+            blk_nrows + 1);
+        out_entries_hostmirror_type entries_h(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_h"),
+            blk_nnz);
+        out_values_hostmirror_type values_h(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_h"),
+            blk_nnz);
 
         kk_extract_subblock_crsmatrix_sequential(
             A_entries_h, A_values_h, blk_col_start, blk_nrows, blk_nnz, first,
-            last, row_map_h_v[i], entries_h_v[i], values_h_v[i]);
+            last, row_map_h, entries_h, values_h);
 
-        Kokkos::deep_copy(row_map_v[i], row_map_h_v[i]);
-        Kokkos::deep_copy(entries_v[i], entries_h_v[i]);
-        Kokkos::deep_copy(values_v[i], values_h_v[i]);
+        if (!UseRCMReordering) {
+          Kokkos::deep_copy(row_map, row_map_h);
+          Kokkos::deep_copy(entries, entries_h);
+          Kokkos::deep_copy(values, values_h);
+        } else {
+          perm_h_v[i] = KokkosGraph::Experimental::graph_rcm<
+              Kokkos::DefaultHostExecutionSpace>(row_map_h, entries_h);
+          perm_v[i] = out_entries_type(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_v"),
+              perm_h_v[i].extent(0));
+
+          out_row_map_hostmirror_type row_map_perm_h(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing, "row_map_perm_h"),
+              blk_nrows + 1);
+          out_entries_hostmirror_type entries_perm_h(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries_perm_h"),
+              blk_nnz);
+          out_values_hostmirror_type values_perm_h(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing, "values_perm_h"),
+              blk_nnz);
+
+          out_entries_hostmirror_type reverseperm_h(
+              Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverseperm_h"),
+              blk_nrows);
+          for (ordinal_type ii = 0; ii < blk_nrows; ii++)
+            reverseperm_h(perm_h_v[i](ii)) = ii;
+
+          std::map<ordinal_type, value_type> colIdx_Value_rcm;
+
+          // Loop through each row of the reordered matrix
+          size_type cnt = 0;
+          for (ordinal_type ii = 0; ii < blk_nrows; ii++) {
+            colIdx_Value_rcm.clear();
+            // ii: reordered index
+            ordinal_type origRow = reverseperm_h(
+                ii);  // get the original row idx of the reordered row idx, ii
+            for (size_type j = row_map_h(origRow); j < row_map_h(origRow + 1);
+                 j++) {
+              ordinal_type origEi = entries_h(j);
+              value_type origV    = values_h(j);
+              ordinal_type Ei =
+                  perm_h_v[i](origEi);  // get the reordered col idx of the
+                                        // original col idx, origEi
+              colIdx_Value_rcm[Ei] = origV;
+            }
+            row_map_perm_h(ii) = cnt;
+            for (typename std::map<ordinal_type, value_type>::iterator it =
+                     colIdx_Value_rcm.begin();
+                 it != colIdx_Value_rcm.end(); ++it) {
+              entries_perm_h(cnt) = it->first;
+              values_perm_h(cnt)  = it->second;
+              cnt++;
+            }
+          }
+          row_map_perm_h(blk_nrows) = cnt;
+
+          Kokkos::deep_copy(row_map, row_map_perm_h);
+          Kokkos::deep_copy(entries, entries_perm_h);
+          Kokkos::deep_copy(values, values_perm_h);
+          Kokkos::deep_copy(perm_v[i], perm_h_v[i]);
+        }
 
         DiagBlk_v[i] = crsMat_t("CrsMatrix", blk_nrows, blk_ncols, blk_nnz,
-                                values_v[i], row_map_v[i], entries_v[i]);
+                                values, row_map, entries);
 
         blk_row_start += blk_nrows;
       }  // for (ordinal_type i = 0; i < n_blocks; i++)
     }    // A_nrows >= 1
   }      // n_blocks > 1
+  return perm_v;
 }
 
 }  // namespace Impl

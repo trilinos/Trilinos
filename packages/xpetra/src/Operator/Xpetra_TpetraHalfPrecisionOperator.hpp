@@ -127,12 +127,12 @@ class TpetraHalfPrecisionOperator : public Xpetra::Operator<Scalar, LocalOrdinal
   //@}
 
   //! Returns the Tpetra::Map object associated with the domain of this TpetraOperator.
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getDomainMap() const {
+  const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getDomainMap() const {
     return Op_->getDomainMap();
   }
 
   //! Returns the Tpetra::Map object associated with the range of this TpetraOperator.
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getRangeMap() const {
+  const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getRangeMap() const {
     return Op_->getRangeMap();
   }
 

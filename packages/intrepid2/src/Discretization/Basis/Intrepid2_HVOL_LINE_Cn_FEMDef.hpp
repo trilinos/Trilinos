@@ -254,7 +254,7 @@ namespace Intrepid2 {
     const double alpha = 0.0, beta = 0.0;
     Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
       getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>
-      (vmat, dofCoords, order, alpha, beta, OPERATOR_VALUE);
+      (typename Kokkos::HostSpace::execution_space{}, vmat, dofCoords, order, alpha, beta, OPERATOR_VALUE);
 
     ordinal_type info = 0;
     Teuchos::LAPACK<ordinal_type,typename ScalarViewType::value_type> lapack;

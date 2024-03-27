@@ -480,7 +480,7 @@ namespace Intrepid2 {
     const auto spaceDim = cellTopo.getDimension();
 
     // Verify inputPoints array
-    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( !(rank(inputPoints) == 2), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for inputPoints array");
 
     INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.extent(0) <= 0), std::invalid_argument,
@@ -513,7 +513,7 @@ namespace Intrepid2 {
     if(spaceDim == 1) {
       switch(operatorType){
       case OPERATOR_VALUE:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 2), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
         break;
       case OPERATOR_GRAD:
@@ -529,7 +529,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 1D when operator = GRAD, CURL, DIV, or Dk.");
 
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.extent(2) == 1 ),
@@ -543,13 +543,13 @@ namespace Intrepid2 {
     else if(spaceDim > 1) {
       switch(operatorType){
       case OPERATOR_VALUE:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 2), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
         break;
       case OPERATOR_GRAD:
       case OPERATOR_CURL:
       case OPERATOR_D1:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
 
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.extent(2) == spaceDim ),
@@ -565,7 +565,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
         
         INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<ordinal_type>(outputValues.extent(2)) == getDkCardinality(operatorType, spaceDim)),
@@ -606,7 +606,7 @@ namespace Intrepid2 {
     
     
     // Verify inputPoints array
-    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( !(rank(inputPoints) == 2), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 2 required for inputPoints array");
     INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.extent(0) <= 0), std::invalid_argument,
                                    ">>> ERROR (Intrepid2::getValues_HCURL_Args): dim 0 (number of points) > 0 required for inputPoints array");
@@ -630,7 +630,7 @@ namespace Intrepid2 {
     switch(operatorType) {
       
     case OPERATOR_VALUE:
-      INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 3 required for outputValues when operator is VALUE");
       INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.extent(2) == spaceDim ),
                                     std::invalid_argument,
@@ -641,7 +641,7 @@ namespace Intrepid2 {
       
       // in 3D we need an (F,P,D) container because CURL gives a vector field:
       if(spaceDim == 3) {
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3 ) ,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3 ) ,
                                       std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 3 required for outputValues in 3D when operator is CURL");
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.extent(2) == spaceDim),
@@ -650,7 +650,7 @@ namespace Intrepid2 {
       }
       // In 2D we need an (F,P) container because CURL gives a scalar field
       else if(spaceDim == 2) {
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2 ) ,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 2 ) ,
                                       std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HCURL_Args) rank = 2 required for outputValues in 2D when operator is CURL");
       }
@@ -685,7 +685,7 @@ namespace Intrepid2 {
     const auto spaceDim = cellTopo.getDimension();
     
     // Verify inputPoints array
-    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( !(rank(inputPoints) == 2), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) rank = 2 required for inputPoints array");
     INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.extent(0) <= 0), std::invalid_argument,
                                    ">>> ERROR (Intrepid2::getValues_HDIV_Args): dim 0 (number of points) > 0 required for inputPoints array");
@@ -708,7 +708,7 @@ namespace Intrepid2 {
     // Check rank of outputValues
     switch(operatorType) {
     case OPERATOR_VALUE:
-      INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HDIV_Args) rank = 3 required for outputValues when operator is VALUE.");
       
       INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.extent(2) == spaceDim ),
@@ -716,7 +716,7 @@ namespace Intrepid2 {
                                     ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 2 of outputValues must equal cell dimension for operator VALUE.");
       break;
     case OPERATOR_DIV:
-      INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 2), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::getValues_HDIV_Args) rank = 2 required for outputValues when operator is DIV.");
       break;
       
@@ -745,7 +745,7 @@ namespace Intrepid2 {
     const auto spaceDim = cellTopo.getDimension();
 
     // Verify inputPoints array
-    INTREPID2_TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( !(rank(inputPoints) == 2), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for inputPoints array");
 
     INTREPID2_TEST_FOR_EXCEPTION(  (inputPoints.extent(0) <= 0), std::invalid_argument,
@@ -778,7 +778,7 @@ namespace Intrepid2 {
     if(spaceDim == 1) {
       switch(operatorType){
       case OPERATOR_VALUE:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 2), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
         break;
       case OPERATOR_GRAD:
@@ -794,7 +794,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 1D when operator = GRAD, CURL, DIV, or Dk.");
 
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.extent(2) == 1 ),
@@ -808,13 +808,13 @@ namespace Intrepid2 {
     else if(spaceDim > 1) {
       switch(operatorType){
       case OPERATOR_VALUE:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 2), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
         break;
       case OPERATOR_GRAD:
       case OPERATOR_CURL:
       case OPERATOR_D1:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
 
         INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.extent(2) == spaceDim ),
@@ -830,7 +830,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10:
-        INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !(rank(outputValues) == 3), std::invalid_argument,
                                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
 
         INTREPID2_TEST_FOR_EXCEPTION( !(static_cast<ordinal_type>(outputValues.extent(2)) == getDkCardinality(operatorType, spaceDim)),

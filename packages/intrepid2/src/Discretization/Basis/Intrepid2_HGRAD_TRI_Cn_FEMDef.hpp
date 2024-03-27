@@ -287,7 +287,11 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   work("Hgrad::Tri::Cn::work", lwork),
   ipiv("Hgrad::Tri::Cn::ipiv", card);
 
-  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
+  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                     vmat,
+                                                                                                                     dofCoords,
+                                                                                                                     order,
+                                                                                                                     OPERATOR_VALUE);
 
   ordinal_type info = 0;
   Teuchos::LAPACK<ordinal_type,scalarType> lapack;
