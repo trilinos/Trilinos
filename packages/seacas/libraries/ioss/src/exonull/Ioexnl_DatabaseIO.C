@@ -54,7 +54,6 @@
 // ========================================================================
 namespace {
   const size_t                     max_line_length = MAX_LINE_LENGTH;
-  const std::array<std::string, 2> complex_suffix{".re", ".im"};
 
   template <typename T>
   void compute_internal_border_maps(T *entities, T *internal, size_t count, size_t entity_count)

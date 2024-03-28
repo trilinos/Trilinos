@@ -4370,7 +4370,7 @@ namespace Ioex {
               }
             }
             size_t eb_offset = eb->get_offset();
-            int    index     = -1 * (field.get_index() + comp);
+            int    index     = -1 * (static_cast<int>(field.get_index()) + comp);
             ierr = ex_put_partial_num_map(get_file_pointer(), EX_ELEM_MAP, index, eb_offset + 1,
                                           my_element_count, Data(component));
           }

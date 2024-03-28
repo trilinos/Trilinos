@@ -36,9 +36,6 @@
 
 namespace {
 
-  // Data space shared by most field input/output routines...
-  std::vector<char> data;
-
   struct Globals
   {
     bool        debug{};
