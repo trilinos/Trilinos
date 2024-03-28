@@ -1789,12 +1789,6 @@ namespace tsl {
     private:
       static const std::size_t MAX_PROBES_FOR_EMPTY_BUCKET = 12 * NeighborhoodSize;
       static constexpr float   MIN_LOAD_FACTOR_FOR_REHASH  = 0.1f;
-      template <typename T, typename U> struct is_type_same
-      {
-        static_assert(std::is_unsigned<T>::value, "T must be an unsigned type");
-        static_assert(std::is_unsigned<U>::value, "U must be an unsigned type");
-        static const bool value = sizeof(T) == sizeof(U);
-      };
 
       /**
        * We can only use the hash on rehash if the size of the hash type is the same
@@ -1804,7 +1798,7 @@ namespace tsl {
        */
       template <
           class T                                                                      = size_type,
-          typename std::enable_if<is_type_same<T, truncated_hash_type>::value>::type * = nullptr>
+	typename std::enable_if<std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
       static bool USE_STORED_HASH_ON_REHASH(size_type /*bucket_count*/)
       {
         return StoreHash;
@@ -1812,7 +1806,7 @@ namespace tsl {
 
       template <
           class T                                                                       = size_type,
-          typename std::enable_if<!is_type_same<T, truncated_hash_type>::value>::type * = nullptr>
+	typename std::enable_if<!std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
       static bool USE_STORED_HASH_ON_REHASH(size_type bucket_count)
       {
         (void)bucket_count;
