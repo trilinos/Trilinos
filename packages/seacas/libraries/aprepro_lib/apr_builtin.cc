@@ -8,6 +8,7 @@
 #include "apr_symrec.h"
 #include "enumerate.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cerrno>
 #include <cfenv>
