@@ -97,6 +97,8 @@ namespace Ioss {
     IOSS_NODISCARD bool operator!=(const Ioss::Property &rhs) const;
     IOSS_NODISCARD bool operator==(const Ioss::Property &rhs) const;
 
+#if 0
+    // Trilinos nvidia build doesn't like this...
     friend void swap(Ioss::Property &first, Ioss::Property &second) // nothrow
     {
       using std::swap;
@@ -105,6 +107,7 @@ namespace Ioss {
       swap(first.origin_, second.origin_);
       swap(first.data_, second.data_);
     }
+#endif
 
   private:
     std::string name_{};
@@ -116,7 +119,7 @@ namespace Ioss {
 
     bool get_value(int64_t *value) const;
     bool get_value(double *value) const;
-    bool get_value(std::string *value) const;
+    bool get_value(std::string *value) const;a
     bool get_value(void *&value) const;
     bool get_value(std::vector<double> *value) const;
     bool get_value(std::vector<int> *value) const;
