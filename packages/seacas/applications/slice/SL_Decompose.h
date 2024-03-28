@@ -12,7 +12,7 @@
 #pragma once
 template <typename INT>
 std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                    const std::vector<int> &weights, IOSS_MAYBE_UNUSED INT dummy);
+                                    const std::vector<int> &weights, INT dummy);
 
 template <typename INT>
 void line_decomp_modify(const Ioss::chain_t<INT> &element_chains, std::vector<int> &elem_to_proc,
