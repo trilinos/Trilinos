@@ -98,7 +98,7 @@ exoid = ex_open_par ("test.exo",     \co{filename path}
                      &CPU_word_size, \co{CPU word size}
                      &IO_word_size,  \co{IO word size}
                      &version,       \co{ExodusII library version
-                     MPI_COMM_WORLD,
+                     MPI_COMM_WORLD, // CHECK: ALLOW MPI_COMM_WORLD
                      MPI_INFO_NULL);}
 ~~~
  */

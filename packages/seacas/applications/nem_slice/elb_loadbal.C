@@ -2676,7 +2676,7 @@ namespace {
       fmt::print(stderr, "Error returned from Zoltan_Initialize ({}:{})\n", __FILE__, __LINE__);
       exit(-1);
     }
-    struct Zoltan_Struct *zz = Zoltan_Create(MPI_COMM_WORLD);
+    struct Zoltan_Struct *zz = Zoltan_Create(MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
 
     /* Register Callback functions */
     /* Using global Zoltan_Data; could register it here instead as data field. */

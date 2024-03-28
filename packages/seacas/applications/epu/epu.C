@@ -74,8 +74,8 @@ public:
   {
 #if ENABLE_PARALLEL_EPU
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &epu_proc_count);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);           // CHECK: ALLOW MPI_COMM_WORLD
+    MPI_Comm_size(MPI_COMM_WORLD, &epu_proc_count); // CHECK: ALLOW MPI_COMM_WORLD
 #else
     (void)(argc);
     (void)(argv);
@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
 
       ExodusFile::close_all();
 #if ENABLE_PARALLEL_EPU
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);  // CHECK: ALLOW MPI_COMM_WORLD
 #endif
     }
     else {
