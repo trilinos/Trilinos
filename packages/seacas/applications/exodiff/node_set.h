@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -29,9 +29,8 @@ public:
   const double *Distribution_Factors() const;
   void          Free_Distribution_Factors() const;
 
-  int Check_State() const;
-
 private:
+  int  Check_State() const override;
   void entity_load_params() override;
 
   EXOTYPE     exodus_type() const override;

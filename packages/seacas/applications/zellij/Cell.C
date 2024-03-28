@@ -12,6 +12,7 @@
 #include <Ioss_SmartAssert.h>
 #include <algorithm>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <string>
 
 //! \file
@@ -260,8 +261,7 @@ size_t Cell::processor_boundary_node_count() const
   // Iterate `ranks` and for each rank, "color" the `bnd_nodes` that that rank touches...
   // Skip center.
   size_t b_count = 0;
-  for (int i = 0; i < (int)ranks.size(); i++) {
-    auto the_rank = ranks[i];
+  for (auto the_rank : ranks) {
     if (the_rank == rank(Loc::C)) {
       continue;
     }

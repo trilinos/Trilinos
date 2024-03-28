@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -30,7 +30,7 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
   struct refine_edata **desire_ptr = NULL; /* array of desire buckets */
   double               *desires    = NULL; /* each edge's inclination to flip */
   int                  *indices    = NULL; /* sorted list of desire values */
-  int                  *space      = NULL; /* used for sorting disire values */
+  int                  *space      = NULL; /* used for sorting desire values */
   double                best_desire;       /* highest desire of edge to flip */
   int                   imax;              /* maxdesire rounded up */
   int                   nsets_tot;         /* total number of sets/processors */

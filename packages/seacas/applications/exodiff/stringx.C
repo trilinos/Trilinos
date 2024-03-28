@@ -82,7 +82,7 @@ std::string extract_token(std::string &s, const char *delimiters)
       // action outside of this block of code.
 
       // Find the closing quote
-      auto cq = s.find_first_of("\"", p + 1);
+      auto cq = s.find_first_of('\"', p + 1);
 
       // No closing quote found. Error out.
       SMART_ASSERT(cq < s.size());

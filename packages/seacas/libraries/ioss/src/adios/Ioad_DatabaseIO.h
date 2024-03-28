@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,11 +8,11 @@
 
 #include "ioad_export.h"
 
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
 #include "Ioss_EntitySet.h"
 #include "Ioss_Region.h"  // for Region, SideSetContainer, etc
 #include "Ioss_SideSet.h" // for SideBlockContainer, SideSet
-#include <Ioss_DBUsage.h>
-#include <Ioss_DatabaseIO.h>
 
 #include "Ioss_Field.h" // for Field, etc
 #include <AdiosWrapper.h>
@@ -40,14 +40,11 @@ namespace Ioad {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
                Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
-    ~DatabaseIO();
-    DatabaseIO(const DatabaseIO &from)            = delete;
-    DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
     std::string get_format() const override { return "ADIOS2"; }
 
-    bool begin__(Ioss::State state) override;
-    bool end__(Ioss::State state) override;
+    bool begin_nl(Ioss::State state) override;
+    bool end_nl(Ioss::State state) override;
 
     unsigned entity_field_support() const override;
     int      int_byte_size_db() const override;
@@ -242,20 +239,20 @@ namespace Ioad {
                                              const std::string &string_variable) const;
 
     void get_globals(const GlobalMapType &globals_map, const FieldsMapType &properties_map);
-    void compute_block_membership__(Ioss::SideBlock          *efblock,
-                                    std::vector<std::string> &block_membership) const override;
+    void compute_block_membership_nl(Ioss::SideBlock          *efblock,
+                                     std::vector<std::string> &block_membership) const override;
     void define_properties(const Ioss::GroupingEntity *entity_block,
                            const std::string          &encoded_entity_name);
 
-    void read_meta_data__() override;
+    void read_meta_data_nl() override;
     void read_communication_metadata();
     void read_region(const FieldsMapType &fields_map);
     void check_processor_info();
     void check_model();
 
     int           RankInit();
-    bool          begin_state__(int state, double time) override;
-    bool          end_state__(int state, double time) override;
+    bool          begin_state_nl(int state, double time) override;
+    bool          end_state_nl(int state, double time) override;
     unsigned long rank; // rank needs to be declared first to be initialized before adios_wrapper.
     mutable AdiosWrapper adios_wrapper; // adios_wrapper needs to be declared before bpio
                                         // and bp_engine to be initialized first.

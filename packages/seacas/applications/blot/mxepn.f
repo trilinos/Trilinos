@@ -22,13 +22,9 @@ C   --
 C   --Common Variables:
 C   --   Uses NUMNP of /DBNUMS/
 
-      common /debugc/ cdebug
-      common /debugn/ idebug
-      character*8 cdebug
-
+      include 'debug.blk'
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       INTEGER LINKE(NLNKE,NUME)
       INTEGER NFPN(0:NUMNP)

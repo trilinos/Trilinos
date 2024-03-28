@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,7 +31,7 @@ int refine_cube(struct vtx_data **comm_graph, /* graph for communication require
   double               *desires    = NULL; /* each edge's inclination to flip */
   double               *dptr;              /* loops through desire */
   int                  *indices = NULL;    /* sorted list of desire values */
-  int                  *space   = NULL;    /* used for sorting disire values */
+  int                  *space   = NULL;    /* used for sorting desire values */
   double                best_desire;       /* desire of max edge to flip */
   int                   imax;              /* maxdesire rounded up */
   int                   nsets_tot;         /* total number of sets/processors */
@@ -57,7 +57,7 @@ int refine_cube(struct vtx_data **comm_graph, /* graph for communication require
 
   /* This is really just ndims_tot different 1-D problems. */
 
-  /* Allocate space for and inititalize the vertex data. */
+  /* Allocate space for and initialize the vertex data. */
   vdata =
       (struct refine_vdata *)smalloc_ret((ndims_tot * nsets_tot + 1) * sizeof(struct refine_vdata));
   if (vdata == NULL) {

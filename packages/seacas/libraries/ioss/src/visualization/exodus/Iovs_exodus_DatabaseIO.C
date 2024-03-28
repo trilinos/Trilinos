@@ -1,10 +1,10 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
+#include "Ioss_CodeTypes.h"
 #include <tokenize.h>
 #include <visualization/exodus/Iovs_exodus_DatabaseIO.h>
 #include <visualization/utils/Iovs_Utils.h>
@@ -14,13 +14,13 @@
 #include <cstring>
 #include <iterator>
 
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_SerializeIO.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
+#include "Ioss_ElementTopology.h"
+#include "Ioss_FileInfo.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_SerializeIO.h"
+#include "Ioss_SubSystem.h"
+#include "Ioss_SurfaceSplit.h"
+#include "Ioss_Utils.h"
 
 namespace { // Internal helper functions
   int64_t get_id(const Ioss::GroupingEntity *entity, Iovs_exodus::EntityIdSet *idset);
@@ -59,7 +59,7 @@ namespace Iovs_exodus {
 
   DatabaseIO::~DatabaseIO() { this->catExoMesh->Delete(); }
 
-  bool DatabaseIO::begin__(Ioss::State state)
+  bool DatabaseIO::begin_nl(Ioss::State state)
   {
     dbState              = state;
     Ioss::Region *region = this->get_region();
@@ -75,7 +75,7 @@ namespace Iovs_exodus {
     return true;
   }
 
-  bool DatabaseIO::end__(Ioss::State state)
+  bool DatabaseIO::end_nl(Ioss::State state)
   {
     // Transitioning out of state 'state'
     assert(state == dbState);
@@ -95,9 +95,9 @@ namespace Iovs_exodus {
 
   // Default versions do nothing at this time...
   // Will be used for global variables...
-  bool DatabaseIO::begin_state__(int state, double time)
+  bool DatabaseIO::begin_state_nl(int state, double time)
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
 
     if (!this->globalNodeAndElementIDsCreated) {
       this->create_global_node_and_element_ids();
@@ -108,9 +108,9 @@ namespace Iovs_exodus {
     return true;
   }
 
-  bool DatabaseIO::end_state__(int /*state*/, double /*time*/)
+  bool DatabaseIO::end_state_nl(int /*state*/, double /*time*/)
   {
-    Ioss::SerializeIO        serializeIO__(this);
+    Ioss::SerializeIO        serializeIO_(this);
     std::vector<int>         error_codes;
     std::vector<std::string> error_messages;
     this->catExoMesh->logMemoryUsageAndTakeTimerReading();
@@ -123,7 +123,7 @@ namespace Iovs_exodus {
     return true;
   }
 
-  void DatabaseIO::read_meta_data__() {}
+  void DatabaseIO::read_meta_data_nl() {}
 
   void DatabaseIO::create_global_node_and_element_ids() const
   {
@@ -134,7 +134,7 @@ namespace Iovs_exodus {
       int64_t eb_offset = (*I)->get_offset();
       this->catExoMesh->CreateElementVariable("ids", 1, bid, &this->elemMap.map()[eb_offset + 1]);
       std::vector<int> object_id((*I)->entity_count(), bid);
-      this->catExoMesh->CreateElementVariable("object_id", 1, bid, object_id.data());
+      this->catExoMesh->CreateElementVariable("object_id", 1, bid, Data(object_id));
     }
     this->catExoMesh->CreateNodalVariable("ids", 1, &this->nodeMap.map()[1]);
 
@@ -150,7 +150,7 @@ namespace Iovs_exodus {
     // are REDUCTION fields (1 value).  We need to gather these
     // and output them all at one time.  The storage location is a
     // 'globalVariables' array
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
 
     size_t                num_to_get = field.verify(data_size);
     Ioss::Field::RoleType role       = field.get_role();
@@ -194,7 +194,7 @@ namespace Iovs_exodus {
   int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
     size_t            num_to_get = field.verify(data_size);
 
     if (num_to_get > 0) {
@@ -254,7 +254,7 @@ namespace Iovs_exodus {
   int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
 
     size_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {

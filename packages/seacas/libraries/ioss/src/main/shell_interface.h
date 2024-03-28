@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,12 +7,12 @@
  */
 #pragma once
 
-#include "Ioss_GetLongOpt.h"
-
 #include <iosfwd>
 #include <limits>
 #include <string>
 #include <vector>
+
+#include "Ioss_GetLongOpt.h"
 
 /** \brief A special namespace for the io_shell demonstration program interFace.
  */
@@ -20,8 +20,7 @@ namespace IOShell {
   class Interface
   {
   public:
-    explicit Interface(const std::string &app_version);
-    ~Interface();
+    explicit Interface(std::string app_version);
 
     bool parse_options(int argc, char **argv, int my_processor);
 
@@ -40,7 +39,7 @@ namespace IOShell {
     std::string              decomp_method;
     std::string              decomp_extra{"processor_id"};
     std::string              compose_output{"default"};
-    std::string              customField{""};
+    std::string              customField{};
     double                   maximum_time{std::numeric_limits<double>::max()};
     double                   minimum_time{-std::numeric_limits<double>::max()};
     double                   append_time{std::numeric_limits<double>::max()};
@@ -82,6 +81,7 @@ namespace IOShell {
     bool ints_64_bit{false};
     bool ints_32_bit{false};
     bool reals_32_bit{false};
+    bool netcdf3{false};
     bool netcdf4{false};
     bool netcdf5{false};
     bool quiet{false};
@@ -100,6 +100,12 @@ namespace IOShell {
     bool boundary_sideset{false};
     bool compare{false};
     bool ignore_qa_info{false};
+    bool ignore_node_map{false};
+    bool ignore_elem_map{false};
+    bool ignore_edge_map{false};
+    bool ignore_face_map{false};
+    bool delete_qa{false};
+    bool delete_info{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

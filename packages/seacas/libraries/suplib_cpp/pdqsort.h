@@ -1,7 +1,7 @@
 /*
     pdqsort.h - Pattern-defeating quicksort.
 
-    Copyright (c) 2021, 2022 Orson Peters
+    Copyright (c) 2021, 2022, 2023 Orson Peters
 
     This software is provided 'as-is', without any express or implied warranty. In no event will the
     authors be held liable for any damages arising from the use of this software.
@@ -177,9 +177,9 @@ namespace pdqsort_detail {
   template <class T> inline T *align_cacheline(T *p)
   {
 #if defined(UINTPTR_MAX) && __cplusplus >= 201103L
-    std::uintptr_t ip = reinterpret_cast<std::uintptr_t>(p);
+    auto ip = reinterpret_cast<std::uintptr_t>(p);
 #else
-    std::size_t ip = reinterpret_cast<std::size_t>(p);
+    auto ip = reinterpret_cast<std::size_t>(p);
 #endif
     int icacheline_size = int(cacheline_size);
     ip                  = (ip + icacheline_size - 1) & -icacheline_size;

@@ -1,13 +1,10 @@
 {a = csv_array("rect.csv")}
 {_therow = rows(a)}
 {_col = cols(a)}
-{_r = 0}
-{loop(_therow)}
-{_c = 0}
-{loop(_col)}
-a[{_r},{_c}] = {a[_r,_c++]}
+{loop(_therow, _r)}
+{loop(_col, _c)}
+a[{_r},{_c}] = {a[_r,_c]}
 {endloop}
-{_r++}
 {endloop}
 {print_array(a)}
 
@@ -15,13 +12,10 @@ a[{_r},{_c}] = {a[_r,_c++]}
 {NOECHO}
 {_therow = rows(b)}
 {_col = cols(b)}
-{_r = 0}
-{loop(_therow)}
-{_c = 0}
-{loop(_col)}
-{b[_r,_c] = 10*(_r+1) + _c++ + 1}
+{loop(_therow, _r)}
+{loop(_col, _c)}
+{b[_r,_c] = 10*(_r+1) + _c + 1}
 {endloop}
-{_r++}
 {endloop}
 {ECHO}
 b = {print_array(b)}
@@ -30,13 +24,10 @@ b = {print_array(b)}
 {NOECHO}
 {_therow = rows(c)}
 {_col = cols(c)}
-{_r = 0}
-{loop(_therow)}
-{_c = 0}
-{loop(_col)}
-{c[_r,_c] = 10*(_r+1) + _c++ + 1}
+{loop(_therow, _r)}
+{loop(_col, _c)}
+{c[_r,_c] = 10*(_r+1) + _c + 1}
 {endloop}
-{_r++}
 {endloop}
 {ECHO}
 c = {print_array(c)}
@@ -62,4 +53,11 @@ scale = {print_array(e*1/e[0,0])}
 {asub = csv_array("rect.csv", 10)}
 {asub_rows = rows(asub)}
 {a_rows = rows(a)}
+
+{std = array_from_string('2.3 5.7 11.13 17.19 23.29 31.37 41.43 47.53 59.61 67.71',' ')}
+{print_array(transpose(std))}
+
+{st = array_from_string('2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71',' ')}
+{print_array(transpose(st))}
+
 {DUMP()}

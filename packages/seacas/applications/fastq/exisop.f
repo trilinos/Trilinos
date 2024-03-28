@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -7,7 +7,7 @@ C    See packages/seacas/LICENSE for details
       SUBROUTINE EXISOP (MXND, XN, YN, LNODES, ANGLE, N1, XNEW, YNEW)
 C***********************************************************************
 
-C  SUBROUTINE EXISOP = CALCULATES A POSITION TO MAKE A PARALLELPIPED
+C  SUBROUTINE EXISOP = CALCULATES A POSITION TO MAKE A PARALLELEPIPED
 
 C***********************************************************************
 

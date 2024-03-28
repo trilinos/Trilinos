@@ -1,22 +1,22 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_BoundingBox.h"  // for AxisAlignedBoundingBox
-#include "Ioss_EntityBlock.h"  // for EntityBlock
-#include "Ioss_FieldManager.h" // for FieldManager
-#include <Ioss_DatabaseIO.h>   // for DatabaseIO
-#include <Ioss_ElementBlock.h>
-#include <Ioss_Field.h>    // for Field, etc
-#include <Ioss_Property.h> // for Property
+#include "Ioss_DatabaseIO.h" // for DatabaseIO
+#include "Ioss_ElementBlock.h"
+#include "Ioss_Field.h"    // for Field, etc
+#include "Ioss_Property.h" // for Property
 #include <cstddef>         // for size_t
 #include <string>          // for string
 #include <vector>          // for vector
 
+#include "Ioss_BoundingBox.h"  // for AxisAlignedBoundingBox
+#include "Ioss_EntityBlock.h"  // for EntityBlock
+#include "Ioss_FieldManager.h" // for FieldManager
+
 namespace Ioss {
-  class Field;
 
   /** \brief Create an element block.
    *
@@ -36,8 +36,6 @@ namespace Ioss {
     fields.add(Ioss::Field("implicit_ids", field_int_type(), "scalar", Ioss::Field::MESH,
                            number_elements));
   }
-
-  ElementBlock::~ElementBlock() = default;
 
   Property ElementBlock::get_implicit_property(const std::string &my_name) const
   {

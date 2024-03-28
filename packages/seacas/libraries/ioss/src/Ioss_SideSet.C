@@ -4,23 +4,25 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Property.h>
-#include <Ioss_Region.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
-#include <algorithm>
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
 #include <cstddef>
 #include <fmt/ostream.h>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
+#include "Ioss_CodeTypes.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
 
 namespace {
-  std::string id_str() { return std::string("id"); }
+  std::string id_str() { return {"id"}; }
   void check_for_duplicate_names(const Ioss::SideSet *sset, const Ioss::SideBlock *side_block)
   {
     const std::string &name = side_block->name();
@@ -134,10 +136,10 @@ int64_t Ioss::SideSet::internal_get_zc_field_data(const Field &field, void **dat
 Ioss::Property Ioss::SideSet::get_implicit_property(const std::string &my_name) const
 {
   if (my_name == "side_block_count") {
-    return Ioss::Property(my_name, static_cast<int>(sideBlocks.size()));
+    return {my_name, static_cast<int>(sideBlocks.size())};
   }
   if (my_name == "block_count") {
-    return Ioss::Property(my_name, static_cast<int>(sideBlocks.size()));
+    return {my_name, static_cast<int>(sideBlocks.size())};
   }
 
   return Ioss::GroupingEntity::get_implicit_property(my_name);

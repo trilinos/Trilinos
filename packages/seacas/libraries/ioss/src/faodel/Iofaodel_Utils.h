@@ -8,9 +8,9 @@
 
 #include "iofaodel_export.h"
 
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Property.h>
-#include <Ioss_Region.h>
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
 
 #include <kelpie/Key.hh>
 #include <lunasa/DataObject.hh>
@@ -64,59 +64,67 @@ namespace Iofaodel {
   IOFAODEL_EXPORT int64_t            unpack_sideblocks(lunasa::DataObject ldo);
 
   IOFAODEL_EXPORT lunasa::DataObject pack_structuredblock(const Ioss::StructuredBlock &sb);
-  IOFAODEL_EXPORT void               unpack_structuredblock(lunasa::DataObject &ldo, Ioss::StructuredBlock &sb);
+  IOFAODEL_EXPORT void unpack_structuredblock(lunasa::DataObject &ldo, Ioss::StructuredBlock &sb);
 
   IOFAODEL_EXPORT kelpie::Key make_states_search_key(int parallel_rank, const Ioss::Region &region);
 
   IOFAODEL_EXPORT kelpie::Key make_states_key(int parallel_rank, const Ioss::Region &region);
 
   IOFAODEL_EXPORT kelpie::Key sideblocks_search_key(int rank, const Ioss::Region &region,
-                                    const Ioss::SideSet &sideset);
+                                                    const Ioss::SideSet &sideset);
 
-  IOFAODEL_EXPORT kelpie::Key make_sideblock_key(int rank, const Ioss::Region &region, const Ioss::SideSet &sideset,
-                                 const Ioss::SideBlock &sideblock);
+  IOFAODEL_EXPORT kelpie::Key make_sideblock_key(int rank, const Ioss::Region &region,
+                                                 const Ioss::SideSet   &sideset,
+                                                 const Ioss::SideBlock &sideblock);
 
-  IOFAODEL_EXPORT kelpie::Key structuredblock_search_key(int parallel_rank, const Ioss::Region &region,
-                                         const Ioss::StructuredBlock &structuredblock);
+  IOFAODEL_EXPORT kelpie::Key
+                  structuredblock_search_key(int parallel_rank, const Ioss::Region &region,
+                                             const Ioss::StructuredBlock &structuredblock);
 
-  IOFAODEL_EXPORT kelpie::Key make_structuredblock_key(int parallel_rank, const Ioss::Region &region,
-                                       const Ioss::StructuredBlock &structuredblock);
-
-  IOFAODEL_EXPORT kelpie::Key make_key(int parallel_rank, const Ioss::Region &region,
-                       const Ioss::GroupingEntity &grouping_entity, const Ioss::Field &field);
-
-  IOFAODEL_EXPORT kelpie::Key make_key(int parallel_rank, const Ioss::Region &region,
-                       const Ioss::GroupingEntity &grouping_entity, const Ioss::Property &property);
+  IOFAODEL_EXPORT kelpie::Key
+                  make_structuredblock_key(int parallel_rank, const Ioss::Region &region,
+                                           const Ioss::StructuredBlock &structuredblock);
 
   IOFAODEL_EXPORT kelpie::Key make_key(int parallel_rank, const Ioss::Region &region,
-                       const Ioss::GroupingEntity &grouping_entity);
+                                       const Ioss::GroupingEntity &grouping_entity,
+                                       const Ioss::Field          &field);
+
+  IOFAODEL_EXPORT kelpie::Key make_key(int parallel_rank, const Ioss::Region &region,
+                                       const Ioss::GroupingEntity &grouping_entity,
+                                       const Ioss::Property       &property);
+
+  IOFAODEL_EXPORT kelpie::Key make_key(int parallel_rank, const Ioss::Region &region,
+                                       const Ioss::GroupingEntity &grouping_entity);
 
   IOFAODEL_EXPORT kelpie::Key entity_search_key(int rank, const Ioss::Region &region,
-                                const std::string &entity_name);
+                                                const std::string &entity_name);
 
   IOFAODEL_EXPORT kelpie::Key entity_search_key(int rank, const Ioss::Region &region,
-                                const Ioss::GroupingEntity &entity);
+                                                const Ioss::GroupingEntity &entity);
 
   IOFAODEL_EXPORT kelpie::Key property_search_key(int parallel_rank, const Ioss::Region &region,
-                                  const Ioss::GroupingEntity &grouping_entity);
+                                                  const Ioss::GroupingEntity &grouping_entity);
 
   IOFAODEL_EXPORT kelpie::Key make_property_key(int rank, const Ioss::Region &region,
-                                const std::string &entity_type, const std::string &entity_name,
-                                const std::string &property_type, const std::string &property_name);
+                                                const std::string &entity_type,
+                                                const std::string &entity_name,
+                                                const std::string &property_type,
+                                                const std::string &property_name);
 
   IOFAODEL_EXPORT kelpie::Key field_search_key(int parallel_rank, const Ioss::Region &region,
-                               const Ioss::GroupingEntity &grouping_entity);
+                                               const Ioss::GroupingEntity &grouping_entity);
 
-  IOFAODEL_EXPORT kelpie::Key field_search_key(int parallel_rank, int state, const Ioss::Region &region,
-                               const Ioss::GroupingEntity &grouping_entity);
+  IOFAODEL_EXPORT kelpie::Key field_search_key(int parallel_rank, int state,
+                                               const Ioss::Region         &region,
+                                               const Ioss::GroupingEntity &grouping_entity);
 
   IOFAODEL_EXPORT std::string to_string(const Ioss::Property::BasicType &t);
   IOFAODEL_EXPORT std::string to_string(const Ioss::Field::BasicType &t);
   IOFAODEL_EXPORT std::string to_string(const Ioss::Field::RoleType &t);
   IOFAODEL_EXPORT std::string to_string(const Ioss::EntityType &t);
 
-  IOFAODEL_EXPORT std::string           get_entity_name(const kelpie::Key &k, const std::string &target);
+  IOFAODEL_EXPORT std::string get_entity_name(const kelpie::Key &k, const std::string &target);
   IOFAODEL_EXPORT std::set<std::string> get_entity_names(const std::vector<kelpie::Key> &keys,
-                                         const std::string              &target);
+                                                         const std::string              &target);
 
 } // namespace Iofaodel

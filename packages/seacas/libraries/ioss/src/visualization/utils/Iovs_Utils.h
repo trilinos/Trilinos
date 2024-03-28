@@ -10,9 +10,9 @@
 #include "iovs_export.h"
 
 #include "CatalystManagerBase.h"
-#include <Ioss_DBUsage.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_PropertyManager.h>
+#include "Ioss_DBUsage.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
 #include <string>
 
 namespace Iovs {
@@ -48,10 +48,10 @@ namespace Iovs {
     std::unique_ptr<Iovs_cgns::CatalystCGNSMeshBase>
     createCatalystCGNSMesh(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);
 
-    std::string getDatabaseOutputFilePath(const std::string &          databaseFilename,
+    std::string getDatabaseOutputFilePath(const std::string           &databaseFilename,
                                           const Ioss::PropertyManager &properties);
 
-    void reportCatalystErrorMessages(const std::vector<int> &        error_codes,
+    void reportCatalystErrorMessages(const std::vector<int>         &error_codes,
                                      const std::vector<std::string> &error_messages, int myRank);
 
     void writeToCatalystLogFile(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);
@@ -61,13 +61,13 @@ namespace Iovs {
   private:
     Utils();
     ~Utils();
-    Utils(const Utils &) = delete;
+    Utils(const Utils &)            = delete;
     Utils &operator=(const Utils &) = delete;
 
     CatalystManagerBase *catalystManager = nullptr;
 
     CatalystManagerBase *createCatalystManagerInstance();
-    void checkCatalystInterfaceAndPluginVersions();
+    void                 checkCatalystInterfaceAndPluginVersions();
 
     void initMeshFromIOSSProps(CatalystManagerBase::CatalystMeshInit &cmInit,
                                const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);

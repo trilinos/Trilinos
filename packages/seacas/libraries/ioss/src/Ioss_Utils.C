@@ -1,26 +1,25 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
-
-#include <algorithm>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_FileInfo.h"
+#include "Ioss_Utils.h"
 #include <cassert>
 #include <cctype>
-#include <chrono>
 #include <cstdint>
-#include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fmt/chrono.h>
+#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <fstream>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <tokenize.h>
@@ -36,8 +35,23 @@
 #endif
 #include <cstdio>
 
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_State.h"
+#include "Ioss_VariableType.h"
+
 #if defined(__IOSS_WINDOWS__)
 #include <io.h>
+
 #define isatty _isatty
 #define WIN32_LEAN_AND_MEAN
 #ifndef NOMINMAX
@@ -486,7 +500,7 @@ namespace {
 
     if (!found_valid) {
       // Return an invalid field...
-      return Ioss::Field("", Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1);
+      return {"", Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1};
     }
 
     // At this point, name[index] should be a valid potential field
@@ -617,7 +631,7 @@ namespace {
       }
       suffix_size--;
     }
-    return Ioss::Field("", Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1);
+    return {"", Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1};
   }
 
   // common
@@ -953,44 +967,44 @@ int64_t Ioss::Utils::get_side_offset(const Ioss::SideBlock *sb)
 std::string Ioss::Utils::shape_to_string(const Ioss::ElementShape &shape)
 {
   switch (shape) {
-  case Ioss::ElementShape::UNKNOWN: return std::string("Unknown");
-  case Ioss::ElementShape::POINT: return std::string("Point");
-  case Ioss::ElementShape::SPHERE: return std::string("Sphere");
-  case Ioss::ElementShape::LINE: return std::string("Line");
-  case Ioss::ElementShape::SPRING: return std::string("Spring");
-  case Ioss::ElementShape::TRI: return std::string("Tri");
-  case Ioss::ElementShape::QUAD: return std::string("Quad");
-  case Ioss::ElementShape::TET: return std::string("Tet");
-  case Ioss::ElementShape::PYRAMID: return std::string("Pyramid");
-  case Ioss::ElementShape::WEDGE: return std::string("Wedge");
-  case Ioss::ElementShape::HEX: return std::string("Hex");
-  case Ioss::ElementShape::SUPER: return std::string("Super");
+  case Ioss::ElementShape::UNKNOWN: return {"Unknown"};
+  case Ioss::ElementShape::POINT: return {"Point"};
+  case Ioss::ElementShape::SPHERE: return {"Sphere"};
+  case Ioss::ElementShape::LINE: return {"Line"};
+  case Ioss::ElementShape::SPRING: return {"Spring"};
+  case Ioss::ElementShape::TRI: return {"Tri"};
+  case Ioss::ElementShape::QUAD: return {"Quad"};
+  case Ioss::ElementShape::TET: return {"Tet"};
+  case Ioss::ElementShape::PYRAMID: return {"Pyramid"};
+  case Ioss::ElementShape::WEDGE: return {"Wedge"};
+  case Ioss::ElementShape::HEX: return {"Hex"};
+  case Ioss::ElementShape::SUPER: return {"Super"};
   }
-  return std::string("Invalid shape [") + std::to_string(unsigned(shape)) + std::string("]");
+  return fmt::format("Invalid shape [{}]", unsigned(shape));
 }
 
 std::string Ioss::Utils::entity_type_to_string(const Ioss::EntityType &type)
 {
   switch (type) {
-  case Ioss::EntityType::NODEBLOCK: return std::string("NODEBLOCK");
-  case Ioss::EntityType::EDGEBLOCK: return std::string("EDGEBLOCK");
-  case Ioss::EntityType::FACEBLOCK: return std::string("FACEBLOCK");
-  case Ioss::EntityType::ELEMENTBLOCK: return std::string("ELEMENTBLOCK");
-  case Ioss::EntityType::NODESET: return std::string("NODESET");
-  case Ioss::EntityType::EDGESET: return std::string("EDGESET");
-  case Ioss::EntityType::FACESET: return std::string("FACESET");
-  case Ioss::EntityType::ELEMENTSET: return std::string("ELEMENTSET");
-  case Ioss::EntityType::SIDESET: return std::string("SIDESET");
-  case Ioss::EntityType::COMMSET: return std::string("COMMSET");
-  case Ioss::EntityType::SIDEBLOCK: return std::string("SIDEBLOCK");
-  case Ioss::EntityType::REGION: return std::string("REGION");
-  case Ioss::EntityType::SUPERELEMENT: return std::string("SUPERELEMENT");
-  case Ioss::EntityType::STRUCTUREDBLOCK: return std::string("STRUCTUREDBLOCK");
-  case Ioss::EntityType::ASSEMBLY: return std::string("ASSEMBLY");
-  case Ioss::EntityType::BLOB: return std::string("BLOB");
-  case Ioss::EntityType::INVALID_TYPE: return std::string("INVALID_TYPE");
+  case Ioss::EntityType::NODEBLOCK: return {"NODEBLOCK"};
+  case Ioss::EntityType::EDGEBLOCK: return {"EDGEBLOCK"};
+  case Ioss::EntityType::FACEBLOCK: return {"FACEBLOCK"};
+  case Ioss::EntityType::ELEMENTBLOCK: return {"ELEMENTBLOCK"};
+  case Ioss::EntityType::NODESET: return {"NODESET"};
+  case Ioss::EntityType::EDGESET: return {"EDGESET"};
+  case Ioss::EntityType::FACESET: return {"FACESET"};
+  case Ioss::EntityType::ELEMENTSET: return {"ELEMENTSET"};
+  case Ioss::EntityType::SIDESET: return {"SIDESET"};
+  case Ioss::EntityType::COMMSET: return {"COMMSET"};
+  case Ioss::EntityType::SIDEBLOCK: return {"SIDEBLOCK"};
+  case Ioss::EntityType::REGION: return {"REGION"};
+  case Ioss::EntityType::SUPERELEMENT: return {"SUPERELEMENT"};
+  case Ioss::EntityType::STRUCTUREDBLOCK: return {"STRUCTUREDBLOCK"};
+  case Ioss::EntityType::ASSEMBLY: return {"ASSEMBLY"};
+  case Ioss::EntityType::BLOB: return {"BLOB"};
+  case Ioss::EntityType::INVALID_TYPE: return {"INVALID_TYPE"};
   }
-  return std::string("Invalid entity type [") + std::to_string(unsigned(type)) + std::string("]");
+  return fmt::format("Invalid entity type [{}]", unsigned(type));
 }
 
 unsigned int Ioss::Utils::hash(const std::string &name)
@@ -1159,7 +1173,7 @@ namespace {
     // Convert to base-26 'number'
     hashval %= HASHSIZE;
     char word[3] = {char(hashval / 26 + 'a'), char(hashval % 26 + 'a'), '\0'};
-    return (std::string(word));
+    return {word};
   }
 } // namespace
 
@@ -1259,7 +1273,7 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
   }
 }
 
-// Safer than Ioss::Utils::copy_string -- guarantees null termination
+// Safer than strcpy -- guarantees null termination
 void Ioss::Utils::copy_string(char *dest, char const *source, size_t elements)
 {
   char *d;
@@ -1319,7 +1333,7 @@ std::string Ioss::Utils::get_type_from_file(const std::string &filename)
   if (all_dig) {
     auto tokens = Ioss::tokenize(filename, ".");
     if (tokens.size() >= 4) {
-      auto proc_count = tokens[tokens.size() - 2];
+      const auto &proc_count = tokens[tokens.size() - 2];
       if (proc_count.find_first_not_of("0123456789") == std::string::npos) {
         extension = tokens[tokens.size() - 3];
       }
@@ -1354,10 +1368,7 @@ void Ioss::Utils::info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::Role
     max_width = max_width > field_name.length() ? max_width : field_name.length();
   }
 
-  size_t width = Ioss::Utils::term_width();
-  if (width == 0) {
-    width = 80;
-  }
+  size_t width   = Ioss::Utils::term_width();
   size_t cur_out = 8; // Tab width...
   if (!header.empty()) {
     cur_out = header.size() + suffix.size() + 16; // Assume 2 tabs...

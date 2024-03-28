@@ -4,12 +4,9 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ionit_Initializer.h>
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Utils.h>
-#include <algorithm>
+#include "Ionit_Initializer.h"
+#include "Ioss_Utils.h"
 #include <cassert>
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -18,7 +15,6 @@
 #include <map>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "Ioss_CommSet.h"
@@ -26,11 +22,13 @@
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementTopology.h"
+#include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
 #include "Ioss_ScopeGuard.h"
@@ -767,14 +765,12 @@ namespace {
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields
     // whose names begin with the prefix
-    Ioss::NameList::const_iterator IF;
-    for (IF = fields.begin(); IF != fields.end(); ++IF) {
-      std::string field_name = *IF;
+    for (const auto &field_name : fields) {
       if (field_name != "ids" && !oge->field_exists(field_name) &&
           Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
         Ioss::Field field = ige->get_field(field_name);
-        oge->field_add(field);
+        oge->field_add(std::move(field));
       }
     }
   }
@@ -787,13 +783,10 @@ namespace {
     // database and transfer to output database.
     Ioss::NameList state_fields = ige->field_describe(role);
 
-    Ioss::NameList::const_iterator IF;
-
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
     if (role == Ioss::Field::MESH) {
-      for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
-        std::string field_name = *IF;
+      for (const auto &field_name : state_fields) {
         assert(oge->field_exists(field_name));
         if (field_name == "ids") {
           transfer_field_data_internal(ige, oge, field_name);
@@ -802,8 +795,7 @@ namespace {
       }
     }
 
-    for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
-      std::string field_name = *IF;
+    for (const auto &field_name : state_fields) {
       // All of the 'Ioss::EntityBlock' derived classes have a
       // 'connectivity' field, but it is only interesting on the
       // Ioss::ElementBlock class. On the other classes, it just
@@ -858,8 +850,8 @@ namespace {
     if (ige->type() == Ioss::SIDEBLOCK && field_name == "ids") {
       return;
     }
-    ige->get_field_data(field_name, &data[0], isize);
-    oge->put_field_data(field_name, &data[0], isize);
+    ige->get_field_data(field_name, Data(data), isize);
+    oge->put_field_data(field_name, Data(data), isize);
   }
 
   void transfer_properties(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge)
@@ -878,11 +870,11 @@ namespace {
   void add_sideset(Ioss::Region &ss_region, Ioss::Region & /* region */,
                    Ioss::Region &output_region, Globals &globals)
   {
-    Ioss::SideSet *pressures = new Ioss::SideSet(output_region.get_database(), "cth_pressures");
+    auto *pressures = new Ioss::SideSet(output_region.get_database(), "cth_pressures");
     // Each element block in the sset file will be a surside in the mesh file...
     {
-      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
+      const auto &ebs = ss_region.get_element_blocks();
+      auto        i   = ebs.begin();
       while (i != ebs.end()) {
         std::string name = (*i)->name();
         name             = "ss" + name;
@@ -908,8 +900,8 @@ namespace {
   {
     // Each element block in the sset file will be a surface in the mesh file...
     {
-      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
+      const auto &ebs = ss_region.get_element_blocks();
+      auto        i   = ebs.begin();
       while (i != ebs.end()) {
         std::string name    = (*i)->name();
         name                = "ss" + name;
@@ -938,8 +930,8 @@ namespace {
 
           data.resize(isize);
 
-          (*i)->get_field_data("skin", &data[0], isize);
-          fb->put_field_data("element_side", &data[0], osize);
+          (*i)->get_field_data("skin", Data(data), isize);
+          fb->put_field_data("element_side", Data(data), osize);
           ++i;
         }
         else {
@@ -975,8 +967,8 @@ namespace {
     if (globals.convert_gage) {
       ss_region.begin_state(1);
 
-      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
+      const auto &ebs = ss_region.get_element_blocks();
+      auto        i   = ebs.begin();
       while (i != ebs.end()) {
 
         // The gage pressure conversion is currently only applied to the field "cth_pressure"
@@ -1001,8 +993,8 @@ namespace {
     if (globals.offset_time > 0.0) {
       int ostep = output_region.add_state(0.0);
       output_region.begin_state(ostep);
-      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
+      const auto &ebs = ss_region.get_element_blocks();
+      auto        i   = ebs.begin();
       while (i != ebs.end()) {
         const std::string &eb_name = (*i)->name();
         std::string        name    = "ss" + eb_name;
@@ -1012,11 +1004,8 @@ namespace {
           std::exit(EXIT_FAILURE);
         }
 
-        Ioss::NameList                 state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
-        Ioss::NameList::const_iterator IF;
-
-        for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
-          std::string field_name = *IF;
+        auto state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
+        for (const auto &field_name : state_fields) {
           // NOTE: Only dealing with the "cth_" fields here.
           // If there are other fields, we probably have an invalid
           // output database...
@@ -1024,11 +1013,11 @@ namespace {
             int isize = (*i)->get_field(field_name).get_size();
             int count = (*i)->get_field(field_name).raw_count();
             data.resize(isize);
-            double *rdata = reinterpret_cast<double *>(&data[0]);
+            auto *rdata = reinterpret_cast<double *>(Data(data));
             for (int ii = 0; ii < count; ii++) {
               rdata[ii] = globals.offset_pressure;
             }
-            fb->put_field_data(field_name, &data[0], isize);
+            fb->put_field_data(field_name, Data(data), isize);
             break;
           }
         }
@@ -1052,22 +1041,19 @@ namespace {
 
       output_region.begin_state(ostep);
       ss_region.begin_state(istep);
-      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
+      const auto &ebs = ss_region.get_element_blocks();
+      auto        i   = ebs.begin();
       while (i != ebs.end()) {
         const std::string &eb_name = (*i)->name();
         std::string        name    = "ss" + eb_name;
-        Ioss::SideBlock   *fb      = output_region.get_sideblock(name);
+        auto              *fb      = output_region.get_sideblock(name);
         if (fb == nullptr) {
           std::cerr << "INTERNAL ERROR: Could not find side block named '" << name << "'\n";
           std::exit(EXIT_FAILURE);
         }
 
-        Ioss::NameList                 state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
-        Ioss::NameList::const_iterator IF;
-
-        for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
-          std::string field_name = *IF;
+        auto state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
+        for (const auto &field_name : state_fields) {
           if (globals.convert_gage && field_name == cth_pressure) {
             // Subtract the time zero pressures (stored in
             // time_zero_field_data) from each time step
@@ -1077,9 +1063,9 @@ namespace {
             int isize = (*i)->get_field(field_name).get_size();
             int count = (*i)->get_field(field_name).raw_count();
             data.resize(isize);
-            double *rdata = reinterpret_cast<double *>(&data[0]);
+            auto *rdata = reinterpret_cast<double *>(Data(data));
 
-            (*i)->get_field_data(field_name, &data[0], isize);
+            (*i)->get_field_data(field_name, Data(data), isize);
             for (int ii = 0; ii < count; ii++) {
               rdata[ii] -= zdata[ii];
             }
@@ -1089,19 +1075,19 @@ namespace {
                 rdata[ii] += globals.offset_pressure;
               }
             }
-            fb->put_field_data(field_name, &data[0], isize);
+            fb->put_field_data(field_name, Data(data), isize);
           }
           else if (globals.offset_pressure != 0.0 && field_name == cth_pressure) {
             int isize = (*i)->get_field(field_name).get_size();
             int count = (*i)->get_field(field_name).raw_count();
             data.resize(isize);
-            double *rdata = reinterpret_cast<double *>(&data[0]);
+            auto *rdata = reinterpret_cast<double *>(Data(data));
 
-            (*i)->get_field_data(field_name, &data[0], isize);
+            (*i)->get_field_data(field_name, Data(data), isize);
             for (int ii = 0; ii < count; ii++) {
               rdata[ii] += globals.offset_pressure;
             }
-            fb->put_field_data(field_name, &data[0], isize);
+            fb->put_field_data(field_name, Data(data), isize);
           }
           else if (Ioss::Utils::substr_equal("cth_", field_name)) {
             assert(fb->field_exists(field_name));
@@ -1137,8 +1123,8 @@ namespace {
       // an
       // "equilibrium" state in case the CTH analysis was not run out to an equilibrium
       // state. If ZERO was specified, then it simply zeros out the pressure field at the last step.
-      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
+      const auto &ebs = ss_region.get_element_blocks();
+      auto        i   = ebs.begin();
       while (i != ebs.end()) {
         const std::string &eb_name = (*i)->name();
         std::string        name    = "ss" + eb_name;
@@ -1149,11 +1135,8 @@ namespace {
           throw std::runtime_error(msg.str());
         }
 
-        Ioss::NameList                 state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
-        Ioss::NameList::const_iterator IF;
-
-        for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
-          std::string field_name = *IF;
+        auto state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
+        for (const auto &field_name : state_fields) {
           if (Ioss::Utils::substr_equal("cth_", field_name)) {
             if (field_name == cth_pressure &&
                 (globals.final_pressure == Globals::ZERO ||
@@ -1171,11 +1154,11 @@ namespace {
               int isize = (*i)->get_field(field_name).get_size();
               int count = (*i)->get_field(field_name).raw_count();
               data.resize(isize);
-              double *rdata = reinterpret_cast<double *>(&data[0]);
+              auto *rdata = reinterpret_cast<double *>(Data(data));
               for (int ii = 0; ii < count; ii++) {
                 rdata[ii] = value;
               }
-              fb->put_field_data(field_name, &data[0], isize);
+              fb->put_field_data(field_name, Data(data), isize);
             }
             else {
               // Replicate first field as last field...
@@ -1204,12 +1187,11 @@ namespace {
   {
     // Each element block in the sset file will be a surface in the mesh file...
     {
-      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
-      while (i != ebs.end()) {
-        std::string name    = (*i)->name();
-        name                = "ss" + name;
-        Ioss::SideBlock *fb = output_region.get_sideblock(name);
+      const auto &ebs = ss_region.get_element_blocks();
+      for (auto *eb : ebs) {
+        std::string name = eb->name();
+        name             = "ss" + name;
+        auto *fb         = output_region.get_sideblock(name);
         assert(fb != nullptr);
 
         if (globals.debug) {
@@ -1218,8 +1200,7 @@ namespace {
           // Each element variable in the sset file which begins with
           // "cth_" will be a sideset variable in the outptut file...
         }
-        transfer_fields((*i), fb, Ioss::Field::TRANSIENT, "cth_");
-        ++i;
+        transfer_fields(eb, fb, Ioss::Field::TRANSIENT, "cth_");
       }
     }
   }
@@ -1228,24 +1209,21 @@ namespace {
   {
     // Define output fields...
     {
-      const Ioss::VariableType *v3d = Ioss::VariableType::factory("vector_3d");
+      const auto *v3d = Ioss::VariableType::factory("vector_3d");
       output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-      Ioss::NodeBlock *nb        = (*output_region.get_node_blocks().begin());
-      int              num_nodes = nb->entity_count();
-      Ioss::Field      node_normal("node_normal", Ioss::Field::REAL, v3d, Ioss::Field::TRANSIENT,
-                                   num_nodes);
-      nb->field_add(node_normal);
+      auto       *nb        = (*output_region.get_node_blocks().begin());
+      int         num_nodes = nb->entity_count();
+      Ioss::Field node_normal("node_normal", Ioss::Field::REAL, v3d, Ioss::Field::TRANSIENT,
+                              num_nodes);
+      nb->field_add(std::move(node_normal));
 
       // Iterate over the element blocks and calculate both node normals and face normals...
-      const Ioss::ElementBlockContainer          &ebs = output_region.get_element_blocks();
-      Ioss::ElementBlockContainer::const_iterator ib  = ebs.begin();
-      while (ib != ebs.end()) {
-        Ioss::ElementBlock *eb = *ib;
-        ++ib;
+      const auto &ebs = output_region.get_element_blocks();
+      for (auto *eb : ebs) {
         int         num_elem = eb->entity_count();
         Ioss::Field face_normal("face_normal", Ioss::Field::REAL, v3d, Ioss::Field::TRANSIENT,
                                 num_elem);
-        eb->field_add(face_normal);
+        eb->field_add(std::move(face_normal));
       }
       output_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
@@ -1254,8 +1232,8 @@ namespace {
     int ostep = output_region.add_state(0.0);
     output_region.begin_state(ostep);
 
-    Ioss::NodeBlock *nb  = (*region.get_node_blocks().begin());
-    Ioss::NodeBlock *nbo = (*output_region.get_node_blocks().begin());
+    auto *nb  = (*region.get_node_blocks().begin());
+    auto *nbo = (*output_region.get_node_blocks().begin());
 
     // Get the nodal coordinates...
     int num_nodes  = nb->entity_count();
@@ -1264,24 +1242,20 @@ namespace {
     std::vector<double> coord(3 * num_nodes);
     assert(3 * num_nodes * sizeof(double) == (size_t)coord_size);
 
-    nb->get_field_data("mesh_model_coordinates", &coord[0], coord_size);
+    nb->get_field_data("mesh_model_coordinates", Data(coord), coord_size);
 
     // Also get an array for the average nodal normal vector...
     std::vector<double> node_normal(3 * num_nodes);
     std::fill(node_normal.begin(), node_normal.end(), 0.0);
 
     // Iterate over the element blocks and calculate both node normals and face normals...
-    std::vector<int>                   conn;
-    std::vector<double>                face_normal;
-    const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
-
-    Ioss::ElementBlockContainer::const_iterator ib = ebs.begin();
-    while (ib != ebs.end()) {
-      Ioss::ElementBlock *eb = *ib;
-      ++ib;
+    std::vector<int>    conn;
+    std::vector<double> face_normal;
+    const auto         &ebs = region.get_element_blocks();
+    for (const auto *eb : ebs) {
       const std::string &name = (*eb).name();
 
-      Ioss::ElementBlock *ebo = output_region.get_element_block(name);
+      auto *ebo = output_region.get_element_block(name);
       if (ebo == nullptr) {
         std::cerr << "INTERNAL ERROR: Could not find element block named '" << name << "'\n";
         std::exit(EXIT_FAILURE);

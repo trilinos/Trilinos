@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -119,10 +119,12 @@ void rf_select(real *a, int count, int l, int r, int k, int discrim)
       perm[j] = tmp;
       i       = i + 1;
       j       = j - 1;
-      while (a[discrim * count + perm[i]] < t)
+      while (a[discrim * count + perm[i]] < t) {
         i++;
-      while (a[discrim * count + perm[j]] > t)
+      }
+      while (a[discrim * count + perm[j]] > t) {
         j--;
+      }
     }
     if (a[discrim * count + perm[l]] == t) {
       /* exchange(x[l], x[j]); */
@@ -138,10 +140,12 @@ void rf_select(real *a, int count, int l, int r, int k, int discrim)
       perm[r] = tmp;
     }
     /* Now adjust L, R so they surround the subset containing the (k-l+1)-th element */
-    if (j <= k)
+    if (j <= k) {
       l = j + 1;
-    if (k <= j)
+    }
+    if (k <= j) {
       r = j - 1;
+    }
   }
 }
 
@@ -201,10 +205,12 @@ int findmaxvariance(int l, int u, int dimension, real *points, int N)
 /*******************************************************************************/
 int check(real *points, int N, int l, int u, int m, int discrim)
 {
-  for (int i = l; i < m; i++)
+  for (int i = l; i < m; i++) {
     assert(points[discrim * N + perm[i]] <= points[discrim * N + perm[m]]);
-  for (int i = m; i < u; i++)
+  }
+  for (int i = m; i < u; i++) {
     assert(points[discrim * N + perm[i]] >= points[discrim * N + perm[m]]);
+  }
   return 1;
 }
 
@@ -365,10 +371,12 @@ int optBoundsContainsRegion(real *B, real *xmin, real *xmax, int Dimension)
 {
   if (Dimension == 3) {
     if (xmin[0] <= B[0] && xmax[0] >= B[1] && xmin[1] <= B[2] && xmax[1] >= B[3] &&
-        xmin[2] <= B[4] && xmax[2] >= B[5])
+        xmin[2] <= B[4] && xmax[2] >= B[5]) {
       return 1;
-    else
+    }
+    else {
       return 0;
+    }
   }
   else {
     int dc;

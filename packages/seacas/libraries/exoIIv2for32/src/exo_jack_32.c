@@ -504,8 +504,8 @@ void F2C(exginf, EXGINF)(int *idexo, char *info, int *ierr, int infolen)
   for (i = 0; i < num_info; i++) { /* Put pointers to the info records in ptr
                                     * array */
     *(aptr + i) = sptr + i * (slen + 1);
-  }                   /* put ptr in string ptr
-                       * array */
+  } /* put ptr in string ptr
+     * array */
   *(aptr + i) = NULL; /* null out last pointer */
 
   /* Do exodus call to get info records */
@@ -1273,8 +1273,8 @@ void F2C(exgpn, EXGPN)(int *idexo, int *obj_type, char *prop_names, int *ierr, i
   int i;
   for (i = 0; i < num_props; i++) {
     *(aptr + i) = sptr + i * (slen + 1);
-  }                   /* put ptrs to staging space
-                       * into ptr array */
+  } /* put ptrs to staging space
+     * into ptr array */
   *(aptr + i) = NULL; /* set last pointer to null */
 
   /* do Exodus C call to get property name records */
@@ -2424,9 +2424,9 @@ void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, 
 
 /*!
  *  Routine to return floating point word size
- * \sa ex__get_cpu_ws()
+ * \sa exi_get_cpu_ws()
  */
-int F2C(excpws, EXCPWS)(void) { return (ex__get_cpu_ws()); }
+int F2C(excpws, EXCPWS)(void) { return (exi_get_cpu_ws()); }
 
 /*!
  *  Routine to return large model setting

@@ -4,7 +4,7 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      COMMON / NODZOM / NZMON, XZM, YZM, ZZM, RADZM, NODEZM
+      COMMON / NODZOM / XZM, YZM, ZZM, RADZM, NODEZM, NZMON
       LOGICAL NZMON
 C     --NZMON - if true, node based zoom is enabled
 C     --XZM   - x location for desired zoom window

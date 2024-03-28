@@ -3,7 +3,7 @@ C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
-      COMMON /FILTER/   ISFILTER, IDXFLT, CMPFLT, VALFLT, TIMFLT
+      COMMON /FILTER/   IDXFLT, CMPFLT, VALFLT, TIMFLT, ISFILTER
       LOGICAL ISFILTER
       INTEGER IDXFLT
       INTEGER CMPFLT

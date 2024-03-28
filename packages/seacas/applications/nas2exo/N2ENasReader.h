@@ -2,7 +2,7 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020, 2021, 2022
+// Copyright   : (c) Sandia National Labs 2020, 2021, 2022, 2024
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
@@ -23,8 +23,6 @@ namespace NasModules {
 
   public:
     N2ENasReader(std::string ifname = "");
-
-    virtual ~N2ENasReader() = default;
 
     inline unsigned    getLineCount() { return this->lineCount; };
     inline size_t      getNumberGridPts() { return this->gridList.size(); };

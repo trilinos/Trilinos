@@ -33,6 +33,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ne_ctest_wrap
   NAME ne_ctest_wrap
   SOURCES ne_ctest_wrap.c
+  LINKER_LANGUAGE C
   NUM_MPI_PROCS 1
 )
 ENDIF()

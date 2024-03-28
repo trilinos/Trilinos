@@ -160,8 +160,7 @@ alias install-user-include : install-user-include0
                              install-user-include4
                              install-user-include5
                              install-user-include6
-                             install-user-include7
-                             install-user-include8 ;
+                             install-user-include7 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -231,13 +230,6 @@ explicit install-user-include7 ;
 install install-user-include7
   : [ glob $(seacas-root)/libraries/aprepro_lib/*.h ]
   : <location>$(install-root)/sierra_seacas/include
-  ;
-
-
-explicit install-user-include8 ;
-install install-user-include8
-  : [ glob $(seacas-root)/libraries/suplib_cpp/fmt/*.h ]
-  : <location>$(install-root)/io_system/include/fmt
   ;
 
 
@@ -525,6 +517,7 @@ lib ioss
     ]
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
+    /tpl/fmt//fmt
     /mpi//mpi
   : <define>BUILT_IN_SIERRA
     [ ifuserbuild
@@ -862,6 +855,7 @@ lib suplib_cpp
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/suplib_cpp/*.C ]
     ]
+    /tpl/fmt//fmt
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -1389,7 +1383,9 @@ lib aprepro_lib
     ]
     exodus
     /tpl/netcdf-c//netcdf
+    /tpl/fmt//fmt
   : <define>EXODUS_SUPPORT
+    <define>FMT_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1402,6 +1398,7 @@ lib aprepro_lib
     ]
   :
   : <define>EXODUS_SUPPORT
+    <define>FMT_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1472,6 +1469,7 @@ exe aprepro
   :
   $(seacas-root)/applications/aprepro/aprepro.C
     aprepro_lib
+    suplib_cpp
   : <include>$(seacas-root)/applications/aprepro
     <include>$(seacas-root)/applications/aprepro
     <tag>@utility-exec-tag
@@ -1499,11 +1497,13 @@ exe slice
   :
   $(seacas-root)/applications/slice/Slice.C
   $(seacas-root)/applications/slice/SL_SystemInterface.C
+  $(seacas-root)/applications/slice/SL_Decompose.C
     suplib_cpp
     suplib_c
     ioinit
   : <include>$(seacas-root)/applications/slice
     <define>USE_METIS
+    <define>USE_ZOLTAN
     <tag>@utility-exec-tag
   ;
 

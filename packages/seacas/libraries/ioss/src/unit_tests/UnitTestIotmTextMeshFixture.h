@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,28 +6,28 @@
 
 #pragma once
 
-#include <Ioss_CodeTypes.h>
+#include "Ioss_CodeTypes.h"
 
-#include <Ionit_Initializer.h>
-#include <Ioss_Assembly.h>
-#include <Ioss_CommSet.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_DatabaseIO.h> // for DatabaseIO
-#include <Ioss_ElementBlock.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_EntityType.h>     // for EntityType, etc
-#include <Ioss_Field.h>          // for Field, etc
-#include <Ioss_GroupingEntity.h> // for GroupingEntity
-#include <Ioss_IOFactory.h>      // for IOFactory
-#include <Ioss_MeshType.h>       // for MeshType, etc
-#include <Ioss_NodeBlock.h>
-#include <Ioss_NodeSet.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_PropertyManager.h>
-#include <Ioss_Region.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_StandardElementTypes.h>
+#include "Ionit_Initializer.h"
+#include "Ioss_Assembly.h"
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h" // for DatabaseIO
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_EntityType.h"     // for EntityType, etc
+#include "Ioss_Field.h"          // for Field, etc
+#include "Ioss_GroupingEntity.h" // for GroupingEntity
+#include "Ioss_IOFactory.h"      // for IOFactory
+#include "Ioss_MeshType.h"       // for MeshType, etc
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_StandardElementTypes.h"
 
 #include <gtest/gtest.h>
 #ifdef SEACAS_HAVE_MPI
@@ -35,8 +35,6 @@
 #endif
 #include <string>
 #include <unordered_map>
-
-#include <fmt/ostream.h>
 
 #include <memory>
 #include <string>
@@ -950,7 +948,7 @@ namespace Iotm {
 
         const double *get_nodal_coordinates(const EntityId &nodeId) const
         {
-          return (*this)[nodeId].data();
+          return Data((*this)[nodeId]);
         }
 
         void verify_nodal_coordinates(const EntityId &nodeId, const double *goldCoords,

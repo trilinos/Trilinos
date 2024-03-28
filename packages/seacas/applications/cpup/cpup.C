@@ -13,6 +13,7 @@
 #include "add_to_log.h"
 #define FMT_DEPRECATED_OSTREAM
 #include "fmt/ostream.h"
+#include "fmt/ranges.h"
 #include "format_time.h"
 #include "hwm.h"
 #include "open_file_limit.h"
@@ -243,13 +244,13 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
       all_blocks[name] = block;
 
       // Build map of unique blocks in the mesh.
-      auto name_proc = Iocgns::Utils::decompose_name(name, true);
-      global_block[name_proc.first];
+      auto [part_name, proc] = Iocgns::Utils::decompose_name(name, true);
+      global_block[part_name];
 
       // Set the zgc 'from_decomp' property...
       for (const auto &zgc : block->m_zoneConnectivity) {
-        auto zgc_name_proc = Iocgns::Utils::decompose_name(zgc.m_donorName, true);
-        if (zgc_name_proc.first == name_proc.first) {
+        const auto [zgc_name, zgc_proc] = Iocgns::Utils::decompose_name(zgc.m_donorName, true);
+        if (zgc_name == part_name) {
           zgc.m_fromDecomp = true;
         }
       }
@@ -356,9 +357,9 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
       for (const auto &prt : part_mesh) {
         const auto &pblocks = prt->get_structured_blocks();
         for (const auto &pblock : pblocks) {
-          const auto &name      = pblock->name();
-          auto        name_proc = Iocgns::Utils::decompose_name(name, true);
-          if (name_proc.first == block->name()) {
+          const auto &name            = pblock->name();
+          auto [part_name, part_proc] = Iocgns::Utils::decompose_name(name, true);
+          if (part_name == block->name()) {
             Ioss::NameList fields = pblock->field_describe(Ioss::Field::TRANSIENT);
 
             for (const auto &field_name : fields) {
@@ -460,11 +461,11 @@ namespace {
     for (const auto &part : part_mesh) {
       const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
-        auto name_proc = Iocgns::Utils::decompose_name(block->name(), true);
+        const auto [part_name, proc] = Iocgns::Utils::decompose_name(block->name(), true);
 
         for (const auto &zgc : block->m_zoneConnectivity) {
           if (!zgc.m_fromDecomp) {
-            auto &gzgc = global_zgc[std::make_pair(name_proc.first, zgc.m_connectionName)];
+            auto &gzgc = global_zgc[std::make_pair(part_name, zgc.m_connectionName)];
             if (gzgc.m_connectionName.empty()) {
               // First time this ZGC has been found.  Copy from the per-proc instance and update...
               gzgc.m_connectionName = zgc.m_connectionName;
@@ -511,11 +512,11 @@ namespace {
     for (const auto &part : part_mesh) {
       const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
-        Ioss::IJK_t offset    = block->get_ijk_offset();
-        auto        name_proc = Iocgns::Utils::decompose_name(block->name(), true);
-        const auto &sb_bc     = block->m_boundaryConditions;
+        Ioss::IJK_t offset           = block->get_ijk_offset();
+        const auto [part_name, proc] = Iocgns::Utils::decompose_name(block->name(), true);
+        const auto &sb_bc            = block->m_boundaryConditions;
         for (const auto &bc : sb_bc) {
-          auto &gbc = global_bc[std::make_pair(name_proc.first, bc.m_bcName)];
+          auto &gbc = global_bc[std::make_pair(part_name, bc.m_bcName)];
           if (gbc.m_bcName.empty()) {
             gbc.m_bcName  = bc.m_bcName;
             gbc.m_famName = bc.m_famName;
@@ -557,9 +558,9 @@ namespace {
         for (const auto &part : part_mesh) {
           const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
-            const auto &name      = pblock->name();
-            auto        name_proc = Iocgns::Utils::decompose_name(name, true);
-            if (name_proc.first == block->name()) {
+            const auto &name             = pblock->name();
+            const auto [part_name, proc] = Iocgns::Utils::decompose_name(name, true);
+            if (part_name == block->name()) {
               if (pblock->field_exists(field_name)) {
                 pblock->get_field_data(field_name, input);
                 transfer_cell_field(pblock, input, output);
@@ -594,9 +595,9 @@ namespace {
         for (const auto &part : part_mesh) {
           const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
-            const auto &name      = pblock->name();
-            auto        name_proc = Iocgns::Utils::decompose_name(name, true);
-            if (name_proc.first == block->name()) {
+            const auto &name             = pblock->name();
+            const auto [part_name, proc] = Iocgns::Utils::decompose_name(name, true);
+            if (part_name == block->name()) {
               auto &inb = pblock->get_node_block();
               if (inb.field_exists(field_name)) {
                 inb.get_field_data(field_name, input);
@@ -655,21 +656,21 @@ namespace {
     for (const auto &part : part_mesh) {
       const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
-        auto  ijk_o      = block->get_ijk_offset();
-        auto  ijk_g      = block->get_ijk_global();
-        auto  name_proc  = Iocgns::Utils::decompose_name(block->name(), true);
-        auto &cur_global = global_block[name_proc.first];
-        cur_global[0]    = std::max(ijk_o[0] + ijk_g[0], cur_global[0]);
-        cur_global[1]    = std::max(ijk_o[1] + ijk_g[1], cur_global[1]);
-        cur_global[2]    = std::max(ijk_o[2] + ijk_g[2], cur_global[2]);
+        auto ijk_o                   = block->get_ijk_offset();
+        auto ijk_g                   = block->get_ijk_global();
+        const auto [part_name, proc] = Iocgns::Utils::decompose_name(block->name(), true);
+        auto &cur_global             = global_block[part_name];
+        cur_global[0]                = std::max(ijk_o[0] + ijk_g[0], cur_global[0]);
+        cur_global[1]                = std::max(ijk_o[1] + ijk_g[1], cur_global[1]);
+        cur_global[2]                = std::max(ijk_o[2] + ijk_g[2], cur_global[2]);
       }
     }
 
     for (const auto &part : part_mesh) {
       const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
-        auto  name_proc  = Iocgns::Utils::decompose_name(block->name(), true);
-        auto &cur_global = global_block[name_proc.first];
+        const auto [part_name, proc] = Iocgns::Utils::decompose_name(block->name(), true);
+        auto &cur_global             = global_block[part_name];
         block->set_ijk_global(cur_global);
       }
       if (debug_level & 4) {
@@ -788,9 +789,9 @@ namespace {
         for (const auto &part : part_mesh) {
           const auto &pblocks = part->get_structured_blocks();
           for (const auto &pblock : pblocks) {
-            const auto &name      = pblock->name();
-            auto        name_proc = Iocgns::Utils::decompose_name(name, true);
-            if (name_proc.first == block->name()) {
+            const auto &name             = pblock->name();
+            const auto [part_name, proc] = Iocgns::Utils::decompose_name(name, true);
+            if (part_name == block->name()) {
               std::vector<double> lcoord;
               pblock->get_field_data(fields[dim], lcoord);
               transfer_nodal_field(pblock, lcoord, coord);

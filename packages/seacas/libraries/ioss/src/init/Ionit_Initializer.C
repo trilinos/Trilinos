@@ -5,45 +5,47 @@
 // See packages/seacas/LICENSE for details
 
 #include "Ionit_Initializer.h"
-#include <Ioss_CodeTypes.h>
+
+#include "Ioss_CodeTypes.h"
 
 #if defined(SEACAS_HAVE_EXODUS)
-#include <exodus/Ioex_IOFactory.h>
-#include <exonull/Ioexnl_IOFactory.h>
+#include "exodus/Ioex_IOFactory.h"
+#include "exonull/Ioexnl_IOFactory.h"
 #endif
 
-#include <gen_struc/Iogs_DatabaseIO.h>
-#include <generated/Iogn_DatabaseIO.h>
-#include <heartbeat/Iohb_DatabaseIO.h>
-#include <text_mesh/Iotm_DatabaseIO.h>
+#include "gen_struc/Iogs_DatabaseIO.h"
+#include "generated/Iogn_DatabaseIO.h"
+#include "heartbeat/Iohb_DatabaseIO.h"
+#include "text_mesh/Iotm_DatabaseIO.h"
 
 #ifdef HAVE_SEACASIOSS_ADIOS2
-#include <adios/Ioad_Initializer.h>
+#include "adios/Ioad_Initializer.h"
 #endif
 
 #if defined(SEACAS_HAVE_CATALYST2)
-#include <catalyst/Iocatalyst_Initializer.h>
+#include "catalyst/Iocatalyst_Initializer.h"
 #endif
 
 #if defined(SEACAS_HAVE_PAMGEN)
-#include <pamgen/Iopg_DatabaseIO.h>
+#include "pamgen/Iopg_DatabaseIO.h"
 #endif
 
 #if defined(SEACAS_HAVE_FAODEL)
-#include <faodel/Iofaodel_DatabaseIO.h>
+#include "faodel/Iofaodel_DatabaseIO.h"
 #endif
 
 #if defined(SEACAS_HAVE_CGNS)
-#include <cgns/Iocgns_IOFactory.h>
+#include "cgns/Iocgns_IOFactory.h"
 #endif
 
-#include <Ioss_ConcreteVariableType.h>
-#include <Ioss_Initializer.h>
-#include <transform/Iotr_Initializer.h>
-#include <visualization/cgns/Iovs_cgns_IOFactory.h>
-#include <visualization/exodus/Iovs_exodus_IOFactory.h>
+#include "Ioss_ConcreteVariableType.h"
+#include "Ioss_Initializer.h"
+#include "null/Ionull_IOFactory.h"
+#include "transform/Iotr_Initializer.h"
+#include "visualization/cgns/Iovs_cgns_IOFactory.h"
+#include "visualization/exodus/Iovs_exodus_IOFactory.h"
 
-#include <null/Ionull_IOFactory.h>
+#include "Ioss_IOFactory.h"
 
 namespace {
 #if defined(IOSS_THREADSAFE)

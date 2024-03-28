@@ -9,10 +9,11 @@
 
 #pragma once
 
-#include "ioss_export.h"
-
 #include <cstdlib>
 #include <iostream>
+#include <string>
+
+#include "ioss_export.h"
 
 namespace Ioss {
   /** \brief A database of program command line and environment variable options and methods for

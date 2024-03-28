@@ -28,8 +28,7 @@ C   --   DODEAD - IN - true iff dead nodes are needed
 C   --   DONPS - IN - true iff node set information is needed
 C   --   DOESS - IN - true iff side set information is needed
 
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       LOGICAL ANYDEF, ANYUND
       LOGICAL DOIXF, DON2B, DOELED, DOELEU, DODEAD, DONPS, DOESS

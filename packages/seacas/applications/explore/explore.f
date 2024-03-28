@@ -442,11 +442,3 @@ C   --Process commands
       CALL WRAPUP (QAINFO(1))
 
       END
-
-      subroutine iniseq(icnt, map)
-      integer map(*)
-      do i=1, icnt
-        map(i) = i
-      end do
-      return
-      end

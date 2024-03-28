@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -107,7 +107,7 @@
  * exmemy.c(141): error: the size of an array must be greater than zero
  * CT_ASSERT(sizeof(FTNINT) == sizeof(void*));
  *
- * Contact Greg Sjaardema, gdsjaar@sandia.gov for asisstance.
+ * Contact Greg Sjaardema, gdsjaar@sandia.gov for assistance.
  */
 CT_ASSERT(sizeof(FTNINT) == sizeof(void *));
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,18 +6,19 @@
 
 #pragma once
 
-#include "iohb_export.h"
-
-#include <Iohb_Layout.h>
-#include <Ioss_CodeTypes.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_State.h>
+#include "Iohb_Layout.h"
+#include "Ioss_CodeTypes.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_State.h"
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <time.h>
+
+#include "iohb_export.h"
 
 namespace Ioss {
   class GroupingEntity;
@@ -37,6 +38,8 @@ namespace Ioss {
   class SideBlock;
   class SideSet;
   class StructuredBlock;
+  class Assembly;
+  class Blob;
 } // namespace Ioss
 
 /** \brief A namespace for the heartbeat database format.
@@ -53,9 +56,10 @@ namespace Iohb {
 
   private:
     IOFactory();
-    Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              Ioss_MPI_Comm                communicator,
-                              const Ioss::PropertyManager &props) const override;
+    IOSS_NODISCARD Ioss::DatabaseIO *make_IO(const std::string           &filename,
+                                             Ioss::DatabaseUsage          db_usage,
+                                             Ioss_MPI_Comm                communicator,
+                                             const Ioss::PropertyManager &props) const override;
   };
 
   class IOHB_EXPORT DatabaseIO : public Ioss::DatabaseIO
@@ -63,37 +67,39 @@ namespace Iohb {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
                Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
-    DatabaseIO(const DatabaseIO &from)            = delete;
-    DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
     ~DatabaseIO() override;
 
-    std::string get_format() const override { return "HeartBeat"; }
+    IOSS_NODISCARD std::string get_format() const override { return "HeartBeat"; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
-    unsigned entity_field_support() const override;
+    IOSS_NODISCARD unsigned entity_field_support() const override;
 
-    int int_byte_size_db() const override { return int_byte_size_api(); }
+    IOSS_NODISCARD int int_byte_size_db() const override { return int_byte_size_api(); }
 
   private:
-    int64_t node_global_to_local__(int64_t /* global */, bool /* must_exist */) const override
+    IOSS_NODISCARD int64_t node_global_to_local_nl(int64_t /* global */,
+                                                   bool /* must_exist */) const override
     {
       return 0;
     }
-    int64_t element_global_to_local__(int64_t /* global */) const override { return 0; }
+    IOSS_NODISCARD int64_t element_global_to_local_nl(int64_t /* global */) const override
+    {
+      return 0;
+    }
 
-    void read_meta_data__() override {}
+    void read_meta_data_nl() override {}
 
-    void flush_database__() const override;
+    void flush_database_nl() const override;
 
-    bool begin__(Ioss::State state) override;
-    bool end__(Ioss::State state) override;
+    bool begin_nl(Ioss::State state) override;
+    bool end_nl(Ioss::State state) override;
 
-    bool begin_state__(int state, double time) override;
-    bool end_state__(int state, double time) override;
+    bool begin_state_nl(int state, double time) override;
+    bool end_state_nl(int state, double time) override;
 
     void initialize() const;
 

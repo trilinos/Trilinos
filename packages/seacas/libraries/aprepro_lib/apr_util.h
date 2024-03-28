@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,11 +7,12 @@
  */
 #pragma once
 
-#include "apr_symrec.h"
-#include "aprepro.h"
 #include <string>
 
 namespace SEAMS {
+  struct symrec;
+  class Aprepro;
+
   bool        arg_check(SEAMS::symrec *symbol, bool is_null);
   void        conv_string(char *string);
   void        new_string(const std::string &from, char **to);

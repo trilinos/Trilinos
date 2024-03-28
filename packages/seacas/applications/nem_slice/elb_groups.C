@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -16,11 +16,12 @@
 #include "elb_err.h"  // for Gen_Error
 #include "elb_groups.h"
 #include "elb_util.h"
+#include "vector_data.h"
 #include <cstdio>  // for sscanf, nullptr
 #include <cstdlib> // for free, malloc
 #include <cstring> // for strchr, strlen
 #include <fmt/format.h>
-#include <vector>  // for vector
+#include <vector> // for vector
 
 /*****************************************************************************/
 namespace {
@@ -80,7 +81,7 @@ template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_De
     if (*id == '/') {
       id++;
     }
-    scandescriptor(id, mesh->eb_ids.data(), i, mesh->num_el_blks, prob);
+    scandescriptor(id, Data(mesh->eb_ids), i, mesh->num_el_blks, prob);
     id = strchr(id, '/');
     i++;
   } while (id != nullptr);

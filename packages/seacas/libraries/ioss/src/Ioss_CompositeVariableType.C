@@ -4,14 +4,11 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CompositeVariableType.h>
-#include <Ioss_Utils.h>
-#include <Ioss_VariableType.h>
+#include "Ioss_CompositeVariableType.h"
+#include "Ioss_VariableType.h"
 #include <cassert>
-#include <cstdio>
 #include <map>
 #include <string>
-#include <utility>
 
 namespace Ioss {
   std::string CompositeVariableType::composite_name(const std::string &base, int copies)

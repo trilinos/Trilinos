@@ -4,9 +4,6 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-
-#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,10 +13,15 @@
 #endif
 
 #undef NDEBUG
-#include <Ioss_ConcreteVariableType.h>
-#include <Ioss_ScopeGuard.h>
+#include "Ioss_ConcreteVariableType.h"
+#include "exodus/Ioex_SuperElement.h"
 #include <cassert>
-#include <exodus/Ioex_SuperElement.h>
+#include <stdlib.h>
+
+#include "Ioss_Field.h"
+#include "Ioss_Property.h"
+#include "Ioss_ScopeGuard.h"
+#include "Ioss_Utils.h"
 
 int main(int argc, char *argv[])
 {

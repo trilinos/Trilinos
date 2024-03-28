@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,6 +12,7 @@
 #include "fix_column_partitions.h"
 #include <array>
 #include <cmath>
+#include <fmt/core.h>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -27,7 +28,7 @@ namespace {
     @param side_id   Side across which we want to find an adjacent element
     @param nadj      Number of elements adjacent to cur_elem (from graph description)
     @param adj       Pointer to elements adjacent to cur_elem (from graph description)
-    @param global_connect Global connectivity array
+    @param mesh      Mesh Description to get connectivity, element types, ...
     @param adj_elem  ID of adjacent element (-1 if not found)
     @param adj_side  Local ID of common side in adjacent element (0 if adj_elem not found)
   */
@@ -44,13 +45,13 @@ namespace {
     std::array<INT, 9> side_nodes{}; // SHELL9 has 9 nodes on a face.
 
     INT *elnodes = mesh->connect[cur_elem];
-    ss_to_node_list(etype, elnodes, side_id, side_nodes.data());
+    ss_to_node_list(etype, elnodes, side_id, Data(side_nodes));
 
     // How would these side's nodes be if they were viewed from the
     // adjacent element
 
     std::array<INT, 9> side_nodes_flipped{0}; // Realistically: 4, max possible: 9
-    get_ss_mirror(etype, side_nodes.data(), side_id, side_nodes_flipped.data());
+    get_ss_mirror(etype, Data(side_nodes), side_id, Data(side_nodes_flipped));
 
     for (int i = 0; i < nadj; i++) {
       INT    adj_elem_id = adj[i] - 1; // Adjacency graph entries start from 1
@@ -65,8 +66,8 @@ namespace {
 
       int skip_check  = 2;
       int partial_adj = 1;
-      *adj_side = get_side_id(etype2, elnodes2, nsnodes, side_nodes_flipped.data(), skip_check,
-                              partial_adj);
+      *adj_side =
+          get_side_id(etype2, elnodes2, nsnodes, Data(side_nodes_flipped), skip_check, partial_adj);
 
       if (*adj_side > 0) {
         *adj_elem = adj_elem_id;
@@ -108,8 +109,9 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
   // - if not, fix it
 
   for (size_t i = 0; i < nel; i++) {
-    if (processed_flag[i])
+    if (processed_flag[i]) {
       continue;
+    }
 
     E_Type etype = mesh->elem_type[i];
 
@@ -154,7 +156,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       }
 
       // Nodes of the side/face
-      ss_to_node_list(etype, mesh->connect[i], j + 1, fnodes.data());
+      ss_to_node_list(etype, mesh->connect[i], j + 1, Data(fnodes));
 
       // Translate global IDs of side nodes to local IDs in element
       std::array<int, 9> fnodes_loc{0};
@@ -167,8 +169,9 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
             break;
           }
         }
-        if (!found)
+        if (!found) {
           Gen_Error(0, "FATAL: side/face node not found in element node list?");
+        }
       }
 
       std::array<double, 3> normal{0.0, 0.0, 0.0};
@@ -246,7 +249,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
     while (!upsearch_done) {
 
       auto       nadj = graph->start[cur_elem + 1] - graph->start[cur_elem];
-      INT const *adj  = graph->adj.data() + graph->start[cur_elem];
+      INT const *adj  = Data(graph->adj) + graph->start[cur_elem];
       find_adjacent_element(cur_elem, etype, top_side, nadj, adj, mesh, &adj_elem, &adj_side);
       if (adj_elem == -1) {
         upsearch_done = true;
@@ -282,7 +285,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
     while (!downsearch_done) {
 
       auto       nadj = graph->start[cur_elem + 1] - graph->start[cur_elem];
-      INT const *adj  = graph->adj.data() + graph->start[cur_elem];
+      INT const *adj  = Data(graph->adj) + graph->start[cur_elem];
       find_adjacent_element(cur_elem, etype, bot_side, nadj, adj, mesh, &adj_elem, &adj_side);
       if (adj_elem == -1) {
         downsearch_done = true;
@@ -317,14 +320,14 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
 
     std::vector<INT> colelems;
     colelems.reserve(nabove + nbelow + 1);
-    typename std::vector<INT>::reverse_iterator rit = above_list.rbegin();
+    auto rit = above_list.rbegin();
     while (rit != above_list.rend()) {
       colelems.push_back(*rit);
       ++rit;
     }
     colelems.push_back(i);
 
-    typename std::vector<INT>::iterator it = below_list.begin();
+    auto it = below_list.begin();
     while (it != below_list.end()) {
       colelems.push_back(*it);
       ++it;
@@ -347,16 +350,16 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       std::pair<std::map<int, int>::iterator, bool> status =
           procid_elcount.insert(std::pair<int, int>(procid, 1));
       if (!status.second) { // procid already in map; could not insert
-        std::map<int, int>::iterator itmap = status.first;
+        auto itmap = status.first;
         (itmap->second)++;
       }
       ++it;
     }
 
     // Which processor has a dominant presence in this column?
-    int                          max_procid = -1;
-    int                          max_elems  = 0;
-    std::map<int, int>::iterator itmap      = procid_elcount.begin();
+    int  max_procid = -1;
+    int  max_elems  = 0;
+    auto itmap      = procid_elcount.begin();
     while (itmap != procid_elcount.end()) {
       if (itmap->second > max_elems) {
         max_procid = itmap->first;

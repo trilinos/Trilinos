@@ -4075,7 +4075,7 @@ static void xcqlna(anything **params, anything **surf_list)
   /* line type */
   *(int *)params[3] = cur_state->line_type;
 
-  /* line width spcification mode - only support scaled */
+  /* line width specification mode - only support scaled */
   *(int *)params[4] = CSCA;
 
   /* line width */
@@ -4115,7 +4115,7 @@ static void xcqmka(anything **params, anything **surf_list)
   /* marker type */
   *(int *)params[3] = cur_state->mark_type;
 
-  /* marker size spcification mode - only support scaled */
+  /* marker size specification mode - only support scaled */
   *(int *)params[4] = CSCA;
 
   /* marker size */

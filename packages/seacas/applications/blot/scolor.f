@@ -44,8 +44,7 @@ C   --                                   6 - magenta
       INTEGER IDELB(*)
 
       include 'dbnums.blk'
-      COMMON /BCOLR/ BCOLCH
-      LOGICAL BCOLCH
+      include 'bcolr.blk'
 
       LOGICAL FFMATC, FFEXST
       INTEGER IDCOL, LOCSTR

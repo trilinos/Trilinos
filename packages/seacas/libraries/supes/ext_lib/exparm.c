@@ -251,8 +251,10 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 #endif /* Linux, Interix */
   /********************************************************************/
 
-  if (isatty(0) != 0) /* Test stdin as to whether or not it's a terminal. */
-    *mode = 1;        /* Indicates an interactive process. */
-  else
+  if (isatty(0) != 0) { /* Test stdin as to whether or not it's a terminal. */
+    *mode = 1;          /* Indicates an interactive process. */
+  }
+  else {
     *mode = 0; /* Else running from a procedure. */
+  }
 }

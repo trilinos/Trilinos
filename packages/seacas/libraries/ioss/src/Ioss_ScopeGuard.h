@@ -21,7 +21,7 @@ namespace Ioss {
 
   public:
     explicit RefHolder(T &ref) : ref_(ref) {}
-    operator T &() const { return ref_; }
+    explicit   operator T &() const { return ref_; }
     RefHolder &operator=(const RefHolder &) = delete;
   };
 
@@ -61,7 +61,7 @@ namespace Ioss {
 #ifndef _MSC_VER
   __attribute__((unused))
 #endif
-  typedef const ScopeGuardImplBase &ScopeGuard;
+  typedef const ScopeGuardImplBase &ScopeGuard; // NOLINT
 
   template <typename F> class ScopeGuardImpl0 : public ScopeGuardImplBase
   {

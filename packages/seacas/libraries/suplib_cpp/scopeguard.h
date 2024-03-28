@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -18,7 +18,7 @@ template <class T> class RefHolder
 
 public:
   explicit RefHolder(T &ref) : ref_(ref) {}
-             operator T &() const { return ref_; }
+  operator T &() const { return ref_; }
   RefHolder &operator=(const RefHolder &) = delete;
 };
 
@@ -26,6 +26,7 @@ template <class T> inline RefHolder<T> ByRef(T &t) { return RefHolder<T>(t); }
 
 class ScopeGuardImplBase
 {
+public:
   ScopeGuardImplBase &operator=(const ScopeGuardImplBase &) = delete;
 
 protected:

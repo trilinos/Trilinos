@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,12 +19,13 @@
 #include <string>
 #include <vector>
 
-#include "elb.h"        // for Weight_Description<INT>, etc
-#include "elb_elem.h"   // for get_elem_type, E_Type, etc
-#include "elb_err.h"    // for Gen_Error, MAX_ERR_MSG
+#include "elb.h"      // for Weight_Description, etc
+#include "elb_elem.h" // for get_elem_type, E_Type, etc
+#include "elb_err.h"  // for Gen_Error, MAX_ERR_MSG
 #include "elb_exo.h"
 #include "elb_groups.h" // for parse_groups
 #include "elb_util.h"   // for in_list, roundfloat
+#include "vector_data.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -34,11 +35,11 @@
  * This function reads the nodal or elemental values from an ExodusII file
  * which will be used by Chaco for weighting of the graph.
  *****************************************************************************/
-template int read_exo_weights(Problem_Description *prob, Weight_Description<int> *weight);
-template int read_exo_weights(Problem_Description *prob, Weight_Description<int64_t> *weight);
+template int read_exo_weights(Problem_Description *prob, Weight_Description *weight, int dummy);
+template int read_exo_weights(Problem_Description *prob, Weight_Description *weight, int64_t dummy);
 
 template <typename INT>
-int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
+int read_exo_weights(Problem_Description *prob, Weight_Description *weight, INT /*dummy*/)
 {
   int exoid;
   /*---------------------------Execution Begins--------------------------------*/
@@ -67,7 +68,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
     weight->ow.resize(weight->nvals);
     /* Read in the nodal values */
     if (ex_get_var(exoid, weight->exo_tindx, EX_NODAL, weight->exo_vindx, 1, weight->nvals,
-                   values.data()) < 0) {
+                   Data(values)) < 0) {
       Gen_Error(0, "fatal: unable to read nodal values");
       ex_close(exoid);
       return 0;
@@ -87,7 +88,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
     std::vector<INT> eblk_ids(neblks);
     std::vector<INT> eblk_ecnts(neblks);
 
-    if (ex_get_ids(exoid, EX_ELEM_BLOCK, eblk_ids.data()) < 0) {
+    if (ex_get_ids(exoid, EX_ELEM_BLOCK, Data(eblk_ids)) < 0) {
       Gen_Error(0, "fatal: unable to get element block IDs");
       ex_close(exoid);
       return 0;
@@ -190,7 +191,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
   mesh->eb_npe.resize(mesh->num_el_blks);
   mesh->eb_type.resize(mesh->num_el_blks);
 
-  if (ex_get_ids(exoid, EX_ELEM_BLOCK, mesh->eb_ids.data()) < 0) {
+  if (ex_get_ids(exoid, EX_ELEM_BLOCK, Data(mesh->eb_ids)) < 0) {
     Gen_Error(0, "fatal: unable to get element block IDs");
     ex_close(exoid);
     return 0;
@@ -276,13 +277,13 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
  * This function reads in the finite element mesh.
  *****************************************************************************/
 template int read_mesh(const std::string &exo_file, Problem_Description *problem,
-                       Mesh_Description<int> *mesh, Weight_Description<int> *weight);
+                       Mesh_Description<int> *mesh, Weight_Description *weight);
 template int read_mesh(const std::string &exo_file, Problem_Description *problem,
-                       Mesh_Description<int64_t> *mesh, Weight_Description<int64_t> *weight);
+                       Mesh_Description<int64_t> *mesh, Weight_Description *weight);
 
 template <typename INT>
 int read_mesh(const std::string &exo_file, Problem_Description *problem,
-              Mesh_Description<INT> *mesh, Weight_Description<INT> *weight)
+              Mesh_Description<INT> *mesh, Weight_Description *weight)
 {
   float  version;
   float *xptr;
@@ -305,9 +306,9 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 3: zptr = mesh->coords.data() + 2 * (mesh->num_nodes); FALL_THROUGH;
-    case 2: yptr = mesh->coords.data() + (mesh->num_nodes); FALL_THROUGH;
-    case 1: xptr = mesh->coords.data();
+    case 3: zptr = Data(mesh->coords) + 2 * (mesh->num_nodes); FALL_THROUGH;
+    case 2: yptr = Data(mesh->coords) + (mesh->num_nodes); FALL_THROUGH;
+    case 1: xptr = Data(mesh->coords);
     }
 
     if (ex_get_coord(exoid, xptr, yptr, zptr) < 0) {
@@ -327,7 +328,7 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
     std::vector<INT> blk_connect(mesh->eb_cnts[cnt] * mesh->eb_npe[cnt]);
 
     /* Get the connectivity for this element block */
-    if (ex_get_conn(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], blk_connect.data(), nullptr, nullptr) <
+    if (ex_get_conn(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], Data(blk_connect), nullptr, nullptr) <
         0) {
       Gen_Error(0, "fatal: failed to get element connectivity");
       return 0;
@@ -451,13 +452,13 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
  * This function initializes the weight structure given the current mesh.
  *****************************************************************************/
 template int init_weight_struct(Problem_Description *problem, Mesh_Description<int> *mesh,
-                                Weight_Description<int> *weight);
+                                Weight_Description *weight);
 template int init_weight_struct(Problem_Description *problem, Mesh_Description<int64_t> *mesh,
-                                Weight_Description<int64_t> *weight);
+                                Weight_Description *weight);
 
 template <typename INT>
 int init_weight_struct(Problem_Description *problem, Mesh_Description<INT> *mesh,
-                       Weight_Description<INT> *weight)
+                       Weight_Description *weight)
 {
   if (problem->type == NODAL) {
     weight->nvals = mesh->num_nodes;
