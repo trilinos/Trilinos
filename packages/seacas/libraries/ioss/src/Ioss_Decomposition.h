@@ -249,12 +249,12 @@ namespace Ioss {
       auto I = lower_bound(
           elemGTL.begin(), elemGTL.end(), global_index,
           [](const std::pair<INT, INT> &lhs, INT val) -> bool { return lhs.first < val; });
-      assert(I != elemGTL.end() && I->first == global_index);
+      assert(I != elemGTL.end() && I->first == (INT)global_index);
 #else
       auto I = elemGTL.find(global_index);
 #endif
       assert(I != elemGTL.end());
-      assert(I->first == global_index);
+      assert(I->first == (INT)global_index);
       return I->second;
     }
 
