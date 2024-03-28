@@ -150,7 +150,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
 }
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, int &value,
-                                          IOSS_MAYBE_UNUSED bool sync_parallel) const
+                                          bool sync_parallel) const
 {
   std::string str_value;
   bool        success = get_environment(name, str_value, sync_parallel);
@@ -161,7 +161,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, int &value,
 }
 
 bool Ioss::ParallelUtils::get_environment(const std::string     &name,
-                                          IOSS_MAYBE_UNUSED bool sync_parallel) const
+                                          bool sync_parallel) const
 {
   // Return true if 'name' defined, no matter what the value.
   // Return false if 'name' not defined.
@@ -260,7 +260,7 @@ void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &
 // Generate a "globally unique id" which is unique over all entities
 // of a specific type over all processors.
 // Used by some applications for uniquely identifying an entity.
-int64_t Ioss::ParallelUtils::generate_guid(size_t id, IOSS_MAYBE_UNUSED int rank) const
+int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
 {
   IOSS_PAR_UNUSED(rank);
 #ifdef SEACAS_HAVE_MPI
@@ -277,8 +277,8 @@ int64_t Ioss::ParallelUtils::generate_guid(size_t id, IOSS_MAYBE_UNUSED int rank
 #endif
 }
 
-void Ioss::ParallelUtils::attribute_reduction(IOSS_MAYBE_UNUSED const int length,
-                                              IOSS_MAYBE_UNUSED char      buffer[]) const
+void Ioss::ParallelUtils::attribute_reduction(const int length,
+                                              char      buffer[]) const
 {
   IOSS_PAR_UNUSED(length);
   IOSS_PAR_UNUSED(buffer);
@@ -426,8 +426,8 @@ template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(int64_t &my_value, int)
 
 namespace Ioss {
   template <>
-  void ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::string &my_str,
-                                IOSS_MAYBE_UNUSED int          root) const
+  void ParallelUtils::broadcast(std::string &my_str,
+                                int          root) const
   {
     IOSS_PAR_UNUSED(my_str);
     IOSS_PAR_UNUSED(root);
@@ -476,8 +476,8 @@ template IOSS_EXPORT void Ioss::ParallelUtils::broadcast(std::vector<char> &, in
 namespace Ioss {
   template <>
   IOSS_EXPORT void
-  ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<std::pair<int, int>> &my_value,
-                           IOSS_MAYBE_UNUSED int                               root) const
+  ParallelUtils::broadcast(std::vector<std::pair<int, int>> &my_value,
+                           int                               root) const
   {
     IOSS_PAR_UNUSED(my_value);
     IOSS_PAR_UNUSED(root);
@@ -496,8 +496,8 @@ namespace Ioss {
 } // namespace Ioss
 
 template <typename T>
-void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<T> &my_value,
-                                    IOSS_MAYBE_UNUSED int             root) const
+void Ioss::ParallelUtils::broadcast(std::vector<T> &my_value,
+                                    int             root) const
 {
   IOSS_PAR_UNUSED(my_value);
   IOSS_PAR_UNUSED(root);
@@ -653,7 +653,7 @@ template IOSS_EXPORT int Ioss::ParallelUtils::gather(int num_vals, int size_per_
                                                      std::vector<char> &my_values,
                                                      std::vector<char> &result) const;
 template <typename T>
-int Ioss::ParallelUtils::gather(int num_vals, IOSS_MAYBE_UNUSED int size_per_val,
+int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                 std::vector<T> &my_values, std::vector<T> &result) const
 {
   IOSS_PAR_UNUSED(size_per_val);

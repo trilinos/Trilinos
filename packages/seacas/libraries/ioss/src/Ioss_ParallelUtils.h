@@ -60,7 +60,7 @@ namespace Ioss {
      * If '!sync_parallel', then don't push to other processors.
      */
     bool get_environment(const std::string &name, std::string &value,
-                         IOSS_MAYBE_UNUSED bool sync_parallel) const;
+                         bool sync_parallel) const;
 
     /*!
      * Returns 'true' if 'name' is defined in the environment.  The
@@ -71,7 +71,7 @@ namespace Ioss {
      * then don't push to other processors.
      */
     bool get_environment(const std::string &name, int &value,
-                         IOSS_MAYBE_UNUSED bool sync_parallel) const;
+                         bool sync_parallel) const;
 
     /*!
      * Returns 'true' if 'name' is defined in the environment no
@@ -79,7 +79,7 @@ namespace Ioss {
      * getenv system call is only done on processor 0.
      * If '!sync_parallel', then don't push to other processors.
      */
-    IOSS_NODISCARD bool get_environment(const std::string &name, IOSS_MAYBE_UNUSED bool sync_parallel) const;
+    IOSS_NODISCARD bool get_environment(const std::string &name, bool sync_parallel) const;
 
     IOSS_NODISCARD std::string decode_filename(const std::string &filename, bool is_parallel) const;
     
@@ -94,7 +94,7 @@ namespace Ioss {
      * knowledge of the value should initialize to '0' and the
      * processors with knowledge set the appropriate values.
      */
-    void attribute_reduction(IOSS_MAYBE_UNUSED int length, IOSS_MAYBE_UNUSED char buffer[]) const;
+    void attribute_reduction(int length, char buffer[]) const;
 
     /*!
      * Generate a "globally unique id" which is unique over all entities
@@ -102,7 +102,7 @@ namespace Ioss {
      * Used by some applications for uniquely identifying an entity.
      * If `rank` == -1, then use parallel_rank; otherwise use rank
      */
-    IOSS_NODISCARD int64_t generate_guid(IOSS_MAYBE_UNUSED size_t id, int rank = -1) const;
+    IOSS_NODISCARD int64_t generate_guid(size_t id, int rank = -1) const;
 
     /*! Return min, max, average memory used by any process */
     void memory_stats(int64_t &min, int64_t &max, int64_t &avg) const;
@@ -120,11 +120,11 @@ namespace Ioss {
     void global_count(const Int64Vector &local_counts, Int64Vector &global_counts) const;
 
     template <typename T>
-    IOSS_NODISCARD T global_minmax(IOSS_MAYBE_UNUSED T local_minmax, IOSS_MAYBE_UNUSED MinMax which) const;
+    IOSS_NODISCARD T global_minmax(T local_minmax, MinMax which) const;
 
     template <typename T>
-    void global_array_minmax(IOSS_MAYBE_UNUSED std::vector<T> &local_minmax,
-                             IOSS_MAYBE_UNUSED MinMax          which) const;
+    void global_array_minmax(std::vector<T> &local_minmax,
+                             MinMax          which) const;
 
     template <typename T> void gather(T my_value, std::vector<T> &result) const;
     template <typename T> void all_gather(T my_value, std::vector<T> &result) const;
@@ -298,8 +298,8 @@ namespace Ioss {
 #endif
 
   template <typename T>
-  void ParallelUtils::global_array_minmax(IOSS_MAYBE_UNUSED std::vector<T> &local_minmax,
-                                          IOSS_MAYBE_UNUSED MinMax          which) const
+  void ParallelUtils::global_array_minmax(std::vector<T> &local_minmax,
+                                          MinMax          which) const
   {
     IOSS_PAR_UNUSED(local_minmax);
     IOSS_PAR_UNUSED(which);
