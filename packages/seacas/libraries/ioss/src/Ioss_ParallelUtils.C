@@ -96,7 +96,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
 }
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value,
-                                          IOSS_MAYBE_UNUSED bool sync_parallel) const
+                                          bool sync_parallel) const
 {
   IOSS_PAR_UNUSED(sync_parallel);
 #ifdef SEACAS_HAVE_MPI
@@ -386,7 +386,7 @@ Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::MinMax which) co
 
 template <typename T>
 T Ioss::ParallelUtils::global_minmax(T                 local_minmax,
-                                     IOSS_MAYBE_UNUSED Ioss::ParallelUtils::MinMax which) const
+                                     Ioss::ParallelUtils::MinMax which) const
 {
   IOSS_PAR_UNUSED(which);
   T minmax = local_minmax;
@@ -446,7 +446,7 @@ namespace Ioss {
 } // namespace Ioss
 
 template <typename T>
-void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED T &my_value, IOSS_MAYBE_UNUSED int root) const
+void Ioss::ParallelUtils::broadcast(T &my_value, int root) const
 {
   IOSS_PAR_UNUSED(my_value);
   IOSS_PAR_UNUSED(root);
