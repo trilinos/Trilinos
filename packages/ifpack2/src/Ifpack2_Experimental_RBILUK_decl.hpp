@@ -183,7 +183,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   //! \name Implementation of KK ILU(k).
   //@{
 
-  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename block_crs_matrix_type::local_matrix_device_type local_matrix_device_type;
   typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
   typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
   typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;

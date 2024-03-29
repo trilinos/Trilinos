@@ -54,13 +54,15 @@
 #include "KokkosSparse_trsv.hpp"
 
 //#define IFPACK2_RBILUK_INITIAL
-#define IFPACK2_RBILUK_INITIAL_NOKK
+//#define IFPACK2_RBILUK_INITIAL_NOKK
 
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
 #endif
+
+#include "Test_vector_fixtures.hpp" // JGF REMOVE
 
 namespace Ifpack2 {
 
@@ -761,10 +763,10 @@ void RBILUK<MatrixType>::compute ()
           const little_block_host_type dmatInverse = D_block_->getLocalBlockHostNonConst(j,j);
           // alpha = 1, beta = 0
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-          KokkosBatched::Experimental::SerialGemm
-            <KokkosBatched::Experimental::Trans::NoTranspose,
-             KokkosBatched::Experimental::Trans::NoTranspose,
-             KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+          KokkosBatched::SerialGemm
+            <KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Algo::Gemm::Blocked>::invoke
             (STS::one (), currentVal, dmatInverse, STS::zero (), matTmp);
 #else
           Tpetra::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
@@ -787,10 +789,10 @@ void RBILUK<MatrixType>::compute ()
                 little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
                 little_block_host_type uumat((typename little_block_host_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-                KokkosBatched::Experimental::SerialGemm
-                  <KokkosBatched::Experimental::Trans::NoTranspose,
-                   KokkosBatched::Experimental::Trans::NoTranspose,
-                   KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+                KokkosBatched::SerialGemm
+                  <KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Algo::Gemm::Blocked>::invoke
                   ( magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
 #else
                 Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
@@ -808,10 +810,10 @@ void RBILUK<MatrixType>::compute ()
               if (kk > -1) {
                 little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-                KokkosBatched::Experimental::SerialGemm
-                  <KokkosBatched::Experimental::Trans::NoTranspose,
-                   KokkosBatched::Experimental::Trans::NoTranspose,
-                   KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+                KokkosBatched::SerialGemm
+                  <KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Algo::Gemm::Blocked>::invoke
                   (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
 #else
                 Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
@@ -821,10 +823,10 @@ void RBILUK<MatrixType>::compute ()
               }
               else {
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-                KokkosBatched::Experimental::SerialGemm
-                  <KokkosBatched::Experimental::Trans::NoTranspose,
-                   KokkosBatched::Experimental::Trans::NoTranspose,
-                   KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+                KokkosBatched::SerialGemm
+                  <KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Algo::Gemm::Blocked>::invoke
                   (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), diagModBlock);
 #else
                 Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
@@ -880,10 +882,10 @@ void RBILUK<MatrixType>::compute ()
           little_block_host_type currentVal((typename little_block_host_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
           // scale U by the diagonal inverse
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-          KokkosBatched::Experimental::SerialGemm
-            <KokkosBatched::Experimental::Trans::NoTranspose,
-             KokkosBatched::Experimental::Trans::NoTranspose,
-             KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
+          KokkosBatched::SerialGemm
+            <KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Algo::Gemm::Blocked>::invoke
             (STS::one (), dmat, currentVal, STS::zero (), matTmp);
 #else
           Tpetra::GEMM ("N", "N", STS::one (), dmat, currentVal,
@@ -910,6 +912,34 @@ void RBILUK<MatrixType>::compute ()
           colflag[j] = -1;
         }
 #endif
+      }
+      // JGF REMOVE
+      auto L_local = L_block_->getLocalMatrixDevice();
+      auto U_local = U_block_->getLocalMatrixDevice();
+      auto D_local = D_block_->getLocalMatrixDevice();
+      std::cout << "L after non-KK compute" << std::endl;
+      {
+        auto rowmap  = L_local.graph.row_map;
+        auto entries = L_local.graph.entries;
+        auto values  = L_local.values;
+        Test::print_matrix(
+          Test::decompress_matrix(rowmap, entries, values, blockSize_));
+      }
+      std::cout << "U after non-KK compute" << std::endl;
+      {
+        auto rowmap  = U_local.graph.row_map;
+        auto entries = U_local.graph.entries;
+        auto values  = U_local.values;
+        Test::print_matrix(
+          Test::decompress_matrix(rowmap, entries, values, blockSize_));
+      }
+      std::cout << "D after non-KK compute" << std::endl;
+      {
+        auto rowmap  = D_local.graph.row_map;
+        auto entries = D_local.graph.entries;
+        auto values  = D_local.values;
+        Test::print_matrix(
+          Test::decompress_matrix(rowmap, entries, values, blockSize_));
       }
     } // !this->isKokkosKernelsSpiluk_
     else {
@@ -939,8 +969,13 @@ void RBILUK<MatrixType>::compute ()
         }
         // Create bcrs from crs
         // We can skip fillLogicalBlocks if we know the input is already filled
-        auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_local_crs, blockSize_);
-        A_local_bcrs = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize_);
+        if (blockSize_ > 1) {
+          auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_local_crs, blockSize_);
+          A_local_bcrs = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize_);
+        }
+        else {
+          A_local_bcrs = Tpetra::convertToBlockCrsMatrix(*A_local_crs, blockSize_);
+        }
       }
 
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -960,7 +995,7 @@ void RBILUK<MatrixType>::compute ()
         U_block_->setAllToScalar (STS::zero ());
       }
 
-      using row_map_type = typename block_crs_matrix_type::local_matrix_device_type::row_map_type;
+      using row_map_type = typename local_matrix_device_type::row_map_type;
 
       auto lclL = L_block_->getLocalMatrixDevice();
       row_map_type L_rowmap  = lclL.graph.row_map;
@@ -975,6 +1010,14 @@ void RBILUK<MatrixType>::compute ()
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
                                                   this->A_local_rowmap_, this->A_local_entries_, this->A_local_values_,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+
+      // JGF REMOVE
+      std::cout << "L after spiluk_numeric" << std::endl;
+      Test::print_matrix(
+        Test::decompress_matrix(L_rowmap, L_entries, L_values, blockSize_));
+      std::cout << "U after spiluk_numeric" << std::endl;
+      Test::print_matrix(
+        Test::decompress_matrix(U_rowmap, U_entries, U_values, blockSize_));
     }
   } // Stop timing
 
@@ -1047,8 +1090,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
-    if (alpha == one && beta == zero) {
-      if (!this->isKokkosKernelsSpiluk_) {
+    if (!this->isKokkosKernelsSpiluk_) {
+      if (alpha == one && beta == zero) {
         if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
           // Start by solving L C = X for C.  C must have the same Map
           // as D.  We have to use a temp multivector, since our
@@ -1134,32 +1177,34 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm without KokkosKernels. ");
         }
       }
-      else {
-        // Kokkos kernels impl
-        auto X_view = X.template getLocalView<typename Kokkos::DefaultHostExecutionSpace>(Tpetra::Access::ReadOnly);
-        auto Y_view = Y.template getLocalView<typename Kokkos::DefaultHostExecutionSpace>(Tpetra::Access::ReadWrite);
-
-        if (mode == Teuchos::NO_TRANS) {
-          KokkosSparse::trsv("L", "N", "N", L_block_->getLocalMatrixDevice(), X_view, Y_view);
-          KokkosSparse::trsv("U", "N", "N", U_block_->getLocalMatrixDevice(), Y_view, Y_view);
-        }
-        else {
-          KokkosSparse::trsv("U", "T", "N", U_block_->getLocalMatrixDevice(), X_view, Y_view);
-          KokkosSparse::trsv("L", "T", "N", B_block_->getLocalMatrixDevice(), Y_view, Y_view);
+      else { // alpha != 1 or beta != 0
+        if (alpha == zero) {
+          if (beta == zero) {
+            Y.putScalar (zero);
+          } else {
+            Y.scale (beta);
+          }
+        } else { // alpha != zero
+          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          apply (X, Y_tmp, mode);
+          Y.update (alpha, Y_tmp, beta);
         }
       }
     }
-    else { // alpha != 1 or beta != 0
-      if (alpha == zero) {
-        if (beta == zero) {
-          Y.putScalar (zero);
-        } else {
-          Y.scale (beta);
-        }
-      } else { // alpha != zero
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-        apply (X, Y_tmp, mode);
-        Y.update (alpha, Y_tmp, beta);
+    else {
+      // Kokkos kernels impl
+      auto X_view = X.template getLocalView<typename Kokkos::DefaultHostExecutionSpace>(Tpetra::Access::ReadOnly);
+      auto Y_view = Y.template getLocalView<typename Kokkos::DefaultHostExecutionSpace>(Tpetra::Access::ReadWrite);
+
+      if (mode == Teuchos::NO_TRANS) {
+        //Kokkos::View<scalar_type**> tmp("tmp", X_view.extent(0), X_view.extent(1));
+        KokkosSparse::trsv("L", "N", "N", L_block_->getLocalMatrixDevice(), X_view, Y_view);
+        KokkosSparse::trsv("U", "N", "N", U_block_->getLocalMatrixDevice(), Y_view, Y_view);
+        KokkosBlas::axpby(alpha, Y_view, beta, Y_view);
+      }
+      else {
+        KokkosSparse::trsv("U", "T", "N", U_block_->getLocalMatrixDevice(), X_view, Y_view);
+        KokkosSparse::trsv("L", "T", "N", L_block_->getLocalMatrixDevice(), Y_view, Y_view);
       }
     }
   } // Stop timing

@@ -178,11 +178,17 @@ int main (int argc, char* argv[])
         int blockSize = 0;
         Teuchos::ParameterList& prec_params = test_params.sublist("Ifpack2");
         Ifpack2::getParameter (prec_params, "fact: block size", blockSize);
-        assert(blockSize > 1);
+        assert(blockSize >= 1);
         auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
-        auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_crs, blockSize);
-        auto A = Teuchos::rcp_const_cast<const block_crs_matrix_type>(Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize));
-        precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+        if (blockSize > 1) {
+          auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_crs, blockSize);
+          auto A = Teuchos::rcp_const_cast<const block_crs_matrix_type>(Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize));
+          precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+        }
+        else {
+          auto A = Teuchos::rcp_const_cast<const block_crs_matrix_type>(Tpetra::convertToBlockCrsMatrix(*A_crs, blockSize));
+          precond = build_precond<Scalar,LO,GO,Node> (test_params, A);
+        }
       }
       else {
         auto A = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(problem->getOperator());
