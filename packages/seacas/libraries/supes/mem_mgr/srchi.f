@@ -1,11 +1,11 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE SRCHI(IVEC,ILBIN,IUBIN,NUM,ICOD,LOC)
 
-C     THIS SUBROUTINE SEARCHES ROW ILB THOURGH ROW IUB OF A
+C     THIS SUBROUTINE SEARCHES ROW ILB THROUGH ROW IUB OF A
 C     NUMERICALLY ORDERED INTEGER COLUMN VECTOR FOR THE OCCURRENCE
 C     THE VALUE NUM.
 C     IF NUM IS FOUND ICOD IS SET TO UNITY AND LOC IS THE ROW NUMBER

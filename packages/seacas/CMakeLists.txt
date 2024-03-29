@@ -28,6 +28,11 @@ IF (NOT CMAKE_CXX_STANDARD MATCHES "^${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOW
     "${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED}")
 ENDIF ()
 
+if ( CYGWIN )
+  # This seems to be needed to get `realpath` defined in the IOSS build...
+  set(CMAKE_CXX_EXTENSIONS ON)
+endif()
+
 set(SEACASExodus_ENABLE_STATIC_DEFAULT "OFF")
 set(SEACASExodus_ENABLE_SHARED_DEFAULT "OFF")
 

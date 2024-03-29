@@ -32,8 +32,7 @@ C   --
 C   --Common Variables:
 C   --   Uses IS3DIM of /D3NUMS/
 
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       REAL VARNP(*)
       INTEGER LINKF1(NLNKF)

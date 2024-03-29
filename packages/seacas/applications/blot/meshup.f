@@ -60,12 +60,8 @@ C   --   Uses IS3DIM, LLNSET of /D3NUMS/
       PARAMETER (MSHNON=0, MSHBOR=1, MSHDIV=2, MSHSEL=3, MSHALL=4)
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-
-      common /debugc/ cdebug
-      common /debugn/ idebug
-      character*8 cdebug
+      include 'd3nums.blk'
+      include 'debug.blk'
 
       LOGICAL WIDLIN
       INTEGER MLNTYP(-1:1)

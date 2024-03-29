@@ -246,8 +246,8 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
   if (out_file_id >= 0) {
     ex_put_all_var_param(out_file_id, interFace.glob_var_names.size(),
                          interFace.node_var_names.size(), interFace.elmt_var_names.size(),
-                         truth_tab.data(), interFace.ns_var_names.size(), ns_truth_tab.data(),
-                         interFace.ss_var_names.size(), ss_truth_tab.data());
+                         Data(truth_tab), interFace.ns_var_names.size(), Data(ns_truth_tab),
+                         interFace.ss_var_names.size(), Data(ss_truth_tab));
 
     output_exodus_names(out_file_id, EX_GLOBAL, interFace.glob_var_names);
     output_exodus_names(out_file_id, EX_NODAL, interFace.node_var_names);
@@ -267,9 +267,8 @@ namespace {
       std::vector<char *> vars(names.size());
       for (unsigned i = 0; i < names.size(); ++i) {
         vars[i] = const_cast<char *>(names[i].c_str());
-        SMART_ASSERT(vars[i] != nullptr);
       }
-      ex_put_variable_names(file_id, type, names.size(), vars.data());
+      ex_put_variable_names(file_id, type, names.size(), Data(vars));
     }
   }
 

@@ -4,8 +4,8 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      COMMON /TPVARS/ NTPCRV, NTPVAR, TIMPLT,
-     &   ITVID(MXTVAR), ITVNE(MXTVAR)
+      COMMON /TPVARS/ NTPCRV, NTPVAR,
+     &   ITVID(MXTVAR), ITVNE(MXTVAR), TIMPLT
       LOGICAL TIMPLT
 C      --NTPCRV - the number of curves in this set
 C      --NTPVAR - the number of plot variables requested in this set

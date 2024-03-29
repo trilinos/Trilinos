@@ -71,8 +71,8 @@ double my_timer(void)
 #ifdef PARALLEL_AWARE_EXODUS
   double t1 = MPI_Wtime();
 #else
-  clock_t ctime     = clock();
-  double  t1        = ctime / (double)CLOCKS_PER_SEC;
+  clock_t ctime = clock();
+  double  t1    = ctime / (double)CLOCKS_PER_SEC;
 #endif
   return t1;
 }
@@ -136,8 +136,8 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &num_domains);
 #else
-  rank              = 0;
-  num_domains       = 1;
+  rank        = 0;
+  num_domains = 1;
 #endif
   /*
    *    Processor 0: parse the command line arguments.
@@ -654,7 +654,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
 #ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&file_size, &glob_file_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
-  glob_file_size    = file_size;
+  glob_file_size = file_size;
 #endif
 
   if (rank == 0) {
@@ -808,7 +808,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
       }
 #else
       err = ex_put_block(exoid[npd], EX_ELEM_BLOCK, EBLK_ID, "hex", num_elems, NUM_NODES_PER_ELEM,
-                            0, 0, 0);
+                         0, 0, 0);
 #endif
       if (err) {
         printf("after ex_put_elem_block, error = %d\n", err);
@@ -1153,7 +1153,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 #ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&file_size, &glob_file_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
-  glob_file_size    = file_size;
+  glob_file_size = file_size;
 #endif
 
   if (rank == 0) {

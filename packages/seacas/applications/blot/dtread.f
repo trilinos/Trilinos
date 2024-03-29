@@ -36,8 +36,7 @@ C   --Common Variables:
 C   --   Uses NUMNP, NUMEL, NELBLK of /DBNUMS/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       DIMENSION A(*)
       INTEGER IDTVAR(*)

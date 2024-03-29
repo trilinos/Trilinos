@@ -11,8 +11,9 @@
 
 /* Function prototypes */
 template <typename INT>
-int read_exo_weights(Problem_Description     *prob,    /* Pointer to problem info structure */
-                     Weight_Description<INT> *weight); /* Pointer to weight info structure */
+int read_exo_weights(Problem_Description *prob,   /* Pointer to problem info structure */
+                     Weight_Description  *weight, /* Pointer to weight info structure */
+                     INT                  dummy);
 
 template <typename INT>
 int read_mesh_params(const std::string     &exo_file, /* Name of ExodusII geometry file */
@@ -21,12 +22,12 @@ int read_mesh_params(const std::string     &exo_file, /* Name of ExodusII geomet
                      Sphere_Info           *sphere);            /* Sphere element info structure */
 
 template <typename INT>
-int read_mesh(const std::string       &exo_file, /* Name of ExodusII geometry file */
-              Problem_Description     *problem,  /* Problem information */
-              Mesh_Description<INT>   *mesh,     /* Mesh information structure */
-              Weight_Description<INT> *weight);  /* Weight specification structure */
+int read_mesh(const std::string     &exo_file, /* Name of ExodusII geometry file */
+              Problem_Description   *problem,  /* Problem information */
+              Mesh_Description<INT> *mesh,     /* Mesh information structure */
+              Weight_Description    *weight);     /* Weight specification structure */
 
 template <typename INT>
-int init_weight_struct(Problem_Description     *problem, /* Problem information */
-                       Mesh_Description<INT>   *mesh,    /* Mesh information structure */
-                       Weight_Description<INT> *weight); /* Weight specification structure */
+int init_weight_struct(Problem_Description   *problem, /* Problem information */
+                       Mesh_Description<INT> *mesh,    /* Mesh information structure */
+                       Weight_Description    *weight);    /* Weight specification structure */

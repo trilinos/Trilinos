@@ -5,8 +5,8 @@ C
 C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
-      COMMON /ATTROT/ REVATT, ROTALL, ROTTYP,
-     *                ROTATT(3,3), ATTIND, ATTBLK
+      COMMON /ATTROT/ ATTIND, ATTBLK, 
+     *                ROTATT(3,3), REVATT, ROTALL, ROTTYP
       INTEGER ATTBLK, ATTIND
       LOGICAL REVATT
       LOGICAL ROTALL

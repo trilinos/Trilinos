@@ -44,10 +44,7 @@ C   --   Uses /PICK/
 
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4, KNEA=5, KFAR=6)
 
-      COMMON /PICK/   INITP, PKDEF,
-     &   PKMESH(KTOP), PKRMAT(3,3), PKRCEN(3),
-     &   DMESH(KTOP), DVRAT, DXMID, DYMID, DXLAST, DYLAST
-      LOGICAL INITP, PKDEF
+      include 'pick.blk'
 
       CHARACTER*(*) PROMPT
       LOGICAL CURSOR

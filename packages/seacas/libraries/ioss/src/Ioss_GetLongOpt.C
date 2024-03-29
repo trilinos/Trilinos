@@ -1,15 +1,17 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
-#include <Ioss_GetLongOpt.h>
+#include "Ioss_GetLongOpt.h"
 #include <cstring>
 #include <fmt/color.h>
+#include <fmt/core.h>
 #include <fmt/ostream.h>
 #include <sstream>
+#include <stdio.h>
 
 namespace Ioss {
   /** \brief Create an empty options database.
@@ -199,7 +201,7 @@ namespace Ioss {
             }
           }
         } /* end if */
-      }   /* end for */
+      } /* end for */
 
       if (matchStatus == PartialMatch) {
         int stat = setcell(pc, tmptoken, *(argv + 1), pname);
@@ -279,7 +281,7 @@ namespace Ioss {
             pc          = t;
           }
         } /* end if */
-      }   /* end for */
+      } /* end for */
 
       if (matchStatus == PartialMatch) {
         ladtoken = strtok(nullptr, " \t");

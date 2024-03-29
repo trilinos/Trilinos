@@ -27,7 +27,7 @@
  *****************************************************************************/
 
 #include "exodusII.h"     // for ex_set_specs, ex_err, etc
-#include "exodusII_int.h" // for ex__check_valid_file_id, etc
+#include "exodusII_int.h" // for exi_check_valid_file_id, etc
 
 int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *set_specs)
 {
@@ -46,7 +46,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   ex_inquiry ex_inq_val;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -76,7 +76,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
 
   /* first check if any sets are specified */
 
-  if ((status = nc_inq_dimid(exoid, ex__dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined for file id %d",
                ex_name_of_object(set_type), exoid);
@@ -199,7 +199,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
         num_dist = ((int *)num_dist_per_set)[i];
       }
       if (num_dist > 0) { /* only get df if they exist */
-        if (ex__comp_ws(exoid) == sizeof(float)) {
+        if (exi_comp_ws(exoid) == sizeof(float)) {
           flt_dist_fact = sets_dist_fact;
           status        = ex_get_set_dist_fact(exoid, set_type, set_id, &(flt_dist_fact[df_idx]));
         }

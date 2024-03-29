@@ -32,18 +32,7 @@ C   --                 .FALSE. if call is to set the parameters.
       REAL TKSPCR
       CHARACTER*8 TKSPCC, TKSPCF
 
-      COMMON /LINTHC/ MSHBND, BLKBND, ELEBND, THKNSS
-      REAL MSHBND, BLKBND, ELEBND
-C      --      Line thickness specification for lines appearing
-C      --      on mesh plots.  Specification is a real value in the
-C      --      range 0. - 1000., with 0. being the thinest line and
-C      --      1000. being the thickest.
-C      -- MSHBND - Thickness of lines forming the mesh boundary.
-C      -- BLKBND - Thickness of lines forming element block boundaries.
-C      -- ELEBND - Thickness of lines forming element boundaries.
-      REAL THKNSS(3)
-C     --       Line thickness specifications for THICK, MEDIUM,
-C     --       and THIN keywords.
+      include 'linthc.blk'
 
       REAL THKRES(3)
       CHARACTER*8 LINLST(5)

@@ -4,7 +4,7 @@ C NTESS, the U.S. Government retains certain rights in this software.
 C
 C See packages/seacas/LICENSE for details
 
-      COMMON /XYZROT/ ROT3D, ROTMAT(3,3), ROTCEN(3)
+      COMMON /XYZROT/ ROTMAT(3,3), ROTCEN(3), ROT3D
       LOGICAL ROT3D
 C      --ROT3D - true iff 3D mesh is to be rotated
 C      --ROTMAT - rotation matrix

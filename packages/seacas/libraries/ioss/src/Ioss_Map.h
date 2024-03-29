@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include "ioss_export.h"
-
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Field.h>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_Field.h"
 #include <cstddef> // for size_t
 #include <cstdint> // for int64_t
 #include <string>  // for string
 #include <vector>  // for vector
+
+#include "ioss_export.h"
 
 #define MAP_USE_STD
 #if defined MAP_USE_STD
@@ -53,19 +53,18 @@ namespace Ioss {
     }
     Map(const Map &from)            = delete;
     Map &operator=(const Map &from) = delete;
-    ~Map()                          = default;
 
     void set_rank(int processor) { m_myProcessor = processor; }
 
-    void   set_size(size_t entity_count);
-    size_t size() const { return m_map.empty() ? 0 : m_map.size() - 1; }
+    void                  set_size(size_t entity_count);
+    IOSS_NODISCARD size_t size() const { return m_map.empty() ? 0 : m_map.size() - 1; }
 
     void set_is_sequential(bool yesno) { m_map[0] = yesno ? -1 : 1; }
 
     // Determines whether the input map is sequential (m_map[i] == i)
-    bool is_sequential(bool check_all = false) const;
+    IOSS_NODISCARD bool is_sequential(bool check_all = false) const;
 
-    int64_t global_to_local(int64_t global, bool must_exist = true) const;
+    IOSS_NODISCARD int64_t global_to_local(int64_t global, bool must_exist = true) const;
 
     template <typename INT>
     bool set_map(INT *ids, size_t count, size_t offset, bool in_define_mode = true);
@@ -88,22 +87,22 @@ namespace Ioss {
                                         size_t begin_offset, size_t count, size_t stride,
                                         size_t offset);
 
-    const MapContainer &map() const { return m_map; }
-    MapContainer       &map() { return m_map; }
+    IOSS_NODISCARD const MapContainer &map() const { return m_map; }
+    IOSS_NODISCARD MapContainer       &map() { return m_map; }
 
-    bool defined() const { return m_defined; }
-    void set_defined(bool yes_no) { m_defined = yes_no; }
+    IOSS_NODISCARD bool defined() const { return m_defined; }
+    void                set_defined(bool yes_no) { m_defined = yes_no; }
 
-    bool reorders() const { return !m_reorder.empty(); }
+    IOSS_NODISCARD bool reorders() const { return !m_reorder.empty(); }
 
   private:
     template <typename INT> void reverse_map_data(INT *data, size_t count) const;
     template <typename INT> void map_data(INT *data, size_t count) const;
     template <typename INT> void map_implicit_data(INT *data, size_t count, size_t offset) const;
 
-    int64_t global_to_local__(int64_t global, bool must_exist = true) const;
-    void    build_reorder_map__(int64_t start, int64_t count);
-    void    build_reverse_map__(int64_t num_to_get, int64_t offset);
+    int64_t global_to_local_nl(int64_t global, bool must_exist = true) const;
+    void    build_reorder_map_nl(int64_t start, int64_t count);
+    void    build_reverse_map_nl(int64_t num_to_get, int64_t offset);
 #if defined MAP_USE_SORTED_VECTOR
     void verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map);
 #endif

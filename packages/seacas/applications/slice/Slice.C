@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -77,7 +77,7 @@ namespace {
     }
   }
 
-  Ioss::PropertyManager set_properties(SystemInterface &interFace)
+  Ioss::PropertyManager set_properties(const SystemInterface &interFace)
   {
     Ioss::PropertyManager properties;
     if (interFace.netcdf4_) {
@@ -159,7 +159,7 @@ namespace {
     for (const auto &block : blocks) {
       auto field =
           Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(1);
-      block->field_add(field);
+      block->field_add(std::move(field));
     }
   }
 
@@ -188,11 +188,11 @@ namespace {
       auto field =
           Ioss::Field(decomp_variable_name, Ioss::Field::INT32, IOSS_SCALAR(), Ioss::Field::MAP)
               .set_index(1);
-      block->field_add(field);
+      block->field_add(std::move(field));
       if (add_chain_info) {
         auto ch_field =
             Ioss::Field("chain", region.field_int_type(), "Real[2]", Ioss::Field::MAP).set_index(2);
-        block->field_add(ch_field);
+        block->field_add(std::move(ch_field));
       }
     }
   }
@@ -941,8 +941,8 @@ namespace {
           count = node_count - beg + 1;
         }
 
-        ex_get_partial_coord(exoid, beg, count, glob_coord_x.data(), glob_coord_y.data(),
-                             glob_coord_z.data());
+        ex_get_partial_coord(exoid, beg, count, Data(glob_coord_x), Data(glob_coord_y),
+                             Data(glob_coord_z));
         progress("\tpartial_coord: " + std::to_string(beg) + " " + std::to_string(count));
 
         for (size_t i = 0; i < count; i++) {
@@ -1039,13 +1039,13 @@ namespace {
 
           switch (comp) {
           case 0:
-            ex_get_partial_coord(exoid, beg, count, glob_coord.data(), nullptr, nullptr);
+            ex_get_partial_coord(exoid, beg, count, Data(glob_coord), nullptr, nullptr);
             break;
           case 1:
-            ex_get_partial_coord(exoid, beg, count, nullptr, glob_coord.data(), nullptr);
+            ex_get_partial_coord(exoid, beg, count, nullptr, Data(glob_coord), nullptr);
             break;
           case 2:
-            ex_get_partial_coord(exoid, beg, count, nullptr, nullptr, glob_coord.data());
+            ex_get_partial_coord(exoid, beg, count, nullptr, nullptr, Data(glob_coord));
             break;
           }
           progress("\tpartial_coord: " + std::to_string(beg) + " " + std::to_string(count));
@@ -1133,7 +1133,7 @@ namespace {
             count = element_count - beg + 1;
           }
 
-          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
+          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, Data(glob_conn), nullptr,
                               nullptr);
           progress(fmt::format("\tpartial_conn-- start: {}\tcount: {}", fmt::group_digits(beg),
                                fmt::group_digits(count)));
@@ -1270,7 +1270,7 @@ namespace {
             count = element_count - beg + 1;
           }
 
-          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
+          ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, Data(glob_conn), nullptr,
                               nullptr);
           progress(fmt::format("\tpartial_conn-- start: {}\tcount: {}", fmt::group_digits(beg),
                                fmt::group_digits(count)));
@@ -1287,7 +1287,7 @@ namespace {
       }
     }
     for (size_t p = 0; p < proc_count; p++) {
-      Ioss::NodeBlock *nb =
+      auto *nb =
           new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1", on_proc_count[p], 3);
       proc_region[p]->add(nb);
       if (debug_level & 2) {
@@ -1367,20 +1367,34 @@ namespace {
 
     Ioss::PropertyManager properties = set_properties(interFace);
 
-    double           start = seacas_timer();
-    std::vector<int> elem_to_proc;
-    decompose_elements(region, interFace, elem_to_proc, dummy);
-    double end = seacas_timer();
-    fmt::print(stderr, "Decompose elements = {:.5}\n", end - start);
-    progress("exit decompose_elements");
-
     Ioss::chain_t<INT> element_chains;
+    std::vector<int>   weights;
     if (interFace.lineDecomp_) {
       element_chains =
           Ioss::generate_element_chains(region, interFace.lineSurfaceList_, debug_level, dummy);
       progress("Ioss::generate_element_chains");
+
+      if (interFace.decomposition_method() == "rcb" || interFace.decomposition_method() == "rib" ||
+          interFace.decomposition_method() == "hsfc") {
+        weights =
+            line_decomp_weights(element_chains, region.get_property("element_count").get_int());
+        progress("generate_element_weights");
+      }
+    }
+
+    if (weights.empty()) {
+      weights.resize(region.get_property("element_count").get_int(), 1);
+    }
+
+    double start        = seacas_timer();
+    auto   elem_to_proc = decompose_elements(region, interFace, weights, dummy);
+    double end          = seacas_timer();
+    fmt::print(stderr, "Decompose elements = {:.5}\n", end - start);
+    progress("exit decompose_elements");
+
+    if (interFace.lineDecomp_) {
+      // Make sure all elements on a chain are on the same processor rank...
       line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count());
-      progress("line_decomp_modify");
     }
 
     if (debug_level & 32) {

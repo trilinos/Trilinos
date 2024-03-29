@@ -46,8 +46,7 @@ C   --   Uses NUMNPF, LLNSET of /D3NUMS/
       character*8 cdebug
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       INTEGER LENF(0:NELBLK)
       INTEGER NLNKF(NELBLK)

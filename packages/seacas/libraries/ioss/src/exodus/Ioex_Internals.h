@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,13 +8,15 @@
 
 #pragma once
 
+#include <cstdint>
+#include <exodusII.h>
+#include <string>
+#include <vector>
+
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Utils.h"
 #include "ioex_export.h"
 
-#include "Ioss_ParallelUtils.h" // for ParallelUtils
-#include <cstdint>              // for int64_t
-#include <exodusII.h>           // for MAX_LINE_LENGTH, etc
-#include <string>               // for string
-#include <vector>               // for vector
 namespace Ioss {
   class Assembly;
   class Blob;
@@ -28,6 +30,7 @@ namespace Ioss {
   class NodeSet;
   class SideBlock;
   class SideSet;
+  class Region;
 } // namespace Ioss
 
 using entity_id = int64_t;
@@ -69,11 +72,7 @@ namespace Ioss {
 namespace Ioex {
   struct IOEX_EXPORT NodeBlock
   {
-    NodeBlock()                       = default;
-    NodeBlock(const NodeBlock &other) = default;
     explicit NodeBlock(const Ioss::NodeBlock &other);
-
-    ~NodeBlock() = default;
 
     std::string name{};
     entity_id   id{0};
@@ -85,10 +84,7 @@ namespace Ioex {
 
   struct IOEX_EXPORT Assembly
   {
-    Assembly()                      = default;
-    Assembly(const Assembly &other) = default;
     explicit Assembly(const Ioss::Assembly &other);
-    ~Assembly() = default;
 
     std::string          name{};
     entity_id            id{0};
@@ -100,10 +96,7 @@ namespace Ioex {
 
   struct IOEX_EXPORT Blob
   {
-    Blob()                  = default;
-    Blob(const Blob &other) = default;
     explicit Blob(const Ioss::Blob &other);
-    ~Blob() = default;
 
     std::string name{};
     entity_id   id{0};
@@ -126,8 +119,6 @@ namespace Ioex {
     }
 
     explicit EdgeBlock(const Ioss::EdgeBlock &other);
-
-    ~EdgeBlock() = default;
 
     char        elType[MAX_STR_LENGTH + 1]{};
     std::string name{};
@@ -153,8 +144,6 @@ namespace Ioex {
     }
 
     explicit FaceBlock(const Ioss::FaceBlock &other);
-
-    ~FaceBlock() = default;
 
     char        elType[MAX_STR_LENGTH + 1]{};
     std::string name{};
@@ -183,8 +172,6 @@ namespace Ioex {
 
     explicit ElemBlock(const Ioss::ElementBlock &other);
 
-    ~ElemBlock() = default;
-
     char        elType[MAX_STR_LENGTH + 1]{};
     std::string name{};
     entity_id   id{0};
@@ -200,8 +187,6 @@ namespace Ioex {
 
   struct IOEX_EXPORT NodeSet
   {
-    NodeSet()                     = default;
-    NodeSet(const NodeSet &other) = default;
     explicit NodeSet(const Ioss::NodeSet &other);
 
     std::string name{};
@@ -216,8 +201,6 @@ namespace Ioex {
 
   struct IOEX_EXPORT EdgeSet
   {
-    EdgeSet()                     = default;
-    EdgeSet(const EdgeSet &other) = default;
     explicit EdgeSet(const Ioss::EdgeSet &other);
 
     std::string name{};
@@ -230,8 +213,6 @@ namespace Ioex {
 
   struct IOEX_EXPORT FaceSet
   {
-    FaceSet()                     = default;
-    FaceSet(const FaceSet &other) = default;
     explicit FaceSet(const Ioss::FaceSet &other);
 
     std::string name{};
@@ -244,8 +225,6 @@ namespace Ioex {
 
   struct IOEX_EXPORT ElemSet
   {
-    ElemSet()                     = default;
-    ElemSet(const ElemSet &other) = default;
     explicit ElemSet(const Ioss::ElementSet &other);
 
     std::string name{};
@@ -258,7 +237,6 @@ namespace Ioex {
 
   struct IOEX_EXPORT SideSet
   {
-    SideSet() = default;
     explicit SideSet(const Ioss::SideBlock &other);
     explicit SideSet(const Ioss::SideSet &other);
 
@@ -273,7 +251,6 @@ namespace Ioex {
 
   struct IOEX_EXPORT CommunicationMap
   {
-    CommunicationMap() = default;
     CommunicationMap(entity_id the_id, int64_t count, char the_type)
         : id(the_id), entityCount(count), type(the_type)
     {
@@ -285,9 +262,6 @@ namespace Ioex {
 
   struct IOEX_EXPORT CommunicationMetaData
   {
-    CommunicationMetaData()                              = default;
-    CommunicationMetaData(const CommunicationMetaData &) = delete;
-
     std::vector<CommunicationMap> nodeMap{};
     std::vector<CommunicationMap> elementMap{};
     int                           processorId{0};
@@ -320,8 +294,6 @@ namespace Ioex {
   class IOEX_EXPORT Mesh
   {
   public:
-    Mesh() = default;
-
     Mesh(int dim, const char *the_title, const Ioss::ParallelUtils &util, bool file_pp)
         : dimensionality(dim), file_per_processor(file_pp), parallelUtil(util)
     {
@@ -409,8 +381,8 @@ namespace Ioex {
     int max_name_length() const { return maximumNameLength; }
 
     int                 exodusFilePtr{0};
-    int                 nodeMapVarID[3];
-    int                 elementMapVarID[2];
+    int                 nodeMapVarID[3]{};
+    int                 elementMapVarID[2]{};
     int                 commIndexVar{0};
     int                 elemCommIndexVar{0};
     int                 maximumNameLength{32};

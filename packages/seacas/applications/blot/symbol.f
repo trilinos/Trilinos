@@ -54,10 +54,9 @@ C   --   Uses DTW, VWSCL of /DEVDAT/
       PARAMETER (KSCHSZ=2)
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /ETCOPT/ VECSCL
-      COMMON /DEVDAT/ DTW, VWSCL
+      include 'd3nums.blk'
+      include 'etcopt.blk'
+      include 'devdat.blk'
 
       CHARACTER*(*) ISYTYP
       REAL VARFAC(*)

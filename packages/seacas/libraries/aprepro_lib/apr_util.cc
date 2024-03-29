@@ -4,7 +4,6 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include "apr_symrec.h"
 #include "aprepro.h"        // for symrec, Aprepro, etc
 #include "aprepro_parser.h" // for Parser, Parser::token, etc
 
@@ -31,7 +30,7 @@
 #include <windows.h>
 
 #if !defined(S_ISDIR)
-#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 
 #endif
 #else

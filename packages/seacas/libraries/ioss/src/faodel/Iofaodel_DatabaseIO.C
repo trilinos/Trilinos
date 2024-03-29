@@ -9,15 +9,15 @@
 #include "faodel/Iofaodel_PropertySerialization.h"
 #include "faodel/Iofaodel_Utils.h"
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_CommSet.h>
-#include <Ioss_ElementBlock.h>
-#include <Ioss_NodeBlock.h>
-#include <Ioss_NodeSet.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_CommSet.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_SubSystem.h"
+#include "Ioss_Utils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -301,13 +301,13 @@ mpisyncstart.enable true
 
   std::string DatabaseIO::get_format() const { return "faodel"; }
 
-  bool DatabaseIO::begin_state__(int /* state */, double /* time */) { return false; }
+  bool DatabaseIO::begin_state_nl(int /* state */, double /* time */) { return false; }
 
-  bool DatabaseIO::end_state__(int /* state */, double /* time */) { return false; }
+  bool DatabaseIO::end_state_nl(int /* state */, double /* time */) { return false; }
 
-  void DatabaseIO::read_meta_data__()
+  void DatabaseIO::read_meta_data_nl()
   {
-    this->get_step_times__();
+    this->get_step_times_nl();
 
     this->read_region();
 
@@ -325,7 +325,7 @@ mpisyncstart.enable true
     this->get_commsets();
   }
 
-  void DatabaseIO::get_step_times__()
+  void DatabaseIO::get_step_times_nl()
   {
     auto                     search_key = make_states_search_key(parallel_rank(), *get_region());
     kelpie::ObjectCapacities oc;
@@ -1183,19 +1183,19 @@ mpisyncstart.enable true
       {
         auto field_x =
             Ioss::Field("mesh_model_coordinates_x", field.get_type(), "scalar", role, num_to_get);
-        this->get_field_internal(*sb, field_x, &data_x[0], component_data_size);
+        this->get_field_internal(*sb, field_x, Data(data_x), component_data_size);
       }
 
       if (dim > 1) {
         auto field_y =
             Ioss::Field("mesh_model_coordinates_y", field.get_type(), "scalar", role, num_to_get);
-        this->get_field_internal(*sb, field_y, &data_y[0], component_data_size);
+        this->get_field_internal(*sb, field_y, Data(data_y), component_data_size);
       }
 
       if (dim > 2) {
         auto field_z =
             Ioss::Field("mesh_model_coordinates_z", field.get_type(), "scalar", role, num_to_get);
-        this->get_field_internal(*sb, field_z, &data_z[0], component_data_size);
+        this->get_field_internal(*sb, field_z, Data(data_z), component_data_size);
       }
 
       size_t index(0);

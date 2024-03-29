@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -24,9 +24,8 @@
 #include <SL_tokenize.h>
 
 namespace {
-  [[noreturn]] void Parse_Die(const char *line)
+  [[noreturn]] void Parse_Die(std::string &sline)
   {
-    std::string sline = line;
     chop_whitespace(sline);
     Error(fmt::format("parsing input file, currently at \"{}\".\n", sline));
   }
@@ -248,8 +247,6 @@ namespace {
 } // namespace
 
 SystemInterface::SystemInterface() { enroll_options(); }
-
-SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::show_version()
 {
@@ -585,7 +582,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         "\nThe following options were specified via the EXODIFF_OPTIONS environment variable:\n"
         "\t\t{}\n\n",
         options);
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, GetLongOption::basename(*argv));
   }
 
   if (options_.retrieve("summary") != nullptr) {
@@ -632,14 +629,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("TimeStepOffset");
     if (temp != nullptr) {
       errno            = 0;
-      time_step_offset = strtol(temp, NULL, 10);
+      time_step_offset = strtol(temp, nullptr, 10);
       SMART_ASSERT(errno == 0);
     }
     else {
       const char *temp2 = options_.retrieve("T");
       if (temp2 != nullptr) {
         errno            = 0;
-        time_step_offset = strtol(temp2, NULL, 10);
+        time_step_offset = strtol(temp2, nullptr, 10);
         SMART_ASSERT(errno == 0);
       }
     }
@@ -833,7 +830,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("max_warnings");
     if (temp != nullptr) {
       errno        = 0;
-      max_warnings = strtol(temp, NULL, 10);
+      max_warnings = strtol(temp, nullptr, 10);
       SMART_ASSERT(errno == 0);
     }
   }
@@ -905,9 +902,9 @@ void SystemInterface::Parse_Command_File()
   std::ifstream cmd_file(command_file, std::ios::in);
   SMART_ASSERT(cmd_file.good());
 
-  char        line[256];
+  std::string line;
   std::string xline, tok2, tok3;
-  cmd_file.getline(line, 256);
+  std::getline(cmd_file, line);
   xline = line;
   while (!cmd_file.eof()) {
     std::string tok1;
@@ -1214,13 +1211,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(glob_var_names, glob_var_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
-
+        line = xline;
         continue;
       }
       else if (abbreviation(tok1, "nodal", 4) && abbreviation(tok2, "variables", 3)) {
@@ -1230,13 +1221,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(node_var_names, node_var_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
-
+        line = xline;
         continue;
       }
       else if (abbreviation(tok1, "element", 4) && abbreviation(tok2, "variables", 3)) {
@@ -1246,13 +1231,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(elmt_var_names, elmt_var_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
-
+        line = xline;
         continue;
       }
       else if (tok1 == "nodeset" && abbreviation(tok2, "variables", 3)) {
@@ -1262,13 +1241,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(ns_var_names, ns_var_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
-
+        line = xline;
         continue;
       }
       else if (abbreviation(tok1, "sideset", 4) && abbreviation(tok2, "variables", 3)) {
@@ -1278,13 +1251,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(ss_var_names, ss_var_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
-
+        line = xline;
         continue;
       }
       else if (abbreviation(tok1, "sideset", 4) && abbreviation(tok2, "distribution", 4)) {
@@ -1378,12 +1345,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(eb_var_names, eb_var_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
+        line = xline;
         continue;
       }
       else if (abbreviation(tok1, "faceblock", 4) && abbreviation(tok2, "variables", 3)) {
@@ -1393,12 +1355,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(fb_var_names, fb_var_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
+        line = xline;
         continue;
       }
       else if (abbreviation(tok1, "element", 4) && abbreviation(tok2, "attributes", 3)) {
@@ -1408,13 +1365,7 @@ void SystemInterface::Parse_Command_File()
 
         Check_Parsed_Names(elmt_att_names, elmt_att_do_all_flag);
 
-        if (!xline.empty()) {
-          copy_string(line, xline);
-        }
-        else {
-          copy_string(line, "");
-        }
-
+        line = xline;
         continue;
       }
       else {
@@ -1422,7 +1373,7 @@ void SystemInterface::Parse_Command_File()
       }
     }
 
-    cmd_file.getline(line, 256);
+    std::getline(cmd_file, line);
     xline = line;
   }
 }
@@ -1432,8 +1383,6 @@ namespace {
                               Tolerance &def_tol, std::vector<std::string> &names,
                               std::vector<Tolerance> &toler)
   {
-    char line[256];
-
     toler.clear();
     names.clear();
 
@@ -1559,7 +1508,8 @@ namespace {
       }
     }
 
-    cmd_file.getline(line, 256);
+    std::string line{};
+    std::getline(cmd_file, line);
     xline = line;
     while (!cmd_file.eof()) {
       if (xline.empty() ||
@@ -1582,7 +1532,7 @@ namespace {
             names.push_back(tok);
             toler.push_back(def_tol);
           }
-          cmd_file.getline(line, 256);
+          std::getline(cmd_file, line);
           xline = line;
           continue;
         }
@@ -1655,7 +1605,7 @@ namespace {
         }
       }
 
-      cmd_file.getline(line, 256);
+      std::getline(cmd_file, line);
       xline = line;
     }
 

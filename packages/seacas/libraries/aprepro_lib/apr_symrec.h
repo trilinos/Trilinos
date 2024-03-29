@@ -1,4 +1,4 @@
-// Copyright(C) 1999-, 20212021,  National Technology & Engineering Solutions
+// Copyright(C) 1999-, 20212021, , ,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -20,10 +20,6 @@ namespace SEAMS {
     int                 cols{0};
 
     array(int r, int c) : rows(r), cols(c) { data.resize(r * c); }
-
-    array(const array &) = default;
-    array()              = default;
-    ~array()             = default;
   };
 
   struct symrec
@@ -68,8 +64,6 @@ namespace SEAMS {
       array *(*arrfnct_dd)(double, double){nullptr};
       array *(*arrfnct_d)(double){nullptr};
       array *(*arrfnct_a)(const array *){nullptr};
-
-      value() = default;
     } value;
     symrec *next;
 

@@ -46,14 +46,8 @@ C   --Common Variables:
 C   --   Uses DOQA, DOLEG, DOAXIS, CAPTN of /LEGOPT/
 C   --   Uses NPTIMS, TMIN, TMAX, DELT, NINTV of /TIMES/
 
-      COMMON /LEGOPT/ DOQA(2), DOLEG(2), DOAXIS(2), DOBOX
-      LOGICAL DOQA, DOLEG, DOAXIS, DOBOX
-      COMMON /LEGOPC/ CAPTN(3,2)
-      CHARACTER*80 CAPTN
-      COMMON /TIMES/  NPTIMS, NPTIMW, TMIN, TMAX, DELT, NINTV,
-     &   NTIMIN, WHONLY, HISTOK
-      LOGICAL WHONLY, HISTOK
-
+      include 'legopt.blk'
+      include 'times.blk'
       include 'plcolr.blk'
 
       CHARACTER*(*) SHOTYP

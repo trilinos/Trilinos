@@ -10,7 +10,7 @@
 std::string time_stamp(const std::string &format)
 {
   if (format.empty()) {
-    return std::string("");
+    return {""};
   }
 
   std::time_t t           = std::time(nullptr);

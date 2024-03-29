@@ -19,7 +19,7 @@
  *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for ex__get_dimension, etc
+#include "exodusII_int.h" // for exi_get_dimension, etc
 
 static int  define_dimension(int exoid, const char *DIMENSION, int count, const char *label,
                              int *dimid);
@@ -37,7 +37,7 @@ static int  ex_define_vars(int exoid, ex_entity_type obj_type, const char *entit
 
 #define EX_GET_IDS_STATUS(TNAME, NUMVAR, DNAME, DID, DVAL, VIDS, EIDS, VSTAT, VSTATVAL)            \
   if (NUMVAR > 0) {                                                                                \
-    status = ex__get_dimension(exoid, DNAME, TNAME "s", &DVAL, &DID, __func__);                    \
+    status = exi_get_dimension(exoid, DNAME, TNAME "s", &DVAL, &DID, __func__);                    \
     if (status != NC_NOERR)                                                                        \
       goto error_ret;                                                                              \
                                                                                                    \
@@ -103,7 +103,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -166,7 +166,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
       ex_err_fn(exoid, __func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
-    ex__compress_variable(exoid, varid, 2);
+    exi_compress_variable(exoid, varid, 2);
 
     /* Now define global variable name variable */
     if (define_variable_name_variable(exoid, VAR_NAME_GLO_VAR, dimid, "global") != NC_NOERR) {
@@ -190,7 +190,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
           ex_err_fn(exoid, __func__, errmsg, status);
           goto error_ret; /* exit define mode and return */
         }
-        ex__compress_variable(exoid, varid, 2);
+        exi_compress_variable(exoid, varid, 2);
       }
     }
 
@@ -252,7 +252,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   /* leave define mode  */
 
   in_define = 0;
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
@@ -312,7 +312,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 /* Fatal error: exit definition mode and return */
 error_ret:
   if (in_define == 1) {
-    ex__leavedef(exoid, __func__);
+    exi_leavedef(exoid, __func__);
   }
   free(eblk_ids);
   free(edblk_ids);
@@ -381,7 +381,7 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
       ex_err_fn(exoid, __func__, errmsg, status);
     }
   }
-  ex__set_compact_storage(exoid, variable);
+  exi_set_compact_storage(exoid, variable);
 #if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
   int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, variable, 0, &fill);
@@ -481,7 +481,7 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
 
           /* Determine number of entities in entity */
           /* Need way to make this more generic... */
-          status = nc_inq_dimid(exoid, ex__dim_num_entries_in_object(obj_type, i + 1), &dims[1]);
+          status = nc_inq_dimid(exoid, exi_dim_num_entries_in_object(obj_type, i + 1), &dims[1]);
           if (status != NC_NOERR) {
             char errmsg[MAX_ERR_LENGTH];
             snprintf(errmsg, MAX_ERR_LENGTH,
@@ -496,7 +496,7 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
            * that the index of the EXODUS variable (which is part of
            * the name of the netCDF variable) will begin at 1 instead of 0
            */
-          status = nc_def_var(exoid, ex__name_var_of_object(obj_type, j, i + 1), nc_flt_code(exoid),
+          status = nc_def_var(exoid, exi_name_var_of_object(obj_type, j, i + 1), nc_flt_code(exoid),
                               2, dims, &varid);
           if (status != NC_NOERR) {
             if (status != NC_ENAMEINUSE) {
@@ -508,12 +508,12 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
               return (status);
             }
           }
-          ex__compress_variable(exoid, varid, 2);
+          exi_compress_variable(exoid, varid, 2);
         }
-      }    /* if */
+      } /* if */
       k++; /* increment truth table pointer */
-    }      /* for j */
-  }        /* for i */
+    } /* for j */
+  } /* for i */
   return NC_NOERR;
 }
 
@@ -555,7 +555,7 @@ static int ex_define_vars(int exoid, ex_entity_type obj_type, const char *entity
       ex_err_fn(exoid, __func__, errmsg, status);
       return status;
     }
-    ex__set_compact_storage(exoid, *truth_table_var);
+    exi_set_compact_storage(exoid, *truth_table_var);
   }
   return NC_NOERR;
 }

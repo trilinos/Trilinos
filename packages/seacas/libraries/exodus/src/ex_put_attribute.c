@@ -22,7 +22,7 @@
    attributes which are currently supported in Exodus.
 */
 
-static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
+static int exi_get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
 {
   const char *entryptr = NULL;
   char        errmsg[MAX_ERR_LENGTH];
@@ -31,7 +31,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
   int status = 0;
   int varid  = 0;
 
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -63,7 +63,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
 
   /* Everything else ... */
   /* First, locate index of this objects id `obj_type` id array */
-  id_ndx = ex__id_lkup(exoid, obj_type, id);
+  id_ndx = exi_id_lkup(exoid, obj_type, id);
   if (id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
@@ -113,9 +113,9 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
   int  varid;
 
   EX_FUNC_ENTER();
-  varid = ex__get_varid(exoid, obj_type, id);
+  varid = exi_get_varid(exoid, obj_type, id);
   if (varid <= 0 && obj_type != EX_GLOBAL) {
-    /* Error message handled in ex__get_varid */
+    /* Error message handled in exi_get_varid */
     EX_FUNC_LEAVE(varid);
   }
 
@@ -136,7 +136,7 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -146,7 +146,7 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }
 
@@ -159,9 +159,9 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
   int  varid;
 
   EX_FUNC_ENTER();
-  varid = ex__get_varid(exoid, obj_type, id);
+  varid = exi_get_varid(exoid, obj_type, id);
   if (varid <= 0 && obj_type != EX_GLOBAL) {
-    /* Error message handled in ex__get_varid */
+    /* Error message handled in exi_get_varid */
     EX_FUNC_LEAVE(varid);
   }
 
@@ -188,7 +188,7 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -198,7 +198,7 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }
 
@@ -212,9 +212,9 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
 
   EX_FUNC_ENTER();
 
-  varid = ex__get_varid(exoid, obj_type, id);
+  varid = exi_get_varid(exoid, obj_type, id);
   if (varid <= 0 && obj_type != EX_GLOBAL) {
-    /* Error message handled in ex__get_varid */
+    /* Error message handled in exi_get_varid */
     EX_FUNC_LEAVE(varid);
   }
 
@@ -234,7 +234,7 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
   }
 
   /* leave define mode  */
-  if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -244,7 +244,7 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  ex__leavedef(exoid, __func__);
+  exi_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }
 

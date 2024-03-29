@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,13 +19,14 @@
 #include "rf_io_const.h"       // for Debug_Flag, etc
 #include "rf_util.h"           // for print_line, my_sort
 #include "sort_utils.h"        // for gds_qsort
-#include <cassert>             // for assert
-#include <climits>             // for INT_MAX
-#include <cstddef>             // for size_t
-#include <cstdio>              // for stderr
-#include <cstdlib>             // for exit, free
-#include <string>              // for string
-#include <vector>              // for vector
+#include "vector_data.h"
+#include <cassert> // for assert
+#include <climits> // for INT_MAX
+#include <cstddef> // for size_t
+#include <cstdio>  // for stderr
+#include <cstdlib> // for exit, free
+#include <string>  // for string
+#include <vector>  // for vector
 template <typename T, typename INT> class Globals;
 
 /*****************************************************************************/
@@ -321,18 +322,18 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   if (globals.Num_Assemblies > 0) {
     globals.Assemblies.resize(globals.Num_Assemblies);
-    for (int i = 0; i < globals.Num_Assemblies; i++) {
-      globals.Assemblies[i].name        = nullptr;
-      globals.Assemblies[i].entity_list = nullptr;
+    for (auto &assembly : globals.Assemblies) {
+      assembly.name        = nullptr;
+      assembly.entity_list = nullptr;
     }
-    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
+    ex_get_assemblies(mesh_exoid, Data(globals.Assemblies));
 
     for (auto &assembly : globals.Assemblies) {
       assembly.entity_list = new int64_t[assembly.entity_count];
     }
 
     // Now get the assembly entity lists...
-    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
+    ex_get_assemblies(mesh_exoid, Data(globals.Assemblies));
   }
 
   /* Read in the coordinate frame information */
@@ -643,6 +644,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     safe_free((void **)&globals.Coordinate_Frame_Tags);
   }
 
+  // Clear out allocated memory for assembly entity_list...
+  for (auto &assembly : globals.Assemblies) {
+    free(assembly.name);
+    delete[] assembly.entity_list;
+    assembly.name        = nullptr;
+    assembly.entity_list = nullptr;
+  }
+
   /* done with the Coordinate names */
   for (int i1 = 0; i1 < globals.Num_Dim; i1++) {
     safe_free((void **)&(Coord_Name[i1]));
@@ -706,7 +715,7 @@ void NemSpread<T, INT>::read_elem_blk_ids(int mesh_exoid, int max_name_length)
    */
 
   /* Get the Element Block IDs from the input file */
-  check_exodus_error(ex_get_ids(mesh_exoid, EX_ELEM_BLOCK, Elem_Blk_Ids.data()), "ex_get_ids");
+  check_exodus_error(ex_get_ids(mesh_exoid, EX_ELEM_BLOCK, Data(Elem_Blk_Ids)), "ex_get_ids");
 
   check_exodus_error(ex_get_names(mesh_exoid, EX_ELEM_BLOCK, Elem_Blk_Names), "ex_get_names");
 
@@ -761,7 +770,7 @@ void NemSpread<T, INT>::read_node_set_ids(int mesh_exoid, std::vector<INT> &num_
 
 {
   if (globals.Num_Node_Set > 0) {
-    int error = ex_get_ids(mesh_exoid, EX_NODE_SET, Node_Set_Ids.data());
+    int error = ex_get_ids(mesh_exoid, EX_NODE_SET, Data(Node_Set_Ids));
     check_exodus_error(error, "ex_get_node_set_ids");
 
     error = ex_get_names(mesh_exoid, EX_NODE_SET, Node_Set_Names);
@@ -815,7 +824,7 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, std::vector<INT> &num_
 
 {
   if (globals.Num_Side_Set > 0) {
-    int error = ex_get_ids(mesh_exoid, EX_SIDE_SET, Side_Set_Ids.data());
+    int error = ex_get_ids(mesh_exoid, EX_SIDE_SET, Data(Side_Set_Ids));
     check_exodus_error(error, "ex_get_side_set_ids");
 
     error = ex_get_names(mesh_exoid, EX_SIDE_SET, Side_Set_Names);
@@ -887,13 +896,13 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
   for (int idim = 0; idim < globals.Num_Dim; idim++) {
     switch (idim) {
     case 0:
-      check_exodus_error(ex_get_coord(exoid, coord.data(), nullptr, nullptr), "ex_get_coord");
+      check_exodus_error(ex_get_coord(exoid, Data(coord), nullptr, nullptr), "ex_get_coord");
       break;
     case 1:
-      check_exodus_error(ex_get_coord(exoid, nullptr, coord.data(), nullptr), "ex_get_coord");
+      check_exodus_error(ex_get_coord(exoid, nullptr, Data(coord), nullptr), "ex_get_coord");
       break;
     case 2:
-      check_exodus_error(ex_get_coord(exoid, nullptr, nullptr, coord.data()), "ex_get_coord");
+      check_exodus_error(ex_get_coord(exoid, nullptr, nullptr, Data(coord)), "ex_get_coord");
       break;
     }
 
@@ -923,7 +932,7 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
   /* Handle global node ids... */
   std::vector<INT> global_node_ids(globals.Num_Node);
 
-  check_exodus_error(ex_get_id_map(exoid, EX_NODE_MAP, global_node_ids.data()), "ex_get_id_map");
+  check_exodus_error(ex_get_id_map(exoid, EX_NODE_MAP, Data(global_node_ids)), "ex_get_id_map");
   /*
    * Check whether map is sequential (1..globals.Num_Node). If it is, then it
    * provides no information and we don't need to store it in the
@@ -1102,7 +1111,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
     /* Sort globals.GElems so that each element block is monotonic */
     size_t j = 0;
     for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
-      gds_qsort((globals.GElems[iproc].data()) + j, globals.Proc_Num_Elem_In_Blk[iproc][i]);
+      gds_qsort((Data(globals.GElems[iproc])) + j, globals.Proc_Num_Elem_In_Blk[iproc][i]);
       j += globals.Proc_Num_Elem_In_Blk[iproc][i];
     }
   } /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
@@ -1430,7 +1439,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
   } /* End "for(ielem_blk=0; ielem_blk < globals.Num_Elem_Blk; ielem_blk++)" */
 
   /* Handle global element ids... */
-  check_exodus_error(ex_get_id_map(exoid, EX_ELEM_MAP, global_ids.data()), "ex_get_id_map");
+  check_exodus_error(ex_get_id_map(exoid, EX_ELEM_MAP, Data(global_ids)), "ex_get_id_map");
 
   /*
    * Check whether map is sequential (1..globals.Num_Elem). If it is, then it
@@ -1892,8 +1901,8 @@ void NemSpread<T, INT>::find_elem_block(std::vector<INT> &proc_elem_blk, int ipr
    * later operations.
    */
 
-  my_sort(globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc], proc_elem_blk.data(),
-          globals.GElems[iproc].data());
+  my_sort(globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc], Data(proc_elem_blk),
+          Data(globals.GElems[iproc]));
 
   /* Now change proc_elem_blk to be a list of global element block IDs */
   for (INT i = 0; i < globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc]; i++) {
@@ -2107,13 +2116,13 @@ void NemSpread<T, INT>::read_node_sets(int exoid, std::vector<INT> &num_nodes_in
 
         /* Read in the part of the node set that will fit in the message */
         check_exodus_error(ex_get_partial_set(exoid, EX_NODE_SET, Node_Set_Ids[i], (istart_ns + 1),
-                                              num_node_per_message, node_set.data(), nullptr),
+                                              num_node_per_message, Data(node_set), nullptr),
                            "ex_get_partial_set");
 
         if (num_df_in_nsets[i] > 0) {
           check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_NODE_SET, Node_Set_Ids[i],
                                                           (istart_ns + 1), num_node_per_message,
-                                                          node_set_df.data()),
+                                                          Data(node_set_df)),
                              "ex_get_partial_node_set_df");
         }
 
@@ -2175,8 +2184,8 @@ void NemSpread<T, INT>::read_node_sets(int exoid, std::vector<INT> &num_nodes_in
               ns_cntr[iproc]++;
             }
           } /* End "if(intersection)" */
-        }   /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
-      }     /* End "for(imess=0; imess < num_messages; imess++)" */
+        } /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
+      } /* End "for(imess=0; imess < num_messages; imess++)" */
 
       /*
        * If any part of this node-set is on the processor, update the various
@@ -2203,7 +2212,7 @@ void NemSpread<T, INT>::read_node_sets(int exoid, std::vector<INT> &num_nodes_in
         }
       }
     } /* END "if (num_nodes_in_node_set[i] > 0)" */
-  }   /* END "for (i = 0; i < globals.Num_Node_Set; i++)" */
+  } /* END "for (i = 0; i < globals.Num_Node_Set; i++)" */
 
   /*--------------------------------------------------------------------------*/
   /*             WRITE PERMANENT ARRAYS FOR NODE SET INFO                     */
@@ -2457,8 +2466,8 @@ void NemSpread<T, INT>::read_side_sets(int exoid, std::vector<INT> &num_elem_in_
         /* Read in the part of the side set that will fit in the message. */
 
         check_exodus_error(ex_get_partial_set(exoid, EX_SIDE_SET, Side_Set_Ids[i], (istart_ss + 1),
-                                              num_elem_per_message, ss_elem_list.data(),
-                                              ss_side_list.data()),
+                                              num_elem_per_message, Data(ss_elem_list),
+                                              Data(ss_side_list)),
                            "ex_get_partial_set");
 
         /* Fill in the distribution factor pointer vector */
@@ -2577,7 +2586,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, std::vector<INT> &num_elem_in_
                   ss_df_ptr[proc_es_pointer[iproc][j]];
             }
           } /* End "if(ipos_elem > 0)" */
-        }   /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
+        } /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
 #endif
       } /* End "for(imess=0; imess < num_messages; imess++)" */
 
@@ -2633,7 +2642,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, std::vector<INT> &num_elem_in_
           /* Read in the part of the side set df's that will fit in the msg. */
           check_exodus_error(ex_get_partial_set_dist_fact(exoid, EX_SIDE_SET, Side_Set_Ids[i],
                                                           (istart_ss + 1), num_elem_per_message,
-                                                          ss_dist_fact.data()),
+                                                          Data(ss_dist_fact)),
                              "ex_get_partial_set_dist_fact");
 
           /*
@@ -2781,12 +2790,12 @@ void NemSpread<T, INT>::read_side_sets(int exoid, std::vector<INT> &num_elem_in_
                   }
                 }
               } /* End "for(j=0; j < num_elem_per_message; j++)" */
-            }   /* End "if(ntotal[iproc] > 0)" */
-          }     /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
-        }       /* End "for(imess=0; imess < num_messages; imess++)" */
-      }         /* End "if(num_df_in_ssets[i] > 0)" */
-    }           /* END "if (num_elem_in_ssets[i] > 0)" */
-  }             /* END "for (i = 0; i < globals.Num_Side_Set; i++)" */
+            } /* End "if(ntotal[iproc] > 0)" */
+          } /* End "for(iproc=0; iproc <Proc_Info[2]; iproc++)" */
+        } /* End "for(imess=0; imess < num_messages; imess++)" */
+      } /* End "if(num_df_in_ssets[i] > 0)" */
+    } /* END "if (num_elem_in_ssets[i] > 0)" */
+  } /* END "for (i = 0; i < globals.Num_Side_Set; i++)" */
 
   /*-------------------------------------------------------------------------*/
   /*---------------- Store Structures back into a packed form ---------------*/

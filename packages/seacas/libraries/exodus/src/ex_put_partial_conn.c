@@ -28,7 +28,7 @@
  *
  */
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
-#include "exodusII_int.h" // for ex__check_valid_file_id, etc
+#include "exodusII_int.h" // for exi_check_valid_file_id, etc
 
 /*
  * reads the connectivity array for an element block
@@ -75,13 +75,13 @@ int ex_put_partial_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
   }
 
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Locate index of element block id in VAR_ID_EL_BLK array */
 
-  blk_id_ndx = ex__id_lkup(exoid, blk_type, blk_id);
+  blk_id_ndx = exi_id_lkup(exoid, blk_type, blk_id);
   if (blk_id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
 

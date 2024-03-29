@@ -1,76 +1,69 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "modify_interface.h"
-
-#include <array>
+#include "Ionit_Initializer.h"
+#include "Ioss_Assembly.h"
+#include "Ioss_Blob.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_FileInfo.h"
+#include "Ioss_Getline.h"
+#include "Ioss_Glob.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_StructuredBlock.h"
+#include "Ioss_Utils.h"
 #include <cassert>
 #include <cmath>
-#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <regex>
-#include <string>
-#include <unistd.h>
-#include <utility>
-#include <vector>
-
-#include <Ionit_Initializer.h>
-#include <Ioss_Assembly.h>
-#include <Ioss_Blob.h>
-#include <Ioss_CodeTypes.h>
-#include <Ioss_CommSet.h>
-#include <Ioss_CoordinateFrame.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_EdgeSet.h>
-#include <Ioss_ElementBlock.h>
-#include <Ioss_ElementSet.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FaceBlock.h>
-#include <Ioss_FaceSet.h>
-#include <Ioss_Field.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_Getline.h>
-#include <Ioss_Glob.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_NodeBlock.h>
-#include <Ioss_NodeSet.h>
-#include <Ioss_Property.h>
-#include <Ioss_Region.h>
-#include <Ioss_ScopeGuard.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_StructuredBlock.h>
-#include <Ioss_Utils.h>
-#include <Ioss_VariableType.h>
-#include <tokenize.h>
-
+#include <exception>
 #include <fmt/color.h>
+#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <regex>
+#include <stdint.h>
+#include <string>
+#include <tokenize.h>
+#include <unistd.h>
+#include <vector>
+
+#include "Ioss_EntityType.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_ScopeGuard.h"
+#include "Ioss_State.h"
+#include "modify_interface.h"
 
 #if defined(SEACAS_HAVE_EXODUS)
-#include <exodus/Ioex_Internals.h>
-#include <exodus/Ioex_Utils.h>
+#include "exodus/Ioex_Internals.h"
+#include "exodus/Ioex_Utils.h"
 #include <exodusII.h>
 #endif
 
 #if defined(SEACAS_HAVE_CGNS)
-#include <cgns/Iocgns_Utils.h>
+#include "cgns/Iocgns_Utils.h"
 #endif
 
 #if defined(__IOSS_WINDOWS__)
 #include <io.h>
+
 #define isatty _isatty
 #endif
 // ========================================================================
@@ -79,7 +72,7 @@ using real = double;
 
 namespace {
   std::string codename;
-  std::string version = "2.03 (2022-05-26)";
+  std::string version = "2.05 (2024-03-25)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -660,17 +653,21 @@ namespace {
     }
     if (all || Ioss::Utils::substr_equal(topic, "geometry")) {
       fmt::print(fmt::emphasis::bold, "\n\tGEOMETRY ROTATE ");
-      fmt::print("{{X|Y|Z}} {{angle}}\n");
+      fmt::print("{{X|Y|Z}} {{angle}} ...\n");
+      fmt::print(fmt::emphasis::bold, "\tGEOMETRY MIRROR ");
+      fmt::print("{{X|Y|Z}} ...\n");
       fmt::print(fmt::emphasis::bold, "\tGEOMETRY SCALE  ");
-      fmt::print("{{x}} {{y}} {{z}}\n");
+      fmt::print("{{X|Y|Z}} {{scale_factor}} ...\n");
       fmt::print(fmt::emphasis::bold, "\tGEOMETRY OFFSET ");
-      fmt::print("{{x}} {{y}} {{z}}\n");
+      fmt::print("{{X|Y|Z}} {{offset}} ...\n");
       fmt::print(fmt::emphasis::bold, "\tGEOMETRY ROTATE ");
-      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{angle}}\n");
+      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{angle}} ...\n");
+      fmt::print(fmt::emphasis::bold, "\tGEOMETRY MIRROR ");
+      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} ...\n");
       fmt::print(fmt::emphasis::bold, "\tGEOMETRY SCALE  ");
-      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
+      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{scale_factor}} ...\n");
       fmt::print(fmt::emphasis::bold, "\tGEOMETRY OFFSET ");
-      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
+      fmt::print("{{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{offset}} ...\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "time")) {
       fmt::print(fmt::emphasis::bold, "\n\tTIME SCALE  ");
@@ -766,9 +763,6 @@ namespace {
     int  size() const { return (int)m_vertices.size(); }
 
   public:
-    Graph()  = default; // Constructor
-    ~Graph() = default;
-
     void add_edge(const std::string &v, const std::string &w); // to add an edge to graph
     bool is_cyclic(); // returns true if there is a cycle in this graph
   };
@@ -941,7 +935,7 @@ namespace {
         else {
           fmt::print(stderr, fg(fmt::color::red),
                      "ERROR: Requested Assembly '{}' was not created during this execution.  Not "
-                     "deleteable.\n",
+                     "deletable.\n",
                      tokens[1]);
           return false;
         }
@@ -967,7 +961,10 @@ namespace {
     if (Ioss::Utils::substr_equal(tokens[2], "add")) {
       // Must be at least 6 tokens...
       if (tokens.size() < 6) {
-        fmt::print(stderr, fg(fmt::color::red),
+        fmt::print(stderr,
+#if !defined __NVCC__
+                   fg(fmt::color::red),
+#endif
                    "ERROR: ATTRIBUTE Command does not have enough tokens to be valid.\n"
                    "\t\t{}\n",
                    fmt::join(tokens, " "));
@@ -988,7 +985,7 @@ namespace {
       }
 
       // Now get name of attribute/property to create...
-      std::string att_name = tokens[3];
+      const std::string &att_name = tokens[3];
 
       // Now, the attribute type and whether vector or scalar...
       size_t value_count = tokens.size() - 5;
@@ -1086,7 +1083,10 @@ namespace {
 
     // Must be at least 4 tokens...
     if (tokens.size() < 4) {
-      fmt::print(stderr, fg(fmt::color::red),
+      fmt::print(stderr,
+#if !defined __NVCC__
+                 fg(fmt::color::red),
+#endif
                  "ERROR: RENAME Command does not have enough tokens to be valid.\n"
                  "\t\t{}\n",
                  fmt::join(tokens, " "));
@@ -1096,7 +1096,7 @@ namespace {
 
     // See if asking for actual entity by name or by type + id
     Ioss::GroupingEntity *ge       = nullptr;
-    std::string           new_name = tokens[tokens.size() - 1];
+    const std::string    &new_name = tokens[tokens.size() - 1];
 
     if (tokens.size() == 5 && Ioss::Utils::str_equal(tokens[3], "to")) {
       // Type + ID
@@ -1123,8 +1123,11 @@ namespace {
       }
     }
     else {
-      fmt::print(stderr, fg(fmt::color::yellow), "\tWARNING: Unrecognized rename syntax '{}'\n",
-                 fmt::join(tokens, " "));
+      fmt::print(stderr,
+#if !defined __NVCC__
+                 fg(fmt::color::yellow),
+#endif
+                 "\tWARNING: Unrecognized rename syntax '{}'\n", fmt::join(tokens, " "));
       handle_help("rename");
     }
 
@@ -1203,7 +1206,10 @@ namespace {
     // TIME   SCALE  {{scale}}
     // TIME   OFFSET {{offset}
     if (tokens.size() < 3) {
-      fmt::print(stderr, fg(fmt::color::red),
+      fmt::print(stderr,
+#if !defined __NVCC__
+                 fg(fmt::color::red),
+#endif
                  "ERROR: TIME Command does not have enough tokens to be valid.\n"
                  "\t\t{}\n",
                  fmt::join(tokens, " "));
@@ -1231,14 +1237,18 @@ namespace {
   {
     //     0        1        2         3         4       5...
     // GEOMETRY   ROTATE {{X|Y|Z}} {{angle}} ...
+    // GEOMETRY   MIRROR {{X|Y|Z}} ...
     // GEOMETRY   SCALE  {{X|Y|Z}} {{scale}} ...
     // GEOMETRY   OFFSET {{X|Y|Z}} {{offset}} ...
     // GEOMETRY   ROTATE {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{angle}}  ...
     // GEOMETRY   SCALE  {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{scale}}  ...
     // GEOMETRY   OFFSET {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{offset}} ...
 
-    if (tokens.size() < 4) {
-      fmt::print(stderr, fg(fmt::color::red),
+    if (tokens.size() < 3) {
+      fmt::print(stderr,
+#if !defined __NVCC__
+                 fg(fmt::color::red),
+#endif
                  "ERROR: GEOMETRY Command does not have enough tokens to be valid.\n"
                  "\t\t{}\n",
                  fmt::join(tokens, " "));
@@ -1257,8 +1267,8 @@ namespace {
       while (!(Ioss::Utils::str_equal(tokens[idx], "x") ||
                Ioss::Utils::str_equal(tokens[idx], "y") ||
                Ioss::Utils::str_equal(tokens[idx], "z"))) {
-        auto  name = tokens[idx++];
-        auto *ge   = region.get_entity(name, Ioss::ELEMENTBLOCK);
+        const auto &name = tokens[idx++];
+        auto       *ge   = region.get_entity(name, Ioss::ELEMENTBLOCK);
         if (ge == nullptr) {
           ge = region.get_entity(name, Ioss::ASSEMBLY);
         }
@@ -1306,9 +1316,9 @@ namespace {
 
       // Get rotation axis...
       do {
-        std::string axis  = tokens[idx++];
-        double      angle = std::stod(tokens[idx++]);
-        auto        ok    = update_rotation_matrix(rotation_matrix, axis, angle);
+        const std::string &axis  = tokens[idx++];
+        double             angle = std::stod(tokens[idx++]);
+        auto               ok    = update_rotation_matrix(rotation_matrix, axis, angle);
         if (!ok) {
           return false;
         }
@@ -1325,8 +1335,8 @@ namespace {
 
       // Get scale axis and scale factor...
       do {
-        std::string axis   = tokens[idx++];
-        double      factor = std::stod(tokens[idx++]);
+        const std::string &axis   = tokens[idx++];
+        double             factor = std::stod(tokens[idx++]);
         if (Ioss::Utils::substr_equal(axis, "x")) {
           scale[0] = factor;
         }
@@ -1340,7 +1350,30 @@ namespace {
 
       // Do the transformation...
       scale_filtered_coordinates(region, scale, node_filter);
-      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinates scaled.\n");
+      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinate(s) scaled.\n");
+      return false;
+    }
+
+    if (Ioss::Utils::substr_equal(tokens[1], "mirror")) {
+      real scale[3] = {1.0, 1.0, 1.0};
+
+      // Get mirror axis ...
+      do {
+        const std::string &axis = tokens[idx++];
+        if (Ioss::Utils::substr_equal(axis, "x")) {
+          scale[0] = -1.0;
+        }
+        else if (Ioss::Utils::substr_equal(axis, "y")) {
+          scale[1] = -1.0;
+        }
+        else if (Ioss::Utils::substr_equal(axis, "z")) {
+          scale[2] = -1.0;
+        }
+      } while (idx < tokens.size());
+
+      // Do the transformation...
+      scale_filtered_coordinates(region, scale, node_filter);
+      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinate(s) mirrored.\n");
       return false;
     }
 
@@ -1349,8 +1382,8 @@ namespace {
 
       // Get offset axis and offset factor...
       do {
-        std::string axis   = tokens[idx++];
-        double      factor = std::stod(tokens[idx++]);
+        const std::string &axis   = tokens[idx++];
+        double             factor = std::stod(tokens[idx++]);
         if (Ioss::Utils::substr_equal(axis, "x")) {
           offset[0] = factor;
         }
@@ -1364,7 +1397,7 @@ namespace {
 
       // Do the transformation...
       offset_filtered_coordinates(region, offset, node_filter);
-      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinates offset.\n");
+      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinate(s) offset.\n");
       return false;
     }
 
@@ -1868,13 +1901,16 @@ namespace {
     std::vector<double> times(ts_count);
 
     int exoid = region.get_database()->get_file_pointer();
-    ex_get_all_times(exoid, times.data());
+    ex_get_all_times(exoid, Data(times));
 
     for (size_t step = 0; step < ts_count; step++) {
       times[step] = times[step] * scale + offset;
       ex_put_time(exoid, step + 1, &times[step]);
     }
-    region.get_min_time();
+    // Now update the `last_time_attribute`...
+    auto max_time = *std::max_element(times.begin(), times.end());
+    Ioex::update_last_time_attribute(exoid, max_time);
+    (void)region.get_min_time(); // Triggers reloading region stateTimes vector.
   }
 
 } // nameSpace

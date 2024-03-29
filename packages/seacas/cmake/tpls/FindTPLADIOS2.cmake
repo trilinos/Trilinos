@@ -80,7 +80,7 @@ ENDIF()
 #
 TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( ADIOS2
   REQUIRED_HEADERS adios2.h
-  REQUIRED_LIBS_NAMES adios2
+  REQUIRED_LIBS_NAMES adios2_cxx11_mpi,adios2_cxx11,adios2_core_mpi,adios2_core
   )
 
 # NOTE: If FIND_PACKAGE(ADIOS2 ...) was called and successfully found ADIOS2, then

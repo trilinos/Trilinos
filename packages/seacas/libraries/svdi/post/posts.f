@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -121,7 +121,7 @@ C CSPOT          - The next open spot in RGB and INDICES.
 C VECTOR(7)      - Used to find out the default foregound and background
 C                  colors from VDIQOS and to reinitialize the system at a
 C                  new file id.
-C DRAWN          - True if something has been drawn since inititalization or
+C DRAWN          - True if something has been drawn since initialization or
 C                  the background color has changed from default.
 C FIRST          - True until after the first newpage since initialization
 
@@ -302,7 +302,7 @@ C          GET THE NUMERIC ARGUMENTS
   330 CONTINUE
       GOTO 350
 
-C          IS IT A KNOWN ALHPA ESCAPE?
+C          IS IT A KNOWN ALPHA ESCAPE?
 
   340 CONTINUE
       GOTO 1

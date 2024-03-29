@@ -2,10 +2,11 @@
 """
 This file performs unit tests of functions within Exomerge.
 
-Copyright 2018, 2021, 2022 National Technology and Engineering Solutions of Sandia.  Under
-the terms of Contract DE-NA-0003525, there is a non-exclusive license for use
-of this work by or on behalf of the U.S. Government.  Export of this program
-may require a license from the United States Government.
+Copyright 2018, 2021, 2022 National Technology and Engineering
+Solutions of Sandia.  Under the terms of Contract DE-NA-0003525, there
+is a non-exclusive license for use of this work by or on behalf of the
+U.S. Government.  Export of this program may require a license from
+the United States Government.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -114,7 +115,7 @@ def compares_equal_with_nan(one, two):
     floats.  They can be nested.
 
     """
-    if type(one) != type(two):
+    if type(one) is not type(two):
         return False
     if isinstance(one, dict):
         if sorted(one.keys()) != sorted(two.keys()):
@@ -918,7 +919,9 @@ class ExomergeUnitTester:
         if not self.model.nodes:
             return False
         x = len(self.model.nodes)
-        self.model._duplicate_nodes(_random_subset(list(range(len(self.model.nodes))), 1), [])
+        self.model._duplicate_nodes(
+            _random_subset(list(range(len(self.model.nodes))), 1), []
+        )
         self.model.merge_nodes(suppress_warnings=True)
         assert len(self.model.nodes) <= x
 
@@ -1765,9 +1768,7 @@ class ExomergeUnitTester:
         # get a list of all public functions in exomerge
         public_functions = []
 
-        for (function, _) in inspect.getmembers(
-            exomerge.ExodusModel, inspect.isfunction
-        ):
+        for function, _ in inspect.getmembers(exomerge.ExodusModel, inspect.isfunction):
             if not function.startswith("_"):
                 public_functions.append(function)
         print(
@@ -1783,7 +1784,7 @@ class ExomergeUnitTester:
         matched_unit_tests = []
         for unit_test in unit_tests:
             (test, _) = unit_test
-            if not test[6:] in public_functions:
+            if test[6:] not in public_functions:
                 unmatched.append(test)
             else:
                 matched_unit_tests.append(unit_test)
@@ -1803,7 +1804,7 @@ class ExomergeUnitTester:
         unmatched = []
         unit_test_names = [x[0] for x in unit_tests]
         for name in public_functions:
-            if not "_test_" + name in unit_test_names:
+            if "_test_" + name not in unit_test_names:
                 unmatched.append(name)
         if unmatched:
             print(
@@ -1860,7 +1861,7 @@ class ExomergeUnitTester:
         # if some tests did not successfully run, not that
         if len(passed_tests) != len(unit_tests):
             untested = []
-            for (x, _) in unit_tests:
+            for x, _ in unit_tests:
                 if x not in passed_tests:
                     untested.append(x)
             print(

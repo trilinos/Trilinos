@@ -9,8 +9,8 @@
 
 #include "iovs_export.h"
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_PropertyManager.h>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_PropertyManager.h"
 #include <string>
 #include <vector>
 

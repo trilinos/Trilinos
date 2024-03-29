@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,14 +7,10 @@
  */
 #pragma once
 
-#include "io_info_lib_export.h"
-
-#include "info_interface.h"
-
-#include <Ionit_Initializer.h>
-#include <Ioss_CodeTypes.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
+#include "Ionit_Initializer.h"
+#include "Ioss_CodeTypes.h"
+#include "Ioss_SurfaceSplit.h"
+#include "Ioss_Utils.h"
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -23,9 +19,14 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "info_interface.h"
+#include "io_info_lib_export.h"
 #if defined(SEACAS_HAVE_EXODUS)
 #include <exodusII.h>
 #endif
+
+#include <cassert>
 
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
@@ -52,9 +53,13 @@
 #include "Ioss_StructuredBlock.h"
 #include "Ioss_VariableType.h"
 
-#include <cassert>
+namespace Info {
+  class Interface;
+} // namespace Info
 
 namespace Ioss {
+  class DatabaseIO;
+  class Region;
 
   // internal to io_info
   IO_INFO_LIB_EXPORT void io_info_file_info(const Info::Interface &interFace);

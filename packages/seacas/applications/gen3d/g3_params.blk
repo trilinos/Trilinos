@@ -10,7 +10,7 @@ C -*- Mode: fortran -*-
 
       COMMON /PARAMS/ ITRANT, NNREPL, NEREPL, DIM3, NRTRAN(MAXINT),
      *     D3TRAN(MAXINT), ZGRAD(MAXINT), CENTER, NUMCOL, NUMCDM,
-     $     NUMROW, RGRAD, IWARP, DWARP, VEDGE, NBLK, HRAD, ROTAX, ISCENT
+     $     NUMROW, RGRAD, IWARP, DWARP, NBLK, HRAD, ROTAX, VEDGE, ISCENT
       LOGICAL VEDGE, ISCENT
 C      --ITRANT - type of transformation:
 C               =  1 if translation

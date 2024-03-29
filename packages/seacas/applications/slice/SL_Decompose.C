@@ -21,9 +21,12 @@
 #include <fstream>
 
 #include <exodusII.h>
+#if !defined __NVCC__
 #include <fmt/color.h>
+#endif
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <init/Ionit_Initializer.h>
 
 #if USE_METIS
@@ -35,7 +38,6 @@ using idx_t = int;
 #if USE_ZOLTAN
 #include <zoltan.h>     // for Zoltan_Initialize
 #include <zoltan_cpp.h> // for Zoltan
-extern "C" int Zoltan_get_global_id_type(char **name);
 #endif
 
 extern int    debug_level;
@@ -99,26 +101,18 @@ namespace {
     throw std::runtime_error(errmsg.str());
   }
 
-  int case_compare(const char *s1, const char *s2)
+  bool case_compare(const std::string &s1, const std::string &s2)
   {
-    const char *c1 = s1;
-    const char *c2 = s2;
-    for (;;) {
-      if (::toupper(*c1) != ::toupper(*c2)) {
-        return (::toupper(*c1) - ::toupper(*c2));
-      }
-      if (*c1 == '\0') {
-        return 0;
-      }
-      c1++;
-      c2++;
-    }
+    return (s1.size() == s2.size()) &&
+           std::equal(s1.begin(), s1.end(), s2.begin(),
+                      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
   }
 
 #if USE_ZOLTAN
-  template<typename INT>
-    std::tuple<std::vector<double>,std::vector<double>,std::vector<double>> get_element_centroid(const Ioss::Region &region, IOSS_MAYBE_UNUSED INT dummy)
-    {
+  template <typename INT>
+  std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>
+  get_element_centroid(const Ioss::Region &region, IOSS_MAYBE_UNUSED INT dummy)
+  {
     size_t element_count = region.get_property("element_count").get_int();
 
     // The zoltan methods supported in slice are all geometry based
@@ -153,7 +147,7 @@ namespace {
       }
     }
     return {x, y, z};
-    }
+  }
   /*****************************************************************************/
   /***** Global data structure used by Zoltan callbacks.                   *****/
   /***** Could implement Zoltan callbacks without global data structure,   *****/
@@ -220,7 +214,7 @@ namespace {
      * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
      */
 
-    for (int i = 0; i < nobj; i++) {
+    for (size_t i = 0; i < static_cast<size_t>(nobj); i++) {
       size_t j       = gids[i];
       geom[i * ndim] = Zoltan_Data.x[j];
       if (ndim > 1) {
@@ -236,34 +230,51 @@ namespace {
 
   template <typename INT>
   void decompose_zoltan(const Ioss::Region &region, int ranks, SystemInterface &interFace,
-                        std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy)
+                        std::vector<int> &elem_to_proc, const std::vector<int> &weights,
+                        IOSS_MAYBE_UNUSED INT dummy)
   {
     if (ranks == 1) {
       return;
     }
 
+    size_t element_count = region.get_property("element_count").get_int();
+    if (element_count != static_cast<size_t>(static_cast<int>(element_count))) {
+      fmt::print(stderr, "ERROR: Cannot have a mesh with more than 2.1 Billion elements in a "
+                         "Zoltan decomposition.\n");
+      exit(EXIT_FAILURE);
+    }
+
     auto [x, y, z] = get_element_centroid(region, dummy);
 
     // Copy mesh data and pointers into structure accessible from callback fns.
-    size_t element_count = region.get_property("element_count").get_int();
     Zoltan_Data.ndot = element_count;
-    Zoltan_Data.vwgt = nullptr;
-    if (interFace.ignore_x_) {
-      Zoltan_Data.x = y.data();
-      Zoltan_Data.y = z.data();
+    Zoltan_Data.vwgt = const_cast<int *>(Data(weights));
+
+    if (interFace.ignore_x_ && interFace.ignore_y_) {
+      Zoltan_Data.x = Data(z);
+    }
+    else if (interFace.ignore_x_ && interFace.ignore_z_) {
+      Zoltan_Data.x = Data(y);
+    }
+    else if (interFace.ignore_y_ && interFace.ignore_z_) {
+      Zoltan_Data.x = Data(x);
+    }
+    else if (interFace.ignore_x_) {
+      Zoltan_Data.x = Data(y);
+      Zoltan_Data.y = Data(z);
     }
     else if (interFace.ignore_y_) {
-      Zoltan_Data.x = x.data();
-      Zoltan_Data.y = z.data();
+      Zoltan_Data.x = Data(x);
+      Zoltan_Data.y = Data(z);
     }
     else if (!interFace.ignore_z_) {
-      Zoltan_Data.x = x.data();
-      Zoltan_Data.y = y.data();
+      Zoltan_Data.x = Data(x);
+      Zoltan_Data.y = Data(y);
     }
     else {
-      Zoltan_Data.x = x.data();
-      Zoltan_Data.y = y.data();
-      Zoltan_Data.z = z.data();
+      Zoltan_Data.x = Data(x);
+      Zoltan_Data.y = Data(y);
+      Zoltan_Data.z = Data(z);
     }
 
     // Initialize Zoltan
@@ -288,6 +299,7 @@ namespace {
     zz.Set_Param("DEBUG_LEVEL", "0");
     std::string str = fmt::format("{}", ranks);
     zz.Set_Param("NUM_GLOBAL_PARTS", str);
+    zz.Set_Param("OBJ_WEIGHT_DIM", "1");
     zz.Set_Param("LB_METHOD", interFace.decomposition_method());
     zz.Set_Param("NUM_LID_ENTRIES", "0");
     zz.Set_Param("REMAP", "0");
@@ -333,8 +345,8 @@ namespace {
 
   End:
     /* Clean up */
-    zz.LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
-    zz.LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
+    Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
+    Zoltan::LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs, &export_to_part);
   }
 #endif
 
@@ -530,7 +542,7 @@ namespace {
     //
     // NOTE: integer division with *no* rounding is used.
     int  iscale = 1;
-    auto pos    = var_name.find(",");
+    auto pos    = var_name.find(',');
     if (pos != std::string::npos) {
       // Extract the string following the comma...
       auto scale = var_name.substr(pos + 1);
@@ -541,17 +553,20 @@ namespace {
         iscale = std::stoi(scale);
       }
     }
-    return std::make_pair(iscale, var_name.substr(0, pos));
+    return {iscale, var_name.substr(0, pos)};
   }
 } // namespace
-template void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                 std::vector<int> &elem_to_proc, int dummy);
-template void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                 std::vector<int> &elem_to_proc, int64_t dummy);
+
+template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
+                                             const std::vector<int> &weights,
+                                             int   dummy);
+template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
+                                             const std::vector<int>   &weights,
+                                             int64_t dummy);
 
 template <typename INT>
-void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                        std::vector<int> &elem_to_proc, INT dummy)
+std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
+                                    const std::vector<int> &weights, INT dummy)
 {
   progress(__func__);
   // Populate the 'elem_to_proc' vector with a mapping from element to processor.
@@ -560,6 +575,7 @@ void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
   size_t elem_per_proc = element_count / interFace.processor_count();
   size_t extra         = element_count % interFace.processor_count();
 
+  std::vector<int> elem_to_proc;
   elem_to_proc.reserve(element_count);
 
   fmt::print(stderr, "\nDecomposing {} elements across {} processors using method '{}'.\n",
@@ -615,7 +631,7 @@ void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
   else if (interFace.decomposition_method() == "rcb" || interFace.decomposition_method() == "rib" ||
            interFace.decomposition_method() == "hsfc") {
 #if USE_ZOLTAN
-    decompose_zoltan(region, interFace.processor_count(), interFace, elem_to_proc, dummy);
+    decompose_zoltan(region, interFace.processor_count(), interFace, elem_to_proc, weights, dummy);
 #else
     fmt::print(stderr, "ERROR: Zoltan library not enabled in this version of slice.\n"
                        "       The 'rcb', 'rib', and 'hsfc' methods are not available.\n\n");
@@ -675,9 +691,9 @@ void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
       }
 
       for (int i = 0; i < map_count; i++) {
-        if (case_compare(names[i], map_name.c_str()) == 0) {
+        if (case_compare(names[i], map_name)) {
           elem_to_proc.resize(element_count);
-          error = ex_get_num_map(exoid, EX_ELEM_MAP, i + 1, elem_to_proc.data());
+          error = ex_get_num_map(exoid, EX_ELEM_MAP, i + 1, Data(elem_to_proc));
           if (error < 0) {
             exodus_error(__LINE__);
           }
@@ -788,6 +804,41 @@ void decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
   }
 
   assert(elem_to_proc.size() == element_count);
+  return elem_to_proc;
+}
+
+template std::vector<int> line_decomp_weights(const Ioss::chain_t<int> &element_chains,
+                                              size_t                    element_count);
+template std::vector<int> line_decomp_weights(const Ioss::chain_t<int64_t> &element_chains,
+                                              size_t                        element_count);
+
+template <typename INT>
+std::vector<int> line_decomp_weights(const Ioss::chain_t<INT> &element_chains, size_t element_count)
+{
+  std::map<INT, std::vector<INT>> chains;
+
+  for (size_t i = 0; i < element_chains.size(); i++) {
+    auto &chain_entry = element_chains[i];
+    if (chain_entry.link >= 0) {
+      chains[chain_entry.element].push_back(i + 1);
+    }
+  }
+
+  std::vector<int> weights(element_count, 1);
+  // Now, for each chain...
+  for (auto &chain : chains) {
+    if ((debug_level & 16) != 0) {
+      fmt::print("Chain Root: {} contains: {}\n", chain.first, fmt::join(chain.second, ", "));
+    }
+    // * Set the weights of all elements in the chain...
+    // * non-root = 0, root = length of chain.
+    const auto &chain_elements = chain.second;
+    for (const auto &element : chain_elements) {
+      weights[element - 1] = 0;
+    }
+    weights[chain.first - 1] = static_cast<int>(chain_elements.size());
+  }
+  return weights;
 }
 
 template void line_decomp_modify(const Ioss::chain_t<int> &element_chains,
@@ -836,17 +887,14 @@ void line_decomp_modify(const Ioss::chain_t<INT> &element_chains, std::vector<in
       chain_proc_count[i] -= delta[i];
     }
 
-    // * Find the maximum value in `chain_proc_count`
-    auto max      = std::max_element(chain_proc_count.begin(), chain_proc_count.end());
-    auto max_proc = std::distance(chain_proc_count.begin(), max);
-
-    // * Assign all elements in the chain to `max_proc`.
+    // * Assign all elements in the chain to processor at chain root
     // * Update the deltas for all processors that gain/lose elements...
+    auto root_proc = elem_to_proc[chain.first - 1];
     for (const auto &element : chain_elements) {
-      if (elem_to_proc[element - 1] != max_proc) {
+      if (elem_to_proc[element - 1] != root_proc) {
         auto old_proc             = elem_to_proc[element - 1];
-        elem_to_proc[element - 1] = max_proc;
-        delta[max_proc]++;
+        elem_to_proc[element - 1] = root_proc;
+        delta[root_proc]++;
         delta[old_proc]--;
       }
     }
@@ -856,7 +904,7 @@ void line_decomp_modify(const Ioss::chain_t<INT> &element_chains, std::vector<in
   for (auto proc : elem_to_proc) {
     proc_element_count[proc]++;
   }
-  if ((debug_level & 16) != 0) {
+  if ((debug_level & 32) != 0) {
     fmt::print("\nElements/Processor: {}\n", fmt::join(proc_element_count, ", "));
     fmt::print("Delta/Processor:    {}\n", fmt::join(delta, ", "));
   }
@@ -907,13 +955,20 @@ void output_decomposition_statistics(const std::vector<INT> &elem_to_proc, int p
       std::string stars(star_cnt, '*');
       std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
       if (elem_per_rank[i] == max_work) {
-        fmt::print(fg(fmt::color::red), format, i, proc_width, fmt::group_digits(elem_per_rank[i]),
-                   work_width, (double)elem_per_rank[i] / avg_work, stars);
+        fmt::print(
+#if !defined __NVCC__
+            fg(fmt::color::red),
+#endif
+            format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
+            (double)elem_per_rank[i] / avg_work, stars);
       }
       else if (elem_per_rank[i] == min_work) {
-        fmt::print(fg(fmt::color::green), format, i, proc_width,
-                   fmt::group_digits(elem_per_rank[i]), work_width, elem_per_rank[i] / avg_work,
-                   stars);
+        fmt::print(
+#if !defined __NVCC__
+            fg(fmt::color::green),
+#endif
+            format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
+            elem_per_rank[i] / avg_work, stars);
       }
       else {
         fmt::print(format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,

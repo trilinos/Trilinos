@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,8 +49,6 @@ namespace {
 } // namespace
 
 Excn::SystemInterface::SystemInterface(int rank) : myRank_(rank) { enroll_options(); }
-
-Excn::SystemInterface::~SystemInterface() = default;
 
 void Excn::SystemInterface::enroll_options()
 {
@@ -266,7 +264,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
           "\t{}\n\n",
           options);
     }
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, GetLongOption::basename(*argv));
   }
 
   int option_index = options_.parse(argc, argv);
@@ -637,10 +635,6 @@ namespace {
   }
 
   using StringVector = std::vector<std::string>;
-  bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
-  {
-    return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
-  }
 
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list)
   {
@@ -663,19 +657,17 @@ namespace {
         StringVector name_id  = SLIB::tokenize(*I, ":");
         std::string  var_name = LowerCase(name_id[0]);
         if (name_id.size() == 1) {
-          (*variable_list).push_back(std::make_pair(var_name, 0));
+          (*variable_list).emplace_back(var_name, 0);
         }
         else {
           for (size_t i = 1; i < name_id.size(); i++) {
             // Convert string to integer...
             int id = std::stoi(name_id[i]);
-            (*variable_list).push_back(std::make_pair(var_name, id));
+            (*variable_list).emplace_back(var_name, id);
           }
         }
         ++I;
       }
-      // Sort the list...
-      std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
   }
 

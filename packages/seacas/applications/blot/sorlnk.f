@@ -38,8 +38,7 @@ C   --   Uses NELBLK of /DBNUMS/
       character*8 cdebug
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       DIMENSION A(*)
       INTEGER NEWELB(*)

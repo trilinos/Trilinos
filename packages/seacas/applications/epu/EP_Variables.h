@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,7 @@ namespace Excn {
 
   struct Variables
   {
-    explicit Variables(ObjectType otype) : objectType(otype), outputCount(0), addProcessorId(false)
+    explicit Variables(ObjectType otype) : objectType(otype)
     {
       SMART_ASSERT(otype == Excn::ObjectType::EBLK || otype == Excn::ObjectType::NSET ||
                    otype == Excn::ObjectType::SSET || otype == Excn::ObjectType::NODE ||
@@ -69,8 +69,8 @@ namespace Excn {
     bool add_processor_id() const { return addProcessorId; }
 
     ObjectType  objectType;
-    int         outputCount;
-    bool        addProcessorId;
+    int         outputCount{0};
+    bool        addProcessorId{false};
     IntVector   index_{};
     std::string type_{};
   };

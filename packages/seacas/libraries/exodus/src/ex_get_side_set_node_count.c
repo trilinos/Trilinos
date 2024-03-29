@@ -37,13 +37,13 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   void_int *side_set_side_list = NULL;
   size_t    elem_ctr;
 
-  struct ex__elem_blk_parm *elem_blk_parms = NULL;
+  struct exi_elem_blk_parm *elem_blk_parms = NULL;
 
   char errmsg[MAX_ERR_LENGTH];
   int  err_stat = EX_NOERR;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -64,7 +64,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   }
 
   /* Lookup index of side set id in VAR_SS_IDS array */
-  if (ex__id_lkup(exoid, EX_SIDE_SET, side_set_id) <= 0) {
+  if (exi_id_lkup(exoid, EX_SIDE_SET, side_set_id) <= 0) {
     ;
   }
   ex_get_err(NULL, NULL, &status);
@@ -174,7 +174,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
       for (i = 0; i < tot_num_ss_elem; i++) {
         elems[i] = i; /* init index array to current position */
       }
-      ex__iqsort64(side_set_elem_list, elems, tot_num_ss_elem);
+      exi_iqsort64(side_set_elem_list, elems, tot_num_ss_elem);
     }
     else {
       /* Sort side set element list into index array  - non-destructive */
@@ -182,7 +182,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
       for (i = 0; i < tot_num_ss_elem; i++) {
         elems[i] = i; /* init index array to current position */
       }
-      ex__iqsort(side_set_elem_list, elems, tot_num_ss_elem);
+      exi_iqsort(side_set_elem_list, elems, tot_num_ss_elem);
     }
   }
 
@@ -213,7 +213,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   }
 
   /* Allocate space for the element block params */
-  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct ex__elem_blk_parm)))) {
+  if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct exi_elem_blk_parm)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate space for element block params "
              "for file id %d",
@@ -233,7 +233,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
       id = ((int *)elem_blk_ids)[i];
     }
 
-    err_stat = ex__get_block_param(exoid, id, ndim, &elem_blk_parms[i]);
+    err_stat = exi_get_block_param(exoid, id, ndim, &elem_blk_parms[i]);
     if (err_stat != EX_NOERR) {
       goto cleanup;
     }

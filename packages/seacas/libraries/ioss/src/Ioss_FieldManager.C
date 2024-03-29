@@ -4,17 +4,16 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Field.h>
-#include <Ioss_FieldManager.h>
-#include <Ioss_Sort.h>
-#include <Ioss_Utils.h>
-
+#include "Ioss_Field.h"
+#include "Ioss_FieldManager.h"
+#include "Ioss_Sort.h"
+#include "Ioss_Utils.h"
 #include <cassert>
 #include <cstddef>
-#include <fmt/ostream.h>
-#include <map>
 #include <string>
-#include <utility>
+
+#include "Ioss_CodeTypes.h"
+#include "robin_hash.h"
 
 /** \brief Add a field to the field manager.
  *

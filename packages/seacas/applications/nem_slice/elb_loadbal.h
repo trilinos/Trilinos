@@ -14,13 +14,13 @@ struct Sphere_Info;
 template <typename INT> struct Graph_Description;
 template <typename INT> struct LB_Description;
 template <typename INT> struct Mesh_Description;
-template <typename INT> struct Weight_Description;
+struct Weight_Description;
 
 template <typename INT>
 int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
                      Mesh_Description<INT> *mesh, LB_Description<INT> *lb,
                      Solver_Description *solve, Graph_Description<INT> *graph,
-                     Weight_Description<INT> *weight, Sphere_Info *sphere, int argc, char *argv[]);
+                     Weight_Description *weight, Sphere_Info *sphere, int argc, char *argv[]);
 
 template <typename INT>
 int generate_maps(Machine_Description *machine, Problem_Description *problem,

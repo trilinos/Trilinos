@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2023 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -851,7 +851,7 @@ C ... Field is character
                 GO TO 320
               END IF
             ELSE
-C ... Field is Attribute index -- first of ndim attributes involed in revolve. 1-based
+C ... Field is Attribute index -- first of ndim attributes involved in revolve. 1-based
               CALL FFINTG (IFLD, INTYP, IFIELD,
      $          'attribute index', 0, ATTIND, *420)
             END IF

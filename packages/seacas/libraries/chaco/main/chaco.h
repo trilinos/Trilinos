@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -98,7 +98,7 @@
  *         argument 16 below, is set to 7. A description of what functionality can be used
  *         with an input assignment can be found in x4.4
  *   NOTE: This argument was a short in the original implementation and documentation.
- *         Since this limits the processor decompositon to < 32,768 processors, it needed
+ *         Since this limits the processor decomposition to < 32,768 processors, it needed
  *         to be changed to an integer as were all other shorts in the library.
  *
  * D. Description of the target machine.

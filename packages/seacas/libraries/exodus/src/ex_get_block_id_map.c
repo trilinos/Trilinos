@@ -34,12 +34,12 @@ int ex_get_block_id_map(int exoid, ex_entity_type obj_type, ex_entity_id entity_
   ex_entity_type map_type = EX_INVALID;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Determine index of entity_id in id array */
-  int blk_id_ndx = ex__id_lkup(exoid, obj_type, entity_id);
+  int blk_id_ndx = exi_id_lkup(exoid, obj_type, entity_id);
   if (blk_id_ndx <= 0) { /* Empty block */
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -9,7 +9,7 @@ C======================================================================
 
 C**********************************************************************
 
-C Subroutine BS does the back substitution for the soultion of the
+C Subroutine BS does the back substitution for the solution of the
 C local least squares extrapolation technique for element variables
 C from their element centroid location to a nodal location.
 C The least squares solution is started by a Gauss elimination in

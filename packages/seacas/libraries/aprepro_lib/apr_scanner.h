@@ -1,20 +1,18 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef EXAMPLE_SCANNER_H
-#define EXAMPLE_SCANNER_H
+#ifndef APR_SCANNER_H
+#define APR_SCANNER_H
 
 // Flex expects the signature of yylex to be defined in the macro YY_DECL, and
 // the C++ parser expects it to be declared. We can factor both as follows.
 
-#ifndef YY_DECL
-
+#undef YY_DECL
 #define YY_DECL SEAMS::Parser::token_type SEAMS::Scanner::lex(SEAMS::Parser::semantic_type *yylval)
-#endif
 
 #ifndef __FLEX_LEXER_H
 #define yyFlexLexer SEAMSFlexLexer
@@ -31,6 +29,7 @@ namespace SEAMS {
    * macros to SEAMSFlexLexer. However we change the context of the generated
    * yylex() function to be contained within the Scanner class. This is required
    * because the yylex() defined in SEAMSFlexLexer has no parameters. */
+  class Aprepro;
   class Scanner : public SEAMSFlexLexer
   {
   public:
@@ -75,4 +74,4 @@ namespace SEAMS {
 
 } // namespace SEAMS
 
-#endif // EXAMPLE_SCANNER_H
+#endif // APR_SCANNER_H
