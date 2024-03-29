@@ -318,11 +318,13 @@ public:
     std::string const& sublistName
     ) const;
   
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
   void validateAndModify(
     std::string const& paramName,
     std::string const& sublistName,
     ParameterEntry * entry
   ) const;
+#endif
 
   //@}
 
@@ -456,8 +458,8 @@ stringToIntegralParameterEntryValidator(
  *
  * The function <tt>getIntegralValue()</tt> can then be used to extract the
  * integral value of the std::string parameter.  In this case, the integral
- * value return will just be the zero-based index of the std::string value in
- * the list <tt>strings</tt>.
+ * value returned will just be the zero-based index of the std::string value
+ * in the list <tt>strings</tt>.
  *
  * \relates ParameterList
  */
@@ -2703,6 +2705,7 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 }
 
 
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
 template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::validateAndModify(
   std::string const& paramName,
@@ -2712,6 +2715,7 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validateAndModify(
 {
   entry->setValue(this->getIntegralValue(*entry, paramName, sublistName, false));
 }
+#endif
 
 
 // private

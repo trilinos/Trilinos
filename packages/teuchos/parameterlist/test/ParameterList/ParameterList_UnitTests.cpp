@@ -896,7 +896,9 @@ TEUCHOS_UNIT_TEST( ParameterList, validateParametersAndSetDefaults_noDefault )
   const ParameterEntry &entry = PL_Main.getEntry("Nonlinear Solver");
   TEST_EQUALITY(entry.isDefault(), false);
   TEST_EQUALITY(entry.isUsed(), false);
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
   TEST_NOTHROW(Teuchos::any_cast<int>(entry.getAny()));
+#endif
 }
 
 
