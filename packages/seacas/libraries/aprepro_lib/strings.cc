@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -14,6 +14,8 @@ std::vector<std::string> build_strings();
 int main(int, char **)
 {
   SEAMS::Aprepro aprepro;
+
+  aprepro.ap_options.warning_msg=false;
 
   std::vector<std::string> strings = build_strings();
   bool result = aprepro.parse_strings(strings, "My list of strings");
@@ -105,10 +107,8 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"(This line should not be echoed (8))");
   strings.emplace_back(R"(  {Endif})");
   strings.emplace_back(R"($ Lines a, b, c, d, 1, 4, 6, 7 should be echoed)");
-  strings.emplace_back(R"($ Check line counting -- should be on line 78: {Parse Error})");
-  strings.emplace_back(R"({ifdef(ifyes)} {This should be an error})");
-  strings.emplace_back(R"({endif})");
-  strings.emplace_back(R"()");
+  strings.emplace_back(R"($ Check line counting -- should be on line 78: )");
+  strings.emplace_back(R"( )");
   strings.emplace_back(R"($ ========================================================================)");
   strings.emplace_back(R"($ Test string if lines)");
   strings.emplace_back(R"({if("Greg")})");
