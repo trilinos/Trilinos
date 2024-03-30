@@ -112,9 +112,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
 
   if (Node::is_cpu) {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 0);
-  } else {
+  }
+#ifdef KOKKOS_HAS_SHARED_SPACE
+  else {
+    size_t targetNumDeepCopies = std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 31 : 42;
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), targetNumDeepCopies);
+  }
+#else
+  else {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 42);
   }
+#endif
 
   auto X = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(map, 1);
   auto B = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(map, 1);
@@ -181,9 +189,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, Aggregration, Scalar, LocalOrdinal
 
   if (Node::is_cpu) {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 0);
-  } else {
+  }
+#ifdef KOKKOS_HAS_SHARED_SPACE
+  else {
+    size_t targetNumDeepCopies = std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 17 : 23;
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), targetNumDeepCopies);
+  }
+#else
+  else {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 23);
   }
+#endif
 
   stacked_timer->stopBaseTimer();
   Teuchos::StackedTimer::OutputOptions options;

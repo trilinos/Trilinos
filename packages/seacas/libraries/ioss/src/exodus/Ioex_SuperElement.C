@@ -1,24 +1,24 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <exodus/Ioex_SuperElement.h> // for SuperElement
-
-#include <Ioss_Field.h>
-#include <Ioss_Property.h>
-#include <Ioss_Utils.h>
-
+#include "Ioss_Field.h"
+#include "Ioss_FieldManager.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
+#include "exodus/Ioex_SuperElement.h" // for SuperElement
 #include <cassert>
 #include <cstddef>
 #include <fmt/ostream.h>
+#include <iosfwd>
 #include <netcdf.h>
 #include <string>
 
-#include <Ioss_FieldManager.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_PropertyManager.h>
+#include "Ioss_CodeTypes.h"
 
 namespace {
   int nc_get_array(int ncid, const char *name, double *data)
@@ -264,19 +264,19 @@ int64_t Ioex::SuperElement::internal_put_field_data(const Ioss::Field & /* field
 Ioss::Property Ioex::SuperElement::get_implicit_property(const std::string &the_name) const
 {
   if (Ioss::Utils::str_equal(the_name, "numDOF")) {
-    return Ioss::Property(the_name, static_cast<int>(numDOF));
+    return {the_name, static_cast<int>(numDOF)};
   }
   if (Ioss::Utils::str_equal(the_name, "num_nodes")) {
-    return Ioss::Property(the_name, static_cast<int>(num_nodes));
+    return {the_name, static_cast<int>(num_nodes)};
   }
   if (Ioss::Utils::str_equal(the_name, "numEIG")) {
-    return Ioss::Property(the_name, static_cast<int>(numEIG));
+    return {the_name, static_cast<int>(numEIG)};
   }
   if (Ioss::Utils::str_equal(the_name, "num_dim")) {
-    return Ioss::Property(the_name, static_cast<int>(num_dim));
+    return {the_name, static_cast<int>(num_dim)};
   }
   if (Ioss::Utils::str_equal(the_name, "numConstraints")) {
-    return Ioss::Property(the_name, static_cast<int>(numDOF) - static_cast<int>(numEIG));
+    return {the_name, static_cast<int>(numDOF) - static_cast<int>(numEIG)};
   }
 
   return Ioss::GroupingEntity::get_implicit_property(the_name);

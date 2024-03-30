@@ -34,11 +34,8 @@ C   --   Uses IS3DIM, NUMNPF of /D3NUMS/
 C   --   Sets IXDEF, IYDEF, IZDEF of /DEFORM/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /DEFORM/ DEFPRO, DEFOK, DEFFAC, DDFAC, DFAC,
-     &   IXDEF, IYDEF, IZDEF
-      LOGICAL DEFPRO, DEFOK
+      include 'd3nums.blk'
+      include 'deform.blk'
 
       DIMENSION A(*)
       LOGICAL SURONL

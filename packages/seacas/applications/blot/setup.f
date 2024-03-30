@@ -32,12 +32,10 @@ C   --   Uses DTW, VWSCL of /DEVDAT/
 
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4, KNEA=5, KFAR=6)
 
-      COMMON /VIEWS/  MULTIM,
-     &   XISSYM, YISSYM, XAXSYM, YAXSYM, LFTSYM, BOTSYM
-      LOGICAL MULTIM, XISSYM, YISSYM, LFTSYM, BOTSYM
-      COMMON /LAYOUT/ CHLSIZ, DBORD0(KTOP), DVIEW0(KTOP)
-      COMMON /LAYOUD/ DVIEW(KTOP,4), WVIEW(KTOP,4)
-      COMMON /DEVDAT/ DTW, VWSCL
+      include 'views.blk'
+      include 'layout.blk'
+      include 'layoud.blk'
+      include 'devdat.blk'
 
       CHARACTER*(*) MSHDEF(4)
       REAL ZMMESH(KTOP)

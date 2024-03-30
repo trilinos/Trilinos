@@ -24,9 +24,3 @@ generate_export_header(Ioad)
 target_include_directories(Ioad
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
-
-IF (BUILD_TESTING)
-  ENABLE_TESTING()
-ENDIF()
-
-TRIBITS_ADD_TEST_DIRECTORIES(utest)

@@ -18,7 +18,7 @@ static void banner()
 {
   time_t     time_val;
   struct tm *time_structure;
-  char *     asc_time;
+  char      *asc_time;
 
   time_val       = time((time_t *)NULL);
   time_structure = localtime(&time_val);

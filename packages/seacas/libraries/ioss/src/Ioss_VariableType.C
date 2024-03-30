@@ -4,24 +4,23 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CompositeVariableType.h>
-#include <Ioss_ConstructedVariableType.h>
-#include <Ioss_NamedSuffixVariableType.h>
-#include <Ioss_Utils.h>
-#include <Ioss_VariableType.h>
-#include <algorithm>
+#include "Ioss_CompositeVariableType.h"
+#include "Ioss_ConstructedVariableType.h"
+#include "Ioss_NamedSuffixVariableType.h"
+#include "Ioss_Utils.h"
+#include "Ioss_VariableType.h"
 #include <cassert>
-#include <cmath>
-#include <cstddef>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <map>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
+
+#include "Ioss_CodeTypes.h"
 
 namespace Ioss {
   void Registry::insert(const VTM_ValuePair &value, bool delete_me)
@@ -38,8 +37,6 @@ namespace Ioss {
       delete entry;
     }
   }
-
-  VariableType::~VariableType() = default;
 
   VariableType::VariableType(const std::string &type, int comp_count, bool delete_me)
       : name_(type), componentCount(comp_count)
@@ -147,13 +144,13 @@ namespace Ioss {
 
   const VariableType *VariableType::factory(const std::string &raw_name, int copies)
   {
-    VariableType *inst = nullptr;
-    std::string   name = Utils::lowercase(raw_name);
-    auto          iter = registry().find(name);
+    VariableType *inst    = nullptr;
+    std::string   lc_name = Utils::lowercase(raw_name);
+    auto          iter    = registry().find(lc_name);
     if (iter == registry().end()) {
-      bool can_construct = build_variable_type(name);
+      bool can_construct = build_variable_type(lc_name);
       if (can_construct) {
-        iter = registry().find(name);
+        iter = registry().find(lc_name);
         assert(iter != registry().end());
         inst = (*iter).second;
       }
@@ -183,7 +180,7 @@ namespace Ioss {
       return nullptr; // All storage types must have at least 2 components.
     }
 
-    bool match = false;
+    bool matches = false;
     for (const auto &vtype : registry()) {
       auto *tst_ivt = vtype.second;
       if (ignore_realn_fields && Ioss::Utils::substr_equal("Real", tst_ivt->name())) {
@@ -191,15 +188,15 @@ namespace Ioss {
       }
       if (tst_ivt->suffix_count() == static_cast<int>(size)) {
         if (tst_ivt->match(suffices)) {
-          ivt   = tst_ivt;
-          match = true;
+          ivt     = tst_ivt;
+          matches = true;
           break;
         }
       }
     }
 
-    if (!match && !ignore_realn_fields) {
-      match = true;
+    if (!matches && !ignore_realn_fields) {
+      matches = true;
       // Check if the suffices form a sequence (1,2,3,...,N)
       // This indicates a "component" variable type that is
       // constructed "on-the-fly" for use in Sierra
@@ -208,11 +205,11 @@ namespace Ioss {
       for (size_t i = 0; i < size; i++) {
         std::string digits = fmt::format("{:0{}}", i + 1, width);
         if (!Ioss::Utils::str_equal(suffices[i].m_data, digits)) {
-          match = false;
+          matches = false;
           break;
         }
       }
-      if (match) {
+      if (matches) {
         // Create a new type.  For now, assume that the base type is
         // "Real" (Sierra type).  The name of the new type is
         // "Real[component_count]"

@@ -1,44 +1,27 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_SerializeIO.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
-#include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <cfloat>
-#include <cstddef>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <exodus/Ioex_BaseDatabaseIO.h>
-#include <exodus/Ioex_Internals.h>
-#include <exodus/Ioex_Utils.h>
 #include <exodusII.h>
+#include <fmt/core.h>
 #include <fmt/ostream.h>
-#include <functional>
-#include <iostream>
 #include <map>
-#include <set>
+#include <sstream>
 #include <string>
 #include <tokenize.h>
-#include <utility>
 #include <vector>
 
+#include "Ioex_Utils.h"
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
-#include "Ioss_CommSet.h"
-#include "Ioss_CoordinateFrame.h"
+#include "Ioss_CodeTypes.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EdgeBlock.h"
@@ -46,24 +29,30 @@
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementSet.h"
 #include "Ioss_EntityBlock.h"
-#include "Ioss_EntitySet.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_FaceBlock.h"
 #include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
 #include "Ioss_Map.h"
+#include "Ioss_MeshType.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
 #include "Ioss_Region.h"
+#include "Ioss_SerializeIO.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_SmartAssert.h"
 #include "Ioss_State.h"
-#include "Ioss_VariableType.h"
+#include "Ioss_Utils.h"
 
-#include "Ioex_Utils.h"
+#include "exodus/Ioex_BaseDatabaseIO.h"
+#include "exodus/Ioex_Internals.h"
 
 // Transitioning from treating global variables as Ioss::Field::TRANSIENT
 // to Ioss::Field::REDUCTION.  To get the old behavior, define the value
@@ -74,7 +63,7 @@
 // Static internal helper functions
 // ========================================================================
 namespace {
-  static bool sixty_four_bit_message_output = false;
+  bool sixty_four_bit_message_output = false;
 
   std::vector<ex_entity_type> exodus_types({EX_GLOBAL, EX_BLOB, EX_ASSEMBLY, EX_NODE_BLOCK,
                                             EX_EDGE_BLOCK, EX_FACE_BLOCK, EX_ELEM_BLOCK,
@@ -90,8 +79,6 @@ namespace {
 
   template <typename T>
   void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T *> &entities);
-
-  void insert_sort_and_unique(const std::vector<std::string> &src, std::vector<std::string> &dest);
 
   class AssemblyTreeFilter
   {
@@ -110,7 +97,7 @@ namespace {
     {
       // Walk the tree without cyclic dependency
       if (assemblyIndex < m_assemblies.size()) {
-        if (m_visitedAssemblies[assemblyIndex] == false) {
+        if (!m_visitedAssemblies[assemblyIndex]) {
           m_visitedAssemblies[assemblyIndex] = true;
 
           const auto            &assembly     = m_assemblies[assemblyIndex];
@@ -181,7 +168,7 @@ namespace {
         assembly.name = new char[max_name_length + 1];
       }
 
-      int ierr = ex_get_assemblies(exoid, assemblies.data());
+      int ierr = ex_get_assemblies(exoid, Data(assemblies));
       if (ierr < 0) {
         Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
@@ -191,7 +178,7 @@ namespace {
         assembly.entity_list = new int64_t[assembly.entity_count];
       }
 
-      ierr = ex_get_assemblies(exoid, assemblies.data());
+      ierr = ex_get_assemblies(exoid, Data(assemblies));
       if (ierr < 0) {
         Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
@@ -223,7 +210,8 @@ namespace Ioex {
     }
 
     timeLastFlush = time(nullptr);
-    dbState       = Ioss::STATE_UNKNOWN;
+
+    dbState = Ioss::STATE_UNKNOWN;
 
     // Set exodusII warning level.
     if (util().get_environment("EX_DEBUG", isParallel)) {
@@ -273,6 +261,9 @@ namespace Ioex {
 
     if (properties.exists("FILE_TYPE")) {
       std::string type = properties.get("FILE_TYPE").get_string();
+      if (type == "netcdf3" || type == "netcdf-3") {
+        exodusMode = EX_CLOBBER; // Reset back to default...
+      }
       if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
         exodusMode |= EX_NETCDF4;
       }
@@ -430,7 +421,7 @@ namespace Ioex {
     return m_exodusFilePtr;
   }
 
-  bool BaseDatabaseIO::ok__(bool write_message, std::string *error_message, int *bad_count) const
+  bool BaseDatabaseIO::ok_nl(bool write_message, std::string *error_message, int *bad_count) const
   {
     // For input, we try to open the existing file.
 
@@ -492,7 +483,7 @@ namespace Ioex {
     ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
   }
 
-  bool BaseDatabaseIO::open_group__(const std::string &group_name)
+  bool BaseDatabaseIO::open_group_nl(const std::string &group_name)
   {
     // Get existing file pointer...
     bool success = false;
@@ -512,7 +503,7 @@ namespace Ioex {
     return success;
   }
 
-  bool BaseDatabaseIO::create_subgroup__(const std::string &group_name)
+  bool BaseDatabaseIO::create_subgroup_nl(const std::string &group_name)
   {
     bool success = false;
     if (!is_input()) {
@@ -557,7 +548,7 @@ namespace Ioex {
       ex_put_qa(get_file_pointer(), num_qa_records + 1, nullptr);
     }
     else {
-      auto *qa = new qa_element[num_qa_records + 1];
+      std::vector<qa_element> qa(num_qa_records + 1);
       for (size_t i = 0; i < num_qa_records + 1; i++) {
         for (int j = 0; j < 4; j++) {
           qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
@@ -590,7 +581,8 @@ namespace Ioex {
       Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][0], codename, MAX_STR_LENGTH + 1);
       Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][1], version, MAX_STR_LENGTH + 1);
 
-      int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, qa[0].qa_record);
+      int ierr = 0;
+      ierr     = ex_put_qa(get_file_pointer(), num_qa_records + 1, qa[0].qa_record);
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
@@ -600,7 +592,6 @@ namespace Ioex {
           delete[] qa[i].qa_record[0][j];
         }
       }
-      delete[] qa;
     }
   }
 
@@ -696,15 +687,7 @@ namespace Ioex {
 
   void BaseDatabaseIO::update_block_omissions_from_assemblies()
   {
-    Ioss::SerializeIO serializeIO__(this);
-
-    if (!assemblyOmissions.empty()) {
-      assert(blockInclusions.empty());
-    }
-
-    if (!assemblyInclusions.empty()) {
-      assert(blockOmissions.empty());
-    }
+    Ioss::SerializeIO serializeIO_(this);
 
     // Query number of assemblies...
     auto assemblies = get_exodus_assemblies(get_file_pointer());
@@ -737,14 +720,14 @@ namespace Ioex {
 
       cleanup_exodus_assembly_vector(assemblies);
 
-      insert_sort_and_unique(exclusions, blockOmissions);
-      insert_sort_and_unique(inclusions, blockInclusions);
+      Ioss::Utils::insert_sort_and_unique(exclusions, blockOmissions);
+      Ioss::Utils::insert_sort_and_unique(inclusions, blockInclusions);
     }
   }
 
   void BaseDatabaseIO::get_assemblies()
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
 
     auto assemblies = get_exodus_assemblies(get_file_pointer());
     if (!assemblies.empty()) {
@@ -827,7 +810,7 @@ namespace Ioex {
 
   void BaseDatabaseIO::get_blobs()
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
     // Query number of blobs...
     int nblob = ex_inquire_int(get_file_pointer(), EX_INQ_BLOB);
 
@@ -838,7 +821,7 @@ namespace Ioex {
         bl.name = new char[max_name_length + 1];
       }
 
-      int ierr = ex_get_blobs(get_file_pointer(), blobs.data());
+      int ierr = ex_get_blobs(get_file_pointer(), Data(blobs));
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
@@ -912,7 +895,7 @@ namespace Ioex {
 
     int num_attr = 0;
     {
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
       int               ierr = ex_get_attr_param(get_file_pointer(), EX_NODE_BLOCK, 1, &num_attr);
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
@@ -980,7 +963,7 @@ namespace Ioex {
      * elemMap.reverse[elemMap.map[eb_offset+i+1]]-eb_offset-1
      *
      * To determine which map to update on a call to this function, we
-     * use the following hueristics:
+     * use the following heuristics:
      * -- If the database state is 'Ioss::STATE_MODEL:', then update the
      *    'elemMap.reverse'.
      * -- If the database state is not Ioss::STATE_MODEL, then leave
@@ -1021,8 +1004,8 @@ namespace Ioex {
   }
 
   // common
-  void BaseDatabaseIO::compute_block_membership__(Ioss::SideBlock          *efblock,
-                                                  std::vector<std::string> &block_membership) const
+  void BaseDatabaseIO::compute_block_membership_nl(Ioss::SideBlock          *efblock,
+                                                   std::vector<std::string> &block_membership) const
   {
     const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
@@ -1085,7 +1068,7 @@ namespace Ioex {
     // 'globalVariables' array
     {
       size_t            num_to_get = field.verify(data_size);
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
 
       Ioss::Field::RoleType role = field.get_role();
 
@@ -1112,7 +1095,7 @@ namespace Ioex {
     // and output them all at one time.  The storage location is a
     // 'globalVariables' array
     {
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
 
       Ioss::Field::RoleType role       = field.get_role();
       size_t                num_to_get = field.verify(data_size);
@@ -1329,7 +1312,7 @@ namespace Ioex {
         auto   &vals  = values.second;
         size_t  count = vals.size();
         if (count > 0) {
-          int ierr = ex_put_reduction_vars(get_file_pointer(), step, type, id, count, vals.data());
+          int ierr = ex_put_reduction_vars(get_file_pointer(), step, type, id, count, Data(vals));
           if (ierr < 0) {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
@@ -1351,7 +1334,7 @@ namespace Ioex {
         size_t  count = vals.size();
         if (count > 0) {
           int ierr = ex_get_reduction_vars(get_file_pointer(), step, type, id, count,
-                                           (double *)vals.data());
+                                           (double *)Data(vals));
           if (ierr < 0) {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
@@ -1361,14 +1344,14 @@ namespace Ioex {
   }
 
   // common
-  bool BaseDatabaseIO::begin__(Ioss::State state)
+  bool BaseDatabaseIO::begin_nl(Ioss::State state)
   {
     dbState = state;
     return true;
   }
 
   // common
-  bool BaseDatabaseIO::end__(Ioss::State state)
+  bool BaseDatabaseIO::end_nl(Ioss::State state)
   {
     // Transitioning out of state 'state'
     assert(state == dbState);
@@ -1388,7 +1371,7 @@ namespace Ioex {
     }
 
     {
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
 
       if (!is_input()) {
         ex_update(get_file_pointer());
@@ -1467,9 +1450,9 @@ namespace Ioex {
     }
   }
 
-  bool BaseDatabaseIO::begin_state__(int state, double time)
+  bool BaseDatabaseIO::begin_state_nl(int state, double time)
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
 
     time /= timeScaleFactor;
 
@@ -1501,9 +1484,9 @@ namespace Ioex {
   }
 
   // common
-  bool BaseDatabaseIO::end_state__(int state, double time)
+  bool BaseDatabaseIO::end_state_nl(int state, double time)
   {
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
 
     if (!is_input()) {
       write_reduction_fields();
@@ -1522,7 +1505,7 @@ namespace Ioex {
 #if GLOBALS_ARE_TRANSIENT
     int field_count = add_results_fields(get_region());
 #else
-    int field_count     = add_reduction_results_fields(get_region());
+    int field_count = add_reduction_results_fields(get_region());
 #endif
     m_reductionValues[EX_GLOBAL][0].resize(field_count);
     add_mesh_reduction_fields(0, get_region());
@@ -1543,14 +1526,14 @@ namespace Ioex {
     // Get "global attributes"
     // These are single key-value per grouping entity
     // Stored as Ioss::Property with origin of ATTRIBUTE
-    Ioss::SerializeIO serializeIO__(this);
+    Ioss::SerializeIO serializeIO_(this);
     auto              type      = Ioex::map_exodus_type(entity->type());
     int               att_count = ex_get_attribute_count(get_file_pointer(), type, id);
 
     if (att_count > 0) {
       std::vector<EX_attribute> attr(att_count);
-      ex_get_attribute_param(get_file_pointer(), type, id, attr.data());
-      ex_get_attributes(get_file_pointer(), att_count, attr.data());
+      ex_get_attribute_param(get_file_pointer(), type, id, Data(attr));
+      ex_get_attributes(get_file_pointer(), att_count, Data(attr));
 
       // Create a property on `entity` for each `attribute`
       for (const auto &att : attr) {
@@ -1610,7 +1593,7 @@ namespace Ioex {
   {
     int nvar = 0;
     {
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
 
       int ierr = ex_get_variable_param(get_file_pointer(), type, &nvar);
       if (ierr < 0) {
@@ -1631,9 +1614,9 @@ namespace Ioex {
           std::fill(truth_table.begin(), truth_table.end(), 1);
         }
         else {
-          Ioss::SerializeIO serializeIO__(this);
+          Ioss::SerializeIO serializeIO_(this);
           int               ierr =
-              ex_get_truth_table(get_file_pointer(), type, block_count, nvar, truth_table.data());
+              ex_get_truth_table(get_file_pointer(), type, block_count, nvar, Data(truth_table));
           if (ierr < 0) {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
@@ -1658,7 +1641,7 @@ namespace Ioex {
       // Read the names...
       // (Currently, names are read for every block.  We could save them...)
       {
-        Ioss::SerializeIO serializeIO__(this);
+        Ioss::SerializeIO serializeIO_(this);
 
         int ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
         if (ierr < 0) {
@@ -1710,7 +1693,7 @@ namespace Ioex {
     ex_entity_type type = Ioex::map_exodus_type(entity->type());
     int            nvar = 0;
     {
-      Ioss::SerializeIO serializeIO__(this);
+      Ioss::SerializeIO serializeIO_(this);
 
       int ierr = ex_get_reduction_variable_param(get_file_pointer(), type, &nvar);
       if (ierr < 0) {
@@ -1727,7 +1710,7 @@ namespace Ioex {
       // Read the names...
       // (Currently, names are read for every block.  We could save them...)
       {
-        Ioss::SerializeIO serializeIO__(this);
+        Ioss::SerializeIO serializeIO_(this);
 
         int ierr = ex_get_reduction_variable_names(get_file_pointer(), type, nvar, names);
         if (ierr < 0) {
@@ -1841,14 +1824,14 @@ namespace Ioex {
       exo_params.num_sset  = m_variables[EX_SIDE_SET].size();
       exo_params.num_elset = m_variables[EX_ELEM_SET].size();
 
-      exo_params.edge_var_tab  = m_truthTable[EX_EDGE_BLOCK].data();
-      exo_params.face_var_tab  = m_truthTable[EX_FACE_BLOCK].data();
-      exo_params.elem_var_tab  = m_truthTable[EX_ELEM_BLOCK].data();
-      exo_params.nset_var_tab  = m_truthTable[EX_NODE_SET].data();
-      exo_params.eset_var_tab  = m_truthTable[EX_EDGE_SET].data();
-      exo_params.fset_var_tab  = m_truthTable[EX_FACE_SET].data();
-      exo_params.sset_var_tab  = m_truthTable[EX_SIDE_SET].data();
-      exo_params.elset_var_tab = m_truthTable[EX_ELEM_SET].data();
+      exo_params.edge_var_tab  = Data(m_truthTable[EX_EDGE_BLOCK]);
+      exo_params.face_var_tab  = Data(m_truthTable[EX_FACE_BLOCK]);
+      exo_params.elem_var_tab  = Data(m_truthTable[EX_ELEM_BLOCK]);
+      exo_params.nset_var_tab  = Data(m_truthTable[EX_NODE_SET]);
+      exo_params.eset_var_tab  = Data(m_truthTable[EX_EDGE_SET]);
+      exo_params.fset_var_tab  = Data(m_truthTable[EX_FACE_SET]);
+      exo_params.sset_var_tab  = Data(m_truthTable[EX_SIDE_SET]);
+      exo_params.elset_var_tab = Data(m_truthTable[EX_ELEM_SET]);
 
       if (isParallel) {
         // Check consistency among all processors.  They should all
@@ -1858,7 +1841,7 @@ namespace Ioex {
       }
 
       {
-        Ioss::SerializeIO serializeIO__(this);
+        Ioss::SerializeIO serializeIO_(this);
 
         int ierr = ex_put_all_var_param_ext(get_file_pointer(), &exo_params);
         if (ierr < 0) {
@@ -2097,10 +2080,10 @@ namespace Ioex {
       int ierr = 0;
       if (reduction) {
         ierr =
-            ex_put_reduction_variable_names(get_file_pointer(), type, var_count, var_names.data());
+            ex_put_reduction_variable_names(get_file_pointer(), type, var_count, Data(var_names));
       }
       else {
-        ierr = ex_put_variable_names(get_file_pointer(), type, var_count, var_names.data());
+        ierr = ex_put_variable_names(get_file_pointer(), type, var_count, Data(var_names));
       }
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
@@ -2131,7 +2114,7 @@ namespace Ioex {
   }
 
   // common
-  void BaseDatabaseIO::flush_database__() const
+  void BaseDatabaseIO::flush_database_nl() const
   {
     if (!is_input()) {
       if (isParallel || myProcessor == 0) {
@@ -2156,28 +2139,16 @@ namespace Ioex {
     Ioex::update_last_time_attribute(get_file_pointer(), sim_time);
 
     // Flush the files buffer to disk...
-    // If a history file, then only flush if there is more
+    // If:
+    //  flushInterval == -1 (default) -- flush if there is more
     // than 10 seconds since the last flush to avoid
     // the flush eating up cpu time for small fast jobs...
-    // NOTE: If decide to do this on all files, need to sync across
-    // processors to make sure they all flush at same time.
-
-    // GDS: 2011/03/30 -- Use for all non-parallel files, but shorten
-    // time for non history files.  Assume that can afford to lose ~10
-    // seconds worth of data...  (Flush was taking long time on some
-    // /scratch filesystems at SNL for short regression tests with
-    // lots of steps)
-    // GDS: 2011/07/27 -- shorten from 90 to 10.  Developers running
-    // small jobs were not able to view output until job
-    // finished. Hopefully the netcdf no-fsync fix along with this fix
-    // results in negligible impact on runtime with more syncs.
-
-    // Need to be able to handle a flushInterval == 1 to force flush
-    // every time step even in a serial run.
-    // The default setting for flushInterval is 1, but in the past,
-    // it was not checked for serial runs.  Now, set the default to -1
-    // and if that is the value and serial, then do the time-based
-    // check; otherwise, use flushInterval setting...
+    //
+    //  flushInterval == 0 -- do not flush until file is closed.
+    //
+    //  flushInterval == 1 -- flush every step
+    //
+    //  flushInterval > 1 -- flush if step % flushInterval == 0
 
     bool do_flush = true;
     if (flushInterval == 1) {
@@ -2186,8 +2157,7 @@ namespace Ioex {
     else if (flushInterval == 0) {
       do_flush = false;
     }
-    else if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
-      assert(myProcessor == 0);
+    else if (flushInterval < 0) {
       time_t cur_time = time(nullptr);
       if (cur_time - timeLastFlush >= 10) {
         timeLastFlush = cur_time;
@@ -2196,16 +2166,22 @@ namespace Ioex {
       else {
         do_flush = false;
       }
+#ifdef SEACAS_HAVE_MPI
+      if (isParallel) {
+        int iflush = do_flush ? 1 : 0;
+        util().broadcast(iflush);
+        do_flush = iflush == 1;
+      }
+#endif
     }
-
-    if (!do_flush && flushInterval > 0) {
+    else if (flushInterval > 1) {
       if (state % flushInterval == 0) {
         do_flush = true;
       }
     }
 
     if (do_flush) {
-      flush_database__();
+      flush_database_nl();
     }
   }
 
@@ -2264,7 +2240,7 @@ namespace Ioex {
       else {
         // Use attribute names if they exist.
         {
-          Ioss::SerializeIO serializeIO__(this);
+          Ioss::SerializeIO serializeIO_(this);
           if (block->entity_count() != 0) {
             ex_entity_type entity_type = Ioex::map_exodus_type(block->type());
             int            ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
@@ -2282,7 +2258,7 @@ namespace Ioex {
               std::memcpy(&cname[i * (maximumNameLength + 1)], names[i], maximumNameLength + 1);
             }
           }
-          util().attribute_reduction(attribute_count * (maximumNameLength + 1), cname.data());
+          util().attribute_reduction(attribute_count * (maximumNameLength + 1), Data(cname));
           for (int i = 0; i < attribute_count; i++) {
             std::memcpy(names[i], &cname[i * (maximumNameLength + 1)], maximumNameLength + 1);
           }
@@ -2877,7 +2853,7 @@ namespace {
           }
         }
         size_t ge_id = ge->get_property("id").get_int();
-        int    ierr  = ex_put_attr_names(exoid, type, ge_id, names.data());
+        int    ierr  = ex_put_attr_names(exoid, type, ge_id, Data(names));
         if (ierr < 0) {
           Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
         }
@@ -3135,13 +3111,5 @@ namespace {
       throw x;
     }
 #endif
-  }
-
-  void insert_sort_and_unique(const std::vector<std::string> &src, std::vector<std::string> &dest)
-  {
-    dest.insert(dest.end(), src.begin(), src.end());
-    std::sort(dest.begin(), dest.end(), std::less<>());
-    auto endIter = std::unique(dest.begin(), dest.end());
-    dest.resize(endIter - dest.begin());
   }
 } // namespace

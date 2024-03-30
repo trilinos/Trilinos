@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -35,8 +35,16 @@ C     duplicate adjacent values.
 C ... There has been a request to show min and max ids to help with
 C     debugging potential database corruption issues.  Do it here.
 
-      write (stra, 10001) type, map(indx(1)), map(indx(icnt))
-10001 FORMAT('INFO: ', A, ' global id range: ',I12, ' to ', I12)
+      if (indx(1) .eq. 1 .and. indx(icnt) .eq. icnt .and.
+     $     (map(icnt) - map(1) +1 .eq. icnt)) then
+         write (stra, 10001) type, map(indx(1)), map(indx(icnt)),
+     $        'sequential'
+      else
+         write (stra, 10001) type, map(indx(1)), map(indx(icnt)),
+     $        'NOT sequential'
+      endif
+10001 FORMAT('INFO: ', A, ' global id range: ',I12, ' to ', I12,
+     $     '. Map is ', A)
       call sqzstr(stra, lstra)
       CALL PRTERR ('CMDSPEC', STRA(:lstra))
 

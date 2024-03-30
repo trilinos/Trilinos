@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -23,8 +23,8 @@
 #define X_OK   1 /* execute permission - unsupported in windows*/
 #define F_OK   0 /* Test for existence.  */
 #ifndef S_ISREG
-#define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
-#define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#define S_ISREG(m) (((m) & _S_IFMT) == _S_IFREG)
+#define S_ISDIR(m) (((m) & _S_IFMT) == _S_IFDIR)
 #endif
 #else
 #include <sys/unistd.h>
@@ -60,7 +60,7 @@ FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
   if (!dirpath.empty()) {
     filename_ = dirpath;
     if (filename_.at(filename_.size() - 1) != '/') {
-      static std::string SLASH("/");
+      const static std::string SLASH("/");
       filename_ += SLASH;
     }
   }
@@ -68,8 +68,6 @@ FileInfo::FileInfo(const std::string &dirpath, const std::string &my_filename)
   readable_ = internal_access(filename_, R_OK);
   exists_   = readable_ || internal_access(filename_, F_OK);
 }
-
-FileInfo::~FileInfo() = default;
 
 //: Returns TRUE if the file exists (is readable)
 bool FileInfo::exists() const { return exists_; }
@@ -209,7 +207,7 @@ std::string FileInfo::extension() const
     return filename_.substr(ind + 1, filename_.size());
   }
 
-  return std::string();
+  return {};
 }
 
 std::string FileInfo::pathname() const
@@ -219,7 +217,7 @@ std::string FileInfo::pathname() const
     return filename_.substr(0, ind);
   }
 
-  return std::string();
+  return {};
 }
 
 std::string FileInfo::tailname() const

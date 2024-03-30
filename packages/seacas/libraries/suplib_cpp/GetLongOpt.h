@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-, 20232023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,7 +36,6 @@ private:
     Cell() = default;
   };
 
-private:
   Cell       *table{nullptr};        // option table
   const char *ustring{nullptr};      // usage message
   char       *pname{nullptr};        // program basename
@@ -44,7 +43,6 @@ private:
   char        optmarker;             // option marker
   bool        options_parsed{false}; // parsed options, cannot enroll anymore options
 
-private:
   int setcell(Cell *c, char *valtoken, char *nexttoken, const char *name);
 
 public:

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -96,6 +96,24 @@ C...four-node tets...
             ILTMP = LINK (2,NE)
             LINK(2,NE) = LINK(3,NE)
             LINK(3,NE) = ILTMP
+          END DO
+
+C...ten-node tets...
+        ELSE IF ((NUMLNK .EQ. 10) .AND.
+     *      (TYPE(:3) .EQ. 'TET')) THEN
+          NONQUD = .TRUE.
+          DO NE = 1, NUMELB
+            ILTMP = LINK (2,NE)
+            LINK(2,NE) = LINK(3,NE)
+            LINK(3,NE) = ILTMP
+
+            ILTMP = LINK (5,NE)
+            LINK(5,NE) = LINK(7,NE)
+            LINK(7,NE) = ILTMP
+
+            ILTMP = LINK (9,NE)
+            LINK(9,NE) = LINK(10,NE)
+            LINK(10,NE) = ILTMP
           END DO
 
 C...Bars

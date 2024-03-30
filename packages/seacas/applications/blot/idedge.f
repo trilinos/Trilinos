@@ -26,12 +26,8 @@ C   --   IXLIN - SCRATCH - index line set to be searched, length = LENL
 
       PARAMETER (KNVIS=0, KNFOVR=10, KNHID=100)
 
-      common /debugc/ cdebug
-      common /debugn/ idebug
-      character*8 cdebug
-
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'debug.blk'
+      include 'd3nums.blk'
 
       INTEGER IEDSET(0:2,*)
       INTEGER HIDENP(*)

@@ -15,25 +15,25 @@
 
 namespace Ioad {
   // Constant variables
-  IOAD_EXPORT const std::string     Schema_version_string = "IOSS_adios_version";
-  IOAD_EXPORT const std::string     Sideblock_separator   = "::";
-  IOAD_EXPORT const std::string     Name_separator        = "/";
-  IOAD_EXPORT const std::string     Role_meta             = "role";
-  IOAD_EXPORT const std::string     Var_type_meta         = "var_type";
-  IOAD_EXPORT const std::string     Topology_meta         = "topology";
-  IOAD_EXPORT const std::string     property_meta         = "property_";
-  IOAD_EXPORT const std::string     Parent_topology_meta  = "parent_topology";
-  IOAD_EXPORT const std::string     Time_scale_factor     = "time_scale_factor";
-  IOAD_EXPORT const std::string     Time_meta             = "time";
-  IOAD_EXPORT const std::string     Processor_id_meta     = "processor_id";
-  IOAD_EXPORT const std::string     Processor_number_meta = "processor_number";
-  IOAD_EXPORT const std::string     globals_entity_type   = "globals";
-  IOAD_EXPORT const std::string     globals_entity_name   = "";
-  IOAD_EXPORT const std::string     region_name           = "no_name";
-  IOAD_EXPORT const std::string     original_name         = "original_name";
-  constexpr const char *sideblock_names       = "sideblock_names";
+  IOAD_EXPORT const std::string Schema_version_string = "IOSS_adios_version";
+  IOAD_EXPORT const std::string Sideblock_separator   = "::";
+  IOAD_EXPORT const std::string Name_separator        = "/";
+  IOAD_EXPORT const std::string Role_meta             = "role";
+  IOAD_EXPORT const std::string Var_type_meta         = "var_type";
+  IOAD_EXPORT const std::string Topology_meta         = "topology";
+  IOAD_EXPORT const std::string property_meta         = "property_";
+  IOAD_EXPORT const std::string Parent_topology_meta  = "parent_topology";
+  IOAD_EXPORT const std::string Time_scale_factor     = "time_scale_factor";
+  IOAD_EXPORT const std::string Time_meta             = "time";
+  IOAD_EXPORT const std::string Processor_id_meta     = "processor_id";
+  IOAD_EXPORT const std::string Processor_number_meta = "processor_number";
+  IOAD_EXPORT const std::string globals_entity_type   = "globals";
+  IOAD_EXPORT const std::string globals_entity_name   = "";
+  IOAD_EXPORT const std::string region_name           = "no_name";
+  IOAD_EXPORT const std::string original_name         = "original_name";
+  constexpr const char         *sideblock_names       = "sideblock_names";
 
-  IOAD_EXPORT const std::string                                  coordinate_frame_name = "CoordinateFrame";
+  IOAD_EXPORT const std::string coordinate_frame_name = "CoordinateFrame";
   IOAD_EXPORT const std::map<std::string, std::set<std::string>> Use_transformed_storage_map = {
       {"ElementBlock", {"connectivity_edge", "connectivity_face"}},
       {"FaceBlock", {"connectivity_edge"}}};

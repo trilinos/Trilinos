@@ -1,14 +1,18 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
+#include "Iocgns_StructuredZoneData.h"
+#include "Ioss_CodeTypes.h"
+#include "Ioss_ZoneConnectivity.h"
 #include "Utst_structured_decomp.h"
-#define DOCTEST_CONFIG_NO_SHORT_MACRO_NAMES
-#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
-#define DOCTEST_CONFIG_NO_MULTITHREADING
-#include <doctest.h>
+
+#include <catch2/catch_test_macros.hpp>
+#include <stddef.h>
+#include <string>
+#include <vector>
 
 // Disable these tests on NVCC. It tries to optimize and takes forever to build...
 #if !defined(__NVCC__) && !defined(__IOSS_WINDOWS__)
@@ -19,7 +23,7 @@
 #endif
 
 ATTRIBUTE_NO_SANITIZE_ADDRESS
-DOCTEST_TEST_CASE("Rocket-1496")
+TEST_CASE("Rocket-1496")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
@@ -41325,7 +41329,7 @@ DOCTEST_TEST_CASE("Rocket-1496")
 
   for (size_t proc_count = 2048; proc_count > 1; proc_count /= 2) {
     std::string name = "Rocket_1496_ProcCount_" + std::to_string(proc_count);
-    DOCTEST_SUBCASE(name.c_str()) { check_split_assign(zones, load_balance_tolerance, proc_count); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);
 }

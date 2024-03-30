@@ -6,7 +6,7 @@
  *    L'Ecuyer and Cote, ACM Transactions on Mathematical
  *       Software, March 1991
  *    Russian peasant algorithm -- Knuth, vol. II, pp. 442-43
- *  Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ *  Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
  *  of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  *  NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -53,7 +53,7 @@ long init_rand_port(long seed)
   return seed;
 }
 
-/* get a long initial seed for gererator
+/* get a long initial seed for generator
   assumes that rand returns a short integer */
 long get_init_rand_port(void)
 {

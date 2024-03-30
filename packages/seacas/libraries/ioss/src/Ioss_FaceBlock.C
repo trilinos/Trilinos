@@ -1,13 +1,13 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FaceBlock.h>
-#include <Ioss_Property.h>
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_FaceBlock.h"
+#include "Ioss_Property.h"
 #include <cstddef>
 #include <string>
 
@@ -34,8 +34,6 @@ Ioss::FaceBlock::FaceBlock(Ioss::DatabaseIO *io_database, const std::string &my_
     properties.add(Ioss::Property("original_face_type", face_type));
   }
 }
-
-Ioss::FaceBlock::~FaceBlock() = default;
 
 Ioss::Property Ioss::FaceBlock::get_implicit_property(const std::string &my_name) const
 {

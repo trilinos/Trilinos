@@ -2,9 +2,7 @@
 $   Variable    = Value
 $  {BirthYear 	= 1958}
 $  {Greg      	= "Is the author of this code"}	(immutable)
-$  {_c        	= 3}
 $  {_col      	= 3}
-$  {_r        	= 2}
 $  {_therow   	= 2}
 $  {a         	 (array) rows = 27, cols = 21}
 $  {a_rows    	= 27}

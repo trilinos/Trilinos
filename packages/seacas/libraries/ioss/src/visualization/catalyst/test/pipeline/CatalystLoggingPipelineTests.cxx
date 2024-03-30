@@ -5,13 +5,13 @@
 // See packages/seacas/LICENSE for details
 
 #include "CatalystTestFixture.h"
+#include "Ioss_PropertyManager.h"
 #include "catch.hpp"
-#include <Ioss_PropertyManager.h>
 #include <Iovs_CatalystLogging.h>
 
 TEST_CASE_METHOD(CatalystTestFixture, "CatalystLoggingDefault", "[catalyst logging]")
 {
-  std::string logFileName = "log.csv";
+  std::string           logFileName = "log.csv";
   Ioss::PropertyManager props;
   props.add(Ioss::Property("CATALYST_LOGGING_ENABLED", true));
   props.add(Ioss::Property("CATALYST_LOGGING_FILE_NAME", logFileName));

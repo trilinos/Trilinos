@@ -1,3 +1,4 @@
+#include <hwm.h>
 // For memory utilities...
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)

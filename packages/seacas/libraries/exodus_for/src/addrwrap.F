@@ -187,21 +187,14 @@ C       READ COORDINATE FRAMES
 
         INTEGER*4 IDEXO4        ! (R)
         integer*4 nframe4       ! (R)
-        integer*4 itags4(1)     ! (W)
         INTEGER*4 IERR4         ! (W)
-
-        POINTER (PITAGS4, ITAGS4)
 
         idexo4 = idexo
 
         NFRAME = EXINQI (IDEXO, EXNCF)
         NFRAME4 = NFRAME
 
-        CALL I4ALLOC (NFRAME, PITAGS4)
-
-        call exgfrm4(idexo4, nframe4, idscf, coord, itags4, ierr4)
-
-        CALL I4I8 (NFRAME, PITAGS4, ITAGS)
+        call exgfrm4(idexo4, nframe4, idscf, coord, itags, ierr4)
         ierr = ierr4
 
         END
@@ -224,19 +217,12 @@ C       DEFINE/WRITE COORDINATE FRAMES
 
         INTEGER*4 IDEXO4        ! (R)
         integer*4 nframe4       ! (R)
-        integer*4 itags4(1)     ! (R)
         INTEGER*4 IERR4         ! (W)
-
-        POINTER (PITAGS4, ITAGS4)
 
         idexo4 = idexo
         NFRAME4 = NFRAME
 
-        CALL I8I4 (NFRAME, ITAGS, PITAGS4)
-
-        call expfrm4(idexo4, nframe4, idscf, coord, itags4, ierr4)
-
-        CALL I4FREE (PITAGS4)
+        call expfrm4(idexo4, nframe4, idscf, coord, itags, ierr4)
         ierr = ierr4
 
         END
@@ -463,24 +449,11 @@ C>       READ ENTITY_COUNT-PER-POLYHEDRA
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
-        INTEGER*4 COUNTS4 (1)   ! (NUMELB) ! (W)
-        POINTER (PCOUNTS4, COUNTS4)
         INTEGER*4 IERR4         ! (W)
-
-        CHARACTER* (MXSTLN) NAMELB
-
-        INTEGER NUMELB
-        INTEGER NUMATR
-        INTEGER NUMLNK
 
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
-        CALL EXGELB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
-     &          NUMATR, IERR4)
-
-        CALL I4ALLOC (NUMELB, PCOUNTS4)
-        CALL EXGECPP4 (IDEXO4, ITYPE4, IDELB, COUNTS4, IERR4)
-        CALL I4I8 (NUMELB, PCOUNTS4, COUNTS)
+        CALL EXGECPP4 (IDEXO4, ITYPE4, IDELB, COUNTS, IERR4)
         IERR = IERR4
         END
 
@@ -1226,21 +1199,12 @@ C>       READ SIDE SET NODE LIST COUNT
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 INCNT4 (1)    ! (W)
-        POINTER (PINCNT4, INCNT4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER   NDESS
-        INTEGER   NINCNT
-
         IDEXO4 = IDEXO
-        CALL EXGSP4 (IDEXO4, IDESS, NINCNT, NDESS, IERR4)
-        CALL I4ALLOC (NINCNT, PINCNT4)
-
-        CALL EXGSSC4 (IDEXO4, IDESS, INCNT4, IERR4)
-
-        CALL I4I8 (NINCNT, PINCNT4, INCNT)
+        CALL EXGSSC4 (IDEXO4, IDESS, INCNT, IERR4)
         IERR = IERR4
+        
         END
 
         SUBROUTINE EXGCSSC (IDEXO, INCNT, IERR)
@@ -1256,20 +1220,10 @@ C>       (nodes/face for all faces)
         INTEGER IERR            ! (W)
 
         INTEGER*4 IDEXO4        ! (R)
-        INTEGER*4 INCNT4 (1)    ! (W)
-        POINTER (PINCNT4, INCNT4)
         INTEGER*4 IERR4         ! (W)
 
-        INTEGER   NINCNT
-
         IDEXO4 = IDEXO
-        NINCNT = EXINQI (IDEXO, EXSSEL)
-
-        CALL I4ALLOC (NINCNT, PINCNT4)
-
-        CALL EXGCSSC4 (IDEXO4, INCNT4, IERR4)
-
-        CALL I4I8 (NINCNT, PINCNT4, INCNT)
+        CALL EXGCSSC4 (IDEXO4, INCNT, IERR4)
         IERR = IERR4
         END
 
@@ -1402,16 +1356,12 @@ C>       READ ELEMENT VARIABLE TRUTH TABLE
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 NELBLK4       ! (R)
         INTEGER*4 NVAREL4       ! (R)
-        INTEGER*4 ISEVOK4(1)    ! (NVAREL,NELBLK) (W)
-        POINTER (PISEVOK4, ISEVOK4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         NELBLK4 = NELBLK
         NVAREL4 = NVAREL
-        CALL I4ALLOC (NVAREL*NELBLK, PISEVOK4)
-        CALL EXGVTT4 (IDEXO4, NELBLK4, NVAREL4, ISEVOK4, IERR4)
-        CALL I4I8 (NVAREL*NELBLK, PISEVOK4, ISEVOK)
+        CALL EXGVTT4 (IDEXO4, NELBLK4, NVAREL4, ISEVOK, IERR4)
         IERR = IERR4
         END
 
@@ -1431,16 +1381,12 @@ C>       READ NODESET VARIABLE TRUTH TABLE
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 NBLK4         ! (R)
         INTEGER*4 NVAR4         ! (R)
-        INTEGER*4 ISVOK4(1)     ! (NVAR,NBLK) (W)
-        POINTER (PISVOK4, ISVOK4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         NBLK4  = NBLK
         NVAR4  = NVAR
-        CALL I4ALLOC (NVAR*NBLK, PISVOK4)
-        CALL EXGNSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK4, IERR4)
-        CALL I4I8 (NVAR*NBLK, PISVOK4, ISVOK)
+        CALL EXGNSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK, IERR4)
         IERR = IERR4
         END
 
@@ -1460,16 +1406,12 @@ C>       READ SIDESET VARIABLE TRUTH TABLE
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 NBLK4         ! (R)
         INTEGER*4 NVAR4         ! (R)
-        INTEGER*4 ISVOK4(1)     ! (NVAR,NBLK) (W)
-        POINTER (PISVOK4, ISVOK4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         NBLK4  = NBLK
         NVAR4  = NVAR
-        CALL I4ALLOC (NVAR*NBLK, PISVOK4)
-        CALL EXGSSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK4, IERR4)
-        CALL I4I8 (NVAR*NBLK, PISVOK4, ISVOK)
+        CALL EXGSSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK, IERR4)
         IERR = IERR4
         END
 
@@ -1900,25 +1842,12 @@ C>       WRITE ELEMENT BLOCK ELEMENT COUNT PER POLYHEDRA
 
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 ITYPE4        ! (R)
-        INTEGER*4 COUNTS4 (1)   ! (NUMELB) ! (R)
-        POINTER (PCOUNTS4, COUNTS4)
         INTEGER*4 IERR4         ! (W)
-
-        CHARACTER* (MXSTLN) NAMELB
-
-        INTEGER   NUMELB
-        INTEGER   NUMLNK
-        INTEGER   NUMATR
 
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
 
-        CALL EXGELB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
-     &    NUMATR, IERR4)
-
-        CALL I8I4 (NUMELB, COUNTS, PCOUNTS4)
-        CALL EXPECPP4 (IDEXO4, ITYPE4, IDELB, COUNTS4, IERR4)
-        CALL I4FREE (PCOUNTS4)
+        CALL EXPECPP4 (IDEXO4, ITYPE4, IDELB, COUNTS, IERR4)
         IERR = IERR4
         END
 
@@ -2526,16 +2455,12 @@ C>       WRITE ELEMENT VARIABLE TRUTH TABLE
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 NELBLK4       ! (R)
         INTEGER*4 NVAREL4       ! (R)
-        INTEGER*4 ISEVOK4 (1)   ! (NVAREL,NELBLK) (R)
-        POINTER (PISEVOK4, ISEVOK4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         NELBLK4 = NELBLK
         NVAREL4 = NVAREL
-        CALL I8I4 (NVAREL*NELBLK, ISEVOK, PISEVOK4)
-        CALL EXPVTT4 (IDEXO4, NELBLK4, NVAREL4, ISEVOK4, IERR4)
-        CALL I4FREE (PISEVOK4)
+        CALL EXPVTT4 (IDEXO4, NELBLK4, NVAREL4, ISEVOK, IERR4)
         IERR = IERR4
         END
 
@@ -2555,16 +2480,12 @@ C>       WRITE NODESET VARIABLE TRUTH TABLE
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 NBLK4 ! (R)
         INTEGER*4 NVAR4 ! (R)
-        INTEGER*4 ISVOK4 (1)    ! (NVAR,NBLK) (R)
-        POINTER (PISVOK4, ISVOK4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         NBLK4 = NBLK
         NVAR4 = NVAR
-        CALL I8I4 (NVAR*NBLK, ISVOK, PISVOK4)
-        CALL EXPNSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK4, IERR4)
-        CALL I4FREE (PISVOK4)
+        CALL EXPNSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK, IERR4)
         IERR = IERR4
         END
 
@@ -2584,16 +2505,12 @@ C>       WRITE SIDESET VARIABLE TRUTH TABLE
         INTEGER*4 IDEXO4        ! (R)
         INTEGER*4 NBLK4 ! (R)
         INTEGER*4 NVAR4 ! (R)
-        INTEGER*4 ISVOK4 (1)    ! (NVAR,NBLK) (R)
-        POINTER (PISVOK4, ISVOK4)
         INTEGER*4 IERR4         ! (W)
 
         IDEXO4 = IDEXO
         NBLK4 = NBLK
         NVAR4 = NVAR
-        CALL I8I4 (NVAR*NBLK, ISVOK, PISVOK4)
-        CALL EXPSSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK4, IERR4)
-        CALL I4FREE (PISVOK4)
+        CALL EXPSSTT4 (IDEXO4, NBLK4, NVAR4, ISVOK, IERR4)
         IERR = IERR4
         END
 
@@ -4088,78 +4005,4 @@ C> writes the values of a single variable for a partial block at one time
 
 C-----------------------------------------------------------------------
 
-        SUBROUTINE I8I4 (N, I8, PI4)
-
-C       CREATE I4 ARRAY AND COPY I8 ARRAY CONTENTS TO I4
-
-        IMPLICIT NONE
-        INTEGER N
-        INTEGER I8 (*)
-        INTEGER*4 I4 (1)
-        POINTER (PI4, I4)
-        INTEGER I
-
-        CALL I4ALLOC (N, PI4)
-        DO I = 1, N
-                I4 (I) = I8 (I)
-        END DO
-        END
-
-        SUBROUTINE I4I8 (N, PI4, I8)
-
-C       COPY I4 ARRAY CONTENTS TO I8 AND FREE I4 ARRAY
-
-        IMPLICIT NONE
-        INTEGER   N
-        INTEGER*4 I4 (1)
-        POINTER (PI4, I4)
-        INTEGER I8 (*)
-        INTEGER I
-
-        DO I = 1, N
-                I8 (I) = I4 (I)
-        END DO
-        CALL I4FREE (PI4)
-        END
-
-        SUBROUTINE I4ALLOC (N, PI4)
-
-C       ALLOCATE DYNAMIC I4 ARRAY N ELEMENTS IN SIZE
-
-        IMPLICIT NONE
-        INTEGER N
-        INTEGER*4 I4 (1)
-        POINTER (PI4, I4)
-        INTEGER MALLOC
-        INTEGER*4 NB
-
-        PI4 = 0
-        IF (N .EQ. 0) RETURN
-        NB = N * 4
-#if defined(__XLF__)
-        PI4 = MALLOC (%val(NB))
-#else
-        PI4 = MALLOC (NB)
-#endif
-        if (PI4 .EQ. 0) then
-          write (*,*)
-     *      'ERROR: Unable to allocate array of size ',N,' in I4ALLOC'
-          stop 'Exodus Memory Allocation Error'
-        end if
-        END
-
-        SUBROUTINE I4FREE (PI4)
-
-C       FREE DYNAMIC MEMORY ASSOCIATED WITH I4 ARRAY REFERENCED BY PI4
-
-        IMPLICIT NONE
-        INTEGER*4 I4 (1)
-        POINTER (PI4, I4)
-
-        IF (PI4 .EQ. 0) RETURN
-#if !defined(__XLF__)
-        CALL FREE(PI4)
-#endif
-        PI4 = 0
-        END
 #endif

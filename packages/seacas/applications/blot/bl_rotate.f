@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -13,7 +13,7 @@ C   --*** ROTATE *** (MESH) Rotate 3D coordinates
 C   --   Written by Amy Gilkey - revised 09/09/87
 C   --
 C   --ROTATE rotates the 3D coordinates by subtracting the rotation center
-C   --and multipling by the rotation matrix.
+C   --and multiplying by the rotation matrix.
 C   --
 C   --Parameters:
 C   --   NUM - IN - the number of nodes to rotate

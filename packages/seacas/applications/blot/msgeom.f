@@ -66,10 +66,8 @@ C   --   Sets and uses NEWCUT, ISCUT, CUTPT, CUTNRM of /CUTOPT/
       include 'dbnums.blk'
       include 'd3nums.blk'
       include 'mshopt.blk'
-      COMMON /ROTOPT/ NEWROT, ROTMAT(3,3), ROTCEN(3), EYE(3)
-      LOGICAL NEWROT
-      COMMON /CUTOPT/ NEWCUT, ISCUT, CUTPT(3), CUTNRM(3)
-      LOGICAL NEWCUT, ISCUT
+      include 'rotopt.blk'
+      include 'cutopt.blk'
 
       DIMENSION A(*)
       CHARACTER*(*) CURPRO

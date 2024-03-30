@@ -4,7 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_MemoryUtils.h>
+#include "Ioss_MemoryUtils.h"
 
 // For memory utilities...
 #if defined(__IOSS_WINDOWS__)
@@ -15,7 +15,12 @@
 #include <unistd.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
-#include <mach/mach.h>
+#include <mach/arm/kern_return.h>
+#include <mach/kern_return.h>
+#include <mach/mach_init.h>
+#include <mach/message.h>
+#include <mach/task.h>
+#include <mach/task_info.h>
 
 #elif (defined(_AIX) || defined(__TOS__AIX__)) ||                                                  \
     (defined(__sun__) || defined(__sun) || defined(sun) && (defined(__SVR4) || defined(__svr4__)))

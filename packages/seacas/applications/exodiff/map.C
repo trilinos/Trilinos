@@ -105,7 +105,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
   }
 
   // Sort by x value.
-  index_qsort(x2.data(), id.data(), num_elmts);
+  index_qsort(Data(x2), Data(id), num_elmts);
 
 #if 0
   fmt::print("******************  elmts  ******************** \n");
@@ -284,7 +284,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
             Error(out);
           }
         } // End of local node loop on file1's element.
-      }   // End of local node search block.
+      } // End of local node search block.
 
       ++e1;
 
@@ -396,7 +396,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
   }
 
   // Sort by x value.
-  index_qsort(x2.data(), id2.data(), num_elmts2);
+  index_qsort(Data(x2), Data(id2), num_elmts2);
 
 #if 0
   fmt::print("******************  elmts  ******************** \n");
@@ -543,7 +543,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
             Error(out);
           }
         } // End of local node loop on file1's element.
-      }   // End of local node search block.
+      } // End of local node search block.
 
       ++e1;
 
@@ -605,12 +605,12 @@ namespace {
     // Check whether sorting needed...
     bool sort1_needed = check_sort(file1_id_map, count);
     if (sort1_needed) {
-      index_qsort(file1_id_map, id1.data(), count);
+      index_qsort(file1_id_map, Data(id1), count);
     }
 
     bool sort2_needed = check_sort(file2_id_map, count);
     if (sort2_needed) {
-      index_qsort(file2_id_map, id2.data(), count);
+      index_qsort(file2_id_map, Data(id2), count);
     }
 
     for (size_t i = 0; i < count; i++) {
@@ -619,7 +619,7 @@ namespace {
       }
       else {
         Error(fmt::format("Unable to match {0} {1} in first file with {0} in second file.\n", type,
-                          file1_id_map[id1[i]]));
+                          fmt::group_digits(file1_id_map[id1[i]])));
       }
     }
 
@@ -970,7 +970,7 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
   }
 
   // Sort based on coordinate with largest range...
-  index_qsort(r, indx.data(), num_nodes);
+  index_qsort(r, Data(indx), num_nodes);
 
   double min = DBL_MAX;
   switch (file.Dimension()) {

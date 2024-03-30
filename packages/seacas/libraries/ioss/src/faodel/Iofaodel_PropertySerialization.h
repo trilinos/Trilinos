@@ -9,9 +9,9 @@
 #include "iofaodel_export.h"
 
 #include "Iofaodel_Utils.h"
-#include <Ioss_Field.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Property.h>
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_Property.h"
 
 #include <string>
 #include <vector>
@@ -37,11 +37,13 @@ namespace Iofaodel {
 
   // Applies PropertyFunction 'op' to all properties encountered in the
   // Ioss::GroupingEntity
-  IOFAODEL_EXPORT void map_properties(const Ioss::Region &region, const Ioss::GroupingEntity &grouping_entity,
-                      PropertyFunction op);
+  IOFAODEL_EXPORT void map_properties(const Ioss::Region         &region,
+                                      const Ioss::GroupingEntity &grouping_entity,
+                                      PropertyFunction            op);
 
-  IOFAODEL_EXPORT lunasa::DataObject pack_property(const Ioss::Region &region, const Ioss::GroupingEntity &entity,
-                                   const Ioss::Property &property);
+  IOFAODEL_EXPORT lunasa::DataObject pack_property(const Ioss::Region         &region,
+                                                   const Ioss::GroupingEntity &entity,
+                                                   const Ioss::Property       &property);
 
   // Put this in the meta data section of the LDO
   struct IOFAODEL_EXPORT property_entry_t
@@ -60,7 +62,7 @@ namespace Iofaodel {
     explicit property_entry_t(const Ioss::Property &property, const size_t start = 0);
   };
 
-  IOFAODEL_EXPORT int64_t     property_get_int(lunasa::DataObject ldo);
-  std::string property_get_string(lunasa::DataObject ldo);
+  IOFAODEL_EXPORT int64_t property_get_int(lunasa::DataObject ldo);
+  std::string             property_get_string(lunasa::DataObject ldo);
 
 } // namespace Iofaodel

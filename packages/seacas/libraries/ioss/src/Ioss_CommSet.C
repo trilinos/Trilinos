@@ -4,10 +4,10 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CommSet.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_Field.h>
-#include <Ioss_Property.h>
+#include "Ioss_CommSet.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_Field.h"
+#include "Ioss_Property.h"
 #include <cassert>
 #include <cstddef>
 #include <string>

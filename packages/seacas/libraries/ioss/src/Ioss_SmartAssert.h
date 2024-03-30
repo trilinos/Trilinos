@@ -333,7 +333,7 @@ namespace Ioss {
         .SMART_ASSERT_A /**/
 
 #else
-// "release" mode
+  // "release" mode
 #define SMART_ASSERT(expr)                                                                         \
   if (true)                                                                                        \
     ;                                                                                              \

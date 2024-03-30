@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,9 +9,10 @@
 #include "elb_elem.h"
 #include "elb_err.h"  // for error_report, Gen_Error
 #include "elb_util.h" // for in_list
-#include <cstddef>    // for size_t
-#include <cstdlib>    // for exit
-#include <cstring>    // for strncasecmp
+#include "vector_data.h"
+#include <cstddef> // for size_t
+#include <cstdlib> // for exit
+#include <cstring> // for strncasecmp
 #include <fmt/ostream.h>
 #include <vector> // for vector
 
@@ -1439,10 +1440,10 @@ int get_side_id_hex_tet(const E_Type etype,     /* The element type */
   case TET8:
   case TET14:
   case TET15: {
-    auto il1 = in_list(1, lcnt, loc_node_ids.data()) >= 0;
-    auto il2 = in_list(2, lcnt, loc_node_ids.data()) >= 0;
-    auto il3 = in_list(3, lcnt, loc_node_ids.data()) >= 0;
-    auto il4 = in_list(4, lcnt, loc_node_ids.data()) >= 0;
+    auto il1 = in_list(1, lcnt, Data(loc_node_ids)) >= 0;
+    auto il2 = in_list(2, lcnt, Data(loc_node_ids)) >= 0;
+    auto il3 = in_list(3, lcnt, Data(loc_node_ids)) >= 0;
+    auto il4 = in_list(4, lcnt, Data(loc_node_ids)) >= 0;
 
     if (il1 && il2 && il4) {
       return 1;
@@ -1465,14 +1466,14 @@ int get_side_id_hex_tet(const E_Type etype,     /* The element type */
   case HEX16:
   case HEX20:
   case HEX27: {
-    auto il1 = in_list(1, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
-    auto il2 = in_list(2, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
-    auto il3 = in_list(3, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
-    auto il4 = in_list(4, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
-    auto il5 = in_list(5, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
-    auto il6 = in_list(6, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
-    auto il7 = in_list(7, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
-    auto il8 = in_list(8, lcnt, loc_node_ids.data()) >= 0 ? 1 : 0;
+    auto il1 = in_list(1, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
+    auto il2 = in_list(2, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
+    auto il3 = in_list(3, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
+    auto il4 = in_list(4, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
+    auto il5 = in_list(5, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
+    auto il6 = in_list(6, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
+    auto il7 = in_list(7, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
+    auto il8 = in_list(8, lcnt, Data(loc_node_ids)) >= 0 ? 1 : 0;
 
     if (il1 + il2 + il5 + il6 > 2) {
       return 1;

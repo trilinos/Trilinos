@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,6 +32,7 @@
 #include "elb_loadbal.h"
 #include "elb_util.h" // for find_inter, etc
 #include "fix_column_partitions.h"
+#include "vector_data.h"
 
 #ifndef M_PI
 #define M_PI   3.14159265358979323846264338327
@@ -104,12 +105,12 @@ namespace {
 template int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
                               Mesh_Description<int> *mesh, LB_Description<int> *lb,
                               Solver_Description *solve, Graph_Description<int> *graph,
-                              Weight_Description<int> *weight, Sphere_Info *sphere, int argc,
+                              Weight_Description *weight, Sphere_Info *sphere, int argc,
                               char *argv[]);
 template int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
                               Mesh_Description<int64_t> *mesh, LB_Description<int64_t> *lb,
                               Solver_Description *solve, Graph_Description<int64_t> *graph,
-                              Weight_Description<int64_t> *weight, Sphere_Info *sphere, int argc,
+                              Weight_Description *weight, Sphere_Info *sphere, int argc,
                               char *argv[]);
 
 /* Variables used in Chaco */
@@ -123,7 +124,7 @@ template <typename INT>
 int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
                      Mesh_Description<INT> *mesh, LB_Description<INT> *lb,
                      Solver_Description *solve, Graph_Description<INT> *graph,
-                     Weight_Description<INT> *weight, Sphere_Info *sphere, int argc, char *argv[])
+                     Weight_Description *weight, Sphere_Info *sphere, int argc, char *argv[])
 {
   const char *assignfile = nullptr;
 
@@ -208,19 +209,19 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 
     switch (mesh->num_dims) {
     case 3:
-      x_node_ptr = mesh->coords.data();
-      y_node_ptr = mesh->coords.data() + (mesh->num_nodes);
-      z_node_ptr = mesh->coords.data() + 2 * (mesh->num_nodes);
+      x_node_ptr = Data(mesh->coords);
+      y_node_ptr = Data(mesh->coords) + (mesh->num_nodes);
+      z_node_ptr = Data(mesh->coords) + 2 * (mesh->num_nodes);
       break;
 
     case 2:
-      x_node_ptr = mesh->coords.data();
-      y_node_ptr = mesh->coords.data() + (mesh->num_nodes);
+      x_node_ptr = Data(mesh->coords);
+      y_node_ptr = Data(mesh->coords) + (mesh->num_nodes);
       z_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       break;
 
     case 1:
-      x_node_ptr = mesh->coords.data();
+      x_node_ptr = Data(mesh->coords);
       y_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       z_node_ptr = (float *)calloc(mesh->num_nodes, sizeof(float));
       break;
@@ -277,13 +278,13 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       } /* End "for (cnt=0; cnt < mesh->num_elem; cnt++)" */
 
       /* and use different pointers for Chaco */
-      x_ptr = x_elem_ptr.data();
-      y_ptr = y_elem_ptr.data();
-      z_ptr = z_elem_ptr.data();
+      x_ptr = Data(x_elem_ptr);
+      y_ptr = Data(y_elem_ptr);
+      z_ptr = Data(z_elem_ptr);
 
     } /* End "if (problem->num_vertices > 0)" */
-  }   /* End "if ((problem->type == ELEMENTAL) &&
-         (lb->type==INERTIAL||ZPINCH||BRICK||ZOLTAN))"*/
+  } /* End "if ((problem->type == ELEMENTAL) &&
+       (lb->type==INERTIAL||ZPINCH||BRICK||ZOLTAN))"*/
 
   /* Allocate memory for the vertex to processor vector */
   if (problem->type == ELEMENTAL) {
@@ -368,8 +369,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     nprocg.resize(problem->num_groups);
     nelemg.resize(problem->num_groups);
 
-    if (!get_group_info(machine, problem, mesh, graph, lb->vertex2proc, nprocg.data(),
-                        nelemg.data(), &max_vtx, &max_adj)) {
+    if (!get_group_info(machine, problem, mesh, graph, lb->vertex2proc, Data(nprocg), Data(nelemg),
+                        &max_vtx, &max_adj)) {
       Gen_Error(0, "fatal: Error obtaining group information.");
       goto cleanup;
     }
@@ -408,8 +409,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       exit(-1);
     }
     else {
-      flag = INTER_FACE(problem->num_vertices, (int *)graph->start.data(), (int *)graph->adj.data(),
-                        weight->vertices.data(), weight->edges.data(), x_ptr, y_ptr, z_ptr,
+      flag = INTER_FACE(problem->num_vertices, (int *)Data(graph->start), (int *)Data(graph->adj),
+                        Data(weight->vertices), Data(weight->edges), x_ptr, y_ptr, z_ptr,
                         const_cast<char *>(assignfile), (char *)nullptr, lb->vertex2proc, tmp_arch,
                         tmp_lev, dim, goal, glob_method, refine, solve->rqi_flag, solve->vmax,
                         lb->num_sects, solve->tolerance, seed);
@@ -766,7 +767,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         }
       }
     } /* End: "for (iloop = 0; iloop < nloops; iloop++)" */
-  }   /* End: "if (sphere->num < mesh->num_elems)" */
+  } /* End: "if (sphere->num < mesh->num_elems)" */
 
   /* Free up coordinates if used */
   if (problem->read_coords == ELB_TRUE) {
@@ -910,7 +911,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         generate_graph(problem, mesh, graph, weight, sphere);
 
         /*
-         * adjacancy graph sent to identify_mechanisms must be 1 based
+         * adjacency graph sent to identify_mechanisms must be 1 based
          *
          */
 
@@ -1098,7 +1099,7 @@ namespace {
         }
 
         size_t components =
-            extract_connected_lists(nrow, columns.data(), rows.data(), list.data(), list_ptr);
+            extract_connected_lists(nrow, Data(columns), Data(rows), Data(list), list_ptr);
 
         if (components) {
           fmt::print("There are {} connected components.\n", components);
@@ -1192,7 +1193,7 @@ namespace {
             }
 
             int components =
-                extract_connected_lists(nrow, columns.data(), rows.data(), list.data(), list_ptr);
+                extract_connected_lists(nrow, Data(columns), Data(rows), Data(list), list_ptr);
 
             if (components > 0) {
               fmt::print("For Processor {} there are {} connected components.\n", pcnt, components);
@@ -1320,18 +1321,18 @@ namespace {
                       ss_to_node_list(etype2, mesh->connect[el2], (cnt + 1), side_nodes2);
 
                       int nhold2 =
-                          find_inter(graph->sur_elem[side_nodes2[0]].data(),
-                                     graph->sur_elem[side_nodes2[1]].data(),
+                          find_inter(Data(graph->sur_elem[side_nodes2[0]]),
+                                     Data(graph->sur_elem[side_nodes2[1]]),
                                      graph->sur_elem[side_nodes2[0]].size(),
-                                     graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
+                                     graph->sur_elem[side_nodes2[1]].size(), Data(pt_list));
 
                       for (int i = 0; i < nhold2; i++) {
                         hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];
                       }
 
-                      size_t nelem = find_inter(
-                          hold_elem.data(), graph->sur_elem[side_nodes2[2]].data(), nhold2,
-                          graph->sur_elem[side_nodes2[2]].size(), pt_list.data());
+                      size_t nelem =
+                          find_inter(Data(hold_elem), Data(graph->sur_elem[side_nodes2[2]]), nhold2,
+                                     graph->sur_elem[side_nodes2[2]].size(), Data(pt_list));
 
                       if (nelem >= 1) {
                         count++;
@@ -1449,7 +1450,7 @@ namespace {
             }
           }
         } /* End "for(i=0; i < nnodes; i++)" */
-      }   /* End "for(ecnt=0; ecnt < graph->nsur_elem[ncnt]; ecnt++)" */
+      } /* End "for(ecnt=0; ecnt < graph->nsur_elem[ncnt]; ecnt++)" */
 
       if (internal) {
         /* "ncnt" is an internal node */
@@ -1593,8 +1594,8 @@ namespace {
             for (int ncnt = 0; ncnt < nnodes; ncnt++) {
               /* Find elements connected to both node '0' and node 'ncnt+1' */
               nelem =
-                  find_inter(hold_elem.data(), graph->sur_elem[side_nodes[(ncnt + 1)]].data(),
-                             nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(), pt_list.data());
+                  find_inter(Data(hold_elem), Data(graph->sur_elem[side_nodes[(ncnt + 1)]]), nhold,
+                             graph->sur_elem[side_nodes[(ncnt + 1)]].size(), Data(pt_list));
 
               if (nelem < 2) {
                 break;
@@ -1656,10 +1657,10 @@ namespace {
             size_t nhold = 0;
             for (int ncnt = 0; ncnt < nnodes; ncnt++) {
               /* Find elements connected to both node 'inode' and node 'node' */
-              nelem = find_inter(graph->sur_elem[side_nodes[inode]].data(),
-                                 graph->sur_elem[side_nodes[node]].data(),
+              nelem = find_inter(Data(graph->sur_elem[side_nodes[inode]]),
+                                 Data(graph->sur_elem[side_nodes[node]]),
                                  graph->sur_elem[side_nodes[inode]].size(),
-                                 graph->sur_elem[side_nodes[node]].size(), pt_list.data());
+                                 graph->sur_elem[side_nodes[node]].size(), Data(pt_list));
 
               if (nelem > 1) {
                 if (ncnt == 0) {
@@ -1876,11 +1877,11 @@ namespace {
                   return 0; /* and get out of here */
 
                 } /* End "if sid < 0 && !problem>skip_checks" */
-              }   /* End "if (sid > 0)" */
-            }     /* End "if (proc != proc2)" */
-          }       /* End "for (ncnt = 0; ncnt < nelem; ncnt++)" */
-        }         /* End "if (nelem > 1)" */
-      }           /* End "for (nscnt = 0; nscnt < nsides; nscnt++)" */
+              } /* End "if (sid > 0)" */
+            } /* End "if (proc != proc2)" */
+          } /* End "for (ncnt = 0; ncnt < nelem; ncnt++)" */
+        } /* End "if (nelem > 1)" */
+      } /* End "for (nscnt = 0; nscnt < nsides; nscnt++)" */
 
       if (internal) {
         lb->int_elems[proc].push_back(ecnt);
@@ -1930,8 +1931,8 @@ namespace {
               lb->bor_nodes[proc2].push_back(ncnt);
             }
           } /* if (proc != lb->vertex2proc[graph->sur_elem[ncnt][ecnt]]) */
-        }   /* for(ecnt=1; ecnt < graph->nsur_elem[ncnt]; ecnt++) */
-      }     /* if(graph->nsur_elem[ncnt]) */
+        } /* for(ecnt=1; ecnt < graph->nsur_elem[ncnt]; ecnt++) */
+      } /* if(graph->nsur_elem[ncnt]) */
 
       if (internal) {
         /*
@@ -1967,9 +1968,9 @@ namespace {
               lb->born_procs[pcnt][ncnt].push_back(proc);
             }
           } /* End "if(proc != pcnt)" */
-        }   /* End "for(ecnt=0; ecnt < graph->nsur_elems[node]; ecnt++)" */
-      }     /* End "for(ncnt=0; ncnt < lb->num_bor_nodes[pcnt]; ncnt++)" */
-    }       /* End "for(pcnt=0; pcnt < machine->num_procs; pcnt++)" */
+        } /* End "for(ecnt=0; ecnt < graph->nsur_elems[node]; ecnt++)" */
+      } /* End "for(ncnt=0; ncnt < lb->num_bor_nodes[pcnt]; ncnt++)" */
+    } /* End "for(pcnt=0; pcnt < machine->num_procs; pcnt++)" */
 
     time2 = get_time();
     fmt::print("Find procs for border nodes: {}s\n", time2 - time1);
@@ -1998,8 +1999,8 @@ namespace {
      */
     time1 = get_time();
     for (INT pcnt = 1; pcnt < machine->num_procs; pcnt++) {
-      int     save_fv1 = 0;
-      int64_t size =
+      int  save_fv1 = 0;
+      auto size =
           static_cast<int64_t>(lb->e_cmap_procs[pcnt].size()); /* Define shortcuts size and procs */
       std::vector<INT> procs = lb->e_cmap_procs[pcnt];
 
@@ -2094,8 +2095,8 @@ namespace {
                 (&lb->e_cmap_sides[pcnt2][fv2]));
 
         } /* End "if(fv1 >= 0)" */
-      }   /* End "for(pcnt2=0; pcnt2 < pcnt; pcnt2++)" */
-    }     /* End "for(pcnt=0; pcnt < machine->num_procs; pcnt++)" */
+      } /* End "for(pcnt2=0; pcnt2 < pcnt; pcnt2++)" */
+    } /* End "for(pcnt=0; pcnt < machine->num_procs; pcnt++)" */
 
     time2 = get_time();
     fmt::print("Make cmaps consistent: {}s\n", time2 - time1);
@@ -2675,7 +2676,7 @@ namespace {
       fmt::print(stderr, "Error returned from Zoltan_Initialize ({}:{})\n", __FILE__, __LINE__);
       exit(-1);
     }
-    struct Zoltan_Struct *zz = Zoltan_Create(MPI_COMM_WORLD);
+    struct Zoltan_Struct *zz = Zoltan_Create(MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
 
     /* Register Callback functions */
     /* Using global Zoltan_Data; could register it here instead as data field. */

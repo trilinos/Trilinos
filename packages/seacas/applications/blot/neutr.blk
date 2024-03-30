@@ -4,7 +4,7 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      COMMON /NEUTR/  NEU, NEUOPN, NUMCRV, INCCRV, NEUGRF, GRFOPN
+      COMMON /NEUTR/  NEU, NUMCRV, INCCRV, NEUGRF, NEUOPN, GRFOPN
       LOGICAL NEUOPN, GRFOPN
       COMMON /NEUTRC/ CRVNAM
       CHARACTER*8 CRVNAM

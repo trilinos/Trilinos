@@ -22,7 +22,7 @@ C   --   Uses DVIEW, WVIEW of /LAYOUT/
 
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4)
 
-      COMMON /LAYOUD/ DVIEW(KTOP,4), WVIEW(KTOP,4)
+      include 'layoud.blk'
 
       LOGICAL MPVIEW, MPORT2, LDUM
       LOGICAL GRABRT

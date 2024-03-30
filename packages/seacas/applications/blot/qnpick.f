@@ -43,13 +43,8 @@ C   --   Uses IS3DIM of /D3NUMS/
 
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4, KNEA=5, KFAR=6)
 
-      COMMON /PICK/   INITP, PKDEF,
-     &  PKMESH(KTOP), PKRMAT(3,3), PKRCEN(3),
-     &  DMESH(KTOP), DVRAT, DXMID, DYMID, DXLAST, DYLAST
-      LOGICAL INITP, PKDEF
-
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'pick.blk'
+      include 'd3nums.blk'
 
       LOGICAL ISUP, ISDEF
       CHARACTER*(*) TYPE

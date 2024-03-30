@@ -33,7 +33,7 @@ template <typename INT> struct NODE_COMM_MAP
 };
 
 /*---------------------------------------------------------------------------*/
-/*      GLOBAL QUANTITITES THAT ARE THE SAME ON ALL PROCESSORS               */
+/*      GLOBAL QUANTITIES THAT ARE THE SAME ON ALL PROCESSORS               */
 /*---------------------------------------------------------------------------*/
 template <typename T, typename INT> class Globals
 {

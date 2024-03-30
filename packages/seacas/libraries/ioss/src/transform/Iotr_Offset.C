@@ -1,16 +1,17 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Field.h>
-#include <Ioss_VariableType.h>
+#include "Ioss_Field.h"
+#include "Ioss_VariableType.h"
+#include "transform/Iotr_Offset.h"
 #include <cstddef>
-#include <string>
-#include <transform/Iotr_Offset.h>
+#include <stdint.h>
 
 #include "Ioss_Transform.h"
+#include "Ioss_TransformFactory.h"
 
 namespace Iotr {
 
@@ -20,7 +21,10 @@ namespace Iotr {
     return &registerThis;
   }
 
-  Offset_Factory::Offset_Factory() : Factory("offset") { Factory::alias("offset", "add"); }
+  Offset_Factory::Offset_Factory() : Ioss::TransformFactory("offset")
+  {
+    Ioss::TransformFactory::alias("offset", "add");
+  }
 
   Ioss::Transform *Offset_Factory::make(const std::string & /*unused*/) const
   {

@@ -4,7 +4,7 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      COMMON /ROTOPT/ NEWROT, ROTMAT(3,3), ROTCEN(3), EYE(3)
+      COMMON /ROTOPT/ ROTMAT(3,3), ROTCEN(3), EYE(3), NEWROT
       LOGICAL NEWROT
 C      --NEWROT - true iff coordinates are not set for the new rotation matrix
 C      --   or center

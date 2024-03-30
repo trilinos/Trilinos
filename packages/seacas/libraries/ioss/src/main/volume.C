@@ -4,17 +4,15 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <cstddef> // for size_t, nullptr
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <stdint.h>
+#include <vector> // for vector
+
 #include "Ioss_DatabaseIO.h"   // for DatabaseIO
 #include "Ioss_ElementBlock.h" // for ElementBlock
-#include "Ioss_Property.h"     // for Property
-#include <algorithm>           // for max_element, min_element
-#include <cstddef>             // for size_t, nullptr
-#include <fmt/ostream.h>
-#include <iomanip>     // for operator<<, setw
-#include <iostream>    // for operator<<, basic_ostream, etc
-#include <string>      // for char_traits, operator<<
-#include <sys/types.h> // for int64_t
-#include <vector>      // for vector
+#include "Ioss_Utils.h"
 
 namespace {
   void comp_grad12x(double *const grad_ptr, const double *const x, const double *const y,

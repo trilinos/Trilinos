@@ -68,6 +68,7 @@ IF ( NETCDF_NCDUMP_BINARY )
   SET( cbind_OLDTESTS
     testwt
     testwtd
+    testwtd-to-f
     testrd
     testrd1
     testrdd

@@ -3,7 +3,7 @@ $
 Test number representations
 {1}	{10e-1}	{10.e-1}	{.1e+1}	{.1e1}
 {1}	{10E-1}	{10.E-1}	{.1E+1}	{.1E1}
-	
+
 Test assign statements:
 {_a = 5}	{b=_a}	$ Should print 5 5
 {_a +=b}	{_a} 	$ Should print 10 10
@@ -179,15 +179,14 @@ $ Test int and [] (shortcut for int)
 {[5.01]}	{[-5.01]}
 
 $ Test looping - print sin, cos from 0 to 90 by 5
-{_angle = -5}
-{Loop(19)}
-{_angle += 5}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} 
+{Loop(19, _angle, 0, 5)}
+{_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} 
 {EndLoop}
 
 $$$$ Test formatting and string concatenation
-{_i = 0} {_SAVE = _FORMAT}
+{_SAVE = _FORMAT}
 {loop(20)}
-{IO(++_i)} Using the format {_FORMAT = "%." // tostring(_i) // "g"},	PI = {PI}
+{IO(__loop_1+1)} Using the format {_FORMAT = "%." // tostring(__loop_1+1) // "g"},	PI = {PI}
 {endloop}
 Reset format to default: {_FORMAT = _SAVE}
 
@@ -227,9 +226,8 @@ string = {_string = " one two, three"}
 delimiter "{_delm = " ,"}"
 word count = { iwords = word_count(_string,_delm)}
 
-{_n = 0}
-	{loop(iwords)}
-word {++_n} = "{get_word(_n,_string,_delm)}"
+	{loop(iwords, _n, 1)}
+word {_n} = "{get_word(_n,_string,_delm)}"
    {endloop}
 
 $ Check parsing of escaped braces...
@@ -247,11 +245,16 @@ $ Test extract
 {ex_null  = extract("The test string is not found", "xxxx", "yyyy")}
 
 $ Test string tokenization optimization
-{_i=1}
 {list1 ='51,52,53,54,61,62,63,64'}
 {list2 ='71,72,73,74,81,82,83,84'}
-{loop(8)}
-Word {_i} of list1 and list2 are {get_word(_i,list1,',')} and {get_word(_i++,list2,',')}
+{loop(8, _i, 1)}
+Word {_i} of list1 and list2 are {get_word(_i,list1,',')} and {get_word(_i,list2,',')}
 {endloop}
 
+{loop(0)}
+This should not be echoed
+{endloop}
+{loop(undefined)}
+This should not be echoed
+{endloop}
 $End of test file

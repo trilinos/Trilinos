@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -196,7 +196,7 @@ namespace {
   /*
    * The following 'qsort' routine is modified from Sedgewicks
    * algorithm It selects the pivot based on the median of the left,
-   * right, and center values to try to avoid degenerate cases ocurring
+   * right, and center values to try to avoid degenerate cases occurring
    * when a single value is chosen.  It performs a quicksort on
    * intervals down to the GDS_QSORT_CUTOFF size and then performs a final
    * insertion sort on the almost sorted final array.  Based on data in
@@ -393,8 +393,10 @@ int64_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1
  *****************************************************************************/
 template int64_t in_list(int value, size_t count, const int *vector);
 template int64_t in_list(int64_t value, size_t count, const int64_t *vector);
+template int64_t in_list(int value, size_t count, const int64_t *vector);
+template int64_t in_list(int64_t value, size_t count, const int *vector);
 
-template <typename INT> int64_t in_list(INT value, size_t count, const INT *vector)
+template <typename INT, typename INT2> int64_t in_list(INT value, size_t count, const INT2 *vector)
 {
   for (size_t i = 0; i < count; i++) {
     if (vector[i] == value) {
@@ -406,8 +408,10 @@ template <typename INT> int64_t in_list(INT value, size_t count, const INT *vect
 
 template int64_t in_list(int value, const std::vector<int> &vector);
 template int64_t in_list(int64_t value, const std::vector<int64_t> &vector);
+template int64_t in_list(int value, const std::vector<int64_t> &vector);
+template int64_t in_list(int64_t value, const std::vector<int> &vector);
 
-template <typename INT> int64_t in_list(INT value, const std::vector<INT> &vector)
+template <typename INT, typename INT2> int64_t in_list(INT value, const std::vector<INT2> &vector)
 {
   size_t count = vector.size();
   for (size_t i = 0; i < count; i++) {

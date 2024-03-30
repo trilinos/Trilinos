@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -27,7 +27,7 @@ double checkeig_ext(double *err, double *work, /* work vector of length n */
 
   splarax(err, A, n, y, vwsqrt, work);
   scadd(err, 1, n, -extval, y);
-  cpvec(work, 1, n, gvec); /* only need if going to re-use gvec */
+  cpvec(work, 1, n, gvec); /* only need if going to reuse gvec */
   scale_diag(work, 1, n, vwsqrt);
   scadd(err, 1, n, -1.0, work);
   resid = ch_norm(err, 1, n);

@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -65,7 +65,7 @@ C   --   Sets (by DATA) FNCNAM, FNCTYP, FNCSTO of /FNCTB./
       CHARACTER*5 STRA
 
       CHARACTER*(MAXNAM+20) ENT20
-C      --ENT20 - long equation entry, before trucation
+C      --ENT20 - long equation entry, before truncation
 
       CHARACTER*(mxstln) ENT, LSTENT
 C      --ENT, LSTENT - single equation entries

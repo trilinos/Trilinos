@@ -20,9 +20,7 @@ C   --
 C   --Common Variables:
 C   --   Uses CINTOK, CMIN, DELC, CINTV of /CNTR/
 
-      COMMON /CNTR/   CINTOK, LINCON, NCNTR, CMIN, CMAX, DELC,
-     &   CINTV(256), NOCMIN, NOCMAX, LABINC, MAXMIN, MAXMAX
-      LOGICAL CINTOK, LINCON, NOCMIN, NOCMAX
+      include 'cntr.blk'
 
       IF (.NOT. CINTOK) THEN
          CNTRI = CMIN + (ICNTR-1) * DELC

@@ -62,13 +62,9 @@ C   --   Uses IS3DIM, NUMNPF of /D3NUMS/
 
       PARAMETER (KHCHSZ=1, KSCHSZ=2)
 
-      common /debugc/ cdebug
-      common /debugn/ idebug
-      character*8 cdebug
-
+      include 'debug.blk'
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       CHARACTER*(*) NUMTYP
       INTEGER LENF(0:NELBLK)

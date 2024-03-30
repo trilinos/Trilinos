@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -17,12 +17,6 @@
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <Shlwapi.h>
 #endif
-
-/*****************************************************************************/
-Excn::ParallelDisks::ParallelDisks() = default;
-
-/*****************************************************************************/
-Excn::ParallelDisks::~ParallelDisks() = default;
 
 /*****************************************************************************/
 void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const std::string &subdir,

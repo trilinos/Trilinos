@@ -1,42 +1,28 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
-#include <algorithm>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Utils.h"
+#include "exonull/Ioexnl_BaseDatabaseIO.h"
 #include <cassert>
-#include <cctype>
-#include <cfloat>
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <ctime>
 #include <exodusII.h>
-#include <exonull/Ioexnl_BaseDatabaseIO.h>
-#include <exonull/Ioexnl_Utils.h>
+#include <fmt/core.h>
 #include <fmt/ostream.h>
-#include <functional>
-#include <iostream>
 #include <map>
-#include <set>
+#include <sstream>
 #include <string>
 #include <tokenize.h>
-#include <utility>
 #include <vector>
 
+#include "Ioexnl_Utils.h"
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
-#include "Ioss_CommSet.h"
-#include "Ioss_CoordinateFrame.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EdgeBlock.h"
@@ -44,24 +30,23 @@
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementSet.h"
 #include "Ioss_EntityBlock.h"
-#include "Ioss_EntitySet.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_FaceBlock.h"
 #include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_Map.h"
+#include "Ioss_MeshType.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
 #include "Ioss_Region.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_SmartAssert.h"
 #include "Ioss_State.h"
-#include "Ioss_VariableType.h"
-
-#include "Ioexnl_Utils.h"
 
 // Transitioning from treating global variables as Ioss::Field::TRANSIENT
 // to Ioss::Field::REDUCTION.  To get the old behavior, define the value
@@ -213,16 +198,6 @@ namespace Ioexnl {
   int BaseDatabaseIO::int_byte_size_db() const { return 8; }
 
   // common
-  BaseDatabaseIO::~BaseDatabaseIO()
-  {
-    try {
-      free_file_pointer();
-    }
-    catch (...) {
-    }
-  }
-
-  // common
   unsigned BaseDatabaseIO::entity_field_support() const
   {
     return Ioss::NODEBLOCK | Ioss::EDGEBLOCK | Ioss::FACEBLOCK | Ioss::ELEMENTBLOCK |
@@ -235,7 +210,7 @@ namespace Ioexnl {
 
   int BaseDatabaseIO::free_file_pointer() const { return 0; }
 
-  bool BaseDatabaseIO::ok__(bool, std::string *, int *) const { return true; }
+  bool BaseDatabaseIO::ok_nl(bool, std::string *, int *) const { return true; }
 
   // common
   void BaseDatabaseIO::put_qa()
@@ -249,7 +224,7 @@ namespace Ioexnl {
 
     if (using_parallel_io() && myProcessor != 0) {}
     else {
-      auto *qa = new qa_element[num_qa_records + 1];
+      std::vector<qa_element> qa(num_qa_records + 1);
       for (size_t i = 0; i < num_qa_records + 1; i++) {
         for (int j = 0; j < 4; j++) {
           qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
@@ -287,7 +262,6 @@ namespace Ioexnl {
           delete[] qa[i].qa_record[0][j];
         }
       }
-      delete[] qa;
     }
   }
 
@@ -413,7 +387,7 @@ namespace Ioexnl {
      * elemMap.reverse[elemMap.map[eb_offset+i+1]]-eb_offset-1
      *
      * To determine which map to update on a call to this function, we
-     * use the following hueristics:
+     * use the following heuristics:
      * -- If the database state is 'Ioss::STATE_MODEL:', then update the
      *    'elemMap.reverse'.
      * -- If the database state is not Ioss::STATE_MODEL, then leave
@@ -449,8 +423,8 @@ namespace Ioexnl {
   }
 
   // common
-  void BaseDatabaseIO::compute_block_membership__(Ioss::SideBlock          *efblock,
-                                                  std::vector<std::string> &block_membership) const
+  void BaseDatabaseIO::compute_block_membership_nl(Ioss::SideBlock          *efblock,
+                                                   std::vector<std::string> &block_membership) const
   {
     const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
@@ -718,14 +692,14 @@ namespace Ioexnl {
   void BaseDatabaseIO::write_reduction_fields() const {}
 
   // common
-  bool BaseDatabaseIO::begin__(Ioss::State state)
+  bool BaseDatabaseIO::begin_nl(Ioss::State state)
   {
     dbState = state;
     return true;
   }
 
   // common
-  bool BaseDatabaseIO::end__(Ioss::State state)
+  bool BaseDatabaseIO::end_nl(Ioss::State state)
   {
     // Transitioning out of state 'state'
     assert(state == dbState);
@@ -756,7 +730,7 @@ namespace Ioexnl {
     return true;
   }
 
-  bool BaseDatabaseIO::begin_state__(int, double)
+  bool BaseDatabaseIO::begin_state_nl(int, double)
   {
     if (!is_input()) {
       // Zero global variable array...
@@ -772,7 +746,7 @@ namespace Ioexnl {
   }
 
   // common
-  bool BaseDatabaseIO::end_state__(int state, double time)
+  bool BaseDatabaseIO::end_state_nl(int state, double time)
   {
     if (!is_input()) {
       write_reduction_fields();
@@ -860,14 +834,14 @@ namespace Ioexnl {
       exo_params.num_sset  = m_variables[EX_SIDE_SET].size();
       exo_params.num_elset = m_variables[EX_ELEM_SET].size();
 
-      exo_params.edge_var_tab  = m_truthTable[EX_EDGE_BLOCK].data();
-      exo_params.face_var_tab  = m_truthTable[EX_FACE_BLOCK].data();
-      exo_params.elem_var_tab  = m_truthTable[EX_ELEM_BLOCK].data();
-      exo_params.nset_var_tab  = m_truthTable[EX_NODE_SET].data();
-      exo_params.eset_var_tab  = m_truthTable[EX_EDGE_SET].data();
-      exo_params.fset_var_tab  = m_truthTable[EX_FACE_SET].data();
-      exo_params.sset_var_tab  = m_truthTable[EX_SIDE_SET].data();
-      exo_params.elset_var_tab = m_truthTable[EX_ELEM_SET].data();
+      exo_params.edge_var_tab  = Data(m_truthTable[EX_EDGE_BLOCK]);
+      exo_params.face_var_tab  = Data(m_truthTable[EX_FACE_BLOCK]);
+      exo_params.elem_var_tab  = Data(m_truthTable[EX_ELEM_BLOCK]);
+      exo_params.nset_var_tab  = Data(m_truthTable[EX_NODE_SET]);
+      exo_params.eset_var_tab  = Data(m_truthTable[EX_EDGE_SET]);
+      exo_params.fset_var_tab  = Data(m_truthTable[EX_FACE_SET]);
+      exo_params.sset_var_tab  = Data(m_truthTable[EX_SIDE_SET]);
+      exo_params.elset_var_tab = Data(m_truthTable[EX_ELEM_SET]);
 
       if (isParallel) {
         // Check consistency among all processors.  They should all
@@ -1068,7 +1042,7 @@ namespace Ioexnl {
   }
 
   // common
-  void BaseDatabaseIO::flush_database__() const {}
+  void BaseDatabaseIO::flush_database_nl() const {}
 
   void BaseDatabaseIO::finalize_write(int, double) {}
 

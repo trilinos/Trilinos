@@ -43,19 +43,10 @@ C   --   Uses MSCTYP of /MSHLIM/
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4, KNEA=5, KFAR=6)
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /DEFORM/ DEFPRO, DEFOK, DEFFAC, DDFAC, DFAC,
-     &   IXDEF, IYDEF, IZDEF
-      LOGICAL DEFPRO, DEFOK
-
+      include 'd3nums.blk'
+      include 'deform.blk'
       include 'mshopt.blk'
-
-      COMMON /MSHLIM/ UNMESH(KFAR), ALMESH(KFAR),
-     &   ZMMESH(KTOP), RDMESH(KTOP), TICMSH, SQMESH
-      LOGICAL SQMESH
-      COMMON /MSHLIC/ MSCTYP
-      CHARACTER*8 MSCTYP
+      include 'mshlim.blk'
 
       LOGICAL ANYDEF, ANYUND
       LOGICAL DOIXF, DON2B, DOELED, DOELEU, DODEAD, DONPS, DOESS, DOSCAL

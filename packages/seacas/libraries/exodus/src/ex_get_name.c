@@ -34,7 +34,7 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
 {
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -70,7 +70,7 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
     /* If this is a null entity, then 'ent_ndx' will be negative.
      * We don't care in this __func__, so make it positive and continue...
      */
-    int ent_ndx = ex__id_lkup(exoid, obj_type, entity_id);
+    int ent_ndx = exi_id_lkup(exoid, obj_type, entity_id);
     if (ent_ndx < 0) {
       ent_ndx = -ent_ndx;
     }
@@ -81,7 +81,7 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
       int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
       int name_size     = db_name_size < api_name_size ? db_name_size : api_name_size;
 
-      int status = ex__get_name(exoid, varid, ent_ndx - 1, name, name_size, obj_type, __func__);
+      int status = exi_get_name(exoid, varid, ent_ndx - 1, name, name_size, obj_type, __func__);
       if (status != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }

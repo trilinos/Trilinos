@@ -46,6 +46,7 @@
 
 #if defined FMT_SUPPORT
 #include <fmt/format.h>
+#include <fmt/printf.h>
 #endif
 #include <cerrno>
 #include <cfenv>
@@ -388,7 +389,6 @@ namespace SEAMS {
     int yylen = 0;
 
     // Error handling.
-    int yynerrs_     = 0;
     int yyerrstatus_ = 0;
 
     /// The lookahead symbol.
@@ -543,10 +543,8 @@ namespace SEAMS {
 #endif
               }
               else {
-                static char tmpstr[512];
-                int         len =
-                    snprintf(tmpstr, 512, format->value.svar.c_str(), (yystack_[1].value.val));
-                aprepro.lexer->LexerOutput(tmpstr, len);
+                auto tmpstr = fmt::sprintf(format->value.svar, (yystack_[1].value.val));
+                aprepro.lexer->LexerOutput(tmpstr.c_str(), tmpstr.size());
               }
             }
           }
@@ -556,7 +554,7 @@ namespace SEAMS {
           case 6: // line: LBRACE sexp RBRACE
 #line 137 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
-            if (echo && (yystack_[1].value.string) != NULL) {
+            if (echo && (yystack_[1].value.string) != nullptr) {
               aprepro.lexer->LexerOutput((yystack_[1].value.string),
                                          strlen((yystack_[1].value.string)));
             }
@@ -780,7 +778,7 @@ namespace SEAMS {
 #line 172 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.arrfnct_c == NULL))
+                          (yystack_[3].value.tptr)->value.arrfnct_c == nullptr))
               (yylhs.value.arrval) =
                   (*((yystack_[3].value.tptr)->value.arrfnct_c))((yystack_[1].value.string));
             else
@@ -793,7 +791,7 @@ namespace SEAMS {
 #line 178 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.arrfnct_cd == NULL))
+                          (yystack_[5].value.tptr)->value.arrfnct_cd == nullptr))
               (yylhs.value.arrval) = (*((yystack_[5].value.tptr)->value.arrfnct_cd))(
                   (yystack_[3].value.string), (yystack_[1].value.val));
             else
@@ -806,7 +804,7 @@ namespace SEAMS {
 #line 184 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.arrfnct_cc == NULL))
+                          (yystack_[5].value.tptr)->value.arrfnct_cc == nullptr))
               (yylhs.value.arrval) = (*((yystack_[5].value.tptr)->value.arrfnct_cc))(
                   (yystack_[3].value.string), (yystack_[1].value.string));
             else
@@ -819,7 +817,7 @@ namespace SEAMS {
 #line 190 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[7].value.tptr),
-                          (yystack_[7].value.tptr)->value.arrfnct_ddd == NULL))
+                          (yystack_[7].value.tptr)->value.arrfnct_ddd == nullptr))
               (yylhs.value.arrval) = (*((yystack_[7].value.tptr)->value.arrfnct_ddd))(
                   (yystack_[5].value.val), (yystack_[3].value.val), (yystack_[1].value.val));
             else
@@ -832,7 +830,7 @@ namespace SEAMS {
 #line 196 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.arrfnct_dd == NULL))
+                          (yystack_[5].value.tptr)->value.arrfnct_dd == nullptr))
               (yylhs.value.arrval) = (*((yystack_[5].value.tptr)->value.arrfnct_dd))(
                   (yystack_[3].value.val), (yystack_[1].value.val));
             else
@@ -845,7 +843,7 @@ namespace SEAMS {
 #line 202 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.arrfnct_d == NULL))
+                          (yystack_[3].value.tptr)->value.arrfnct_d == nullptr))
               (yylhs.value.arrval) =
                   (*((yystack_[3].value.tptr)->value.arrfnct_d))((yystack_[1].value.val));
             else
@@ -858,7 +856,7 @@ namespace SEAMS {
 #line 208 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.arrfnct_a == NULL))
+                          (yystack_[3].value.tptr)->value.arrfnct_a == nullptr))
               (yylhs.value.arrval) =
                   (*((yystack_[3].value.tptr)->value.arrfnct_a))((yystack_[1].value.arrval));
             else
@@ -1081,7 +1079,7 @@ namespace SEAMS {
 #line 276 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.strfnct_c == NULL))
+                          (yystack_[3].value.tptr)->value.strfnct_c == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[3].value.tptr)->value.strfnct_c))(
                   (yystack_[1].value.string));
             else
@@ -1094,7 +1092,7 @@ namespace SEAMS {
 #line 282 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[2].value.tptr),
-                          (yystack_[2].value.tptr)->value.strfnct == NULL))
+                          (yystack_[2].value.tptr)->value.strfnct == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[2].value.tptr)->value.strfnct))();
             else
               (yylhs.value.string) = (char *)"";
@@ -1106,7 +1104,7 @@ namespace SEAMS {
 #line 288 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.strfnct_d == NULL))
+                          (yystack_[3].value.tptr)->value.strfnct_d == nullptr))
               (yylhs.value.string) =
                   (char *)(*((yystack_[3].value.tptr)->value.strfnct_d))((yystack_[1].value.val));
             else
@@ -1119,7 +1117,7 @@ namespace SEAMS {
 #line 294 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.strfnct_a == NULL))
+                          (yystack_[3].value.tptr)->value.strfnct_a == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[3].value.tptr)->value.strfnct_a))(
                   (yystack_[1].value.arrval));
             else
@@ -1141,7 +1139,7 @@ namespace SEAMS {
 #line 301 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.strfnct_dd == NULL))
+                          (yystack_[5].value.tptr)->value.strfnct_dd == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[5].value.tptr)->value.strfnct_dd))(
                   (yystack_[3].value.val), (yystack_[1].value.val));
             else
@@ -1154,7 +1152,7 @@ namespace SEAMS {
 #line 307 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[11].value.tptr),
-                          (yystack_[11].value.tptr)->value.strfnct_dcccc == NULL))
+                          (yystack_[11].value.tptr)->value.strfnct_dcccc == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[11].value.tptr)->value.strfnct_dcccc))(
                   (yystack_[9].value.val), (yystack_[7].value.string), (yystack_[5].value.string),
                   (yystack_[3].value.string), (yystack_[1].value.string));
@@ -1168,7 +1166,7 @@ namespace SEAMS {
 #line 313 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[7].value.tptr),
-                          (yystack_[7].value.tptr)->value.strfnct_dcc == NULL))
+                          (yystack_[7].value.tptr)->value.strfnct_dcc == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[7].value.tptr)->value.strfnct_dcc))(
                   (yystack_[5].value.val), (yystack_[3].value.string), (yystack_[1].value.string));
             else
@@ -1181,7 +1179,7 @@ namespace SEAMS {
 #line 319 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[7].value.tptr),
-                          (yystack_[7].value.tptr)->value.strfnct_ccc == NULL))
+                          (yystack_[7].value.tptr)->value.strfnct_ccc == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[7].value.tptr)->value.strfnct_ccc))(
                   (yystack_[5].value.string), (yystack_[3].value.string),
                   (yystack_[1].value.string));
@@ -1195,7 +1193,7 @@ namespace SEAMS {
 #line 325 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.strfnct_cc == NULL))
+                          (yystack_[5].value.tptr)->value.strfnct_cc == nullptr))
               (yylhs.value.string) = (char *)(*((yystack_[5].value.tptr)->value.strfnct_cc))(
                   (yystack_[3].value.string), (yystack_[1].value.string));
             else
@@ -1586,7 +1584,7 @@ namespace SEAMS {
 #line 408 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[2].value.tptr),
-                          (yystack_[2].value.tptr)->value.fnctptr == NULL))
+                          (yystack_[2].value.tptr)->value.fnctptr == nullptr))
               (yylhs.value.val) = (*((yystack_[2].value.tptr)->value.fnctptr))();
             else
               (yylhs.value.val) = 0.0;
@@ -1598,7 +1596,7 @@ namespace SEAMS {
 #line 415 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.fnctptr_d == NULL))
+                          (yystack_[3].value.tptr)->value.fnctptr_d == nullptr))
               (yylhs.value.val) =
                   (*((yystack_[3].value.tptr)->value.fnctptr_d))((yystack_[1].value.val));
             else
@@ -1611,7 +1609,7 @@ namespace SEAMS {
 #line 422 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.fnctptr_c == NULL))
+                          (yystack_[3].value.tptr)->value.fnctptr_c == nullptr))
               (yylhs.value.val) =
                   (*((yystack_[3].value.tptr)->value.fnctptr_c))((yystack_[1].value.string));
             else
@@ -1624,7 +1622,7 @@ namespace SEAMS {
 #line 429 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[3].value.tptr),
-                          (yystack_[3].value.tptr)->value.fnctptr_a == NULL))
+                          (yystack_[3].value.tptr)->value.fnctptr_a == nullptr))
               (yylhs.value.val) =
                   (*((yystack_[3].value.tptr)->value.fnctptr_a))((yystack_[1].value.arrval));
             else
@@ -1637,7 +1635,7 @@ namespace SEAMS {
 #line 436 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.fnctptr_cd == NULL))
+                          (yystack_[5].value.tptr)->value.fnctptr_cd == nullptr))
               (yylhs.value.val) = (*((yystack_[5].value.tptr)->value.fnctptr_cd))(
                   (yystack_[3].value.string), (yystack_[1].value.val));
             else
@@ -1650,7 +1648,7 @@ namespace SEAMS {
 #line 443 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.fnctptr_dc == NULL))
+                          (yystack_[5].value.tptr)->value.fnctptr_dc == nullptr))
               (yylhs.value.val) = (*((yystack_[5].value.tptr)->value.fnctptr_dc))(
                   (yystack_[3].value.val), (yystack_[1].value.string));
             else
@@ -1663,7 +1661,7 @@ namespace SEAMS {
 #line 450 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.fnctptr_cc == NULL))
+                          (yystack_[5].value.tptr)->value.fnctptr_cc == nullptr))
               (yylhs.value.val) = (*((yystack_[5].value.tptr)->value.fnctptr_cc))(
                   (yystack_[3].value.string), (yystack_[1].value.string));
             else
@@ -1676,7 +1674,7 @@ namespace SEAMS {
 #line 457 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[7].value.tptr),
-                          (yystack_[7].value.tptr)->value.fnctptr_ccc == NULL))
+                          (yystack_[7].value.tptr)->value.fnctptr_ccc == nullptr))
               (yylhs.value.val) = (*((yystack_[7].value.tptr)->value.fnctptr_ccc))(
                   (yystack_[5].value.string), (yystack_[3].value.string),
                   (yystack_[1].value.string));
@@ -1690,7 +1688,7 @@ namespace SEAMS {
 #line 464 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[5].value.tptr),
-                          (yystack_[5].value.tptr)->value.fnctptr_dd == NULL))
+                          (yystack_[5].value.tptr)->value.fnctptr_dd == nullptr))
               (yylhs.value.val) = (*((yystack_[5].value.tptr)->value.fnctptr_dd))(
                   (yystack_[3].value.val), (yystack_[1].value.val));
             else
@@ -1703,7 +1701,7 @@ namespace SEAMS {
 #line 470 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[7].value.tptr),
-                          (yystack_[7].value.tptr)->value.fnctptr_ddd == NULL))
+                          (yystack_[7].value.tptr)->value.fnctptr_ddd == nullptr))
               (yylhs.value.val) = (*((yystack_[7].value.tptr)->value.fnctptr_ddd))(
                   (yystack_[5].value.val), (yystack_[3].value.val), (yystack_[1].value.val));
             else
@@ -1716,7 +1714,7 @@ namespace SEAMS {
 #line 476 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[7].value.tptr),
-                          (yystack_[7].value.tptr)->value.fnctptr_ccd == NULL))
+                          (yystack_[7].value.tptr)->value.fnctptr_ccd == nullptr))
               (yylhs.value.val) = (*((yystack_[7].value.tptr)->value.fnctptr_ccd))(
                   (yystack_[5].value.string), (yystack_[3].value.string), (yystack_[1].value.val));
             else
@@ -1729,7 +1727,7 @@ namespace SEAMS {
 #line 482 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[9].value.tptr),
-                          (yystack_[9].value.tptr)->value.fnctptr_dddd == NULL))
+                          (yystack_[9].value.tptr)->value.fnctptr_dddd == nullptr))
               (yylhs.value.val) = (*((yystack_[9].value.tptr)->value.fnctptr_dddd))(
                   (yystack_[7].value.val), (yystack_[5].value.val), (yystack_[3].value.val),
                   (yystack_[1].value.val));
@@ -1743,7 +1741,7 @@ namespace SEAMS {
 #line 488 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[9].value.tptr),
-                          (yystack_[9].value.tptr)->value.fnctptr_dddd == NULL))
+                          (yystack_[9].value.tptr)->value.fnctptr_dddd == nullptr))
               (yylhs.value.val) = (*((yystack_[9].value.tptr)->value.fnctptr_dddd))(
                   (yystack_[7].value.val), (yystack_[5].value.val), (yystack_[3].value.val),
                   (yystack_[1].value.val));
@@ -1757,7 +1755,7 @@ namespace SEAMS {
 #line 494 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[11].value.tptr),
-                          (yystack_[11].value.tptr)->value.fnctptr_ddddc == NULL))
+                          (yystack_[11].value.tptr)->value.fnctptr_ddddc == nullptr))
               (yylhs.value.val) = (*((yystack_[11].value.tptr)->value.fnctptr_ddddc))(
                   (yystack_[9].value.val), (yystack_[7].value.val), (yystack_[5].value.val),
                   (yystack_[3].value.val), (yystack_[1].value.string));
@@ -1771,7 +1769,7 @@ namespace SEAMS {
 #line 500 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy"
           {
             if (arg_check((yystack_[13].value.tptr),
-                          (yystack_[13].value.tptr)->value.fnctptr_dddddd == NULL))
+                          (yystack_[13].value.tptr)->value.fnctptr_dddddd == nullptr))
               (yylhs.value.val) = (*((yystack_[13].value.tptr)->value.fnctptr_dddddd))(
                   (yystack_[11].value.val), (yystack_[9].value.val), (yystack_[7].value.val),
                   (yystack_[5].value.val), (yystack_[3].value.val), (yystack_[1].value.val));
@@ -1991,7 +1989,6 @@ namespace SEAMS {
     yyerrlab:
       // If not already recovering from an error, report this error.
       if (!yyerrstatus_) {
-        ++yynerrs_;
         context     yyctx(*this, yyla);
         std::string msg = yysyntax_error_(yyctx);
         error(YY_MOVE(msg));

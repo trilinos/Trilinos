@@ -4,12 +4,9 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_SmartAssert.h>
-
+#include "Ioss_SmartAssert.h"
 #include <cstdlib>
 #include <fstream>
-#include <set>
-#include <sstream>
 #include <stdexcept>
 
 namespace {

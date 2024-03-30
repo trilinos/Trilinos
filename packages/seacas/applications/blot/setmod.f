@@ -24,9 +24,7 @@ C   --   Uses MSHDEF of /MSHOPT/
 C   --   Sets MODDET, MODTYP, NNDVAR, NEDVAR of /DETOPT/
 
       include 'mshopt.blk'
-      COMMON /DETOPT/ IDTVAR(4), NNDVAR, NEDVAR
-      COMMON /DETOPC/ MODDET(4), MODTYP(4)
-      CHARACTER*8 MODDET, MODTYP
+      include 'detopt.blk'
 
       CHARACTER*(*) MMOD, MTYP
 

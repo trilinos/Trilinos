@@ -2,7 +2,7 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020, 2021, 2022
+// Copyright   : (c) Sandia National Labs 2020, 2021, 2022, 2023
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
@@ -23,7 +23,7 @@ namespace NasModules {
     // C++ 14 version
     // this->inStream = make_unique<std::ifstream>(this->inFileName);
     // C++ 11 version
-    this->inStream.reset(new std::ifstream(this->inFileName));
+    this->inStream = std::make_unique<std::ifstream>(this->inFileName);
 
     // Let's set the buffer
     this->inStream->rdbuf()->pubsetbuf(this->_readBuffer, sizeof(this->_readBuffer));
@@ -58,8 +58,9 @@ namespace NasModules {
     for (;;) {
 
       this->inStream->getline(buff, 511);
-      if (this->inStream->eof())
+      if (this->inStream->eof()) {
         break;
+      }
       ++count;
     }
 

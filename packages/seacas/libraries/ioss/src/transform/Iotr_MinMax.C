@@ -1,18 +1,19 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_Transform.h"    // for Factory, Transform
-#include <Ioss_Field.h>        // for Field, etc
-#include <Ioss_VariableType.h> // for VariableType
-#include <algorithm>           // for max_element, min_element
-#include <cmath>               // for fabs
-#include <cstddef>             // for size_t
-#include <cstdlib>             // for abs
-#include <string>              // for operator==, string
-#include <transform/Iotr_MinMax.h>
+#include "Ioss_Field.h"        // for Field, etc
+#include "Ioss_VariableType.h" // for VariableType
+#include "transform/Iotr_MinMax.h"
+#include <cmath>   // for fabs
+#include <cstddef> // for size_t
+#include <stdint.h>
+#include <string> // for operator==, string
+
+#include "Ioss_Transform.h" // for Factory, Transform
+#include "Ioss_TransformFactory.h"
 
 namespace Iotr {
 
@@ -22,12 +23,12 @@ namespace Iotr {
     return &registerThis;
   }
 
-  MinMax_Factory::MinMax_Factory() : Factory("generic_minmax")
+  MinMax_Factory::MinMax_Factory() : Ioss::TransformFactory("generic_minmax")
   {
-    Factory::alias("generic_minmax", "minimum");
-    Factory::alias("generic_minmax", "maximum");
-    Factory::alias("generic_minmax", "absolute_minimum");
-    Factory::alias("generic_minmax", "absolute_maximum");
+    Ioss::TransformFactory::alias("generic_minmax", "minimum");
+    Ioss::TransformFactory::alias("generic_minmax", "maximum");
+    Ioss::TransformFactory::alias("generic_minmax", "absolute_minimum");
+    Ioss::TransformFactory::alias("generic_minmax", "absolute_maximum");
   }
 
   Ioss::Transform *MinMax_Factory::make(const std::string &type) const { return new MinMax(type); }

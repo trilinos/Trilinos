@@ -32,8 +32,7 @@ C   --   Uses NELBLK of /DBNUMS/
 C   --   Uses IS3DIM, NUMNPF of /D3NUMS/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       DIMENSION A(*)
       INTEGER LENF(0:*)

@@ -27,7 +27,7 @@
 /* Convergence check uses Paige bji estimate over the whole
    spectrum of T. This is a lot of work, but we are trying to be
    extra safe. Since we are orthogonalizing fully, we assume the
-   bji esitmates are very good and don't provide a contingency for
+   bji estimates are very good and don't provide a contingency for
    when they don't match the residuals. */
 /* A lot of the time in this routine (say half) is spent in ql finding
    the evals of T on each iteration. This could be reduced by only using

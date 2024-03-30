@@ -1,22 +1,19 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-
-#include <Ionit_Initializer.h>
-#include <Ioss_Hex8.h>
-#include <Ioss_Wedge6.h>
-#include <algorithm>
+#include "Ionit_Initializer.h"
+#include "Ioss_Hex8.h"
+#include "Ioss_Wedge6.h"
 #include <cassert>
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -27,6 +24,7 @@
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
 #include "Ioss_ScopeGuard.h"
@@ -37,9 +35,6 @@
 // ========================================================================
 
 namespace {
-
-  // Data space shared by most field input/output routines...
-  std::vector<char> data;
 
   struct Globals
   {
@@ -281,8 +276,8 @@ namespace {
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::NodeBlockContainer          &nbs = region.get_node_blocks();
-    Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
+    const auto &nbs = region.get_node_blocks();
+    auto        i   = nbs.begin();
     while (i != nbs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -306,9 +301,9 @@ namespace {
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::ElementBlockContainer          &ebs            = region.get_element_blocks();
-    Ioss::ElementBlockContainer::const_iterator i              = ebs.begin();
-    size_t                                      total_elements = 0;
+    const auto &ebs            = region.get_element_blocks();
+    auto        i              = ebs.begin();
+    size_t      total_elements = 0;
     while (i != ebs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -342,14 +337,11 @@ namespace {
 
   void transfer_properties(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge)
   {
-    Ioss::NameList names;
-    ige->property_describe(&names);
-
+    auto names = ige->property_describe();
     // Iterate through properties and transfer to output database...
-    Ioss::NameList::const_iterator I;
-    for (I = names.begin(); I != names.end(); ++I) {
-      if (!oge->property_exists(*I)) {
-        oge->property_add(ige->get_property(*I));
+    for (const auto &name : names) {
+      if (!oge->property_exists(name)) {
+        oge->property_add(ige->get_property(name));
       }
     }
   }
@@ -380,13 +372,13 @@ namespace {
     std::fill(node_normal.begin(), node_normal.end(), 0.0);
 
     // Iterate over the element blocks and calculate node normals
-    std::vector<int>                   conn;
-    std::vector<int>                   output_conn;
-    const Ioss::ElementBlockContainer &ebs     = region.get_element_blocks();
-    const Ioss::ElementBlockContainer &out_ebs = output_region.get_element_blocks();
+    std::vector<int> conn;
+    std::vector<int> output_conn;
+    const auto      &ebs     = region.get_element_blocks();
+    const auto      &out_ebs = output_region.get_element_blocks();
 
-    Ioss::ElementBlockContainer::const_iterator ib     = ebs.begin();
-    Ioss::ElementBlockContainer::const_iterator out_ib = out_ebs.begin();
+    auto ib     = ebs.begin();
+    auto out_ib = out_ebs.begin();
     while (ib != ebs.end() && out_ib != out_ebs.end()) {
       Ioss::ElementBlock *eb = *ib;
       ++ib;

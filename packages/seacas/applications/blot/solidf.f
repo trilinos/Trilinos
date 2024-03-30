@@ -22,9 +22,7 @@ C   --   XN, YN, ZN - IN - the nodal coordinates
       REAL XN(*), YN(*), ZN(*)
 
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4, KNEA=5, KFAR=6)
-      COMMON /MSHLIM/ UNMESH(KFAR), ALMESH(KFAR),
-     &   ZMMESH(KTOP), RDMESH(KTOP), TICMSH, SQMESH
-      LOGICAL SQMESH
+      include 'mshlim.blk'
 
       REAL XPTS(20), YPTS(20)
 

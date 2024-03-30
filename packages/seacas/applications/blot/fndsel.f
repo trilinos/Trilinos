@@ -34,8 +34,7 @@ C   --   Uses NDIM of /DBNUMS/
 C   --   Uses NNPSUR, NUMNPF of /D3NUMS/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       LOGICAL NODVAR
       INTEGER NENUM(NNENUM)

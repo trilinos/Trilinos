@@ -89,17 +89,10 @@ C   --   Uses DEFPRO, DEFOK, DFAC of /DEFORM/
 C   --   Uses ROTMAT, ROTCEN of /ROTOPT/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /DEFORM/ DEFPRO, DEFOK, DEFFAC, DDFAC, DFAC,
-     &  IXDEF, IYDEF, IZDEF
-      LOGICAL DEFPRO, DEFOK
-      COMMON /ROTOPT/ NEWROT, ROTMAT(3,3), ROTCEN(3), EYE(3)
-      LOGICAL NEWROT
-
-      COMMON /SIZES/  NPSIZ
-C      --NPSIZ - the size of the nodal coordinate arrays passed to the
-C      --   HIDDEN routine for partial line
+      include 'd3nums.blk'
+      include 'deform.blk'
+      include 'rotopt.blk'
+      include 'sizes.blk'
 
       DIMENSION A(*)
       LOGICAL NEWSET, NEWFAC

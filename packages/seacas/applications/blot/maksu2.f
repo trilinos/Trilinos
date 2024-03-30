@@ -29,8 +29,7 @@ C   --   Sets NNPSUR, NUMNPF of /D3NUMS/
       PARAMETER (MSHNON=0, MSHBOR=1, MSHDIV=2, MSHSEL=3, MSHALL=4)
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       INTEGER LENL(-2:NELBLK), LINSET(LLNSET,*)
       LOGICAL DODEAD

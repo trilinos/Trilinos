@@ -4,8 +4,8 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      COMMON /VIEWS/  MULTIM,
-     &   XISSYM, YISSYM, XAXSYM, YAXSYM, LFTSYM, BOTSYM
+      COMMON /VIEWS/  XAXSYM, YAXSYM, MULTIM,
+     &   XISSYM, YISSYM, LFTSYM, BOTSYM
       LOGICAL MULTIM, XISSYM, YISSYM, LFTSYM, BOTSYM
 C      --MULTIM - true iff times are overlaid
 C      --XISSYM - true iff X views are symmetric vs copies

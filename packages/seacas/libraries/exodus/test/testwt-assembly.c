@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 
   /* ======================================================================== */
   /* write element block parameters */
-  struct ex_block blocks[num_elem_blk];
+  struct ex_block blocks[7];
   for (int i = 0; i < num_elem_blk; i++) {
     blocks[i] = (ex_block){.type = EX_ELEM_BLOCK, .num_entry = 1, .id = i + 10};
   }

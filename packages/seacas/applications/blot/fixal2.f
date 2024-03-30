@@ -25,8 +25,7 @@ C   --Common Variables:
 C   --   Uses NELBLK of /DBNUMS/
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       LOGICAL ALIVE(NUMEL)
       INTEGER LENF(0:NELBLK+2)

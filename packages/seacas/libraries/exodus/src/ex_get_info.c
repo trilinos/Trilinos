@@ -7,7 +7,7 @@
  */
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex__trim, etc
+#include "exodusII_int.h" // for EX_FATAL, exi_trim, etc
 
 /*!
   \ingroup Utilities
@@ -50,7 +50,7 @@ int ex_get_info(int exoid, char **info)
   int status;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -98,7 +98,7 @@ int ex_get_info(int exoid, char **info)
         EX_FUNC_LEAVE(EX_FATAL);
       }
       info[i][MAX_LINE_LENGTH] = '\0';
-      ex__trim(info[i]);
+      exi_trim(info[i]);
     }
   }
   EX_FUNC_LEAVE(EX_NOERR);

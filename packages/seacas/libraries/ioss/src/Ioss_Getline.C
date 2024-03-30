@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993, 2021, 2022, 2023 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2021, 2022, 2023, 2024 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -24,8 +24,10 @@
 #define __windows__ 1
 #include <conio.h>
 #include <io.h>
+
 #define NOMINMAX
 #include <windows.h>
+
 #define sleep(a) Sleep(a * 1000)
 #ifndef write
 #define write _write
@@ -39,15 +41,20 @@
 #endif
 
 /********************* C library headers ********************************/
-#include <cctype>
-#include <cerrno>
-#include <cstdio>
+#include <array>
 #include <cstdlib>
 #include <cstring>
+#include <ctype.h>
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
+#ifdef __EMSCRIPTEN__
+#include <errno.h>
+#elif __unix__
+#include <sys/errno.h>
+#endif
 
+#include "Ioss_CodeTypes.h"
 #include "Ioss_Getline.h"
 
 namespace {
@@ -118,8 +125,12 @@ namespace {
 #endif
 
 namespace {
-#ifdef __unix__
+#if defined(__EMSCRIPTEN__) || defined(__unix__)
+#ifdef __EMSCRIPTEN__
 #include <termios.h>
+#elif __unix__
+#include <sys/termios.h>
+#endif
   struct termios io_new_termios;
   struct termios io_old_termios;
 #endif
@@ -237,10 +248,12 @@ namespace {
   {
     char ch = (char)(unsigned char)c;
 
-    write(1, &ch, 1);
+    IOSS_MAYBE_UNUSED auto result = write(1, &ch, 1);
+    IOSS_PAR_UNUSED(result);
     if (ch == '\n') {
-      ch = '\r';
-      write(1, &ch, 1); /* RAW mode needs '\r', does not hurt */
+      ch     = '\r';
+      result = write(1, &ch, 1); /* RAW mode needs '\r', does not hurt */
+      IOSS_PAR_UNUSED(result);
     }
   }
 
@@ -249,8 +262,9 @@ namespace {
   void gl_puts(const char *const buf)
   {
     if (buf) {
-      int len = strlen(buf);
-      write(1, buf, len);
+      int                    len    = strlen(buf);
+      IOSS_MAYBE_UNUSED auto result = write(1, buf, len);
+      IOSS_PAR_UNUSED(result);
     }
   }
 
@@ -259,7 +273,8 @@ namespace {
     int len = strlen(buf);
 
     gl_cleanup();
-    write(2, buf, len);
+    IOSS_MAYBE_UNUSED auto result = write(2, buf, len);
+    IOSS_PAR_UNUSED(result);
     exit(1);
   }
 
@@ -721,9 +736,9 @@ namespace {
 #define HIST_SIZE 100
 #endif
 
-  int   hist_pos = 0, hist_last = 0;
-  char *hist_buf[HIST_SIZE];
-  char  hist_empty_elem[2] = "";
+  int                           hist_pos = 0, hist_last = 0;
+  std::array<char *, HIST_SIZE> hist_buf;
+  char                          hist_empty_elem[2] = "";
 
   void hist_init()
   {

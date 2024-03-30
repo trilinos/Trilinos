@@ -11,11 +11,11 @@
 /*****************************************************************************/
 /* Function(s) contained in this file:
  *
- *     ex__leavedef()
- *     ne__id_lkup()
- *     ex__get_file_type()
- *     ex__put_nemesis_version()
- *     ne__check_file_version()
+ *     exi_leavedef()
+ *     nei_id_lkup()
+ *     exi_get_file_type()
+ *     exi_put_nemesis_version()
+ *     nei_check_file_version()
  *     ex_get_idx()
  *
  *****************************************************************************
@@ -37,7 +37,7 @@ char *ne_ret_string;
 /* Note: This function assumes a 1-d vector of data for "ne_var_name".
  */
 /*****************************************************************************/
-int ne__id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne_var_id)
+int nei_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne_var_id)
 {
   int status;
   int varid;
@@ -111,7 +111,7 @@ int ne__id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id n
 /* This function retrieves the file type from a Nemesis file.
  */
 /*****************************************************************************/
-int ex__get_file_type(int exoid, char *ftype)
+int exi_get_file_type(int exoid, char *ftype)
 {
   EX_FUNC_ENTER();
 
@@ -152,7 +152,7 @@ int ex__get_file_type(int exoid, char *ftype)
 /* This function outputs the Nemesis version information to the file.
  */
 /*****************************************************************************/
-int ex__put_nemesis_version(int exoid)
+int exi_put_nemesis_version(int exoid)
 {
   EX_FUNC_ENTER();
 
@@ -192,7 +192,7 @@ int ex__put_nemesis_version(int exoid)
 /* This function checks that the version info is correct.
  */
 /*****************************************************************************/
-int ne__check_file_version(int exoid)
+int nei_check_file_version(int exoid)
 {
 #if 0
   float  file_ver;
