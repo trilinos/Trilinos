@@ -1,4 +1,4 @@
-name: PR-gcc-openmpi
+name: AT2-EXPERIMENTAL
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  triloamd01-gcc:
+  gcc10-openmpi416-EXPERIMENTAL:
     runs-on: [self-hosted, triloamd01]
     if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
     steps:
@@ -70,7 +70,7 @@ jobs:
           bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
       - name: build trilinos
         working-directory: /home/Trilinos/build
-        run: bash -l -c "ninja"
+        run: bash -l -c "ninja -j36"
       - name: ctest
         working-directory: /home/Trilinos/build
         run: bash -l -c "ctest -j36"
