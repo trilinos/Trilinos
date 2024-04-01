@@ -14,8 +14,6 @@
 #include "Ioss_ZoneConnectivity.h"
 #include <array>
 #include <cassert>
-#include <fmt/core.h>
-#include <fmt/ostream.h>
 #include <iosfwd>
 #include <stddef.h>
 #include <stdint.h>
@@ -370,10 +368,3 @@ namespace Ioss {
   };
 } // namespace Ioss
 
-#if FMT_VERSION >= 90000
-namespace fmt {
-  template <> struct formatter<Ioss::BoundaryCondition> : ostream_formatter
-  {
-  };
-} // namespace fmt
-#endif
