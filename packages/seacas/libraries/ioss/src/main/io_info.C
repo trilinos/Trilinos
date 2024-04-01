@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -305,11 +305,7 @@ namespace {
       if (!sb->m_zoneConnectivity.empty()) {
         fmt::print("\tConnectivity with other blocks:\n");
         for (const auto &zgc : sb->m_zoneConnectivity) {
-#if defined __NVCC__
           std::cout << zgc << "\n";
-#else
-          fmt::print("{}\n", zgc);
-#endif
         }
       }
       if (!sb->m_boundaryConditions.empty()) {
@@ -323,11 +319,7 @@ namespace {
                    });
 
         for (const auto &bc : sb_bc) {
-#if defined __NVCC__
           std::cout << bc << "\n";
-#else
-          fmt::print("{}\n", bc);
-#endif
         }
       }
       if (interFace.compute_bbox()) {
