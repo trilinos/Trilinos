@@ -22,6 +22,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Checkout PR ref
+        shell: bash -l
         run: |
           cd $GITHUB_WORKSPACE
           gh pr checkout ${{ github.event.number }}
@@ -29,6 +30,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
           GH_TOKEN: ${{ github.token }}
       - name: Spack build
+        shell: bash -l
         run: |
           spack develop --no-clone --path $GITHUB_WORKSPACE trilinos@develop
           spack add trilinos@develop
