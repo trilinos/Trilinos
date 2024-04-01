@@ -271,8 +271,10 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
+#if defined(EX_CAN_USE_NC_DEF_VAR_FILL)
       int fill = NC_FILL_CHAR;
       nc_def_var_fill(exoid, temp, 0, &fill);
+#endif
       eb_array[iblk] = temp;
 
       dims[0] = numelbdim;
