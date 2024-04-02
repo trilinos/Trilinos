@@ -308,16 +308,13 @@ namespace Tpetra {
       using Teuchos::ArrayView;
       using Teuchos::RCP;
 
-      typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
       typedef Tpetra::Map<LO,GO,Node>                   map_type;
       typedef Tpetra::CrsGraph<LO,GO,Node>              crs_graph_type;
       typedef Tpetra::CrsMatrix<Scalar, LO,GO,Node>     crs_matrix_type;
 
       using local_graph_device_type  = typename crs_matrix_type::local_graph_device_type;
-      using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
       using row_map_type             = typename local_graph_device_type::row_map_type::non_const_type;
       using entries_type             = typename local_graph_device_type::entries_type::non_const_type;
-      using values_type              = typename local_matrix_device_type::values_type::non_const_type;
 
       using offset_type              = typename row_map_type::non_const_value_type;
 
@@ -342,15 +339,19 @@ namespace Tpetra {
       const offset_type bs2 = blockSize * blockSize;
 
       {
+        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillCrsGraph");
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
 
-        LO block_rows = (pointRowptr.extent(0)-1)/blockSize;
+        TEUCHOS_TEST_FOR_EXCEPTION(pointColind.extent(0) % bs2 != 0,
+          std::runtime_error, "Tpetra::getBlockCrsGraph: "
+          "local number of non zero entries is not a multiple of blockSize^2 ");
+
+        LO block_rows = pointRowptr.extent(0) == 0 ? 0 : (pointRowptr.extent(0)-1)/blockSize;
         row_map_type blockRowptr("blockRowptr", block_rows+1);
         entries_type blockColind("blockColind", pointColind.extent(0)/(bs2));
 
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillCrsGraph");
         Kokkos::parallel_for("fillMesh",range_type(0,block_rows), KOKKOS_LAMBDA(const LO i) {
 
           const LO offset_b = pointRowptr(i*blockSize)/bs2;
@@ -393,8 +394,6 @@ namespace Tpetra {
       using Teuchos::RCP;
 
       typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
-      typedef Tpetra::Map<LO,GO,Node>                   map_type;
-      typedef Tpetra::CrsGraph<LO,GO,Node>              crs_graph_type;
       typedef Tpetra::CrsMatrix<Scalar, LO,GO,Node>     crs_matrix_type;
 
       using local_graph_device_type  = typename crs_matrix_type::local_graph_device_type;
@@ -413,12 +412,12 @@ namespace Tpetra {
 
       auto meshCrsGraph = getBlockCrsGraph(pointMatrix, blockSize);
       {
+        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillBlockCrsMatrix");
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
         auto pointColind = pointLocalGraph.entries;
 
-        offset_type block_rows = (pointRowptr.extent(0)-1)/blockSize;
-        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillBlockCrsMatrix");
+        offset_type block_rows = pointRowptr.extent(0) == 0 ? 0 : (pointRowptr.extent(0)-1)/blockSize;
         values_type blockValues("values",  meshCrsGraph->getLocalNumEntries()*bs2);
         auto pointValues = pointMatrix.getLocalValuesDevice (Access::ReadOnly);
         auto blockRowptr = meshCrsGraph->getLocalGraphDevice().row_map;
