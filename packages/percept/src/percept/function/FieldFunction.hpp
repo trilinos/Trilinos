@@ -192,7 +192,7 @@
     void FieldFunction::helper(const stk::mesh::BulkData& bulk, MDArray& input_phy_points, MDArray& output_field_values,
                                const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional)
     {
-      VERIFY_OP_ON(parametric_coordinates.rank(), ==, 2, "FieldFunction::operator() parametric_coordinates bad rank");
+      //VERIFY_OP_ON(parametric_coordinates.rank(), ==, 2, "FieldFunction::operator() parametric_coordinates bad rank");
       VERIFY_OP_ON(output_field_values.rank(), <=, 3, "FieldFunction::operator() output_field_values bad rank");
 
       int numInterpPoints = parametric_coordinates.extent_int(0);

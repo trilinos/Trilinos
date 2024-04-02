@@ -875,7 +875,7 @@
         Kokkos::DynRankView<double,Kokkos::HostSpace> param_coord("param_coord",cell_topo.getDimension());
         for (unsigned iNode = 0; iNode < FromTopology::node_count; iNode++)
           {              
-            Intrepid2::CellTools<double>::getReferenceNode(param_coord, cell_topo, iNode);
+            Intrepid2::CellTools<Kokkos::HostSpace>::getReferenceNode(param_coord, cell_topo, iNode);
             ref_topo_x[iNode].parametric_coordinates[0] = param_coord(0);
             ref_topo_x[iNode].parametric_coordinates[1] = param_coord(1);
             ref_topo_x[iNode].parametric_coordinates[2] = param_coord(2);

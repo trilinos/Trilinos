@@ -66,7 +66,7 @@
       void operator()(MDArray& integrand_values, MDArray& output_values, double time_value_optional=0.0)
       {
         VERIFY_OP(integrand_values.size(), ==, output_values.size(), "LN_NormOp::operator() bad sizes");
-        for (int i = 0; i < integrand_values.size(); i++)
+        for (size_t i = 0; i < integrand_values.size(); i++)
           {
             output_values[i] = std::pow(std::fabs(integrand_values[i]), double(std::fabs(Power)) );
           }
@@ -154,7 +154,7 @@
         VERIFY_OP_ON(m_selector, !=, 0, "logic error 2");
         delete m_selector;
         m_selector = new stk::mesh::Selector;
-        for (int i = 0; i < partNames.extent_int(0); i++)
+        for (size_t i = 0; i < partNames.extent_int(0); i++)
           {
             stk::mesh::Part * part = bulkData.mesh_meta_data().get_part(partNames(i));
             if (!part) throw std::runtime_error(std::string("No part named ") +partNames(i));

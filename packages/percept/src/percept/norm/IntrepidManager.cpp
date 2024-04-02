@@ -446,41 +446,11 @@
             }
         }
 
-      // FIXME for multiple points
-      if (input_phy_points.rank() == 1)
-        {
-          VERIFY_1("IsInElement::isInElement bad rank of input_phy_points");
-        }
-      VERIFY_OP(input_phy_points.extent_int(0), == , 1, "IsInElement::isInElement bad input_phy_points 1st dim");
-      if (input_phy_points.extent_int(1) < (int)cellDim)
-        {
-          std::cout << "IsInElement::isInElement bad input_phy_points 2nd dim";
-        }
-      VERIFY_OP(input_phy_points.extent_int(1), >= , (int)cellDim, "IsInElement::isInElement bad input_phy_points 2nd dim");
-
-      if (found_parametric_coordinates.rank() == 1)
-        {
-          VERIFY_1("IsInElement::isInElement bad rank of found_parametric_coordinates");
-        }
-      VERIFY_OP(found_parametric_coordinates.extent_int(0), == , 1, "IsInElement::isInElement bad found_parametric_coordinates 1st dim");
-      VERIFY_OP(found_parametric_coordinates.extent_int(1), == , (int)cellDim,
-                "IsInElement::isInElement bad found_parametric_coordinates 2nd dim");
-
       Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo);
-      MDArrayUInt inclusion_results("inclusion_results", 1);  // FIXME
+      MDArrayUInt inclusion_results("inclusion_results", 1, 1);  // FIXME
       double threshold = 1.e-4; // (INTREPID_THRESHOLD default = 10*double_eps ~ 20e-16)
       Intrepid2::CellTools<Kokkos::HostSpace>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo, threshold);
-      found_it = inclusion_results(0);
-      if (found_it)
-        {
-          // for testing only
-          if (0)
-            {
-              MDArray images("images", 1, cellDim );
-              //Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(images, preImages, triNodes, triangle_3);
-              Intrepid2::CellTools<Kokkos::HostSpace>::mapToPhysicalFrame(images, found_parametric_coordinates, cellWorkset, topo);
-            }
-        }
+      found_it = inclusion_results(0,0);
     }
 
     void IntrepidManager::more_template_instantiations()

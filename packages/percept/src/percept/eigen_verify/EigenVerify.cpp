@@ -226,8 +226,6 @@ write_mac(Kokkos::View<double**,Kokkos::HostSpace> & mac_values,
 
 void EigenVerify::run(int argc, char** argv)
 {
-  stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
-
   process_options();
   clp.parse( argc, argv );
 
@@ -322,7 +320,6 @@ void EigenVerify::run(int argc, char** argv)
   }
   delete mesh_data[0];
   delete mesh_data[1];
-  stk::parallel_machine_finalize();
 }
 
 } //namespace percept

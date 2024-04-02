@@ -111,6 +111,7 @@ namespace percept {
   {
 
 #if defined( STK_HAS_MPI )
+    Kokkos::finalize();
     stk::parallel_machine_finalize();
 #endif
 
@@ -2066,6 +2067,7 @@ namespace percept {
 
 #if defined( STK_HAS_MPI )
     m_comm = stk::ParallelMachine(stk::parallel_machine_init(&argc, &argv));
+    Kokkos::initialize(argc,argv);
 #endif
 
     EXCEPTWATCH;

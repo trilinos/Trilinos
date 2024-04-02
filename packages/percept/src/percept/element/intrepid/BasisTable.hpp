@@ -28,6 +28,7 @@
       using BasisTableMap = std::map<unsigned, BasisTypeRCP >;
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
+      static void destroyBasisTable() {m_basisTable.clear();}
 
     private:
       static BasisTableMap m_basisTable;

@@ -2754,6 +2754,8 @@
 
           //Note: the 99's are filled in programatically
 
+          typedef const UInt * const *ChildNodeTableConst;
+
           static UInt child_node_table_0[][15] = {
             {  0, 5, 13, 8, 9,    99,99,99,99, 99,99,99,99, 99, EUA},
             {  5, 1, 6, 13, 10,   99,99,99,99, 99,99,99,99, 99, EUA},

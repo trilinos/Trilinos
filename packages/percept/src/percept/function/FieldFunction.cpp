@@ -163,7 +163,7 @@
       unsigned found_it = 0;
 
       int D_ = last_dimension(input_phy_points);
-      MDArray found_parametric_coordinates_one("found_parametric_coordinates_one", 1, D_);
+      MDArray found_parametric_coordinates_one("found_parametric_coordinates_one", 1, 1, D_);
       setup_searcher(D_);
 
       MDArray output_field_values_local = output_field_values;
@@ -175,7 +175,7 @@
       // FIXME for tensor valued fields
       int DOF_ = last_dimension(output_field_values_local);
 
-      MDArray input_phy_points_one("input_phy_points_one",1,D_);
+      MDArray input_phy_points_one("input_phy_points_one",1,1,D_);
       MDArray output_field_values_one("output_field_values_one",1,DOF_);
 
       int C_ = 1;
@@ -191,9 +191,9 @@
                 {
                   switch(R_input)
                     {
-                    case 1: input_phy_points_one(0, iD) = input_phy_points(iD); break;
-                    case 2: input_phy_points_one(0, iD) = input_phy_points(iP, iD); break;
-                    case 3: input_phy_points_one(0, iD) = input_phy_points(iC, iP, iD); break;
+                    case 1: input_phy_points_one(0, 0, iD) = input_phy_points(iD); break;
+                    case 2: input_phy_points_one(0, 0, iD) = input_phy_points(iP, iD); break;
+                    case 3: input_phy_points_one(0, 0, iD) = input_phy_points(iC, iP, iD); break;
                     default: VERIFY_1("bad rank");
                     }
                 }
@@ -213,7 +213,9 @@
                   if (( EXTRA_PRINT) && m_searchType==STK_SEARCH)
                     std::cout << "FieldFunction::operator() found element # = " << m_bulkData->identifier(found_element) << std::endl;
 
-                  (*this)(input_phy_points_one, output_field_values_one, found_element, found_parametric_coordinates_one);
+                  auto found_parametric_coordinates = Kokkos::subview(found_parametric_coordinates_one, 0, Kokkos::ALL(), Kokkos::ALL());
+
+                  (*this)(input_phy_points, output_field_values, found_element, found_parametric_coordinates);
 
                   for (int iDOF = 0; iDOF < DOF_; iDOF++)
                     {

@@ -110,7 +110,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
       compute_nodal_coords(*tocoordinates, theNode, &coord[0]);
     }
 
-    DynRankView inputPhysicalPoints("LI:inputPhysicalPoints", 1,nDim);
+    DynRankView inputPhysicalPoints("LI:inputPhysicalPoints",1,1,nDim);
 
     double rz_coord[2];
     switch(ToPoints.transferType_) {
@@ -154,7 +154,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
 
       std::vector<double> isoParCoords(nDim);
 
-      DynRankView outputParametricPoints("LI:outputParametricPoints",1,nDim);
+      DynRankView outputParametricPoints("LI:outputParametricPoints",1,1,nDim);
       shards::CellTopology topo(bucket_cell_topo_data);
 
       double dist = 0.0;
@@ -162,7 +162,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
       if (topo.getKey()==shards::Particle::key) {
         dist = 0.0;
         for ( unsigned j = 0; j < nDim; ++j ) {
-          dist += std::pow(cellWorkset(0,0,j) - inputPhysicalPoints(0,j), 2);
+          dist += std::pow(cellWorkset(0,0,j) - inputPhysicalPoints(0,0,j), 2);
         }
         dist = std::sqrt(dist);
       }
@@ -170,12 +170,18 @@ LinInterp<FROM,TO>::filter_to_nearest (
         // do nothing
       }
       else {
+        /*std::cout << outputParametricPoints.rank() << " "
+                  << inputPhysicalPoints.rank() << ""
+                  << std::endl;
+        std::cout << outputParametricPoints.size() << " "
+                  << inputPhysicalPoints.size() << " "
+                  << std::endl;*/
         Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame(outputParametricPoints,
                                                          inputPhysicalPoints,
                                                          cellWorkset,
                                                          topo);
         
-        dist = parametricDistanceToEntity(&outputParametricPoints(0,0), topo);
+        dist = parametricDistanceToEntity(outputParametricPoints.data(), topo);
       }
 
       if ( dist < (1.0 + parametric_tolerance) && dist < best_dist ) {
@@ -183,7 +189,7 @@ LinInterp<FROM,TO>::filter_to_nearest (
         best_dist = dist;
 
 	for ( unsigned j = 0; j < nDim; ++j ) {
-	  isoParCoords[j] = outputParametricPoints(0,j);
+	  isoParCoords[j] = outputParametricPoints(0,0,j);
 	}
 
         ToPoints.TransferInfo_[thePt] = isoParCoords;

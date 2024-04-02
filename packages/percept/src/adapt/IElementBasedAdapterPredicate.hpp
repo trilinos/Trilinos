@@ -32,7 +32,7 @@
      */
 
     // Example
-    struct IElementBasedAdapterPredicate : public std::function<int(const stk::mesh::Entity)> {
+    struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity , int> {
       PerceptMesh& m_eMesh;
       stk::mesh::Selector * m_eb_selector;
       stk::mesh::FieldBase *m_field;
