@@ -586,6 +586,14 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupLineSmooth
       myparamList.set("partitioner: map", TVertLineIdSmoo);
       myparamList.set("partitioner: local parts", maxPart + 1);
     } else {
+      if (myparamList.isParameter("partitioner: block size") &&
+          myparamList.get<int>("partitioner: block size") != -1) {
+        int block_size = myparamList.get<int>("partitioner: block size");
+        TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % block_size != 0, Exceptions::RuntimeError,
+                                   "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the specified block size.");
+        numLocalRows /= block_size;
+      }
+
       // we assume a constant number of DOFs per node
       size_t numDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
 

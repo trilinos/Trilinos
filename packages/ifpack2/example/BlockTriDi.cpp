@@ -18,7 +18,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),numRepeats(1),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),sublinesPerLineSchur(1),useStackedTimer(false),overlapCommAndComp(false){}
+  CmdLineArgs ():blockSize(-1),numIters(10),numRepeats(1),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),sublinesPerLineSchur(1),useStackedTimer(false),usePointMatrix(false),overlapCommAndComp(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -37,6 +37,7 @@ struct CmdLineArgs {
   int sublinesPerLine;
   int sublinesPerLineSchur;
   bool useStackedTimer;
+  bool usePointMatrix;
   bool overlapCommAndComp;
   std::string problemName;
   std::string matrixType;
@@ -68,6 +69,8 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("sublinesPerLine", &args.sublinesPerLine, "If using inline meshing, number of sublines per mesh x line. If set to -1 the block Jacobi algorithm is used.");
   cmdp.setOption ("withStackedTimer", "withoutStackedTimer", &args.useStackedTimer,
       "Whether to run with a StackedTimer and print the timer tree at the end (and try to output Watchr report)");
+  cmdp.setOption ("withPointMatrix", "withoutPointMatrix", &args.usePointMatrix,
+      "Whether to run with a point matrix");
   cmdp.setOption ("withOverlapCommAndComp", "withoutOverlapCommAndComp", &args.overlapCommAndComp,
 		  "Whether to run with overlapCommAndComp)");
   cmdp.setOption("problemName", &args.problemName, "Human-readable problem name for Watchr plot");
@@ -279,7 +282,6 @@ main (int argc, char* argv[])
   using std::cerr;
   using std::endl;
   typedef Tpetra::CrsMatrix<> crs_matrix_type;
-  typedef Tpetra::BlockCrsMatrix<> block_crs_matrix_type;
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::MultiVector<> MV;
   typedef Tpetra::RowMatrix<> row_matrix_type;
@@ -358,11 +360,15 @@ main (int argc, char* argv[])
 
   // Read sparse matrix A from Matrix Market file.
   RCP<crs_matrix_type> A;
-  RCP<block_crs_matrix_type> Ablock;
+  RCP<row_matrix_type> Ablock;
   RCP<MV> B,X;
   RCP<IV> line_info;
 #if defined(HAVE_IFPACK2_XPETRA)
   if(args.matrixFilename == "") {
+    if (args.usePointMatrix) {
+      std::string msg = "usePointMatrix with inline matrix is not yet implemented";
+      throw std::runtime_error(msg);      
+    }
     // matrix
     Teuchos::ParameterList plist;
     if(args.matrixType == "") {
@@ -575,7 +581,10 @@ main (int argc, char* argv[])
 
   {
     Teuchos::TimeMonitor precSetupTimeMon (*precSetupTime);
-    precond = rcp(new BTDC(Ablock,parts,args.sublinesPerLineSchur,args.overlapCommAndComp));
+    if(args.usePointMatrix)
+      precond = rcp(new BTDC(A,parts,args.sublinesPerLineSchur,args.overlapCommAndComp, false, args.blockSize));
+    else
+      precond = rcp(new BTDC(Ablock,parts,args.sublinesPerLineSchur,args.overlapCommAndComp));
 
     if(rank0) std::cout<<"Initializing preconditioner..."<<std::endl;
     precond->initialize ();

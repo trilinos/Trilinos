@@ -44,6 +44,7 @@
 
 #include "Tpetra_BlockCrsMatrix_fwd.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Teuchos_RCP.hpp"
 #include <string>
@@ -87,6 +88,18 @@ namespace Tpetra {
   */
   template<class Scalar, class LO, class GO, class Node>
   void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params);
+
+  /// \brief Non-member constructor that creates the CrsGraph of a BlockCrsMatrix
+  /// from an existing point CrsMatrix and a block size.
+  ///
+  /// This function accepts an already constructed point version of the block matrix.
+  /// Assumptions:
+  ///   - All point entries in a logical block must be stored in the CrsMatrix, even
+  ///     if the values are zero.
+  ///   - Point rows corresponding to a particular mesh node must be stored consecutively.
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>
+  getBlockCrsGraph(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize);
 
   /// \brief Non-member constructor that creates a BlockCrsMatrix from an existing point CrsMatrix.
   ///
