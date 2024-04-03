@@ -32,7 +32,7 @@ private:
   bool hasLinearEquality_;
   bool hasLinearInequality_;
   bool hasProximableObjective_; 
-	unsigned cnt_econ_;
+  unsigned cnt_econ_;
   unsigned cnt_icon_;
   unsigned cnt_linear_econ_;
   unsigned cnt_linear_icon_;
@@ -40,7 +40,7 @@ private:
   ParameterList ppa_list_;
 
   Ptr<Objective<Real>>            obj_;
-	Ptr<Objective<Real>>            nobj_; 
+  Ptr<Objective<Real>>            nobj_; 
   Ptr<Vector<Real>>               xprim_;
   Ptr<Vector<Real>>               xdual_;
   Ptr<BoundConstraint<Real>>      bnd_;
@@ -57,7 +57,7 @@ private:
 protected:
 
   Ptr<Objective<Real>>                                 INPUT_obj_;
-	Ptr<Objective<Real>>                                 INPUT_nobj_; 
+  Ptr<Objective<Real>>                                 INPUT_nobj_; 
   Ptr<Vector<Real>>                                    INPUT_xprim_;
   Ptr<Vector<Real>>                                    INPUT_xdual_;
   Ptr<BoundConstraint<Real>>                           INPUT_bnd_;
@@ -199,7 +199,7 @@ public:
   void addProximableObjective(const Ptr<Objective<Real>> &nobj); 
 	/** Remove Proximable objective function
 	*/
-	void removeProximableObjective(); 
+  void removeProximableObjective(); 
 
 
   /***************************************************************************/
@@ -210,8 +210,8 @@ public:
   */
   const Ptr<Objective<Real>>&            getObjective();
   
-	/** Get proximable objective
-	*/
+  /** Get proximable objective
+  */
   const Ptr<Objective<Real>>&            getProximableObjective();   
 
   /** \brief Get the primal optimization space vector.

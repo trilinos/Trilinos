@@ -168,9 +168,9 @@ int main(int argc, char *argv[]) {
     list.sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "SPG");  
     sol->zero();
     auto problem = ROL::makePtr<ROL::Problem<RealT>>(sobj, sol); // check 
-	  problem->addProximableObjective(nobj);
-	  problem->finalize(false, true, *outStream); 
-	  ROL::Solver<RealT> solverspg(problem, list); 	
+    problem->addProximableObjective(nobj);
+    problem->finalize(false, true, *outStream); 
+    ROL::Solver<RealT> solverspg(problem, list); 	
 
     auto begin = std::chrono::high_resolution_clock::now();
     solverspg.solve(*outStream); 

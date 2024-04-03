@@ -222,7 +222,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
         problemType_ = TYPE_U;
         obj_         = INPUT_obj_;
         nobj_        = nullPtr; 
-				xprim_       = INPUT_xprim_;
+        xprim_       = INPUT_xprim_;
         xdual_       = INPUT_xdual_;
         bnd_         = nullPtr;
         con_         = nullPtr;
