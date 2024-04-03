@@ -65,7 +65,8 @@ private:
   bool hasInequality_;
   bool hasLinearEquality_;
   bool hasLinearInequality_;
-  unsigned cnt_econ_;
+  bool hasProximableObjective_; 
+	unsigned cnt_econ_;
   unsigned cnt_icon_;
   unsigned cnt_linear_econ_;
   unsigned cnt_linear_icon_;
@@ -73,6 +74,7 @@ private:
   ParameterList ppa_list_;
 
   Ptr<Objective<Real>>            obj_;
+	Ptr<Objective<Real>>            nobj_; 
   Ptr<Vector<Real>>               xprim_;
   Ptr<Vector<Real>>               xdual_;
   Ptr<BoundConstraint<Real>>      bnd_;
@@ -89,6 +91,7 @@ private:
 protected:
 
   Ptr<Objective<Real>>                                 INPUT_obj_;
+	Ptr<Objective<Real>>                                 INPUT_nobj_; 
   Ptr<Vector<Real>>                                    INPUT_xprim_;
   Ptr<Vector<Real>>                                    INPUT_xdual_;
   Ptr<BoundConstraint<Real>>                           INPUT_bnd_;
@@ -119,12 +122,14 @@ public:
        hasInequality_(problem.hasInequality_),
        hasLinearEquality_(problem.hasLinearEquality_),
        hasLinearInequality_(problem.hasLinearInequality_),
+       hasProximableObjective_(problem.hasProximableObjective_), 
        cnt_econ_(problem.cnt_econ_),
        cnt_icon_(problem.cnt_icon_),
        cnt_linear_econ_(problem.cnt_linear_econ_),
        cnt_linear_icon_(problem.cnt_linear_icon_),
        ppa_list_(problem.ppa_list_),
        INPUT_obj_(problem.INPUT_obj_),
+       INPUT_nobj_(problem.INPUT_nobj_),
        INPUT_xprim_(problem.INPUT_xprim_),
        INPUT_xdual_(problem.INPUT_xdual_),
        INPUT_bnd_(problem.INPUT_bnd_),
@@ -222,6 +227,14 @@ public:
       @param[in] ppa  polyhedral projection algorithm
   */
   void setProjectionAlgorithm(ParameterList &parlist);
+  
+	/** Set Proximable objective function
+	*/
+  void addProximableObjective(const Ptr<Objective<Real>> &nobj); 
+	/** Remove Proximable objective function
+	*/
+	void removeProximableObjective(); 
+
 
   /***************************************************************************/
   /*** Accessor methods ******************************************************/
@@ -230,6 +243,10 @@ public:
   /** \brief Get the objective function.
   */
   const Ptr<Objective<Real>>&            getObjective();
+  
+	/** Get proximable objective
+	*/
+  const Ptr<Objective<Real>>&            getProximableObjective();   
 
   /** \brief Get the primal optimization space vector.
   */
@@ -260,7 +277,7 @@ public:
   */
   const Ptr<PolyhedralProjection<Real>>& getPolyhedralProjection();
 
-  /** \brief Get the optimization problem type (U, B, E, or G).
+  /** \brief Get the optimization problem type (U, B, E, G, or P).
   */
   EProblem                              getProblemType();
 

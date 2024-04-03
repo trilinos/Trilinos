@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TYPEP_QUASINEWTONALGORITHM_DEF_HPP
-#define ROL_TYPEP_QUASINEWTONALGORITHM_DEF_HPP
+#ifndef ROL_TYPEP_INEXACTNEWTONALGORITHM_DEF_HPP
+#define ROL_TYPEP_INEXACTNEWTONALGORITHM_DEF_HPP
 
 #include "ROL_TypeP_ProxGradientAlgorithm.hpp"
 #include "ROL_TypeP_SpectralGradientAlgorithm.hpp"

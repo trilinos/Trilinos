@@ -129,7 +129,7 @@ inline EAlgorithmP StringToEAlgorithmP(std::string s) {
 }
 
 template<typename Real>
-inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
+inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
   EAlgorithmP ealg = StringToEAlgorithmP(parlist.sublist("Step").get("Type","Trust Region"));
   switch(ealg) {
     case ALGORITHM_P_LINESEARCH:
@@ -138,7 +138,7 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
         = parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Newton-Krylov");
       if (desc=="Newton-Krylov" || desc=="Newton")
         return makePtr<InexactNewtonAlgorithm<Real>>(parlist);
-      else if (desc=="Quasi-Newton Method" || desc = "Quasi-Newton")
+      else if (desc=="Quasi-Newton Method" || desc == "Quasi-Newton")
         return makePtr<QuasiNewtonAlgorithm<Real>>(parlist);
       else
         return makePtr<ProxGradientAlgorithm<Real>>(parlist);

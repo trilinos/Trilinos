@@ -256,6 +256,7 @@ namespace ROL {
   // Types of optimization problem
   enum EProblem {
     TYPE_U = 0,
+    TYPE_P,
     TYPE_B,
     TYPE_E,
     TYPE_EB,
@@ -312,7 +313,9 @@ namespace ROL {
                                (s == STEP_TRUSTREGION) ||
                                (s == STEP_BUNDLE) );
         break;
-
+      case TYPE_P:    comp = ( (s == STEP_LINESEARCH) ||
+                               (s == STEP_TRUSTREGION));
+        break; 
       case TYPE_B:    comp = ( (s == STEP_LINESEARCH)  ||
                                (s == STEP_TRUSTREGION) ||
                                (s == STEP_MOREAUYOSIDAPENALTY) ||
@@ -341,6 +344,7 @@ namespace ROL {
     std::string retString;
     switch(p) {
       case TYPE_U:     retString = "Type-U";             break;
+      case TYPE_P:     retString = "Type-P";             break;
       case TYPE_E:     retString = "Type-E";             break;
       case TYPE_B:     retString = "Type-B";             break;
       case TYPE_EB:    retString = "Type-EB";            break;
