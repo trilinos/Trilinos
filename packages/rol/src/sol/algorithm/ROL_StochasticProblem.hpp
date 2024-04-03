@@ -81,7 +81,7 @@ private:
   std::unordered_map<std::string,size_t> statMap_;
 
   using Problem<Real>::INPUT_obj_;
-	using Problem<Real>::INPUT_nobj_; 
+  using Problem<Real>::INPUT_nobj_; 
   using Problem<Real>::INPUT_xprim_;
   using Problem<Real>::INPUT_xdual_;
   using Problem<Real>::INPUT_bnd_;

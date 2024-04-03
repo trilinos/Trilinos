@@ -112,7 +112,7 @@ Ptr<const AlgorithmState<Real>> Solver<Real>::getAlgorithmState() const {
   switch (problemType_) {
     case TYPE_U:  return algoU_->getState();
     case TYPE_P:  return algoP_->getState(); 
-		case TYPE_B:  return algoB_->getState();
+    case TYPE_B:  return algoB_->getState();
     case TYPE_E:  return algoE_->getState();
     case TYPE_EB: return algoG_->getState();
     case TYPE_LAST:
