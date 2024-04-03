@@ -1,11 +1,13 @@
-name: PR-gcc-openmpi
+name: AT2-EXPERIMENTAL
 
 on:
   pull_request:
     types:
-      - labeled
       - opened
       - synchronize
+  pull_request_review:
+    types: 
+      - submitted
     branches:
     - master
     - develop
@@ -15,14 +17,9 @@ permissions:
   contents: read
 
 jobs:
-  trilogpu02-gcc:
-    permissions:
-      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
-      contents: read  # for actions/checkout to fetch code
-    runs-on: [self-hosted, trilogpu02]
-    container:
-      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/rhel8/trilinos-pr-env:gcc-8.5.0
-      options: --hostname trilinos-container-gcc-8
+  gcc10-openmpi416-EXPERIMENTAL:
+    runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
+    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
     steps:
       - name: env
         env:
@@ -62,7 +59,7 @@ jobs:
       - name: Generate PR cmake fragment
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
+          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --force --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
       - name: Generate enable packages cmake fragment
         working-directory: /home/Trilinos/build
         run: |
@@ -71,14 +68,9 @@ jobs:
         working-directory: /home/Trilinos/build
         run: |
           bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
-      - name: CMakeCache.txt
-        if: always()
-        working-directory: /home/Trilinos/build
-        run: |
-          bash -l -c "cat CMakeCache.txt"
       - name: build trilinos
         working-directory: /home/Trilinos/build
-        run: bash -l -c "ninja"
+        run: bash -l -c "ninja -j36"
       - name: ctest
         working-directory: /home/Trilinos/build
         run: bash -l -c "ctest -j36"
