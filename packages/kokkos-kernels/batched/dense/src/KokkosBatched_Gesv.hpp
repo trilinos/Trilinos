@@ -63,11 +63,18 @@ struct Gesv {
 
 template <typename ArgAlgo>
 struct SerialGesv {
-  template <typename MatrixType, typename VectorType>
+  template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
-                                           const VectorType X,
-                                           const VectorType Y,
+                                           const XVectorType X,
+                                           const YVectorType Y,
                                            const MatrixType tmp);
+
+  template <typename MatrixType, typename VectorType>
+  [[deprecated]] KOKKOS_INLINE_FUNCTION static int invoke(
+      const MatrixType A, const VectorType X, const VectorType Y,
+      const MatrixType tmp) {
+    return invoke(A, X, Y, tmp);
+  }
 };
 
 /// \brief Team Batched GESV:

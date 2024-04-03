@@ -10,6 +10,12 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 #                   #
 #####################
 
+IF (KokkosKernels_TEST_ETI_ONLY)
+  IF (NOT KokkosKernels_INST_DOUBLE AND NOT KokkosKernels_INST_FLOAT)
+    MESSAGE(FATAL_ERROR "Because only ETI'd type combinations are enabled for testing, the Kokkos Kernels graph tests require that double or float is enabled in ETI.")
+  ENDIF ()
+ENDIF ()
+
 #####################
 #                   #
 # Add GPU backends  #

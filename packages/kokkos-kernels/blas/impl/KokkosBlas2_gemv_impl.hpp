@@ -199,10 +199,9 @@ struct SingleLevelTransposeGEMV {
 };
 
 // Single-level parallel version of GEMV.
-template <class AViewType, class XViewType, class YViewType,
-          class IndexType = typename AViewType::size_type>
-void singleLevelGemv(const typename AViewType::execution_space& space,
-                     const char trans[],
+template <class ExecutionSpace, class AViewType, class XViewType,
+          class YViewType, class IndexType = typename AViewType::size_type>
+void singleLevelGemv(const ExecutionSpace& space, const char trans[],
                      typename AViewType::const_value_type& alpha,
                      const AViewType& A, const XViewType& x,
                      typename YViewType::const_value_type& beta,
@@ -222,9 +221,8 @@ void singleLevelGemv(const typename AViewType::execution_space& space,
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
-  using y_value_type    = typename YViewType::non_const_value_type;
-  using execution_space = typename AViewType::execution_space;
-  using policy_type     = Kokkos::RangePolicy<execution_space, IndexType>;
+  using y_value_type = typename YViewType::non_const_value_type;
+  using policy_type  = Kokkos::RangePolicy<ExecutionSpace, IndexType>;
 
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using BetaCoeffType  = typename YViewType::non_const_value_type;
@@ -442,8 +440,8 @@ struct TwoLevelGEMV_LayoutRightTag {};
 // ---------------------------------------------------------------------------------------------
 // Functor for a two-level parallel_reduce version of GEMV (non-transpose),
 // designed for performance on GPU. Kernel depends on the layout of A.
-template <class AViewType, class XViewType, class YViewType,
-          class IndexType = typename AViewType::size_type>
+template <class ExecutionSpace, class AViewType, class XViewType,
+          class YViewType, class IndexType = typename AViewType::size_type>
 struct TwoLevelGEMV {
   using y_value_type   = typename YViewType::non_const_value_type;
   using AlphaCoeffType = typename AViewType::non_const_value_type;
@@ -453,9 +451,8 @@ struct TwoLevelGEMV {
           std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value,
       float, y_value_type>::type;
 
-  using execution_space = typename AViewType::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
-  using member_type     = typename policy_type::member_type;
+  using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
+  using member_type = typename policy_type::member_type;
 
   TwoLevelGEMV(const AlphaCoeffType& alpha, const AViewType& A,
                const XViewType& x, const BetaCoeffType& beta,
@@ -564,7 +561,8 @@ struct TwoLevelGEMV {
 // transpose GEMV.  The functor uses parallel-for over the columns of the input
 // matrix A and each team uses parallel-reduce over the row of its column.
 // The output vector y is the reduction result.
-template <class AViewType, class XViewType, class YViewType, const bool conj,
+template <class ExecutionSpace, class AViewType, class XViewType,
+          class YViewType, const bool conj,
           class IndexType = typename AViewType::size_type>
 struct TwoLevelTransposeGEMV {
   using y_value_type   = typename YViewType::non_const_value_type;
@@ -575,9 +573,8 @@ struct TwoLevelTransposeGEMV {
           std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value,
       float, y_value_type>::type;
 
-  using execution_space = typename AViewType::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
-  using member_type     = typename policy_type::member_type;
+  using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
+  using member_type = typename policy_type::member_type;
 
   TwoLevelTransposeGEMV(const AlphaCoeffType& alpha, const AViewType& A,
                         const XViewType& x, const BetaCoeffType& beta,
@@ -637,10 +634,9 @@ struct TwoLevelTransposeGEMV {
 };
 
 // Two-level parallel version of GEMV.
-template <class AViewType, class XViewType, class YViewType,
-          class IndexType = typename AViewType::size_type>
-void twoLevelGemv(const typename AViewType::execution_space& space,
-                  const char trans[],
+template <class ExecutionSpace, class AViewType, class XViewType,
+          class YViewType, class IndexType = typename AViewType::size_type>
+void twoLevelGemv(const ExecutionSpace& space, const char trans[],
                   typename AViewType::const_value_type& alpha,
                   const AViewType& A, const XViewType& x,
                   typename YViewType::const_value_type& beta,
@@ -661,9 +657,8 @@ void twoLevelGemv(const typename AViewType::execution_space& space,
                 "IndexType must be an integer");
 
   using y_value_type      = typename YViewType::non_const_value_type;
-  using execution_space   = typename AViewType::execution_space;
-  using team_policy_type  = Kokkos::TeamPolicy<execution_space>;
-  using range_policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
+  using team_policy_type  = Kokkos::TeamPolicy<ExecutionSpace>;
+  using range_policy_type = Kokkos::RangePolicy<ExecutionSpace, IndexType>;
 
   using Kokkos::ArithTraits;
   using KAT  = ArithTraits<typename AViewType::non_const_value_type>;
@@ -704,19 +699,19 @@ void twoLevelGemv(const typename AViewType::execution_space& space,
     using layout_tag =
         typename std::conditional<isLayoutLeft, TwoLevelGEMV_LayoutLeftTag,
                                   TwoLevelGEMV_LayoutRightTag>::type;
-    using tagged_policy = Kokkos::TeamPolicy<execution_space, layout_tag>;
-    using functor_type =
-        TwoLevelGEMV<AViewType, XViewType, YViewType, IndexType>;
+    using tagged_policy = Kokkos::TeamPolicy<ExecutionSpace, layout_tag>;
+    using functor_type  = TwoLevelGEMV<ExecutionSpace, AViewType, XViewType,
+                                      YViewType, IndexType>;
     functor_type functor(alpha, A, x, beta, y);
     tagged_policy team;
-    if (isLayoutLeft) {
+    if constexpr (isLayoutLeft) {
       using AccumScalar = typename std::conditional<
           std::is_same<y_value_type, Kokkos::Experimental::half_t>::value ||
               std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value,
           float, y_value_type>::type;
       size_t sharedPerTeam = 32 * sizeof(AccumScalar);
       IndexType numTeams   = (A.extent(0) + 31) / 32;
-      tagged_policy temp(1, 1);
+      tagged_policy temp(space, 1, 1);
       temp.set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam));
       int teamSize =
           temp.team_size_recommended(functor, Kokkos::ParallelForTag());
@@ -727,7 +722,7 @@ void twoLevelGemv(const typename AViewType::execution_space& space,
         // FIXME SYCL: team_size_recommended() returns too big of a team size.
         // Kernel hangs with 1024 threads on XEHP.
 #ifdef KOKKOS_ENABLE_SYCL
-      if (std::is_same<execution_space, Kokkos::Experimental::SYCL>::value) {
+      if (std::is_same<ExecutionSpace, Kokkos::Experimental::SYCL>::value) {
         if (teamSize > 256) teamSize = 256;
       }
 #endif
@@ -749,16 +744,18 @@ void twoLevelGemv(const typename AViewType::execution_space& space,
     } else if (tr == 'T') {
       // transpose, and not conj transpose
       team_policy_type team(space, A.extent(1), Kokkos::AUTO);
-      using functor_type = TwoLevelTransposeGEMV<AViewType, XViewType,
-                                                 YViewType, false, IndexType>;
+      using functor_type =
+          TwoLevelTransposeGEMV<ExecutionSpace, AViewType, XViewType, YViewType,
+                                false, IndexType>;
       functor_type functor(alpha, A, x, beta, y);
       Kokkos::parallel_for("KokkosBlas::gemv[twoLevelTranspose]", team,
                            functor);
     } else if (tr == 'C' || tr == 'H') {
       // conjugate transpose
       team_policy_type team(space, A.extent(1), Kokkos::AUTO);
-      using functor_type = TwoLevelTransposeGEMV<AViewType, XViewType,
-                                                 YViewType, true, IndexType>;
+      using functor_type =
+          TwoLevelTransposeGEMV<ExecutionSpace, AViewType, XViewType, YViewType,
+                                true, IndexType>;
       functor_type functor(alpha, A, x, beta, y);
       Kokkos::parallel_for("KokkosBlas::gemv[twoLevelTranspose]", team,
                            functor);
@@ -769,11 +766,11 @@ void twoLevelGemv(const typename AViewType::execution_space& space,
 // generalGemv: use 1 level (Range) or 2 level (Team) implementation,
 // depending on whether execution space is CPU or GPU. enable_if makes sure
 // unused kernels are not instantiated.
-template <class AViewType, class XViewType, class YViewType, class IndexType,
+template <class ExecutionSpace, class AViewType, class XViewType,
+          class YViewType, class IndexType,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AViewType::execution_space>()>::type* = nullptr>
-void generalGemvImpl(const typename AViewType::execution_space& space,
-                     const char trans[],
+              ExecutionSpace>()>::type* = nullptr>
+void generalGemvImpl(const ExecutionSpace& space, const char trans[],
                      typename AViewType::const_value_type& alpha,
                      const AViewType& A, const XViewType& x,
                      typename YViewType::const_value_type& beta,
@@ -781,11 +778,11 @@ void generalGemvImpl(const typename AViewType::execution_space& space,
   singleLevelGemv(space, trans, alpha, A, x, beta, y);
 }
 
-template <class AViewType, class XViewType, class YViewType, class IndexType,
+template <class ExecutionSpace, class AViewType, class XViewType,
+          class YViewType, class IndexType,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename AViewType::execution_space>()>::type* = nullptr>
-void generalGemvImpl(const typename AViewType::execution_space& space,
-                     const char trans[],
+              ExecutionSpace>()>::type* = nullptr>
+void generalGemvImpl(const ExecutionSpace& space, const char trans[],
                      typename AViewType::const_value_type& alpha,
                      const AViewType& A, const XViewType& x,
                      typename YViewType::const_value_type& beta,

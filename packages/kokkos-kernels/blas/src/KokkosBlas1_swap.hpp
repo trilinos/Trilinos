@@ -26,12 +26,12 @@ namespace KokkosBlas {
 /// \brief Swaps the entries of vectors x and y.
 ///
 /// \tparam execution_space an execution space to perform parallel work
-/// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
-/// \tparam YVector Type of the first vector y; a 1-D Kokkos::View.
+/// \tparam XVector Type of the first vector x; a rank 1 Kokkos::View.
+/// \tparam YVector Type of the first vector y; a rank 1 Kokkos::View.
 ///
 /// \param space [in] execution space passed to execution policies
-/// \param x [in/out] 1-D View.
-/// \param y [in/out] 1-D View.
+/// \param x [in/out] rank 1 View.
+/// \param y [in/out] rank 1 View.
 ///
 /// Swaps x and y. Note that this is akin to performing a deep_copy, swapping
 /// pointers inside view can only be performed if no aliasing, subviews, etc...
@@ -100,11 +100,11 @@ void swap(execution_space const& space, XVector const& x, YVector const& y) {
 
 /// \brief Swaps the entries of vectors x and y.
 ///
-/// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
-/// \tparam YVector Type of the first vector y; a 1-D Kokkos::View.
+/// \tparam XVector Type of the first vector x; a rank 1 Kokkos::View.
+/// \tparam YVector Type of the first vector y; a rank 1 Kokkos::View.
 ///
-/// \param x [in/out] 1-D View.
-/// \param y [in/out] 1-D View.
+/// \param x [in/out] rank 1 View.
+/// \param y [in/out] rank 1 View.
 ///
 /// This function is non-blocking unless the underlying TPL requested
 /// at compile time is itself blocking. Note that the kernel will be

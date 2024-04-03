@@ -109,8 +109,6 @@ void impl_test_axpby_mv(int N, int K) {
   Kokkos::deep_copy(org_y.h_base, y.d_base);
   Kokkos::deep_copy(x.h_base, x.d_base);
 
-  Kokkos::View<ScalarB*, Kokkos::HostSpace> r("Dot::Result", K);
-
   KokkosBlas::axpby(a, x.d_view, b, y.d_view);
   Kokkos::deep_copy(y.h_base, y.d_base);
 

@@ -55,11 +55,7 @@ struct SerialSVDInternal {
     value_type a = Kokkos::ArithTraits<value_type>::one();
     value_type b = -a11 - a22;
     value_type c = a11 * a22 - a21 * a21;
-#if KOKKOS_VERSION >= 30699
     using Kokkos::sqrt;
-#else
-    using Kokkos::Experimental::sqrt;
-#endif
     value_type sqrtDet = sqrt(b * b - 4 * a * c);
     e1                 = (-b + sqrtDet) / (2 * a);
     e2                 = (-b - sqrtDet) / (2 * a);

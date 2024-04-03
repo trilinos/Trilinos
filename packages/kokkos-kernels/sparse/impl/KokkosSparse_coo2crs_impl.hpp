@@ -15,11 +15,6 @@
 //@HEADER
 #ifndef KOKKOSSPARSE_COO2CRS_IMPL_HPP
 #define KOKKOSSPARSE_COO2CRS_IMPL_HPP
-// The unorderedmap changes necessary for this to work
-// have not made it into Kokkos 4.0.00 pr 4.0.01 will
-// need to see if it happens in 4.1.00 to have a final
-// version check here.
-#if KOKKOS_VERSION >= 40099
 
 #include <Kokkos_StdAlgorithms.hpp>
 #include "Kokkos_UnorderedMap.hpp"
@@ -196,8 +191,13 @@ class Coo2Crs {
         reinterpret_cast<UmapType *>(Kokkos::kokkos_malloc<UmapMemorySpace>(
             "m_umaps", m_nrows * sizeof(UmapType)));
 
-    using shallow_copy_to_device =
-        Kokkos::Impl::DeepCopy<UmapMemorySpace, typename Kokkos::HostSpace>;
+    auto shallow_copy_to_device = [](UmapType *dst, UmapType const *src,
+                                     std::size_t cnt) {
+      std::size_t nn = cnt / sizeof(UmapType);
+      Kokkos::deep_copy(
+          Kokkos::View<UmapType *, UmapMemorySpace>(dst, nn),
+          Kokkos::View<UmapType const *, Kokkos::HostSpace>(src, nn));
+    };
 
     UmapType **umap_ptrs = new UmapType *[m_nrows];
     // TODO: use host-level parallel_for with tag rowmapRp1
@@ -274,7 +274,5 @@ class Coo2Crs {
 };
 }  // namespace Impl
 }  // namespace KokkosSparse
-
-#endif  // KOKKOS_VERSION >= 40099
 
 #endif  // KOKKOSSPARSE_COO2CRS_IMPL_HPP
