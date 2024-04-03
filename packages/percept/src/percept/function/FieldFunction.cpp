@@ -167,16 +167,16 @@
       setup_searcher(D_);
 
       MDArray output_field_values_local = output_field_values;
-      int R_output = output_field_values.rank();
+      //int R_output = output_field_values.rank();
 
       int R_input = input_phy_points.rank();
       int P_ = (R_input == 1 ? 1 : input_phy_points.extent_int(R_input-2));
 
       // FIXME for tensor valued fields
-      int DOF_ = last_dimension(output_field_values_local);
+      //int DOF_ = last_dimension(output_field_values_local);
 
       MDArray input_phy_points_one("input_phy_points_one",1,1,D_);
-      MDArray output_field_values_one("output_field_values_one",1,DOF_);
+      //MDArray output_field_values_one("output_field_values_one",1,DOF_);
 
       int C_ = 1;
       if (R_input == 3)
@@ -213,10 +213,15 @@
                   if (( EXTRA_PRINT) && m_searchType==STK_SEARCH)
                     std::cout << "FieldFunction::operator() found element # = " << m_bulkData->identifier(found_element) << std::endl;
 
-                  auto found_parametric_coordinates = Kokkos::subview(found_parametric_coordinates_one, 0, Kokkos::ALL(), Kokkos::ALL());
+                  //auto found_parametric_coordinates = Kokkos::subview(found_parametric_coordinates_one, 0, Kokkos::ALL(), Kokkos::ALL());
+
+                  MDArray found_parametric_coordinates("found_parametric_coordinates", 1, D_);
+                  Kokkos::deep_copy(found_parametric_coordinates,
+                                    Kokkos::subview(found_parametric_coordinates_one, 0, Kokkos::ALL(), Kokkos::ALL()));
 
                   (*this)(input_phy_points, output_field_values, found_element, found_parametric_coordinates);
 
+                  /*
                   for (int iDOF = 0; iDOF < DOF_; iDOF++)
                     {
                       switch (R_output)
@@ -227,6 +232,7 @@
                         default: VERIFY_1("bad rank");
                         }
                     }
+                  */
                 }
               else
                 {

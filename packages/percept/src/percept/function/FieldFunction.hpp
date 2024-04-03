@@ -187,13 +187,13 @@
      *  Dimensions of output_field_values are required to be ([P],[DOF]), (or in future, ([C],[P],[DOF]) )
      *
      */
-#define EXTRA_PRINT_FF_HELPER 0
+#define EXTRA_PRINT_FF_HELPER 1
     template<class BucketOrEntity>
     void FieldFunction::helper(const stk::mesh::BulkData& bulk, MDArray& input_phy_points, MDArray& output_field_values,
                                const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional)
     {
       //VERIFY_OP_ON(parametric_coordinates.rank(), ==, 2, "FieldFunction::operator() parametric_coordinates bad rank");
-      VERIFY_OP_ON(output_field_values.rank(), <=, 3, "FieldFunction::operator() output_field_values bad rank");
+      //VERIFY_OP_ON(output_field_values.rank(), <=, 3, "FieldFunction::operator() output_field_values bad rank");
 
       int numInterpPoints = parametric_coordinates.extent_int(0);
       int spatialDim = m_bulkData->mesh_meta_data().spatial_dimension();
@@ -405,10 +405,10 @@
                 {
                   for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
                     {
-                      if (output_field_values.rank() == 2)
-                        output_field_values(iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
-                      else if (output_field_values.rank() == 3)
-                        output_field_values(iCell, iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
+                      if (output_field_values.rank() == 1)
+                        output_field_values(iDOF) = loc_output_field_values(iCell, iPoint);
+                      else if (output_field_values.rank() == 2)
+                        output_field_values(iCell, iDOF) = loc_output_field_values(iCell, iPoint);
                       if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " ofd= " << output_field_values(iPoint, iDOF) << std::endl;
                     }
                 }
