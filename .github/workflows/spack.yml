@@ -11,7 +11,7 @@ on:
 
 jobs:
   gcc10-openmpi416:
-    runs-on: [self-hosted, triloamd02]
+    runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.11.0
