@@ -33,6 +33,7 @@ template<typename Real>
 class StochasticProblem : public Problem<Real> {
 private:
   Ptr<Objective<Real>>                                 ORIGINAL_obj_;
+  Ptr<Objective<Real>>                                 ORIGINAL_nobj_;  
   Ptr<Vector<Real>>                                    ORIGINAL_xprim_;
   Ptr<Vector<Real>>                                    ORIGINAL_xdual_;
   Ptr<BoundConstraint<Real>>                           ORIGINAL_bnd_;
@@ -46,6 +47,7 @@ private:
   std::unordered_map<std::string,size_t> statMap_;
 
   using Problem<Real>::INPUT_obj_;
+	using Problem<Real>::INPUT_nobj_; 
   using Problem<Real>::INPUT_xprim_;
   using Problem<Real>::INPUT_xdual_;
   using Problem<Real>::INPUT_bnd_;
