@@ -784,9 +784,6 @@ namespace Ifpack2 {
                   &reqs.send[i]);
           }
           else {
-            const local_ordinal_type num_vectors = mv.extent(1);
-            const local_ordinal_type mv_blocksize = blocksize*num_vectors;
-
             Kokkos::deep_copy(
               Kokkos::subview(buffer_host.send, 
                 Kokkos::pair<local_ordinal_type, local_ordinal_type>(
