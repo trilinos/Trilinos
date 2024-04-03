@@ -5094,11 +5094,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     auto A_lcl = getLocalMatrixDevice();
     if(!applyHelper.get()) {
       // The apply helper does not exist, so create it.
-      // This is when we can choose the spmv algorithm.
-      bool exceedsImbalanceThreshold = size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold();
-      KokkosSparse::SPMVAlgorithm algo =
-        exceedsImbalanceThreshold ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT;
-      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map, algo);
+      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
     }
 
     // Translate mode (Teuchos enum) to KokkosKernels (1-character string)
