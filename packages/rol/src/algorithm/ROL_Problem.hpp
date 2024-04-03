@@ -228,11 +228,11 @@ public:
   */
   void setProjectionAlgorithm(ParameterList &parlist);
   
-	/** Set Proximable objective function
-	*/
+  /** Set Proximable objective function
+  */
   void addProximableObjective(const Ptr<Objective<Real>> &nobj); 
-	/** Remove Proximable objective function
-	*/
+  /** Remove Proximable objective function
+  */
   void removeProximableObjective(); 
 
 
