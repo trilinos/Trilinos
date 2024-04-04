@@ -88,7 +88,6 @@ void Problem<Real>::removeBoundConstraint() {
   hasBounds_ = false;
 }
 
-
 template<typename Real>
 void Problem<Real>::addProximableObjective(const Ptr<Objective<Real>> &nobj) {
   ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
@@ -106,8 +105,6 @@ void Problem<Real>::removeProximableObjective() {
   INPUT_nobj_ = nullPtr;
   hasProximableObjective_ = false;
 }
-
-
 template<typename Real>
 void Problem<Real>::addConstraint( std::string                  name,
                                    const Ptr<Constraint<Real>> &econ,
