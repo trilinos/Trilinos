@@ -696,7 +696,15 @@ void ParameterList::validateParametersAndSetDefaults(
           validEntry.getAny(),
           true // isDefault
           );
-        newEntry.setValidator(validEntry.validator());
+        RCP<const ParameterEntryValidator> validator;
+        if (nonnull(validator=validEntry.validator())) {
+#if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
+          validEntry.validator()->validateAndModify(this->name(itr), validEntryName, &newEntry);
+          // validateAndModify changes the default status so we reset it
+          newEntry.setAnyValue(newEntry.getAny(), true);
+#endif
+          newEntry.setValidator(validator);
+        }
         this->setEntry(validEntryName,newEntry);
       }
     }
