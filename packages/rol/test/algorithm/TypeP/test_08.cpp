@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::l1Objective<RealT>>      nobj;
 		
 		
-		ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
+    ROL::Ptr<ROL::TypeP::TrustRegionAlgorithm<RealT>> algo;
     std::vector<RealT> data;
     RealT err(0);
 

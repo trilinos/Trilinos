@@ -197,6 +197,7 @@ public:
   /** Set Proximable objective function
   */
   void addProximableObjective(const Ptr<Objective<Real>> &nobj); 
+  
   /** Remove Proximable objective function
   */
   void removeProximableObjective(); 
@@ -210,7 +211,7 @@ public:
   */
   const Ptr<Objective<Real>>&            getObjective();
   
-  /** Get proximable objective
+  /** \brief Get proximable objective
   */
   const Ptr<Objective<Real>>&            getProximableObjective();   
 
