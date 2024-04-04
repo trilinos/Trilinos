@@ -50,8 +50,8 @@ ELSE()
   FetchContent_Declare(
     googlebenchmark
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE
-    URL https://github.com/google/benchmark/archive/refs/tags/v1.6.2.tar.gz
-    URL_HASH MD5=14d14849e075af116143a161bc3b927b
+    URL https://github.com/google/benchmark/archive/refs/tags/v1.7.1.tar.gz
+    URL_HASH MD5=0459a6c530df9851bee6504c3e37c2e7
   )
   FetchContent_MakeAvailable(googlebenchmark)
   list(POP_BACK CMAKE_MESSAGE_INDENT)
@@ -82,7 +82,7 @@ FUNCTION(KOKKOS_ADD_BENCHMARK NAME)
     )
   ENDIF()
 
-  SET(BENCHMARK_NAME ${PACKAGE_NAME}_${NAME})
+  SET(BENCHMARK_NAME Kokkos_${NAME})
   LIST(APPEND BENCHMARK_SOURCES
     BenchmarkMain.cpp
     Benchmark_Context.cpp
