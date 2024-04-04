@@ -26,7 +26,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   NOX.H
   NOX_Common.H
-  NOX_Exception.H
+  NOX_Exceptions.H
   )
 
 # Abstract
