@@ -5085,11 +5085,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          std::runtime_error, "X and Y may not alias one another.");
     }
 
-    LocalOrdinal nrows = getLocalNumRows();
-    LocalOrdinal maxRowImbalance = 0;
-    if(nrows != 0)
-      maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
-
 #if KOKKOSKERNELS_VERSION >= 40299
     auto A_lcl = getLocalMatrixDevice();
     if(!applyHelper.get()) {
@@ -5125,6 +5120,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           impl_scalar_type(alpha), A_lcl, X_lcl, impl_scalar_type(beta), Y_lcl);
     }
 #else
+    LocalOrdinal nrows = getLocalNumRows();
+    LocalOrdinal maxRowImbalance = 0;
+    if(nrows != 0)
+      maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
+
     auto matrix_lcl = getLocalMultiplyOperator();
     if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
       matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
