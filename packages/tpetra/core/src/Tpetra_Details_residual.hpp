@@ -338,16 +338,18 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        (X_colmap_lcl.data () == B_lcl.data () && X_colmap_lcl.data () != nullptr),
        std::runtime_error, "X, Y and R may not alias one another.");
   }
-      
-#ifdef TPETRA_DETAILS_USE_REFERENCE_RESIDUAL
-  SC one = Teuchos::ScalarTraits<SC>::one();
-  SC negone = -one;
-  SC zero = Teuchos::ScalarTraits<SC>::zero();
-  // This is currently a "reference implementation" waiting until Kokkos Kernels provides
-  // a residual kernel.
-  A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
-  R.update(one,B,negone);
-#else
+
+  const bool fusedResidual = ::Tpetra::Details::Behavior::fusedResidual ();
+  if (!fusedResidual) {
+    SC one = Teuchos::ScalarTraits<SC>::one();
+    SC negone = -one;
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
+    // This is currently a "reference implementation" waiting until Kokkos Kernels provides
+    // a residual kernel.
+    A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
+    R.update(one,B,negone);
+    return;
+  }
 
   if (A_lcl.numRows() == 0) {
     return;
@@ -412,7 +414,6 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
 
     }
   }
-#endif
 }
 
 
