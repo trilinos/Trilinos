@@ -176,6 +176,32 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag,
   }
 };
 
+template <typename ArgDiag>
+struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
+                  Algo::Trsm::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+                                           const AViewType &A,
+                                           const BViewType &B) {
+    return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride_0(), A.stride_1(), B.data(), B.stride_1(), B.stride_0());
+  }
+};
+
+template <typename ArgDiag>
+struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
+                  Algo::Trsm::Blocked> {
+  template <typename ScalarType, typename AViewType, typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+                                           const AViewType &A,
+                                           const BViewType &B) {
+    return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
+        ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride_0(), A.stride_1(), B.data(), B.stride_1(), B.stride_0());
+  }
+};
+
 ///
 /// L/U/NT
 ///

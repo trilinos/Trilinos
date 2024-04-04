@@ -149,9 +149,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE& /* space */                            \
-                    ,                                                        \
-                    const char trans[],                                      \
+    static void ger(const EXEC_SPACE& space, const char trans[],             \
                     typename AViewType::const_value_type& alpha,             \
                     const XViewType& X, const YViewType& Y,                  \
                     const AViewType& A) {                                    \
@@ -183,8 +181,9 @@ namespace Impl {
               reinterpret_cast<const std::complex<double>*>(X.data()), one,  \
               reinterpret_cast<std::complex<double>*>(A.data()), LDA);       \
         } else {                                                             \
-          throw std::runtime_error(                                          \
-              "Error: blasZgerc() requires LayoutLeft views.");              \
+          /* blasgerc() + ~A_ll => call kokkos-kernels' implementation */    \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,            \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);            \
         }                                                                    \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \
@@ -218,9 +217,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE& /* space */                            \
-                    ,                                                        \
-                    const char trans[],                                      \
+    static void ger(const EXEC_SPACE& space, const char trans[],             \
                     typename AViewType::const_value_type& alpha,             \
                     const XViewType& X, const YViewType& Y,                  \
                     const AViewType& A) {                                    \
@@ -252,8 +249,9 @@ namespace Impl {
               reinterpret_cast<const std::complex<float>*>(X.data()), one,   \
               reinterpret_cast<std::complex<float>*>(A.data()), LDA);        \
         } else {                                                             \
-          throw std::runtime_error(                                          \
-              "Error: blasCgerc() requires LayoutLeft views.");              \
+          /* blasgerc() + ~A_ll => call kokkos-kernels' implementation */    \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,            \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);            \
         }                                                                    \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \

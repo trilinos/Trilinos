@@ -18,15 +18,18 @@
 #define KOKKOSPARSE_SPMV_MV_TPL_SPEC_DECL_HPP_
 
 #include <sstream>
-
-#include "KokkosKernels_Controls.hpp"
+#include "KokkosKernels_tpl_handles_decl.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
 /* CUSPARSE_VERSION < 10301 either doesn't have cusparseSpMM
    or the non-tranpose version produces incorrect results.
+
+   Version 11702 corresponds to CUDA 11.6.1, which also produces incorrect
+   results. 11701 (CUDA 11.6.0) is OK.
 */
-#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION)
+#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION) && \
+    (CUSPARSE_VERSION != 11702)
 #include "cusparse.h"
 #include "KokkosSparse_Utils_cusparse.hpp"
 
@@ -64,9 +67,14 @@ inline cudaDataType compute_type<Kokkos::Experimental::half_t>() {
 */
 template <typename ViewType, std::enable_if_t<ViewType::rank == 2, bool> = true>
 cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
-  const int64_t rows = view.extent(0);
-  const int64_t cols = view.extent(1);
-  const int64_t ld   = view.extent(0);
+  // If the view is LayoutRight, we still need to create descr as column-major
+  // but it should be an implicit transpose, meaning dimensions and strides are
+  // swapped
+  bool transpose =
+      std::is_same_v<typename ViewType::array_layout, Kokkos::LayoutRight>;
+  const size_t rows = transpose ? view.extent(1) : view.extent(0);
+  const size_t cols = transpose ? view.extent(0) : view.extent(1);
+  const size_t ld   = transpose ? view.stride(0) : view.stride(1);
 
   // cusparseCreateCsr notes it is safe to const_cast this away for input
   // pointers to a descriptor as long as that descriptor is not an output
@@ -84,15 +92,15 @@ cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
   const cusparseOrder_t order = CUSPARSE_ORDER_COL;
 
   cusparseDnMatDescr_t descr;
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseCreateDnMat(&descr, rows, cols, ld, values, valueType, order));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnMat(
+      &descr, static_cast<int64_t>(rows), static_cast<int64_t>(cols),
+      static_cast<int64_t>(ld), values, valueType, order));
 
   return descr;
 }
 
-template <class AMatrix, class XVector, class YVector>
-void spmv_mv_cusparse(const Kokkos::Cuda &exec,
-                      const KokkosKernels::Experimental::Controls &controls,
+template <class Handle, class AMatrix, class XVector, class YVector>
+void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
                       const char mode[],
                       typename YVector::non_const_value_type const &alpha,
                       const AMatrix &A, const XVector &x,
@@ -110,9 +118,17 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
   using y_value_type = typename YVector::non_const_value_type;
 
   /* initialize cusparse library */
-  cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  cusparseHandle_t cusparseHandle =
+      KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
-  TemporarySetCusparseStream(cusparseHandle, exec);
+  TemporarySetCusparseStream tscs(cusparseHandle, exec);
+
+  /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
+  const cusparseIndexType_t myCusparseOffsetType =
+      cusparse_index_type_t_from<offset_type>();
+  const cusparseIndexType_t myCusparseEntryType =
+      cusparse_index_type_t_from<entry_type>();
+  const cudaDataType aCusparseType = cuda_data_type_from<value_type>();
 
   /* Set the operation mode */
   cusparseOperation_t opA;
@@ -127,21 +143,6 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
     }
   }
 
-  /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
-  const cusparseIndexType_t myCusparseOffsetType =
-      cusparse_index_type_t_from<offset_type>();
-  const cusparseIndexType_t myCusparseEntryType =
-      cusparse_index_type_t_from<entry_type>();
-  const cudaDataType aCusparseType = cuda_data_type_from<value_type>();
-
-  /* create matrix */
-  cusparseSpMatDescr_t A_cusparse;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
-      &A_cusparse, A.numRows(), A.numCols(), A.nnz(),
-      (void *)A.graph.row_map.data(), (void *)A.graph.entries.data(),
-      (void *)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
-      CUSPARSE_INDEX_BASE_ZERO, aCusparseType));
-
   /* create lhs and rhs
      NOTE: The descriptions always say vecX and vecY are column-major cusparse
      order. For CUSPARSE_VERSION 10301 this is the only supported ordering. if X
@@ -152,16 +153,20 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
   constexpr bool xIsLR =
       std::is_same<typename XVector::array_layout, Kokkos::LayoutRight>::value;
   static_assert(xIsLL || xIsLR, "X multivector was not LL or LR (TPL error)");
+  static_assert(
+      std::is_same_v<typename YVector::array_layout, Kokkos::LayoutLeft>,
+      "Y multivector was not LL (TPL error)");
   cusparseDnMatDescr_t vecX = make_cusparse_dn_mat_descr_t(x);
   cusparseDnMatDescr_t vecY = make_cusparse_dn_mat_descr_t(y);
   cusparseOperation_t opB =
       xIsLL ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE;
 
-// CUSPARSE_MM_ALG_DEFAULT was deprecated as early as 11.1 (maybe earlier)
-#if CUSPARSE_VERSION < 11010
-  const cusparseSpMMAlg_t alg = CUSPARSE_MM_ALG_DEFAULT;
+// CUSPARSE_MM_ALG_DEFAULT was deprecated in CUDA 11.0.1 / cuSPARSE 11.0.0 and
+// removed in CUDA 12.0.0 / cuSPARSE 12.0.0
+#if CUSPARSE_VERSION < 11000
+  cusparseSpMMAlg_t algo = CUSPARSE_MM_ALG_DEFAULT;
 #else
-  const cusparseSpMMAlg_t alg = CUSPARSE_SPMM_ALG_DEFAULT;
+  cusparseSpMMAlg_t algo = CUSPARSE_SPMM_ALG_DEFAULT;
 #endif
 
   // the precision of the SpMV
@@ -180,21 +185,39 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
     }
   }
 
-  size_t bufferSize = 0;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM_bufferSize(
-      cusparseHandle, opA, opB, &alpha, A_cusparse, vecX, &beta, vecY,
-      computeType, alg, &bufferSize));
+  KokkosSparse::Impl::CuSparse10_SpMV_Data *subhandle;
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data *>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for cusparse");
+  } else {
+    subhandle   = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
+    handle->tpl = subhandle;
+    /* create matrix */
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &subhandle->mat, A.numRows(), A.numCols(), A.nnz(),
+        (void *)A.graph.row_map.data(), (void *)A.graph.entries.data(),
+        (void *)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+        CUSPARSE_INDEX_BASE_ZERO, aCusparseType));
 
-  void *dBuffer = nullptr;
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM_bufferSize(
+        cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX, &beta, vecY,
+        computeType, algo, &subhandle->bufferSize));
+
+    KOKKOS_IMPL_CUDA_SAFE_CALL(
+        cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
+
+    handle->is_set_up = true;
+  }
+
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM(cusparseHandle, opA, opB, &alpha,
-                                         A_cusparse, vecX, &beta, vecY,
-                                         computeType, alg, dBuffer));
+                                         subhandle->mat, vecX, &beta, vecY,
+                                         computeType, algo, subhandle->buffer));
 
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dBuffer));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecX));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecY));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
 }
 
 #define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, XL, YL, SPACE, \
@@ -202,6 +225,8 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
   template <>                                                                 \
   struct SPMV_MV<                                                             \
       Kokkos::Cuda,                                                           \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, \
+                                         ORDINAL>,                            \
       KokkosSparse::CrsMatrix<                                                \
           SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,   \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, OFFSET const>,             \
@@ -213,6 +238,9 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
       false, true, COMPILE_LIBRARY> {                                         \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;            \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;        \
+    using Handle =                                                            \
+        KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR,       \
+                                           OFFSET, ORDINAL>;                  \
     using AMatrix = CrsMatrix<SCALAR const, ORDINAL const, device_type,       \
                               memory_trait_type, OFFSET const>;               \
     using XVector = Kokkos::View<                                             \
@@ -223,15 +251,14 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
                                                                               \
     using coefficient_type = typename YVector::non_const_value_type;          \
                                                                               \
-    using Controls = KokkosKernels::Experimental::Controls;                   \
-    static void spmv_mv(const Kokkos::Cuda &exec, const Controls &controls,   \
+    static void spmv_mv(const Kokkos::Cuda &exec, Handle *handle,             \
                         const char mode[], const coefficient_type &alpha,     \
                         const AMatrix &A, const XVector &x,                   \
                         const coefficient_type &beta, const YVector &y) {     \
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," +                \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                   \
-      spmv_mv_cusparse(exec, controls, mode, alpha, A, x, beta, y);           \
+      spmv_mv_cusparse(exec, handle, mode, alpha, A, x, beta, y);             \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
   };

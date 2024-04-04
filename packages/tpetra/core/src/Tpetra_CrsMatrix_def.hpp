@@ -5085,20 +5085,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          std::runtime_error, "X and Y may not alias one another.");
     }
 
-    LocalOrdinal nrows = getLocalNumRows();
-    LocalOrdinal maxRowImbalance = 0;
-    if(nrows != 0)
-      maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
-
 #if KOKKOSKERNELS_VERSION >= 40299
     auto A_lcl = getLocalMatrixDevice();
     if(!applyHelper.get()) {
       // The apply helper does not exist, so create it.
-      // This is when we can choose the spmv algorithm.
-      bool exceedsImbalanceThreshold = size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold();
-      KokkosSparse::SPMVAlgorithm algo =
-        exceedsImbalanceThreshold ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT;
-      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map, algo);
+      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
     }
 
     // Translate mode (Teuchos enum) to KokkosKernels (1-character string)
@@ -5129,6 +5120,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           impl_scalar_type(alpha), A_lcl, X_lcl, impl_scalar_type(beta), Y_lcl);
     }
 #else
+    LocalOrdinal nrows = getLocalNumRows();
+    LocalOrdinal maxRowImbalance = 0;
+    if(nrows != 0)
+      maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
+
     auto matrix_lcl = getLocalMultiplyOperator();
     if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
       matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);

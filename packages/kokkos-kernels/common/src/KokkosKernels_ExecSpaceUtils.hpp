@@ -215,8 +215,19 @@ inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
   total_mem /= n_streams;
 }
 template <>
+inline void kk_get_free_total_memory<Kokkos::HIPManagedSpace>(size_t& free_mem,
+                                                              size_t& total_mem,
+                                                              int n_streams) {
+  kk_get_free_total_memory<Kokkos::HIPSpace>(free_mem, total_mem, n_streams);
+}
+template <>
 inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
                                                        size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::HIPSpace>(free_mem, total_mem, 1);
+}
+template <>
+inline void kk_get_free_total_memory<Kokkos::HIPManagedSpace>(
+    size_t& free_mem, size_t& total_mem) {
   kk_get_free_total_memory<Kokkos::HIPSpace>(free_mem, total_mem, 1);
 }
 #endif
