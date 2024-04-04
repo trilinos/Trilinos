@@ -803,7 +803,7 @@ getUniformCubaturePointsRef(const bool cache,
                             const bool force,
                             const bool apply_permutation) const
 {
-  if(cub_points_evaluated_ and not force)
+  if(cub_points_evaluated_ and (apply_permutation == requires_permutation_) and not force)
     return cub_points;
 
   // Only log time if values computed (i.e. don't log if values are already cached)
@@ -845,7 +845,7 @@ getUniformCubaturePointsRef(const bool cache,
   if(apply_permutation and requires_permutation_)
     applyBasePermutation(aux, permutations_);
 
-  if(cache){
+  if(cache and (apply_permutation == requires_permutation_)){
     cub_points = aux;
     cub_points_evaluated_ = true;
   }
@@ -861,7 +861,7 @@ getUniformSideCubaturePointsRef(const bool cache,
                                 const bool force,
                                 const bool apply_permutation) const
 {
-  if(side_cub_points_evaluated_ and not force)
+  if(side_cub_points_evaluated_ and (apply_permutation == requires_permutation_) and not force)
     return side_cub_points;
 
   // Only log time if values computed (i.e. don't log if values are already cached)
@@ -898,7 +898,7 @@ getUniformSideCubaturePointsRef(const bool cache,
   if(apply_permutation and requires_permutation_)
     applyBasePermutation(aux, permutations_);
 
-  if(cache){
+  if(cache and (apply_permutation == requires_permutation_)){
     side_cub_points = aux;
     side_cub_points_evaluated_ = true;
   }
@@ -913,7 +913,7 @@ getUniformCubatureWeightsRef(const bool cache,
                              const bool force,
                              const bool apply_permutation) const
 {
-  if(cub_weights_evaluated_ and not force)
+  if(cub_weights_evaluated_ and (apply_permutation == requires_permutation_) and not force)
     return cub_weights;
 
   // Only log time if values computed (i.e. don't log if values are already cached)
@@ -947,7 +947,7 @@ getUniformCubatureWeightsRef(const bool cache,
   if(apply_permutation and requires_permutation_)
     applyBasePermutation(aux, permutations_);
 
-  if(cache){
+  if(cache and (apply_permutation == requires_permutation_)){
     cub_weights = aux;
     cub_weights_evaluated_ = true;
   }
@@ -1665,7 +1665,7 @@ IntegrationValues2<Scalar>::
 getCubaturePointsRef(const bool cache,
                      const bool force) const
 {
-  if(ref_ip_coordinates_evaluated_)
+  if(ref_ip_coordinates_evaluated_ and not force)
     return ref_ip_coordinates;
 
   // Only log time if values computed (i.e. don't log if values are already cached)
@@ -1793,43 +1793,44 @@ evaluateEverything()
   const bool is_cv = (int_rule->getType() == ID::CV_VOLUME) or (int_rule->getType() == ID::CV_SIDE) or (int_rule->getType() == ID::CV_BOUNDARY);
   const bool is_side = int_rule->isSide();
 
+  // This will force all values to be re-evaluated
   resetArrays();
 
   // Base cubature stuff
   if(is_cv){
-    getCubaturePoints(true,true);
-    getCubaturePointsRef(true,true);
+    getCubaturePoints(true);
+    getCubaturePointsRef(true);
   } else {
     if(not is_surface){
-      getUniformCubaturePointsRef(true,true);
-      getUniformCubatureWeightsRef(true,true);
+      getUniformCubaturePointsRef(true,true,requires_permutation_);
+      getUniformCubatureWeightsRef(true,true,requires_permutation_);
       if(is_side)
-        getUniformSideCubaturePointsRef(true,true);
+        getUniformSideCubaturePointsRef(true,true,requires_permutation_);
     }
-    getCubaturePointsRef(true,true);
-    getCubaturePoints(true,true);
+    getCubaturePointsRef(true);
+    getCubaturePoints(true);
   }
 
   // Measure stuff
-  getJacobian(true,true);
-  getJacobianDeterminant(true,true);
-  getJacobianInverse(true,true);
+  getJacobian(true);
+  getJacobianDeterminant(true);
+  getJacobianInverse(true);
   if(int_rule->cv_type == "side")
-    getWeightedNormals(true,true);
+    getWeightedNormals(true);
   else
-    getWeightedMeasure(true,true);
+    getWeightedMeasure(true);
 
   // Surface stuff
   if(is_surface){
-    getSurfaceNormals(true,true);
-    getSurfaceRotationMatrices(true,true);
+    getSurfaceNormals(true);
+    getSurfaceRotationMatrices(true);
   }
 
   // Stabilization stuff
   if(not (is_surface or is_cv)){
-    getContravarientMatrix(true,true);
-    getCovarientMatrix(true,true);
-    getNormContravarientMatrix(true,true);
+    getContravarientMatrix(true);
+    getCovarientMatrix(true);
+    getNormContravarientMatrix(true);
   }
 }
 
