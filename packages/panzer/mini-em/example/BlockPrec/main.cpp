@@ -110,7 +110,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   {
     // defaults for command-line options
     int x_elements=-1,y_elements=-1,z_elements=-1,basis_order=1;
-    int workset_size=20;
+    int workset_size=2000;
     std::string pCoarsenScheduleStr = "1";
     double dt=0.0;
     std::string meshFile = "";
