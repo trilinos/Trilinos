@@ -745,7 +745,7 @@ protected:
    * <tt>MultiVectorBase</tt> object using explicit vector access.
    */
   virtual RCP<MultiVectorBase<Scalar> >
-  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const { return this->createMembersView(raw_mv); };
+  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv, bool initialize = true) const { return this->createMembersView(raw_mv); };
 
   /** \brief Create a (possibly) cached multi-vector member that is a <tt>const</tt> view of raw
    * multi-vector data. The caching mechanism must be implemented by child classes, by default

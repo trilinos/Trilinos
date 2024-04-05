@@ -121,7 +121,7 @@ protected:
 public:
 
   RCP<MultiVectorBase<Scalar> >
-  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
+  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv, bool initialize = true) const;
 
   RCP<const MultiVectorBase<Scalar> >
   createCachedMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;

@@ -360,7 +360,8 @@ namespace Belos {
           RTOpPack::SubMultiVectorView<ScalarType>(
             0, m, 0, n,
             arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
-            )
+            ),
+          false
           );
       Thyra::apply<ScalarType>(A, Thyra::CONJTRANS, mv, B_thyra.ptr(), alpha);
     }
