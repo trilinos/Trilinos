@@ -41,7 +41,8 @@ inline void svd_print_specialization() {
 }  // namespace KokkosLapack
 
 // LAPACK
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) && \
+    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
 #include "KokkosLapack_Host_tpl.hpp"
 
 namespace KokkosLapack {
