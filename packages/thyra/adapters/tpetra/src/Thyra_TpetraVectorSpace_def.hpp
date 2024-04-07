@@ -155,7 +155,8 @@ private:
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP< MultiVectorBase<Scalar> >
 TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createCachedMembersView(
-  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
+                                                                                   const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+                                                                                   const bool initialize) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
@@ -189,14 +190,16 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createCachedMembersVi
     RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv = Teuchos::rcp_dynamic_cast<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(mv,true)->getTpetraMultiVector();
     Teuchos::set_extra_data(inUse,"inUse",Teuchos::outArg(tmv));
   }
-  // Copy initial values in raw_mv into multi-vector
-  RTOpPack::SubMultiVectorView<Scalar> smv;
-  mv->acquireDetachedView(Range1D(),Range1D(),&smv);
-  RTOpPack::assign_entries<Scalar>(
-    Ptr<const RTOpPack::SubMultiVectorView<Scalar> >(Teuchos::outArg(smv)),
-    raw_mv
-    );
-  mv->commitDetachedView(&smv);
+  if (initialize) {
+    // Copy initial values in raw_mv into multi-vector
+    RTOpPack::SubMultiVectorView<Scalar> smv;
+    mv->acquireDetachedView(Range1D(),Range1D(),&smv);
+    RTOpPack::assign_entries<Scalar>(
+                                     Ptr<const RTOpPack::SubMultiVectorView<Scalar> >(Teuchos::outArg(smv)),
+                                     raw_mv
+                                     );
+    mv->commitDetachedView(&smv);
+  }
   // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destroyed
   Teuchos::set_extra_data(
     // We create a duplicate of the RCP, otherwise the ref count does not go to zero.
