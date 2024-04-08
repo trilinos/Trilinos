@@ -21,7 +21,8 @@
 
 namespace Test {
 
-template <class system_type, class mat_type, class vec_type, class status_view>
+template <class system_type, class mat_type, class vec_type, class status_view,
+          class scale_type>
 struct NewtonSolve_wrapper {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
@@ -32,10 +33,13 @@ struct NewtonSolve_wrapper {
   mat_type J, tmp;
   status_view status;
 
+  scale_type scale;
+
   NewtonSolve_wrapper(const system_type& my_nls_, const newton_params& params_,
                       const vec_type& x_, const vec_type& rhs_,
                       const vec_type& update_, const mat_type& J_,
-                      const mat_type& tmp_, const status_view& status_)
+                      const mat_type& tmp_, const status_view& status_,
+                      const scale_type& scale_)
       : my_nls(my_nls_),
         params(params_),
         x(x_),
@@ -43,7 +47,8 @@ struct NewtonSolve_wrapper {
         update(update_),
         J(J_),
         tmp(tmp_),
-        status(status_) {}
+        status(status_),
+        scale(scale_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int idx) const {
@@ -71,7 +76,8 @@ struct NewtonSolve_wrapper {
 
     // Run Newton nonlinear solver
     status(idx) = KokkosODE::Experimental::Newton::Solve(
-        my_nls, params, local_J, local_tmp, local_x, local_rhs, local_update);
+        my_nls, params, local_J, local_tmp, local_x, local_rhs, local_update,
+        scale);
   }
 };
 
@@ -86,6 +92,9 @@ void run_newton_test(const system_type& mySys,
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
 
   Kokkos::View<newton_solver_status*, Device> status("Newton status", 1);
+
+  vec_type scale("scaling factors", mySys.neqs);
+  Kokkos::deep_copy(scale, 1);
 
   vec_type x("solution vector", mySys.neqs),
       rhs("right hand side vector", mySys.neqs);
@@ -104,7 +113,7 @@ void run_newton_test(const system_type& mySys,
 
   Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   NewtonSolve_wrapper solve_wrapper(mySys, params, x, rhs, update, J, tmp,
-                                    status);
+                                    status, scale);
 
   Kokkos::parallel_for(my_policy, solve_wrapper);
 
@@ -205,6 +214,9 @@ void test_newton_status() {
   using vec_type             = typename Kokkos::View<scalar_type*, Device>;
   using mat_type             = typename Kokkos::View<scalar_type**, Device>;
 
+  vec_type scale("scaling factors", 1);
+  Kokkos::deep_copy(scale, 1);
+
   double abs_tol, rel_tol;
   if (std::is_same_v<scalar_type, float>) {
     rel_tol = 10e-5;
@@ -227,7 +239,7 @@ void test_newton_status() {
   scalar_type solution[3] = {2.0, -1.0, 0.0};
 #endif
   newton_solver_status newton_status[3] = {
-      newton_solver_status::NLS_SUCCESS, newton_solver_status::MAX_ITER,
+      newton_solver_status::NLS_SUCCESS, newton_solver_status::NLS_DIVERGENCE,
       newton_solver_status::LIN_SOLVE_FAIL};
   vec_type x("solution vector", 1), rhs("right hand side vector", 1);
   auto x_h = Kokkos::create_mirror_view(x);
@@ -242,7 +254,7 @@ void test_newton_status() {
 
     Kokkos::RangePolicy<execution_space> my_policy(0, 1);
     NewtonSolve_wrapper solve_wrapper(my_system, params, x, rhs, update, J, tmp,
-                                      status);
+                                      status, scale);
     Kokkos::parallel_for(my_policy, solve_wrapper);
 
     Kokkos::deep_copy(status_h, status);
@@ -481,6 +493,9 @@ void test_newton_on_device() {
 
   system_type mySys{};
 
+  vec_type scale("scaling factors", mySys.neqs);
+  Kokkos::deep_copy(scale, 1);
+
   vec_type x("solution vector", mySys.neqs * num_systems);
   vec_type rhs("right hand side vector", mySys.neqs * num_systems);
   vec_type update("update", mySys.neqs * num_systems);
@@ -503,7 +518,7 @@ void test_newton_on_device() {
 
   Kokkos::RangePolicy<execution_space> my_policy(0, num_systems);
   NewtonSolve_wrapper solve_wrapper(mySys, params, x, rhs, update, J, tmp,
-                                    status);
+                                    status, scale);
 
   Kokkos::parallel_for(my_policy, solve_wrapper);
   Kokkos::fence();

@@ -366,20 +366,24 @@ KOKKOS_INLINE_FUNCTION void TeamVectorHadamard1D(const MemberType &member,
 /// ===========
 template <>
 struct SerialGesv<Gesv::StaticPivoting> {
-  template <typename MatrixType, typename VectorType>
+  template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
-                                           const VectorType X,
-                                           const VectorType Y,
+                                           const XVectorType X,
+                                           const YVectorType Y,
                                            const MatrixType tmp) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value,
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
-    static_assert(Kokkos::is_view<VectorType>::value,
-                  "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
+    static_assert(Kokkos::is_view<XVectorType>::value,
+                  "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
+    static_assert(Kokkos::is_view<YVectorType>::value,
+                  "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::rank == 1,
-                  "KokkosBatched::gesv: VectorType must have rank 1.");
+    static_assert(XVectorType::rank == 1,
+                  "KokkosBatched::gesv: XVectorType must have rank 1.");
+    static_assert(YVectorType::rank == 1,
+                  "KokkosBatched::gesv: YVectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
 
@@ -462,20 +466,24 @@ struct SerialGesv<Gesv::StaticPivoting> {
 
 template <>
 struct SerialGesv<Gesv::NoPivoting> {
-  template <typename MatrixType, typename VectorType>
+  template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
-                                           const VectorType X,
-                                           const VectorType Y,
+                                           const XVectorType X,
+                                           const YVectorType Y,
                                            const MatrixType /*tmp*/) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value,
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
-    static_assert(Kokkos::is_view<VectorType>::value,
-                  "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
+    static_assert(Kokkos::is_view<XVectorType>::value,
+                  "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
+    static_assert(Kokkos::is_view<YVectorType>::value,
+                  "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::rank == 1,
-                  "KokkosBatched::gesv: VectorType must have rank 1.");
+    static_assert(XVectorType::rank == 1,
+                  "KokkosBatched::gesv: XVectorType must have rank 1.");
+    static_assert(YVectorType::rank == 1,
+                  "KokkosBatched::gesv: YVectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
 

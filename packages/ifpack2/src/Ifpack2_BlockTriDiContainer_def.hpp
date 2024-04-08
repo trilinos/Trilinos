@@ -47,6 +47,7 @@
 
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_BlockMultiVector.hpp>
+#include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
@@ -81,7 +82,8 @@ namespace Ifpack2 {
   ::initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
                   const Teuchos::RCP<const import_type>& importer,
                   const bool overlapCommAndComp,
-                  const bool useSeqMethod) 
+                  const bool useSeqMethod,
+                  const int block_size) 
   {
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::initInternal");
 
@@ -98,8 +100,15 @@ namespace Ifpack2 {
     {
       IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA");
       impl_->A = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
-      TEUCHOS_TEST_FOR_EXCEPT_MSG
-        (impl_->A.is_null(), "BlockTriDiContainer currently supports Tpetra::BlockCrsMatrix only.");
+      if (impl_->A.is_null()) {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG
+          (block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
+        {
+          IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA::convertToBlockCrsMatrix");
+          impl_->A = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(matrix), block_size);
+          IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
+        }
+      }
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
 
@@ -197,11 +206,12 @@ namespace Ifpack2 {
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const int n_subparts_per_part,
                        const bool overlapCommAndComp, 
-                       const bool useSeqMethod)
+                       const bool useSeqMethod,
+                       const int block_size)
     : Container<MatrixType>(matrix, partitions, false), partitions_(partitions)
   {
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer");
-    initInternal(matrix, Teuchos::null, overlapCommAndComp, useSeqMethod);
+    initInternal(matrix, Teuchos::null, overlapCommAndComp, useSeqMethod, block_size);
     n_subparts_per_part_ = n_subparts_per_part;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
   }

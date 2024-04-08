@@ -588,7 +588,7 @@ struct IlutWrap {
           count);
 
       Kokkos::single(Kokkos::PerTeam(team),
-                     [=]() { O_row_map(row_idx) = count; });
+                     [&]() { O_row_map(row_idx) = count; });
     }
 
     float_t threshold;
@@ -699,18 +699,24 @@ struct IlutWrap {
     multiply_matrices(kh, ih, L_row_map, L_entries, L_values, U_row_map,
                       U_entries, U_values, LU_row_map, LU_entries, LU_values);
 
-    auto addHandle = kh.get_spadd_handle();
-    KokkosSparse::Experimental::spadd_symbolic(
-        &kh, A_row_map, A_entries, LU_row_map, LU_entries, R_row_map);
+    auto addHandle                      = kh.get_spadd_handle();
+    typename KHandle::const_nnz_lno_t m = A_row_map.extent(0) - 1,
+                                      n = m;  // square matrix
+    // TODO: let compute_residual_norm also take an execution space argument and
+    // use that for exec!
+    typename KHandle::HandleExecSpace exec{};
+    KokkosSparse::Experimental::spadd_symbolic(exec, &kh, m, n, A_row_map,
+                                               A_entries, LU_row_map,
+                                               LU_entries, R_row_map);
 
     const size_type r_nnz = addHandle->get_c_nnz();
-    Kokkos::resize(R_entries, r_nnz);
-    Kokkos::resize(R_values, r_nnz);
+    Kokkos::resize(exec, R_entries, r_nnz);
+    Kokkos::resize(exec, R_values, r_nnz);
 
     KokkosSparse::Experimental::spadd_numeric(
-        &kh, A_row_map, A_entries, A_values, 1., LU_row_map, LU_entries,
-        LU_values, -1., R_row_map, R_entries, R_values);
-
+        exec, &kh, m, n, A_row_map, A_entries, A_values, 1., LU_row_map,
+        LU_entries, LU_values, -1., R_row_map, R_entries, R_values);
+    // TODO: how to make this policy use exec?
     auto policy = ih.get_default_team_policy();
 
     Kokkos::parallel_reduce(

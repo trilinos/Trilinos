@@ -21,6 +21,7 @@
 #include "Test_Blas1_asum.hpp"
 #include "Test_Blas1_axpby.hpp"
 #include "Test_Blas1_axpy.hpp"
+#include "Test_Blas1_axpby_unification.hpp"
 #include "Test_Blas1_dot.hpp"
 #include "Test_Blas1_iamax.hpp"
 #include "Test_Blas1_mult.hpp"
@@ -60,6 +61,7 @@
 #include "Test_Blas2_gemv.hpp"
 #include "Test_Blas2_ger.hpp"
 #include "Test_Blas2_syr.hpp"
+#include "Test_Blas2_syr2.hpp"
 
 // Serial Blas 2
 #include "Test_Blas2_serial_gemv.hpp"

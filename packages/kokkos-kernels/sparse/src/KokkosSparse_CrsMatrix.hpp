@@ -867,5 +867,9 @@ struct is_crs_matrix<CrsMatrix<P...>> : public std::true_type {};
 template <typename... P>
 struct is_crs_matrix<const CrsMatrix<P...>> : public std::true_type {};
 
+/// \brief Equivalent to is_crs_matrix<T>::value.
+template <typename T>
+inline constexpr bool is_crs_matrix_v = is_crs_matrix<T>::value;
+
 }  // namespace KokkosSparse
 #endif

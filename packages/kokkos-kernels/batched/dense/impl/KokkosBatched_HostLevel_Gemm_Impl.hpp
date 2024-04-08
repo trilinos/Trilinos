@@ -93,11 +93,9 @@ int BatchedGemmImpl(BatchedGemmHandleType *const handle, const ScalarType alpha,
       case BaseKokkosBatchedAlgos::KK_SERIAL:
       case BaseHeuristicAlgos::SQUARE:
       case BaseTplAlgos::ARMPL:
-#if KOKKOS_VERSION > 40099
         assert(A.rank_dynamic() == 3 && "AViewType must have rank 3.");
         assert(B.rank_dynamic() == 3 && "BViewType must have rank 3.");
         assert(C.rank_dynamic() == 3 && "CViewType must have rank 3.");
-#endif
         break;
       default:
         std::ostringstream os;

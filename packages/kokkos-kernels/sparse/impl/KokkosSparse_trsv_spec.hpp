@@ -20,6 +20,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_BsrMatrix.hpp"
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -47,6 +48,22 @@ struct trsv_eti_spec_avail {
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
                               const OFFSET_TYPE>,                              \
+      Kokkos::View<                                                            \
+          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {               \
+    enum : bool { value = true };                                              \
+  };                                                                           \
+                                                                               \
+  template <>                                                                  \
+  struct trsv_eti_spec_avail<                                                  \
+      KokkosSparse::Experimental::BsrMatrix<                                   \
+          const SCALAR_TYPE, const ORDINAL_TYPE,                               \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,         \
       Kokkos::View<                                                            \
           const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
@@ -93,50 +110,52 @@ struct TRSV<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false,
                    const CrsMatrixType &A, DomainMultiVectorType B,
                    RangeMultiVectorType X)  // X is the output MV
   {
+    using Wrap = Sequential::TrsvWrap<CrsMatrixType, DomainMultiVectorType,
+                                      RangeMultiVectorType>;
     if (trans[0] == 'N' || trans[0] == 'n') {    // no transpose
       if (uplo[0] == 'L' || uplo[0] == 'l') {    // lower triangular
         if (diag[0] == 'U' || diag[0] == 'u') {  // unit diagonal
-          Sequential::lowerTriSolveCsrUnitDiag(X, A, B);
+          Wrap::lowerTriSolveCsrUnitDiag(X, A, B);
         } else {  // non unit diagonal
-          Sequential::lowerTriSolveCsr(X, A, B);
+          Wrap::lowerTriSolveCsr(X, A, B);
         }
       } else {                                   // upper triangular
         if (diag[0] == 'U' || diag[0] == 'u') {  // unit diagonal
-          Sequential::upperTriSolveCsrUnitDiag(X, A, B);
+          Wrap::upperTriSolveCsrUnitDiag(X, A, B);
         } else {  // non unit diagonal
-          Sequential::upperTriSolveCsr(X, A, B);
+          Wrap::upperTriSolveCsr(X, A, B);
         }
       }
     } else if (trans[0] == 'T' || trans[0] == 't') {  // transpose
       if (uplo[0] == 'L' || uplo[0] == 'l') {         // lower triangular
         // Transposed lower tri CSR => upper tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {  // unit diagonal
-          Sequential::upperTriSolveCscUnitDiag(X, A, B);
+          Wrap::upperTriSolveCscUnitDiag(X, A, B);
         } else {  // non unit diagonal
-          Sequential::upperTriSolveCsc(X, A, B);
+          Wrap::upperTriSolveCsc(X, A, B);
         }
       } else {  // upper triangular
         // Transposed upper tri CSR => lower tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {  // unit diagonal
-          Sequential::lowerTriSolveCscUnitDiag(X, A, B);
+          Wrap::lowerTriSolveCscUnitDiag(X, A, B);
         } else {  // non unit diagonal
-          Sequential::lowerTriSolveCsc(X, A, B);
+          Wrap::lowerTriSolveCsc(X, A, B);
         }
       }
     } else if (trans[0] == 'C' || trans[0] == 'c') {  // conj transpose
       if (uplo[0] == 'L' || uplo[0] == 'l') {         // lower triangular
         // Transposed lower tri CSR => upper tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {  // unit diagonal
-          Sequential::upperTriSolveCscUnitDiagConj(X, A, B);
+          Wrap::upperTriSolveCscUnitDiagConj(X, A, B);
         } else {  // non unit diagonal
-          Sequential::upperTriSolveCscConj(X, A, B);
+          Wrap::upperTriSolveCscConj(X, A, B);
         }
       } else {  // upper triangular
         // Transposed upper tri CSR => lower tri CSC.
         if (diag[0] == 'U' || diag[0] == 'u') {  // unit diagonal
-          Sequential::lowerTriSolveCscUnitDiagConj(X, A, B);
+          Wrap::lowerTriSolveCscUnitDiagConj(X, A, B);
         } else {  // non unit diagonal
-          Sequential::lowerTriSolveCscConj(X, A, B);
+          Wrap::lowerTriSolveCscConj(X, A, B);
         }
       }
     }
@@ -169,6 +188,20 @@ struct TRSV<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false,
       Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      false, true>;                                                            \
+                                                                               \
+  extern template struct TRSV<                                                 \
+      KokkosSparse::Experimental::BsrMatrix<                                   \
+          const SCALAR_TYPE, const ORDINAL_TYPE,                               \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,         \
+      Kokkos::View<                                                            \
+          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       false, true>;
 
 #define KOKKOSSPARSE_TRSV_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE,             \
@@ -179,6 +212,20 @@ struct TRSV<CrsMatrixType, DomainMultiVectorType, RangeMultiVectorType, false,
                               Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,         \
                               const OFFSET_TYPE>,                              \
+      Kokkos::View<                                                            \
+          const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<SCALAR_TYPE **, LAYOUT_TYPE,                                \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      false, true>;                                                            \
+                                                                               \
+  template struct TRSV<                                                        \
+      KokkosSparse::Experimental::BsrMatrix<                                   \
+          const SCALAR_TYPE, const ORDINAL_TYPE,                               \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,         \
       Kokkos::View<                                                            \
           const SCALAR_TYPE **, LAYOUT_TYPE,                                   \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \

@@ -139,6 +139,8 @@ private:
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type> crs_matrix_type;
   typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type,
                                  global_ordinal_type, node_type> block_crs_matrix_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;

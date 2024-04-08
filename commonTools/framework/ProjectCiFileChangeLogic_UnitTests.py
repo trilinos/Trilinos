@@ -116,6 +116,9 @@ class test_TribitsExampleProject_ProjectCiFileChangeLogic(unittest.TestCase):
   def test_packages_framework(self):
     self.check('packages/framework/something', True)
 
+  def test_dotgithub_workflows(self):
+    self.check('.github/workflows/something', True)
+
 
 if __name__ == '__main__':
   unittest.main()

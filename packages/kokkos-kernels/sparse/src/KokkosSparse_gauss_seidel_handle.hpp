@@ -29,12 +29,21 @@ namespace KokkosSparse {
 
 enum GSAlgorithm { GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER, GS_TWOSTAGE };
 enum GSDirection { GS_FORWARD, GS_BACKWARD, GS_SYMMETRIC };
-enum ClusteringAlgorithm {
+enum struct ClusteringAlgorithm {
   CLUSTER_DEFAULT,
   CLUSTER_MIS2,
   CLUSTER_BALLOON,
   NUM_CLUSTERING_ALGORITHMS
 };
+
+static constexpr ClusteringAlgorithm CLUSTER_DEFAULT =
+    ClusteringAlgorithm::CLUSTER_DEFAULT;
+static constexpr ClusteringAlgorithm CLUSTER_MIS2 =
+    ClusteringAlgorithm::CLUSTER_MIS2;
+static constexpr ClusteringAlgorithm CLUSTER_BALLOON =
+    ClusteringAlgorithm::CLUSTER_BALLOON;
+static constexpr ClusteringAlgorithm NUM_CLUSTERING_ALGORITHMS =
+    ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS;
 
 inline const char *getClusterAlgoName(ClusteringAlgorithm ca) {
   switch (ca) {
