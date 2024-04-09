@@ -464,7 +464,13 @@ Teuchos::RCP<const Teuchos::ParameterList> StratimikosFactory::getValidParameter
             "velocity and pressure forming an inner two-by-two block, and then the\n"
             "temperature unknowns forming a two-by-two system with the velocity-pressure\n"
             "block.");
-    pl->set("Inverse Type", "Amesos",
+    std::string defaultInverseType = "";
+#if defined(Teko_ENABLE_Amesos)
+    defaultInverseType = "Amesos";
+#elif defined(Teko_ENABLE_Amesos2)
+    defaultInverseType = "Amesos2";
+#endif
+    pl->set("Inverse Type", defaultInverseType,
             "The type of inverse operator the user wants. This can be one of the defaults\n"
             "from Stratimikos, or a Teko preconditioner defined in the\n"
             "\"Inverse Factory Library\".");

@@ -250,8 +250,12 @@ void LSCSIMPLECStrategy::initializeFromParameterList(const Teuchos::ParameterLis
   pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END()
 
-      // set defaults as needed
+  // set defaults as needed
+#if defined(Teko_ENABLE_Amesos)
       if (invStr == "") invStr = "Amesos";
+#elif defined(Teko_ENABLE_Amesos2)
+      if (invStr == "") invStr = "Amesos2";
+#endif
   if (invVStr == "") invVStr = invStr;
   if (invPStr == "") invPStr = invStr;
 

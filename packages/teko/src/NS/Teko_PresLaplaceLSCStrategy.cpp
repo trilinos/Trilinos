@@ -291,7 +291,13 @@ void PresLaplaceLSCStrategy::computeInverses(const BlockedLinearOp& A,
 void PresLaplaceLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList& pl,
                                                          const InverseLibrary& invLib) {
   // get string specifying inverse
-  std::string invStr = "Amesos", invVStr = "", invPStr = "";
+  std::string invStr = "", invVStr = "", invPStr = "";
+#if defined(Teko_ENABLE_Amesos)
+  invStr = "Amesos";
+#elif defined(Teko_ENABLE_Amesos2)
+  invStr = "Amesos2";
+#endif
+
   bool useLDU = false;
   scaleType_  = AbsRowSum;
 
