@@ -242,7 +242,7 @@ bool compareArrays(
  * floating point precision.
  *
  * This function works with any two array objects are the same size and have
- * the same element value types.  The funtion is templated on the container
+ * the same element value types.  The function is templated on the container
  * types and therefore can compare any two objects that have size() and
  * operator[](i) defined.
  *
@@ -252,6 +252,28 @@ bool compareArrays(
  */
 template<class Array1, class Array2, class ScalarMag>
 bool compareFloatingArrays(
+  const Array1 &a1, const std::string &a1_name,
+  const Array2 &a2, const std::string &a2_name,
+  const ScalarMag &tol,
+  Teuchos::FancyOStream &out
+  );
+
+/** \brief Compare if two array objects are the same up to an absolute
+ * difference: elements <tt>a1[i]</tt> and <tt>a2[i]</tt> are considered
+ * the same if <tt>|a1[i]-a2[i]| <= tol</tt>.
+ *
+ * This function works with any two array objects are the same size and have
+ * the same element value types.  The function is templated on the container
+ * types and therefore can compare any two objects that have size() and
+ * operator[](i) defined. <tt>Teuchos::ScalarTraits</tt> must have a specialization
+ * for the element type.
+ *
+ * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template<class Array1, class Array2, class ScalarMag>
+bool compareFloatingArraysAbsolute(
   const Array1 &a1, const std::string &a1_name,
   const Array2 &a2, const std::string &a2_name,
   const ScalarMag &tol,
@@ -724,6 +746,53 @@ bool Teuchos::compareFloatingArrays(
 
   return success;
 
+}
+
+template<class Array1, class Array2, class ScalarMag>
+bool Teuchos::compareFloatingArraysAbsolute(
+  const Array1 &a1, const std::string &a1_name,
+  const Array2 &a2, const std::string &a2_name,
+  const ScalarMag &tol,
+  Teuchos::FancyOStream &out
+  )
+{
+  using Teuchos::as;
+  using Teuchos::ScalarTraits;
+
+  // This figures out what the elements of Array1 and Array2 are (result of their [] operators)
+  using Elem1 = std::remove_const_t<std::remove_reference_t<decltype(std::declval<Array1>()[0])>>;
+  using Elem2 = std::remove_const_t<std::remove_reference_t<decltype(std::declval<Array2>()[1])>>;
+
+  static_assert(std::is_same_v<Elem1, Elem2>,
+      "Teuchos::compareFloatingArraysAbsolute: element types of Array1 and Array2 must be the same.");
+
+  bool success = true;
+
+  out << "Comparing " << a1_name << " == " << a2_name << " ... ";
+
+  const int n = a1.size();
+
+  // Compare sizes
+  if (as<int>(a2.size()) != n) {
+    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == "
+        << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
+    return false;
+  }
+
+  // Compare elements
+  for( int i = 0; i < n; ++i ) {
+    const ScalarMag err = ScalarTraits<Elem1>::magnitude( a1[i] - a2[i] );
+    if ( !(err <= tol) ) {
+      out
+        <<"\nError, ||"<<a1_name<<"["<<i<<"] - " << a2_name<<"["<<i<<"]|| = "
+        <<err<<" <= tol = "<<tol<<": failed!\n";
+      success = false;
+    }
+  }
+  if (success) {
+    out << "passed\n";
+  }
+  return success;
 }
 
 
