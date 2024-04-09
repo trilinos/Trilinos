@@ -12,10 +12,10 @@
 name: "CodeQL"
 
 on:
-  push:
-    branches: [ "muelu-sync-workflow" ]
+  #push:
+  #  branches: [ "muelu-sync-workflow" ]
   pull_request:
-    branches: [ "muelu-sync-workflow" ]
+    branches: [ "develop" ]
   schedule:
     - cron: '41 23 * * 2'
 
