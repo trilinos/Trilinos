@@ -44,6 +44,7 @@
 #endif
 #include "cgns/Iocgns_StructuredZoneData.h"
 #include "cgns/Iocgns_Utils.h"
+#include <cgnsconfig.h>
 #include <cgnstypes.h>
 #include <cmath>
 #include <cstring>
