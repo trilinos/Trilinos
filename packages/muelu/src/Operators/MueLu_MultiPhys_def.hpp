@@ -142,7 +142,9 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   // Generate the (iii,iii) Hierarchy
 
   for (int iii = 0; iii < nBlks_; iii++) {
-    arrayOfParamLists_[iii]->sublist("user data").set("Coordinates", arrayOfCoords_[iii]);
+    if(arrayOfCoords_ != Teuchos::null){
+      arrayOfParamLists_[iii]->sublist("user data").set("Coordinates", arrayOfCoords_[iii]);
+    }
 
     bool wantToRepartition = false;
     if (paramListMultiphysics_->isParameter("repartition: enable"))
