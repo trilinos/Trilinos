@@ -9,8 +9,14 @@ on:
       - submitted
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   gcc10-openmpi416:
+    permissions:
+      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
+      contents: read  # for actions/checkout to fetch code
     runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
     steps:
       - name: Cancel Previous Runs
