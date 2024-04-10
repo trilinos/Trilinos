@@ -70,7 +70,7 @@ jobs:
           bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
       - name: build trilinos
         working-directory: /home/Trilinos/build
-        run: bash -l -c "ninja -j36"
+        run: bash -l -c "ninja -j16"
       - name: ctest
         working-directory: /home/Trilinos/build
-        run: bash -l -c "ctest -j36"
+        run: bash -l -c "ctest -j16"
