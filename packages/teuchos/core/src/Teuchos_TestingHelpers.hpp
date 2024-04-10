@@ -221,12 +221,14 @@ bool testRelErr(
 
 /** \brief Compare if two array objects are the same or not.
  *
- * This function works with any two array objects are the same size and have
- * the same element value types.  The funtion is templated on the container
- * types and therefore can compare any two objects that have size() and
- * operator[](i) defined.
+ * This function works with any two array-like objects:
+ * <tt>Array1</tt> and <tt>Array2</tt> must have <tt>size()</tt>
+ * and <tt>operator[](i)</tt> methods defined. Their element types
+ * may be different, but it must be possible to compare them with
+ * <tt>==</tt>.
  *
- * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
+ * \returns Returns <tt>true</tt> if <tt>a1.size() == a2.size()</tt> and
+ *   their elements are equal. Otherwise returns <tt>false</tt>.
  *
  * \ingroup teuchos_testing_grp
  */
@@ -241,12 +243,15 @@ bool compareArrays(
 /** \brief Compare if two array objects are the same or not up to a relative
  * floating point precision.
  *
- * This function works with any two array objects are the same size and have
- * the same element value types.  The function is templated on the container
- * types and therefore can compare any two objects that have size() and
- * operator[](i) defined.
+ * This function works with any two array-like objects:
+ * <tt>Array1</tt> and <tt>Array2</tt> must have <tt>size()</tt>
+ * and <tt>operator[](i)</tt> methods defined. Their element
+ * types may be different, as long as <tt>Teuchos::relErr(a1[i], a2[i])</tt>
+ * can be called to determine the relative difference between them.
  *
- * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
+ * \returns Returns <tt>true</tt> if <tt>a1.size() == a2.size()</tt> and
+ *   <tt>relErr(a1[i], a2[i]) <= tol</tt> for all <tt>0 <= i < a1.size()</tt>.
+ *   Otherwise returns <tt>false</tt>.
  *
  * \ingroup teuchos_testing_grp
  */
@@ -259,16 +264,18 @@ bool compareFloatingArrays(
   );
 
 /** \brief Compare if two array objects are the same up to an absolute
- * difference: elements <tt>a1[i]</tt> and <tt>a2[i]</tt> are considered
+ * tolerance: elements <tt>a1[i]</tt> and <tt>a2[i]</tt> are considered
  * the same if <tt>|a1[i]-a2[i]| <= tol</tt>.
  *
- * This function works with any two array objects are the same size and have
- * the same element value types.  The function is templated on the container
- * types and therefore can compare any two objects that have size() and
- * operator[](i) defined. <tt>Teuchos::ScalarTraits</tt> must have a specialization
+ * This function works with any two array-like objects
+ * with the same element types. <tt>Array1</tt> and <tt>Array2</tt> must have
+ * <tt>size()</tt> and <tt>operator[](i)</tt> methods defined.
+ * <tt>Teuchos::ScalarTraits</tt> must also have a specialization
  * for the element type.
  *
- * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
+ * \returns Returns <tt>true</tt> if <tt>a1.size() == a2.size()</tt> and
+ *   <tt>|a1[i]-a2[i]| <= tol</tt> for all <tt>0 <= i < a1.size()</tt>.
+ *   Otherwise returns <tt>false</tt>.
  *
  * \ingroup teuchos_testing_grp
  */
@@ -676,6 +683,7 @@ bool Teuchos::compareArrays(
   )
 {
   using Teuchos::as;
+
   bool success = true;
 
   out << "Comparing " << a1_name << " == " << a2_name << " ... ";
@@ -716,6 +724,14 @@ bool Teuchos::compareFloatingArrays(
   )
 {
   using Teuchos::as;
+
+  // Determine the element types of Array1 and Array2
+  using Elem1 = std::decay_t<decltype(std::declval<Array1>()[0])>;
+  using Elem2 = std::decay_t<decltype(std::declval<Array2>()[0])>;
+
+  static_assert(std::is_same_v<Elem1, Elem2>,
+      "Teuchos::compareFloatingArrays: element types of Array1 and Array2 must be the same.");
+
   bool success = true;
 
   out << "Comparing " << a1_name << " == " << a2_name << " ... ";
@@ -759,9 +775,9 @@ bool Teuchos::compareFloatingArraysAbsolute(
   using Teuchos::as;
   using Teuchos::ScalarTraits;
 
-  // This figures out what the elements of Array1 and Array2 are (result of their [] operators)
-  using Elem1 = std::remove_const_t<std::remove_reference_t<decltype(std::declval<Array1>()[0])>>;
-  using Elem2 = std::remove_const_t<std::remove_reference_t<decltype(std::declval<Array2>()[1])>>;
+  // Determine the element types of Array1 and Array2
+  using Elem1 = std::decay_t<decltype(std::declval<Array1>()[0])>;
+  using Elem2 = std::decay_t<decltype(std::declval<Array2>()[0])>;
 
   static_assert(std::is_same_v<Elem1, Elem2>,
       "Teuchos::compareFloatingArraysAbsolute: element types of Array1 and Array2 must be the same.");
