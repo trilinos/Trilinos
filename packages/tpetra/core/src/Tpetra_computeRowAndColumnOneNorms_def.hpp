@@ -805,7 +805,7 @@ bool findZero (const OneDViewType& x)
   using functor_type = FindZero<view_type, size_type>;
 
   Kokkos::RangePolicy<execution_space, size_type> range (0, x.extent (0));
-  range.set (Kokkos::ChunkSize (500)); // adjust as needed
+  range.set_chunk_size (500); // adjust as needed
 
   int foundZero = 0;
   Kokkos::parallel_reduce ("findZero", range, functor_type (x), foundZero);

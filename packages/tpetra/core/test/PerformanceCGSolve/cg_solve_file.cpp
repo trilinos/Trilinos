@@ -303,7 +303,6 @@ int main(int argc, char *argv[]) {
   const char* rawKokkosNumDevices = std::getenv("KOKKOS_NUM_DEVICES");
   if(rawKokkosNumDevices)
     numgpus = std::atoi(rawKokkosNumDevices);
-  int skipgpu = 999;
 
   bool useSYCL = false;
   bool useHIP = false;
@@ -316,7 +315,6 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("numthreads",&numthreads,"Number of threads per thread team.");
   cmdp.setOption("numgpus",&numgpus,"Number of GPUs.");
-  cmdp.setOption("skipgpu",&skipgpu,"Do not use this GPU.");
   cmdp.setOption("hostname",&hostname,"Override of hostname for PerfTest entry.");
   cmdp.setOption("testarchive",&testarchive,"Set filename for Performance Test archive.");
   cmdp.setOption("filename",&filename,"Filename for test matrix.");
@@ -405,7 +403,6 @@ int main(int argc, char *argv[]) {
   Kokkos::InitializationSettings kokkosArgs;
   kokkosArgs.set_num_threads(numthreads);
   kokkosArgs.set_device_id(myRank % numgpus);
-  kokkosArgs.set_skip_device(skipgpu);
   kokkosArgs.set_disable_warnings(!verbose);
 
   Kokkos::initialize (kokkosArgs);
