@@ -312,6 +312,8 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
   oss << std::endl;
 
+  out << oss.str();
+
   for (int i = 0; i < nBlks_; i++) {
     arrayOfHierarchies_[i]->describe(out, GetVerbLevel());
   }
