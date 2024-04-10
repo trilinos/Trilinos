@@ -247,151 +247,153 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
     }
     // Transform optimization problem
     //std::cout << hasBounds_ << "  " << hasEquality << "  " << hasInequality << "  " << hasLinearEquality << "  " << hasLinearInequality << std::endl;
-    if (!hasLinearEquality && !hasLinearInequality) {
-      proj_ = nullPtr;
-      if (!hasEquality && !hasInequality && !hasBounds_ && !hasProximableObjective) {
-        problemType_ = TYPE_U;
+    if (hasProximableObjective){
+      if (!hasEquality && !hasInequality && !hasBounds_ && !hasLinearEquality && !hasLinearInequality){
+        problemType_ = TYPE_P;
         obj_         = INPUT_obj_;
-        nobj_        = nullPtr; 
+        nobj_        = INPUT_nobj_; 
         xprim_       = INPUT_xprim_;
         xdual_       = INPUT_xdual_;
         bnd_         = nullPtr;
         con_         = nullPtr;
         mul_         = nullPtr;
         res_         = nullPtr;
-      }
-      else if (!hasEquality && !hasInequality && hasBounds_ && !hasProximableObjective) {
-        problemType_ = TYPE_B;
-        obj_         = INPUT_obj_;
-        nobj_        = nullPtr; 
-        xprim_       = INPUT_xprim_;
-        xdual_       = INPUT_xdual_;
-        bnd_         = INPUT_bnd_;
-        con_         = nullPtr;
-        mul_         = nullPtr;
-        res_         = nullPtr;
-      }
-      else if (hasEquality && !hasInequality && !hasBounds_ && !hasProximableObjective) {
-        ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_);
-        problemType_ = TYPE_E;
-        obj_         = INPUT_obj_;
-        nobj_        = nullPtr; 
-        xprim_       = INPUT_xprim_;
-        xdual_       = INPUT_xdual_;
-        bnd_         = nullPtr;
-        con_         = cm.getConstraint();
-        mul_         = cm.getMultiplier();
-        res_         = cm.getResidual();
-      }
-      else if (hasProximableObjective){
-        if (!hasEquality && !hasInequality && !hasBounds_){
-          problemType_ = TYPE_P;
+     }
+     else {
+       throw Exception::NotImplemented(">>> ROL::TypeP - with constraints is not supported");
+     }
+    }
+    else {    
+      if (!hasLinearEquality && !hasLinearInequality) {
+        proj_ = nullPtr;
+        if (!hasEquality && !hasInequality && !hasBounds_ ) {
+          problemType_ = TYPE_U;
           obj_         = INPUT_obj_;
-          nobj_        = INPUT_nobj_;   
-          xprim_       = INPUT_xprim_;
+          nobj_        = nullPtr; 
+		  		xprim_       = INPUT_xprim_;
           xdual_       = INPUT_xdual_;
           bnd_         = nullPtr;
           con_         = nullPtr;
           mul_         = nullPtr;
           res_         = nullPtr;
         }
-        else {
-          throw Exception::NotImplemented(">>> ROL::TypeP - with constraints is not supported");
-        }
-      }
-      else {
-        ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
-        problemType_ = TYPE_EB;
-        obj_         = INPUT_obj_;
-        nobj_        = nullPtr; 
-        if (cm.hasInequality()) {
-          obj_      = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
-        }
-        xprim_       = cm.getOptVector();
-        xdual_       = cm.getDualOptVector();
-        bnd_         = cm.getBoundConstraint();
-        con_         = cm.getConstraint();
-        mul_         = cm.getMultiplier();
-        res_         = cm.getResidual();
-      }
-    }
-    else {
-      if (!hasBounds_ && !hasLinearInequality) {
-        if (hasProximableObjective){
-          throw Exception::NotImplemented(">>> ROL::TypeP - with constraints is not supported"); 
-        }
-        nobj_ = nullPtr; 
-        ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_);
-        xfeas_ = cm.getOptVector()->clone(); xfeas_->set(*cm.getOptVector());
-        rlc_   = makePtr<ReduceLinearConstraint<Real>>(cm.getConstraint(),xfeas_,cm.getResidual());
-        proj_  = nullPtr;
-        if (!hasEquality && !hasInequality) {
-          problemType_ = TYPE_U;
-          obj_         = rlc_->transform(INPUT_obj_);
-          xprim_       = xfeas_->clone(); xprim_->zero();
-          xdual_       = cm.getDualOptVector();
-          bnd_         = nullPtr;
+        else if (!hasEquality && !hasInequality && hasBounds_) {
+          problemType_ = TYPE_B;
+          obj_         = INPUT_obj_;
+          nobj_        = nullPtr; 
+          xprim_       = INPUT_xprim_;
+          xdual_       = INPUT_xdual_;
+          bnd_         = INPUT_bnd_;
           con_         = nullPtr;
           mul_         = nullPtr;
           res_         = nullPtr;
         }
+        else if (hasEquality && !hasInequality && !hasBounds_) {
+          ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_);
+          problemType_ = TYPE_E;
+          obj_         = INPUT_obj_;
+          nobj_        = nullPtr; 
+          xprim_       = INPUT_xprim_;
+          xdual_       = INPUT_xdual_;
+          bnd_         = nullPtr;
+          con_         = cm.getConstraint();
+          mul_         = cm.getMultiplier();
+          res_         = cm.getResidual();
+        }
         else {
-          for (auto it = con.begin(); it != con.end(); ++it) {
-            icon.insert(std::pair<std::string,ConstraintData<Real>>(it->first,
-              ConstraintData<Real>(rlc_->transform(it->second.constraint),
-                it->second.multiplier,it->second.residual,it->second.bounds)));
+          ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+          problemType_ = TYPE_EB;
+          obj_         = INPUT_obj_;
+          nobj_        = nullPtr; 
+          if (cm.hasInequality()) {
+            obj_      = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
           }
-          Ptr<Vector<Real>> xtmp = xfeas_->clone(); xtmp->zero();
-          ConstraintAssembler<Real> cm1(icon,xtmp,cm.getDualOptVector());
-          xprim_         = cm1.getOptVector();
-          xdual_         = cm1.getDualOptVector();
-          con_           = cm1.getConstraint();
-          mul_           = cm1.getMultiplier();
-          res_           = cm1.getResidual();
-          if (!hasInequality) {
-            problemType_ = TYPE_E;
-            obj_         = rlc_->transform(INPUT_obj_);
-            bnd_         = nullPtr;
-          }
-          else {
-            problemType_ = TYPE_EB;
-            obj_         = makePtr<SlacklessObjective<Real>>(rlc_->transform(INPUT_obj_));
-            bnd_         = cm1.getBoundConstraint();
-          }
+          xprim_       = cm.getOptVector();
+          xdual_       = cm.getDualOptVector();
+          bnd_         = cm.getBoundConstraint();
+          con_         = cm.getConstraint();
+          mul_         = cm.getMultiplier();
+          res_         = cm.getResidual();
         }
-      }
-      else if ((hasBounds_ || hasLinearInequality) && !hasEquality && !hasInequality) {
-        ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
-        problemType_ = TYPE_B;
-        obj_         = INPUT_obj_;
-        if (cm.hasInequality()) {
-          obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
-        }
-        xprim_       = cm.getOptVector();
-        xdual_       = cm.getDualOptVector();
-        bnd_         = cm.getBoundConstraint();
-        con_         = nullPtr;
-        mul_         = nullPtr;
-        res_         = nullPtr;
-        proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
-                         cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_list_);
       }
       else {
-        ConstraintAssembler<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
-        problemType_ = TYPE_EB;
-        obj_         = INPUT_obj_;
-        if (cm.hasInequality()) {
-          obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
+        if (!hasBounds_ && !hasLinearInequality) {
+          if (hasProximableObjective){
+            throw Exception::NotImplemented(">>> ROL::TypeP - with constraints is not supported"); 
+          }
+          nobj_ = nullPtr; 
+          ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_);
+          xfeas_ = cm.getOptVector()->clone(); xfeas_->set(*cm.getOptVector());
+          rlc_   = makePtr<ReduceLinearConstraint<Real>>(cm.getConstraint(),xfeas_,cm.getResidual());
+          proj_  = nullPtr;
+          if (!hasEquality && !hasInequality) {
+            problemType_ = TYPE_U;
+            obj_         = rlc_->transform(INPUT_obj_);
+            xprim_       = xfeas_->clone(); xprim_->zero();
+            xdual_       = cm.getDualOptVector();
+            bnd_         = nullPtr;
+            con_         = nullPtr;
+            mul_         = nullPtr;
+            res_         = nullPtr;
+          }
+          else {
+            for (auto it = con.begin(); it != con.end(); ++it) {
+              icon.insert(std::pair<std::string,ConstraintData<Real>>(it->first,
+                ConstraintData<Real>(rlc_->transform(it->second.constraint),
+                  it->second.multiplier,it->second.residual,it->second.bounds)));
+            }
+            Ptr<Vector<Real>> xtmp = xfeas_->clone(); xtmp->zero();
+            ConstraintAssembler<Real> cm1(icon,xtmp,cm.getDualOptVector());
+            xprim_         = cm1.getOptVector();
+            xdual_         = cm1.getDualOptVector();
+            con_           = cm1.getConstraint();
+            mul_           = cm1.getMultiplier();
+            res_           = cm1.getResidual();
+            if (!hasInequality) {
+              problemType_ = TYPE_E;
+              obj_         = rlc_->transform(INPUT_obj_);
+              bnd_         = nullPtr;
+            }
+            else {
+              problemType_ = TYPE_EB;
+              obj_         = makePtr<SlacklessObjective<Real>>(rlc_->transform(INPUT_obj_));
+              bnd_         = cm1.getBoundConstraint();
+            }
+          }
         }
-        xprim_       = cm.getOptVector();
-        xdual_       = cm.getDualOptVector();
-        con_         = cm.getConstraint();
-        mul_         = cm.getMultiplier();
-        res_         = cm.getResidual();
-        bnd_         = cm.getBoundConstraint();
-        proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
-                        cm.getLinearConstraint(),*cm.getLinearMultiplier(),
-                        *cm.getLinearResidual(),ppa_list_);
+        else if ((hasBounds_ || hasLinearInequality) && !hasEquality && !hasInequality) {
+          ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+          problemType_ = TYPE_B;
+          obj_         = INPUT_obj_;
+          if (cm.hasInequality()) {
+            obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
+          }
+          xprim_       = cm.getOptVector();
+          xdual_       = cm.getDualOptVector();
+          bnd_         = cm.getBoundConstraint();
+          con_         = nullPtr;
+          mul_         = nullPtr;
+          res_         = nullPtr;
+          proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
+                           cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_list_);
+        }
+        else {
+          ConstraintAssembler<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+          problemType_ = TYPE_EB;
+          obj_         = INPUT_obj_;
+          if (cm.hasInequality()) {
+            obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
+          }
+          xprim_       = cm.getOptVector();
+          xdual_       = cm.getDualOptVector();
+          con_         = cm.getConstraint();
+          mul_         = cm.getMultiplier();
+          res_         = cm.getResidual();
+          bnd_         = cm.getBoundConstraint();
+          proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
+                          cm.getLinearConstraint(),*cm.getLinearMultiplier(),
+                          *cm.getLinearResidual(),ppa_list_);
+        }
       }
     }
     isFinalized_ = true;
