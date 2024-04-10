@@ -71,13 +71,15 @@ jobs:
     - if: matrix.build-mode == 'manual'
       name: Configure Trilinos            
       run: |
-          bash  -l -c "mkdir -p trilinos_build && cd trilinos_build;"
-          bash -l -c "cd trilinos_build ; cmake -G 'Unix Makefiles' -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Epetra=OFF -DTrilinos_ENABLE_AztecOO=OFF -DTrilinos_ENABLE_Ifpack=OFF -DTrilinos_ENABLE_ML=OFF -D Trilinos_ENABLE_Triutils=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_MueLu=ON -DTrilinos_ENABLE_Krino=OFF .."
+          mkdir -p trilinos_build
+          cd trilinos_build 
+          cmake -G 'Unix Makefiles' -DTrilinos_ENABLE_TESTS=OFF -DTrilinos_ENABLE_Epetra=OFF -DTrilinos_ENABLE_AztecOO=OFF -DTrilinos_ENABLE_Ifpack=OFF -DTrilinos_ENABLE_ML=OFF -D Trilinos_ENABLE_Triutils=OFF -DTrilinos_ENABLE_Tpetra=ON -DTrilinos_ENABLE_MueLu=ON -DTrilinos_ENABLE_Krino=OFF ..
       
     - if: matrix.build-mode == 'manual'
       name: Build Trilinos
       run: |
-          bash -l -c "cd trilinos_build ; make -j 2"
+          cd trilinos_build 
+          make -j 2
       
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
