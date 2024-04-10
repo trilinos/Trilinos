@@ -62,8 +62,6 @@
 #include "KokkosBatched_Util.hpp"
 #endif
 
-#include "Test_vector_fixtures.hpp" // JGF REMOVE
-
 namespace Ifpack2 {
 
 namespace Experimental {
@@ -650,8 +648,8 @@ void RBILUK<MatrixType>::compute ()
 
 //    const scalar_type MinDiagonalValue = STS::rmin ();
 //    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
-    initAllValues ();
     if (!this->isKokkosKernelsSpiluk_) {
+      initAllValues ();
       size_t NumIn;
       LO NumL, NumU, NumURead;
 
@@ -913,34 +911,6 @@ void RBILUK<MatrixType>::compute ()
         }
 #endif
       }
-      // JGF REMOVE
-      auto L_local = L_block_->getLocalMatrixDevice();
-      auto U_local = U_block_->getLocalMatrixDevice();
-      auto D_local = D_block_->getLocalMatrixDevice();
-      std::cout << "L after non-KK compute" << std::endl;
-      {
-        auto rowmap  = L_local.graph.row_map;
-        auto entries = L_local.graph.entries;
-        auto values  = L_local.values;
-        Test::print_matrix(
-          Test::decompress_matrix(rowmap, entries, values, blockSize_));
-      }
-      std::cout << "U after non-KK compute" << std::endl;
-      {
-        auto rowmap  = U_local.graph.row_map;
-        auto entries = U_local.graph.entries;
-        auto values  = U_local.values;
-        Test::print_matrix(
-          Test::decompress_matrix(rowmap, entries, values, blockSize_));
-      }
-      std::cout << "D after non-KK compute" << std::endl;
-      {
-        auto rowmap  = D_local.graph.row_map;
-        auto entries = D_local.graph.entries;
-        auto values  = D_local.values;
-        Test::print_matrix(
-          Test::decompress_matrix(rowmap, entries, values, blockSize_));
-      }
     } // !this->isKokkosKernelsSpiluk_
     else {
       RCP<const block_crs_matrix_type> A_local_bcrs = Details::getBcrsMatrix(this->A_local_);
@@ -1010,14 +980,6 @@ void RBILUK<MatrixType>::compute ()
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
                                                   this->A_local_rowmap_, this->A_local_entries_, this->A_local_values_,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
-
-      // JGF REMOVE
-      std::cout << "L after spiluk_numeric" << std::endl;
-      Test::print_matrix(
-        Test::decompress_matrix(L_rowmap, L_entries, L_values, blockSize_));
-      std::cout << "U after spiluk_numeric" << std::endl;
-      Test::print_matrix(
-        Test::decompress_matrix(U_rowmap, U_entries, U_values, blockSize_));
     }
   } // Stop timing
 
@@ -1205,6 +1167,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       else {
         KokkosSparse::trsv("U", "T", "N", U_block_->getLocalMatrixDevice(), X_view, Y_view);
         KokkosSparse::trsv("L", "T", "N", L_block_->getLocalMatrixDevice(), Y_view, Y_view);
+        KokkosBlas::axpby(alpha, Y_view, beta, Y_view);
       }
     }
   } // Stop timing
