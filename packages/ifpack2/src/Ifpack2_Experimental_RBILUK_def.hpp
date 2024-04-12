@@ -1166,12 +1166,12 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       auto L_values_host = L_block_->getValuesHost();
       auto U_values_host = U_block_->getValuesHost();
 
-      Kokkos::View<scalar_type*, Kokkos::Serial> L_values_host_non_const("", L_values_host.size());
+      Kokkos::View<impl_scalar_type*, Kokkos::Serial> L_values_host_non_const("", L_values_host.size());
       Kokkos::View<local_ordinal_type*, Kokkos::Serial> L_entries_host_non_const("", L_entries_host.size());
       Kokkos::deep_copy(L_values_host_non_const, L_values_host);
       Kokkos::deep_copy(L_entries_host_non_const, L_entries_host);
 
-      Kokkos::View<scalar_type*, Kokkos::Serial> U_values_host_non_const("", U_values_host.size());
+      Kokkos::View<impl_scalar_type*, Kokkos::Serial> U_values_host_non_const("", U_values_host.size());
       Kokkos::View<local_ordinal_type*, Kokkos::Serial> U_entries_host_non_const("", U_entries_host.size());
       Kokkos::deep_copy(U_values_host_non_const, U_values_host);
       Kokkos::deep_copy(U_entries_host_non_const, U_entries_host);
