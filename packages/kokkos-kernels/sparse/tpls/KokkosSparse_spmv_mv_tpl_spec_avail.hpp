@@ -29,6 +29,7 @@ struct spmv_mv_tpl_spec_avail {
   enum : bool { value = false };
 };
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #define KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_CUSPARSE(SCALAR, ORDINAL, OFFSET,  \
                                                      XL, YL, MEMSPACE)         \
   template <>                                                                  \
@@ -152,6 +153,7 @@ KOKKOSSPARSE_SPMV_MV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::Experimental::half_t, int,
 
 #endif
 #endif  // defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosSparse
