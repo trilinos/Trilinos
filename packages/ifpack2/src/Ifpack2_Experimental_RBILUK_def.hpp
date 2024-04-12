@@ -269,7 +269,7 @@ makeLocalFilter (const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matri
 
 template<class MatrixType>
 Teuchos::RCP<const typename RBILUK<MatrixType>::crs_graph_type>
-getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A,const typename MatrixType::local_ordinal_type blockSize)
+getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A)
 {
   using local_ordinal_type = typename MatrixType::local_ordinal_type;
   using Teuchos::RCP;
@@ -382,7 +382,7 @@ void RBILUK<MatrixType>::initialize ()
     this->isComputed_ = false;
     this->Graph_ = Teuchos::null;
 
-    RCP<const crs_graph_type> matrixCrsGraph = getBlockCrsGraph<MatrixType>(this->A_,blockSize_);
+    RCP<const crs_graph_type> matrixCrsGraph = getBlockCrsGraph<MatrixType>(this->A_);
     this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (matrixCrsGraph,
         this->LevelOfFill_, 0));
 
