@@ -67,15 +67,23 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_Vector.h>
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/MultiVector/Xpetra_EpetraMultiVector.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/MultiVector/Xpetra_EpetraMultiVector.hpp is deprecated."
+#endif
+
 namespace Xpetra {
 
 // TODO: move that elsewhere
 template <class GlobalOrdinal, class Node>
-const Epetra_MultiVector &toEpetra(const MultiVector<double, int, GlobalOrdinal, Node> &);
+XPETRA_DEPRECATED const Epetra_MultiVector &toEpetra(const MultiVector<double, int, GlobalOrdinal, Node> &);
 template <class GlobalOrdinal, class Node>
-Epetra_MultiVector &toEpetra(MultiVector<double, int, GlobalOrdinal, Node> &);
+XPETRA_DEPRECATED Epetra_MultiVector &toEpetra(MultiVector<double, int, GlobalOrdinal, Node> &);
 template <class GlobalOrdinal, class Node>
-RCP<MultiVector<double, int, GlobalOrdinal, Node> > toXpetra(RCP<Epetra_MultiVector> vec);
+XPETRA_DEPRECATED RCP<MultiVector<double, int, GlobalOrdinal, Node> > toXpetra(RCP<Epetra_MultiVector> vec);
 
 // we need this forward declaration
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -84,7 +92,7 @@ class EpetraVectorT;
 #endif
 
 template <class EpetraGlobalOrdinal, class Node>
-class EpetraMultiVectorT
+class XPETRA_DEPRECATED EpetraMultiVectorT
   : public virtual MultiVector<double, int, EpetraGlobalOrdinal, Node> {
   typedef double Scalar;
   typedef int LocalOrdinal;

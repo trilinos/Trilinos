@@ -121,8 +121,6 @@ MatrixType make_matrix(const char* name, const RowMapType& row_map,
                     entries, block_size);
 }
 
-static constexpr double EPS = 1e-7;
-
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 struct SpilukTest {
@@ -130,6 +128,7 @@ struct SpilukTest {
   using EntriesType = Kokkos::View<lno_t*, device>;
   using ValuesType  = Kokkos::View<scalar_t*, device>;
   using AT          = Kokkos::ArithTraits<scalar_t>;
+  using mag_t       = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
   using RowMapType_hostmirror  = typename RowMapType::HostMirror;
   using EntriesType_hostmirror = typename EntriesType::HostMirror;
@@ -137,6 +136,9 @@ struct SpilukTest {
   using execution_space        = typename device::execution_space;
   using memory_space           = typename device::memory_space;
   using range_policy           = Kokkos::RangePolicy<execution_space>;
+
+  static constexpr double EPS =
+      std::is_same<mag_t, double>::value ? 1e-7 : 1e-4;
 
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
@@ -243,11 +245,7 @@ struct SpilukTest {
     }
 
     if (fill_lev > 1) {
-      if (UseBlocks) {
-        EXPECT_LT(result, 1e-2);
-      } else {
-        EXPECT_LT(result, 1e-4);
-      }
+      EXPECT_LT(result, 1e-4);
     }
   }
 

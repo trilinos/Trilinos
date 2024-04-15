@@ -60,19 +60,27 @@
 
 #include <Epetra_CrsGraph.h>
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/CrsGraph/Xpetra_EpetraCrsGraph.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/CrsGraph/Xpetra_EpetraCrsGraph.hpp is deprecated."
+#endif
+
 namespace Xpetra {
 
 // TODO: move that elsewhere
 template <class GlobalOrdinal, class Node>
-RCP<const CrsGraph<int, GlobalOrdinal, Node>>
+XPETRA_DEPRECATED RCP<const CrsGraph<int, GlobalOrdinal, Node>>
 toXpetra(const Epetra_CrsGraph &graph);
 
 template <class GlobalOrdinal, class Node>
-const Epetra_CrsGraph &
+XPETRA_DEPRECATED const Epetra_CrsGraph &
 toEpetra(const RCP<const CrsGraph<int, GlobalOrdinal, Node>> &graph);
 
 template <class GlobalOrdinal, class Node>
-class EpetraCrsGraphT
+class XPETRA_DEPRECATED EpetraCrsGraphT
   : public CrsGraph<int, GlobalOrdinal, Node> {
   typedef int LocalOrdinal;
 

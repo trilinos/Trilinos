@@ -59,24 +59,32 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
+#if defined(XPETRA_ENABLE_DEPRECATED_CODE)
+#ifdef __GNUC__
+#warning "The header file Trilinos/packages/xpetra/src/Map/Xpetra_EpetraMap.hpp is deprecated."
+#endif
+#else
+#error "The header file Trilinos/packages/xpetra/src/Map/Xpetra_EpetraMap.hpp is deprecated."
+#endif
+
 namespace Xpetra {
 
 // TODO: move that elsewhere
 template <class GlobalOrdinal, class Node>
-const Epetra_Map &toEpetra(const Map<int, GlobalOrdinal, Node> &);
+XPETRA_DEPRECATED const Epetra_Map &toEpetra(const Map<int, GlobalOrdinal, Node> &);
 
 template <class GlobalOrdinal, class Node>
-const Epetra_Map &toEpetra(const RCP<const Map<int, GlobalOrdinal, Node> > &);
+XPETRA_DEPRECATED const Epetra_Map &toEpetra(const RCP<const Map<int, GlobalOrdinal, Node> > &);
 
 // template<class GlobalOrdinal>
 // const RCP< const Map<int, GlobalOrdinal> > toXpetra(const RCP< const Epetra_Map > &);
 
 template <class GlobalOrdinal, class Node>
-const RCP<const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
+XPETRA_DEPRECATED const RCP<const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
 
 // stub implementation for EpetraMapT
 template <class GlobalOrdinal, class Node>
-class EpetraMapT
+class XPETRA_DEPRECATED EpetraMapT
   : public virtual Map<int, GlobalOrdinal, Node> {
   typedef int LocalOrdinal;
 
