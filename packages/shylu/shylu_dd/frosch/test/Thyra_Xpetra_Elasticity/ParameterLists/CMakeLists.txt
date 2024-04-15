@@ -12,7 +12,7 @@ DEST_FILES ParameterList_GDSWPreconditioner_ILU.xml
            ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu_ML.xml
            ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_ILU.xml
            ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml
-           ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_ILU.xml
+           ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_ILU.xm
            ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml
            ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_2D.xml
            ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_3D.xml
@@ -22,4 +22,12 @@ DEST_FILES ParameterList_GDSWPreconditioner_ILU.xml
 SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
 DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 EXEDEPS thyra_xpetra_elasticity
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ThyraXpetraElasticityCopyFilesPerformance
+DEST_FILES ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml
+SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+EXEDEPS thyra_xpetra_elasticity
+CATEGORIES BASIC PERFORMANCE
 )
