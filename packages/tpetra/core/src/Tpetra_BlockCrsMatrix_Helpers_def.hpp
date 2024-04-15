@@ -478,7 +478,6 @@ namespace Tpetra {
               }
 
               for(LO little_row=0; little_row<blockSize; little_row++) {
-                offset_type point_row_offset = pointRowptr[i*blockSize + little_row];
                 blockValues((blkBeg+block_inv) * bs2 + little_row * blockSize + little_col_inv) = pointValues[pointRowptr[i*blockSize+little_row] + point_i];
               }
             }
