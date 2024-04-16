@@ -118,26 +118,50 @@ void
 CellExtreme<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
-{ 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    
-    for (std::size_t qp = 0; qp < num_qp; ++qp) {
-      ScalarT current= multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-	   field != field_multipliers.end(); ++field)
-        current *= (*field)(cell,qp);  
+{
+    double mult = this->multiplier;
+    std::size_t num_pt = this->num_qp;
+    bool extreme_max = this->use_max;
+    auto scalar_view = scalar.get_view();
+    auto extreme_view = extreme.get_view();
 
-      // take first quad point value
-      if(qp==0)
-        extreme(cell) = current;
+    // compute field weighted with multipliers
+    PHX::View<ScalarT**> mult_field("Multiplied Field", workset.num_cells, scalar.extent(1));
 
-      // take largest value in the cell
-      if(use_max)
-        extreme(cell) = extreme(cell)<current ? current : extreme(cell);
-      else // use_min
-        extreme(cell) = extreme(cell)>current ? current : extreme(cell);
+    // initialize to scalar value
+    Kokkos::parallel_for("Initialize Muliplier Field", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+      for (std::size_t qp = 0; qp < num_pt; ++qp) {
+        mult_field(cell, qp) = mult * scalar_view(cell, qp);
+      }
+    });
+
+    // multiply by field values
+    for (std::size_t field_num = 0; field_num < field_multipliers.size(); ++field_num)
+    {
+      auto field = field_multipliers[field_num];
+      Kokkos::parallel_for("CellExtreme: Multiply Fields", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+        for (std::size_t qp = 0; qp < num_pt; ++qp) {
+          mult_field(cell, qp) *= field(cell, qp);
+        }
+      });
     }
-  }
+
+    // take extreme over points in each cell
+    Kokkos::parallel_for ("CellExtreme", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+      for (std::size_t qp = 0; qp < num_pt; ++qp) {
+        auto current = mult_field(cell, qp);
+        
+        // take first point
+        if (qp == 0)
+          extreme_view(cell) = current;
+
+        // take largest value in the cell
+        if(extreme_max)
+          extreme_view(cell) = extreme_view(cell)<current ? current : extreme_view(cell);
+        else // use_min
+          extreme_view(cell) = extreme_view(cell)>current ? current : extreme_view(cell);
+      }
+    });
 }
 
 //**********************************************************************
