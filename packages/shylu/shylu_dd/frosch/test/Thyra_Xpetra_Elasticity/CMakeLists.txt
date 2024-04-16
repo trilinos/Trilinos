@@ -328,8 +328,7 @@ NUM_MPI_PROCS 4
 ENDIF()
 
 
-#Performance Test
-MESSAGE(INFO "CMS - Enable FROSCH perf tests")
+### Performance Tests ###
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME performance_TLP_IPOUHarmonic_RGDSW_DIM2
