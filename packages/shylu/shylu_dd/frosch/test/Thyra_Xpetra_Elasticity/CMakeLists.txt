@@ -333,7 +333,7 @@ MESSAGE(INFO "CMS - Enable FROSCH perf tests")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME performance_TLP_IPOUHarmonic_RGDSW_DIM2
-ARGS "--M=50 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
+ARGS "--M=100 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 CATEGORIES PERFORMANCE
@@ -342,7 +342,7 @@ RUN_SERIAL
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME performance_TLP_IPOUHarmonic_RGDSW_DIM2
-ARGS "--M=50 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
+ARGS "--M=100 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 9
 CATEGORIES PERFORMANCE
@@ -352,7 +352,7 @@ RUN_SERIAL
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME performance_TLP_IPOUHarmonic_RGDSW_DIM2
-ARGS "--M=50 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
+ARGS "--M=100 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 16
 CATEGORIES PERFORMANCE
@@ -362,7 +362,7 @@ RUN_SERIAL
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME performance_TLP_IPOUHarmonic_RGDSW_DIM2
-ARGS "--M=50 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
+ARGS "--M=100 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 25
 CATEGORIES PERFORMANCE
