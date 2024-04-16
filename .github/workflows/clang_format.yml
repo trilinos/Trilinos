@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-    - uses: DoozyX/clang-format-lint-action@1566bcec081dcb246ab02e7c5f9786c0b629dd4d # v0.16.2
+    - uses: DoozyX/clang-format-lint-action@11b773b1598aa4ae3b32f023701bca5201c3817d # v0.17
       with:
         source: './packages/muelu ./packages/tempus ./packages/teko ./packages/xpetra'
         exclude: './packages/tempus/examples'
