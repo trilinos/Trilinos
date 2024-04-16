@@ -137,11 +137,13 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_ExtremeValue<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
+  auto hostField = Kokkos::create_mirror_view(cellExtremeValue_.get_view());
+  Kokkos::deep_copy(hostField, cellExtremeValue_.get_view());
   for(index_t i=0;i<d.num_cells;i++) {
     if(useMax_)
-      responseObj_->value = (responseObj_->value < cellExtremeValue_(i)) ? cellExtremeValue_(i) : responseObj_->value;
+      responseObj_->value = (responseObj_->value < hostField(i)) ? hostField(i) : responseObj_->value;
     else
-      responseObj_->value = (responseObj_->value > cellExtremeValue_(i)) ? cellExtremeValue_(i) : responseObj_->value;
+      responseObj_->value = (responseObj_->value > hostField(i)) ? hostField(i) : responseObj_->value;
   }
 }
 

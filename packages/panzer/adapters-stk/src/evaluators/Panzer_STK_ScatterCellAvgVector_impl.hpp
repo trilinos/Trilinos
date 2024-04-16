@@ -93,7 +93,7 @@ ScatterCellAvgVector(
   PHX::Tag<ScalarT> scatterHolder(scatterName,Teuchos::rcp(new PHX::MDALayout<panzer::Dummy>(0)));
   this->addEvaluatedField(scatterHolder);
 
-  this->setName(scatterName+": STK-Scatter Cell Vectors");
+  this->setName(scatterName+": PanzerSTK::ScatterCellAvgVectors");
 }
 
 
@@ -131,9 +131,9 @@ evaluateFields(
   {
     PHX::MDField<const ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & field = scatterFields_[fieldIndex];
     std::string fieldName = field.fieldTag().name();
-    int numCells = field.extent(0);
-    int numPoints = field.extent(1);
-    int numDims = field.extent(2);
+    const int numCells = workset.num_cells;
+    const int numPoints = field.extent(1);
+    const int numDims = field.extent(2);
 
     for (int dim = 0; dim < numDims; dim++)
     {
@@ -141,15 +141,13 @@ evaluateFields(
       PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",numCells,1);
 
       // write to double field
-      for(int i = 0; i < numCells; i++)  // loop over cells
-      {
-         average(i,0) = 0.0;
-         for(int j = 0; j < numPoints; j++)  // loop over IPs
-            average(i,0) += Sacado::scalarValue(field(i,j,dim));
-
-         average(i,0) /= numPoints;
-      }
-
+      Kokkos::parallel_for("ScatterCellAvgVector",numCells,KOKKOS_LAMBDA(const int i){
+        average(i,0) = 0.0;
+        for(int j = 0; j < numPoints; j++) { // loop over IPs
+          average(i,0) += Sacado::scalarValue(field(i,j,dim));
+        }
+        average(i,0) /= numPoints;
+      });
       double scalef = 1.0;
 
       if (!varScaleFactors_.is_null())
@@ -159,11 +157,10 @@ evaluateFields(
           scalef = (*tmp_sfs)[fieldName];
       }
 
+      PHX::Device().fence();
       mesh_->setCellFieldData(fieldName+d_mod[dim],blockId,localCellIds,average.get_view(),scalef);
-
     }
   }
-
 }
 
 } // end panzer_stk
