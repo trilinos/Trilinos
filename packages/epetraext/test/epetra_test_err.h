@@ -62,3 +62,10 @@ using namespace std;
 }
 
 #endif /*_EPETRA_TEST_ERR_H_ */
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

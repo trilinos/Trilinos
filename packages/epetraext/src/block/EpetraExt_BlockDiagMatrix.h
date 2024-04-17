@@ -278,3 +278,10 @@ private:
 };  /* EPETRAEXT_BLOCKDIAGMATRIX_H */
 
 #endif
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

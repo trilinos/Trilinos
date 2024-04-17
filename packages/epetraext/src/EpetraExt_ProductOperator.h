@@ -416,3 +416,10 @@ void ProductOperator::validateIndex(int k) const
 } // namespace EpetraExt
 
 #endif // EPETRAEXT_PRODUCT_OPERATOR_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

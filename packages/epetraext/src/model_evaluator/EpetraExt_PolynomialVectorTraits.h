@@ -90,3 +90,10 @@ namespace Teuchos {
 } // namespace Teuchos
 
 #endif // EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_Hx
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

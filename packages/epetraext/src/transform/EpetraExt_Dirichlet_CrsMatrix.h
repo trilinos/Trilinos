@@ -96,3 +96,10 @@ class CrsMatrix_Dirichlet : public InPlaceTransform<Epetra_CrsMatrix>
 
 #endif //EpetraExt_CRSMATRIX_DIRICHLET_H
 
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
