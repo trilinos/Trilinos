@@ -405,15 +405,15 @@ namespace Tpetra {
           LO filled_block = 0;
           for (LO p_i=0; p_i<offset_p_max-offset_p; ++p_i) {
             auto bcol_GID = localPointColMap.getGlobalElement(pointColind(offset_p + p_i))/blockSize;
-            auto lcol_GID = localMeshColMap.getLocalElement(bcol_GID);
+            auto bcol_LID = localMeshColMap.getLocalElement(bcol_GID);
 
             bool visited = false;
             for (LO k=0; k<filled_block; ++k) {
-              if (blockColind(offset_b + k) == lcol_GID)
+              if (blockColind(offset_b + k) == bcol_LID)
                 visited = true;
             }
             if (!visited) {
-              blockColind(offset_b + filled_block) = lcol_GID;
+              blockColind(offset_b + filled_block) = bcol_LID;
               ++filled_block;
             }
           }
