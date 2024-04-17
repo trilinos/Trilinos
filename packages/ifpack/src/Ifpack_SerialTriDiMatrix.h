@@ -526,3 +526,10 @@ inline const double& Ifpack_SerialTriDiMatrix::operator () (int RowIndex, int Co
 
 
 #endif /* EPETRA_SERIALTRIDIMATRIX_H */
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

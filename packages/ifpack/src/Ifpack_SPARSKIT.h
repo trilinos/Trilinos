@@ -303,3 +303,10 @@ private:
 
 #endif // HAVE_IFPACK_SPARSKIT
 #endif /* IFPACK_SPARSKIT_H */
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

@@ -200,3 +200,10 @@ extern "C"
 }
 #endif
 #endif				/*  #ifndef EUCLID_MPI_INTERFACE_DH */
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+
