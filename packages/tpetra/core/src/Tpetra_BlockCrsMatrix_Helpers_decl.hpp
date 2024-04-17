@@ -99,7 +99,7 @@ namespace Tpetra {
   ///   - Point rows corresponding to a particular mesh node must be stored consecutively.
   template<class Scalar, class LO, class GO, class Node>
   Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>
-  getBlockCrsGraph(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize);
+  getBlockCrsGraph(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_local_ID=true);
 
   /// \brief Non-member constructor that creates a BlockCrsMatrix from an existing point CrsMatrix.
   ///
@@ -110,7 +110,7 @@ namespace Tpetra {
   ///   - Point rows corresponding to a particular mesh node must be stored consecutively.
   template<class Scalar, class LO, class GO, class Node>
   Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node>>
-  convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize);
+  convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_local_ID=true);
 
   /// \brief Fill all point entries in a logical block of a CrsMatrix with zeroes. This should be called
   /// before convertToBlockCrsMatrix if your Crs is not filled. Performed on host.
