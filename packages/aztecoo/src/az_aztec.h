@@ -1643,3 +1643,10 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 #endif
 
 #endif
+
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+
