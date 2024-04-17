@@ -58,3 +58,10 @@ private:
   Amesos_NoCopiable& operator=(const Amesos_NoCopiable& rhs);
 };
 #endif
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+

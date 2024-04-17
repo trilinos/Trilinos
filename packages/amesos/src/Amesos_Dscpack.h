@@ -199,3 +199,10 @@ private:
   
 };  // class Amesos_Dscpack  
 #endif /* AMESOS_DSCPACK_H */
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+
