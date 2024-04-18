@@ -47,7 +47,6 @@ IF (Tpetra_INST_DOUBLE)
     )
 
     TRIBITS_ADD_TEST(
-
       Performance-CGSolve
       NAME Performance_StrongScaling_CGSolve
       ARGS "--size=200"
@@ -68,6 +67,43 @@ IF (Tpetra_INST_DOUBLE)
       RUN_SERIAL
       CATEGORIES PERFORMANCE
     )
+
+    TRIBITS_ADD_TEST(
+      Performance-CGSolve
+      NAME Performance_StrongScaling_CGSolve
+      ARGS "--size=200"
+      COMM mpi
+      NUM_MPI_PROCS 25
+      STANDARD_PASS_OUTPUT
+      RUN_SERIAL
+      CATEGORIES PERFORMANCE
+    )
+
+    # For big machines
+
+    TRIBITS_ADD_TEST(
+      Performance-CGSolve
+      NAME Performance_StrongScaling_CGSolve
+      ARGS "--size=200"
+      COMM mpi
+      NUM_MPI_PROCS 81
+      STANDARD_PASS_OUTPUT
+      RUN_SERIAL
+      CATEGORIES PERFORMANCE
+    )
+
+    TRIBITS_ADD_TEST(
+      Performance-CGSolve
+      NAME Performance_StrongScaling_CGSolve
+      ARGS "--size=200"
+      COMM mpi
+      NUM_MPI_PROCS 100
+      STANDARD_PASS_OUTPUT
+      RUN_SERIAL
+      CATEGORIES PERFORMANCE
+    )
+
+
 
     IF (Tpetra_ENABLE_CUDA)
         MESSAGE(STATUS "Tpetra: Performance-CGSolve CUDA_LAUNCH_BLOCKING test ENABLED")

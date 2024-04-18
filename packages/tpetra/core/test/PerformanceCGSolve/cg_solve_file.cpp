@@ -258,6 +258,11 @@ int run()
     b = gen_type::generate_miniFE_vector (nsize, map->getComm ());
   }
 
+  // Output the problem size
+  Tpetra::global_size_t ng = map->getGlobalNumElements();  
+  if(!myRank)
+    std::cout<<"Global matrix size = "<<ng<<std::endl;
+
   // The vector x on input is the initial guess for the CG solve.
   // On output, it is the approximate solution.
   RCP<vec_type> x (new vec_type (A->getDomainMap ()));
