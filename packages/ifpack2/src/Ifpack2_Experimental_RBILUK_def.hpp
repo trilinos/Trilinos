@@ -1156,7 +1156,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     else {
       // Kokkos kernels impl. For now, the only block trsv available is Sequential
       // and must be done on host.
-      using size_type = typename local_matrix_host_type::size_type;
+      using row_map_type = typename local_matrix_host_type::row_map_type;
+      using index_type   = typename local_matrix_host_type::index_type;
+      using values_type  = typename local_matrix_host_type::values_type;
 
       auto X_view = X.getLocalViewHost(Tpetra::Access::ReadOnly);
       auto Y_view = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
@@ -1168,23 +1170,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       auto L_values_host = L_block_->getValuesHost();
       auto U_values_host = U_block_->getValuesHost();
 
-      Kokkos::View<impl_scalar_type*, Kokkos::Serial> L_values_host_non_const("", L_values_host.size());
-      Kokkos::View<local_ordinal_type*, Kokkos::Serial> L_entries_host_non_const("", L_entries_host.size());
-      Kokkos::View<size_type*, Kokkos::Serial> L_row_ptrs_host_non_const("", L_row_ptrs_host.size());
-      Kokkos::deep_copy(L_values_host_non_const, L_values_host);
-      Kokkos::deep_copy(L_entries_host_non_const, L_entries_host);
-      Kokkos::deep_copy(L_row_ptrs_host_non_const, L_row_ptrs_host);
-
-      Kokkos::View<impl_scalar_type*, Kokkos::Serial> U_values_host_non_const("", U_values_host.size());
-      Kokkos::View<local_ordinal_type*, Kokkos::Serial> U_entries_host_non_const("", U_entries_host.size());
-      Kokkos::View<size_type*, Kokkos::Serial> U_row_ptrs_host_non_const("", U_row_ptrs_host.size());
-      Kokkos::deep_copy(U_values_host_non_const, U_values_host);
-      Kokkos::deep_copy(U_entries_host_non_const, U_entries_host);
-      Kokkos::deep_copy(U_row_ptrs_host_non_const, U_row_ptrs_host);
+      row_map_type* L_row_ptrs_host_ri = reinterpret_cast<row_map_type*>(&L_row_ptrs_host);
+      index_type* L_entries_host_ri    = reinterpret_cast<index_type*>(&L_entries_host);
+      row_map_type* U_row_ptrs_host_ri = reinterpret_cast<row_map_type*>(&U_row_ptrs_host);
+      index_type* U_entries_host_ri    = reinterpret_cast<index_type*>(&U_entries_host);
+      values_type* L_values_host_ri    = reinterpret_cast<values_type*>(&L_values_host);
+      values_type* U_values_host_ri    = reinterpret_cast<values_type*>(&U_values_host);
 
       const auto numRows = L_block_->getLocalNumRows();
-      local_matrix_host_type L_block_local_host("L_block_local_host", numRows, numRows, L_entries_host.size(), L_values_host_non_const, L_row_ptrs_host_non_const, L_entries_host_non_const, blockSize_);
-      local_matrix_host_type U_block_local_host("U_block_local_host", numRows, numRows, U_entries_host.size(), U_values_host_non_const, U_row_ptrs_host_non_const, U_entries_host_non_const, blockSize_);
+      local_matrix_host_type L_block_local_host("L_block_local_host", numRows, numRows, L_entries_host.size(), *L_values_host_ri, *L_row_ptrs_host_ri, *L_entries_host_ri, blockSize_);
+      local_matrix_host_type U_block_local_host("U_block_local_host", numRows, numRows, U_entries_host.size(), *U_values_host_ri, *U_row_ptrs_host_ri, *U_entries_host_ri, blockSize_);
 
       if (mode == Teuchos::NO_TRANS) {
         KokkosSparse::trsv("L", "N", "N", L_block_local_host, X_view, Y_view);
