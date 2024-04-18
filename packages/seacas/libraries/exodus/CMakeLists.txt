@@ -48,7 +48,7 @@ if (SEACASExodus_ENABLE_SHARED)
       set_property(TARGET exodus_shared PROPERTY C_STANDARD 99)
       # This keeps the library out of the `all_libs` targets...
       set_target_properties(exodus_shared PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
-      set_target_properties(exodus_shared PROPERTIES RUNTIME_OUTPUT_NAME exodus)
+      set_target_properties(exodus_shared PROPERTIES OUTPUT_NAME exodus)
       INSTALL(TARGETS exodus_shared DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
    endif()
 endif()
