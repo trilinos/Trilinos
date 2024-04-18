@@ -29,7 +29,6 @@
    requires (a) header file(s) as well, and may use functions other
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
-#cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE
 
 #cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARK
@@ -153,6 +152,9 @@
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif
 #endif
+
+/* Whether MKL is providing the BLAS and LAPACK implementation */
+#cmakedefine MKL_PROVIDES_BLAS_LAPACK
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMPTARGET)

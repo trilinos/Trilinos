@@ -767,9 +767,7 @@ KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
 // ONEMKL
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) &&                \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE) && \
-    defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
 #include <mkl.h>
 #include <oneapi/mkl/blas.hpp>
 #include <KokkosBlas_tpl_spec.hpp>

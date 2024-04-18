@@ -334,8 +334,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>,
 // oneMKL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
-#if defined(KOKKOS_ENABLE_SYCL) && \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+#if defined(KOKKOS_ENABLE_SYCL)
 
 #include <KokkosBlas_tpl_spec.hpp>
 #include <oneapi/mkl/blas.hpp>

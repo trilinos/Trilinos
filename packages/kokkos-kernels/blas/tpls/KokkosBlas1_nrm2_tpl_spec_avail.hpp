@@ -88,9 +88,7 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::HIP,
                                 Kokkos::HIPSpace)
 #endif
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) &&                \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE) && \
-    defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
 KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
                                 Kokkos::Experimental::SYCLDeviceUSMSpace)
 #endif
