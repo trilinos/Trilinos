@@ -267,3 +267,10 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & Dof
 }
 
 }// namespace Intrepid
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

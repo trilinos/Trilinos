@@ -181,3 +181,10 @@ public:
 #include "Intrepid_HGRAD_LINE_Hermite_FEMDef.hpp"
 
 #endif // INTREPID_HGRAD_LINE_HERMITE_FEM_HPP
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

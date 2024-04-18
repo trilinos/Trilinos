@@ -6466,3 +6466,10 @@ Scalar IntrepidBurkardtRules::r8_sign ( Scalar x )
 
 } // end of namespace Intrepid
 
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

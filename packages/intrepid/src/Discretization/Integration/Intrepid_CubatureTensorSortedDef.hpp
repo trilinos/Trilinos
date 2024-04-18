@@ -420,3 +420,10 @@ CubatureTensorSorted<Scalar> kron_prod(CubatureTensorSorted<Scalar> & rule1,
   }
 }
 } // end Intrepid namespace
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

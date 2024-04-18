@@ -185,3 +185,10 @@ public:
 #include "Intrepid_HGRAD_TET_COMP12_FEMDef.hpp"
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+
