@@ -54,6 +54,8 @@ ENDIF()
 # Set the package version number
 SET(PyTrilinos_VERSION ${Trilinos_VERSION})
 
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
 # of modules is similar to the packages, except it contains the names
