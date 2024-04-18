@@ -70,10 +70,21 @@
 # pseudorandom number generators.  That's why we require a header
 # file, to access the function declarations.
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
-  REQUIRED_HEADERS mkl.h
-  REQUIRED_LIBS_NAMES mkl_rt
-  )
+IF(KOKKOS_ENABLE_SYCL)
+  # For OneAPI MKL on GPU, use the CMake target
+  find_package(MKL)
+  IF(MKL_FOUND)
+    tribits_extpkg_create_imported_all_libs_target_and_config_file( MKL
+      INNER_FIND_PACKAGE_NAME  MKL
+      IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL)
+    ENDIF()
+ELSEIF()
+  # For host MKL, the single library libmkl_rt is sufficient
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
+    REQUIRED_HEADERS mkl.h
+    REQUIRED_LIBS_NAMES mkl_rt
+    )
+ENDIF()
 
 # In the past, MKL users had to link with a long list of libraries.
 # The choice of libraries enables specific functionality.  Intel
