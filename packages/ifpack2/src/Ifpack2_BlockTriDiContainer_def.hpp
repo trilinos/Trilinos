@@ -105,7 +105,7 @@ namespace Ifpack2 {
           (block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
         {
           IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::setA::convertToBlockCrsMatrix");
-          impl_->A = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(matrix), block_size);
+          impl_->A = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(matrix), block_size, false);
           IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
         }
       }
