@@ -151,3 +151,10 @@ extern int ML_compute_line_info(int LayerId[], int VertLineId[],
 
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

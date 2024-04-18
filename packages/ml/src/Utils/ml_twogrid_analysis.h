@@ -48,3 +48,10 @@ double ML_GetTwoLevelConvergenceFactor(ML *ml, double *approx_soln,
 
 #endif /*ifdef __MLTWOGRID__*/
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

@@ -44,3 +44,10 @@ void run_serial_utests(bool verbose);
 
 #endif
 
+
+#if defined(Isorropia_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Isorropia package is deprecated"
+#endif
+#endif
+

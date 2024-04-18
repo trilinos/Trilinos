@@ -31,3 +31,10 @@ extern int ML_GMRES_Solve(ML_Krylov *,int length,double *rhs,double *sol);
 #endif
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

@@ -135,3 +135,10 @@ extern int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia,
 
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

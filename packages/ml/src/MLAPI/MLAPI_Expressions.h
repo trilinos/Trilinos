@@ -265,3 +265,10 @@ double operator* (const BaseLinearCombination& x, const BaseLinearCombination& y
 } // namespace MLAPI
 
 #endif // if ML_EXPRESSIONS_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

@@ -33,3 +33,10 @@ extern int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double r
 
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

@@ -29,3 +29,10 @@ extern int ML_Reitzinger_Check_Hierarchy(ML *ml, ML_Operator **Tmat_array, int i
 #endif
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

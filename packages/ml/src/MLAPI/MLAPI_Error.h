@@ -63,3 +63,10 @@ inline void StackPrint() {std::cout << "Compile with -DMLAPI_CHECK to get the fu
 #endif // ndef ML_THROW
 
 #endif // MLAPI_ERROR_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

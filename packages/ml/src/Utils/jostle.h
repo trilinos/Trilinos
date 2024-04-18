@@ -16,3 +16,10 @@ extern	int	jostle_cut(void);
 extern	double	jostle_bal(void);
 extern	double	jostle_tim(void);
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
