@@ -56,3 +56,10 @@ double max_all(double , int );
 }
 #endif
 #endif
+
+#if defined(Pliris_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Pliris package is deprecated"
+#endif
+#endif
+
