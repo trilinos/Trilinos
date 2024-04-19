@@ -70,14 +70,28 @@
 # pseudorandom number generators.  That's why we require a header
 # file, to access the function declarations.
 
-IF(KOKKOS_ENABLE_SYCL)
+IF(Kokkos_ENABLE_SYCL)
   # For OneAPI MKL on GPU, use the CMake target
+  # Temporarily change CMAKE_CXX_COMPILER to icpx to convince MKL to add the DPCPP target
+  # If it sees that CMAKE_CXX_COMPILER is just ".../mpicxx", it won't do this.
+  SET(CMAKE_CXX_COMPILER_PREVIOUS "${CMAKE_CXX_COMPILER}")
+  SET(CMAKE_CXX_COMPILER "icpx")
   find_package(MKL)
-  IF(MKL_FOUND)
-    tribits_extpkg_create_imported_all_libs_target_and_config_file( MKL
-      INNER_FIND_PACKAGE_NAME  MKL
-      IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL)
-    ENDIF()
+  SET(CMAKE_CXX_COMPILER "${CMAKE_CXX_COMPILER_PREVIOUS}")
+  IF (NOT MKL_FOUND)
+    MESSAGE(FATAL_ERROR "MKL (as CMake package) was not found! This is required for SYCL+MKL")
+  ENDIF()
+  IF (NOT TARGET MKL::MKL_DPCPP)
+    MESSAGE(FATAL_ERROR "SYCL and MKL are enabled, but the target MKL_DPCPP wasn't found")
+  ENDIF()
+  tribits_extpkg_create_imported_all_libs_target_and_config_file( MKL
+    INNER_FIND_PACKAGE_NAME  MKL
+    IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL MKL::MKL_DPCPP)
+
+  #  TARGET_LINK_LIBRARIES(MKL INTERFACE MKL::MKL MKL::MKL_DPCPP)
+  IF (NOT TARGET MKL::all_libs)
+    MESSAGE(FATAL_ERROR "MKL::all_libs was not created as a target")
+  ENDIF()
 ELSEIF()
   # For host MKL, the single library libmkl_rt is sufficient
   TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL

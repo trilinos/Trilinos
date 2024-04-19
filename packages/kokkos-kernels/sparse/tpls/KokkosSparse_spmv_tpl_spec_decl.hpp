@@ -720,8 +720,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 #undef KOKKOSSPARSE_SPMV_MKL
 #endif
 
-#if defined(KOKKOS_ENABLE_SYCL) && \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+#if defined(KOKKOS_ENABLE_SYCL)
 inline oneapi::mkl::transpose mode_kk_to_onemkl(char mode_kk) {
   switch (toupper(mode_kk)) {
     case 'N': return oneapi::mkl::transpose::nontrans;

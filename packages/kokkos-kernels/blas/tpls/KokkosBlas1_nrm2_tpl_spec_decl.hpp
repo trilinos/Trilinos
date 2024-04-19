@@ -364,8 +364,7 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS_EXT(false)
 
 #endif
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) &&                \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE) && \
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && \
     defined(KOKKOS_ENABLE_SYCL)
 #include <mkl.h>
 #include <oneapi/mkl/blas.hpp>

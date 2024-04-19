@@ -189,8 +189,7 @@ struct MKL_SpMV_Data : public TPL_SpMV_Data<ExecutionSpace> {
 };
 #endif
 
-#if defined(KOKKOS_ENABLE_SYCL) && \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+#if defined(KOKKOS_ENABLE_SYCL)
 struct OneMKL_SpMV_Data : public TPL_SpMV_Data<Kokkos::Experimental::SYCL> {
   OneMKL_SpMV_Data(const Kokkos::Experimental::SYCL& exec_)
       : TPL_SpMV_Data(exec_) {}
