@@ -239,6 +239,8 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MatrixFree_ModelEvaluatorDecorator.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_LineSearch_SafeguardedDirection.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_TOpEleWiseMinSwap.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Observer_ReusePreconditioner.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Observer_ReusePreconditionerFactory.hpp
   )
   APPEND_SET(SOURCES
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.C
@@ -249,6 +251,8 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MeritFunction_Weighted.cpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Solver_PseudoTransient.cpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_LineSearch_SafeguardedDirection.cpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Observer_ReusePreconditioner.cpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Observer_ReusePreconditionerFactory.cpp
   )
 ENDIF()
 
