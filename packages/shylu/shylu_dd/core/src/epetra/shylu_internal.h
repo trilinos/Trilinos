@@ -64,3 +64,10 @@ int extract_matrices
 );
 
 #endif //SHYLU_INTERNAL_H
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+

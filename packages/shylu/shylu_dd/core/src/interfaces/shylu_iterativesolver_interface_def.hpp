@@ -227,3 +227,10 @@ namespace ShyLU
 }//end namespace shylu
 
 #endif //end ifdef shylu_interative_fie
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+
