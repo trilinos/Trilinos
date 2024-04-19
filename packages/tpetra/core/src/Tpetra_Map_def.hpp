@@ -183,6 +183,7 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::Behavior::reject_unrecognized_env_vars();
   }
 
 
@@ -222,6 +223,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::Behavior::reject_unrecognized_env_vars();
 
     // In debug mode only, check whether numGlobalElements and
     // indexBase are the same over all processes in the communicator.
@@ -400,6 +402,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::Behavior::reject_unrecognized_env_vars();
 
     // Global sum of numLocalElements over all processes.
     // Keep this for later debug checks.
@@ -896,6 +899,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, const GO[], LO, GO, comm)",
                         indexList, static_cast<size_t> (indexListSize),
@@ -940,6 +944,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     Tpetra::Details::ProfilingRegion pr(funcName);
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
     checkMapInputArray ("(GST, ArrayView, GO, comm)",
@@ -1008,6 +1013,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     Tpetra::Details::initializeKokkos ();
+    Tpetra::Details::Behavior::reject_unrecognized_env_vars();
     Tpetra::Details::ProfilingRegion pr(funcName);
     checkMapInputArray ("(GST, Kokkos::View, GO, comm)",
                         entryList.data (),
