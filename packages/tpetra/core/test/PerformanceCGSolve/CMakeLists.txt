@@ -57,18 +57,7 @@ IF (Tpetra_INST_DOUBLE)
       CATEGORIES PERFORMANCE
     )
 
-    TRIBITS_ADD_TEST(
-      Performance-CGSolve
-      NAME Performance_StrongScaling_CGSolve
-      ARGS "--size=200"
-      COMM mpi
-      NUM_MPI_PROCS 25
-      STANDARD_PASS_OUTPUT
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
-    )
-
-    TRIBITS_ADD_TEST(
+  TRIBITS_ADD_TEST(
       Performance-CGSolve
       NAME Performance_StrongScaling_CGSolve
       ARGS "--size=200"
