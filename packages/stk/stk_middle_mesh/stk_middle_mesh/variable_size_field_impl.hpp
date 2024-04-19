@@ -255,7 +255,7 @@ class VariableSizeFieldForDimension
       // int idx = idxs.start + component
       int start = idxs.start;
       int idx   = start + component;
-      assert(size_t(idx) >= 0 && size_t(idx) < m_values.size());
+      assert(idx >= 0 && size_t(idx) < m_values.size());
 
       return idx;
     }

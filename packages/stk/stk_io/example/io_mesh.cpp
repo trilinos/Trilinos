@@ -51,7 +51,6 @@
 #include <stk_util/environment/EnvData.hpp>                     // for EnvData
 #include <stk_util/environment/LogWithTimeAndMemory.hpp>        // for log_w...
 #include <stk_util/environment/memory_util.hpp>                 // for get_c...
-#include <stk_util/util/MemoryTracking.hpp>
 #include <stk_util/parallel/Parallel.hpp>                       // for paral...
 #include <stk_util/parallel/ParallelReduce.hpp>                 // for Reduc...
 #include <stk_util/util/ParameterList.hpp>                      // for Param...
@@ -80,13 +79,20 @@
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
+void set_output_streams(MPI_Comm comm)
+{
+  if (stk::parallel_machine_rank(comm) != 0) {
+    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+  }
+  Ioss::Utils::set_output_stream(sierra::Env::outputP0());
+}
+
 class IoMeshDriver
 {
 public:
   IoMeshDriver(MPI_Comm comm)
   : m_comm(comm), m_curAvg_baseline(0), m_baselineBuffer()
   {
-    set_output_streams();
     equilibrate_memory_baseline();
   }
 
@@ -101,14 +107,6 @@ public:
     size_t curMax = 0, curMin = 0, curAvg = 0;
     stk::get_memory_high_water_mark_across_processors(m_comm, curMax, curMin, curAvg);
     m_curAvg_baseline = curAvg;
-  }
-
-  void set_output_streams()
-  {
-    if (stk::parallel_machine_rank(m_comm) != 0) {
-      stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-    }
-    Ioss::Utils::set_output_stream(sierra::Env::outputP0());
   }
 
   void log_mesh_counts(const stk::mesh::BulkData& mesh)
@@ -291,14 +289,14 @@ public:
     // For each global field name on the input database, determine the type of the field
     // and define that same global field on the results, restart, history, and heartbeat outputs.
     if (!global_fields.empty()) {
-      std::cout << "Adding " << global_fields.size() << " global fields:\n";
+      sierra::Env::outputP0() << "Adding " << global_fields.size() << " global fields:\n";
     }
 
     auto io_region = ioBroker.get_input_ioss_region();
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);
-      std::cout << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
+      sierra::Env::outputP0() << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
 
       if (input_field.raw_storage()->component_count() == 1) {
 	double val = 0.0;
@@ -447,6 +445,9 @@ public:
     if (!decomp_method.empty()) {
       ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
     }
+    else {
+      sierra::Env::outputP0()<<"decomposition not specified, defaulting to file-per-processor mode for mesh-read."<<std::endl;
+    }
 
     if (compose_output) {
       ioBroker.property_add(Ioss::Property("COMPOSE_RESULTS", true));
@@ -517,15 +518,16 @@ int main(int argc, const char** argv)
   int maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity();
 
   MPI_Comm comm = stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
-  int myRank = stk::parallel_machine_rank(comm);
+
+  set_output_streams(comm);
 
   //----------------------------------
   // Process the command line arguments
   stk::CommandLineParserParallel cmdLine(comm);
 
   cmdLine.add_required<std::string>({"mesh", "m", "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'"});
-  cmdLine.add_optional<std::string>({"add_edges", "e", "create all internal edges in the mesh (default is false): true|false"}, "false");
-  cmdLine.add_optional<std::string>({"add_faces", "f", "create all internal faces in the mesh (default is false): true|false"}, "false");
+  cmdLine.add_optional<std::string>({"add_edges", "e", "create all internal edges in the mesh: true|false"}, "false");
+  cmdLine.add_optional<std::string>({"add_faces", "f", "create all internal faces in the mesh: true|false"}, "false");
   cmdLine.add_optional<std::string>({"upward_connectivity", "u", "create upward connectivity/adjacency in the mesh (default is true): true|false"}, "true");
   cmdLine.add_optional<std::string>({"ghost_aura", "g", "create aura ghosting around each MPI rank (default is false): true|false"}, "false");
   cmdLine.add_optional<std::string>({"directory", "d", "working directory with trailing '/'"}, "./");
@@ -550,12 +552,10 @@ int main(int argc, const char** argv)
       returnCode = 1;
       break;
     case stk::CommandLineParser::ParseHelpOnly:
-      std::cout << cmdLine.get_usage() << std::endl;
+      sierra::Env::outputP0() << cmdLine.get_usage() << std::endl;
       break;
     case stk::CommandLineParser::ParseVersionOnly:
-      if (myRank == 0) {
-        std::cout << "STK Version: " << stk::version_string() << std::endl;
-      }
+      sierra::Env::outputP0() << "STK Version: " << stk::version_string() << std::endl;
       break;
     default: break;
     }

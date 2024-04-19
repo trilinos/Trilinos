@@ -1328,16 +1328,18 @@ void comm_sync_nonowned_sends(
   }
 }
 
-EntityRank get_highest_upward_connected_rank(const Bucket& bucket,
+std::pair<EntityRank,unsigned> get_highest_upward_connected_rank(const Bucket& bucket,
                                              unsigned bucketOrdinal,
                                              EntityRank entityRank,
                                              EntityRank maxRank)
 {
-  EntityRank highestRank = maxRank;
-  while(highestRank > entityRank && bucket.num_connectivity(bucketOrdinal, highestRank) == 0) {
-    highestRank = static_cast<EntityRank>(highestRank-1);
+  std::pair<EntityRank,unsigned> result(maxRank,0);
+  while(result.first > entityRank &&
+        (result.second = bucket.num_connectivity(bucketOrdinal, result.first)) == 0)
+  {
+    result.first = static_cast<EntityRank>(result.first-1);
   }
-  return highestRank;
+  return result;
 }
 
 void insert_upward_relations_for_owned(const BulkData& bulk_data,
@@ -1353,10 +1355,11 @@ void insert_upward_relations_for_owned(const BulkData& bulk_data,
   const Bucket& bucket = *idx.bucket;
   STK_ThrowAssert(bucket.owned());
   const unsigned bucketOrd = idx.bucket_ordinal;
-  const EntityRank upwardRank = get_highest_upward_connected_rank(bucket, bucketOrd, entityRank, maxRank);
+  const std::pair<EntityRank,unsigned> rankAndNumConn = get_highest_upward_connected_rank(bucket, bucketOrd, entityRank, maxRank);
+  const EntityRank upwardRank = rankAndNumConn.first;
 
   if (upwardRank > entityRank) {
-    const int numRels = bucket.num_connectivity(bucketOrd, upwardRank);
+    const int numRels = rankAndNumConn.second;
     const Entity* rels     = bucket.begin(bucketOrd, upwardRank);
 
     for (int r = 0; r < numRels; ++r) {

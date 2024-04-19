@@ -547,23 +547,41 @@ unsigned FieldBase::max_extent(unsigned dimension) const
   }
 }
 
-void FieldBase::rotate_multistate_data()
+void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
 {
-  const unsigned numStates = number_of_states();
+  const int numStates = number_of_states();
   if (numStates > 1 && StateNew == state()) {
-    NgpFieldBase* ngpField = get_ngp_field();
-    if (ngpField != nullptr) {
-      ngpField->rotate_multistate_data();
+    bool allStatesHaveNgpFields = true;
+    for(int s = 0; s < numStates; ++s) {
+      if (field_state(static_cast<FieldState>(s))->get_ngp_field() == nullptr) {
+        allStatesHaveNgpFields = false;
+      }
     }
-    for (unsigned s = 1; s < numStates; ++s) {
+
+    for (int s = 1; s < numStates; ++s) {
       FieldBase* sField = field_state(static_cast<FieldState>(s));
       m_field_meta_data.swap(sField->m_field_meta_data);
 
       std::swap(m_numSyncsToDevice, sField->m_numSyncsToDevice);
       std::swap(m_numSyncsToHost, sField->m_numSyncsToHost);
-
       std::swap(m_modifiedOnHost, sField->m_modifiedOnHost);
       std::swap(m_modifiedOnDevice, sField->m_modifiedOnDevice);
+    }
+
+    for(int s = 0; s < numStates; ++s) {
+      NgpFieldBase* ngpField = field_state(static_cast<FieldState>(s))->get_ngp_field();
+      if (ngpField != nullptr) {
+        ngpField->update_bucket_pointer_view();
+        ngpField->fence();
+      }
+    }
+
+    if (rotateNgpFieldViews && allStatesHaveNgpFields) {
+      for (int s = 1; s < numStates; ++s) {
+        NgpFieldBase* ngpField_sminus1 = field_state(static_cast<FieldState>(s-1))->get_ngp_field();
+        NgpFieldBase* ngpField_s = field_state(static_cast<FieldState>(s))->get_ngp_field();
+        ngpField_s->swap_field_views(ngpField_sminus1);
+      }
     }
   }
 }

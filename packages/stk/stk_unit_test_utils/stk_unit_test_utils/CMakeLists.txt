@@ -140,9 +140,15 @@ else()
 endif()
 
 target_include_directories(stk_unit_test_utils PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_transfer>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(stk_unit_test_utils PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_unit_test_utils>
   $<INSTALL_INTERFACE:include>
 )
+
 
 if (NOT DEFINED STK_ENABLE_UnitMain)
   set(STK_ENABLE_UnitMain ON)

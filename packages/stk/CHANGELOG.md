@@ -1,0 +1,5 @@
+# CHANGELOG
+
+5.19.2 (STK_VERSION 5190200) 4/17/2024
+Initial creation of STK_VERSION macro
+

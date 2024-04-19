@@ -52,7 +52,7 @@ using stk::unit_test_util::build_mesh;
 inline void findBoundingBoxCoordinates(const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
 {
     int spatialDim = 3;
-    double *minCoordinates = &boxCoordinates[0];
+    double *minCoordinates = boxCoordinates.data();
     double *maxCoordinates = &boxCoordinates[spatialDim];
 
     for (int j=0;j<spatialDim;j++)
@@ -219,7 +219,7 @@ inline void putCoordinatesInFile(const int exoid, const std::vector<FloatBox>& b
         double zmax = boxes[i].get_z_max();
 
         double hexCoordinates[24];
-        setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, &hexCoordinates[0]);
+        setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, hexCoordinates);
 
         unsigned offset = i*num_nodes_per_element;
         for (int j=0; j<num_nodes_per_element; j++)
@@ -281,7 +281,7 @@ inline void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const 
         }
         offset += num_elements_this_block*num_nodes_per_elem;
 
-        ex_put_elem_conn(exoid, blockId, &connect[0]);
+        ex_put_elem_conn(exoid, blockId, connect.data());
     }
 
     ex_close(exoid);
@@ -444,7 +444,7 @@ namespace simple_fields {
 inline void findBoundingBoxCoordinates(const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
 {
     int spatialDim = 3;
-    double *minCoordinates = &boxCoordinates[0];
+    double *minCoordinates = boxCoordinates.data();
     double *maxCoordinates = &boxCoordinates[spatialDim];
 
     for (int j=0;j<spatialDim;j++)
@@ -611,7 +611,7 @@ inline void putCoordinatesInFile(const int exoid, const std::vector<FloatBox>& b
         double zmax = boxes[i].get_z_max();
 
         double hexCoordinates[24];
-        setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, &hexCoordinates[0]);
+        setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, hexCoordinates);
 
         unsigned offset = i*num_nodes_per_element;
         for (int j=0; j<num_nodes_per_element; j++)
@@ -673,7 +673,7 @@ inline void writeExodusFileUsingBoxes(const std::vector<FloatBox>& boxes, const 
         }
         offset += num_elements_this_block*num_nodes_per_elem;
 
-        ex_put_elem_conn(exoid, blockId, &connect[0]);
+        ex_put_elem_conn(exoid, blockId, connect.data());
     }
 
     ex_close(exoid);

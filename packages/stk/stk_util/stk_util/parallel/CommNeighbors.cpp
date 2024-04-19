@@ -177,11 +177,13 @@ void store_recvd_data(const std::vector<unsigned char>& recvBuf,
                       std::vector<CommBufferV>& recvBuffers)
 {
   for(size_t i=0; i<recvProcs.size(); ++i) {
-    int p = recvProcs[i];
+    const int p = recvProcs[i];
     const unsigned char* buf = recvBuf.data() + recvDispls[i];
-    int len = recvCounts[i];
+    const int len = recvCounts[i];
     recvBuffers[p].resize(len);
-    std::memcpy(recvBuffers[p].raw_buffer(), buf, len);
+    if (len > 0) {
+      std::memcpy(recvBuffers[p].raw_buffer(), buf, len);
+    }
   }
 }
 
@@ -259,7 +261,7 @@ void old_communicate(MPI_Comm comm,
   int numRecvProcs = 0;
   for(int i=0; i<maxRecvProcs; ++i) {
       int idx = 0;
-      MPI_Waitany(maxRecvProcs, &requests[0], &idx, &status);
+      MPI_Waitany(maxRecvProcs, requests.data(), &idx, &status);
       int p = status.MPI_SOURCE;
       if (recv_sizes[idx] > 0) {
           recv_buffers[p].resize(recv_sizes[idx]);
@@ -281,10 +283,12 @@ void old_communicate(MPI_Comm comm,
 void CommNeighbors::communicate()
 {
   if (m_size == 1) {
-    int len = m_send[0].size_in_bytes();
+    const int len = m_send[0].size_in_bytes();
     const unsigned char* buf = m_send[0].raw_buffer();
     m_recv[0].resize(len);
-    std::memcpy(m_recv[0].raw_buffer(), buf, len);
+    if (len > 0) {
+      std::memcpy(m_recv[0].raw_buffer(), buf, len);
+    }
     return;
   }
 

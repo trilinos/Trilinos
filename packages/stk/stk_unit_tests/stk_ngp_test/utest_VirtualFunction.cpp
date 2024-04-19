@@ -61,7 +61,7 @@ class NgpDerived : public NgpBase
 struct SimpleStruct {
   KOKKOS_FUNCTION
   void print() {
-#ifdef STK_BUILT_IN_SIERRA
+#if KOKKOS_VERSION < 40200
     printf("Printing from A located at %p\n", static_cast<void*>(this));
 #else
     Kokkos::printf("Printing from A located at %p\n", static_cast<void*>(this));
@@ -73,7 +73,7 @@ struct BaseStruct {
   virtual void set_i(const int) = 0;
   KOKKOS_FUNCTION
   virtual void print() {
-#ifdef STK_BUILT_IN_SIERRA
+#if KOKKOS_VERSION < 40200
     printf("Printing from base located at %p\n", static_cast<void*>(this));
 #else
     Kokkos::printf("Printing from base located at %p\n", static_cast<void*>(this));
@@ -86,7 +86,7 @@ struct ChildStruct : public BaseStruct {
   virtual void set_i(const int _i) { i = _i; }
   KOKKOS_FUNCTION
   virtual void print() {
-#ifdef STK_BUILT_IN_SIERRA
+#if KOKKOS_VERSION < 40200
     printf("Printing from child located at %p with i %i\n", static_cast<void*>(this), i); }
 #else
     Kokkos::printf("Printing from child located at %p with i %i\n", static_cast<void*>(this), i); }

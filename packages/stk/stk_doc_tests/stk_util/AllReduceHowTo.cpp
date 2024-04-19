@@ -35,12 +35,13 @@
 #include "gtest/gtest.h"
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <vector>
 
 //BEGINAllReduce
 TEST(AllReduce, combinedOps)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  if (stk::parallel_machine_size(comm) != 2) { return; }
+  if (stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
 
   int myRank = stk::parallel_machine_rank(comm);
 

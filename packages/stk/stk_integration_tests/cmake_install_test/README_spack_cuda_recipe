@@ -1,0 +1,52 @@
+
+# recipe for creating a spack env and building trilinos/stk,
+# then building a stk-test-app using the spack-installed trilinos/stk
+#
+# Note: this is on ascicgpu057 as of March 27, 2024
+# Note2: edit user-specific paths below
+
+mkdir -p /fgs/william/sandbox_spack
+cd /fgs/william/sandbox_spack
+
+git clone --depth=100 --branch=releases/v0.21 https://github.com/spack/spack.git
+source ./spack/share/spack/setup-env.sh
+
+spack env create mystkcudaenv
+spack env activate mystkcudaenv
+module load aue/gcc/10.3.0
+spack compiler add
+#optionally remove old compilers that spack found
+spack compiler remove gcc@4.8.5
+spack compiler remove gcc@4.4.7
+
+spack add hdf5@1.14.3~shared
+spack add zlib
+spack add openmpi@4.1.6
+spack add kokkos@4.1.00+cuda+wrapper+cuda_constexpr+cuda_lambda+cuda_relocatable_device_code~shared cuda_arch=70
+spack add trilinos@master+cuda+cuda_rdc+exodus+stk+kokkos+wrapper~shared~boost cuda_arch=70 cxxstd=17
+
+spack external find
+# if spack didn't find openmpi@4.1.6, add these lines in `spack config edit`:
+# openmpi:
+#   externals:
+#   - spec: openmpi@4.1.6
+#   modules:
+#   - aue/openmpi/4.1.6-gcc-10.3.0
+#   buildable: false
+
+spack concretize -f
+spack install
+
+spack load cmake
+spack load openmpi
+
+# this is necessary on our ascicgpu057 machine, perhaps not in general
+export OMPI_CXX=$(find $(spack location -i kokkos) -name nvcc_wrapper)
+
+cp -r /fgs/william/code/stk/stk_integration_tests/cmake_install_test/stk_test_app .
+cd stk_test_app
+source run_cmake_in_spack_cuda_env
+#note: the run_cmake_in_spack_cuda_env script also did 'cd build' so you're now in build subdir
+make
+mpirun --np 4 ./test_stk_app
+

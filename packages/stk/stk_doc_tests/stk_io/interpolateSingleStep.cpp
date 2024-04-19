@@ -38,7 +38,7 @@
 #include <iomanip>                      // for operator<<
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <string>                       // for string
 #include <vector>                       // for vector
@@ -46,6 +46,7 @@
 #include "stk_io/MeshField.hpp"         // for MeshField, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/FieldBLAS.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"
 
@@ -82,18 +83,10 @@ TEST(StkMeshIoBrokerHowTo, interpolateSingleStep)
     //+ The name of the field on the database will be "temp"
     stkIo.add_field(fh, temperature, "temp");
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(),
-                            stk::topology::NODE_RANK, nodes);
-
     // Add one step to the database
     double time = 1.0;
 
-    for(size_t inode=0; inode<nodes.size(); inode++) {
-      double *fieldData =
-          stk::mesh::field_data(temperature, nodes[inode]);
-      *fieldData = time;
-    }
+    stk::mesh::field_fill(time, temperature);
 
     stkIo.begin_output_step(fh, time);
     stkIo.write_defined_output_fields(fh);
@@ -126,9 +119,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateSingleStep)
 
     stkIo.populate_bulk_data();
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
-
     for (size_t i=0; i < 21; i++) {
       double time = i/10.0;
       //+ Read the field values from the database and verify that they
@@ -138,10 +128,11 @@ TEST(StkMeshIoBrokerHowTo, interpolateSingleStep)
       // ============================================================
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 1.0
-      for(size_t j=0; j<nodes.size(); j++) {
-        double *fieldData = stk::mesh::field_data(temperature, nodes[j]);
-        EXPECT_DOUBLE_EQ(1.0, *fieldData);
-      }
+      stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
+        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+          double *fieldData = stk::mesh::field_data(temperature, node);
+          EXPECT_DOUBLE_EQ(1.0, *fieldData);
+        });
     }
     //-END
   }

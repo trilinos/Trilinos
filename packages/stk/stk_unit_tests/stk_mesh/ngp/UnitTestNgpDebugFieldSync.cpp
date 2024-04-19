@@ -213,7 +213,11 @@ public:
                            for (unsigned i = 0; i < bucketIds.size(); ++i) {
                              const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
                              for (unsigned j = 0; j < bucket.size(); ++j) {
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
                                stk::mesh::NgpMesh::MeshIndex index{&bucket, static_cast<unsigned>(j)};
+#else
+                               stk::mesh::NgpMesh::MeshIndex index{bucket.bucket_id(), static_cast<unsigned>(j)};
+#endif
                                ngpField(index, component) = value;
                              }
                            }

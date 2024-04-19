@@ -40,6 +40,7 @@
 
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
+#include <stk_search/BoxIdent.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
 
@@ -231,6 +232,56 @@ template <typename VolumeType>
 std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
 {
   return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), Ident(id,proc));
+}
+
+
+template<class BoxType>
+KOKKOS_FUNCTION
+BoxType device_generateBox(double x, double y, double z, double radius);
+
+template<>
+KOKKOS_INLINE_FUNCTION
+Point device_generateBox<Point>(double x, double y, double z, double /*radius*/)
+{
+  return Point(x,y,z);
+}
+
+template<>
+KOKKOS_INLINE_FUNCTION
+Sphere device_generateBox<Sphere>(double x, double y, double z, double radius)
+{
+  return Sphere(Point(x, y, z), radius);
+}
+
+template<>
+KOKKOS_INLINE_FUNCTION
+StkBox device_generateBox<StkBox>(double x, double y, double z, double radius)
+{
+  Point min_corner(x-radius, y-radius, z-radius);
+  Point max_corner(x+radius, y+radius, z+radius);
+  return StkBox(min_corner, max_corner);
+}
+
+template <typename BoxType, typename IdentProcType>
+KOKKOS_FUNCTION
+stk::search::BoxIdentProc<BoxType, IdentProcType> device_generateBoxIdentProc(double x, double y, double z,
+                                                                              double radius, int id, int proc)
+{
+  return stk::search::BoxIdentProc<BoxType, IdentProcType>{device_generateBox<BoxType>(x, y, z, radius),
+                                                           IdentProcType{id, proc}};
+}
+
+template <typename BoxType, typename IdentType>
+KOKKOS_FUNCTION
+stk::search::BoxIdent<BoxType, IdentType> device_generateBoxIdent(double x, double y, double z,
+                                                                  double radius, IdentType id)
+{
+  return stk::search::BoxIdent<BoxType, IdentType>{device_generateBox<BoxType>(x, y, z, radius), id};
+}
+
+template <typename BoxIdent>
+auto box_ident_to_pair(BoxIdent const& ident) {
+  return std::make_pair(ident.box, ident.ident);
 }
 
 //======================

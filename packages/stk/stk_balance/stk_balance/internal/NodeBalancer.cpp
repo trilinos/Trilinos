@@ -122,10 +122,10 @@ NodeBalancer::exchangeLocalSizes(const std::set<int>& neighborProcessors,
   }
 
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0]);
+  MPI_Waitall(receiveRequests.size(), receiveRequests.data(), receiveStati.data());
 
   std::vector<MPI_Status> sendStati(sendRequests.size());
-  MPI_Waitall(sendRequests.size(), &sendRequests[0], &sendStati[0]);
+  MPI_Waitall(sendRequests.size(), sendRequests.data(), sendStati.data());
 
   int i = 0;
   for (int p : neighborProcessors) {

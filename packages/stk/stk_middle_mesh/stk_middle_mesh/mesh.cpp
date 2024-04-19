@@ -811,6 +811,40 @@ void apply_orientation(EntityOrientation flag, MeshEntityPtr* down, const int n)
     }
 }
 
+void reverse_edge(MeshEntityPtr edge)
+{
+  assert(edge->get_type() == MeshEntityType::Edge);
+
+  std::vector<MeshEntityPtr> els;
+  get_upward(edge, 2, els);
+
+  std::vector<int> edgeIdxs(els.size());
+  for (size_t i=0; i < els.size(); ++i)
+  {
+    for (int j=0; j < els[i]->count_down(); ++j)
+    {
+      if (els[i]->get_down(j) == edge)
+      {
+        edgeIdxs[i] = j;
+      }
+    }
+  }
+
+  mesh::MeshEntityPtr v0 = edge->get_down(0);
+  mesh::MeshEntityPtr v1 = edge->get_down(1);
+
+  edge->replace_down(0, v1);
+  edge->replace_down(1, v0);
+
+  for (size_t i=0; i < els.size(); ++i)
+  {
+    EntityOrientation orientOld = els[i]->get_down_orientation(edgeIdxs[i]);
+    EntityOrientation orientNew = reverse(orientOld);
+    els[i]->set_down_orientation(edgeIdxs[i], orientNew);
+  }
+}
+
+
 int get_vertices(MeshEntityPtr e, MeshEntityPtr* verts)
 {
   int nnodes;

@@ -36,13 +36,14 @@
 #define STKSEARCH_KDTREE_IMPL_H
 
 // #######################  Start Clang Header Tool Managed Headers ########################
-#include <algorithm>                    // for min
-#include <cassert>                      // for assert
-#include <cmath>                        // for fabs
-#include <stk_search/KDTree_Threaded_Sort.hpp>    // for ThreadedSort
-#include <utility>                      // for pair, make_pair
-#include <stk_math/StkMath.hpp>         // for stk::math::max, stk::math::min
+#include <algorithm>                                   // for min
+#include <cassert>                                     // for assert
+#include <cmath>                                       // for fabs
+#include <stk_math/StkMath.hpp>                        // for stk::math::max, stk::math::min
+#include <stk_search/kdtree/KDTree_Threaded_Sort.hpp>  // for ThreadedSort
+#include <utility>                                     // for pair, make_pair
 
+#include "KDTree_BoundingBox.hpp"
 
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -1468,13 +1469,6 @@ inline bool ProximitySearchTree_T<RangeBoxType>::AnyOverlap(const DomainBox& sea
     } while(true);
 
   }
-}
-
-//
-//  Create empty search tree
-//
-template<typename RangeBoxType>
-ProximitySearchTree_T<RangeBoxType>::ProximitySearchTree_T() {
 }
 
 template<typename RangeBoxType>

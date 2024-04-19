@@ -919,3 +919,16 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
   EXPECT_EQ( bulk->bucket(node).capacity(), non_standard_bucket_capacity );
 }
 
+TEST(BulkData, bucket_debug_ThrowsWithInvalidEntity)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+#ifndef NDEBUG
+  std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+
+  stk::mesh::Entity invalidEntity;
+  EXPECT_TRUE(nullptr == bulkPtr->bucket_ptr(invalidEntity));
+  EXPECT_ANY_THROW(bulkPtr->bucket(invalidEntity));
+#endif
+}
+

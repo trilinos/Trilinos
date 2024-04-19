@@ -1034,18 +1034,14 @@ void print_hinge_info(const stk::mesh::BulkData& bulk,
   if(hingeNodes.size() > 0) {
     os << "PRINTING HINGE NODES on Proc " << bulk.parallel_rank() << " : " << std::endl;
     for(const stk::tools::impl::HingeNode& node : hingeNodes) {
-      if(hinge_node_is_locally_owned(bulk, node)) {
-        os << "\tHinge node id: " << bulk.identifier(node.get_node()) << std::endl;
-      }
+      os << "\tHinge node id: " << bulk.identifier(node.get_node()) << std::endl;
     }
   }
   if(hingeEdges.size() > 0) {
     os << "PRINTING HINGE EDGES on Proc " << bulk.parallel_rank() << " : " << std::endl;
     for(const stk::tools::impl::HingeEdge& edge : hingeEdges) {
-      if(hinge_edge_is_locally_owned(bulk, edge)) {
-        os << "\tHinge edge ids: " << bulk.identifier(edge.first.get_node())
-           << ", " << bulk.identifier(edge.second.get_node()) << std::endl;
-      }
+      os << "\tHinge edge ids: " << bulk.identifier(edge.first.get_node())
+         << ", " << bulk.identifier(edge.second.get_node()) << std::endl;
     }
   }
 

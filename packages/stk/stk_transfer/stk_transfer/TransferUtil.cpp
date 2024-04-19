@@ -74,7 +74,7 @@ void exchange_transfer_ids(ReducedDependencyCommData& comm_data)
   }
 
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
-  MPI_Waitall(receiveRequests.size(), &receiveRequests[0], &receiveStati[0] );
+  MPI_Waitall(receiveRequests.size(), receiveRequests.data(), receiveStati.data());
 
   if (stk::util::get_common_coupling_version() >= 10) {
     comm_data.m_otherTransferId.resize(comm_data.numToMeshCommunications);
@@ -83,7 +83,7 @@ void exchange_transfer_ids(ReducedDependencyCommData& comm_data)
     }
   }
 
-  MPI_Waitall(sendRequests.size(), &sendRequests[0], MPI_STATUSES_IGNORE);
+  MPI_Waitall(sendRequests.size(), sendRequests.data(), MPI_STATUSES_IGNORE);
 }
 
 }

@@ -48,43 +48,43 @@ template <typename T>
 class StridedArray
 {
 public:
-  KOKKOS_FUNCTION 
+  KOKKOS_INLINE_FUNCTION 
   StridedArray()
   : dataPointer(nullptr),
     length(0)
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_ENABLE_GPU
     , stride(defaultStride)
 #endif
   {
   }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   StridedArray(T* e,
                unsigned n,
                int stride_in=defaultStride)
   : dataPointer(e),
     length(n)
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_ENABLE_GPU
     , stride(stride_in)
 #endif
   {
   }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   StridedArray(PairIter<T*> data
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_ENABLE_GPU
                , int stride_in=defaultStride
 #endif
               )
   : dataPointer(data.begin()),
     length(data.size())
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_ENABLE_GPU
     , stride(stride_in)
 #endif
   {
   }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T operator[](unsigned i) const
   {
 #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
@@ -94,21 +94,43 @@ public:
 #endif
   }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T* data() { return dataPointer; }
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const T* data() const { return dataPointer; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   unsigned size() const
   { 
     return length;
   }
 
+  KOKKOS_INLINE_FUNCTION
+  bool operator==(const StridedArray<T>& rhs) const
+  {
+    if (this->size() != rhs.size()) {
+      return false;
+    }
+
+    for(unsigned i=0; i<size(); ++i) {
+      if ((*this)[i] != rhs[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator!=(const StridedArray<T>& rhs) const
+  {
+    return !(*this == rhs);
+  }
+
 private:
   T* dataPointer;
   unsigned length;
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_ENABLE_GPU
   int stride;
 #endif
 };

@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 #include <cmath>
-#include <stk_search/KDTree_BoundingSpheres.hpp>
+#include <stk_search/kdtree/KDTree_BoundingSpheres.hpp>
 
 namespace {
 

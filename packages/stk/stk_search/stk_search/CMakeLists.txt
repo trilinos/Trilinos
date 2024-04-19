@@ -34,8 +34,14 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS *.hpp
+                  ${CMAKE_CURRENT_SOURCE_DIR}/kdtree/*.hpp
+                  ${CMAKE_CURRENT_SOURCE_DIR}/morton_lbvh/*.hpp
+)
+FILE(GLOB SOURCES *.cpp
+                  ${CMAKE_CURRENT_SOURCE_DIR}/kdtree/*.cpp
+                  ${CMAKE_CURRENT_SOURCE_DIR}/morton_lbvh/*.cpp
+)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(stk_search
@@ -48,8 +54,12 @@ else()
   target_link_libraries(stk_search PUBLIC stk_math)
   target_link_libraries(stk_search PUBLIC stk_util_parallel)
 
-  find_package(KokkosKernels REQUIRED)
-  target_link_libraries(stk_search PUBLIC Kokkos::kokkoskernels)
+  if(STK_HAS_ARBORX)
+    target_link_libraries(stk_search PUBLIC ArborX::ArborX)
+  endif()
+
+#  find_package(KokkosKernels REQUIRED)
+#  target_link_libraries(stk_search PUBLIC KokkosKernels::all_libs)
 endif()
 
 target_include_directories(stk_search PUBLIC
