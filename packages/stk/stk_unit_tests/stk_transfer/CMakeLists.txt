@@ -58,8 +58,15 @@ else()
   add_executable(stk_transfer_utest ${SOURCES})
   target_link_libraries(stk_transfer_utest stk_transfer)
   target_link_libraries(stk_transfer_utest stk_unit_test_utils)
+  if (STK_ENABLE_STKMiddle_mesh)
+    target_link_libraries(stk_transfer_utest stk_transfer_fixtures)
+  endif()
   target_link_libraries(stk_transfer_utest stk_util_parallel)
   target_link_libraries(stk_transfer_utest stk_unit_main)
+
+  target_include_directories(stk_transfer_utest PUBLIC
+    ${STK_TOPLEVEL_SOURCE_DIR}/stk_unit_test_utils
+  )
 
   add_test("stk_transfer_utest" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_transfer_utest --gtest_filter=GeomXferImpl.coarseSearchImpl_emptyDomain")
 endif()

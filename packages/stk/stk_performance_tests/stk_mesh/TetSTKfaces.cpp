@@ -107,7 +107,7 @@ TEST(tet_faces, tet_faces)
     const double timers[NUM_TIMERS] = {mesh_create_time, create_faces_time, total_time};
     const char* timer_names[NUM_TIMERS] = {"Create mesh", "Create faces", "Total time"};
 
-    stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+    stk::print_timers_and_memory(timer_names, timers, NUM_TIMERS);
     std::cout<<"Global HWM: "<<stk::human_bytes(global_hwm)<<std::endl;
   }
 
@@ -173,7 +173,7 @@ TEST(tet_faces, minimal_tet_faces)
     const double timers[NUM_TIMERS] = {mesh_create_time, create_faces_time, total_time};
     const char* timer_names[NUM_TIMERS] = {"Create mesh", "Create faces", "Total time"};
 
-    stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+    stk::print_timers_and_memory(timer_names, timers, NUM_TIMERS);
     std::cout<<"Global HWM: "<<stk::human_bytes(global_hwm)<<std::endl;
   }
 

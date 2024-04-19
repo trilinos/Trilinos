@@ -134,6 +134,7 @@ exe stk_performance_tests
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_middle_mesh//stk_middle_mesh
     /sierra/stk_coupling//stk_coupling
+    /sierra/stk_search//stk_search
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_diag
     /sierra/stk_tools//stk_mesh_tools_lib

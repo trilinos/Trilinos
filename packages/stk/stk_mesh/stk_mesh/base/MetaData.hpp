@@ -1069,7 +1069,7 @@ MetaData::legacy_declare_field(stk::topology::rank_t arg_entity_rank,
 
   if (f[0] != nullptr) {
     for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
-      f[i] = &f[0]->field_of_state(static_cast<FieldState>(i));
+      f[i] = &(f[0]->field_of_state(static_cast<FieldState>(i)));
     }
   }
   else {

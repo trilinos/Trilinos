@@ -44,7 +44,7 @@ TEST(StkIoHowTo, WriteMesh)
   unlink(filename.c_str());
 }
 
-TEST(StkIoHowTo, generateHugeMesh)
+TEST(StkIoHowTo, generateMeshWith64BitIds)
 {
   std::string meshSpec = stk::unit_test_util::simple_fields::get_option("-i", "1x1x4");
   std::string fullMeshSpec = "generated:"+meshSpec;
@@ -52,6 +52,8 @@ TEST(StkIoHowTo, generateHugeMesh)
   std::string filename = "output.exo";
   stk::io::StkMeshIoBroker inputBroker;
   inputBroker.use_simple_fields();
+
+  //+ Set properties to ensure that 64-bit integers will be used
   inputBroker.property_add(Ioss::Property("INTEGER_SIZE_API" , 8));
   inputBroker.property_add(Ioss::Property("INTEGER_SIZE_DB" , 8));
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();

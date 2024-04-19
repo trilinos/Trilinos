@@ -39,74 +39,114 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
-#include <stk_search/CoarseSearchKdTree.hpp>
+#include <stk_search/kdtree/CoarseSearchKdTree.hpp>
+#include <stk_search/morton_lbvh/CoarseSearchMortonLBVH.hpp>
+#ifdef STK_HAS_ARBORX
+#include <stk_search/arborx/CoarseSearchArborX.hpp>
+#endif
+
 #include <stk_search/SearchMethod.hpp>
+#include <stk_search/CommonSearchUtil.hpp>
+#include <Kokkos_Core.hpp>
 #include <vector>
 #include <utility>
 
+namespace stk::search {
 
-namespace stk { namespace search {
-
-inline
-std::ostream& operator<<(std::ostream &out, SearchMethod method)
-{
-  switch( method )   {
-  case KDTREE:                 out << "KDTREE"; break;
-  case MORTON_LINEARIZED_BVH:  out << "MORTON_LINEARIZED_BVH"; break;
-  }
-  return out;
-}
-
-// THIS MIGHT BE WHAT WE ACTUALLY WANT FOR THE INTERFACE.
-template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search(
-                    std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
-                    std::vector<std::pair<RangeBox, RangeIdent> >  const& range,
-                    SearchMethod                                          method,
-                    stk::ParallelMachine                                  comm,
-                    std::vector< std::pair< IdentProc<DomainIdent, unsigned int>,
-                                            IdentProc<RangeIdent, unsigned int> > > &  intersections
-                  )
-{
-  std::cerr << "Future version of coarse_search called" << std::endl;
-  abort();
-}
-
-// intersections will be those of distributed domain boxes associated with this
-// processor rank via get_proc<DomainIdent>(.) that intersect distributed range
-// boxes.  Optionally, also include intersections of distributed domain boxes
-// with distributed range boxes associated with this processor rank via
-// get_proc<RangeIdent>(.).
-// Note that the search results that are placed in the intersections result argument
-// are not sorted. If the caller needs this vector to be sorted, you must
-// call std::sort(intersections.begin(), intersections.end()) or similar.
+// After providing a vector of local domain and range search box information
+// (that includes both the box itself and the target entity ID and owning
+// processor), this function will compute a parallel-consistent list of
+// all box intersections between local entities (in the domain vector) and
+// range entities from all processors.
+//
+// The "enforceSearchResultSymmetry" argument indicates whether you want to
+// perform an additional round of parallel communication to make sure that
+// no intersections with anything in the local domain or range vectors have
+// been missed by only being detected on another processor.  Intersections
+// can be missed if, say, some local entities exist only in the range vector
+// and not the domain vector.  This flag will add another round of parallel
+// communication that makes sure all local interactions that involve an
+// off-processor entity are shared with that remote processor.  Results are
+// sorted if this flag is set.
+//
+// Search performance will generally be better if the global domain vector is
+// larger than the range vector.  The "autoSwapDomainAndRange" argument
+// controls if a global input length comparison is made, followed by
+// potentially swapping the domain and range vectors.  The final results should
+// be independent of this flag.
+//
 //BEGINcoarse_search_impl
-template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search(std::vector<std::pair<DomainBox, DomainIdent>> const& domain,
-    std::vector<std::pair<RangeBox, RangeIdent>> const& range,
-    SearchMethod method,
-    stk::ParallelMachine comm,
-    std::vector<std::pair<DomainIdent, RangeIdent>>& intersections,
-    bool communicateRangeBoxInfo = true,
-    bool determineDomainAndRange = true)
+template <typename DomainBoxType, typename DomainIdentProcType, typename RangeBoxType, typename RangeIdentProcType>
+void coarse_search(std::vector<std::pair<DomainBoxType, DomainIdentProcType>> const & domain,
+                   std::vector<std::pair<RangeBoxType, RangeIdentProcType>> const & range,
+                   SearchMethod method,
+                   stk::ParallelMachine comm,
+                   std::vector<std::pair<DomainIdentProcType, RangeIdentProcType>>& intersections,
+                   bool enforceSearchResultSymmetry = true,
+                   bool autoSwapDomainAndRange = true)
 {
-  switch( method )
-  {
-  case KDTREE:
-    if (determineDomainAndRange) {
-      coarse_search_kdtree_driver(domain,range,comm,intersections,communicateRangeBoxInfo);
+  switch (method) {
+    case ARBORX: {
+#ifdef STK_HAS_ARBORX
+      coarse_search_arborx(domain, range, comm, intersections, enforceSearchResultSymmetry);
+#else
+      STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX enabled. Please use KDTREE or MORTON_LBVH.");
+#endif
+      break;
     }
-    else {
-      coarse_search_kdtree(domain,range,comm,intersections,communicateRangeBoxInfo);
+    case KDTREE: {
+      if (autoSwapDomainAndRange) {
+        coarse_search_kdtree_driver(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      }
+      else {
+        coarse_search_kdtree(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      }
+      break;
     }
-    break;
-  default:
-    std::cerr << "coarse_search(..) interface used does not support SearchMethod " << method << std::endl;
-    abort();
-    break;
+    case MORTON_LBVH: {
+      coarse_search_morton_lbvh(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      break;
+    }
+    default: {
+      STK_ThrowErrorMsg("Unsupported coarse_search method supplied. Choices are: KDTREE, MORTON_LBVH, or ARBORX.");
+    }
   }
 }
 //ENDcoarse_search_impl
-}} // namespace stk::search
+
+template <typename DomainBoxType, typename DomainIdentProcType, typename RangeBoxType, typename RangeIdentProcType, typename ExecutionSpace>
+void coarse_search(Kokkos::View<BoxIdentProc<DomainBoxType, DomainIdentProcType>*, ExecutionSpace> const & domain,
+                   Kokkos::View<BoxIdentProc<RangeBoxType, RangeIdentProcType>*, ExecutionSpace> const & range,
+                   SearchMethod method,
+                   stk::ParallelMachine comm,
+                   Kokkos::View<IdentProcIntersection<DomainIdentProcType, RangeIdentProcType>*, ExecutionSpace>& intersections,
+                   ExecutionSpace const& execSpace = Kokkos::DefaultExecutionSpace{},
+                   bool enforceSearchResultSymmetry = true,
+                   bool autoSwapDomainAndRange = true)
+{
+  switch (method) {
+    case ARBORX: {
+#ifdef STK_HAS_ARBORX
+      coarse_search_arborx(domain, range, comm, intersections, enforceSearchResultSymmetry);
+#else
+      STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX enabled. Please use KDTREE or MORTON_LBVH.");
+#endif
+      break;
+    }
+    case KDTREE: {
+      STK_ThrowErrorMsg("The KDTREE search method is not supported on GPUs.  Please use MORTON_LBVH or ARBORX instead.");
+      break;
+    }
+    case MORTON_LBVH: {
+      coarse_search_morton_lbvh(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      break;
+    }
+    default: {
+      STK_ThrowErrorMsg("Unsupported coarse_search method supplied. Choices are: KDTREE, MORTON_LBVH, or ARBORX.");
+    }
+  }
+}
+
+} // namespace stk::search
 
 #endif // stk_search_CoarseSearch_hpp

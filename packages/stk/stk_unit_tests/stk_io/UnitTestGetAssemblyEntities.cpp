@@ -197,12 +197,12 @@ class GetAssemblyEntities : public stk::io::unit_test::Assembly
     return assemblyPart;
   }
 
-  stk::mesh::Part& setup_single_hex_mesh()
+  stk::mesh::Part& setup_single_hex_mesh(stk::mesh::EntityRank assemblyRank = stk::topology::INVALID_RANK)
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
 
     const std::string assemblyName("simpleAssembly");
-    stk::mesh::Part& assemblyPart = create_single_hex_assembly(assemblyName, 10);
+    stk::mesh::Part& assemblyPart = create_single_hex_assembly(assemblyName, 10, assemblyRank);
     create_single_hex_mesh();
     return assemblyPart;
   }
@@ -213,11 +213,12 @@ class GetAssemblyEntities : public stk::io::unit_test::Assembly
     stk::io::fill_mesh(meshDesc, get_bulk());
   }
 
-  stk::mesh::Part& create_single_hex_assembly(const std::string& assemblyName, int id)
+  stk::mesh::Part& create_single_hex_assembly(const std::string& assemblyName, int id,
+                                              stk::mesh::EntityRank assemblyRank = stk::topology::INVALID_RANK)
   {
     const std::vector<std::string> partNames{"block_1"};
 
-    stk::mesh::Part& assemblyPart = create_assembly(assemblyName, id);
+    stk::mesh::Part& assemblyPart = create_assembly(assemblyName, id, assemblyRank);
     stk::mesh::Part& block1Part = create_io_part(partNames[0], 1);
     declare_subsets(assemblyPart, {&block1Part});
 
@@ -311,9 +312,7 @@ class GetAssemblyEntities : public stk::io::unit_test::Assembly
 
 TEST_F(GetAssemblyEntities, noEntities)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
 
@@ -329,9 +328,7 @@ TEST_F(GetAssemblyEntities, noEntities)
 
 TEST_F(GetAssemblyEntities, singleParticle_getElementBucket)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_particle_mesh();
 
@@ -341,9 +338,7 @@ TEST_F(GetAssemblyEntities, singleParticle_getElementBucket)
 
 TEST_F(GetAssemblyEntities, singleParticle_getElement)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_particle_mesh();
 
@@ -353,9 +348,7 @@ TEST_F(GetAssemblyEntities, singleParticle_getElement)
 
 TEST_F(GetAssemblyEntities, singleParticle_getNodeBucket)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_particle_mesh();
 
@@ -365,9 +358,7 @@ TEST_F(GetAssemblyEntities, singleParticle_getNodeBucket)
 
 TEST_F(GetAssemblyEntities, singleParticle_getNode)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_particle_mesh();
 
@@ -377,9 +368,7 @@ TEST_F(GetAssemblyEntities, singleParticle_getNode)
 
 TEST_F(GetAssemblyEntities, singleHex_getElementBucket)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_hex_mesh();
 
@@ -387,11 +376,19 @@ TEST_F(GetAssemblyEntities, singleHex_getElementBucket)
   test_get_buckets(assemblyPart, stk::topology::ELEM_RANK, BucketTestData(stk::topology::HEX_8, {1}));
 }
 
+TEST_F(GetAssemblyEntities, singleHex_getElementBucket_rankedAssemblyPart)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
+
+  stk::mesh::Part& assemblyPart = setup_single_hex_mesh(stk::topology::ELEM_RANK);
+
+  test_assembly_part_attributes(assemblyPart);
+  test_get_buckets(assemblyPart, stk::topology::ELEM_RANK, BucketTestData(stk::topology::HEX_8, {1}));
+}
+
 TEST_F(GetAssemblyEntities, singleHex_getElement)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_hex_mesh();
 
@@ -401,9 +398,7 @@ TEST_F(GetAssemblyEntities, singleHex_getElement)
 
 TEST_F(GetAssemblyEntities, singleHex_getNodeBucket)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_hex_mesh();
 
@@ -413,9 +408,7 @@ TEST_F(GetAssemblyEntities, singleHex_getNodeBucket)
 
 TEST_F(GetAssemblyEntities, singleHex_getNodes)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   stk::mesh::Part& assemblyPart = setup_single_hex_mesh();
 
@@ -425,9 +418,7 @@ TEST_F(GetAssemblyEntities, singleHex_getNodes)
 
 TEST_F(GetAssemblyEntities, twoHexDifferentBlocks_getElementBucket)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   const std::string assemblyBlock("block_1");
   stk::mesh::Part& assemblyPart = setup_two_hex_mesh_with_block_in_assembly(assemblyBlock);
@@ -438,9 +429,7 @@ TEST_F(GetAssemblyEntities, twoHexDifferentBlocks_getElementBucket)
 
 TEST_F(GetAssemblyEntities, twoHexDifferentBlocks_getElement)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) {
-    return;
-  }
+  if (stk::parallel_machine_size(get_comm()) != 1) { GTEST_SKIP(); }
 
   const std::string assemblyBlock("block_1");
   stk::mesh::Part& assemblyPart = setup_two_hex_mesh_with_block_in_assembly(assemblyBlock);

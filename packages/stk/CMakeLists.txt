@@ -34,6 +34,8 @@
 
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
+message("starting STK cmake configuration, CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
+
 IF(COMMAND TRIBITS_PACKAGE_DECL)
   SET(HAVE_STK_Trilinos ON)
   TRIBITS_PACKAGE_DECL(STK)
@@ -122,6 +124,28 @@ ELSE()
     MESSAGE("Building serial without MPI. (To enable MPI, use '-DSTK_ENABLE_MPI:BOOL=ON')")
   ENDIF()
 ENDIF()
+
+find_package(ArborX)
+if(TARGET ArborX::ArborX)
+  MESSAGE("found ArborX")
+  SET(STK_HAS_ARBORX ON)
+else()
+  MESSAGE("did not find ArborX. If stk_search is enabled, ArborX will not be a valid option.")
+endif()
+
+find_package(SEACAS)
+if(SEACAS_ENABLE_SEACASIoss)
+  message("found SEACASIoss")
+  SET(STK_HAS_SEACAS_IOSS ON)
+endif()
+if(SEACAS_ENABLE_SEACASExodus)
+  message("found SEACASExodus")
+  SET(STK_HAS_SEACAS_EXODUS ON)
+endif()
+if(SEACAS_ENABLE_SEACASNemesis)
+  message("found SEACASNemesis")
+  SET(STK_HAS_SEACAS_NEMESIS ON)
+endif()
 
 if(NOT HAVE_STK_Trilinos)
   stk_process_enables()

@@ -1228,20 +1228,24 @@ TEST_F(NgpFieldFixture, blas_field_copy_device_to_device)
   EXPECT_FALSE(stkField1->need_sync_to_device());
   EXPECT_FALSE(stkField2->need_sync_to_device());
 
-  stk::mesh::NgpField<double> ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
-  stk::mesh::NgpField<double> ngpField2 = stk::mesh::get_updated_ngp_field<double>(*stkField2);
  
   const double myConstantValue = 97.9;
   stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::ExecSpace());
 
+#ifdef STK_ENABLE_GPU
+  stk::mesh::NgpField<double>& ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
   EXPECT_TRUE(ngpField1.need_sync_to_host());
+#endif
 
   stk::mesh::field_copy(*stkField1, *stkField2);
 
+#ifdef STK_ENABLE_GPU
   EXPECT_TRUE(stkField1->need_sync_to_host());
   EXPECT_TRUE(stkField2->need_sync_to_host());
+#endif
 
   stk::mesh::Selector selector(*stkField2);
+  stk::mesh::NgpField<double>& ngpField2 = stk::mesh::get_updated_ngp_field<double>(*stkField2);
   check_field_data_on_device(ngpMesh, ngpField2, selector, myConstantValue);
 }
 
@@ -1259,7 +1263,7 @@ TEST_F(NgpFieldFixture, blas_field_fill_device)
   EXPECT_FALSE(stkField1->need_sync_to_host());
   EXPECT_FALSE(stkField1->need_sync_to_device());
 
-  stk::mesh::NgpField<double> ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
+  stk::mesh::NgpField<double>& ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
  
   ngpField1.set_all(ngpMesh, 97.9);
 
@@ -1268,10 +1272,23 @@ TEST_F(NgpFieldFixture, blas_field_fill_device)
   const double myConstantValue = 55.5;
   stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::ExecSpace());
 
+#ifdef STK_ENABLE_GPU
   EXPECT_TRUE(stkField1->need_sync_to_host());
+#else
+  EXPECT_TRUE(stkField1->need_sync_to_device());
+#endif
+
+#if defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)
+  EXPECT_TRUE(stkField1->need_sync_to_device());
+  stkField1->sync_to_device();
+#endif
 
   stk::mesh::Selector selector(*stkField1);
+#ifdef STK_ENABLE_GPU
   check_field_data_on_device(ngpMesh, ngpField1, selector, myConstantValue);
+#else
+  check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
+#endif
 }
 
 TEST_F(NgpFieldFixture, blas_field_fill_host_ngp)

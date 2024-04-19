@@ -37,6 +37,7 @@
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -80,6 +81,7 @@ public:
     {
       observer->entity_added(entity);
     }
+    anyModification = true;
   }
 
   void notify_entity_deleted(stk::mesh::Entity entity)
@@ -88,6 +90,7 @@ public:
     {
       observer->entity_deleted(entity);
     }
+    anyModification = true;
   }
 
   void notify_entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
@@ -96,6 +99,7 @@ public:
     {
       observer->entity_parts_added(entity, parts);
     }
+    anyModification = true;
   }
 
   void notify_entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
@@ -104,6 +108,7 @@ public:
     {
       observer->entity_parts_removed(entity, parts);
     }
+    anyModification = true;
   }
 
   void notify_modification_begin()
@@ -122,13 +127,15 @@ public:
     }
   }
 
-  void notify_finished_modification_end(MPI_Comm communicator)
+  bool notify_finished_modification_end(MPI_Comm communicator)
   {
-    reduce_values_for_observers(communicator);
+    bool globalAnyModification = reduce_values_for_observers(communicator);
     for(std::shared_ptr<ModificationObserver>& observer : observers)
     {
       observer->finished_modification_end_notification();
     }
+    anyModification = false;
+    return globalAnyModification;
   }
 
   void notify_elements_about_to_move_procs(const stk::mesh::EntityProcVec &elemProcPairsToMove)
@@ -137,6 +144,7 @@ public:
     {
       observer->elements_about_to_move_procs_notification(elemProcPairsToMove);
     }
+    anyModification = true;
   }
 
   void notify_elements_moved_procs(const stk::mesh::EntityProcVec &elemProcPairsToMove)
@@ -145,6 +153,7 @@ public:
     {
       observer->elements_moved_procs_notification(elemProcPairsToMove);
     }
+    anyModification = true;
   }
 
   void notify_local_entities_created_or_deleted(stk::mesh::EntityRank rank)
@@ -153,6 +162,7 @@ public:
     {
       observer->local_entities_created_or_deleted_notification(rank);
     }
+    anyModification = true;
   }
 
   void notify_local_entity_comm_info_changed(stk::mesh::EntityRank rank)
@@ -161,6 +171,7 @@ public:
     {
       observer->local_entity_comm_info_changed_notification(rank);
     }
+    anyModification = true;
   }
 
   void notify_local_buckets_changed(stk::mesh::EntityRank rank)
@@ -169,6 +180,7 @@ public:
     {
       observer->local_buckets_changed_notification(rank);
     }
+    anyModification = true;
   }
 
   template<typename ObserverType>
@@ -210,6 +222,7 @@ public:
     {
       observer->relation_destroyed(from, to, ordinal);
     }
+    anyModification = true;
   }
 
   void notify_relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
@@ -218,14 +231,19 @@ public:
     {
       observer->relation_declared(from, to, ordinal);
     }
+    anyModification = true;
   }
 
 private:
   std::vector<std::shared_ptr<ModificationObserver>> observers;
 
-  void reduce_values_for_observers(MPI_Comm communicator);
+  bool reduce_values_for_observers(MPI_Comm communicator);
   void get_values_to_reduce_from_observers(std::vector<size_t> &allObserverValues, std::vector<std::vector<size_t> >& observerValues);
   void set_max_values_on_observers(const std::vector<size_t> &maxValues, std::vector<std::vector<size_t> >& observerValues);
+
+  std::vector<size_t> m_allObserverValues;
+  std::vector<std::vector<size_t>> m_observerValues;
+  bool anyModification = false;
 };
 
 }

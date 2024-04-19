@@ -415,20 +415,6 @@ bool Bucket::member_all( const PartVector & parts ) const
   return result_all ;
 }
 
-bool Bucket::member_any( const PartVector & parts ) const
-{
-  const PartVector::const_iterator ip_end = parts.end();
-        PartVector::const_iterator ip     = parts.begin() ;
-
-  bool result_none = true ;
-
-  for ( ; result_none && ip_end != ip ; ++ip ) {
-    const unsigned ord = (*ip)->mesh_meta_data_ordinal();
-    result_none = !member(ord);
-  }
-  return ! result_none ;
-}
-
 bool Bucket::member_any( const OrdinalVector & parts ) const
 {
   const OrdinalVector::const_iterator ip_end = parts.end();

@@ -1,5 +1,6 @@
 #include "stk_util/parallel/ReceiveCounter.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
+#include <cassert>                          // for assert
 
 #include <iostream>  //TODO: DEBUGGING
 

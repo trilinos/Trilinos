@@ -65,14 +65,13 @@ TEST(StkMeshHowTo, CreateStkMesh)
   stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkDataPtr->mesh_meta_data();
   stkMeshMetaData.use_simple_fields();
 
-  // STK IO module will be described in separate chapter.
-  // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
+  // Read the mesh data from the Exodus file and populate an STK Mesh.
   // The order of the following lines in {} are important
   {
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
     exodusFileReader.use_simple_fields();
 
-    // Inform STK IO which STK Mesh objects to populate later
+    // Provide STK Mesh object to be populated
     exodusFileReader.set_bulk_data(*stkMeshBulkDataPtr);
 
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
@@ -84,7 +83,7 @@ TEST(StkMeshHowTo, CreateStkMesh)
     exodusFileReader.populate_bulk_data();
   }
 
-  // Test if the STK Mesh has 512 elements. Other examples will discuss details below.
+  // Verify that the STK Mesh has 512 elements.
   stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
   std::vector<size_t> entityCounts;
   stk::mesh::count_entities(allEntities, *stkMeshBulkDataPtr, entityCounts);

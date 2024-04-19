@@ -69,7 +69,7 @@ template<typename PARTVECTOR>
 void fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(
                                   const PARTVECTOR & remove_parts,
                                   const OrdinalVector & addPartsAndSupersets,
-                                  stk::mesh::Bucket &entityBucket,
+                                  const stk::mesh::Bucket* entityBucket,
                                   OrdinalVector &removePartsAndSubsetsMinusPartsInAddPartsList)
 {
   const unsigned expected_min_num_subsets = 3;
@@ -82,12 +82,12 @@ void fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(
                          rmPart->mesh_meta_data_ordinal()))
     {
       removePartsAndSubsetsMinusPartsInAddPartsList.push_back(rmPart->mesh_meta_data_ordinal());
-      const PartVector& subsets = rmPart->subsets();
-      for(const Part* subset : subsets)
-      {
-        if(entityBucket.member(*subset))
-        {
-          removePartsAndSubsetsMinusPartsInAddPartsList.push_back(subset->mesh_meta_data_ordinal());
+      if (entityBucket != nullptr) {
+        const PartVector& subsets = rmPart->subsets();
+        for(const Part* subset : subsets) {
+          if(entityBucket->member(*subset)) {
+            removePartsAndSubsetsMinusPartsInAddPartsList.push_back(subset->mesh_meta_data_ordinal());
+          }
         }
       }
     }
@@ -105,20 +105,16 @@ void fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(
   const unsigned expected_min_num_subsets = 3;
   const size_t expectedSizeOfRemovePartList = remove_parts.size() * expected_min_num_subsets;
   removePartsAndSubsetsMinusPartsInAddPartsList.reserve(expectedSizeOfRemovePartList);
-  for(const Part* rmPart : remove_parts)
-  {
+  for(const Part* rmPart : remove_parts) {
     if(!contains_ordinal(addPartsAndSupersets.begin(),
                          addPartsAndSupersets.end(),
                          rmPart->mesh_meta_data_ordinal()))
     {
       removePartsAndSubsetsMinusPartsInAddPartsList.push_back(rmPart->mesh_meta_data_ordinal());
       const PartVector& subsets = rmPart->subsets();
-      for(const Part* subset : subsets)
-      {
-        for(auto entityBucket : buckets)
-        {
-          if(entityBucket->member(*subset))
-          {
+      for(const Part* subset : subsets) {
+        for(auto entityBucket : buckets) {
+          if(entityBucket->member(*subset)) {
             removePartsAndSubsetsMinusPartsInAddPartsList.push_back(subset->mesh_meta_data_ordinal());
           }
         }

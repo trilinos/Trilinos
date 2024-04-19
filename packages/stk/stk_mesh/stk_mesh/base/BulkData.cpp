@@ -1014,7 +1014,7 @@ void BulkData::internal_verify_and_change_entity_parts( Entity entity,
     OrdinalVector removePartsAndSubsetsMinusPartsInAddPartsList;
     impl::fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(remove_parts,
                                                       addPartsAndSupersets,
-                                                      bucket(entity),
+                                                      bucket_ptr(entity),
                                                       removePartsAndSubsetsMinusPartsInAddPartsList);
 
     scratchOrdinalVec.clear();
@@ -1052,7 +1052,7 @@ void BulkData::internal_verify_and_change_entity_parts( const EntityVector& enti
 
       impl::fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(remove_parts,
                                                         addPartsAndSupersets,
-                                                        bucket(entity),
+                                                        bucket_ptr(entity),
                                                         removePartsAndSubsetsMinusPartsInAddPartsList);
 
       internal_change_entity_parts(entity,
@@ -1441,6 +1441,8 @@ template<typename IDVECTOR>
 void BulkData::declare_entities(stk::topology::rank_t rank, const IDVECTOR& newIds,
        const PartVector &parts, std::vector<Entity>& requested_entities)
 {
+    require_ok_to_modify();
+
     requested_entities.resize(newIds.size());
     if (newIds.empty()) {
         return;
@@ -2000,30 +2002,20 @@ void BulkData::reset_empty_field_data_callback(EntityRank rank, unsigned bucketI
   m_field_data_manager->reset_empty_field_data(rank, bucketId, bucketSize, bucketCapacity, fields);
 }
 
-void BulkData::update_field_data_states(FieldBase* field)
+void BulkData::update_field_data_states(FieldBase* field, bool rotateNgpFieldViews)
 {
   const int numStates = field->number_of_states();
   if (numStates > 1) {
-    field->rotate_multistate_data();
-
     unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
     for (int s = 1; s < numStates; ++s) {
       m_field_data_manager->swap_fields(fieldOrdinal+s, fieldOrdinal);
     }
 
-    for (int state = 0; state < numStates; ++state) {
-      FieldBase* currentStateField = field->field_state(static_cast<FieldState>(state));
-
-      NgpFieldBase* ngpField = currentStateField->get_ngp_field();
-      if (ngpField != nullptr) {
-        ngpField->update_bucket_pointer_view();
-        ngpField->fence();
-      }
-    }
+    field->rotate_multistate_data(rotateNgpFieldViews);
   }
 }
 
-void BulkData::update_field_data_states()
+void BulkData::update_field_data_states(bool rotateNgpFieldViews)
 {
   const std::vector<FieldBase*> & fields = mesh_meta_data().get_fields();
 
@@ -2031,7 +2023,7 @@ void BulkData::update_field_data_states()
     FieldBase* field = fields[i];
     const int numStates = field->number_of_states();
     if (numStates > 1) {
-      update_field_data_states(field);
+      update_field_data_states(field, rotateNgpFieldViews);
     }
     i += numStates ;
   }
@@ -4159,7 +4151,10 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
 
 void BulkData::notify_finished_mod_end()
 {
-    notifier.notify_finished_modification_end(parallel());
+  bool anyModOnAnyProc = notifier.notify_finished_modification_end(parallel());
+  if (!anyModOnAnyProc) {
+    m_meshModification.set_sync_count(synchronized_count()-1);
+  }
 }
 
 void BulkData::internal_modification_end_for_change_ghosting()

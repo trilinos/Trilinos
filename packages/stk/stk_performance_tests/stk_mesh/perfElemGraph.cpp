@@ -4,7 +4,6 @@
 #include <stk_mesh/base/SkinBoundary.hpp> 
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/environment/memory_util.hpp>

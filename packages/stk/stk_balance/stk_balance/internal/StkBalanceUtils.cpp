@@ -116,7 +116,7 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSet
                                    sidesetSide, sideNodes);
       const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord,
                                                                    sideNodes.data(), sideNodes.size());
-      addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps,
+      addBoxForNodes(stkMeshBulkData, sideNodes.size(), sideNodes.data(), coord, eps,
           stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
   }

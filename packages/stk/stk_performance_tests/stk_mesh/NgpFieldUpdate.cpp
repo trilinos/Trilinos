@@ -324,7 +324,7 @@ TEST_F( NgpMeshChangeElementPartMembershipWithFields, Timing )
   if (get_parallel_size() != 1) return;
 
   const unsigned NUM_RUNS = 5;
-  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  #ifdef STK_ENABLE_GPU
   const int NUM_ITERS = 50;
   #else
   const int NUM_ITERS = 2500;
@@ -353,7 +353,7 @@ TEST_F( NgpMeshCreateEntityWithFields, Timing )
   if (get_parallel_size() != 1) return;
 
   const unsigned NUM_RUNS = 5;
-  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  #ifdef STK_ENABLE_GPU
   const int numModCycles = 50;
   #else
   const int numModCycles = 4000;

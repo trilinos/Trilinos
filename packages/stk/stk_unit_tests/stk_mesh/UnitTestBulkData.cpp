@@ -1933,7 +1933,8 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
     // Create local version of side on each proc
     Entity side = mesh.declare_element_side(elem, local_side_ordinal, stk::mesh::ConstPartVector{&side_part});
 
-    stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_ordinal), &side_nodes[0], local_side_ordinal);
+    stk::mesh::Permutation perm1 = mesh.find_permutation(
+        elem_top, nodes.data(), elem_top.side_topology(local_side_ordinal), side_nodes.data(), local_side_ordinal);
     ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
     mesh.modification_end();
 
@@ -1965,7 +1966,8 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
     }
     side = mesh.declare_element_side(elem, local_side_ordinal, stk::mesh::ConstPartVector{&side_part});
 
-    stk::mesh::Permutation perm2 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_ordinal), &side_nodes[0], local_side_ordinal);
+    stk::mesh::Permutation perm2 = mesh.find_permutation(
+        elem_top, nodes.data(), elem_top.side_topology(local_side_ordinal), side_nodes.data(), local_side_ordinal);
     ASSERT_TRUE(perm2 != stk::mesh::Permutation::INVALID_PERMUTATION);
 
     mesh.modification_end();

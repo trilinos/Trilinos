@@ -52,7 +52,8 @@ public:
     FaceCreator(stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph& elemElemGraph);
     ~FaceCreator();
 
-    void create_side_entities_given_sideset(const SideSet &skinnedSideSet, const stk::mesh::PartVector& skinParts);
+    void create_side_entities_given_sideset(const SideSet &skinnedSideSet, const stk::mesh::PartVector& skinParts,
+                                            bool doLocalModCycle = true);
 private:
     void fill_side_ordinals(size_t element_side_index, const SideSet &skinnedSideSet, std::vector<int>& ordinals);
     std::vector<int> get_side_ordinals_of_element(size_t element_side_index, const SideSet &skinnedSideSet);

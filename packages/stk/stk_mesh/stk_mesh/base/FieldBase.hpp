@@ -280,7 +280,7 @@ public:
     return std::any_cast<StkDebugger&>(m_stkFieldSyncDebugger);
   }
 
-  void rotate_multistate_data();
+  void rotate_multistate_data(bool rotateNgpFieldViews = false);
 
  private:
   unsigned legacy_field_array_rank() const;

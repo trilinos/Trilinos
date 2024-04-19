@@ -126,6 +126,7 @@ void create_corrupt_restart(MPI_Comm communicator,
 
   stkIo.populate_bulk_data();
 
+  stkIo.property_add(Ioss::Property("FLUSH_INTERVAL", 1));
   size_t fileIndex = stkIo.create_output_mesh(restartFilename, stk::io::WRITE_RESTART);
   stkIo.add_field(fileIndex, field0);
 

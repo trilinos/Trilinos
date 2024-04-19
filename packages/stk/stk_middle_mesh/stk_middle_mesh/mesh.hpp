@@ -152,6 +152,8 @@ void check_remotes_unique(std::shared_ptr<Mesh> mesh);
 
 void check_coordinate_field(std::shared_ptr<Mesh> mesh);
 
+void reverse_edge(MeshEntityPtr edge);
+
 void apply_orientation(EntityOrientation flag, MeshEntityPtr* down, const int n);
 
 int get_vertices(MeshEntityPtr tri, MeshEntityPtr*);

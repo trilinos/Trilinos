@@ -683,7 +683,7 @@ protected:
 
     stk::mesh::Part* test_surface2 = meta.get_part("surface_2");
     ASSERT_TRUE(test_surface2 != nullptr);
-    EXPECT_EQ(stk::topology::EDGE_RANK, test_surface2->primary_entity_rank());
+    EXPECT_EQ(stk::topology::FACE_RANK, test_surface2->primary_entity_rank());
 
     unlink(fileName.c_str());
   }
@@ -703,6 +703,19 @@ TEST_F(ShellSidesets, testWriteThenRead)
   create_parts_for_shell_and_sidesets();
   create_shell_and_sides();
   test_write_then_read();
+}
+
+TEST(ShellSideSidesets, create3DEdgesFromShellSides)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  std::string meshDesc = "textmesh: 0,1,SHELL_QUAD_4,1,2,3,4 |coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0 |sideset:name=surface_1; data=1,3";
+
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+  ::testing::internal::CaptureStderr();
+  EXPECT_NO_THROW(stk::io::fill_mesh(meshDesc, *bulk));
+  ASSERT_TRUE(::testing::internal::GetCapturedStderr().empty());
 }
 
 }  // namespace unit_test

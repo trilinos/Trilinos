@@ -68,6 +68,10 @@ else()
     $<INSTALL_INTERFACE:include>
   )
 
+  target_include_directories(stk_io_unit_tests PUBLIC
+    ${STK_TOPLEVEL_SOURCE_DIR}/stk_unit_test_utils
+  )
+
   add_test(NAME "stk_io_unit_tests" COMMAND stk_io_unit_tests)
 endif()
 

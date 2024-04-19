@@ -78,5 +78,12 @@ fi
 
 set_stk_version $STK_VERSION_STRING
 export COMMIT_MESSAGE="STK: Snapshot $(date +'%m-%d-%y %H:%M') from Sierra $STK_VERSION_STRING"
+
+echo "*** Be sure to set the STK_VERSION macro in stk_util/Version.hpp with an integer"
+echo "*** value corresponding to the release/sprint number."
+echo "*** Example: 5.19.2 translates to STK_VERSION 5190200"
+echo "*** Also edit CHANGELOG.md with any API changes made"
+echo "*** since the last version."
+
 exe git commit -am '"'$COMMIT_MESSAGE'"'
 exe git push --force origin $SNAPSHOT_BRANCH

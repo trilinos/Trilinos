@@ -1,0 +1,15 @@
+spack env status
+
+spack find -v trilinos
+
+TEST_STK_APP_SOURCE_DIR=$(pwd)
+
+mkdir -p build
+
+cd build
+
+cmake \
+-DCMAKE_BUILD_TYPE=${BUILD_TYPE:-RELEASE} \
+-DCMAKE_CXX_COMPILER=mpicxx \
+${TEST_STK_APP_SOURCE_DIR}
+

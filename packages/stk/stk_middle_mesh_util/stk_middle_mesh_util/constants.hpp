@@ -1,7 +1,6 @@
-#ifdef STK_BUILT_IN_SIERRA
 
-#ifndef STK_INTERFACE_CONSTANTS
-#define STK_INTERFACE_CONSTANTS
+#ifndef STK_MIDDLE_MESH_UTILS_STK_INTERFACE_CONSTANTS
+#define STK_MIDDLE_MESH_UTILS_STK_INTERFACE_CONSTANTS
 
 #include <string>
 
@@ -21,4 +20,3 @@ const std::string NAME_PREFIX("ci7Hl3_");
 } // namespace stk
 #endif
 
-#endif

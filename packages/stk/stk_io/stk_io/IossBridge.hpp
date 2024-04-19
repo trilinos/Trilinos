@@ -58,6 +58,7 @@
 #include "stk_topology/topology.hpp"        // for topology
 #include "stk_util/util/ParameterList.hpp"  // for Type
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "Ioss_SideBlock.h"                         // for SideBlock
 namespace Ioss { class DatabaseIO; }
 namespace Ioss { class ElementTopology; }
 namespace Ioss { class EntityBlock; }
@@ -76,7 +77,6 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace Ioss {
 class SideSet;
-class SideBlock;
 class NodeBlock;
 class Field;
 class GroupingEntity;
@@ -660,7 +660,9 @@ void fill_data_for_side_block( OutputParams &params,
         parentElementBlock = get_parent_element_block(params.bulk_data(), params.io_region(), io.name());
     }
 
-    fill_element_and_side_ids(params, part, parentElementBlock, stk_elem_topology, sides, elem_side_ids);
+    // An offset required to translate Ioss's interpretation of shell ordinals 
+    INT sideOrdOffset = (io.type() == Ioss::SIDEBLOCK) ? Ioss::Utils::get_side_offset(dynamic_cast<Ioss::SideBlock*>(&io)) : 0;
+    fill_element_and_side_ids(params, part, parentElementBlock, stk_elem_topology, sides, elem_side_ids, sideOrdOffset);
 }
 
 namespace impl {

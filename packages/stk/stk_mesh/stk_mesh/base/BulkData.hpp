@@ -38,7 +38,6 @@
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max
-#include <functional>                   // for less, equal_to
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <list>                         // for list
 #include <map>                          // for map, map<>::value_compare
@@ -312,8 +311,8 @@ public:
    *    StateNM3 <- StateNM2
    *  </PRE>
    */
-  void update_field_data_states();
-  void update_field_data_states(FieldBase *field);
+  void update_field_data_states(bool rotateNgpFieldViews = false);
+  void update_field_data_states(FieldBase *field, bool rotateNgpFieldViews = false);
 
   /** \brief  Copy field data from src entity to Dest entity
    *           - Fields that exist on the src that don't exist on the dest will
@@ -879,6 +878,8 @@ public:
       }
       return hasOrphanProtection;
   }
+
+  bool is_mesh_consistency_check_on() const { return m_runConsistencyCheck; }
 
 protected: //functions
   BulkData(std::shared_ptr<MetaData> mesh_meta_data,
@@ -2155,11 +2156,11 @@ BulkData::internal_add_node_sharing_called() const
 inline Bucket &
 BulkData::bucket(Entity entity) const
 {
-#ifndef NDEBUG
-  entity_getter_debug_check(entity);
-#endif
+  Bucket* bptr = bucket_ptr(entity);
 
-  return *mesh_index(entity).bucket;
+  STK_ThrowAssertMsg(bptr != nullptr, "BulkData::bucket error, invalid bucket (nullptr) for entity with local_offset()="<<entity.local_offset());
+
+  return *bptr;
 }
 
 inline Bucket *

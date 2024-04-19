@@ -4,7 +4,6 @@ namespace stk {
 
 DataExchangeKnownPatternNonBlocking::DataExchangeKnownPatternNonBlocking(MPI_Comm comm, int tag_hint) :
   m_comm(comm),
-  m_tagHint(tag_hint),
   m_tag(stk::get_mpi_tag_manager().get_tag(comm, tag_hint))
 {
   m_sendReqs.reserve(stk::parallel_machine_size(comm));

@@ -36,7 +36,6 @@
 
 #include "Ioss_Region.h"                // for Region, NodeSetContainer, etc
 #include "StkMeshIoBroker.hpp"
-#include "Ioss_GroupingEntity.h"
 #include "IossBridge.hpp"
 #include <stk_mesh/base/Types.hpp>
 #include "stk_mesh/base/MetaData.hpp"

@@ -1,7 +1,6 @@
-#ifdef STK_BUILT_IN_SIERRA
 
-#ifndef STK_INTERFACE
-#define STK_INTERFACE
+#ifndef STK_MIDDLE_MESH_UTILS_STK_INTERFACE
+#define STK_MIDDLE_MESH_UTILS_STK_INTERFACE
 
 #include "stk_middle_mesh/mesh_input.hpp"
 #include <set>
@@ -108,4 +107,3 @@ class StkInterface
 } // namespace stk
 #endif
 
-#endif

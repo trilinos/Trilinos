@@ -82,7 +82,6 @@ class DataExchangeKnownPatternNonBlocking
     void start_sends(std::vector< std::vector<T> > &sendLists);
 
     MPI_Comm m_comm;
-    int m_tagHint;
     MPITag m_tag;
 
     std::vector<int> m_recvRankMap;

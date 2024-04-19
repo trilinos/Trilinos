@@ -139,7 +139,6 @@ class MPIKeyManager
     void destructor();
 
     int m_mpiAttrKey;
-    int m_destructorAttrKey;
     CommKey m_currentCommKey = 0;
     CallerUID m_currUID   = 0;
     std::set<CommKey> m_usedCommKeys;

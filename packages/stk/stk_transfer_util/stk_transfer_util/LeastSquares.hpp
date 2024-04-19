@@ -42,7 +42,7 @@ namespace stk {
 namespace mesh {
 class BulkData;
 class FieldBase;
-class Entity;
+struct Entity;
 } // namespace mesh
 } // namespace stk
 

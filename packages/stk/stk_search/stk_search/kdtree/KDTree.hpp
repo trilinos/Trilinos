@@ -36,7 +36,7 @@
 
 #include <vector>                       // for vector
          // for AxisAlignedBB
-#include <stk_search/KDTree_BoundingBox.hpp>
+#include <stk_search/kdtree/KDTree_BoundingBox.hpp>
 #ifdef _OPENMP
 #include "omp.h" 
 #endif
@@ -59,9 +59,6 @@ enum { MAX_TREE_LEVELS = 100 };
 template <typename BoxType>
 class ObjectBoundingBoxHierarchy_T {
  public:
-  KOKKOS_DEFAULTED_FUNCTION ObjectBoundingBoxHierarchy_T() = default; /// Default box is null and right child offset is 0 (invalid)
-  KOKKOS_DEFAULTED_FUNCTION ~ObjectBoundingBoxHierarchy_T() = default;
-
   /**
    * Create a hierarchy from a list of object bounding boxes.  The top level of the hierarchy will contain all boxes.  In the next level
    *  each leave of the tree will contain approximiatly half of the boxes.  The hierarchy continues down until the tree node contains only 
@@ -90,9 +87,8 @@ class ObjectBoundingBoxHierarchy_T {
 template <typename RangeBoxType>
 class ProximitySearchTree_T {
  public:
-
   // Create an empty tree
-  ProximitySearchTree_T();
+  ProximitySearchTree_T() = default;
 
   // Create and initialize a search tree from a set of input boxes.  Assumed ident based on original box order
 
@@ -150,7 +146,7 @@ class ProximitySearchTree_T {
   }
 }
 
-#include<stk_search/KDTree_impl.hpp>
+#include<stk_search/kdtree/KDTree_impl.hpp>
 
 
 #endif // STKSEARCH_KDTREE_BoundingBoxHierarchy_h_

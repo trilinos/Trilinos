@@ -622,9 +622,9 @@ private:
   {
     for (auto && side_1 : side_1_vector)
     {
-      double *center = &side_1.first.center()[0];
+      double *center = &(side_1.first.center()[0]);
       std::vector<double> ctr(center, center+3);
-      rotation.transformVec(&ctr[0], center);
+      rotation.transformVec(ctr.data(), center);
     }
   }
 

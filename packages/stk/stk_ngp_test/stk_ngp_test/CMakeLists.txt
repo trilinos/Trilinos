@@ -33,7 +33,7 @@
 # 
 
 FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES ngp_test.cpp)
+FILE(GLOB SOURCES *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(stk_ngp_test

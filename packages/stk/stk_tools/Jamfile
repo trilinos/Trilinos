@@ -290,7 +290,7 @@ exe stk_tools_pmesh_unit_tester
       $(stk_tools-root)/stk_tools/pmesh_lib/UnitTest/*.cpp
     ]
     stk_pmesh_lib
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   :
     <tag>@sierra-exec-tag
   ;

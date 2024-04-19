@@ -13,7 +13,7 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }
-namespace stk { namespace mesh { struct SideSet; } }
+namespace stk { namespace mesh { class SideSet; } }
 
 namespace stk {
 namespace mesh {
