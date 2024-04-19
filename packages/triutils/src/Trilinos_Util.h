@@ -503,3 +503,10 @@ int Trilinos_Util_ReadTriples2Epetra64(
 #endif //ifdef HAVE_TRIUTILS_EPETRA
 
 #endif /* _TRILINOS_UTIL_H_ */
+
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif
+
