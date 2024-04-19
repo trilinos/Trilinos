@@ -83,3 +83,10 @@ RCP<Epetra_CrsMatrix> getEpetraMatrix(int numRows, int numCols, double shift=0.0
 
 
 } // namespace
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraAdapters package is deprecated"
+#endif
+#endif
+
