@@ -96,3 +96,10 @@ epetraExtDiagScaledMatProdTransformer()
 
 
 #endif	// THYRA_EPETRAEXT_DIAG_SCALED_MAT_PROD_TRANSFORMER_HPP
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraExtAdapters package is deprecated"
+#endif
+#endif
+
