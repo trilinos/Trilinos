@@ -1,5 +1,7 @@
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_TimeMonitor.hpp>
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StackedTimer.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "Intrepid2_ArrayTools.hpp"
 #include "Intrepid2_CellGeometry.hpp"
@@ -100,60 +102,91 @@ int main(int argc, char *argv[])
 {
   const int numInvocations = (argc > 1) ? atoi(argv[1]) : 1000;
   
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  
   {
     // Note that the dtor for GlobalMPISession will call Kokkos::finalize_all() but does not call Kokkos::initialize()...
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
     Kokkos::initialize(argc,argv);
     Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
     
-    gradient = Kokkos::DynRankView<double, DeviceType>("gradient", worksetSize, numFields, numIntg, numDims);
-    points   = Kokkos::DynRankView<double, DeviceType>("points", numIntg, numDims); // (P,D)
+    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm
+      = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
+    if (comm->getSize() > 1) {
+      out->setOutputToRootOnly(0);
+    }
     
-    jacobian     = Kokkos::DynRankView<double, DeviceType>("jacobian", worksetSize, numIntg, numDims, numDims);
-    jacobian_inv = Kokkos::DynRankView<double, DeviceType>("jacobian_inv", worksetSize, numIntg, numDims, numDims);
-    tempGrad     = Kokkos::DynRankView<double, DeviceType>("tempGrad", worksetSize, numNodes, numIntg, numDims);
-    
-    basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<DeviceType>() );
-    
-    const int cellCount = 25000;
-    
-    Kokkos::Array<double,numDims> domainExtents{1.,1.,1.};
-    Kokkos::Array<int,numDims> gridCellCounts{50,50,10}; // 25000 total cells
-    
-    auto geometry = uniformCartesianMesh<double, numDims, DeviceType>(domainExtents, gridCellCounts);
-    
-    Kokkos::DynRankView<double, DeviceType> det("det", worksetSize, numIntg);
-    Kokkos::DynRankView<double, DeviceType> coords("coords", cellCount, numNodes, numDims);
-    for (int cellOrdinal=0; cellOrdinal<cellCount; cellOrdinal++)
     {
-      for (int nodeOrdinal=0; nodeOrdinal<numNodes; nodeOrdinal++)
+      stacked_timer = rcp(new Teuchos::StackedTimer("Intrepid2 Sierra Test"));
+      Teuchos::RCP<Teuchos::FancyOStream> verbose_out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+      verbose_out->setShowProcRank(true);
+      stacked_timer->setVerboseOstream(verbose_out);
+    }
+    
+    Kokkos::DynRankView<double, DeviceType> coords, det;
+    {
+      auto setupTimer = Teuchos::TimeMonitor::getNewTimer("allocations and other one-time setup");
+      
+      gradient = Kokkos::DynRankView<double, DeviceType>("gradient", worksetSize, numFields, numIntg, numDims);
+      points   = Kokkos::DynRankView<double, DeviceType>("points", numIntg, numDims); // (P,D)
+      
+      jacobian     = Kokkos::DynRankView<double, DeviceType>("jacobian", worksetSize, numIntg, numDims, numDims);
+      jacobian_inv = Kokkos::DynRankView<double, DeviceType>("jacobian_inv", worksetSize, numIntg, numDims, numDims);
+      tempGrad     = Kokkos::DynRankView<double, DeviceType>("tempGrad", worksetSize, numNodes, numIntg, numDims);
+      
+      basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<DeviceType>() );
+      
+      const int cellCount = 25000;
+      
+      Kokkos::Array<double,numDims> domainExtents{1.,1.,1.};
+      Kokkos::Array<int,numDims> gridCellCounts{50,50,10}; // 25000 total cells
+      
+      auto geometry = uniformCartesianMesh<double, numDims, DeviceType>(domainExtents, gridCellCounts);
+      
+      det    = Kokkos::DynRankView<double, DeviceType>("det", worksetSize, numIntg);
+      coords = Kokkos::DynRankView<double, DeviceType>("coords", cellCount, numNodes, numDims);
+      for (int cellOrdinal=0; cellOrdinal<cellCount; cellOrdinal++)
       {
-        for (int d=0; d<numDims; d++)
+        for (int nodeOrdinal=0; nodeOrdinal<numNodes; nodeOrdinal++)
         {
-          coords(cellOrdinal,nodeOrdinal,d) = geometry(cellOrdinal,nodeOrdinal,d);
+          for (int d=0; d<numDims; d++)
+          {
+            coords(cellOrdinal,nodeOrdinal,d) = geometry(cellOrdinal,nodeOrdinal,d);
+          }
         }
       }
     }
     
-    auto intrepid2Timer = Teuchos::TimeMonitor::getNewTimer("Intrepid2");
-    intrepid2Timer->start();
-    for (int i=0; i<numInvocations; i++)
     {
-      // this is only approximately what will be happening in Sierra; there, the pointers here will move from one call to the next
-      // corresponding to the cell ordinal.  But let's start with this; probably that difference will not be significant.
-      intrepid2_gradient_operator(worksetSize, coords.data(), gradient.data(), det.data());
+      auto intrepid2Timer = Teuchos::TimeMonitor::getNewTimer("Intrepid2");
+      intrepid2Timer->start();
+      for (int i=0; i<numInvocations; i++)
+      {
+        // this is only approximately what will be happening in Sierra; there, the pointers here will move from one call to the next
+        // corresponding to the cell ordinal.  But we start with this; probably that difference will not be significant.
+        intrepid2_gradient_operator(worksetSize, coords.data(), gradient.data(), det.data());
+      }
+      intrepid2Timer->stop();
+      std::cout << "intrepid2 time: " << intrepid2Timer->totalElapsedTime() << " seconds.\n";
     }
-    intrepid2Timer->stop();
-    std::cout << "intrepid2 time: " << intrepid2Timer->totalElapsedTime() << " seconds.\n";
-        
-    gradient = Kokkos::DynRankView<double, DeviceType>();
-    points   = Kokkos::DynRankView<double, DeviceType>();
-    basis = Teuchos::null;
-    jacobian     = Kokkos::DynRankView<double, DeviceType>();
-    jacobian_inv = Kokkos::DynRankView<double, DeviceType>();
-    tempGrad     = Kokkos::DynRankView<double, DeviceType>();
     
-    return 0;
+    {
+      auto dtorTimer = Teuchos::TimeMonitor::getNewTimer("post-run cleanup");
+      gradient = Kokkos::DynRankView<double, DeviceType>();
+      points   = Kokkos::DynRankView<double, DeviceType>();
+      basis = Teuchos::null;
+      jacobian     = Kokkos::DynRankView<double, DeviceType>();
+      jacobian_inv = Kokkos::DynRankView<double, DeviceType>();
+      tempGrad     = Kokkos::DynRankView<double, DeviceType>();
+    }
+    
+    stacked_timer->stop("Intrepid2 Sierra Test");
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(*out, comm, options);
   }
+  
+  return 0;
 }
 
