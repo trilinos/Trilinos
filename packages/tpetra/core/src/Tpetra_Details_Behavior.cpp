@@ -41,8 +41,8 @@
 // clang-format on
 #include <algorithm> // std::transform
 #include <array>
-#include <cctype>    // std::toupper
-#include <cstdlib>   // std::getenv
+#include <cctype>  // std::toupper
+#include <cstdlib> // std::getenv
 #include <functional>
 #include <map>
 #include <stdexcept>
@@ -129,8 +129,7 @@ constexpr const std::string_view HIERARCHICAL_UNPACK =
     "TPETRA_HIERARCHICAL_UNPACK";
 constexpr const std::string_view SKIP_COPY_AND_PERMUTE =
     "TPETRA_SKIP_COPY_AND_PERMUTE";
-constexpr const std::string_view FUSED_RESIDUAL =
-    "TPETRA_FUSED_RESIDUAL";
+constexpr const std::string_view FUSED_RESIDUAL = "TPETRA_FUSED_RESIDUAL";
 constexpr const std::string_view OVERLAP = "TPETRA_OVERLAP";
 constexpr const std::string_view SPACES_ID_WARN_LIMIT =
     "TPETRA_SPACES_ID_WARN_LIMIT";
@@ -158,9 +157,8 @@ constexpr const auto RECOGNIZED_VARS = make_array(
     MULTIVECTOR_USE_MERGE_PATH, VECTOR_DEVICE_THRESHOLD,
     HIERARCHICAL_UNPACK_BATCH_SIZE, HIERARCHICAL_UNPACK_TEAM_SIZE,
     USE_TEUCHOS_TIMERS, USE_KOKKOS_PROFILING, DEBUG, VERBOSE, TIMING,
-    HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL,
-    OVERLAP, SPACES_ID_WARN_LIMIT,
-    TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
+    HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL, OVERLAP,
+    SPACES_ID_WARN_LIMIT, TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
     TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS);
 
 // clang-format off
@@ -688,8 +686,7 @@ bool Behavior::fusedResidual() {
   static bool value_ = defaultValue;
   static bool initialized_ = false;
   return idempotentlyGetEnvironmentVariable(
-      value_, initialized_, BehaviorDetails::FUSED_RESIDUAL,
-      defaultValue);
+      value_, initialized_, BehaviorDetails::FUSED_RESIDUAL, defaultValue);
 }
 
 bool Behavior::overlapCommunicationAndComputation() {
