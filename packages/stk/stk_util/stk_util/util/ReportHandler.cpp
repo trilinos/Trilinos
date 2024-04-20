@@ -32,12 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "stk_util/stk_config.h"
+
 #include "stk_util/util/ReportHandler.hpp"
+#include "Kokkos_Core.hpp"
 #include <iostream>   // for cout
 #include <sstream>    // for ostringstream, operator<<, basic_ostream, basic_ostream::operator<<
 #include <stdexcept>  // for runtime_error, logic_error, invalid_argument
-
-#include "stk_util/stk_config.h"
 
 #ifdef STK_HAVE_BOOST
 #include "boost/version.hpp"
@@ -104,7 +105,6 @@ void default_handler_exc(const char* expr,
   throw EXCEPTION(
     expr_msg + "Error occurred at: " + location + "\n" + error_msg);
 }
-
 
 }
 
@@ -265,3 +265,18 @@ std::ostream & output_stacktrace(std::ostream & os)
 #endif
 
 } // namespace stk
+
+#ifndef STK_ENABLE_GPU_BUT_NO_RDC
+
+STK_FUNCTION void ThrowMsgDevice(const char * message)
+{
+  Kokkos::abort(message);
+}
+
+STK_FUNCTION void ThrowErrorMsgDevice(const char * message)
+{
+  Kokkos::abort(message);
+}
+
+#endif
+

@@ -445,7 +445,7 @@ public:
     for (unsigned i = 0; i < NumDim; ++i)
       array_dimension_verify(i, index[i], m_dim[i]);
 
-    value_type *l_ptr = ArrayHelper<NumDim - 1>::index(m_ptr, m_stride, m_dim, &index[0]);
+    value_type *l_ptr = ArrayHelper<NumDim - 1>::index(m_ptr, m_stride, m_dim, index.data());
 
     return *l_ptr;
   }
@@ -585,7 +585,7 @@ public:
     for (unsigned i = 0; i < NumDim; ++i)
       array_dimension_verify(i, index[i], m_dim[i]);
 
-    const value_type *l_ptr = ArrayHelper<NumDim - 1>::index(m_ptr, m_stride, m_dim, &index[0]);
+    const value_type *l_ptr = ArrayHelper<NumDim - 1>::index(m_ptr, m_stride, m_dim, index.data());
 
     return *l_ptr;
   }
@@ -1149,7 +1149,7 @@ public:
   }
 
   void dimensions(const_iterator it, Index &index) const {
-    ArrayHelper<NumDim - 1>::get_index(m_stride, &index[0], it - m_ptr);
+    ArrayHelper<NumDim - 1>::get_index(m_stride, index.data(), it - m_ptr);
   }
 
   //----------------------------------------

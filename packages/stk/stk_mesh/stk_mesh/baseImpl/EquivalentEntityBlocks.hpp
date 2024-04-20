@@ -47,9 +47,19 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, stk::mesh::Entity entity2, std::vector<stk::mesh::PartOrdinal>& scratchOrdinals1, std::vector<stk::mesh::PartOrdinal>& scratchOrdinals2);
-bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals, std::vector<stk::mesh::PartOrdinal>& scratchOrdinals);
-void get_element_block_part_ordinals(stk::mesh::Entity element, const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::PartOrdinal>& partOrdinalsElementBlock);
+bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData,
+                                          stk::mesh::Entity entity1, stk::mesh::Entity entity2,
+                                          std::vector<stk::mesh::PartOrdinal>& scratchOrdinals1,
+                                          std::vector<stk::mesh::PartOrdinal>& scratchOrdinals2);
+
+bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData,
+                                          stk::mesh::Entity entity1,
+                                          const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals,
+                                          std::vector<stk::mesh::PartOrdinal>& scratchOrdinals);
+
+void get_element_block_part_ordinals(stk::mesh::Entity element,
+                                     const stk::mesh::BulkData& bulkData,
+                                     std::vector<stk::mesh::PartOrdinal>& partOrdinalsElementBlock);
 
 }
 }

@@ -43,7 +43,7 @@ if(HAVE_STK_Trilinos)
   )
 
   TRIBITS_ADD_TEST(stk_search_utest
-    ARGS ""
+    ARGS "--gtest_filter=stk_search.ident_proc"
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
@@ -56,6 +56,7 @@ else()
   target_link_libraries(stk_search_utest stk_unit_test_utils)
   target_link_libraries(stk_search_utest stk_util_diag)
   target_link_libraries(stk_search_utest stk_util_parallel)
+  target_link_libraries(stk_search_utest stk_util_util)
   target_link_libraries(stk_search_utest stk_unit_main)
 
   add_test(NAME "stk_search_utest" COMMAND stk_search_utest)

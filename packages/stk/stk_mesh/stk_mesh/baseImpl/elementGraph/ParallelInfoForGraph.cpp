@@ -325,11 +325,8 @@ void update_selected_values(const ElemElemGraph& graph,
     const stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_graph().get_parallel_graph_info();
     for(const stk::mesh::impl::ParallelGraphInfo::value_type& edgeAndParInfo : parallel_info)
     {
-        const stk::mesh::GraphEdge &graphEdge = edgeAndParInfo.first;
-        if(remoteSelectedValue.is_id_selected(-graphEdge.elem2()))
-            selInfo[graphEdge.elem2()] = true;
-        else
-            selInfo[graphEdge.elem2()] = false;
+        auto graphEdge_elem2 = edgeAndParInfo.first.elem2();
+        selInfo[graphEdge_elem2] = remoteSelectedValue.is_id_selected(-graphEdge_elem2);
     }
 }
 

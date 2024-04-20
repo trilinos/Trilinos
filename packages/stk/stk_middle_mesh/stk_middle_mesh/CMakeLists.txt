@@ -65,6 +65,11 @@ target_include_directories(stk_middle_mesh PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
+target_include_directories(stk_middle_mesh PUBLIC
+  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_util>
+  $<INSTALL_INTERFACE:include>
+)
+
 if(CDT_INCLUDE_DIRS)
 SET(CDT_INC_DIR "${CDT_INCLUDE_DIRS}")
 else()

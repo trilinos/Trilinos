@@ -44,7 +44,7 @@ struct FuncWithExecPolicy {
   using execution_policy = Kokkos::RangePolicy<ExecSpace>;
 };
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_ENABLE_GPU
 TEST( SimdInfo, checkDeviceWidths )
 {
   EXPECT_EQ(stk::unit_test_util::get_float_width_on_device(), 1);

@@ -598,14 +598,13 @@ public:
                            for (unsigned i = 0; i < bucketIds.size(); ++i) {
                              const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
                              for (unsigned j = 0; j < bucket.size(); ++j) {
-                               stk::mesh::NgpMesh::MeshIndex meshIndex{&bucket, static_cast<unsigned>(j)};
                                stk::mesh::FastMeshIndex fastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(j)};
                                const unsigned numComponents = ngpField.get_num_components_per_entity(fastMeshIndex);
                                for (unsigned component = 0; component < numComponents; ++component) {
 #if defined(DEVICE_USE_LOCATION_BUILTINS)
-                                 access_for_memory_checking_tool(&ngpField(meshIndex, component));
+                                 access_for_memory_checking_tool(&ngpField(fastMeshIndex, component));
 #else
-                                 access_for_memory_checking_tool(&ngpField(meshIndex, component, __FILE__, __LINE__));
+                                 access_for_memory_checking_tool(&ngpField(fastMeshIndex, component, __FILE__, __LINE__));
 #endif
                                }
                              }

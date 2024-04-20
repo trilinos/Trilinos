@@ -44,9 +44,7 @@
 #include <vector>                        // for vector
 #include <functional>
 
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldState, StateNP1, StateNM1
 #include "stk_mesh/base/Types.hpp"       // for EntityRank
-#include "stk_transfer_util/Patch.hpp"
 #include <stk_transfer_util/LeastSquares.hpp>
 #include "stk_mesh/base/BulkData.hpp"             // for BulkData
 #include "stk_mesh/base/Entity.hpp"               // for Entity
@@ -59,12 +57,8 @@
 #include "stk_transfer_util/Patch.hpp"
 #include "stk_util/util/ReportHandler.hpp"        // for ThrowRequireMsg
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
-namespace stk { namespace mesh { struct Entity; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 

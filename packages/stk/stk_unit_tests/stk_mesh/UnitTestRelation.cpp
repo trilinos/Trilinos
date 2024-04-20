@@ -372,7 +372,8 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   edge = mesh.declare_element_side(elem, local_side_id, sides_parts);
 
   stk::topology elem_top = mesh.bucket(elem).topology();
-  stk::mesh::Permutation perm1 = mesh.find_permutation(elem_top, &nodes[0], elem_top.side_topology(local_side_id), &side_nodes[0], local_side_id);
+  stk::mesh::Permutation perm1 = mesh.find_permutation(
+      elem_top, nodes.data(), elem_top.side_topology(local_side_id), side_nodes.data(), local_side_id);
   ASSERT_TRUE(perm1 != stk::mesh::Permutation::INVALID_PERMUTATION);
 
   // Set up duplicate relations from edge to nodes

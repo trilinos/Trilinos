@@ -214,7 +214,6 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
             //       is not split into homogenous side_blocks, then the topology will not necessarily
             //       be the same and this could fail (a sideset of mixed edges and faces)
             int par_dimen = block->topology()->parametric_dimension();
-            STKIORequire(par_dimen == 1 || par_dimen == 2);
 
             stk::mesh::EntityRank side_rank = par_dimen == 1 ? stk::topology::EDGE_RANK : stk::topology::FACE_RANK;
 
@@ -229,18 +228,43 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
             block->get_field_data("element_side", elemSidePairs);
             size_t side_count = elemSidePairs.size()/2;
 
+            // NOTE: Needed for shell side topology offset translation to IOSS
+            std::int64_t sideSetOffset = Ioss::Utils::get_side_offset(block);
+
             std::vector<stk::mesh::Entity> sides;
             sides.reserve(side_count);
 
             for (size_t is = 0; is < side_count; ++is) {
-                stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]-1, side_rank);
+                INT elemId = elemSidePairs[is*2];
+                INT elemSide = elemSidePairs[is*2+1] + sideSetOffset - 1;
+                stk::mesh::Entity const elem = bulk.get_entity(stk::topology::ELEMENT_RANK, elemId);
+                if (!bulk.is_valid(elem)) { continue; }
+                stk::topology elemTopo = bulk.bucket(elem).topology();
+                if(par_dimen == 0)
+                {
+                  stk::topology faceTopo = elemTopo.sub_topology(elemTopo.side_rank(), elemSide);
+
+                  Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(faceTopo.name(), false);
+                  par_dimen = ioss_topo->parametric_dimension();
+                  side_rank = par_dimen == 1 ? stk::topology::EDGE_RANK : stk::topology::FACE_RANK;
+                }
+                STKIORequire(par_dimen == 1 || par_dimen == 2);
+
+                if (par_dimen == 1) {
+                  // conversion from face ordinal to edge ordinal for shells
+                  if (elemTopo.is_shell()) {
+                    elemSide -= elemTopo.num_faces();
+                  }
+                }
+                stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elemId, elemSide, side_rank);
+
                 if (bulk.is_valid(side)) {
                     sides.push_back(side);
                 }
                 else {
                     std::ostringstream os;
                     os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side "
-                      <<elemSidePairs[is*2]<<" on element "<<(elemSidePairs[is*2+1]-1)
+                      << elemSide << " on element " << elemId
                       <<" in sideset: " << sset->name()
                       <<" does not have a corresponding face entity in the current mesh database"
                       <<" (possibly referenced by a reduced restart file)."<<std::endl;

@@ -29,7 +29,7 @@
   #define HOST_DEBUG_LINE_NUMBER -1
 #endif
 
-#if defined(HAS_LOCATION_BUILTINS) && !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if defined(HAS_LOCATION_BUILTINS) && !defined(STK_ENABLE_GPU)
   #define DEVICE_USE_LOCATION_BUILTINS
   #define DEVICE_DEBUG_FILE_NAME __builtin_FILE()
   #define DEVICE_DEBUG_LINE_NUMBER __builtin_LINE()

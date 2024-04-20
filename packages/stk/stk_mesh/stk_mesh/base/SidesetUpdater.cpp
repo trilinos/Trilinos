@@ -11,7 +11,6 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/SideSetUtil.hpp"
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector
 #include "stk_mesh/base/SideSetUtil.hpp"
 #include "stk_mesh/base/SidesetUpdater.hpp"

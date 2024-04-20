@@ -70,11 +70,14 @@ inline stk::NgpVector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
                                                stk::mesh::EntityRank rank,
                                                const stk::mesh::Selector &selector)
 {
+  Kokkos::Profiling::pushRegion("get_bucket_ids");
   const stk::mesh::BucketVector &buckets = bulk.get_buckets(rank, selector);
   stk::NgpVector<unsigned> bucketIds(buckets.size());
-  for(size_t i=0; i<buckets.size(); i++)
+  for(size_t i=0; i<buckets.size(); i++) {
     bucketIds[i] = buckets[i]->bucket_id();
+  }
   bucketIds.copy_host_to_device();
+  Kokkos::Profiling::popRegion();
   return bucketIds;
 }
 

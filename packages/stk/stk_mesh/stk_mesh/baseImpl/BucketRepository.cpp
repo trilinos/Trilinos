@@ -199,7 +199,7 @@ void BucketRepository::fill_key_ptr(const OrdinalVector& parts, PartOrdinal** ke
 
   const size_t keyLen = 2 + part_count;
 
-  *keyPtr = &keyTmpBuffer[0];
+  *keyPtr = keyTmpBuffer;
   *keyEnd = *keyPtr+keyLen;
 
   if (keyLen >= maxKeyTmpBufferSize) {

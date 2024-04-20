@@ -53,7 +53,8 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
                                             const stk::mesh::Part *parentElementBlock,
                                             stk::topology stk_element_topology,
                                             stk::mesh::EntityVector &sides,
-                                            std::vector<INT>& elem_side_ids)
+                                            std::vector<INT>& elem_side_ids,
+                                            INT sideOrdOffset = 0)
 {
   const mesh::BulkData &bulk_data = params.bulk_data();
   const stk::mesh::Selector *elemSubsetSelector = params.get_subset_selector();
@@ -104,7 +105,7 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
 
           if (selectedByBucket && selectedByParent && selectedByOutput) {
             elem_side_ids.push_back(elemId);
-            elem_side_ids.push_back(zero_based_side_ord+1);
+            elem_side_ids.push_back(zero_based_side_ord - sideOrdOffset + 1);
             sides.push_back(side);
           }
         }
@@ -144,7 +145,8 @@ void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
                                                  const stk::mesh::Part *parentElementBlock,
                                                  stk::topology stk_element_topology,
                                                  stk::mesh::EntityVector &sides,
-                                                 std::vector<INT>& elem_side_ids)
+                                                 std::vector<INT>& elem_side_ids,
+                                                 INT sideOrdOffset = 0)
 {
     const stk::mesh::BulkData &bulk_data = params.bulk_data();
     const stk::mesh::Selector *subset_selector = params.get_subset_selector();
@@ -228,8 +230,9 @@ void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
 
         if (bulk_data.is_valid(suitable_elem))
         {
+            int oneBasedOrdinal = suitable_ordinal - sideOrdOffset + 1;
             elem_side_ids.push_back(bulk_data.identifier(suitable_elem));
-            elem_side_ids.push_back(suitable_ordinal + 1); // Ioss is 1-based, mesh is 0-based.
+            elem_side_ids.push_back(oneBasedOrdinal);
             sides.push_back(side);
         }
     }
@@ -241,7 +244,8 @@ void fill_element_and_side_ids(stk::io::OutputParams &params,
                                const stk::mesh::Part *parentElementBlock,
                                stk::topology stk_element_topology,
                                stk::mesh::EntityVector &sides,
-                               std::vector<INT>& elem_side_ids)
+                               std::vector<INT>& elem_side_ids,
+                               INT sideOrdOffset = 0)
 {
     const mesh::BulkData &bulk_data = params.bulk_data();
     const stk::mesh::Part &parentPart = stk::mesh::get_sideset_parent(*part);
@@ -250,12 +254,12 @@ void fill_element_and_side_ids(stk::io::OutputParams &params,
     {
         const stk::mesh::SideSet& sset = bulk_data.get_sideset(parentPart);
         fill_element_and_side_ids_from_sideset(sset, params, part, parentElementBlock,
-                                               stk_element_topology, sides, elem_side_ids);
+                                               stk_element_topology, sides, elem_side_ids, sideOrdOffset);
     }
     else
     {
         fill_element_and_side_ids_from_connectivity(params, part, parentElementBlock,
-                                                    stk_element_topology, sides, elem_side_ids);
+                                                    stk_element_topology, sides, elem_side_ids, sideOrdOffset);
     }
 }
 
@@ -263,7 +267,8 @@ void fill_element_and_side_ids(stk::io::OutputParams &params,
 inline size_t get_number_sides_in_sideset(OutputParams &params,
                                           const stk::mesh::Part &ssPart,
                                           stk::topology stk_element_topology,
-                                          const stk::mesh::Part *parentElementBlock = nullptr)
+                                          const stk::mesh::Part *parentElementBlock = nullptr,
+                                          int sideOrdOffset = 0)
 {
     stk::mesh::EntityVector sides;
     std::vector<int> elemSideIds;
@@ -273,7 +278,8 @@ inline size_t get_number_sides_in_sideset(OutputParams &params,
                                parentElementBlock,
                                stk_element_topology,
                                sides,
-                               elemSideIds);
+                               elemSideIds,
+                               sideOrdOffset);
 
     return sides.size();
 }

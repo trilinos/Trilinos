@@ -450,10 +450,10 @@ Marshal &operator>>(Marshal &min, std::string &s)  {
   size_t size = 0;
   min >> size;
   std::vector<char> c(size);
-  
-  min.stream.read(&c[0], size);
-  s.assign(&c[0], size);
-  
+
+  min.stream.read(c.data(), size);
+  s.assign(c.data(), size);
+
   return min;
 }
 

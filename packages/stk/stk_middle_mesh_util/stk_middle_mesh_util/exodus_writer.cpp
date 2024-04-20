@@ -1,6 +1,5 @@
 #include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/mesh_entity.hpp"
-#ifdef STK_BUILT_IN_SIERRA
 
 #include "stk_middle_mesh_util/field_output_adaptor.hpp"
 #include "stk_middle_mesh_util/exodus_writer.hpp"
@@ -251,4 +250,4 @@ void ExodusWriter::write_output_stk(const std::string& fname)
 } // namespace stk_interface
 } // namespace middle_mesh
 } // namespace stk
-#endif
+

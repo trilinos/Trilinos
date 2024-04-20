@@ -65,7 +65,7 @@ struct IndexTraits<int> {
   typedef float float_type;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(USE_STK_SIMD_NONE)
+#if defined(STK_ENABLE_GPU) || defined(USE_STK_SIMD_NONE)
 typedef int DeviceIndex;
 
 template <typename T>

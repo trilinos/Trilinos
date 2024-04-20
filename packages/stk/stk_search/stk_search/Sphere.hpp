@@ -80,6 +80,18 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION value_type get_y_max() const { return m_center[1] + m_radius; }
   KOKKOS_FORCEINLINE_FUNCTION value_type get_z_max() const { return m_center[2] + m_radius; }
 
+  KOKKOS_FORCEINLINE_FUNCTION
+  float get_expanded_radius() const { 
+    return Kokkos::nextafter(static_cast<float>(m_radius), Kokkos::Experimental::finite_max_v<float>); 
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION float get_expanded_x_min() const { return static_cast<float>(m_center[0]) - this->get_expanded_radius(); }
+  KOKKOS_FORCEINLINE_FUNCTION float get_expanded_y_min() const { return static_cast<float>(m_center[1]) - this->get_expanded_radius(); }
+  KOKKOS_FORCEINLINE_FUNCTION float get_expanded_z_min() const { return static_cast<float>(m_center[2]) - this->get_expanded_radius(); }
+  KOKKOS_FORCEINLINE_FUNCTION float get_expanded_x_max() const { return static_cast<float>(m_center[0]) + this->get_expanded_radius(); }
+  KOKKOS_FORCEINLINE_FUNCTION float get_expanded_y_max() const { return static_cast<float>(m_center[1]) + this->get_expanded_radius(); }
+  KOKKOS_FORCEINLINE_FUNCTION float get_expanded_z_max() const { return static_cast<float>(m_center[2]) + this->get_expanded_radius(); }
+
   friend std::ostream& operator<<(std::ostream & out, Sphere<value_type> const& s)
   {
     out << "{" << s.center() << ":" << s.radius() << "}";

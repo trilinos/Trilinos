@@ -37,6 +37,7 @@
 
 #include "stk_util/stk_config.h"            // for STK_HAS_MPI
 #include "stk_util/parallel/Parallel.hpp"   // for MPI_Irecv, MPI_Wait, MPI_Barrier, MPI_Send
+#include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/parallel/CouplingVersions.hpp"
 #include "stk_util/parallel/MPITagManager.hpp"  // for MPITagManager
 #include "stk_util/parallel/DataExchangeUnknownPatternBlocking.hpp"  // for DataExchangeUnknownPatternBlocking
@@ -48,7 +49,7 @@
 #include <stdexcept>                        // for runtime_error
 #include <string>                           // for string
 #include <vector>                           // for vector
-
+#include <sstream>
 
 namespace stk {
 
@@ -219,24 +220,50 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
 #endif
 }
 
+//
+//The checkInput flag must have the same value on every processor, or this function will hang.
+//
 template<typename T>
 inline
 void parallel_data_exchange_nonsym_known_sizes_t(const int* sendOffsets,
                                                  T* sendData,
                                                  const int* recvOffsets,
                                                  T* recvData,
-                                                 MPI_Comm mpi_communicator )
+                                                 MPI_Comm mpi_communicator,
+                                                 bool checkInput = false)
 {
 #if defined( STK_HAS_MPI)
   const auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10243); //arbitrary tag value, anything less than 32768 is legal
   const int num_procs = stk::parallel_machine_size(mpi_communicator);
   const int bytesPerScalar = sizeof(T);
 
+  if (checkInput && stk::util::get_common_coupling_version() > 11) {
+    std::vector<int> reducedSendOffsets(num_procs+1);
+    const int result = MPI_Allreduce(sendOffsets, reducedSendOffsets.data(), num_procs+1, MPI_INT, MPI_SUM, mpi_communicator);
+    int myProc = -1;
+    MPI_Comm_rank(mpi_communicator, &myProc);
+    const int totalNumRecvs = reducedSendOffsets[myProc+1] - reducedSendOffsets[myProc];
+    const int expectedNumRecvs = recvOffsets[num_procs];
+    STK_ThrowRequireMsg(result == MPI_SUCCESS, "parallel_data_exchange_nonsym_known_sizes_t MPI_Allreduce return-code "<<result);
+    const int localErr = totalNumRecvs != expectedNumRecvs;
+    const int globalErr = stk::get_global_max(mpi_communicator, localErr);
+    if (globalErr) {
+      std::ostringstream oss;
+      if (totalNumRecvs != expectedNumRecvs) {
+        oss << "parallel_data_exchange_nonsym_known_sizes_t P"<<myProc<<" expecting to recv "<<expectedNumRecvs<<" values, but senders planning to send "<<totalNumRecvs<<" total values" << std::endl;
+      }
+      STK_ThrowErrorMsg(oss.str());
+    }
+  }
+
   //
   //  Send the actual messages as raw byte streams.
   //
   std::vector<MPI_Request> recv_handles(num_procs);
-  std::vector<MPI_Request> send_handles(num_procs);
+  std::vector<MPI_Request> send_handles;
+  if (stk::util::get_common_coupling_version() <= 13) {
+    send_handles.resize(num_procs);
+  }
   int numRecvs = 0;
   for(int iproc = 0; iproc < num_procs; ++iproc) {
     const int recvSize = recvOffsets[iproc+1]-recvOffsets[iproc];
@@ -247,7 +274,7 @@ void parallel_data_exchange_nonsym_known_sizes_t(const int* sendOffsets,
     }
   }
 
-  if (stk::util::get_common_coupling_version() <= 11) {
+  if (stk::util::get_common_coupling_version() <= 11 || stk::util::get_common_coupling_version() >= 13) {
     MPI_Barrier(mpi_communicator);
   }
 
@@ -257,11 +284,18 @@ void parallel_data_exchange_nonsym_known_sizes_t(const int* sendOffsets,
     if(sendSize > 0) {
       char* sendBuffer = (char*)(&sendData[sendOffsets[iproc]]);
       const int sendSizeBytes = sendSize*bytesPerScalar;
-      MPI_Isend(sendBuffer, sendSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_handles[numSends++]);
+      if (stk::util::get_common_coupling_version() <= 13) {
+        MPI_Isend(sendBuffer, sendSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator, &send_handles[numSends++]);
+      }
+      else {
+        MPI_Send(sendBuffer, sendSizeBytes, MPI_CHAR, iproc, msg_tag, mpi_communicator);
+      }
     }
   }
 
-  MPI_Waitall(numSends, send_handles.data(), MPI_STATUSES_IGNORE);
+  if (stk::util::get_common_coupling_version() <= 13) {
+    MPI_Waitall(numSends, send_handles.data(), MPI_STATUSES_IGNORE);
+  }
   MPI_Waitall(numRecvs, recv_handles.data(), MPI_STATUSES_IGNORE);
 #endif
 }

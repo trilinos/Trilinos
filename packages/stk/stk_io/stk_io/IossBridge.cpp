@@ -1619,7 +1619,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
             const std::vector<stk::mesh::FieldBase::Restriction> & restrictions = f->restrictions();
             if (restrictions.size() > 0 && f->entity_rank() == stk::topology::NODE_RANK) {
-                res = &restrictions[0];
+              res = restrictions.data();
             }
 
             if(res != nullptr) {
@@ -2551,10 +2551,10 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         if((member->type() != Ioss::ELEMENTBLOCK) && (member->type() != Ioss::SIDESET) &&
            (member->type() != Ioss::NODESET)      && (member->type() != Ioss::ASSEMBLY))   {
           std::string filename = assem->get_database()->get_filename();
-          stk::RuntimeWarning() << "The entity type of '" << member->name() << "' (" << member->type_string() <<
-                                   ") is not a valid assembly member type for "
-                                   "assembly '" << assem->name() << "' (" << assem->contains_string() <<
-                                   ").\n\t In the database file '" << filename << "'.\n";
+          stk::RuntimeWarningP0() << "The entity type of '" << member->name() << "' (" << member->type_string() <<
+                                     ") is not a valid assembly member type for "
+                                     "assembly '" << assem->name() << "' (" << assem->contains_string() <<
+                                     ").\n\t In the database file '" << filename << "'.\n";
           return false;
         }
 

@@ -729,7 +729,9 @@ Selector selectUnion( const VectorType & union_vector )
 {
   if constexpr(std::is_same_v<VectorType,PartVector> || std::is_same_v<VectorType,ConstPartVector>) {
     OrdinalVector partOrdinals;
+    partOrdinals.reserve(union_vector.size());
     OrdinalVector subsetPartOrdinals;
+    subsetPartOrdinals.reserve(union_vector.size());
     const MetaData* metaPtr = nullptr;
     for(const Part* part : union_vector) {
       if (part == nullptr) continue;
@@ -749,30 +751,6 @@ Selector selectUnion( const VectorType & union_vector )
     stk::util::sort_and_unique(partOrdinals);
     stk::util::sort_and_unique(subsetPartOrdinals);
     Selector selector(SelectorNodeType::PART_UNION, metaPtr, partOrdinals, subsetPartOrdinals);
-//    if (partOrdinals.size() > 1) {
-//      Selector selectorOld;
-//      bool foundFirstNonNullptr = false;
-//      for(unsigned i=0; i<union_vector.size(); ++i) {
-//        if (get_pointer(union_vector[i]) == nullptr) continue;
-//        if (!foundFirstNonNullptr) {
-//          selectorOld = dereference_if_pointer(union_vector[i]);
-//          foundFirstNonNullptr = true;
-//          continue;
-//        }
-//        selectorOld |= dereference_if_pointer(union_vector[i]);
-//      }
-//      if (metaPtr!=nullptr && metaPtr->has_mesh()) {
-//        for(EntityRank rank : {stk::topology::NODE_RANK,stk::topology::FACE_RANK,stk::topology::ELEM_RANK}) {
-//          const BucketVector& bkts = selector.get_buckets(rank);
-//          const BucketVector& bktsOld = selectorOld.get_buckets(rank);
-//          STK_ThrowRequireMsg(bkts.size()==bktsOld.size(),"ERROR, selector: "<<selector<<" vs selectorOld: "<<selectorOld);
-//        }
-//      }
-//      return selectorOld;
-//      std::ostringstream os;
-//      os<<"\n"<<counter<<"{\nselector: "<<selector<<"\nselectorOld: "<<selectorOld<<"\n}\n"<<std::endl;
-//      std::cerr<<os.str();
-//    }
     return selector;
   }
   else {

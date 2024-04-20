@@ -9,7 +9,7 @@ option(ENABLE_ALL_WARNINGS "Show most warnings for most compilers" ON)
 option(ENABLE_WERROR "Warnings are errors" ON)
 option(ENABLE_OPENMP "Enable OpenMP flags" OFF)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 
@@ -19,8 +19,14 @@ add_library(test_stk_lib "")
 add_executable(${exe_name} ${CMAKE_CURRENT_SOURCE_DIR}/test_stk_app.cpp)
 
 ########################## MPI ####################################
-find_package(MPI REQUIRED)
-target_link_libraries(test_stk_lib PUBLIC $<$<BOOL:${MPI_CXX_FOUND}>:MPI::MPI_CXX>)
+find_package(MPI)
+if(MPI_FOUND)
+  include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+  target_link_libraries(test_stk_lib PUBLIC ${MPI_LIBRARIES})
+  message("found MPI, MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
+else()
+  message(FATAL_ERROR "MPI not found")
+endif()
 
 if(ENABLE_CUDA)
   find_package(CUDA REQUIRED)

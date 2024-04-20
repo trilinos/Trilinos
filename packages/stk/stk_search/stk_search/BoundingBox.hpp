@@ -49,17 +49,20 @@ namespace stk { namespace search {
 
 // is_valid: Point
 template <typename T>
-inline bool is_valid(Point<T> const&)
+KOKKOS_FORCEINLINE_FUNCTION
+bool is_valid(Point<T> const&)
 { return true; }
 
 // is_valid: Sphere
 template <typename T>
-inline bool is_valid(Sphere<T> const& s)
+KOKKOS_FORCEINLINE_FUNCTION
+bool is_valid(Sphere<T> const& s)
 { return static_cast<T>(0) <= s.radius(); }
 
 // is_valid: Box
 template <typename T>
-inline bool is_valid(Box<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool is_valid(Box<T> const& b)
 {
   return   b.min_corner()[0] <= b.max_corner()[0]
         && b.min_corner()[1] <= b.max_corner()[1]
@@ -68,40 +71,50 @@ inline bool is_valid(Box<T> const& b)
 
 //Point
 template <typename T>
-inline Point<T> const& min_corner(Point<T> const& p)
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const& min_corner(Point<T> const& p)
 { return p; }
 
 template <typename T>
-inline Point<T> const& max_corner(Point<T> const& p)
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const& max_corner(Point<T> const& p)
 { return p; }
 
 template <typename T>
-inline Point<T> const& center(Point<T> const& p)
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const& center(Point<T> const& p)
 { return p; }
 
 //Point,index
 template <typename T>
-inline T min_corner(Point<T> const& p, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T min_corner(Point<T> const& p, int index)
 { return p[index]; }
 
 template <typename T>
-inline T max_corner(Point<T> const& p, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T max_corner(Point<T> const& p, int index)
 { return p[index]; }
 
 template <typename T>
-inline T center(Point<T> const& p, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T center(Point<T> const& p, int index)
 { return p[index]; }
 
 
 //Sphere
-template <typename T> inline Point<T> const min_corner(Sphere<T> const& s)
+template <typename T>
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const min_corner(Sphere<T> const& s)
 {
   const Point<T> & c = s.center();
   const T r = s.radius();
   return Point<T>(c[0]-r,c[1]-r,c[2]-r);
 }
 
-template <typename T> inline Point<T> const max_corner(Sphere<T> const& s)
+template <typename T>
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const max_corner(Sphere<T> const& s)
 {
   const Point<T> & c = s.center();
   const T r = s.radius();
@@ -109,34 +122,40 @@ template <typename T> inline Point<T> const max_corner(Sphere<T> const& s)
 }
 
 template <typename T>
-inline Point<T> const& center(Sphere<T> const& s)
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const& center(Sphere<T> const& s)
 { return s.center(); }
 
 //Sphere,index
 template <typename T>
-inline T min_corner(Sphere<T> const& s, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T min_corner(Sphere<T> const& s, int index)
 { return s.center()[index] - s.radius(); }
 
 template <typename T>
-inline T max_corner(Sphere<T> const& s, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T max_corner(Sphere<T> const& s, int index)
 { return s.center()[index] + s.radius(); }
 
 template <typename T>
-inline T center(Sphere<T> const& s, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T center(Sphere<T> const& s, int index)
 { return s.center()[index]; }
-
 
 //Box
 template <typename T>
-inline Point<T> const& min_corner(Box<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const& min_corner(Box<T> const& b)
 { return b.min_corner(); }
 
 template <typename T>
-inline Point<T> const& max_corner(Box<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const& max_corner(Box<T> const& b)
 { return b.max_corner(); }
 
 template <typename T>
-inline Point<T> const center(Box<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+Point<T> const center(Box<T> const& b)
 {
   const Point<T> & l = b.min_corner();
   const Point<T> & u = b.max_corner();
@@ -145,27 +164,32 @@ inline Point<T> const center(Box<T> const& b)
 
 //Box,index
 template <typename T>
-inline T min_corner(Box<T> const& b, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T min_corner(Box<T> const& b, int index)
 { return b.min_corner()[index]; }
 
 template <typename T>
-inline T max_corner(Box<T> const& b, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T max_corner(Box<T> const& b, int index)
 { return b.max_corner()[index]; }
 
 template <typename T>
-inline T center(Box<T> const& b, int index)
+KOKKOS_FORCEINLINE_FUNCTION
+T center(Box<T> const& b, int index)
 { return (b.min_corner()[index] + b.max_corner()[index])/2; }
 
 
 // intersects: Point,Point
 template <typename T>
-inline bool intersects(Point<T> const& a, Point<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Point<T> const& a, Point<T> const& b)
 { return (a==b); }
 
 
 // intersects: Point,Sphere
 template <typename T>
-inline bool intersects(Point<T> const& a, Sphere<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Point<T> const& a, Sphere<T> const& b)
 {
   const T dist2 =   (a[0]-b.center()[0])*(a[0]-b.center()[0])
                   + (a[1]-b.center()[1])*(a[1]-b.center()[1])
@@ -175,7 +199,8 @@ inline bool intersects(Point<T> const& a, Sphere<T> const& b)
 
 // intersects: Sphere,Point
 template <typename T>
-inline bool intersects(Sphere<T> const& a, Point<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Sphere<T> const& a, Point<T> const& b)
 { return intersects(b,a); }
 
 // intersects: Point,Box
@@ -190,12 +215,14 @@ bool intersects(Point<T> const& a, Box<T> const& b)
 
 // intersects: Box,Point
 template <typename T>
-inline bool intersects(Box<T> const& a, Point<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Box<T> const& a, Point<T> const& b)
 { return intersects(b,a); }
 
 // intersects: Sphere,Sphere
 template <typename T>
-inline bool intersects(Sphere<T> const& a, Sphere<T> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Sphere<T> const& a, Sphere<T> const& b)
 {
   const Point<T> & ac = a.center();
   const Point<T> & bc = b.center();
@@ -203,12 +230,13 @@ inline bool intersects(Sphere<T> const& a, Sphere<T> const& b)
   const T dist2 =  (ac[0]-bc[0])*(ac[0]-bc[0])
                  + (ac[1]-bc[1])*(ac[1]-bc[1])
                  + (ac[2]-bc[2])*(ac[2]-bc[2]);
-  return dist2 < r2;
+  return dist2 <= r2;
 }
 
 // intersects: Sphere,Box
 template <typename T1, typename T2>
-inline bool intersects(Sphere<T1> const& a, Box<T2> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Sphere<T1> const& a, Box<T2> const& b)
 {
   Point<T1> const& ac   = a.center();
   const T1         ar   = a.radius(); 
@@ -235,7 +263,8 @@ inline bool intersects(Sphere<T1> const& a, Box<T2> const& b)
 
 // intersects: Box,Sphere
 template <typename T1, typename T2>
-inline bool intersects(Box<T1> const& a, Sphere<T2> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Box<T1> const& a, Sphere<T2> const& b)
 { return intersects(b,a); }
 
 // intersects: Box,Box

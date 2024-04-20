@@ -1,7 +1,5 @@
-#ifdef STK_BUILT_IN_SIERRA
-
-#ifndef CREATE_STK_MESH
-#define CREATE_STK_MESH
+#ifndef STK_MIDDLE_MESH_UTILS_CREATE_STK_MESH
+#define STK_MIDDLE_MESH_UTILS_CREATE_STK_MESH
 
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
@@ -108,4 +106,3 @@ class StkMeshCreator
 } // namespace stk
 #endif
 
-#endif

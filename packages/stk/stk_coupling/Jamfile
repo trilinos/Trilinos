@@ -157,7 +157,7 @@ exe stk_coupling_utest
     [ glob $(stk_coupling-root)/../stk_unit_tests/stk_coupling/*.cpp ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_unit_test_utils//stk_unit_main
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
 
   : <tag>@sierra-exec-tag
   ;

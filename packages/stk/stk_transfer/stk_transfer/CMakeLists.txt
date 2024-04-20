@@ -27,6 +27,9 @@ else()
   target_link_libraries(stk_transfer PUBLIC stk_search)
   target_link_libraries(stk_transfer PUBLIC stk_util_env)
   target_link_libraries(stk_transfer PUBLIC stk_util_parallel)
+  if (STK_ENABLE_STKMiddle_mesh)
+    target_link_libraries(stk_transfer PUBLIC stk_middle_mesh)
+  endif()
 endif()
 
 target_include_directories(stk_transfer PUBLIC
