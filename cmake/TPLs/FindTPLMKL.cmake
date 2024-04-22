@@ -88,16 +88,38 @@ IF(Kokkos_ENABLE_SYCL)
     INNER_FIND_PACKAGE_NAME  MKL
     IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL MKL::MKL_DPCPP)
 
-  #  TARGET_LINK_LIBRARIES(MKL INTERFACE MKL::MKL MKL::MKL_DPCPP)
-  IF (NOT TARGET MKL::all_libs)
-    MESSAGE(FATAL_ERROR "MKL::all_libs was not created as a target")
-  ENDIF()
+  IF (TPL_ENABLE_BLAS)
+    # Also create the BLAS::all_libs target from MKL::MKL
+    # (don't need MKL::MKL_DPCPP, as BLAS only uses the host libraries)
+    tribits_extpkg_create_imported_all_libs_target_and_config_file( BLAS
+      INNER_FIND_PACKAGE_NAME  MKL
+      IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL)
+  ENDIF ()
+
+  IF (TPL_ENABLE_LAPACK)
+    # Also create the BLAS::all_libs target from MKL::MKL
+    # (don't need MKL::MKL_DPCPP, as BLAS only uses the host libraries)
+    tribits_extpkg_create_imported_all_libs_target_and_config_file( LAPACK
+      INNER_FIND_PACKAGE_NAME  MKL
+      IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL)
+  ENDIF ()
 ELSEIF()
-  # For host MKL, the single library libmkl_rt is sufficient
+  # For host MKL, the single library libmkl_rt is sufficient.
+  # This works for older versions of MKL that don't provide MKLConfig.cmake.
   TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( MKL
     REQUIRED_HEADERS mkl.h
     REQUIRED_LIBS_NAMES mkl_rt
     )
+  IF (TPL_ENABLE_BLAS)
+    TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( BLAS
+      REQUIRED_LIBS_NAMES mkl_rt
+      )
+  ENDIF ()
+  IF (TPL_ENABLE_LAPACK)
+    TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( LAPACK
+      REQUIRED_LIBS_NAMES mkl_rt
+      )
+  ENDIF ()
 ENDIF()
 
 # In the past, MKL users had to link with a long list of libraries.

@@ -53,22 +53,35 @@
 # ************************************************************************
 # @HEADER
 
-
-if (MSVC AND NOT
-    (LAPACK_LIBRARY_DIRS  OR
-     (NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "lapack lapack_win32" AND
-      NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "") OR
-     LAPACK_INCLUDE_DIRS  OR
-     LAPACK_INCLUDE_NAMES OR
-     (NOT "${TPL_LAPACK_LIBRARIES}" STREQUAL "lapack" AND
-      NOT "${TPL_LAPACK_LIBRARIES}" STREQUAL "") OR
-     TPL_LAPACK_INCLUDE_DIRS)
-   )
-  if(CLAPACK_FOUND)
-    advanced_set(TPL_LAPACK_LIBRARIES lapack
-        CACHE FILEPATH "Set from MSVC CLAPACK specialization")
+if (TPL_ENABLE_MKL)
+  # MKL provides the LAPACK library.
+  # In Trilinos, FindTPLMKL is processed before FindTPLLAPACK (this file) so
+  # it should have already created the target LAPACK::all_libs.
+  if (NOT TARGET LAPACK::all_libs)
+    MESSAGE (FATAL_ERROR "\
+    MKL and LAPACK are both enabled as TPLs, so MKL's libraries\
+    should also be used as the LAPACK libraries. However, FindTPLMKL.cmake\
+    did not create the target LAPACK::all_libs. Please report this bug to\
+    the Trilinos developers.")
+  endif ()
+  MESSAGE(STATUS "MKL will also be used to provide LAPACK.")
+else ()
+  if (MSVC AND NOT
+      (LAPACK_LIBRARY_DIRS  OR
+       (NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "lapack lapack_win32" AND
+        NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "") OR
+       LAPACK_INCLUDE_DIRS  OR
+       LAPACK_INCLUDE_NAMES OR
+       (NOT "${TPL_LAPACK_LIBRARIES}" STREQUAL "lapack" AND
+        NOT "${TPL_LAPACK_LIBRARIES}" STREQUAL "") OR
+       TPL_LAPACK_INCLUDE_DIRS)
+     )
+    if(CLAPACK_FOUND)
+      advanced_set(TPL_LAPACK_LIBRARIES lapack
+          CACHE FILEPATH "Set from MSVC CLAPACK specialization")
+    endif()
   endif()
-endif()
 
-tribits_tpl_find_include_dirs_and_libraries( LAPACK
-  REQUIRED_LIBS_NAMES "lapack lapack_win32")
+  tribits_tpl_find_include_dirs_and_libraries( LAPACK
+    REQUIRED_LIBS_NAMES "lapack lapack_win32")
+endif ()
