@@ -64,7 +64,19 @@ if (TPL_ENABLE_MKL)
     did not create the target MKL::all_libs. Please report this bug to\
     the Trilinos developers.")
   endif ()
-  MESSAGE(STATUS "MKL will also be used to provide BLAS.")
+  if (Kokkos_ENABLE_SYCL)
+    # FindTPLMKL already called find_package(MKL).
+    # The MKL::MKL target was required for MKL when SYCL is enabled.
+    tribits_extpkg_create_imported_all_libs_target_and_config_file( BLAS
+      INNER_FIND_PACKAGE_NAME MKL
+      IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL)
+  else ()
+    # Use the Tribits-generated target (tribits::MKL::mkl_rt) as the BLAS library
+    tribits_extpkg_create_imported_all_libs_target_and_config_file( BLAS
+      INNER_FIND_PACKAGE_NAME  MKL
+      IMPORTED_TARGETS_FOR_ALL_LIBS tribits::MKL::mkl_rt)
+  endif ()
+  MESSAGE(STATUS "MKL will provide BLAS functions.")
 else ()
   if (MSVC AND NOT
       (BLAS_LIBRARY_DIRS  OR

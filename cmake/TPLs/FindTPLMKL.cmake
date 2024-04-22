@@ -87,22 +87,6 @@ IF(Kokkos_ENABLE_SYCL)
   tribits_extpkg_create_imported_all_libs_target_and_config_file( MKL
     INNER_FIND_PACKAGE_NAME  MKL
     IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL MKL::MKL_DPCPP)
-
-  IF (TPL_ENABLE_BLAS)
-    # Also create the BLAS::all_libs target from MKL::MKL
-    # (don't need MKL::MKL_DPCPP, as BLAS only uses the host libraries)
-    tribits_extpkg_create_imported_all_libs_target_and_config_file( BLAS
-      INNER_FIND_PACKAGE_NAME  MKL
-      IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL)
-  ENDIF ()
-
-  IF (TPL_ENABLE_LAPACK)
-    # Also create the LAPACK::all_libs target from MKL::MKL
-    # (don't need MKL::MKL_DPCPP, as BLAS only uses the host libraries)
-    tribits_extpkg_create_imported_all_libs_target_and_config_file( LAPACK
-      INNER_FIND_PACKAGE_NAME  MKL
-      IMPORTED_TARGETS_FOR_ALL_LIBS  MKL::MKL)
-  ENDIF ()
 ELSE ()
   # For host MKL, the single library libmkl_rt is sufficient.
   # This works for older versions of MKL that don't provide MKLConfig.cmake.
@@ -110,20 +94,6 @@ ELSE ()
     REQUIRED_HEADERS mkl.h
     REQUIRED_LIBS_NAMES mkl_rt
     )
-  # The line above created $build_dir/external_packages/MKL/MKLConfig.cmake.
-  # We can use the tribits::MKL::mkl_rt target from this as the BLAS and LAPACK library
-  # as well, so that the user doesn't also have to provide the MKL lib path
-  # again for BLAS and LAPACK.
-  IF (TPL_ENABLE_BLAS)
-    tribits_extpkg_create_imported_all_libs_target_and_config_file( BLAS
-      INNER_FIND_PACKAGE_NAME  MKL
-      IMPORTED_TARGETS_FOR_ALL_LIBS tribits::MKL::mkl_rt)
-  ENDIF ()
-  IF (TPL_ENABLE_LAPACK)
-    tribits_extpkg_create_imported_all_libs_target_and_config_file( LAPACK
-      INNER_FIND_PACKAGE_NAME  MKL
-      IMPORTED_TARGETS_FOR_ALL_LIBS tribits::MKL::mkl_rt)
-  ENDIF ()
 ENDIF()
 
 # In the past, MKL users had to link with a long list of libraries.
