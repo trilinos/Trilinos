@@ -157,8 +157,10 @@ namespace Intrepid2 {
           refBasisValues("refBasisValues", numDofs, numPoints),
           refBasisGrads ("refBasisGrads",  numDofs, numPoints, spaceDim);
         
-        ImplBasisType::getValues<DeviceSpaceType>(refBasisValues, refPoints, OPERATOR_VALUE);
-        ImplBasisType::getValues<DeviceSpaceType>(refBasisGrads,  refPoints, OPERATOR_GRAD);
+        auto space = typename DeviceSpaceType::execution_space();
+        
+        ImplBasisType::getValues<DeviceSpaceType>(space, refBasisValues, refPoints, OPERATOR_VALUE);
+        ImplBasisType::getValues<DeviceSpaceType>(space, refBasisGrads,  refPoints, OPERATOR_GRAD);
 
 	std::cout << " Ref completed\n";
         
