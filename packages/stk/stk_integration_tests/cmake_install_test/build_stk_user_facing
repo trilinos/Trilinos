@@ -3,6 +3,10 @@
 exe() {
   stdbuf -o0 -e0 echo "% $@" ;
   eval "$@" ;
+  if [ $? -ne 0 ] ; then
+    echo "'$@' failed.";
+    exit 1;
+  fi
 }
 
 sierra_proj=${SIERRA_PROJ:-${PWD}}
