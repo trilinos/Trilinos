@@ -126,15 +126,18 @@ namespace Teuchos {
   { SROTG_F77(da, db, c, s ); }
 
   void BLAS<int, float>::ROT(const int& n, float* dx, const int& incx, float* dy, const int& incy, float* c, float* s) const
-  { SROT_F77(&n, dx, &incx, dy, &incy, c, s); }
-
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    SROT_F77(&n_, dx, &incx_, dy, &incy_, c, s);
+  }
 
   float BLAS<int, float>::ASUM(const int& n, const float* x, const int& incx) const
   {
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_sasum(n, x, incx);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-    float tmp = SASUM_F77(&n, x, &incx);
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    float tmp = SASUM_F77(&n_, x, &incx_);
     return tmp;
 #else
     typedef ScalarTraits<float> ST;
@@ -152,133 +155,227 @@ namespace Teuchos {
   }
 
   void BLAS<int, float>::AXPY(const int& n, const float& alpha, const float* x, const int& incx, float* y, const int& incy) const
-  { SAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    SAXPY_F77(&n_, &alpha, x, &incx_, y, &incy_);
+  }
 
   void BLAS<int, float>::COPY(const int& n, const float* x, const int& incx, float* y, const int& incy) const
-  { SCOPY_F77(&n, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    SCOPY_F77(&n_, x, &incx_, y, &incy_);
+  }
 
   float BLAS<int, float>::DOT(const int& n, const float* x, const int& incx, const float* y, const int& incy) const
   {
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_sdot(n, x, incx, y, incy);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-    return SDOT_F77(&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    return SDOT_F77(&n_, x, &incx_, y, &incy_);
 #else
     return generic_dot(n, x, incx, y, incy);
 #endif
   }
 
   int BLAS<int, float>::IAMAX(const int& n, const float* x, const int& incx) const
-  { return ISAMAX_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return ISAMAX_F77(&n_, x, &incx_);
+  }
 
   float BLAS<int, float>::NRM2(const int& n, const float* x, const int& incx) const
   {
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_snrm2(n, x, incx);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-    return SNRM2_F77(&n, x, &incx);
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return SNRM2_F77(&n_, x, &incx_);
 #else
     return ScalarTraits<float>::squareroot(generic_dot(n, x, incx, x, incx));
 #endif
   }
 
   void BLAS<int, float>::SCAL(const int& n, const float& alpha, float* x, const int& incx) const
-  { SSCAL_F77(&n, &alpha, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    SSCAL_F77(&n_, &alpha, x, &incx_);
+  }
 
   void BLAS<int, float>::GEMV(ETransp trans, const int& m, const int& n, const float& alpha, const float* A, const int& lda, const float* x, const int& incx, const float& beta, float* y, const int& incy) const
-  { SGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    SGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m_, &n_, &alpha, A, &lda_, x, &incx_, &beta, y, &incy_);
+  }
 
   void BLAS<int, float>::GER(const int& m, const int& n, const float& alpha, const float* x, const int& incx, const float* y, const int& incy, float* A, const int& lda) const
-  { SGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    SGER_F77(&m_, &n_, &alpha, x, &incx_, y, &incy_, A, &lda_);
+  }
 
   void BLAS<int, float>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const int& n, const float* A, const int& lda, float* x, const int& incx) const
-  { STRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n, A, &lda, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, lda_ = lda, incx_ = incx;
+    STRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n_, A, &lda_, x, &incx_);
+  }
 
   void BLAS<int, float>::GEMM(ETransp transa, ETransp transb, const int& m, const int& n, const int& k, const float& alpha, const float* A, const int& lda, const float* B, const int& ldb, const float& beta, float* C, const int& ldc) const
-  { SGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, k_ = k, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    SGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m_, &n_, &k_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, float>::SWAP(const int& n, float* const x, const int& incx, float* const y, const int& incy) const
   {
-    SSWAP_F77 (&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    SSWAP_F77 (&n_, x, &incx_, y, &incy_);
   }
 
   void BLAS<int, float>::SYMM(ESide side, EUplo uplo, const int& m, const int& n, const float& alpha, const float* A, const int& lda, const float* B, const int& ldb, const float& beta, float* C, const int& ldc) const
-  { SSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    SSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m_, &n_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, float>::SYRK(EUplo uplo, ETransp trans, const int& n, const int& k, const float& alpha, const float* A, const int& lda, const float& beta, float* C, const int& ldc) const
-  { SSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    SSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, float>::HERK(EUplo uplo, ETransp trans, const int& n, const int& k, const float& alpha, const float* A, const int& lda, const float& beta, float* C, const int& ldc) const
-  { SSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    SSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, float>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const float& alpha, const float* A, const int& lda, float* B, const int& ldb) const
-  { STRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    STRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
   void BLAS<int, float>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const float& alpha, const float* A, const int& lda, float* B, const int& ldb) const
-  { STRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    STRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
   // *************************** BLAS<int,double> DEFINITIONS ******************************
 
   void BLAS<int, double>::ROTG(double* da, double* db, double* c, double* s) const
-  { DROTG_F77(da, db, c, s); }
+  {
+    DROTG_F77(da, db, c, s);
+  }
 
   void BLAS<int, double>::ROT(const int& n, double* dx, const int& incx, double* dy, const int& incy, double* c, double* s) const
-  { DROT_F77(&n, dx, &incx, dy, &incy, c, s); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    DROT_F77(&n_, dx, &incx_, dy, &incy_, c, s);
+  }
 
   double BLAS<int, double>::ASUM(const int& n, const double* x, const int& incx) const
-  { return DASUM_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return DASUM_F77(&n_, x, &incx_);
+  }
 
   void BLAS<int, double>::AXPY(const int& n, const double& alpha, const double* x, const int& incx, double* y, const int& incy) const
-  { DAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    DAXPY_F77(&n_, &alpha, x, &incx_, y, &incy_);
+  }
 
   void BLAS<int, double>::COPY(const int& n, const double* x, const int& incx, double* y, const int& incy) const
-  { DCOPY_F77(&n, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    DCOPY_F77(&n_, x, &incx_, y, &incy_);
+  }
 
   double BLAS<int, double>::DOT(const int& n, const double* x, const int& incx, const double* y, const int& incy) const
   {
-    return DDOT_F77(&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    return DDOT_F77(&n_, x, &incx_, y, &incy_);
   }
 
   int BLAS<int, double>::IAMAX(const int& n, const double* x, const int& incx) const
-  { return IDAMAX_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return IDAMAX_F77(&n_, x, &incx_);
+  }
 
   double BLAS<int, double>::NRM2(const int& n, const double* x, const int& incx) const
-  { return DNRM2_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return DNRM2_F77(&n_, x, &incx_);
+  }
 
   void BLAS<int, double>::SCAL(const int& n, const double& alpha, double* x, const int& incx) const
-  { DSCAL_F77(&n, &alpha, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    DSCAL_F77(&n_, &alpha, x, &incx_);
+  }
 
   void BLAS<int, double>::GEMV(ETransp trans, const int& m, const int& n, const double& alpha, const double* A, const int& lda, const double* x, const int& incx, const double& beta, double* y, const int& incy) const
-  { DGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    DGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m_, &n_, &alpha, A, &lda_, x, &incx_, &beta, y, &incy_);
+  }
 
   void BLAS<int, double>::GER(const int& m, const int& n, const double& alpha, const double* x, const int& incx, const double* y, const int& incy, double* A, const int& lda) const
-  { DGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    DGER_F77(&m_, &n_, &alpha, x, &incx_, y, &incy_, A, &lda_);
+  }
 
   void BLAS<int, double>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const int& n, const double* A, const int& lda, double* x, const int& incx) const
-  { DTRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n, A, &lda, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, lda_ = lda, incx_ = incx;
+    DTRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n_, A, &lda_, x, &incx_);
+  }
 
   void BLAS<int, double>::GEMM(ETransp transa, ETransp transb, const int& m, const int& n, const int& k, const double& alpha, const double* A, const int& lda, const double* B, const int& ldb, const double& beta, double* C, const int& ldc) const
-  { DGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, k_ = k, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    DGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m_, &n_, &k_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, double>::SWAP(const int& n, double* const x, const int& incx, double* const y, const int& incy) const
   {
-    DSWAP_F77 (&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    DSWAP_F77 (&n_, x, &incx_, y, &incy_);
   }
 
   void BLAS<int, double>::SYMM(ESide side, EUplo uplo, const int& m, const int& n, const double& alpha, const double* A, const int& lda, const double* B, const int& ldb, const double& beta, double* C, const int& ldc) const
-  { DSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    DSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m_, &n_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, double>::SYRK(EUplo uplo, ETransp trans, const int& n, const int& k, const double& alpha, const double* A, const int& lda, const double& beta, double* C, const int& ldc) const
-  { DSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    DSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, double>::HERK(EUplo uplo, ETransp trans, const int& n, const int& k, const double& alpha, const double* A, const int& lda, const double& beta, double* C, const int& ldc) const
-  { DSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    DSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, double>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const double& alpha, const double* A, const int& lda, double* B, const int& ldb) const
-  { DTRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    DTRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
   void BLAS<int, double>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const double& alpha, const double* A, const int& lda, double* B, const int& ldb) const
-  { DTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    DTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
@@ -288,16 +385,21 @@ namespace Teuchos {
   { CROTG_F77(da, db, c, s ); }
 
   void BLAS<int, std::complex<float> >::ROT(const int& n, std::complex<float>* dx, const int& incx, std::complex<float>* dy, const int& incy, float* c, std::complex<float>* s) const
-  { CROT_F77(&n, dx, &incx, dy, &incy, c, s); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    CROT_F77(&n_, dx, &incx_, dy, &incy_, c, s);
+  }
 
   float BLAS<int, std::complex<float> >::ASUM(const int& n, const std::complex<float>* x, const int& incx) const
   {
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_scasum(n, x, incx);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
-    return (float) SCASUM_F77(&n, x, &incx);
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return (float) SCASUM_F77(&n_, x, &incx_);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-    return SCASUM_F77(&n, x, &incx);
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return SCASUM_F77(&n_, x, &incx_);
 #else // Wow, you just plain don't have this routine.
     // mfh 01 Feb 2013: See www.netlib.org/blas/scasum.f.
     // I've enhanced this by accumulating in double precision.
@@ -317,10 +419,16 @@ namespace Teuchos {
   }
 
   void BLAS<int, std::complex<float> >::AXPY(const int& n, const std::complex<float> alpha, const std::complex<float>* x, const int& incx, std::complex<float>* y, const int& incy) const
-  { CAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    CAXPY_F77(&n_, &alpha, x, &incx_, y, &incy_);
+  }
 
   void BLAS<int, std::complex<float> >::COPY(const int& n, const std::complex<float>* x, const int& incx, std::complex<float>* y, const int& incy) const
-  { CCOPY_F77(&n, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    CCOPY_F77(&n_, x, &incx_, y, &incy_);
+  }
 
   std::complex<float> BLAS<int, std::complex<float> >::DOT(const int& n, const std::complex<float>* x, const int& incx, const std::complex<float>* y, const int& incy) const
   {
@@ -330,10 +438,12 @@ namespace Teuchos {
     return z;
 #elif defined(HAVE_COMPLEX_BLAS_PROBLEM) && defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
     std::complex<float> z;
-    CDOT_F77(&z, &n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    CDOT_F77(&z, &n_, x, &incx_, y, &incy_);
     return z;
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-    Teuchos_Complex_float_type_name z = CDOT_F77(&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    Teuchos_Complex_float_type_name z = CDOT_F77(&n_, x, &incx_, y, &incy_);
     return TEUCHOS_BLAS_CONVERT_COMPLEX_FORTRAN_TO_CXX(float, z);
 #else // Wow, you just plain don't have this routine.
     // mfh 01 Feb 2013: See www.netlib.org/blas/cdotc.f.
@@ -365,16 +475,21 @@ namespace Teuchos {
   }
 
   int BLAS<int, std::complex<float> >::IAMAX(const int& n, const std::complex<float>* x, const int& incx) const
-  { return ICAMAX_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return ICAMAX_F77(&n_, x, &incx_);
+  }
 
   float BLAS<int, std::complex<float> >::NRM2(const int& n, const std::complex<float>* x, const int& incx) const
   {
 #if defined(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
     return cblas_scnrm2(n, x, incx);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
-    return (float) SCNRM2_F77(&n, x, &incx);
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return (float) SCNRM2_F77(&n_, x, &incx_);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-    return SCNRM2_F77(&n, x, &incx);
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return SCNRM2_F77(&n_, x, &incx_);
 #else // Wow, you just plain don't have this routine.
     // mfh 01 Feb 2013: See www.netlib.org/blas/scnrm2.f.
     // I've enhanced this by accumulating in double precision.
@@ -421,39 +536,70 @@ namespace Teuchos {
   }
 
   void BLAS<int, std::complex<float> >::SCAL(const int& n, const std::complex<float> alpha, std::complex<float>* x, const int& incx) const
-  { CSCAL_F77(&n, &alpha, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    CSCAL_F77(&n_, &alpha, x, &incx_);
+  }
 
   void BLAS<int, std::complex<float> >::GEMV(ETransp trans, const int& m, const int& n, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, const std::complex<float>* x, const int& incx, const std::complex<float> beta, std::complex<float>* y, const int& incy) const
-  { CGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    CGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m_, &n_, &alpha, A, &lda_, x, &incx_, &beta, y, &incy_);
+  }
 
   void BLAS<int, std::complex<float> >::GER(const int& m, const int& n, const std::complex<float> alpha, const std::complex<float>* x, const int& incx, const std::complex<float>* y, const int& incy, std::complex<float>* A, const int& lda) const
-  { CGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    CGER_F77(&m_, &n_, &alpha, x, &incx_, y, &incy_, A, &lda_);
+  }
 
   void BLAS<int, std::complex<float> >::TRMV(EUplo uplo, ETransp trans, EDiag diag, const int& n, const std::complex<float>* A, const int& lda, std::complex<float>* x, const int& incx) const
-  { CTRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n, A, &lda, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, lda_ = lda, incx_ = incx;
+    CTRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n_, A, &lda_, x, &incx_);
+  }
 
   void BLAS<int, std::complex<float> >::GEMM(ETransp transa, ETransp transb, const int& m, const int& n, const int& k, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, const std::complex<float>* B, const int& ldb, const std::complex<float> beta, std::complex<float>* C, const int& ldc) const
-  { CGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, k_ = k, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    CGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m_, &n_, &k_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<float> >::SWAP(const int& n, std::complex<float>* const x, const int& incx, std::complex<float>* const y, const int& incy) const
   {
-    CSWAP_F77 (&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    CSWAP_F77 (&n_, x, &incx_, y, &incy_);
   }
 
   void BLAS<int, std::complex<float> >::SYMM(ESide side, EUplo uplo, const int& m, const int& n, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, const std::complex<float>* B, const int& ldb, const std::complex<float> beta, std::complex<float>* C, const int& ldc) const
-  { CSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    CSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m_, &n_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<float> >::SYRK(EUplo uplo, ETransp trans, const int& n, const int& k, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, const std::complex<float> beta, std::complex<float>* C, const int& ldc) const
-  { CSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    CSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<float> >::HERK(EUplo uplo, ETransp trans, const int& n, const int& k, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, const std::complex<float> beta, std::complex<float>* C, const int& ldc) const
-  { CHERK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    CHERK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<float> >::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, std::complex<float>* B, const int& ldb) const
-  { CTRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    CTRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
   void BLAS<int, std::complex<float> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const std::complex<float> alpha, const std::complex<float>* A, const int& lda, std::complex<float>* B, const int& ldb) const
-  { CTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    CTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
   // *************************** BLAS<int,std::complex<double> > DEFINITIONS ******************************
 
@@ -461,16 +607,28 @@ namespace Teuchos {
   { ZROTG_F77(da, db, c, s); }
 
   void BLAS<int, std::complex<double> >::ROT(const int& n, std::complex<double>* dx, const int& incx, std::complex<double>* dy, const int& incy, double* c, std::complex<double>* s) const
-  { ZROT_F77(&n, dx, &incx, dy, &incy, c, s); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    ZROT_F77(&n_, dx, &incx_, dy, &incy_, c, s);
+  }
 
   double BLAS<int, std::complex<double> >::ASUM(const int& n, const std::complex<double>* x, const int& incx) const
-  { return ZASUM_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return ZASUM_F77(&n_, x, &incx_);
+  }
 
   void BLAS<int, std::complex<double> >::AXPY(const int& n, const std::complex<double> alpha, const std::complex<double>* x, const int& incx, std::complex<double>* y, const int& incy) const
-  { ZAXPY_F77(&n, &alpha, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    ZAXPY_F77(&n_, &alpha, x, &incx_, y, &incy_);
+  }
 
   void BLAS<int, std::complex<double> >::COPY(const int& n, const std::complex<double>* x, const int& incx, std::complex<double>* y, const int& incy) const
-  { ZCOPY_F77(&n, x, &incx, y, &incy); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    ZCOPY_F77(&n_, x, &incx_, y, &incy_);
+  }
 
   std::complex<double> BLAS<int, std::complex<double> >::DOT(const int& n, const std::complex<double>* x, const int& incx, const std::complex<double>* y, const int& incy) const
   {
@@ -481,7 +639,8 @@ namespace Teuchos {
 #elif defined(HAVE_COMPLEX_BLAS_PROBLEM)
 #  if defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
     std::complex<double> z;
-    ZDOT_F77(&z, &n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    ZDOT_F77(&z, &n_, x, &incx_, y, &incy_);
     return z;
 #  else
     // mfh 01 Feb 2013: Your complex BLAS is broken, but the problem
@@ -513,51 +672,89 @@ namespace Teuchos {
 
 #  endif // defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
 #else
-    Teuchos_Complex_double_type_name z = ZDOT_F77(&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    Teuchos_Complex_double_type_name z = ZDOT_F77(&n_, x, &incx_, y, &incy_);
     return TEUCHOS_BLAS_CONVERT_COMPLEX_FORTRAN_TO_CXX(double, z);
 #endif
   }
 
   int BLAS<int, std::complex<double> >::IAMAX(const int& n, const std::complex<double>* x, const int& incx) const
-  { return IZAMAX_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return IZAMAX_F77(&n_, x, &incx_);
+  }
 
   double BLAS<int, std::complex<double> >::NRM2(const int& n, const std::complex<double>* x, const int& incx) const
-  { return ZNRM2_F77(&n, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    return ZNRM2_F77(&n_, x, &incx_);
+  }
 
   void BLAS<int, std::complex<double> >::SCAL(const int& n, const std::complex<double> alpha, std::complex<double>* x, const int& incx) const
-  { ZSCAL_F77(&n, &alpha, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, incx_ = incx;
+    ZSCAL_F77(&n_, &alpha, x, &incx_);
+  }
 
   void BLAS<int, std::complex<double> >::GEMV(ETransp trans, const int& m, const int& n, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, const std::complex<double>* x, const int& incx, const std::complex<double> beta, std::complex<double>* y, const int& incy) const
-  { ZGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m, &n, &alpha, A, &lda, x, &incx, &beta, y, &incy); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    ZGEMV_F77(CHAR_MACRO(ETranspChar[trans]), &m_, &n_, &alpha, A, &lda_, x, &incx_, &beta, y, &incy_);
+  }
 
   void BLAS<int, std::complex<double> >::GER(const int& m, const int& n, const std::complex<double> alpha, const std::complex<double>* x, const int& incx, const std::complex<double>* y, const int& incy, std::complex<double>* A, const int& lda) const
-  { ZGER_F77(&m, &n, &alpha, x, &incx, y, &incy, A, &lda); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, incx_ = incx, incy_ = incy;
+    ZGER_F77(&m_, &n_, &alpha, x, &incx_, y, &incy_, A, &lda_);
+  }
 
   void BLAS<int, std::complex<double> >::TRMV(EUplo uplo, ETransp trans, EDiag diag, const int& n, const std::complex<double>* A, const int& lda, std::complex<double>* x, const int& incx) const
-  { ZTRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n, A, &lda, x, &incx); }
+  {
+    TeuchosNumerics_Int n_ = n, lda_ = lda, incx_ = incx;
+    ZTRMV_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), CHAR_MACRO(EDiagChar[diag]), &n_, A, &lda_, x, &incx_);
+  }
 
   void BLAS<int, std::complex<double> >::GEMM(ETransp transa, ETransp transb, const int& m, const int& n, const int& k, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, const std::complex<double>* B, const int& ldb, const std::complex<double> beta, std::complex<double>* C, const int& ldc) const
-  { ZGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, k_ = k, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    ZGEMM_F77(CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(ETranspChar[transb]), &m_, &n_, &k_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<double> >::SWAP(const int& n, std::complex<double>* const x, const int& incx, std::complex<double>* const y, const int& incy) const
   {
-    ZSWAP_F77 (&n, x, &incx, y, &incy);
+    TeuchosNumerics_Int n_ = n, incx_ = incx, incy_ = incy;
+    ZSWAP_F77 (&n_, x, &incx_, y, &incy_);
   }
 
   void BLAS<int, std::complex<double> >::SYMM(ESide side, EUplo uplo, const int& m, const int& n, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, const std::complex<double> *B, const int& ldb, const std::complex<double> beta, std::complex<double> *C, const int& ldc) const
-  { ZSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m, &n, &alpha, A, &lda, B, &ldb, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
+    ZSYMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), &m_, &n_, &alpha, A, &lda_, B, &ldb_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<double> >::SYRK(EUplo uplo, ETransp trans, const int& n, const int& k, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, const std::complex<double> beta, std::complex<double>* C, const int& ldc) const
-  { ZSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    ZSYRK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<double> >::HERK(EUplo uplo, ETransp trans, const int& n, const int& k, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, const std::complex<double> beta, std::complex<double>* C, const int& ldc) const
-  { ZHERK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n, &k, &alpha, A, &lda, &beta, C, &ldc); }
+  {
+    TeuchosNumerics_Int n_ = n, k_ = k, lda_ = lda, ldc_ = ldc;
+    ZHERK_F77(CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[trans]), &n_, &k_, &alpha, A, &lda_, &beta, C, &ldc_);
+  }
 
   void BLAS<int, std::complex<double> >::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, std::complex<double>* B, const int& ldb) const
-  { ZTRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    ZTRMM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
   void BLAS<int, std::complex<double> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int& m, const int& n, const std::complex<double> alpha, const std::complex<double>* A, const int& lda, std::complex<double>* B, const int& ldb) const
-  { ZTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
+  {
+    TeuchosNumerics_Int m_ = m, n_ = n, lda_ = lda, ldb_ = ldb;
+    ZTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m_, &n_, &alpha, A, &lda_, B, &ldb_);
+  }
 
 #endif // HAVE_TEUCHOS_COMPLEX
 
