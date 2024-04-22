@@ -34,22 +34,27 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp
-                  ${CMAKE_CURRENT_SOURCE_DIR}/kdtree/*.hpp
-                  ${CMAKE_CURRENT_SOURCE_DIR}/morton_lbvh/*.hpp
-)
-FILE(GLOB SOURCES *.cpp
-                  ${CMAKE_CURRENT_SOURCE_DIR}/kdtree/*.cpp
-                  ${CMAKE_CURRENT_SOURCE_DIR}/morton_lbvh/*.cpp
-)
+FILE(GLOB HEADERS_KDTREE  
+     ${CMAKE_CURRENT_SOURCE_DIR}/kdtree/*.hpp)
+FILE(GLOB HEADERS_MORTON  
+     ${CMAKE_CURRENT_SOURCE_DIR}/morton_lbvh/*.hpp)
+
+FILE(GLOB HEADERS *.hpp)
+
+FILE(GLOB SOURCES_KDTREE
+     ${CMAKE_CURRENT_SOURCE_DIR}/kdtree/*.cpp)
+FILE(GLOB SOURCES_MORTON
+     ${CMAKE_CURRENT_SOURCE_DIR}/morton_lbvh/*.cpp)
+
+FILE(GLOB SOURCES *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(stk_search
-    NOINSTALLHEADERS ${HEADERS}
-    SOURCES ${SOURCES}
+    NOINSTALLHEADERS ${HEADERS} ${HEADERS_KDTREE} ${HEADERS_MORTON}
+    SOURCES ${SOURCES} ${SOURCES_KDTREE} ${SOURCES_MORTON}
   )
 else()
-  add_library(stk_search ${SOURCES})
+  add_library(stk_search ${SOURCES} ${SOURCES_KDTREE} ${SOURCES_MORTON})
 
   target_link_libraries(stk_search PUBLIC stk_math)
   target_link_libraries(stk_search PUBLIC stk_util_parallel)
@@ -69,6 +74,10 @@ target_include_directories(stk_search PUBLIC
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_search)
+INSTALL(FILES ${HEADERS_KDTREE} DESTINATION
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_search/kdtree)
+INSTALL(FILES ${HEADERS_MORTON} DESTINATION
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_search/morton_lbvh)
 
 if(NOT HAVE_STK_Trilinos)
   INSTALL(TARGETS stk_search DESTINATION ${STK_INSTALL_LIBDIR})
