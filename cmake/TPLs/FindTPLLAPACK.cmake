@@ -57,11 +57,11 @@ if (TPL_ENABLE_MKL)
   # MKL provides the LAPACK library.
   # In Trilinos, FindTPLMKL is processed before FindTPLLAPACK (this file) so
   # it should have already created the target LAPACK::all_libs.
-  if (NOT TARGET LAPACK::all_libs)
+  if (NOT TARGET MKL::all_libs)
     MESSAGE (FATAL_ERROR "\
     MKL and LAPACK are both enabled as TPLs, so MKL's libraries\
     should also be used as the LAPACK libraries. However, FindTPLMKL.cmake\
-    did not create the target LAPACK::all_libs. Please report this bug to\
+    did not create the target MKL::all_libs. Please report this bug to\
     the Trilinos developers.")
   endif ()
   MESSAGE(STATUS "MKL will also be used to provide LAPACK.")

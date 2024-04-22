@@ -57,11 +57,11 @@ if (TPL_ENABLE_MKL)
   # If enabled, MKL provides the BLAS library.
   # In Trilinos, FindTPLMKL is processed before FindTPLBLAS (this file) so
   # it should have already created the target BLAS::all_libs.
-  if (NOT TARGET BLAS::all_libs)
+  if (NOT TARGET MKL::all_libs)
     MESSAGE (FATAL_ERROR "\
     MKL and BLAS are both enabled as TPLs, so MKL's libraries\
     should also be used as the BLAS libraries. However, FindTPLMKL.cmake\
-    did not create the target BLAS::all_libs. Please report this bug to\
+    did not create the target MKL::all_libs. Please report this bug to\
     the Trilinos developers.")
   endif ()
   MESSAGE(STATUS "MKL will also be used to provide BLAS.")
