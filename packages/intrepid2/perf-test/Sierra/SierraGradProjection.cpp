@@ -109,17 +109,13 @@ int main(int argc, char *argv[])
   std::string test_name = "Intrepid2 Sierra Test";
   
   {
-    // Note that the dtor for GlobalMPISession will call Kokkos::finalize_all() but does not call Kokkos::initialize()...
+    // Note that the dtor for GlobalMPISession will call Kokkos::finalize_all() but ctor does not call Kokkos::initialize()...
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
     Kokkos::initialize(argc,argv);
     Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
     
     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
-    Teuchos::RCP<const Teuchos::MpiComm<int> > comm
-      = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
-    if (comm->getSize() > 1) {
-      out->setOutputToRootOnly(0);
-    }
+    auto comm = Teuchos::DefaultComm<int>::getComm();
     
     {
       Teuchos::CommandLineProcessor cmdp(false,true); // false: don't throw exceptions; true: do return errors for unrecognized options
