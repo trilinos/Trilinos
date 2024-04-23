@@ -57,6 +57,8 @@
 // Individual Observers
 #include "user_app_NOXObserver_WriteToExodus.hpp"
 #include "user_app_NOXObserver_NeumannBCAnalyticSystemTest.hpp"
+#include "NOX_Observer_ReusePreconditionerFactory.hpp"
+#include "NOX_Observer_Print.hpp"
 
 namespace user_app {
   
@@ -87,13 +89,27 @@ namespace user_app {
 
       RCP<NOX::PrePostOperatorVector> observer = rcp(new NOX::PrePostOperatorVector);
 
+      // Delay the preconditioner update
+      if (this->getParameterList()->get<bool>("Delay Preconditioner Update")) {
+        Teuchos::ParameterList delay_list = this->getParameterList()->sublist("Delay Preconditioner Factory Sublist");
+        auto ppo = NOX::createReusePreconditionerObserver(delay_list);
+	observer->pushBack(ppo);
+      }
+
+      // New output format via observer
+      if (this->getParameterList()->get<bool>("New Output Format")) {
+        auto utils = Teuchos::rcp(new NOX::Utils(0,mesh->getComm()->getRank(),0,6));
+	Teuchos::RCP<NOX::Abstract::PrePostOperator> po = 
+	  Teuchos::rcp(new NOX::ObserverPrint(utils));
+	observer->pushBack(po);
+      }
+
       // Exodus writer to output solution
       if (this->getParameterList()->get<std::string>("Write Solution to Exodus File") == "ON") {
 	Teuchos::RCP<NOX::Abstract::PrePostOperator> solution_writer = 
 	  Teuchos::rcp(new user_app::NOXObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
 	observer->pushBack(solution_writer);
       }
-
       
       // Neumann BC unit test
       if (this->getParameterList()->get<std::string>("Neumann BC Analytic System Test") == "ON") {
@@ -113,7 +129,7 @@ namespace user_app {
       using Teuchos::RCP;
       using Teuchos::rcp;
 
-      paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
+      paramList->validateParametersAndSetDefaults(*(this->getValidParameters()),0);
       setMyParamList(paramList);
     }
     
@@ -123,14 +139,18 @@ namespace user_app {
 	
 	valid_params_ = Teuchos::rcp(new Teuchos::ParameterList);
 
-  valid_params_->set<std::string>("Write Solution to Exodus File", "ON",
-    "Enables or disables writing of solution to Exodus file at end of NOX solve",
-    rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
+        valid_params_->set<std::string>("Write Solution to Exodus File", "ON",
+                                        "Enables or disables writing of solution to Exodus file at end of NOX solve",
+                                        rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
 	
-  valid_params_->set<std::string>("Neumann BC Analytic System Test", "OFF",
-    "Checks solution values for Neumann BC Analytic System Test",
-    rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
+        valid_params_->set<std::string>("Neumann BC Analytic System Test", "OFF",
+                                        "Checks solution values for Neumann BC Analytic System Test",
+                                        rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
 
+        valid_params_->set<bool>("Delay Preconditioner Update",false,"Sets an observer that controls when to update the preconditioner.");
+        valid_params_->sublist("Delay Preconditioner Factory Sublist",false,"Sublist used to build the ReusePreconditioner observer.");
+
+        valid_params_->set<bool>("New Output Format",false,"Enables new output format from observer.");
       }
       return valid_params_;
     }
