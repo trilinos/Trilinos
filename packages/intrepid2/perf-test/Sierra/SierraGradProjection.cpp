@@ -87,13 +87,14 @@ void intrepid2_gradient_operator(const int n, const double* coords, double* grad
   //  to index order consistent with the rest of Sierra:   ( Element, Intg Point,  Node Number, Component)
   //
   FieldContainer gradOpContainer(grad, n, numIntg, numNodes, numDims);
+  FieldContainer tempGradLocal = tempGrad; // local View to avoid CUDA complaints.
   Kokkos::parallel_for("reorder gradients", n,
   KOKKOS_LAMBDA(const int &ielem)
   {
     for (int ip = 0; ip < numIntg; ++ip) {
       for (int inode = 0; inode < numNodes; ++inode) {
         for (int d = 0; d<numDims; ++d) {
-          gradOpContainer(ielem, ip, inode, d) = tempGrad(ielem, inode, ip, d);
+          gradOpContainer(ielem, ip, inode, d) = tempGradLocal(ielem, inode, ip, d);
         }
       }
     }
