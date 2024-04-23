@@ -323,6 +323,7 @@ stk::mesh::EntityVector get_mesh_nodes(const stk::mesh::BulkData& bulk, const st
   if(parts.empty()) {
     selector = meta.universal_part();
   }
+  selector &= (meta.locally_owned_part() | meta.globally_shared_part());
 
   stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, selector, nodes);
 

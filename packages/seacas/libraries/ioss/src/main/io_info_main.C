@@ -1,14 +1,22 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
-#include "fmt/format.h"
+#include <fmt/core.h>
+#include <ostream>
+#include <stdlib.h>
+#include <string>
+
+#include "Ionit_Initializer.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_ScopeGuard.h"
+#include "Ioss_Utils.h"
+#include "info_interface.h"
 #include "io_info.h"
-#include <Ioss_ScopeGuard.h>
 
 // ========================================================================
 

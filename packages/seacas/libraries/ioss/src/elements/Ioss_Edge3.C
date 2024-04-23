@@ -4,12 +4,14 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include "Ioss_Edge3.h"
+#include "Ioss_ElementVariableType.h" // for ElementVariableType
+#include <cassert>                    // for assert
+#include <string>
+
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
-#include <Ioss_Edge3.h>
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <cassert>                    // for assert
-#include <cstddef>                    // for nullptr
+#include "Ioss_Utils.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity

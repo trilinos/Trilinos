@@ -316,8 +316,9 @@ int GeometricMovingLeastSquares::compute_moving_least_squares_solution(const uns
     unsigned coeffIndex = col_major_index(0, irhs, m_numBasis, nrhs);
     fill_diagonal_scaled_vector(weight, &fieldVal[fieldIndex], m_tempVector);
 
-    SIERRA_FORTRAN(dgemv)(&TRANSPOSE, &dim2, &dim1, &REAL_ONE, basisVal.data(), &dim2,
-                          m_tempVector.data(), &INT_ONE, &ZERO, &coeff[coeffIndex], &INT_ONE);
+    SIERRA_FORTRAN(dgemv)
+    (&TRANSPOSE, &dim2, &dim1, &REAL_ONE, basisVal.data(), &dim2, m_tempVector.data(), &INT_ONE, &ZERO,
+        coeff + coeffIndex, &INT_ONE);
   }
   // Solve system of equations using the LU factorization [LAPACK].
   // Replace beta vector with solution(s).

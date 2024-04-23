@@ -144,6 +144,11 @@
 
     <ParameterList name="Output">
         <Parameter name="File Name" type="string" value="energy-ss-tp.exo"/>
+<!-- This is inefficient: writes to file every residual evaluation: Used for debug, added to exercise capability -->
+        <ParameterList name="Cell Average Vectors">
+          <Parameter name="eblock-0_0" type="string" value="GRAD_TEMPERATURE"/>
+        </ParameterList>
+<!-- -->
     </ParameterList>
 
     <ParameterList name="Options">

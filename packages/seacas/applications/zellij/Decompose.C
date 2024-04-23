@@ -174,9 +174,9 @@ void decompose_grid(Grid &grid, int ranks, const std::string &method)
 
   /* Copy mesh data and pointers into structure accessible from callback fns. */
   Zoltan_Data.ndot = grid.size();
-  Zoltan_Data.vwgt = w.data();
-  Zoltan_Data.x    = x.data();
-  Zoltan_Data.y    = y.data();
+  Zoltan_Data.vwgt = Data(w);
+  Zoltan_Data.x    = Data(x);
+  Zoltan_Data.y    = Data(y);
   Zoltan_Data.z    = nullptr;
 
   /* Initialize Zoltan */

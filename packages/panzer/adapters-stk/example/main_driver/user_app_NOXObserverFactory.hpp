@@ -123,20 +123,13 @@ namespace user_app {
 	
 	valid_params_ = Teuchos::rcp(new Teuchos::ParameterList);
 
-	Teuchos::setStringToIntegralParameter<int>(
-          "Write Solution to Exodus File",
-          "ON",
-          "Enables or disables writing of solution to Exodus file at end of NOX solve",
-          Teuchos::tuple<std::string>("ON","OFF"),
-          valid_params_.get()
-          );
-	Teuchos::setStringToIntegralParameter<int>(
-          "Neumann BC Analytic System Test",
-          "OFF",
-          "Checks solution values for Neumann BC Analytic System Test",
-          Teuchos::tuple<std::string>("ON","OFF"),
-          valid_params_.get()
-          );
+  valid_params_->set<std::string>("Write Solution to Exodus File", "ON",
+    "Enables or disables writing of solution to Exodus file at end of NOX solve",
+    rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
+	
+  valid_params_->set<std::string>("Neumann BC Analytic System Test", "OFF",
+    "Checks solution values for Neumann BC Analytic System Test",
+    rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
 
       }
       return valid_params_;

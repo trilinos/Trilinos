@@ -82,10 +82,12 @@ struct spgemm_numeric_tpl_spec_avail {
   SPGEMM_NUMERIC_AVAIL_CUSPARSE(SCALAR, Kokkos::CudaSpace) \
   SPGEMM_NUMERIC_AVAIL_CUSPARSE(SCALAR, Kokkos::CudaUVMSpace)
 
+#if (CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040)
 SPGEMM_NUMERIC_AVAIL_CUSPARSE_S(float)
 SPGEMM_NUMERIC_AVAIL_CUSPARSE_S(double)
 SPGEMM_NUMERIC_AVAIL_CUSPARSE_S(Kokkos::complex<float>)
 SPGEMM_NUMERIC_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
+#endif
 
 #endif
 

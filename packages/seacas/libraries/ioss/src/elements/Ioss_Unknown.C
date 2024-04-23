@@ -4,11 +4,14 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_CodeTypes.h"           // for IntVector
-#include "Ioss_ElementTopology.h"     // for ElementTopology
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <Ioss_Unknown.h>
+#include "Ioss_ElementVariableType.h" // for ElementVariableType
+#include "Ioss_Unknown.h"
 #include <cassert> // for assert
+#include <string>
+
+#include "Ioss_CodeTypes.h"       // for IntVector
+#include "Ioss_ElementTopology.h" // for ElementTopology
+#include "Ioss_Utils.h"
 
 // ========================================================================
 namespace Ioss {

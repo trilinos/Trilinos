@@ -2,13 +2,15 @@ name: Check packages with clang-format
 
 on: [pull_request]
 
+permissions: read-all
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-    - uses: DoozyX/clang-format-lint-action@1566bcec081dcb246ab02e7c5f9786c0b629dd4d # v0.16.2
+    - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+    - uses: DoozyX/clang-format-lint-action@11b773b1598aa4ae3b32f023701bca5201c3817d # v0.17
       with:
         source: './packages/muelu ./packages/tempus ./packages/teko ./packages/xpetra'
         exclude: './packages/tempus/examples'
@@ -18,7 +20,7 @@ jobs:
     - run: git diff HEAD > format_patch.txt
     - run: if [ "$(cat format_patch.txt)" == "" ] ; then rm format_patch.txt ; else cat format_patch.txt; fi
 
-    - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       id: upload-artf
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:

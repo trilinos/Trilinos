@@ -48,7 +48,7 @@ int ex_get_block_param(int exoid, ex_block *block)
 
   EX_FUNC_ENTER();
 
-  struct ex__file_item *file = ex__find_file_item(exoid);
+  struct exi_file_item *file = exi_find_file_item(exoid);
   if (!file) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d in ex_get_block_param().", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
@@ -56,7 +56,7 @@ int ex_get_block_param(int exoid, ex_block *block)
   }
 
   /* First, locate index of element block id in VAR_ID_EL_BLK array */
-  blk_id_ndx = ex__id_lkup(exoid, block->type, block->id);
+  blk_id_ndx = exi_id_lkup(exoid, block->type, block->id);
   if (blk_id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
@@ -254,7 +254,7 @@ int ex_get_block_param(int exoid, ex_block *block)
     }
 
     /* get rid of trailing blanks */
-    ex__trim(block->topology);
+    exi_trim(block->topology);
   }
   EX_FUNC_LEAVE(EX_NOERR);
 }

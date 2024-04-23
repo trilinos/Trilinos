@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -9,7 +9,7 @@ C    See packages/seacas/LICENSE for details
      &   ERR)
 C***********************************************************************
 
-C  SUBROUTINE DELEM = DELETES AN ELEMENT BY COLAPSING NODE1 ONTO THE
+C  SUBROUTINE DELEM = DELETES AN ELEMENT BY COLLAPSING NODE1 ONTO THE
 C                     OPPOSING DIAGONAL NODE
 
 C***********************************************************************

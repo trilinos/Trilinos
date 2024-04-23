@@ -410,6 +410,21 @@ TEST(UnitTestMetaData, ConsistentParallelDebugCheck)
   EXPECT_NO_THROW(bulk.modification_begin());
 }
 
+#define STK_EXPECT_THROW_MSG(runit, myProc, msgProc, goldMsg) \
+{ \
+  bool threw = false; \
+  try { \
+    runit; \
+  } \
+  catch(std::exception& e) { \
+    threw = true; \
+    if (myProc == msgProc) { \
+      EXPECT_TRUE(std::string(e.what()).find(goldMsg) != std::string::npos)<<"failed to find '"<<goldMsg<<"' in exception string '"<<e.what()<<"'"; \
+    } \
+  } \
+  EXPECT_TRUE(threw); \
+}
+
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameLength)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
@@ -426,13 +441,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameLength)
     meta.declare_part("really_long_part_1", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part name (really_long_part_1) does not match Part name (part_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part name (really_long_part_1) does not match Part name (part_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameText)
@@ -451,13 +460,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameText)
     meta.declare_part("part_2", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part name (part_2) does not match Part name (part_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part name (part_2) does not match Part name (part_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartRank)
@@ -476,13 +479,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartRank)
     meta.declare_part("part_1", stk::topology::ELEM_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part part_1 rank (ELEMENT_RANK) does not match Part part_1 rank (NODE_RANK) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 rank (ELEMENT_RANK) does not match Part part_1 rank (NODE_RANK) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartTopology)
@@ -501,13 +498,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartTopology)
     meta.declare_part_with_topology("part_1", stk::topology::TET_4);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part part_1 topology (TETRAHEDRON_4) does not match Part part_1 topology (HEXAHEDRON_8) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 topology (TETRAHEDRON_4) does not match Part part_1 topology (HEXAHEDRON_8) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
@@ -529,13 +520,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
     meta.declare_part_subset(part_1, part_2);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Part part_1 subset ordinals (41 ) does not match Part part_1 subset ordinals () on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Part part_1 subset ordinals (41 ) does not match Part part_1 subset ordinals () on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooFew)
@@ -555,13 +540,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooFe
     meta.declare_part("part_2", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Have extra Part (part_2) that does not exist on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Have extra Part (part_2) that does not exist on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooMany)
@@ -581,13 +560,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooMa
     meta.declare_part("part_1", stk::topology::NODE_RANK);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Received extra Part (part_2) from root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Received extra Part (part_2) from root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameLength)
@@ -606,13 +579,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameLength)
     meta.declare_field<double>(stk::topology::NODE_RANK, "really_long_field_1");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field name (really_long_field_1) does not match Field name (field_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field name (really_long_field_1) does not match Field name (field_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameText)
@@ -631,13 +598,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameText)
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_2");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field name (field_2) does not match Field name (field_1) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field name (field_2) does not match Field name (field_1) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldRank)
@@ -656,13 +617,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldRank)
     meta.declare_field<double>(stk::topology::ELEM_RANK, "field_1");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field field_1 rank (ELEMENT_RANK) does not match Field field_1 rank (NODE_RANK) on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field field_1 rank (ELEMENT_RANK) does not match Field field_1 rank (NODE_RANK) on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
@@ -681,14 +636,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_1", 2);
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n"
-                            "[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooFew)
@@ -708,13 +656,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooF
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_2");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Have extra Field (field_2) that does not exist on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Have extra Field (field_2) that does not exist on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooMany)
@@ -734,13 +676,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooM
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_1");
   }
 
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
-
-  std::string stderrString = testing::internal::GetCapturedStderr();
-  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
-    EXPECT_EQ(stderrString, "[p1] Received extra Field (field_2) from root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1, "[p1] Received extra Field (field_2) from root processor\n");
 }
 
 }

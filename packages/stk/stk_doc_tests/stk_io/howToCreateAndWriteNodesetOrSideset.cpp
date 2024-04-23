@@ -99,9 +99,8 @@ void verify_field_is_valid(const stk::mesh::MetaData &meta,
   stk::topology::rank_t rank = meta.mesh_bulk_data().entity_rank(entity);
   stk::mesh::FieldBase* field = meta.get_field(rank, fieldName);
   ASSERT_TRUE(field != nullptr);
-  double* fieldDataForEntity = static_cast<double*>(stk::mesh::field_data(*field, entity) );
-  unsigned numScalars = stk::mesh::field_scalars_per_entity(*field, entity);
-  ASSERT_EQ(fieldLength, numScalars);
+  const double* fieldDataForEntity = static_cast<double*>(stk::mesh::field_data(*field, entity) );
+  ASSERT_EQ(fieldLength, stk::mesh::field_scalars_per_entity(*field, entity));
   ASSERT_EQ(initialValue[0], fieldDataForEntity[0]);
 }
 

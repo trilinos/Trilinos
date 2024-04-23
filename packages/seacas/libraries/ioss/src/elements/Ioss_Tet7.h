@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,8 +8,8 @@
 
 #include "ioss_export.h"
 
-#include <Ioss_CodeTypes.h>       // for IntVector
-#include <Ioss_ElementTopology.h> // for ElementTopology
+#include "Ioss_CodeTypes.h"       // for IntVector
+#include "Ioss_ElementTopology.h" // for ElementTopology
 
 // STL Includes
 
@@ -21,7 +21,6 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    ~Tet7() override   = default;
     Tet7(const Tet7 &) = delete;
 
     ElementShape shape() const override { return ElementShape::TET; }

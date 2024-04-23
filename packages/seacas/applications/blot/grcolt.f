@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -164,7 +164,7 @@ C     Orange = 255,168,0  (R,G,B)
               RBLUE(I)=0.
    50        CONTINUE
 
-C     Define colors 57-106 to be a linear variation from orange to yello
+C     Define colors 57-106 to be a linear variation from orange to yellow
 C     Orange = 255,168,0  (R,G,B)
 C     Yellow = 255,255,0  (R,G,B)
 
@@ -175,7 +175,7 @@ C     Yellow = 255,255,0  (R,G,B)
               RBLUE(I)=0.
    60        CONTINUE
 
-C     Define colors 107-166 to be a linear variation from yellow to gree
+C     Define colors 107-166 to be a linear variation from yellow to green
 C     Yellow = 255,255,0  (R,G,B)
 C     Green  = 0,255,0    (R,G,B)
 

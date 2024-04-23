@@ -7,7 +7,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "apr_symrec.h"
 #include "aprepro.h"
 
 // This function is used below in the example showing how an
@@ -110,15 +109,19 @@ int main(int argc, char *argv[])
 
     if (result) {
       std::string res_str = aprepro.parsing_results().str();
-      std::cout << "         : " << res_str;
+      std::cout << "          : " << res_str;
 
       // Example showing how to get the substitution history for the current line.
       if (aprepro.ap_options.keep_history) {
         std::vector<SEAMS::history_data> hist = aprepro.get_history();
         for (const auto &curr_history : hist) {
 
-          std::cout << curr_history.original << " was substituted with "
-                    << curr_history.substitution << " at index " << curr_history.index << '\n';
+          auto substitution = curr_history.substitution;
+          if (substitution == "\n") {
+            substitution = "<not echoed>";
+          }
+          std::cout << "\t'" << curr_history.original << "' was substituted with '" << substitution
+                    << "' at index " << curr_history.index << '\n';
         }
 
         aprepro.clear_history();

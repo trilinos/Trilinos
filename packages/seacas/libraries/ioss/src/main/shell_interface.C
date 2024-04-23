@@ -1,32 +1,28 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#include "Ioss_CodeTypes.h"
+#include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
+#include <cstring> // for strcmp
+#include <fmt/core.h>
+#include <iostream> // for operator<<, basic_ostream, etc
+#include <stdio.h>
+#include <string> // for string, char_traits
+#include <vector> // for vector
+
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Sort.h"
 #include "Ioss_Utils.h" // for Utils
 #include "shell_interface.h"
 #include "tokenize.h"
 
-#include <cctype>  // for tolower
-#include <cstddef> // for nullptr
-#include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
-#include <cstring> // for strcmp
-#include <fmt/ostream.h>
-#include <iostream> // for operator<<, basic_ostream, etc
-#include <string>   // for string, char_traits
-#include <vector>   // for vector
-
-IOShell::Interface::Interface(const std::string &app_version) : version(app_version)
+IOShell::Interface::Interface(std::string app_version) : version(std::move(app_version))
 {
   enroll_options();
 }
-
-IOShell::Interface::~Interface() = default;
 
 void IOShell::Interface::enroll_options()
 {
@@ -72,9 +68,22 @@ void IOShell::Interface::enroll_options()
       "Absolute tolerance to use if comparing real field data. (diff > abs && diff > rel)",
       nullptr);
   options_.enroll("floor", Ioss::GetLongOption::MandatoryValue,
-                  "Only compare values if `|a| > floor && |b| > floor`", nullptr);
+                  "Only compare values if `|a| > floor || |b| > floor`", nullptr);
   options_.enroll("ignore_qa_info", Ioss::GetLongOption::NoValue,
                   "If comparing databases, do not compare the qa and info records.", nullptr,
+                  nullptr, true);
+
+  options_.enroll("ignore_node_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global node id map (if any) from the input database.", nullptr,
+                  nullptr);
+  options_.enroll("ignore_element_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global element id map (if any) from the input database.",
+                  nullptr, nullptr);
+  options_.enroll("ignore_edge_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global edge id map (if any) from the input database.", nullptr,
+                  nullptr);
+  options_.enroll("ignore_face_map", Ioss::GetLongOption::NoValue,
+                  "Do not read the global face id map (if any) from the input database.", nullptr,
                   nullptr, true);
 
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "Use 64-bit integers on output database",
@@ -88,6 +97,9 @@ void IOShell::Interface::enroll_options()
   options_.enroll("float", Ioss::GetLongOption::NoValue,
                   "Use 32-bit floating point values on output database; default is 64-bits",
                   nullptr);
+
+  options_.enroll("netcdf3", Ioss::GetLongOption::NoValue,
+                  "Output database will be a classical netcdf (CDF3) file.", nullptr);
 
   options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
                   "Output database will be a netcdf4 "
@@ -236,10 +248,6 @@ void IOShell::Interface::enroll_options()
                   "comma-separated list of times that should be transferred to output database",
                   nullptr);
 
-  options_.enroll("delete_timesteps", Ioss::GetLongOption::NoValue,
-                  "Do not transfer any timesteps or transient data to the output database",
-                  nullptr);
-
   options_.enroll("append_after_time", Ioss::GetLongOption::MandatoryValue,
                   "add steps on input database after specified time on output database", nullptr);
 
@@ -250,7 +258,15 @@ void IOShell::Interface::enroll_options()
                   "Specify the number of steps between database flushes.\n"
                   "\t\tIf not specified, then the default database-dependent setting is used.\n"
                   "\t\tA value of 0 disables flushing.",
-                  nullptr, nullptr, true);
+                  nullptr);
+  options_.enroll("delete_timesteps", Ioss::GetLongOption::NoValue,
+                  "Do not transfer any timesteps or transient data to the output database",
+                  nullptr);
+
+  options_.enroll("delete_qa_records", Ioss::GetLongOption::NoValue,
+                  "Do not output qa records to output database.", nullptr);
+  options_.enroll("delete_info_records", Ioss::GetLongOption::NoValue,
+                  "Do not output info records to output database.", nullptr, nullptr, true);
 
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
@@ -270,7 +286,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
-                  "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
+                  "\t\tOptions are: TOPOLOGY(default), BLOCK, NO_SPLIT",
                   nullptr);
 
   options_.enroll("native_variable_names", Ioss::GetLongOption::NoValue,
@@ -345,7 +361,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
         "\nThe following options were specified via the IO_SHELL_OPTIONS environment variable:\n"
         "\t{}\n\n",
         options);
-    options_.parse(options, options_.basename(*argv));
+    options_.parse(options, Ioss::GetLongOption::basename(*argv));
   }
 
   int option_index = options_.parse(argc, argv);
@@ -367,7 +383,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
 
   if (options_.retrieve("version") != nullptr) {
-    fmt::print(stderr, "Version: {}\n", version);
+    fmt::print(stderr, "IO_SHELL\tVersion: {}\n", version);
     exit(0);
   }
 
@@ -375,14 +391,23 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   ints_32_bit  = (options_.retrieve("32-bit") != nullptr);
   reals_32_bit = (options_.retrieve("float") != nullptr);
 
+  if (options_.retrieve("netcdf3") != nullptr) {
+    netcdf3     = true;
+    netcdf4     = false;
+    netcdf5     = false;
+    ints_32_bit = true;
+  }
+
   if (options_.retrieve("netcdf4") != nullptr) {
+    netcdf3 = false;
     netcdf4 = true;
     netcdf5 = false;
   }
 
   if (options_.retrieve("netcdf5") != nullptr) {
-    netcdf5 = true;
+    netcdf3 = false;
     netcdf4 = false;
+    netcdf5 = true;
   }
 
   shuffle = (options_.retrieve("shuffle") != nullptr);
@@ -398,8 +423,14 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     }
     return false;
   }
-  compare        = (options_.retrieve("compare") != nullptr);
-  ignore_qa_info = (options_.retrieve("ignore_qa_info") != nullptr);
+  compare         = (options_.retrieve("compare") != nullptr);
+  ignore_qa_info  = (options_.retrieve("ignore_qa_info") != nullptr);
+  ignore_node_map = (options_.retrieve("ignore_node_map") != nullptr);
+  ignore_elem_map = (options_.retrieve("ignore_element_map") != nullptr);
+  ignore_edge_map = (options_.retrieve("ignore_edge_map") != nullptr);
+  ignore_face_map = (options_.retrieve("ignore_face_map") != nullptr);
+  delete_qa       = (options_.retrieve("delete_qa_records") != nullptr);
+  delete_info     = (options_.retrieve("delete_info_records") != nullptr);
 
   {
     const char *temp = options_.retrieve("absolute");

@@ -60,3 +60,59 @@ TEST( StridedArray, pair_iter)
   }
 }
 
+TEST( StridedArray, comparison)
+{
+  std::vector<int> vec = {1, 2, 3, 4};
+  stk::util::StridedArray<int> stridedArray1(vec.data(), vec.size());
+  stk::util::StridedArray<int> stridedArray2(vec.data(), vec.size());
+
+  EXPECT_EQ(stridedArray1, stridedArray2);
+
+  std::vector<int> otherVec = {1, 4, 3, 2};
+  stk::util::StridedArray<int> otherStridedArray(otherVec.data(), otherVec.size());
+
+  EXPECT_NE(stridedArray1, otherStridedArray);
+
+  std::vector<int> smallerVec = {1, 2};
+  stk::util::StridedArray<int> smallerStridedArray(smallerVec.data(), smallerVec.size());
+
+  EXPECT_NE(stridedArray1, smallerStridedArray);
+}
+
+#ifdef STK_ENABLE_GPU
+void run_comparison_test_on_device()
+{
+  constexpr int N1 = 3;
+  constexpr int N2 = 5;
+  Kokkos::View<int**> v1("v1", N1, N2);
+
+  Kokkos::parallel_for(N1, KOKKOS_LAMBDA(const int& i) {
+    for(int j=0; j<N2; ++j) {
+      v1(i,j) = 1 + i + j;
+    }
+  });
+
+  int result = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& localResult) {
+    int stride = N1;
+    int wrongStride = 2;
+    stk::util::StridedArray<int> sa(v1.data(), N2, stride);
+    localResult = static_cast<int>(sa.size())==N2 ? 0 : 1;
+    localResult += sa[1]==v1(0,1) ? 0 : 3;
+    stk::util::StridedArray<int> sa2(v1.data(), N2, stride);
+    localResult += (sa == sa2) ? 0 : 7;
+
+    stk::util::StridedArray<int> saWrong(v1.data(), N2, wrongStride);
+    localResult += (sa != saWrong) ? 0 : 15;
+  }, result);
+
+  EXPECT_EQ(0, result);
+}
+
+TEST(StridedArray, comparison_on_device)
+{
+  run_comparison_test_on_device();
+}
+
+#endif
+

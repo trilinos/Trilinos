@@ -404,16 +404,13 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       validParams->set<int>("Restart Index",-1,"Index of solution to read in",
 			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
 
-      Teuchos::setStringToIntegralParameter<int>("File Type",
-                                                 "Exodus",
-                                                 "Choose input file type - either \"Exodus\", \"Exodus Refinement\" or \"Pamgen\"",
-                                                 Teuchos::tuple<std::string>("Exodus","Pamgen"
+      validParams->set<std::string>("File Type", "Exodus",
+        "Choose input file type - either \"Exodus\", \"Exodus Refinement\" or \"Pamgen\"",
+        rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Exodus", "Pamgen"
 #ifdef PANZER_HAVE_UMR
-                                                                             ,"Exodus Refinement"
-#endif
-                                                                             ),
-                                                 validParams.get()
-                                                 );
+                                                                     ,"Exodus Refinement"
+#endif        
+        ))));
 
       validParams->set<double>("Scale Factor", 1.0, "Scale factor to apply to mesh after read",
                                Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));

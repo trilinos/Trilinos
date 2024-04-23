@@ -62,6 +62,12 @@ inline std::ostream& operator<<(std::ostream& os, EntityOrientation orient)
   return os;
 }
 
+inline EntityOrientation reverse(EntityOrientation orient)
+{
+  return orient == EntityOrientation::Standard ? EntityOrientation::Reversed : 
+                                                 EntityOrientation::Standard;  
+}
+
 struct RemoteSharedEntity
 {
   explicit RemoteSharedEntity(int remoteRank_=0, int remoteId_=0) :
@@ -174,7 +180,9 @@ class MeshEntity
 
     EntityOrientation get_down_orientation(const int i);
 
-    void replace_down(const int i, MeshEntityPtr e);
+    void set_down_orientation(int i, EntityOrientation orient);
+
+    void replace_down(const int i, MeshEntityPtr e, EntityOrientation orient = EntityOrientation::Standard);
 
     void delete_down(const int i);
 

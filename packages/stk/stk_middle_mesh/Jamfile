@@ -213,8 +213,8 @@ lib stk_middle_mesh_test_util
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(stk_middle_mesh-root)/../stk_unit_tests/stk_middle_mesh/util/*.cpp ]
-        /tpl/gtest//gtest
-        /tpl/gtest//gmock  
+        /tpl/googletest//gtest
+        /tpl/googletest//gmock  
     ]
     stk_middle_mesh
   :

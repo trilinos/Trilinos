@@ -53,7 +53,7 @@
 namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
-  
+
   namespace Impl {
 
     template<EOperator opType>
@@ -70,7 +70,7 @@ namespace Intrepid2 {
                const vinvViewType   vinv ) {
 
       constexpr ordinal_type spaceDim = 3;
-      const ordinal_type 
+      const ordinal_type
         card = vinv.extent(0),
         npts = input.extent(0);
 
@@ -82,7 +82,7 @@ namespace Intrepid2 {
           break;
         }
       }
-      
+
       typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
       auto vcprop = Kokkos::common_view_alloc_prop(work);
       auto ptr = work.data();
@@ -91,10 +91,10 @@ namespace Intrepid2 {
       case OPERATOR_VALUE: {
         const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
         workViewType dummyView;
-        
+
         Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
           Serial<opType>::getValues(phis, input, dummyView, order);
-        
+
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
             output.access(i,j) = 0.0;
@@ -166,7 +166,7 @@ namespace Intrepid2 {
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
       typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
-      
+
       // loopSize corresponds to cardinality
       const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
       const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
@@ -194,7 +194,7 @@ namespace Intrepid2 {
       break;
       }
       case OPERATOR_GRAD:
-      case OPERATOR_D1: { 
+      case OPERATOR_D1: {
         auto bufferSize = Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_D1>::getWorkSizePerPoint(order);
         workViewType  work(Kokkos::view_alloc("Basis_HVOL_TET_Cn_FEM::getValues::work", vcprop), bufferSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
@@ -224,7 +224,7 @@ namespace Intrepid2 {
       }
     }
   }
-  
+
   // -------------------------------------------------------------------------------------
   template<typename DT, typename OT, typename PT>
   Basis_HVOL_TET_Cn_FEM<DT,OT,PT>::
@@ -245,14 +245,14 @@ namespace Intrepid2 {
     // points are computed in the host and will be copied
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoords("HVOL::Tet::Cn::dofCoords", card, spaceDim);
-    
+
     // construct lattice (only internal nodes for HVOL element)
     const ordinal_type offset = 1;
     PointTools::getLattice( dofCoords,
                             this->basisCellTopology_,
                             order+spaceDim+offset, offset,
                             pointType );
-    
+
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
 
@@ -263,12 +263,16 @@ namespace Intrepid2 {
       vmat("HVOL::Tet::Cn::vmat", card, card),
       work("HVOL::Tet::Cn::work", lwork),
       ipiv("HVOL::Tet::Cn::ipiv", card);
-  
-    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(vmat, dofCoords, order, OPERATOR_VALUE);
+
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       vmat,
+                                                                                                                       dofCoords,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE);
 
     ordinal_type info = 0;
     Teuchos::LAPACK<ordinal_type,scalarType> lapack;
-    
+
     lapack.GETRF(card, card,
                  vmat.data(), vmat.stride_1(),
                  (ordinal_type*)ipiv.data(),
@@ -303,14 +307,14 @@ namespace Intrepid2 {
     {
       // Basis-dependent initializations
       constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-      
+
       constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
       ordinal_type tags[maxCard][tagSize];
 
-      const ordinal_type 
+      const ordinal_type
         numElemDof = this->basisCardinality_; //all the degrees of freedom are internal.
 
 
@@ -324,7 +328,7 @@ namespace Intrepid2 {
       }
 
       OrdinalTypeArray1DHost tagView(&tags[0][0], card*tagSize);
-      
+
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host
       this->setOrdinalTagData(this->tagToOrdinal_,

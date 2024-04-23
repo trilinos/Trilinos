@@ -36,6 +36,7 @@
 #define PDQSORT_PREFER_MOVE(x) (x)
 #endif
 
+// NOLINTBEGIN
 namespace pdqsort_detail {
   enum {
     // Partitions below this size are sorted using insertion sort.
@@ -612,3 +613,4 @@ template <class Iter> inline void pdqsort_branchless(Iter begin, Iter end)
 #undef PDQSORT_PREFER_MOVE
 
 #endif
+// NOLINTEND

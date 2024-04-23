@@ -8,7 +8,8 @@
 
 #include "ioad_export.h"
 
-#include <Ioss_PropertyManager.h>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_PropertyManager.h"
 #include <adios2.h>
 #include <string>
 
@@ -69,7 +70,7 @@ namespace Ioad {
 
     const std::string m_MetaSeparator{"::"};
 
-    const int      m_Rank;
+    const int           m_Rank;
     const Ioss_MPI_Comm m_Communicator;
 
     bool m_OpenStep;

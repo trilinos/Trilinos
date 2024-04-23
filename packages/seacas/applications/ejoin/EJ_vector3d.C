@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -90,7 +90,7 @@ vector3d operator/(const vector3d &lhs, double scalar)
     return tmp /= scalar;
   }
 
-  return vector3d(HUGE_VAL, HUGE_VAL, HUGE_VAL);
+  return {HUGE_VAL, HUGE_VAL, HUGE_VAL};
 }
 
 vector3d &vector3d::operator/=(double scalar)

@@ -492,6 +492,140 @@ TEST_F(NeighborParallelCommTesterDouble, FuncBlocking)
 }
 
 //-----------------------------------------------------------------------------
+// test parallel_data_exchange_nonsym_known_sizes_t
+TEST(NonsymKnownsizes, nominal_correct)
+{
+  const int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numProcs != 4) { GTEST_SKIP(); }
+
+  std::vector<int> sendOffsets, recvOffsets;
+  std::vector<double> sendData, recvData, expectedRecvData;
+
+  const int myProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  if (myProc == 2) {
+    sendOffsets = { 0, 0, 0, 0, 0 };
+    recvOffsets = { 0, 2, 4, 4, 6 }; //recving from procs 0, 1, 3
+    expectedRecvData = { 42.0, 99.0, 42.0, 99.0, 42.0, 99.0 };
+    recvData.resize(6);
+  }
+  else {
+    sendOffsets = { 0, 0, 0, 2, 2 }; //sending to proc 2
+    sendData = { 42.0, 99.0 };
+    recvOffsets = { 0, 0, 0, 0, 0 };
+  }
+
+  const bool checkInput = true;
+  EXPECT_NO_THROW(
+  stk::parallel_data_exchange_nonsym_known_sizes_t(sendOffsets.data(), sendData.data(),
+                                                   recvOffsets.data(), recvData.data(),
+                                                   MPI_COMM_WORLD, checkInput));
+
+  EXPECT_EQ(recvData.size(), expectedRecvData.size());
+  if (myProc == 2) {
+    EXPECT_EQ(6u, recvData.size());
+  }
+
+  for(unsigned i=0; i<recvData.size(); ++i) {
+    EXPECT_NEAR(recvData[i], expectedRecvData[i], 1.e-8);
+  }
+}
+
+TEST(NonsymKnownsizes, inconsistent_send_input)
+{
+  const int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numProcs != 4) { GTEST_SKIP(); }
+
+  std::vector<int> sendOffsets, recvOffsets;
+  std::vector<double> sendData, recvData, expectedRecvData;
+
+  const int myProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  if (myProc == 2) {
+    sendOffsets = { 0, 0, 0, 0, 0 };
+    recvOffsets = { 0, 2, 4, 4, 6 }; //recving from procs 0, 1, 3
+    expectedRecvData = { 42.0, 99.0, 42.0, 99.0, 42.0, 99.0 };
+    recvData.resize(6);
+  }
+  else if (myProc == 0) {
+    sendOffsets = { 0, 0, 1, 3, 3 }; //sending to procs 1 and 2
+    sendData = { 42.0, 99.0 };
+    recvOffsets = { 0, 0, 0, 0, 0 };
+  }
+  else {
+    sendOffsets = { 0, 0, 0, 2, 2 };
+    sendData = { 42.0, 99.0 };
+    recvOffsets = { 0, 0, 0, 0, 0 };
+  }
+
+  const bool checkInput = true;
+  EXPECT_ANY_THROW(
+  stk::parallel_data_exchange_nonsym_known_sizes_t(sendOffsets.data(), sendData.data(),
+                                                   recvOffsets.data(), recvData.data(),
+                                                   MPI_COMM_WORLD, checkInput));
+
+}
+
+TEST(NonsymKnownsizes, inconsistent_recv_input)
+{
+  const int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numProcs != 4) { GTEST_SKIP(); }
+
+  std::vector<int> sendOffsets, recvOffsets;
+  std::vector<double> sendData, recvData, expectedRecvData;
+
+  const int myProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  if (myProc == 2) {
+    sendOffsets = { 0, 0, 0, 0, 0 };
+    recvOffsets = { 0, 0, 2, 2, 4 }; // only recving from procs 1 and 3
+    expectedRecvData = { 42.0, 99.0, 42.0, 99.0, 42.0, 99.0 };
+    recvData.resize(6);
+  }
+  else {
+    sendOffsets = { 0, 0, 0, 2, 2 }; //sending to proc 2
+    sendData = { 42.0, 99.0 };
+    recvOffsets = { 0, 0, 0, 0, 0 };
+  }
+
+  const bool checkInput = true;
+  EXPECT_ANY_THROW(
+  stk::parallel_data_exchange_nonsym_known_sizes_t(sendOffsets.data(), sendData.data(),
+                                                   recvOffsets.data(), recvData.data(),
+                                                   MPI_COMM_WORLD, checkInput));
+
+}
+
+TEST(NonsymKnownsizes, inconsistent_msg_sizing)
+{
+  const int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numProcs != 4) { GTEST_SKIP(); }
+
+  std::vector<int> sendOffsets, recvOffsets;
+  std::vector<double> sendData, recvData, expectedRecvData;
+
+  const int myProc = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  if (myProc == 2) {
+    sendOffsets = { 0, 0, 0, 0, 0 };
+    recvOffsets = { 0, 2, 4, 4, 6 }; //recving 2 values each from procs 0, 1, 3
+    expectedRecvData = { 42.0, 99.0, 42.0, 99.0, 42.0, 99.0 };
+    recvData.resize(6);
+  }
+  else {
+    sendOffsets = { 0, 0, 0, 1, 1 }; //sending 1 value to proc 2
+    sendData = { 42.0, 99.0 };
+    recvOffsets = { 0, 0, 0, 0, 0 };
+  }
+
+  const bool checkInput = true;
+  EXPECT_ANY_THROW(
+  stk::parallel_data_exchange_nonsym_known_sizes_t(sendOffsets.data(), sendData.data(),
+                                                   recvOffsets.data(), recvData.data(),
+                                                   MPI_COMM_WORLD, checkInput));
+}
+
+//-----------------------------------------------------------------------------
 // test ParallelDataExchange class
 
 TEST_F(DenseParallelCommTesterInt, ClassBlocking)

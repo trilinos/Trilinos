@@ -4,12 +4,15 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Utils.h>
-#include <Ioss_ZoneConnectivity.h>
-#include <cstddef> // for size_t
+#include "Ioss_Utils.h"
+#include "Ioss_ZoneConnectivity.h"
+#include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <string> // for string
 #include <vector> // for vector
+
+#include "Ioss_CodeTypes.h"
 
 namespace {
   int sign(int value) { return value < 0 ? -1 : 1; }

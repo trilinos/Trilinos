@@ -496,6 +496,43 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, stringValidator)
 
 
 /*
+ * Testing StringToIntegralParameterEntryValidator.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Validators, StringToIntegralParameterEntryValidator) {
+  Array<std::string> strVals = tuple<std::string>("str1", "str2", "str3");
+  Array<std::string> strDocs = tuple<std::string>("a str1", "a str2", "a str3");
+  Array<int> intVals = tuple<int>(1, 2, 3);
+  bool caseSensitive = true;
+  typedef StringToIntegralParameterEntryValidator<int> ret_type;
+  // Note that validator1 maps the strings to {0, 1, 2} not {1, 2, 3} as in `intVals`
+  RCP<ret_type> validator1 = rcp(new ret_type(strVals, "str1", caseSensitive));
+  RCP<ret_type> validator2 = rcp(new ret_type(strVals, intVals, "str1", caseSensitive));
+  RCP<ret_type> validator3 = rcp(new ret_type(strVals, strDocs, intVals, "str1", caseSensitive));
+  TEST_EQUALITY(strDocs, *validator3->getStringDocs());
+  ParameterList valid_pl = ParameterList();
+  valid_pl.set("Param1", "str1", "Parameter 1", validator1);
+  valid_pl.set("Param2", "str1", "Parameter 2", validator2);
+  valid_pl.set("Param3", "str1", "Parameter 3", validator3);
+  ParameterList user_pl = ParameterList();
+  user_pl.set("Param1", "str1");
+  user_pl.set("Param2", "str2");
+  user_pl.set("Param3", "str3");
+  // Test `getStringValue` and `getIntegralValue` before validation on `valid_pl`
+  TEST_EQUALITY(0,          getIntegralValue<int>(valid_pl, "Param1"));
+  TEST_EQUALITY(intVals[0], getIntegralValue<int>(valid_pl, "Param2"));
+  TEST_EQUALITY(strVals[0], getStringValue<int>(valid_pl, "Param2"));
+  // Test `getStringValue` and `getIntegralValue` after validation on `user_pl`
+  user_pl.validateParametersAndSetDefaults(valid_pl);
+  TEST_EQUALITY(0,          getIntegralValue<int>(user_pl, "Param1"));
+  TEST_EQUALITY(intVals[1], getIntegralValue<int>(user_pl, "Param2"));
+  TEST_EQUALITY(intVals[2], getIntegralValue<int>(user_pl, "Param3"));
+  TEST_EQUALITY(strVals[0], getStringValue<int>(user_pl, "Param1"));
+  TEST_EQUALITY(strVals[1], getStringValue<int>(user_pl, "Param2"));
+  TEST_EQUALITY(strVals[2], getStringValue<int>(user_pl, "Param3"));
+}
+
+
+/*
  * Testing FileNameValidator.
  */
 TEUCHOS_UNIT_TEST(Teuchos_Validators, fileNameValidator)

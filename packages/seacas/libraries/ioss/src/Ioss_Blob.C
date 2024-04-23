@@ -4,17 +4,11 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Blob.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Property.h>
-#include <Ioss_PropertyManager.h>
-#include <Ioss_Region.h>
-#include <algorithm>
+#include "Ioss_Blob.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_Property.h"
 #include <cstddef>
-#include <fmt/ostream.h>
-#include <string>
-#include <vector>
 
 namespace Ioss {
   class Field;

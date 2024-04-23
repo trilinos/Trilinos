@@ -1,0 +1,36 @@
+name: spack
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  pull_request_review:
+    types: 
+      - submitted
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gcc10-openmpi416:
+    permissions:
+      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
+      contents: read  # for actions/checkout to fetch code
+    runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@b173b6ec0100793626c2d9e6b90435061f4fc3e5 # 0.11.0
+        with:
+          access_token: ${{ github.token }}
+      - name: Clone Trilinos
+        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+        with:
+          fetch-depth: 1
+      - name: Spack build
+        shell: bash -l {0}
+        run: |
+          spack develop --no-clone --path $GITHUB_WORKSPACE trilinos@develop
+          spack add trilinos@develop
+          spack concretize -f
+          spack install --cdash-upload-url=https://sems-cdash-son.sandia.gov/cdash/submit.php?project=Trilinos -j16

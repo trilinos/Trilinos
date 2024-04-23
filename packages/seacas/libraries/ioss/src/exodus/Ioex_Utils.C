@@ -1,28 +1,39 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Assembly.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Region.h>
-#include <Ioss_SmartAssert.h>
-#include <Ioss_Utils.h>
-#include <Ioss_VariableType.h>
-#include <algorithm>
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Region.h"
+#include "Ioss_SmartAssert.h"
+#include "Ioss_Utils.h"
+#include "Ioss_VariableType.h"
+#include "exodus/Ioex_Utils.h"
 #include <cstring>
-#include <exodus/Ioex_Utils.h>
 #include <exodusII_int.h>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <iosfwd>
+#include <netcdf.h>
 #include <tokenize.h>
 
+#include "Ioss_CoordinateFrame.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
+#include "exodusII.h"
+
 namespace {
-  size_t match(const char *name1, const char *name2)
+  size_t match(const std::string &name1, const std::string &name2)
   {
-    size_t l1  = std::strlen(name1);
-    size_t l2  = std::strlen(name2);
-    size_t len = l1 < l2 ? l1 : l2;
+    size_t l1  = name1.size();
+    size_t l2  = name2.size();
+    size_t len = std::min(l1, l2);
     for (size_t i = 0; i < len; i++) {
       if (name1[i] != name2[i]) {
         while (i > 0 && (isdigit(name1[i - 1]) != 0) && (isdigit(name2[i - 1]) != 0)) {
@@ -54,8 +65,7 @@ namespace {
           coordinates[9 * i + j] = coord[j];
         }
       }
-      int ierr =
-          ex_put_coordinate_frames(exoid, nframes, ids.data(), coordinates.data(), tags.data());
+      int ierr = ex_put_coordinate_frames(exoid, nframes, Data(ids), Data(coordinates), Data(tags));
       if (ierr < 0) {
         Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
@@ -76,7 +86,7 @@ namespace {
       std::vector<char>   tags(nframes);
       std::vector<double> coord(nframes * 9);
       std::vector<INT>    ids(nframes);
-      ierr = ex_get_coordinate_frames(exoid, &nframes, ids.data(), coord.data(), tags.data());
+      ierr = ex_get_coordinate_frames(exoid, &nframes, Data(ids), Data(coord), Data(tags));
       if (ierr < 0) {
         Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
@@ -237,7 +247,7 @@ namespace Ioex {
     const char *s = substring;
     const char *t = type.c_str();
 
-    SMART_ASSERT(s != nullptr && t != nullptr);
+    SMART_ASSERT(s != nullptr);
     while (*s != '\0' && *t != '\0') {
       if (*s++ != tolower(*t++)) {
         return false;
@@ -409,14 +419,14 @@ namespace Ioex {
     // VECTOR_3D).  If found, it returns the name.
     //
 
-    static char displace[] = "displacement";
+    static const std::string displace = "displacement";
 
     size_t max_span = 0;
     for (const auto &name : fields) {
       std::string lc_name(name);
 
       Ioss::Utils::fixup_name(lc_name);
-      size_t span = match(lc_name.c_str(), displace);
+      size_t span = match(lc_name, displace);
       if (span > max_span) {
         const Ioss::VariableType *var_type   = block->get_field(name).transformed_storage();
         int                       comp_count = var_type->component_count();
@@ -450,21 +460,21 @@ namespace Ioex {
   {
     std::vector<char> buffer(length + 1);
     buffer[0] = '\0';
-    int error = ex_get_name(exoid, type, id, buffer.data());
+    int error = ex_get_name(exoid, type, id, Data(buffer));
     if (error < 0) {
       exodus_error(exoid, __LINE__, __func__, __FILE__);
     }
     if (buffer[0] != '\0') {
-      Ioss::Utils::fixup_name(buffer.data());
+      Ioss::Utils::fixup_name(Data(buffer));
       // Filter out names of the form "basename_id" if the name
       // id doesn't match the id in the name...
       size_t base_size = basename.size();
-      if (std::strncmp(basename.c_str(), &buffer[0], base_size) == 0) {
-        int64_t name_id = extract_id(buffer.data());
+      if (std::strncmp(basename.c_str(), Data(buffer), base_size) == 0) {
+        int64_t name_id = extract_id(Data(buffer));
 
         // See if name is truly of form "basename_name_id" (e.g. "surface_{id}")
         std::string tmp_name = Ioss::Utils::encode_entity_name(basename, name_id);
-        if (tmp_name == buffer.data()) {
+        if (tmp_name == Data(buffer)) {
           if (name_id > 0) {
             db_has_name = false;
             if (name_id != id) {
@@ -474,7 +484,7 @@ namespace Ioex {
                          "embedded id {}.\n"
                          "         This can cause issues later; the entity will be renamed to '{}' "
                          "(IOSS)\n\n",
-                         buffer.data(), id, name_id, new_name);
+                         Data(buffer), id, name_id, new_name);
               return new_name;
             }
             return tmp_name;
@@ -482,7 +492,7 @@ namespace Ioex {
         }
       }
       db_has_name = true;
-      return (std::string(buffer.data()));
+      return {Data(buffer)};
     }
     db_has_name = false;
     return Ioss::Utils::encode_entity_name(basename, id);
@@ -543,7 +553,7 @@ namespace Ioex {
         auto field = Ioss::Field(name, block->field_int_type(), IOSS_SCALAR(), Ioss::Field::MAP,
                                  my_element_count)
                          .set_index(i + 1);
-        block->field_add(field);
+        block->field_add(std::move(field));
         continue;
       }
 
@@ -569,7 +579,7 @@ namespace Ioex {
       auto        field =
           Ioss::Field(base, block->field_int_type(), storage, Ioss::Field::MAP, my_element_count)
               .set_index(i + 1);
-      block->field_add(field);
+      block->field_add(std::move(field));
 
       i = ii - 1;
     }
@@ -764,11 +774,11 @@ namespace Ioex {
         break;
       case Ioss::Property::BasicType::VEC_INTEGER:
         ex_put_integer_attribute(exoid, type, id, property_name.c_str(), prop.get_vec_int().size(),
-                                 prop.get_vec_int().data());
+                                 Data(prop.get_vec_int()));
         break;
       case Ioss::Property::BasicType::VEC_DOUBLE:
         ex_put_double_attribute(exoid, type, id, property_name.c_str(),
-                                prop.get_vec_double().size(), prop.get_vec_double().data());
+                                prop.get_vec_double().size(), Data(prop.get_vec_double()));
         break;
       default:; // Do nothing
       }

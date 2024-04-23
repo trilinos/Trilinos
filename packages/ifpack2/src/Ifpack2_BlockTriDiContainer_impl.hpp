@@ -300,6 +300,7 @@ namespace Ifpack2 {
 #else
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view;
 #endif
+      using impl_scalar_type_1d_view_host = Kokkos::View<impl_scalar_type*,Kokkos::HostSpace>;
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view;
       using impl_scalar_type_2d_view_tpetra = typename impl_type::impl_scalar_type_2d_view_tpetra;
 
@@ -322,6 +323,7 @@ namespace Ifpack2 {
       SendRecvPair<size_type_1d_view_host> offset_host;        // offsets to local id list and data buffer
       SendRecvPair<local_ordinal_type_1d_view> lids; // local id list
       SendRecvPair<impl_scalar_type_1d_view> buffer; // data buffer
+      SendRecvPair<impl_scalar_type_1d_view_host> buffer_host; // data buffer
 
       local_ordinal_type_1d_view dm2cm; // permutation
 
@@ -478,6 +480,11 @@ namespace Ifpack2 {
 
           buffer.send = impl_scalar_type_1d_view(do_not_initialize_tag("buffer send"), send_buffer_size);
           buffer.recv = impl_scalar_type_1d_view(do_not_initialize_tag("buffer recv"), recv_buffer_size);
+
+          if (!Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            buffer_host.send = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer send"), send_buffer_size);
+            buffer_host.recv = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer recv"), recv_buffer_size);
+          }
         }
       }
 
@@ -549,12 +556,22 @@ namespace Ifpack2 {
 
         // 0. post receive async
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
-          irecv(comm,
-                reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
-                (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.recv[i],
-                42,
-                &reqs.recv[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+          }
+          else {
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer_host.recv.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+          }
         }
 
         /// this is necessary to pass unit test. somewhere overlapped using the default execution space
@@ -569,19 +586,43 @@ namespace Ifpack2 {
                          mv, blocksize,
                          //execution_space());
                          exec_instances[i%8]);
+          if (!Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            //if (i<8)  exec_instances[i%8].fence();
+            const local_ordinal_type num_vectors = mv.extent(1);
+            const local_ordinal_type mv_blocksize = blocksize*num_vectors;
 
+            Kokkos::deep_copy(exec_instances[i%8],
+              Kokkos::subview(buffer_host.send, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.send(i)*mv_blocksize, 
+                  offset_host.send(i+1)*mv_blocksize)), 
+              Kokkos::subview(buffer.send, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.send(i)*mv_blocksize,
+                  offset_host.send(i+1)*mv_blocksize)));
+          }
         }
         /// somehow one unit test fails when we use exec_instance[i%8]
         //execution_space().fence();
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.send.extent(0));++i) {
           // 1.1. sync the stream and isend
           if (i<8)  exec_instances[i%8].fence();
-          isend(comm,
-                reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
-                (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.send[i],
-                42,
-                &reqs.send[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);
+          }
+          else {
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer_host.send.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);
+          }
         }
 
         // 2. poke communication
@@ -603,6 +644,21 @@ namespace Ifpack2 {
 
           // 0.0. wait any
           waitany(pids.recv.extent(0), reqs.recv.data(), &idx);
+
+          if (!Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            const local_ordinal_type num_vectors = remote_multivector.extent(1);
+            const local_ordinal_type mv_blocksize = blocksize*num_vectors;
+
+            Kokkos::deep_copy(
+              Kokkos::subview(buffer.recv, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.recv(idx)*mv_blocksize, 
+                  offset_host.recv(idx+1)*mv_blocksize)), 
+              Kokkos::subview(buffer_host.recv, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.recv(idx)*mv_blocksize, 
+                  offset_host.recv(idx+1)*mv_blocksize)));
+          }
 
           // 0.1. unpack data after data is moved into a device
           copy<ToMultiVector>(lids.recv, buffer.recv,
@@ -696,12 +752,22 @@ namespace Ifpack2 {
 
         // receive async
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
-          irecv(comm,
-                reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
-                (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.recv[i],
-                42,
-                &reqs.recv[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer.recv.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+          }
+          else {
+            irecv(comm,
+                  reinterpret_cast<char*>(buffer_host.recv.data() + offset_host.recv[i]*mv_blocksize),
+                  (offset_host.recv[i+1] - offset_host.recv[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.recv[i],
+                  42,
+                  &reqs.recv[i]);
+          }
         }
 
         // send async
@@ -709,12 +775,31 @@ namespace Ifpack2 {
           copy<ToBuffer>(lids.send, buffer.send, offset_host.send(i), offset_host.send(i+1),
                          mv, blocksize);
           Kokkos::fence();
-          isend(comm,
-                reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
-                (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
-                pids.send[i],
-                42,
-                &reqs.send[i]);
+          if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);
+          }
+          else {
+            Kokkos::deep_copy(
+              Kokkos::subview(buffer_host.send, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.send(i)*mv_blocksize,
+                  offset_host.send(i+1)*mv_blocksize)), 
+              Kokkos::subview(buffer.send, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.send(i)*mv_blocksize,
+                  offset_host.send(i+1)*mv_blocksize)));
+            isend(comm,
+                  reinterpret_cast<const char*>(buffer_host.send.data() + offset_host.send[i]*mv_blocksize),
+                  (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
+                  pids.send[i],
+                  42,
+                  &reqs.send[i]);            
+          }
         }
 
         // I find that issuing an Iprobe seems to nudge some MPIs into action,
@@ -735,6 +820,19 @@ namespace Ifpack2 {
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
           local_ordinal_type idx = i;
           waitany(pids.recv.extent(0), reqs.recv.data(), &idx);
+          if (!Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+            const local_ordinal_type num_vectors = remote_multivector.extent(1);
+            const local_ordinal_type mv_blocksize = blocksize*num_vectors;
+            Kokkos::deep_copy(
+              Kokkos::subview(buffer.recv, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.recv(idx)*mv_blocksize,
+                  offset_host.recv(idx+1)*mv_blocksize)), 
+              Kokkos::subview(buffer_host.recv, 
+                Kokkos::pair<local_ordinal_type, local_ordinal_type>(
+                  offset_host.recv(idx)*mv_blocksize,
+                  offset_host.recv(idx+1)*mv_blocksize)));
+          }
           copy<ToMultiVector>(lids.recv, buffer.recv, offset_host.recv(idx), offset_host.recv(idx+1),
                               remote_multivector, blocksize);
         }

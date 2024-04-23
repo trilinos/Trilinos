@@ -30,18 +30,10 @@ C   --   Uses ROTMAT, ROTCEN of /ROTOPT/
 
       PARAMETER (KLFT=1, KRGT=2, KBOT=3, KTOP=4, KNEA=5, KFAR=6)
 
-      COMMON /PICK/   INITP, PKDEF,
-     &   PKMESH(KTOP), PKRMAT(3,3), PKRCEN(3),
-     &   DMESH(KTOP), DVRAT, DXMID, DYMID, DXLAST, DYLAST
-      LOGICAL INITP, PKDEF
-
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
-      COMMON /MSHLIM/ UNMESH(KFAR), ALMESH(KFAR),
-     &   ZMMESH(KTOP), RDMESH(KTOP), TICMSH, SQMESH
-      LOGICAL SQMESH
-      COMMON /ROTOPT/ NEWROT, ROTMAT(3,3), ROTCEN(3), EYE(3)
-      LOGICAL NEWROT
+      include 'pick.blk'
+      include 'd3nums.blk'
+      include 'mshlim.blk'
+      include 'rotopt.blk'
 
       CHARACTER*(*) TYPE
 

@@ -75,6 +75,24 @@
 
 #endif /* 64 vs 32 bit build */
 
+#if defined(Build64)
+static int *i8i4(int64_t size, const int64_t *i8) 
+{
+  int *i4 = malloc(size * sizeof(int));
+  for (int64_t i = 0; i < size; i++) {
+    i4[i] = i8[i];
+  }
+  return i4;
+}
+
+static void i4i8(int64_t size, const int *i4, int64_t *i8) 
+{
+  for (int64_t i = 0; i < size; i++) {
+    i8[i] = i4[i];
+  }
+}
+#endif
+
 /* blank fill C string to make FORTRAN string */
 static void ex_fcdcpy(char *fstring, /* output string to be blank-filled */
                       int   fslen,   /* length of output string */
@@ -836,23 +854,61 @@ void F2C(exgelc, EXGELC)(int *idexo, entity_id *elem_blk_id, void_int *connect, 
  * write entity count-per-polyhedra information for nsided block
  * \sa ex_put_entity_count_per_polyhedra()
  */
+#if Build64
+void F2C(expecpp, EXPECPP)(int *idexo, int *obj_type, entity_id *elem_blk_id, int64_t *counts,
+                           int *ierr)
+{
+  ex_block block;
+  block.id = *elem_blk_id;
+  block.type = *obj_type;
+  if (ex_get_block_param(*idexo, &block) == EX_FATAL) {
+    *ierr = EX_FATAL;
+    return;
+  }
+  int *counts4 = i8i4(block.num_entry, counts);
+  *ierr =
+      ex_put_entity_count_per_polyhedra(*idexo, (ex_entity_type)*obj_type, *elem_blk_id, counts4);
+  free(counts4);
+}
+#else
 void F2C(expecpp, EXPECPP)(int *idexo, int *obj_type, entity_id *elem_blk_id, int *counts,
                            int *ierr)
 {
   *ierr =
       ex_put_entity_count_per_polyhedra(*idexo, (ex_entity_type)*obj_type, *elem_blk_id, counts);
 }
+#endif
 
 /*!
  * read entity count-per-polyhedra information for nsided block
  * \sa ex_get_entity_count_per_polyhedra()
  */
+#if Build64
+void F2C(exgecpp, EXGECPP)(int *idexo, int *obj_type, entity_id *elem_blk_id, int64_t *counts,
+                           int *ierr)
+{
+  ex_block block;
+  block.id = *elem_blk_id;
+  block.type = *obj_type;
+  if (ex_get_block_param(*idexo, &block) == EX_FATAL) {
+    *ierr = EX_FATAL;
+    return;
+  }
+  int64_t num_elem_this_blk = block.num_entry;
+  int *counts4 = malloc(num_elem_this_blk * sizeof(int));
+  *ierr =
+      ex_get_entity_count_per_polyhedra(*idexo, (ex_entity_type)*obj_type, *elem_blk_id, counts4);
+  i4i8(num_elem_this_blk, counts4, counts);
+  free(counts4);
+}
+#else
 void F2C(exgecpp, EXGECPP)(int *idexo, int *obj_type, entity_id *elem_blk_id, int *counts,
                            int *ierr)
 {
   *ierr =
       ex_get_entity_count_per_polyhedra(*idexo, (ex_entity_type)*obj_type, *elem_blk_id, counts);
 }
+#endif
 
 /*!
  * write element block attributes
@@ -1980,58 +2036,116 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
  * write element variable truth table
  * \sa ex_put_truth_table()
  */
-void F2C(expvtt, EXPVTT)(int *idexo, int *num_elem_blk, int *num_elem_var, int *elem_var_tab,
+#if Build64
+void F2C(expvtt, EXPVTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab,
                          int *ierr)
 {
-  *ierr = ex_put_truth_table(*idexo, EX_ELEM_BLOCK, *num_elem_blk, *num_elem_var, elem_var_tab);
+  int *var_tab4 = i8i4(*num_entity * *num_var, var_tab);
+  *ierr = ex_put_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
+  free(var_tab4);
 }
+#else
+void F2C(expvtt, EXPVTT)(int *idexo, int *num_entity, int *num_var, int *var_tab,
+                         int *ierr)
+{
+  *ierr = ex_put_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab);
+}
+#endif
 
 /*!
  * write nodeset variable truth table
  * \sa ex_put_truth_table()
  */
+#if Build64
+void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
+{
+  int *var_tab4 = i8i4(*num_entity * *num_var, var_tab);
+  *ierr = ex_put_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
+  free(var_tab4);
+}
+#else
 void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
   *ierr = ex_put_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab);
 }
+#endif
 
 /*!
  * write sideset variable truth table
  * \sa ex_put_truth_table()
  */
+#if Build64
+void F2C(expsstt, EXPSSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
+{
+  int *var_tab4 = i8i4(*num_entity * *num_var, var_tab);
+  *ierr = ex_put_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
+  free(var_tab4);
+}
+#else
 void F2C(expsstt, EXPSSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
   *ierr = ex_put_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab);
 }
+#endif
 
 /*!
  * read element variable truth table
  * \sa ex_get_truth_table()
  */
-void F2C(exgvtt, EXGVTT)(int *idexo, int *num_elem_blk, int *num_elem_var, int *elem_var_tab,
+#if Build64
+void F2C(exgvtt, EXGVTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab,
                          int *ierr)
 {
-  *ierr = ex_get_truth_table(*idexo, EX_ELEM_BLOCK, *num_elem_blk, *num_elem_var, elem_var_tab);
+  int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
+  *ierr = ex_get_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
+  i4i8(*num_entity * *num_var, var_tab4, var_tab);
+  free(var_tab4);
+#else
+void F2C(exgvtt, EXGVTT)(int *idexo, int *num_entity, int *num_var, int *var_tab,
+                         int *ierr)
+{
+  *ierr = ex_get_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab);
+#endif
 }
 
 /*!
  * read nodeset variable truth table
  * \sa ex_get_truth_table()
  */
-void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
+#if Build64
+void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
+{
+  int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
+  *ierr = ex_get_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
+  i4i8(*num_entity * *num_var, var_tab4, var_tab);
+  free(var_tab4);
+}
+#else
+ void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
   *ierr = ex_get_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab);
 }
-
+#endif
+ 
 /*!
  * read sideset variable truth table
  * \sa ex_get_truth_table()
  */
-void F2C(exgsstt, EXGSSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
+#if Build64
+void F2C(exgsstt, EXGSSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
+{
+  int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
+  *ierr = ex_get_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
+  i4i8(*num_entity * *num_var, var_tab4, var_tab);
+  free(var_tab4);
+}
+#else
+ void F2C(exgsstt, EXGSSTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
 {
   *ierr = ex_get_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab);
 }
-
+#endif
+ 
 /*!
  * write global variable values at time step
  * \sa ex_put_var()
@@ -2314,7 +2428,7 @@ void F2C(excn2s, EXCN2S)(int *idexo, void_int *num_elem_per_set, void_int *num_n
  * read side set node list
  * \sa ex_get_side_set_node_list()
  */
-void F2C(exgssn, EXGSSN)(int *idexo, entity_id *side_set_id, int *side_set_node_cnt_list,
+void F2C(exgssn, EXGSSN)(int *idexo, entity_id *side_set_id, void_int *side_set_node_cnt_list,
                          void_int *side_set_node_list, int *ierr)
 {
   *ierr =
@@ -2325,26 +2439,59 @@ void F2C(exgssn, EXGSSN)(int *idexo, entity_id *side_set_id, int *side_set_node_
  * read side set node count
  * \sa ex_get_side_set_node_count()
  */
+#if Build64
+void F2C(exgssc, EXGSSC)(int *idexo, entity_id *side_set_id, int64_t *side_set_node_cnt_list, int *ierr)
+{
+  int64_t num_sides_in_set = 0;
+  int64_t num_df_in_set = 0;
+  ex_get_set_param(*idexo, EX_SIDE_SET, *side_set_id, &num_sides_in_set, &num_df_in_set);
+  int *cnt_list = malloc(num_sides_in_set * sizeof(int));
+
+  *ierr = ex_get_side_set_node_count(*idexo, *side_set_id, cnt_list);
+
+  i4i8(num_sides_in_set, cnt_list, side_set_node_cnt_list);
+  free(cnt_list);
+}
+#else
 void F2C(exgssc, EXGSSC)(int *idexo, entity_id *side_set_id, int *side_set_node_cnt_list, int *ierr)
 {
   *ierr = ex_get_side_set_node_count(*idexo, *side_set_id, side_set_node_cnt_list);
 }
+#endif
 
 /*!
  * read concatenated side set node count
  * \sa ex_get_concat_side_set_node_count()
  */
+#if Build64
+void F2C(exgcssc, EXGCSSC)(int *idexo, int64_t *side_set_node_cnt_list, int *ierr)
+{
+  int count = ex_inquire_int(*idexo, EX_INQ_SS_ELEM_LEN);
+  int *cnt_list = malloc(count * sizeof(int));
+
+  *ierr = ex_get_concat_side_set_node_count(*idexo, cnt_list);
+
+  i4i8(count, cnt_list, side_set_node_cnt_list);
+  free(cnt_list);
+}
+#else
 void F2C(exgcssc, EXGCSSC)(int *idexo, int *side_set_node_cnt_list, int *ierr)
 {
   *ierr = ex_get_concat_side_set_node_count(*idexo, side_set_node_cnt_list);
 }
+#endif
 
 /*!
  *  ex_get_coordinate_frames -- read coordinate frames
  * \sa ex_get_coordinate_frames()
  */
+#if Build64
+void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord, int64_t *tags,
+                         int *ierr)
+#else
 void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord, int *tags,
                          int *ierr)
+#endif
 {
   /* Determine number of coordinate frames stored in file */
   int nframe = ex_inquire_int(*idexo, EX_INQ_COORD_FRAMES);
@@ -2390,8 +2537,13 @@ void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord,
  *  ex_put_coordinate_frames -- define/write coordinate frames
  * \sa ex_put_coordinate_frames()
  */
+#if Build64
+void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, int64_t *tags,
+                         int *ierr)
+#else
 void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, int *tags,
                          int *ierr)
+#endif
 {
   /* Create array of characters to store tags... */
   if (*nframe > 0) {
@@ -2424,9 +2576,9 @@ void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, 
 
 /*!
  *  Routine to return floating point word size
- * \sa ex__get_cpu_ws()
+ * \sa exi_get_cpu_ws()
  */
-int F2C(excpws, EXCPWS)(void) { return (ex__get_cpu_ws()); }
+int F2C(excpws, EXCPWS)(void) { return (exi_get_cpu_ws()); }
 
 /*!
  *  Routine to return large model setting
@@ -3879,3 +4031,4 @@ void F2C(exppcc, EXPPCC)(int *exoid, void_int *start_node_num, void_int *num_nod
     ex_err_fn(*exoid, __func__, errmsg, EX_MSG);
   }
 }
+

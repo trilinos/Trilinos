@@ -310,6 +310,8 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
             //       is not split into homogenous side_blocks, then the topology will not necessarily
             //       be the same and this could fail (a sideset of mixed edges and faces)
             int par_dimen = block->topology()->parametric_dimension();
+            // NOTE: Needed for shell side topology offset translation to IOSS
+            std::int64_t sideSetOffset = Ioss::Utils::get_side_offset(block);
 
             size_t side_count = elem_side.size() / 2;
             for(size_t is=0; is<side_count; ++is) {
@@ -321,7 +323,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                 // non-null.
                 if (bulk.is_valid(elem)) {
                     // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-                    int side_ordinal = elem_side[is*2+1] - 1;
+                    int side_ordinal = elem_side[is*2+1] + sideSetOffset - 1;
                     stk::mesh::EntityId side_id_for_classic_behavior = stk::mesh::impl::side_id_formula(elem_side[is*2], side_ordinal);
 
                     if(par_dimen == 0)
@@ -344,7 +346,12 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     }
 
                     if (par_dimen == 1) {
-                        create_processed_edge(bulk, elem, side_ordinal, add_parts, behavior, side_id_for_classic_behavior);
+                      stk::topology elemTopo = bulk.bucket(elem).topology();
+                      // conversion from face ordinal to edge ordinal for shells
+                      if (elemTopo.is_shell()) {
+                        side_ordinal -= elemTopo.num_faces();
+                      }
+                      create_processed_edge(bulk, elem, side_ordinal, add_parts, behavior, side_id_for_classic_behavior);
                     }
                     else if (par_dimen == 2) {
                         create_processed_face(bulk, elem, side_ordinal, add_parts, behavior,

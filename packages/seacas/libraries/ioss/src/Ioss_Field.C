@@ -1,13 +1,13 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Field.h>
-#include <Ioss_Transform.h>
-#include <Ioss_Utils.h>
-#include <Ioss_VariableType.h>
+#include "Ioss_Field.h"
+#include "Ioss_Transform.h"
+#include "Ioss_Utils.h"
+#include "Ioss_VariableType.h"
 #include <cstddef>
 #include <cstdint>
 #include <fmt/ostream.h>
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include <Ioss_CodeTypes.h>
+#include "Ioss_CodeTypes.h"
 
 namespace {
   size_t internal_get_size(Ioss::Field::BasicType type, size_t count,
@@ -270,70 +270,71 @@ bool Ioss::Field::transform(void *data)
 
 bool Ioss::Field::equal_(const Ioss::Field &rhs, bool quiet) const
 {
+  bool is_same = true;
   if (!Ioss::Utils::str_equal(this->name_, rhs.name_)) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD name mismatch ({} v. {})", this->name_, rhs.name_);
+      fmt::print(Ioss::OUTPUT(), "\tFIELD name mismatch ({} v. {})\n", this->name_, rhs.name_);
     }
-    return false;
+    is_same = false;
   }
 
   if (this->type_ != rhs.type_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD type mismatch ({} v. {})", this->type_string(),
+      fmt::print(Ioss::OUTPUT(), "\tFIELD type mismatch ({} v. {})\n", this->type_string(),
                  rhs.type_string());
     }
-    return false;
+    is_same = false;
   }
 
   if (this->role_ != rhs.role_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD role mismatch ({} v. {})", this->role_string(),
+      fmt::print(Ioss::OUTPUT(), "\tFIELD role mismatch ({} v. {})\n", this->role_string(),
                  rhs.role_string());
     }
-    return false;
+    is_same = false;
   }
 
   if (this->rawCount_ != rhs.rawCount_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD rawCount mismatch ({} v. {})", this->rawCount_,
+      fmt::print(Ioss::OUTPUT(), "\tFIELD rawCount mismatch ({} v. {})\n", this->rawCount_,
                  rhs.rawCount_);
     }
-    return false;
+    is_same = false;
   }
 
   if (this->transCount_ != rhs.transCount_) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD transCount mismatch ({} v. {})", this->transCount_,
+      fmt::print(Ioss::OUTPUT(), "\tFIELD transCount mismatch ({} v. {})\n", this->transCount_,
                  rhs.transCount_);
     }
-    return false;
+    is_same = false;
   }
 
   if (this->get_size() != rhs.get_size()) {
     if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD size mismatch ({} v. {})", this->get_size(),
+      fmt::print(Ioss::OUTPUT(), "\tFIELD size mismatch ({} v. {})\n", this->get_size(),
                  rhs.get_size());
     }
-    return false;
+    is_same = false;
   }
 
-  if (this->get_suffices_uppercase() != rhs.get_suffices_uppercase()) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD suffices_uppercase mismatch ({} v. {})",
+  if (!quiet) {
+    if (this->get_suffices_uppercase() != rhs.get_suffices_uppercase()) {
+      fmt::print(Ioss::OUTPUT(), "\tFIELD suffices_uppercase mismatch ({} v. {})\n",
                  this->get_suffices_uppercase(), rhs.get_suffices_uppercase());
+      is_same = false;
     }
-    return false;
   }
 
-  if (this->zero_copy_enabled() != rhs.zero_copy_enabled()) {
-    if (!quiet) {
-      fmt::print(Ioss::OUTPUT(), "\n\tFIELD zero_copy_enabled mismatch ({} v. {})",
+  if (!quiet) {
+    if (this->zero_copy_enabled() != rhs.zero_copy_enabled()) {
+      fmt::print(Ioss::OUTPUT(), "\tFIELD zero_copy_enabled mismatch ({} v. {})\n",
                  this->zero_copy_enabled(), rhs.zero_copy_enabled());
+      is_same = false;
     }
-    return false;
   }
 
-  return true;
+  return is_same;
 }
 
 bool Ioss::Field::operator==(const Ioss::Field &rhs) const { return equal_(rhs, true); }
@@ -347,14 +348,14 @@ std::string Ioss::Field::type_string() const { return type_string(get_type()); }
 std::string Ioss::Field::type_string(Ioss::Field::BasicType type)
 {
   switch (type) {
-  case Ioss::Field::REAL: return std::string("real");
-  case Ioss::Field::INTEGER: return std::string("integer");
-  case Ioss::Field::INT64: return std::string("64-bit integer");
-  case Ioss::Field::COMPLEX: return std::string("complex");
-  case Ioss::Field::STRING: return std::string("string");
-  case Ioss::Field::CHARACTER: return std::string("char");
-  case Ioss::Field::INVALID: return std::string("invalid");
-  default: return std::string("internal error");
+  case Ioss::Field::REAL: return {"real"};
+  case Ioss::Field::INTEGER: return {"integer"};
+  case Ioss::Field::INT64: return {"64-bit integer"};
+  case Ioss::Field::COMPLEX: return {"complex"};
+  case Ioss::Field::STRING: return {"string"};
+  case Ioss::Field::CHARACTER: return {"char"};
+  case Ioss::Field::INVALID: return {"invalid"};
+  default: return {"internal error"};
   }
 }
 
@@ -363,14 +364,14 @@ std::string Ioss::Field::role_string() const { return role_string(get_role()); }
 std::string Ioss::Field::role_string(Ioss::Field::RoleType role)
 {
   switch (role) {
-  case Ioss::Field::INTERNAL: return std::string("Internal");
-  case Ioss::Field::MESH: return std::string("Mesh");
-  case Ioss::Field::ATTRIBUTE: return std::string("Attribute");
-  case Ioss::Field::COMMUNICATION: return std::string("Communication");
-  case Ioss::Field::MESH_REDUCTION: return std::string("Mesh Reduction");
-  case Ioss::Field::REDUCTION: return std::string("Reduction");
-  case Ioss::Field::TRANSIENT: return std::string("Transient");
-  default: return std::string("internal error");
+  case Ioss::Field::INTERNAL: return {"Internal"};
+  case Ioss::Field::MESH: return {"Mesh"};
+  case Ioss::Field::ATTRIBUTE: return {"Attribute"};
+  case Ioss::Field::COMMUNICATION: return {"Communication"};
+  case Ioss::Field::MESH_REDUCTION: return {"Mesh Reduction"};
+  case Ioss::Field::REDUCTION: return {"Reduction"};
+  case Ioss::Field::TRANSIENT: return {"Transient"};
+  default: return {"internal error"};
   }
 }
 

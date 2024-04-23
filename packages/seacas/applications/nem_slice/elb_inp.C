@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,6 +19,7 @@
 #include "elb_inp.h"
 #include "elb_util.h" // for strip_string, token_compare, etc
 #include "fmt/ostream.h"
+#include "vector_data.h"
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include "XGetopt.h"
@@ -60,24 +61,24 @@ template int cmd_line_arg_parse(int argc, char *argv[], std::string &exoII_inp_f
                                 std::string &ascii_inp_file, std::string &nemI_out_file,
                                 Machine_Description *machine, LB_Description<int> *lb,
                                 Problem_Description *prob, Solver_Description *solver,
-                                Weight_Description<int> *weight);
+                                Weight_Description *weight);
 
 template int cmd_line_arg_parse(int argc, char *argv[], std::string &exoII_inp_file,
                                 std::string &ascii_inp_file, std::string &nemI_out_file,
                                 Machine_Description *machine, LB_Description<int64_t> *lb,
                                 Problem_Description *prob, Solver_Description *solver,
-                                Weight_Description<int64_t> *weight);
+                                Weight_Description *weight);
 
 template <typename INT>
-int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passed by main() */
-                       std::string             &exoII_inp_file, /* The input ExodusII file name */
-                       std::string             &ascii_inp_file, /* The ASCII input file name */
-                       std::string             &nemI_out_file,  /* Output NemesisI file name */
-                       Machine_Description     *machine, /* Structure for machine description */
-                       LB_Description<INT>     *lb,     /* Structure for load balance description */
-                       Problem_Description     *prob,   /* Structure for various problem params */
-                       Solver_Description      *solver, /* Structure for eigen solver params */
-                       Weight_Description<INT> *weight  /* Structure for weighting graph */
+int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by main() */
+                       std::string         &exoII_inp_file, /* The input ExodusII file name */
+                       std::string         &ascii_inp_file, /* The ASCII input file name */
+                       std::string         &nemI_out_file,  /* Output NemesisI file name */
+                       Machine_Description *machine,        /* Structure for machine description */
+                       LB_Description<INT> *lb,     /* Structure for load balance description */
+                       Problem_Description *prob,   /* Structure for various problem params */
+                       Solver_Description  *solver, /* Structure for eigen solver params */
+                       Weight_Description  *weight  /* Structure for weighting graph */
 )
 {
   int         opt_let;
@@ -305,7 +306,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         } /* End "switch(my_getsubopt(&sub_opt, weight_subopts, &value))" */
 
-      }      /* End "while(*sub_opt != '\0')" */
+      } /* End "while(*sub_opt != '\0')" */
       break; /* End "case 'w'" */
 
     case 'a':
@@ -437,7 +438,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         } /* End "switch(my_getsubopt(&sub_opt, mach_subopts, &value))" */
 
-      }      /* End "while(*sub_opt != '\0')" */
+      } /* End "while(*sub_opt != '\0')" */
       break; /* End "case 'm'" */
 
     case 'l':
@@ -526,7 +527,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         } /* End "switch(my_getsubopt(&sup_opt, mach_subopts, &value))" */
 
-      }      /* End "while(*sup_opt != '\0')" */
+      } /* End "while(*sup_opt != '\0')" */
       break; /* End "case 'l'" */
 
     case 'S': prob->no_sph = 1; break;
@@ -580,7 +581,7 @@ value\n");
 
         } /* End "switch(my_getsubopt(&sub_opt, solve_subopts, &value))" */
 
-      }      /* End "while(sub_opt != '\0')" */
+      } /* End "while(sub_opt != '\0')" */
       break; /* End "case 's'" */
 
     case 'g':
@@ -633,17 +634,17 @@ value\n");
 template int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                            std::string &nemI_out_file, Machine_Description *machine,
                            LB_Description<int> *lb, Problem_Description *problem,
-                           Solver_Description *solver, Weight_Description<int> *weight);
+                           Solver_Description *solver, Weight_Description *weight);
 template int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                            std::string &nemI_out_file, Machine_Description *machine,
                            LB_Description<int64_t> *lb, Problem_Description *problem,
-                           Solver_Description *solver, Weight_Description<int64_t> *weight);
+                           Solver_Description *solver, Weight_Description *weight);
 
 template <typename INT>
 int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                   std::string &nemI_out_file, Machine_Description *machine, LB_Description<INT> *lb,
                   Problem_Description *problem, Solver_Description *solver,
-                  Weight_Description<INT> *weight)
+                  Weight_Description *weight)
 {
   FILE       *inp_fd;
   std::string ctemp;
@@ -1301,18 +1302,18 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
 template int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                              Machine_Description *machine, LB_Description<int> *lb,
                              Problem_Description *prob, Solver_Description *solver,
-                             Weight_Description<int> *weight);
+                             Weight_Description *weight);
 
 template int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                              Machine_Description *machine, LB_Description<int64_t> *lb,
                              Problem_Description *prob, Solver_Description *solver,
-                             Weight_Description<int64_t> *weight);
+                             Weight_Description *weight);
 
 template <typename INT>
 int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                     Machine_Description *machine, LB_Description<INT> *lb,
                     Problem_Description *prob, Solver_Description *solver,
-                    Weight_Description<INT> *weight)
+                    Weight_Description *weight)
 {
   /* Check that an input ExodusII file name was specified */
   if (exoII_inp_file.empty()) {
@@ -1696,7 +1697,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   if ((weight->type & EL_BLK) && (weight->ow_read)) {
     if (weight->elemblk.size() > 1) {
       /* start by sorting the two arrays by the element block number */
-      sort2(weight->elemblk.size(), weight->elemblk.data(), weight->elemblk_wgt.data());
+      sort2(weight->elemblk.size(), Data(weight->elemblk), Data(weight->elemblk_wgt));
 
       /* now loop through, and make sure that we don't have multiple values */
       for (int cnt = 1; cnt < (int)weight->elemblk.size(); cnt++) {
@@ -1750,37 +1751,42 @@ namespace {
      token or at the terminating NUL character.  */
   int my_getsubopt(char **optionp, char *const *tokens, char **valuep)
   {
-    if (**optionp == '\0')
+    if (**optionp == '\0') {
       return -1;
+    }
 
     /* Find end of next token.  */
     char *endp = (char *)my_strchrnul(*optionp, ',');
 
     /* Find start of value.  */
     char *vstart = (char *)memchr(*optionp, '=', endp - *optionp);
-    if (vstart == nullptr)
+    if (vstart == nullptr) {
       vstart = endp;
+    }
 
     /* Try to match the characters between *OPTIONP and VSTART against
        one of the TOKENS.  */
-    for (int cnt = 0; tokens[cnt] != nullptr; ++cnt)
+    for (int cnt = 0; tokens[cnt] != nullptr; ++cnt) {
       if (strncmp(*optionp, tokens[cnt], vstart - *optionp) == 0 &&
           tokens[cnt][vstart - *optionp] == '\0') {
         /* We found the current option in TOKENS.  */
         *valuep = vstart != endp ? vstart + 1 : nullptr;
 
-        if (*endp != '\0')
+        if (*endp != '\0') {
           *endp++ = '\0';
+        }
         *optionp = endp;
 
         return cnt;
       }
+    }
 
     /* The current suboption does not match any option.  */
     *valuep = *optionp;
 
-    if (*endp != '\0')
+    if (*endp != '\0') {
       *endp++ = '\0';
+    }
     *optionp = endp;
 
     return -1;

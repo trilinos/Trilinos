@@ -247,6 +247,8 @@ class Hierarchy : public BaseClass {
 
   void SetupRe();
 
+  void CheckForEmptySmoothersAndCoarseSolve();
+
   //! Clear impermanent data from previous setup
   void Clear(int startLevel = 0);
   void ExpertClear();

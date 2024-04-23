@@ -463,8 +463,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
   SET_VALID_ENTRY("aggregation: use ml scaling of drop tol");
   {
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-    validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
+    validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("classical", "distance laplacian"))));
   }
 #undef SET_VALID_ENTRY
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");

@@ -142,7 +142,9 @@ typename inputPointValueType,  class ...inputPointProperties,
 typename vinvValueType,        class ...vinvProperties>
 void
 Basis_HCURL_TET_In_FEM::
-getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+getValues(
+    const typename DT::execution_space& space,
+          Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
     const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
     const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        coeffs,
     const EOperator operatorType) {
@@ -155,7 +157,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
   const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
-  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+  Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
 
@@ -167,14 +169,14 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 
   switch (operatorType) {
   case OPERATOR_VALUE: {
-    workViewType  work(Kokkos::view_alloc("Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
+    workViewType  work(Kokkos::view_alloc(space, "Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_VALUE,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
     break;
   }
   case OPERATOR_CURL: {
-    workViewType  work(Kokkos::view_alloc("Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
+    workViewType  work(Kokkos::view_alloc(space, "Basis_HCURL_TET_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_CURL,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
@@ -253,7 +255,11 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 
   // tabulate the scalar orthonormal basis at cubature points
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hcurl::Tet::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
-  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtCubPoints, cubPoints, order, OPERATOR_VALUE);
+  Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                     phisAtCubPoints,
+                                                                                                                     cubPoints,
+                                                                                                                     order,
+                                                                                                                     OPERATOR_VALUE);
 
   // Integrate (x psi_j, y psi_j, z psi_j) \times (phi_i, phi_{i+cardPn}, phi_{i+2 cardPn})    cross product. psi are homogeneous polynomials of order (n-1)
   for (ordinal_type i=0;i<cardPn;i++) {
@@ -378,7 +384,11 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
         i ,
         this->basisCellTopology_);
 
-    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace,Parameters::MaxNumPtsPerBasisEval>(phisAtEdgePoints , edgePts, order, OPERATOR_VALUE);
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       phisAtEdgePoints,
+                                                                                                                       edgePts,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE);
 
     // loop over points (rows of V2)
     for (ordinal_type j=0;j<numPtsPerEdge;j++) {
@@ -420,7 +430,11 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
           i ,
           this->basisCellTopology_ );
 
-      Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace,Parameters::MaxNumPtsPerBasisEval>(phisAtFacePoints , facePts, order, OPERATOR_VALUE);
+      Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                         phisAtFacePoints,
+                                                                                                                         facePts,
+                                                                                                                         order,
+                                                                                                                         OPERATOR_VALUE);
 
       // loop over points (rows of V2)
       for (ordinal_type j=0;j<numPtsPerFace;j++) {
@@ -470,7 +484,11 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
 
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     phisAtCellPoints("Hcurl::Tet::In::phisAtCellPoints", cardPn , numPtsPerCell );
-    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>( phisAtCellPoints , cellPoints , order, OPERATOR_VALUE );
+    Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+                                                                                                                       phisAtCellPoints,
+                                                                                                                       cellPoints,
+                                                                                                                       order,
+                                                                                                                       OPERATOR_VALUE);
 
     // copy values into right positions of V2
     for (ordinal_type j=0;j<numPtsPerCell;j++) {

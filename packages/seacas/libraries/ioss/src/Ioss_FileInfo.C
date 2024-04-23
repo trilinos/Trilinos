@@ -1,35 +1,40 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_FileInfo.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_Utils.h>
-#include <cstddef>
+#include "Ioss_CodeTypes.h"
+#include "Ioss_FileInfo.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Utils.h"
 #include <cstring>
+#include <ostream>
+#include <stdlib.h>
 #include <string>
 #include <tokenize.h>
+#include <vector>
 
 #if defined(__IOSS_WINDOWS__)
 #include <direct.h>
 #include <io.h>
+
 #define access _access
 #define R_OK   4 /* Test for read permission.  */
 #define W_OK   2 /* Test for write permission.  */
 #define X_OK   1 /* execute permission - unsupported in windows*/
 #define F_OK   0 /* Test for existence.  */
 #ifndef S_ISREG
-#define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
-#define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#define S_ISREG(m) (((m) & _S_IFMT) == _S_IFREG)
+#define S_ISDIR(m) (((m) & _S_IFMT) == _S_IFDIR)
 #endif
 #else
 #include <unistd.h>
-#if defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/mount.h>
-#include <sys/param.h>
+#elif defined(__OpenBSD__)
+#include <sys/mount.h>
+#include <sys/types.h>
 #else
 #include <sys/statfs.h>
 #endif
@@ -79,8 +84,6 @@ namespace Ioss {
     readable_ = internal_access(filename_, R_OK);
     exists_   = readable_ || internal_access(filename_, F_OK);
   }
-
-  FileInfo::~FileInfo() = default;
 
   //: Returns TRUE if the file exists (is readable)
   bool FileInfo::exists() const { return exists_; }
@@ -170,18 +173,13 @@ namespace Ioss {
   bool FileInfo::is_nfs() const
   {
 #if !defined(__IOSS_WINDOWS__)
-#define NFS_FS 0x6969 /* statfs defines that 0x6969 is NFS filesystem */
     auto tmp_path = pathname();
     if (tmp_path.empty()) {
       char *current_cwd = getcwd(nullptr, 0);
       tmp_path          = std::string(current_cwd);
       free(current_cwd);
     }
-#if defined(__IOSS_WINDOWS__)
-    char *path = _fullpath(nullptr, tmp_path.c_str(), _MAX_PATH);
-#else
     char *path = ::realpath(tmp_path.c_str(), nullptr);
-#endif
     if (path != nullptr) {
 
       struct statfs stat_fs;
@@ -193,7 +191,13 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
       free(path);
-      return (stat_fs.f_type == NFS_FS);
+
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+      return (0 == ::strcmp("nfs", stat_fs.f_fstypename));
+#else
+      /* linux statfs defines that 0x6969 is NFS filesystem */
+      return (stat_fs.f_type == 0x6969);
+#endif
     }
 #endif
     return false;
@@ -283,7 +287,7 @@ namespace Ioss {
       return filename_.substr(ind + 1, filename_.size());
     }
 
-    return std::string();
+    return {};
   }
 
   std::string FileInfo::pathname() const
@@ -293,7 +297,7 @@ namespace Ioss {
       return filename_.substr(0, ind);
     }
 
-    return std::string();
+    return {};
   }
 
   std::string FileInfo::tailname() const

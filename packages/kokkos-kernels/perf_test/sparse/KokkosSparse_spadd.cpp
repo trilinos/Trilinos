@@ -303,8 +303,8 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   double numericTime  = 0;
 
   // Do an untimed warm up symbolic, and preallocate space for C entries/values
-  spadd_symbolic(&kh, A.graph.row_map, A.graph.entries, B.graph.row_map,
-                 B.graph.entries, row_mapC);
+  spadd_symbolic(exec_space{}, &kh, A.numRows(), A.numCols(), A.graph.row_map,
+                 A.graph.entries, B.graph.row_map, B.graph.entries, row_mapC);
 
   bool use_kk = !params.use_cusparse && !params.use_mkl;
 
@@ -366,7 +366,8 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   for (int sumRep = 0; sumRep < params.repeat; sumRep++) {
     timer.reset();
     if (use_kk) {
-      spadd_symbolic(&kh, A.graph.row_map, A.graph.entries, B.graph.row_map,
+      spadd_symbolic(exec_space{}, &kh, A.numRows(), A.numCols(),
+                     A.graph.row_map, A.graph.entries, B.graph.row_map,
                      B.graph.entries, row_mapC);
       c_nnz = addHandle->get_c_nnz();
     } else if (params.use_cusparse) {
@@ -434,7 +435,8 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
         }
 #endif
       } else {
-        spadd_numeric(&kh, A.graph.row_map, A.graph.entries, A.values,
+        spadd_numeric(exec_space{}, &kh, A.numRows(), A.numCols(),
+                      A.graph.row_map, A.graph.entries, A.values,
                       1.0,  // A, alpha
                       B.graph.row_map, B.graph.entries, B.values,
                       1.0,                           // B, beta

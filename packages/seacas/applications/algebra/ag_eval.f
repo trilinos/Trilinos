@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -18,7 +18,7 @@ C   --and assigns the output variables.
 C   --
 C   --Parameters:
 C   --   STEP1  - IN - true iff evaluating the first selected time step
-C   --   WSTEP1 - IN - true iff evalutaing the first selected whole time step
+C   --   WSTEP1 - IN - true iff evaluating the first selected whole time step
 C   --   MAXNE  - IN - the VARVAL and STACK dimension
 C   --   MAXSTK - IN - the maximum STACK size
 C   --   IXNODE - IN - the indices of the zoomed nodes (iff ISZOOM)

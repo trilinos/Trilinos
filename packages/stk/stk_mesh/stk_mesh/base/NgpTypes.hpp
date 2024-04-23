@@ -45,12 +45,14 @@ namespace mesh {
 using DeviceCommMapIndices        = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
 using EntityKeyViewType           = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
 using EntityViewType              = Kokkos::View<Entity*, stk::ngp::MemSpace>;
+using HostEntityViewType          = Kokkos::View<const Entity*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 using BucketConnectivityType      = Kokkos::View<Entity*, stk::ngp::MemSpace>;
 using UnsignedViewType            = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
 using Unsigned2dViewType          = Kokkos::View<unsigned**, stk::ngp::MemSpace>;
 using BoolViewType                = Kokkos::View<bool*, stk::ngp::MemSpace>;
 using OrdinalViewType             = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;
 using PartOrdinalViewType         = Kokkos::View<PartOrdinal*, stk::ngp::MemSpace>;
+using HostPartOrdinalViewType     = Kokkos::View<const PartOrdinal*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 using PermutationViewType         = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
 using FastSharedCommMapViewType   = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
 using HostMeshIndexType           = Kokkos::View<FastMeshIndex*>::HostMirror;
@@ -66,7 +68,7 @@ using FieldDataPointerDeviceViewType = Kokkos::View<uintptr_t*, Kokkos::LayoutRi
 template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_USE_DEVICE_MESH
 #define ORDER_INDICES(i,j) j,i
 #else
 #define ORDER_INDICES(i,j) i,j

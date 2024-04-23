@@ -6,29 +6,26 @@
 
 #include "Iotm_DatabaseIO.h"
 
-#include <Ioss_CodeTypes.h> // for Int64Vector, IntVector
-#include <Ioss_SideBlock.h> // for SideBlock
-#include <Ioss_SmartAssert.h>
-#include <Ioss_Utils.h> // for Utils, IOSS_ERROR
+#include "Ioss_CodeTypes.h" // for Int64Vector, IntVector
+#include "Ioss_SideBlock.h" // for SideBlock
+#include "Ioss_SmartAssert.h"
+#include <cassert> // for assert
+#include <cmath>   // for sqrt
+#include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <iostream> // for ostringstream
+#include <stdlib.h>
+#include <string> // for string, operator==, etc
+#include <vector>
 
-#include <algorithm> // for copy
-#include <cassert>   // for assert
-#include <cmath>     // for sqrt
-#include <iostream>  // for ostringstream
-#include <string>    // for string, operator==, etc
-#include <utility>   // for pair
-
-#include "Ioss_Assembly.h"     // for Assembly
-#include "Ioss_CommSet.h"      // for CommSet
-#include "Ioss_DBUsage.h"      // for DatabaseUsage
-#include "Ioss_DatabaseIO.h"   // for DatabaseIO
-#include "Ioss_ElementBlock.h" // for ElementBlock
-#include "Ioss_ElementTopology.h"
-#include "Ioss_EntityType.h"     // for EntityType, etc
-#include "Ioss_Field.h"          // for Field, etc
-#include "Ioss_GroupingEntity.h" // for GroupingEntity
-#include "Ioss_Hex8.h"
+#include "Ioss_Assembly.h"        // for Assembly
+#include "Ioss_CommSet.h"         // for CommSet
+#include "Ioss_DBUsage.h"         // for DatabaseUsage
+#include "Ioss_DatabaseIO.h"      // for DatabaseIO
+#include "Ioss_ElementBlock.h"    // for ElementBlock
+#include "Ioss_EntityType.h"      // for EntityType, etc
+#include "Ioss_Field.h"           // for Field, etc
+#include "Ioss_GroupingEntity.h"  // for GroupingEntity
 #include "Ioss_IOFactory.h"       // for IOFactory
 #include "Ioss_Map.h"             // for Map, MapContainer
 #include "Ioss_NodeBlock.h"       // for NodeBlock
@@ -37,11 +34,11 @@
 #include "Ioss_Property.h"        // for Property
 #include "Ioss_PropertyManager.h" // for PropertyManager
 #include "Ioss_Region.h"          // for Region
-#include "Ioss_SerializeIO.h"
-#include "Ioss_SideSet.h" // for SideSet
+#include "Ioss_SideSet.h"         // for SideSet
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h" // for VariableType
 #include "Iotm_TextMesh.h"     // for TextMesh
+#include "Iotm_TextMeshSidesetSplitter.h"
 
 namespace {
   template <typename INT>
@@ -134,7 +131,7 @@ namespace Iotm {
 
   DatabaseIO::~DatabaseIO() { delete m_textMesh; }
 
-  void DatabaseIO::read_meta_data__()
+  void DatabaseIO::read_meta_data_nl()
   {
     if (m_textMesh == nullptr) {
       if (get_filename() == "external") {
@@ -180,7 +177,7 @@ namespace Iotm {
     sidesetCount      = m_textMesh->sideset_count();
     assemblyCount     = m_textMesh->assembly_count();
 
-    get_step_times__();
+    get_step_times_nl();
 
     add_transient_fields(this_region);
     get_nodeblocks();
@@ -194,11 +191,11 @@ namespace Iotm {
         Ioss::Property(std::string("title"), std::string("TextMesh: ") += get_filename()));
   }
 
-  bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::begin_nl(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
+  bool DatabaseIO::end_nl(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::begin_state__(int /* state */, double time)
+  bool DatabaseIO::begin_state_nl(int /* state */, double time)
   {
     currentTime = time;
     return true;
@@ -258,8 +255,8 @@ namespace Iotm {
 
     const Ioss::Field &id_fld = nb->get_fieldref("ids");
     std::vector<char>  ids(id_fld.get_size());
-    get_field_internal(nb, id_fld, ids.data(), id_fld.get_size());
-    fill_transient_data(nb, field, data, ids.data(), num_to_get, currentTime);
+    get_field_internal(nb, id_fld, Data(ids), id_fld.get_size());
+    fill_transient_data(nb, field, data, Data(ids), num_to_get, currentTime);
 
     return num_to_get;
   }
@@ -335,8 +332,8 @@ namespace Iotm {
       // Fill the field with arbitrary data...
       const Ioss::Field &id_fld = eb->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
-      get_field_internal(eb, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(eb, field, data, ids.data(), num_to_get, currentTime);
+      get_field_internal(eb, id_fld, Data(ids), id_fld.get_size());
+      fill_transient_data(eb, field, data, Data(ids), num_to_get, currentTime);
     }
     else if (role == Ioss::Field::REDUCTION) {
       num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
@@ -392,7 +389,7 @@ namespace Iotm {
         std::vector<int64_t> elem_side;
         m_textMesh->sideblock_elem_sides(id, ef_blk->name(), elem_side);
         if (field.get_name() == "element_side_raw") {
-          map_global_to_local(get_element_map(), elem_side.size(), 2, &elem_side[0]);
+          map_global_to_local(get_element_map(), elem_side.size(), 2, Data(elem_side));
         }
 
         if (field.is_type(Ioss::Field::INTEGER)) {
@@ -415,8 +412,8 @@ namespace Iotm {
         if (m_useVariableDf) {
           const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
           std::vector<char>  ids(id_fld.get_size());
-          get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
-          fill_transient_data(ef_blk, field, data, ids.data(), num_to_get);
+          get_field_internal(ef_blk, id_fld, Data(ids), id_fld.get_size());
+          fill_transient_data(ef_blk, field, data, Data(ids), num_to_get);
         }
         else {
           fill_constant_data(field, data, 1.0);
@@ -430,8 +427,8 @@ namespace Iotm {
     else if (role == Ioss::Field::TRANSIENT) {
       const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
-      get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(ef_blk, field, data, ids.data(), num_to_get, currentTime);
+      get_field_internal(ef_blk, id_fld, Data(ids), id_fld.get_size());
+      fill_transient_data(ef_blk, field, data, Data(ids), num_to_get, currentTime);
     }
     return num_to_get;
   }
@@ -449,7 +446,7 @@ namespace Iotm {
         std::vector<int64_t> nodes;
         m_textMesh->nodeset_nodes(id, nodes);
         if (field.get_name() == "ids_raw") {
-          map_global_to_local(get_node_map(), nodes.size(), 1, &nodes[0]);
+          map_global_to_local(get_node_map(), nodes.size(), 1, Data(nodes));
         }
 
         if (field.is_type(Ioss::Field::INTEGER)) {
@@ -472,8 +469,8 @@ namespace Iotm {
         if (m_useVariableDf) {
           const Ioss::Field &id_fld = ns->get_fieldref("ids");
           std::vector<char>  ids(id_fld.get_size());
-          get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
-          fill_transient_data(ns, field, data, ids.data(), num_to_get);
+          get_field_internal(ns, id_fld, Data(ids), id_fld.get_size());
+          fill_transient_data(ns, field, data, Data(ids), num_to_get);
         }
         else {
           fill_constant_data(field, data, 1.0);
@@ -486,8 +483,8 @@ namespace Iotm {
     else if (role == Ioss::Field::TRANSIENT) {
       const Ioss::Field &id_fld = ns->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
-      get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(ns, field, data, ids.data(), num_to_get, currentTime);
+      get_field_internal(ns, id_fld, Data(ids), id_fld.get_size());
+      fill_transient_data(ns, field, data, Data(ids), num_to_get, currentTime);
     }
     return num_to_get;
   }
@@ -558,51 +555,47 @@ namespace Iotm {
   int64_t DatabaseIO::get_field_internal(const Ioss::Assembly *assembly, const Ioss::Field &field,
                                          void * /* data */, size_t data_size) const
   {
-    {
-      Ioss::SerializeIO serializeIO__(this);
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
 
-      size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
-
-        Ioss::Field::RoleType role = field.get_role();
-        if (role == Ioss::Field::MESH) {
-          if (field.get_name() == "ids") {
-            // Map the local ids in this node block
-            // (1...node_count) to global node ids.
-            //          get_map(EX_ASSEMBLY).map_implicit_data(data, field, num_to_get, 0);
-          }
-
-          else if (field.get_name() == "connectivity") {
-            // Do nothing, just handles an idiosyncrasy of the GroupingEntity
-          }
-          else if (field.get_name() == "connectivity_raw") {
-            // Do nothing, just handles an idiosyncrasy of the GroupingEntity
-          }
-          else {
-            num_to_get = Ioss::Utils::field_warning(assembly, field, "input");
-          }
+      Ioss::Field::RoleType role = field.get_role();
+      if (role == Ioss::Field::MESH) {
+        if (field.get_name() == "ids") {
+          // Map the local ids in this node block
+          // (1...node_count) to global node ids.
+          //          get_map(EX_ASSEMBLY).map_implicit_data(data, field, num_to_get, 0);
         }
-        else if (role == Ioss::Field::TRANSIENT) {
-          // Check if the specified field exists on this assembly.
-          // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
-          // exist on the database as scalars with the appropriate
-          // extensions.
 
-          // Read in each component of the variable and transfer into
-          // 'data'.  Need temporary storage area of size 'number of
-          // items in this assembly.
-          // num_to_get =
-          //    read_transient_field(EX_ASSEMBLY, m_variables[EX_ASSEMBLY], field, assembly, data);
+        else if (field.get_name() == "connectivity") {
+          // Do nothing, just handles an idiosyncrasy of the GroupingEntity
         }
-        else if (role == Ioss::Field::REDUCTION) {
-          // get_reduction_field(EX_ASSEMBLY, field, assembly, data);
+        else if (field.get_name() == "connectivity_raw") {
+          // Do nothing, just handles an idiosyncrasy of the GroupingEntity
         }
-        else if (role == Ioss::Field::ATTRIBUTE) {
-          // num_to_get = read_attribute_field(EX_ASSEMBLY, field, assembly, data);
+        else {
+          num_to_get = Ioss::Utils::field_warning(assembly, field, "input");
         }
       }
-      return num_to_get;
+      else if (role == Ioss::Field::TRANSIENT) {
+        // Check if the specified field exists on this assembly.
+        // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+        // exist on the database as scalars with the appropriate
+        // extensions.
+
+        // Read in each component of the variable and transfer into
+        // 'data'.  Need temporary storage area of size 'number of
+        // items in this assembly.
+        // num_to_get =
+        //    read_transient_field(EX_ASSEMBLY, m_variables[EX_ASSEMBLY], field, assembly, data);
+      }
+      else if (role == Ioss::Field::REDUCTION) {
+        // get_reduction_field(EX_ASSEMBLY, field, assembly, data);
+      }
+      else if (role == Ioss::Field::ATTRIBUTE) {
+        // num_to_get = read_attribute_field(EX_ASSEMBLY, field, assembly, data);
+      }
     }
+    return num_to_get;
   }
 
   const Ioss::Map &DatabaseIO::get_node_map() const
@@ -613,7 +606,7 @@ namespace Iotm {
       nodeMap.set_size(nodeCount);
       std::vector<int64_t> map;
       m_textMesh->node_map(map);
-      nodeMap.set_map(map.data(), map.size(), 0, true);
+      nodeMap.set_map(Data(map), map.size(), 0, true);
     }
     return nodeMap;
   }
@@ -626,7 +619,7 @@ namespace Iotm {
       elemMap.set_size(elementCount);
       std::vector<int64_t> map;
       m_textMesh->element_map(map);
-      elemMap.set_map(map.data(), map.size(), 0, true);
+      elemMap.set_map(Data(map), map.size(), 0, true);
     }
     return elemMap;
   }
@@ -642,12 +635,18 @@ namespace Iotm {
     add_transient_fields(block);
   }
 
-  void DatabaseIO::get_step_times__()
+  void DatabaseIO::get_step_times_nl()
   {
     int time_step_count = m_textMesh->timestep_count();
     for (int i = 0; i < time_step_count; i++) {
       get_region()->add_state(i);
     }
+  }
+
+  void DatabaseIO::update_block_omissions_from_assemblies()
+  {
+    m_textMesh->update_block_omissions_from_assemblies(
+        get_region(), assemblyOmissions, assemblyInclusions, blockOmissions, blockInclusions);
   }
 
   void DatabaseIO::get_elemblocks()
@@ -681,6 +680,37 @@ namespace Iotm {
       add_transient_fields(block);
 
       order++;
+    }
+
+    if (!assemblyOmissions.empty() || !assemblyInclusions.empty()) {
+      update_block_omissions_from_assemblies();
+    }
+
+    assert(blockOmissions.empty() || blockInclusions.empty()); // Only one can be non-empty
+
+    // Handle all block omissions or inclusions...
+    if (!blockOmissions.empty()) {
+      for (const auto &name : blockOmissions) {
+        auto block = get_region()->get_element_block(name);
+        if (block != nullptr) {
+          block->property_add(Ioss::Property(std::string("omitted"), 1));
+        }
+      }
+    }
+
+    if (!blockInclusions.empty()) {
+      const auto &blocks = get_region()->get_element_blocks();
+      for (auto &block : blocks) {
+        block->property_add(Ioss::Property(std::string("omitted"), 1));
+      }
+
+      // Now, erase the property on any blocks in the inclusion list...
+      for (const auto &name : blockInclusions) {
+        auto block = get_region()->get_element_block(name);
+        if (block != nullptr) {
+          block->property_erase("omitted");
+        }
+      }
     }
   }
 
@@ -825,4 +855,12 @@ namespace Iotm {
       entity->field_add(Ioss::Field(var_name, Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
     }
   }
+
+  void DatabaseIO::compute_block_membership_nl(Ioss::SideBlock          *efblock,
+                                               std::vector<std::string> &block_membership) const
+  {
+    m_textMesh->compute_block_membership(efblock->owner()->name(), efblock->name(),
+                                         block_membership);
+  }
+
 } // namespace Iotm

@@ -41,18 +41,32 @@ MeshEntityPtr MeshEntity::get_down(const int i)
 EntityOrientation MeshEntity::get_down_orientation(const int i)
 {
 #ifdef NDEBUG
-  return m_orientation.at(i);
+  return m_orientation[i];
 #else
   return m_orientation.at(i);
 #endif
 }
 
-void MeshEntity::replace_down(const int i, MeshEntityPtr e)
+void MeshEntity::set_down_orientation(int i, EntityOrientation orient)
+{
+#ifdef NDEBUG
+  m_orientation[i] = orient;
+#else
+  m_orientation.at(i) = orient;
+#endif
+}
+
+
+void MeshEntity::replace_down(const int i, MeshEntityPtr e, EntityOrientation orient)
 {
   if (!e)
     throw std::invalid_argument("entity must not be null");
 
   m_down[i] = e;
+  if (m_type == MeshEntityType::Edge)
+  {
+    m_orientation[i] = orient;
+  }
 }
 
 void MeshEntity::delete_down(const int i)

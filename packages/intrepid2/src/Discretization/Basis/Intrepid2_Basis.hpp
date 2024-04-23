@@ -398,7 +398,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
       auto dataView = allocateOutputView(numPoints, operatorType);
       Data<Scalar,DeviceType> data(dataView);
       
-      bool useVectorData = (dataView.rank() == 3);
+      bool useVectorData = (rank(dataView) == 3);
       
       if (useVectorData)
       {

@@ -142,6 +142,8 @@ class HostField : public NgpFieldBase
     return data[component];
   }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2024
+  STK_DEPRECATED
   T& get(HostMesh::MeshIndex entity, int component,
          const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
@@ -150,18 +152,20 @@ class HostField : public NgpFieldBase
     return data[component];
   }
 
-  T& operator()(const stk::mesh::FastMeshIndex& index, int component,
-                const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
-  {
-    T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
-    STK_ThrowAssert(data);
-    return data[component];
-  }
-
+  STK_DEPRECATED
   T& operator()(const HostMesh::MeshIndex& index, int component,
                 const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T* data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket->bucket_id(), index.bucketOrd));
+    STK_ThrowAssert(data);
+    return data[component];
+  }
+#endif
+
+  T& operator()(const stk::mesh::FastMeshIndex& index, int component,
+                const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+  {
+    T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
     STK_ThrowAssert(data);
     return data[component];
   }
@@ -263,10 +267,13 @@ class HostField : public NgpFieldBase
 
   FieldState state() const { return field->state(); }
 
-  void rotate_multistate_data() override { }
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
+  STK_DEPRECATED void rotate_multistate_data() override { }
+#endif
 
   void update_bucket_pointer_view() override { }
 
+  void swap_field_views(NgpFieldBase *other) override { }
   void swap(HostField<T> &other) { }
 
   stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }

@@ -131,14 +131,14 @@ namespace Intrepid2 {
   }
   
   template<typename DeviceType>
-  template<typename outputValValueType,       class ...outputValProperties,
-           typename jacobianInverseValueType, class ...jacobianInverseProperties,
-           typename inputValValueType,        class ...inputValProperties>
+  template<typename OutputValViewType,
+           typename JacobianInverseViewType,
+           typename InputValViewType>
   void
   FunctionSpaceTools<DeviceType>::
-  HGRADtransformGRAD(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
-                      const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                      const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
+  HGRADtransformGRAD(       OutputValViewType       outputVals,
+                      const JacobianInverseViewType jacobianInverse,
+                      const InputValViewType        inputVals ) {
     return HCURLtransformVALUE(outputVals, jacobianInverse, inputVals);
   }
   
@@ -562,19 +562,19 @@ namespace Intrepid2 {
   }
 
   template<typename DeviceType>
-  template<typename outputValValueType,   class ...outputValProperties,
-           typename inputDetValueType,    class ...inputDetProperties,
-           typename inputWeightValueType, class ...inputWeightProperties>
+  template<typename OutputValViewType,
+           typename InputDetViewType,
+           typename InputWeightViewType>
   bool
   FunctionSpaceTools<DeviceType>::
-  computeCellMeasure(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
-                      const Kokkos::DynRankView<inputDetValueType,   inputDetProperties...>    inputDet,
-                      const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights ) {
+  computeCellMeasure(       OutputValViewType   outputVals,
+                      const InputDetViewType    inputDet,
+                      const InputWeightViewType inputWeights ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inputDet.rank()     != 2 || 
-                                    inputWeights.rank() != 1 || 
-                                    outputVals.rank()   != 2, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank(inputDet)     != 2 || 
+                                    rank(inputWeights) != 1 || 
+                                    rank(outputVals)   != 2, std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Ranks are not compatible.");
       INTREPID2_TEST_FOR_EXCEPTION( outputVals.extent(0) != inputDet.extent(0), std::invalid_argument,
                                     ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Cell dimension does not match.");

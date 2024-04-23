@@ -7,7 +7,7 @@
  */
 
 #include "exodusII.h"     // for ex_err, etc
-#include "exodusII_int.h" // for EX_FATAL, ex__id_lkup, etc
+#include "exodusII_int.h" // for EX_FATAL, exi_id_lkup, etc
 
 /*! write out the connectivity array */
 int ex_int_write_conn(int exoid, ex_entity_id blk_id, const char *type, int var_id,
@@ -49,11 +49,11 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  int blk_id_ndx = ex__id_lkup(exoid, blk_type, blk_id);
+  int blk_id_ndx = exi_id_lkup(exoid, blk_type, blk_id);
   if (blk_id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
 

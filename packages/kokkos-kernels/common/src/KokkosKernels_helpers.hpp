@@ -29,11 +29,11 @@ namespace Impl {
 // Used to reduce number of code instantiations.
 template <class ViewType, class PreferredLayoutType>
 struct GetUnifiedLayoutPreferring {
-  typedef typename std::conditional<
-      ((ViewType::rank == 1) && (!std::is_same<typename ViewType::array_layout,
-                                               Kokkos::LayoutStride>::value)) ||
-          ((ViewType::rank == 0)),
-      PreferredLayoutType, typename ViewType::array_layout>::type array_layout;
+  using array_layout = typename std::conditional<
+      ((ViewType::rank == 1) && !std::is_same_v<typename ViewType::array_layout,
+                                                Kokkos::LayoutStride>) ||
+          (ViewType::rank == 0),
+      PreferredLayoutType, typename ViewType::array_layout>::type;
 };
 
 template <class ViewType>

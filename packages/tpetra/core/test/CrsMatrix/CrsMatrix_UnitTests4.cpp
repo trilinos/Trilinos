@@ -50,6 +50,7 @@
 #include "Tpetra_Details_scaleBlockDiagonal.hpp"
 #include "Tpetra_Apply_Helpers.hpp"
 #include "TpetraUtils_MatrixGenerator.hpp"
+#include "KokkosBlas1_nrm2.hpp"
 #include <type_traits> // std::is_same
 
 
@@ -1060,17 +1061,27 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     auto lclMtx1 = A1->getLocalMatrixDevice();
     values_type A1_values = lclMtx1.values;
     values_type A2_values("values",A1_values.extent(0));
+    values_type A2_abs_values("absolute values",A1_values.extent(0));
     Kokkos::parallel_for( range_policy(0,A1_values.extent(0)),KOKKOS_LAMBDA(const int i){
         A2_values[i] = A1_values[i] + A1_values[i];
+        A2_abs_values[i] = Kokkos::abs(A2_values[i]);
       });
 
     RCP<MAT> A2 = rcp(new MAT(map,A1->getColMap(),lclMtx1.graph.row_map,lclMtx1.graph.entries,A2_values));
     A2->expertStaticFillComplete(A1->getDomainMap(),A1->getRangeMap(),A1->getGraph()->getImporter(),A1->getGraph()->getExporter());
+    // Entrywise absolute value of A2, used for choosing a tolerance
+    RCP<MAT> A2_abs = rcp(new MAT(map,A1->getColMap(),lclMtx1.graph.row_map,lclMtx1.graph.entries,A2_abs_values));
+    A2_abs->expertStaticFillComplete(A1->getDomainMap(),A1->getRangeMap(),A1->getGraph()->getImporter(),A1->getGraph()->getExporter());
 
     /* Allocate multivectors */
     MV X(map,2), Y1a(map,2), Y1b(map,2), Y2a(map,2), Y2b(map,2), compare(map,2);
+    MV Y_abs(map,2);
     Array<Mag> norm(2), exact(2,MT_ZERO);
     X.putScalar(ONE);
+
+    A2_abs->apply(X, Y_abs);
+    // both columns of X are filled with 1, so just use the first column here
+    Mag absNorm = Y_abs.getVector(0)->norm1();
 
     // Do a std::vector version 
     {
@@ -1090,13 +1101,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // Compare
       compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
       compare.norm1(norm());
+
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else{TEST_ABSOLUTE_COMPARE_FLOATING_ARRAYS(exact,norm,absNorm*testingTol<Mag>());}
 
       compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else {TEST_ABSOLUTE_COMPARE_FLOATING_ARRAYS(exact,norm,absNorm*testingTol<Mag>());}
     }
 
     // Do a std::vector version w/ a nice combination of options
@@ -1127,12 +1139,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
         compare.norm1(norm());
         if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-        else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+        else{TEST_ABSOLUTE_COMPARE_FLOATING_ARRAYS(exact,norm,absNorm*testingTol<Mag>());}
         
         compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
         compare.norm1(norm());
         if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-        else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+        else {TEST_ABSOLUTE_COMPARE_FLOATING_ARRAYS(exact,norm,absNorm*testingTol<Mag>());}
       }
     }
 
@@ -1156,12 +1168,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       compare.update(ONE,Y1a,-ONE,Y1b,ZERO);
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else{TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else{TEST_ABSOLUTE_COMPARE_FLOATING_ARRAYS(exact,norm,absNorm*testingTol<Mag>());}
 
       compare.update(ONE,Y2a,-ONE,Y2b,ZERO);
       compare.norm1(norm());
       if (ST::isOrdinal) {TEST_COMPARE_ARRAYS(exact,norm);}
-      else {TEST_COMPARE_FLOATING_ARRAYS(exact,norm,2.0*testingTol<Mag>());}
+      else {TEST_ABSOLUTE_COMPARE_FLOATING_ARRAYS(exact,norm,absNorm*testingTol<Mag>());}
     }
 
   }

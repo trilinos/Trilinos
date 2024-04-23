@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -16,16 +16,15 @@ public:
   Edge_Block();
   Edge_Block(int file_id, size_t id);
   Edge_Block(int file_id, size_t id, size_t ne);
+  Edge_Block(const Edge_Block &)                  = delete; // Not written.
+  const Edge_Block &operator=(const Edge_Block &) = delete; // Not written.
+
   ~Edge_Block() override;
 
   size_t Edge_Index(size_t position) const;
 
-  int Check_State() const;
-
 private:
-  Edge_Block(const Edge_Block &)                  = delete; // Not written.
-  const Edge_Block &operator=(const Edge_Block &) = delete; // Not written.
-
+  int  Check_State() const override;
   void entity_load_params() override;
 
   EXOTYPE     exodus_type() const override;

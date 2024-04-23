@@ -135,7 +135,8 @@ public:
   typename outputValueValueType, class ...outputValueProperties,
   typename inputPointValueType,  class ...inputPointProperties>
   static void
-  getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+  getValues( const typename DeviceType::execution_space& space,
+                   Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
              const ordinal_type order,
              const EOperator operatorType );
@@ -217,25 +218,30 @@ class Basis_HGRAD_TET_Cn_FEM_ORTH
     : public Basis<DeviceType,outputValueType,pointValueType> {
     public:
   typedef double value_type;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
+
+  using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+  using typename BasisBase::ExecutionSpace;
+
+  using typename BasisBase::OrdinalTypeArray1DHost;
+  using typename BasisBase::OrdinalTypeArray2DHost;
+  using typename BasisBase::OrdinalTypeArray3DHost;
+
+  using typename BasisBase::OutputViewType;
+  using typename BasisBase::PointViewType ;
+  using typename BasisBase::ScalarViewType;
 
   /** \brief  Constructor.
    */
   Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order );
-
-  using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-  using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-  using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
   
-  using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+  using BasisBase::getValues;
 
   virtual
   void
-  getValues(       OutputViewType outputValues,
-             const PointViewType  inputPoints,
-             const EOperator operatorType = OPERATOR_VALUE ) const override {
+  getValues( const ExecutionSpace& space,
+                   OutputViewType  outputValues,
+             const PointViewType   inputPoints,
+             const EOperator       operatorType = OPERATOR_VALUE ) const override {
     #ifdef HAVE_INTREPID2_DEBUG
           Intrepid2::getValues_HGRAD_Args(outputValues,
                                           inputPoints,
@@ -245,10 +251,11 @@ class Basis_HGRAD_TET_Cn_FEM_ORTH
     #endif
     constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    getValues<DeviceType,numPtsPerEval>( outputValues,
-        inputPoints,
-        this->getDegree(),
-        operatorType );
+    getValues<DeviceType,numPtsPerEval>(space, 
+                                        outputValues,
+                                        inputPoints,
+                                        this->getDegree(),
+                                        operatorType);
   }
 };
 

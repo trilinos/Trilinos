@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -150,7 +150,7 @@ C  IF ANY STICK OUT AS THE MOST APPROPRIATE
                KOUNTL = KOUNT2 - 2
             ENDIF
 
-C  NONE STICK OUT AS THE OVIOUS WINNER - TAKE ONE BASED ON
+C  NONE STICK OUT AS THE OBVIOUS WINNER - TAKE ONE BASED ON
 C  INTERSECTION PORTIONS
 
          ELSE

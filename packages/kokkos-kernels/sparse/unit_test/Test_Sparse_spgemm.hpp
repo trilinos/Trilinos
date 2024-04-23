@@ -486,16 +486,6 @@ void test_issue402() {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_issue1738() {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11000) && \
-    (CUDA_VERSION < 11040)
-  {
-    std::cerr
-        << "TEST SKIPPED: See "
-           "https://github.com/kokkos/kokkos-kernels/issues/1777 for details."
-        << std::endl;
-    return;
-  }
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
   // Make sure that std::invalid_argument is thrown if you:
   //  - call numeric where an input matrix's entries have changed.
   //  - try to reuse an spgemm handle by calling symbolic with new input

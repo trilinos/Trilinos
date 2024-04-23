@@ -79,7 +79,7 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
   if (numEntity && num_nodes_per_elmt) {
     conn.resize(numEntity * num_nodes_per_elmt);
 
-    int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn.data(), nullptr, nullptr);
+    int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, Data(conn), nullptr, nullptr);
     if (err < 0) {
       Error(fmt::format("Exo_Block<INT>::Load_Connectivity(): Call to ex_get_conn returned error "
                         "value!  Block id = {}\n"

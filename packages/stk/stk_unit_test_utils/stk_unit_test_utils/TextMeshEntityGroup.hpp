@@ -23,6 +23,7 @@
 #include <functional>
 #include <stdexcept>
 #include <numeric>
+#include <limits>
 #include <strings.h>
 
 #include "TextMeshFuncs.hpp"

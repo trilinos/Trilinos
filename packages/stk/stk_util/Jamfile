@@ -210,30 +210,36 @@ lib stk_util_parallel
 
 
 # Run version script. This will generate stk_version.hpp, and
-# return the version to this script. If it doesn't do so, fail. We don't
-# want to generate a bad version for external customers.
+# return the version to this script. If it doesn't do so, set the version
+# string to 'unable-to-set-version'.
 local version ;
 if ( $(use_git_version) = "yes" ) || ( [ os.name ] = NT ) {
     if $(RTenv-arg) = "user" {
-        local v = [ SHELL "cat $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
-        if $(v[2]) != 0
-          { # Assume here that stk_version.hpp caused the error and just fail.
-          EXIT ;
+        local have_version_header =  [ path.exists $(stk_util-root-inc)/stk_util/registry/stk_version.hpp ] ;
+        if $(have_version_header) {
+          local v = [ SHELL "cat $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
+          if $(v[2]) != 0 {
+            version = "unable-to-set-version" ;
+          } else {
+            version = $(v[1]) ;
           }
-        version = $(v[1]) ;
+        }
+        else {
+          version = "unable-to-set-version" ;
+        }
     } else {
         local v = [ SHELL "$(stk_util-root-inc)/stk_util/registry/stk_version_gen.sh" : exit-status ] ;
-        if $(v[2]) != 0
-          { # Assume here that stk_version_gen.sh reported the error and just fail.
-          EXIT ;
-          }
-        version = $(v[1]) ;
+        if $(v[2]) != 0 {
+          version = "unable-to-set-version" ;
+        } else {
+          version = $(v[1]) ;
+        }
     }
 }
 else
 {
-    local v = [ SHELL "echo \"// 4.59.7\" > $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
-    version = 4.59.7 ;
+    local v = [ SHELL "echo \"// unable-to-set-version\" > $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
+    version = unable-to-set-version ;
 }
 
 lib stk_util_environment
@@ -360,5 +366,5 @@ alias stk_util_ngp
   : # No sources defined for header-only libraries.
   : # No build requirements
   : # No default build
-  : <include>$(stk_util-root)/stk_util/ngp
+  : <include>$(stk_util-root)
   ;

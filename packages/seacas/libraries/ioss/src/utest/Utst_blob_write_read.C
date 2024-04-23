@@ -4,20 +4,28 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_Blob.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_Property.h>
-#include <Ioss_Region.h>
-#include <Ioss_ScopeGuard.h>
-#include <Ioss_Sort.h>
-#include <Ioss_Utils.h>
-
-#include <Ionit_Initializer.h>
-
-#include <algorithm>
+#include "Ionit_Initializer.h"
+#include "Ioss_Blob.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_Sort.h"
+#include "Ioss_Utils.h"
+#include <cstdlib>
+#include <iostream>
+#include <stdint.h>
 #include <string>
 #include <vector>
+
+#include "Ioss_CodeTypes.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_Field.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_ScopeGuard.h"
+#include "Ioss_State.h"
+#include "Ioss_VariableType.h"
 
 //--------------------------------------------------------------------
 /*----------------------------------------------------------------------
@@ -142,7 +150,7 @@ void write_blob()
 
   blob1->field_add(x);
   blob1->field_add(dx);
-  blob1->field_add(ddx);
+  blob1->field_add(std::move(ddx));
 
   // Blobs can have different fields
   blob2->field_add(x);

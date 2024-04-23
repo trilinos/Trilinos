@@ -234,7 +234,13 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList& pl,
                                               const InverseLibrary& invLib) {
   Teko_DEBUG_SCOPE("PCDStrategy::initializeFromParameterList", 10);
 
-  std::string invStr = "Amesos", invFStr = "", invSStr = "";
+  std::string invStr = "", invFStr = "", invSStr = "";
+#if defined(Teko_ENABLE_Amesos)
+  invStr = "Amesos";
+#elif defined(Teko_ENABLE_Amesos2)
+  invStr = "Amesos2";
+#endif
+
   massInverseType_ = Diagonal;
 
   // "parse" the parameter list

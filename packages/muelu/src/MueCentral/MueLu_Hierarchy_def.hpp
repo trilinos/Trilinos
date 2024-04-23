@@ -601,6 +601,8 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupRe() {
   ResetDescription();
 
   describe(GetOStream(Statistics0), GetVerbLevel());
+
+  CheckForEmptySmoothersAndCoarseSolve();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -673,6 +675,17 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const FactoryMa
   manager.Clean();
 
   describe(GetOStream(Statistics0), GetVerbLevel());
+
+  CheckForEmptySmoothersAndCoarseSolve();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckForEmptySmoothersAndCoarseSolve() {
+  for (LO levelNo = 0; levelNo < as<LO>(Levels_.size()); ++levelNo) {
+    auto level = Levels_[levelNo];
+    if ((!level->IsAvailable("PreSmoother")) && (!level->IsAvailable("PostSmoother")))
+      GetOStream(Warnings1) << "No " << (levelNo == as<LO>(Levels_.size()) - 1 ? "coarse grid solver" : "smoother") << " on level " << level->GetLevelID() << std::endl;
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -834,7 +847,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
     emptyFineSolve = false;
   }
   if (emptyFineSolve == true) {
-    GetOStream(Warnings1) << "No fine grid smoother" << std::endl;
     // Fine grid smoother is identity
     fineX->update(one, B, zero);
   }
@@ -854,7 +866,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       emptyCoarseSolve = false;
     }
     if (emptyCoarseSolve == true) {
-      GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
       // Coarse operator is identity
       coarseX->update(one, *coarseRhs, zero);
     }
@@ -1003,7 +1014,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
         zeroGuess  = false;
       }
       if (emptySolve == true) {
-        GetOStream(Warnings1) << "No coarse grid solver" << std::endl;
         // Coarse operator is identity
         X.update(one, B, zero);
       }

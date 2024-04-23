@@ -5,7 +5,7 @@ C
 C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
-      common /combine/ equiv, eqtoler
+      common /combine/ eqtoler, equiv
       logical equiv
       real    eqtoler
 C -- equiv - True if node equivalencing is to be performed

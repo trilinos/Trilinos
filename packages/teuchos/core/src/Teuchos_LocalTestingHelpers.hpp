@@ -164,7 +164,7 @@
 
 /** \brief Assert that a1.size()==a2.size() and a[i]==b[i], i=0....
  *
- * Works for any object types that support a1[i], a1.size(), a2[j], and
+ * Works for all object types that support a1[i], a1.size(), a2[j], and
  * a2.size() and types a1 and a2 can be different types!
  *
  * \ingroup Teuchos_UnitTestAssertMacros_grp
@@ -178,7 +178,7 @@
 
 /** \brief Assert that a1.size()==a2.size() and rel_error(a[i],b[i]) <= tol, i=0....
  *
- * Works for any object types that support a1[i], a1.size(), a2[j], and
+ * Works for all object types that support a1[i], a1.size(), a2[j], and
  * a2.size() and types a1 and a2 can be different types!
  *
  * \ingroup Teuchos_UnitTestAssertMacros_grp
@@ -189,6 +189,19 @@
     if (!result) success = false; \
   }
 
+/** \brief Assert that a1.size()==a2.size() and |a[i]-b[i]| <= tol, i=0....
+ *
+ * Works for all object types that support a1[i], a1.size(), a2[j], and
+ * a2.size(), but the element types of a1 and a2 must be the same and Teuchos::ScalarTraits
+ * must have a specialization for this element type.
+ *
+ * \ingroup Teuchos_UnitTestAssertMacros_grp
+ */
+#define TEST_ABSOLUTE_COMPARE_FLOATING_ARRAYS( a1, a2, tol ) \
+  { \
+    const bool result = compareFloatingArraysAbsolute(a1,#a1,a2,#a2,tol,out); \
+    if (!result) success = false; \
+  }
 
 /** \brief Assert that the statement 'code' throws the exception 'ExceptType'
  * (otherwise the test fails).

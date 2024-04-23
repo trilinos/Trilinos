@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -75,7 +75,7 @@ C  NOW SEE IF A TRIANGLE INTERPRETATION IS WARRANTED
       LDIF = (L1 - L2) / 2
       IF (LDIF .GT. L1 / 2) LDIF = L1 - LDIF
 
-C  THIS TESTS THE FORCED RETANGLE - THE TWO NEW ROWS MUST BE
+C  THIS TESTS THE FORCED RECTANGLE - THE TWO NEW ROWS MUST BE
 C  ENDED AT CURRENT SIDE NODES
 
       IF (L1 .EQ. L2) THEN

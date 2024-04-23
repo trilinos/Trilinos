@@ -1,22 +1,17 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h> // for IntVector
-#include <Ioss_ElementPermutation.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Utils.h>
-
-#include <cassert> // for assert
-#include <cstddef> // for size_t
+#include "Ioss_CodeTypes.h" // for IntVector
+#include "Ioss_ElementPermutation.h"
+#include "Ioss_Utils.h"
+#include <assert.h>
+#include <fmt/ostream.h>
 #include <ostream> // for basic_ostream, etc
 #include <string>  // for string, char_traits, etc
-#include <utility> // for pair
 #include <vector>  // for vector
-
-#include <fmt/ostream.h>
 
 namespace Ioss {
   void EPRegistry::insert(const Ioss::EPM_VP &value, bool delete_me)
@@ -45,8 +40,6 @@ namespace Ioss {
     static EPRegistry registry_;
     return registry_;
   }
-
-  Ioss::ElementPermutation::~ElementPermutation() = default;
 
   ElementPermutation *Ioss::ElementPermutation::factory(const std::string &type)
   {

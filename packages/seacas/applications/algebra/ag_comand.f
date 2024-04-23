@@ -276,7 +276,8 @@ C ... Check that specified time is in range of times on database. Assume TIMES()
          CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
          if (.not. matstr(word, 'ELEMENTS', 1)) THEN
            CALL PRTERR ('CMDERR',
-     &       'Expected "ELEMENTS".  Syntax: FILTER ELEMENTS {elem_var}')
+     &       'Expected "ELEMENTS".  "
+     $"Syntax: REMOVE ELEMENTS [local | global] {list of ids}')
            VERB = ' '
            GOTO 150
          ENDIF

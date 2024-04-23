@@ -1,14 +1,14 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_CodeTypes.h>          // for IntVector
-#include <Ioss_ElementPermutation.h> // for ElementPermutation
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Super.h> // for Super
-#include <Ioss_Utils.h>
+#include "Ioss_CodeTypes.h"          // for IntVector
+#include "Ioss_ElementPermutation.h" // for ElementPermutation
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Super.h" // for Super
+#include "Ioss_Utils.h"
 
 #include <cassert> // for assert
 #include <cstddef> // for size_t
@@ -60,8 +60,6 @@ Ioss::ETRegistry &Ioss::ElementTopology::registry()
   static ETRegistry registry_;
   return registry_;
 }
-
-Ioss::ElementTopology::~ElementTopology() = default;
 
 bool Ioss::ElementTopology::edges_similar() const { return true; }
 bool Ioss::ElementTopology::faces_similar() const { return true; }
@@ -298,7 +296,7 @@ Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int bnd_number) con
       return Ioss::IntVector{bnd_number - 1};
     }
   }
-  return Ioss::IntVector();
+  return {};
 }
 
 Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int bnd_number) const

@@ -28,21 +28,21 @@
 #include "ne_nemesisI.h"
 
 /* Constants for init_global functions */
-#define NNG 100
-#define NEG 50
-#define NEBG 5
+#define NNG   100
+#define NEG   50
+#define NEBG  5
 #define NEBCG 10
-#define NNSG 2
-#define NSSG 3
+#define NNSG  2
+#define NSSG  3
 
 /* Constants for load-balance functions */
-#define NPROC 10
+#define NPROC  10
 #define NPROCF NPROC
-#define NINTN 200
-#define NBORN 10
-#define NEXTN 5
-#define NINTE 100
-#define NBORE 20
+#define NINTN  200
+#define NBORN  10
+#define NEXTN  5
+#define NINTE  100
+#define NBORE  20
 #define NNCMAP 4
 #define NECMAP 2
 

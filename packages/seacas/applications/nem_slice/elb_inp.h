@@ -12,26 +12,25 @@ struct Machine_Description;
 struct Problem_Description;
 struct Solver_Description;
 template <typename INT> struct LB_Description;
-template <typename INT> struct Weight_Description;
+struct Weight_Description;
 
 /* Prototype for command-line parsing function */
 template <typename INT>
-int cmd_line_arg_parse(
-    int                  argc,           /* The command line argument count */
-    char                *argv[],         /* The command line arguments array */
-    std::string         &exoII_inp_file, /* The ExodusII input FEM file name */
-    std::string         &ascii_inp_file, /* The ASCII input file name */
-    std::string         &nemI_out_file,  /* The output NemesisI file name */
-    Machine_Description *machine,        /* Pointer to structure in which to place machine
-                                          * information */
-    LB_Description<INT> *lb,             /* Pointer to structure in which to place load
-                                          * balance parameters */
-    Problem_Description *prob,           /* Pointer to structure in which to place general
-                                          * information about the run */
-    Solver_Description *solver,          /* Pointer to structure in which to place parameters
-                                          * for the eigensolver */
-    Weight_Description<INT> *weight      /* Pointer to structure in which to place parameters
-                                          * for the graph weighting scheme */
+int cmd_line_arg_parse(int                  argc,           /* The command line argument count */
+                       char                *argv[],         /* The command line arguments array */
+                       std::string         &exoII_inp_file, /* The ExodusII input FEM file name */
+                       std::string         &ascii_inp_file, /* The ASCII input file name */
+                       std::string         &nemI_out_file,  /* The output NemesisI file name */
+                       Machine_Description *machine, /* Pointer to structure in which to place
+                                                      * machine information */
+                       LB_Description<INT> *lb,      /* Pointer to structure in which to place load
+                                                      * balance parameters */
+                       Problem_Description *prob,  /* Pointer to structure in which to place general
+                                                    * information about the run */
+                       Solver_Description *solver, /* Pointer to structure in which to place
+                                                    * parameters for the eigensolver */
+                       Weight_Description *weight  /* Pointer to structure in which to place
+                                                    * parameters  for the graph weighting scheme */
 );
 
 /* Prototype for function which reads in the ASCII input file */
@@ -47,8 +46,8 @@ int read_cmd_file(std::string         &ascii_inp_file, /* The ASCII input file n
                                                  * information about the run */
                   Solver_Description *solver,   /* Pointer to structure in which to place parameters
                                                  * for the eigensolver */
-                  Weight_Description<INT> *weight /* Pointer to structure in which to place
-                                                   * parameters for the eigensolver */
+                  Weight_Description *weight    /* Pointer to structure in which to place
+                                                 * parameters for the eigensolver */
 );
 
 /* Prototype for function which checks the user specified input */
@@ -63,8 +62,8 @@ int check_inp_specs(std::string         &exoII_inp_file, /* The ExodusII input F
                                                    * information about the run */
                     Solver_Description *solver, /* Pointer to structure in which to place parameters
                                                  * for the eigensolver */
-                    Weight_Description<INT> *weight /* Pointer to structure in which to place
-                                                     * parameters for the weighting scheme */
+                    Weight_Description *weight  /* Pointer to structure in which to place
+                                                 * parameters for the weighting scheme */
 );
 
 /* Various defines used by the input routines */

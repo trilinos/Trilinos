@@ -25,10 +25,8 @@ C   --   DIST - OUT - THE DISTANCE BETWEEN NODE1 AND NODE2
 
 C=======================================================================
 
+      include 'd3nums.blk'
       REAL XN(*), YN(*), ZN(*)
-
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
 
       XDIST = XN(NODE2) - XN(NODE1)
       YDIST = YN(NODE2) - YN(NODE1)

@@ -174,6 +174,8 @@ namespace Ifpack2 {
     //typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
     //typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
 
+    typedef Tpetra::CrsMatrix
+    <scalar_type,local_ordinal_type,global_ordinal_type,node_type> crs_matrix_type;
     typedef Tpetra::BlockCrsMatrix
     <scalar_type,local_ordinal_type,global_ordinal_type,node_type> block_crs_matrix_type;
 
@@ -231,7 +233,9 @@ namespace Ifpack2 {
     BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                          const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                          const int n_subparts_per_part = 1,
-                         bool overlapCommAndComp = false, bool useSequentialMethod = false);
+                         bool overlapCommAndComp = false, 
+                         bool useSequentialMethod = false,
+                         const int block_size = -1);
 
     //! Destructor (declared virtual for memory safety of derived classes).
     ~BlockTriDiContainer () override;
@@ -398,7 +402,8 @@ namespace Ifpack2 {
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::RCP<const import_type> &importer,
                        const bool overlapCommAndComp,
-                       const bool useSeqMethod);
+                       const bool useSeqMethod,
+                       const int block_size = -1);
 
     void clearInternal();
   };

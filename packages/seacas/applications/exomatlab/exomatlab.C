@@ -42,10 +42,8 @@ namespace {
                     Ioss::GroupingEntity *entity)
   {
     fmt::print("\n{} variables on exodus data base:\n", type);
-    Ioss::NameList::const_iterator IF;
-    for (IF = fields.begin(); IF != fields.end(); ++IF) {
-      std::string               field_name = *IF;
-      const Ioss::VariableType *var_type   = entity->get_field(field_name).raw_storage();
+    for (const auto &field_name : fields) {
+      const Ioss::VariableType *var_type = entity->get_field(field_name).raw_storage();
       fmt::print("\t{}\t{}\n", field_name, var_type->name());
     }
   }
@@ -53,8 +51,7 @@ namespace {
 // ========================================================================
 
 namespace {
-  std::string codename;
-  std::string version = "1.2";
+  std::string       codename;
 } // namespace
 
 int main(int argc, char *argv[])
@@ -67,7 +64,7 @@ int main(int argc, char *argv[])
 
   bool ok    = false;
   codename   = argv[0];
-  size_t ind = codename.find_last_of("/", codename.size());
+  size_t ind = codename.find_last_of('/', codename.size());
   if (ind != std::string::npos) {
     codename = codename.substr(ind + 1, codename.size());
   }
@@ -180,10 +177,8 @@ namespace {
 
     fmt::print(out_stream, "% number of curves\nnvars = {}\n", fields.size() + 1);
 
-    size_t                         namelen = 4; // length of 'time'
-    Ioss::NameList::const_iterator IF;
-    for (IF = fields.begin(); IF != fields.end(); ++IF) {
-      std::string field_name = *IF;
+    size_t namelen = 4; // length of 'time'
+    for (const auto &field_name : fields) {
       if (field_name.length() > namelen) {
         namelen = field_name.length();
       }
@@ -191,8 +186,7 @@ namespace {
 
     fmt::print(out_stream, "names= [\n'{:<{}}';\n", "TIME", namelen);
 
-    for (IF = fields.begin(); IF != fields.end(); ++IF) {
-      std::string field_name = *IF;
+    for (const auto &field_name : fields) {
       fmt::print(out_stream, "'{:<{}}';\n", field_name, namelen);
     }
     fmt::print(out_stream, "];\n");
@@ -247,9 +241,8 @@ namespace {
     // Output field values...
 
     std::vector<double> data(1);
-    for (IF = fields.begin(); IF != fields.end(); ++IF) {
-      std::string field_name = *IF;
-      int         comp_count = region.get_field(field_name).raw_storage()->component_count();
+    for (const auto &field_name : fields) {
+      int comp_count = region.get_field(field_name).raw_storage()->component_count();
       fmt::print(out_stream, "{} = zeros({}, {});\n", field_name, comp_count, num_steps);
       fmt::print(out_stream, "{} = [\n", field_name);
       for (int istep = st_min; istep <= st_max; istep++) {

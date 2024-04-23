@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -14,7 +14,7 @@ C   --   D. P. Flanagan, 3/25/83
 C   --
 C   --INTERP_BL tests if a contour value falls within an interval.
 C   --A degenerate interval fails regardless of the contour value. If the
-C   --test is passed, the nomalized interval coordinate of the contour
+C   --test is passed, the normalized interval coordinate of the contour
 C   --value is computed.  The returned function value is true only if the
 C   --interval test is passed.
 C   --

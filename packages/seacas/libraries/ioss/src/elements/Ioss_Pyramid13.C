@@ -4,14 +4,16 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include "Ioss_ElementVariableType.h" // for ElementVariableType
+#include "Ioss_Pyramid13.h"
+#include <cassert> // for assert
+#include <string>
+
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
-#include "Ioss_CodeTypes.h"           // for IntVector
-#include "Ioss_ElementTopology.h"     // for ElementTopology
-#include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <Ioss_Pyramid13.h>
-#include <cassert> // for assert
-#include <cstddef> // for nullptr
+#include "Ioss_CodeTypes.h"       // for IntVector
+#include "Ioss_ElementTopology.h" // for ElementTopology
+#include "Ioss_Utils.h"
 
 namespace Ioss {
   const char *Pyramid13::name = "pyramid13";

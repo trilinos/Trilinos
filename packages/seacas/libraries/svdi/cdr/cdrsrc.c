@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -550,7 +550,7 @@ void cdrc2a_(char *charac, int *asci) { *asci = (int)charac[0]; }
 
   Notes and Revisions:
     This routine just copies the input to the output and appends a
-    zero word, the C/FORTRAN parameter passsing handles the rest.
+    zero word, the C/FORTRAN parameter passing handles the rest.
 
   Parameters:
     title - IN - character string of any length

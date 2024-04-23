@@ -332,7 +332,8 @@ void communicate_field_data(const BulkData& mesh ,
   }
 
   parallel_data_exchange_nonsym_known_sizes_t(sendOffsets, send_data,
-                                              recvOffsets, recv_data, mesh.parallel());
+                                              recvOffsets, recv_data, mesh.parallel(),
+                                              mesh.is_mesh_consistency_check_on());
 
   //now unpack and store the recvd data
   for(int fi=0; fi<numFields; ++fi)

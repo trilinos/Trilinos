@@ -84,14 +84,9 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
-
-    Teuchos::setStringToIntegralParameter<int>(
-      "CONVECTION",
-      "OFF",
+    valid_parameters.set("CONVECTION", "OFF",
       "Enables or disables convection term in the energy equation",
-      Teuchos::tuple<std::string>("ON","OFF"),
-      &valid_parameters
-      );    
+      rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
 
     params->validateParametersAndSetDefaults(valid_parameters);
   }

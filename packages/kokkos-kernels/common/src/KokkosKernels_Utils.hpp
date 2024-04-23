@@ -890,7 +890,7 @@ void permute_block_vector(typename idx_array_type::value_type num_elements,
 // TODO BMK: clean this up by removing 1st argument. It is unused but
 // its name gives the impression that only num_elements of the vector are
 // zeroed, when really it's always the whole thing.
-template <class ExecSpaceIn, typename value_array_type, typename MyExecSpace>
+template <class ExecSpaceIn, typename value_array_type>
 void zero_vector(ExecSpaceIn &exec_space_in,
                  typename value_array_type::value_type /* num_elements */,
                  value_array_type &vector) {
@@ -906,8 +906,7 @@ void zero_vector(typename value_array_type::value_type /* num_elements */,
   using ne_tmp_t  = typename value_array_type::value_type;
   ne_tmp_t ne_tmp = ne_tmp_t(0);
   MyExecSpace my_exec_space;
-  zero_vector<MyExecSpace, value_array_type, MyExecSpace>(my_exec_space, ne_tmp,
-                                                          vector);
+  zero_vector(my_exec_space, ne_tmp, vector);
 }
 
 template <typename v1, typename v2, typename v3>

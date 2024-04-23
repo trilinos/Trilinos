@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,14 +8,14 @@
 
 #include "iofaodel_export.h"
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_DBUsage.h>      // for DatabaseUsage
-#include <Ioss_DatabaseIO.h>   // for DatabaseIO
-#include <Ioss_IOFactory.h>    // for IOFactory
-#include <Ioss_Map.h>          // for Map
-#include <Ioss_Region.h>       // for Region
-#include <Ioss_State.h>        // for State
-#include <Ioss_VariableType.h> // for VariableType
+#include "Ioss_CodeTypes.h"
+#include "Ioss_DBUsage.h"      // for DatabaseUsage
+#include "Ioss_DatabaseIO.h"   // for DatabaseIO
+#include "Ioss_IOFactory.h"    // for IOFactory
+#include "Ioss_Map.h"          // for Map
+#include "Ioss_Region.h"       // for Region
+#include "Ioss_State.h"        // for State
+#include "Ioss_VariableType.h" // for VariableType
 #include <atomic>              // for atomic
 #include <cstddef>             // for size_t
 #include <cstdint>             // for int64_t
@@ -66,8 +66,6 @@ namespace Iofaodel {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
                Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties);
-    DatabaseIO(const DatabaseIO &from)            = delete;
-    DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
     // TODO what should this be for Faodel?
@@ -100,17 +98,17 @@ namespace Iofaodel {
 
     void finalize_database() const override;
 
-    void read_meta_data__() override;
+    void read_meta_data_nl() override;
 
-    bool begin_state__(int /* state */, double /* time */) override;
-    bool end_state__(int /* state */, double /* time */) override;
+    bool begin_state_nl(int /* state */, double /* time */) override;
+    bool end_state_nl(int /* state */, double /* time */) override;
 
-    bool begin__(Ioss::State state) override
+    bool begin_nl(Ioss::State state) override
     {
       dbState = state;
       return true;
     };
-    bool end__(Ioss::State state) override
+    bool end_nl(Ioss::State state) override
     {
       dbState = Ioss::STATE_UNKNOWN;
       return true;
@@ -126,7 +124,7 @@ namespace Iofaodel {
     /*
      * TODO identify all the get_*{blocks|sets} needed here
      */
-    void get_step_times__() override;
+    void get_step_times_nl() override;
 
     void get_edgeblocks();
     void get_elemblocks();

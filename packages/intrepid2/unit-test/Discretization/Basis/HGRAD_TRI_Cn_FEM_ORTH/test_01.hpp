@@ -60,6 +60,7 @@
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
 
 #include "packages/intrepid2/unit-test/Discretization/Basis/Macros.hpp"
+#include "packages/intrepid2/unit-test/Discretization/Basis/Setup.hpp"
 
 namespace Intrepid2 {
 
@@ -68,34 +69,16 @@ namespace Test {
 template<typename ValueType, typename DeviceType>
 int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
 
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  //! Create an execution space instance.
+  const auto space = Kokkos::Experimental::partition_space(typename DeviceType::execution_space {}, 1)[0];
 
-  if (verbose)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
+  Teuchos::RCP<std::ostream> outStream = setup_output_stream<DeviceType>(
+    verbose, "OrthogonalBases", {
+        "1) Tests orthogonality of triangular orthogonal basis"
+  });
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
-  *outStream
-  << "===============================================================================\n"
-  << "|                                                                             |\n"
-  << "|                           Unit Test OrthogonalBases                         |\n"
-  << "|                                                                             |\n"
-  << "|     1) Tests orthogonality of triangular orthogonal basis                   |\n"
-  << "|                                                                             |\n"
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov),                     |\n"
-  << "|                      Denis Ridzal (dridzal@sandia.gov),                     |\n"
-  << "|                      Robert Kirby (robert.c.kirby@ttu.edu),                 |\n"
-  << "|                      Mauro Perego (mperego@sandia.gov),                     |\n"
-  << "|                      Kyungjoo Kim (kyukim@sandia.gov)                       |\n"
-  << "|                                                                             |\n"
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-  << "|                                                                             |\n"
-  << "===============================================================================\n";
 
   typedef Kokkos::DynRankView<ValueType, DeviceType> DynRankView;
 
@@ -138,7 +121,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
     // Tabulate the basis functions at the cubature points
     DynRankView ConstructWithLabel(basisAtCubPts, polydim, npts);
 
-    triBasis.getValues(basisAtCubPts, cubPoints, OPERATOR_VALUE);
+    triBasis.getValues(space, basisAtCubPts, cubPoints, OPERATOR_VALUE);
     auto h_basisAtCubPts = Kokkos::create_mirror_view(basisAtCubPts);
     Kokkos::deep_copy(h_basisAtCubPts, basisAtCubPts);
 
@@ -181,7 +164,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
       PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
       DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , dim);
-      triBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D1);
+      triBasis.getValues(space, dBasisAtLattice, lattice, OPERATOR_D1);
 
       auto h_dBasisAtLattice = Kokkos::create_mirror_view(dBasisAtLattice);
       Kokkos::deep_copy(h_dBasisAtLattice, dBasisAtLattice);
@@ -334,7 +317,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
       PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
       DynRankView ConstructWithLabel(dBasisAtLattice, polydim , np_lattice , 3);
-      triBasis.getValues(dBasisAtLattice, lattice, OPERATOR_D2);
+      triBasis.getValues(space, dBasisAtLattice, lattice, OPERATOR_D2);
 
       auto h_dBasisAtLattice = Kokkos::create_mirror_view(dBasisAtLattice);
       Kokkos::deep_copy(h_dBasisAtLattice, dBasisAtLattice);

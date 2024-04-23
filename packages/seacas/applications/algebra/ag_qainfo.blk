@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2022 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -18,7 +18,7 @@ C      --   (6) = time of current run
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
-      QAINFO(2) = '2022/03/23                      '
-      QAINFO(3) = ' 1.51                           '
+      QAINFO(2) = '2024/03/21                      '
+      QAINFO(3) = ' 1.54                           '
 
 c ------------------------.-.

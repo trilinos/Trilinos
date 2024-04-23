@@ -44,6 +44,8 @@ FILE(GLOB BLOCK_EXTRACTOR_HEADERS block_extractor/*.hpp)
 FILE(GLOB BLOCK_EXTRACTOR_SOURCES block_extractor/*.cpp)
 FILE(GLOB TRANSFER_UTILS_HEADERS transfer_utils/*.hpp)
 FILE(GLOB TRANSFER_UTILS_SOURCES transfer_utils/*.cpp)
+FILE(GLOB PMESH_LIB_HEADERS pmesh_lib/*.hpp)
+FILE(GLOB PMESH_LIB_SOURCES pmesh_lib/*.cpp)
 LIST(REMOVE_ITEM BLOCK_EXTRACTOR_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp)
 
 #
@@ -67,6 +69,12 @@ if(HAVE_STK_Trilinos)
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp
     COMM serial mpi
   )
+
+  TRIBITS_ADD_LIBRARY(stk_pmesh_lib
+    NOINSTALLHEADERS ${PMESH_LIB_HEADERS}
+    SOURCES ${PMESH_LIB_SOURCES}
+  )
+
 else()
   add_library(stk_transfer_utils_lib ${TRANSFER_UTILS_SOURCES})
   target_link_libraries(stk_transfer_utils_lib PUBLIC stk_io)
@@ -79,6 +87,14 @@ else()
   add_executable(stk_block_extractor ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/main.cpp)
   target_link_libraries(stk_block_extractor PUBLIC stk_tools_lib)
   target_link_libraries(stk_block_extractor PUBLIC stk_util_command_line)
+
+  if(STK_HAS_SEACAS_NEMESIS)
+    add_library(stk_pmesh_lib ${TRANSFER_UTILS_SOURCES})
+    target_link_libraries(stk_pmesh_lib PUBLIC stk_io)
+    target_link_libraries(stk_pmesh_lib PUBLIC stk_io_util)
+    target_link_libraries(stk_pmesh_lib PUBLIC stk_tools_lib)
+    target_link_libraries(stk_pmesh_lib PUBLIC SEACASNemesis::nemesis)
+  endif()
 endif()
 
 target_include_directories(stk_transfer_utils_lib PUBLIC
@@ -89,6 +105,12 @@ target_include_directories(stk_tools_lib PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_tools>
   $<INSTALL_INTERFACE:include>
 )
+if(STK_HAS_SEACAS_NEMESIS)
+  target_include_directories(stk_pmesh_lib PUBLIC
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_tools>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()
 
 INSTALL(FILES ${MESH_CLONE_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_tools/mesh_clone)
@@ -102,11 +124,19 @@ INSTALL(FILES ${BLOCK_EXTRACTOR_HEADERS} DESTINATION
 INSTALL(FILES ${TRANSFER_UTILS_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_tools/transfer_utils)
 
+if (STK_HAS_SEACAS_NEMESIS)
+  INSTALL(FILES ${PMESH_LIB_HEADERS} DESTINATION
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_tools/pmesh_lib)
+endif()
+
 INSTALL(TARGETS stk_block_extractor COMPONENT ${PACKAGE_NAME} RUNTIME DESTINATION ${${PROJECT_NAME}_INSTALL_RUNTIME_DIR})
 
 if(NOT HAVE_STK_Trilinos)
   INSTALL(TARGETS stk_transfer_utils_lib DESTINATION ${STK_INSTALL_LIBDIR})
   INSTALL(TARGETS stk_tools_lib DESTINATION ${STK_INSTALL_LIBDIR})
   INSTALL(TARGETS stk_block_extractor DESTINATION ${STK_INSTALL_BINDIR})
+  if (STK_HAS_SEACAS_NEMESIS)
+    INSTALL(TARGETS stk_pmesh_lib DESTINATION ${STK_INSTALL_LIBDIR})
+  endif()
 endif()
 

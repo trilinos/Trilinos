@@ -283,6 +283,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     // This is cached, but involves and MPI_Allreduce.
     H.description();
     H.describe(H.GetOStream(Runtime0), verbosity_);
+    H.CheckForEmptySmoothersAndCoarseSolve();
 
     // When we reuse hierarchy, it is necessary that we don't
     // change the number of levels. We also cannot make requests

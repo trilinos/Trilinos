@@ -14,6 +14,7 @@
 #include "Ioss_SmartAssert.h"
 #include "Ioss_Sort.h"
 #include "fmt/format.h"
+#include "fmt/ranges.h"
 
 //! \file
 
@@ -48,8 +49,9 @@ namespace {
     // Check if the numbers are really close -- needed
     // when comparing numbers near zero.
     double diff = std::abs(A - B);
-    if (diff <= maxDiff)
+    if (diff <= maxDiff) {
       return true;
+    }
 
     A              = std::abs(A);
     B              = std::abs(B);

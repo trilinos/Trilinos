@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -92,8 +92,6 @@ namespace SEAMS {
   const char *do_dumpsym1(char *pre);
   const char *do_dumpfunc1(char *pre);
   const char *do_dumpvar1(char *pre);
-  const char *do_tolower(char *string);
-  const char *do_toupper(char *string);
   const char *do_Units(char *type);
   const char *do_file_to_string(char *filename);
   const char *do_error(char *error_string);
@@ -101,7 +99,6 @@ namespace SEAMS {
   const char *do_getenv(char *env);
   const char *do_output(char *filename);
   const char *do_append(char *filename);
-  const char *do_execute(char *string);
   const char *do_rescan(char *string);
 
   const char *do_if(double x);
@@ -109,29 +106,16 @@ namespace SEAMS {
   const char *do_elseif(double x);
   const char *do_switch(double x);
   const char *do_case(double x);
-  const char *do_intout(double intval);
-  const char *do_tostring(double x);
 
   const char *do_get_word(double n, char *string, char *delm);
-  const char *do_extract(char *string, char *begin, char *end);
   const char *do_print_array(const array *my_array_data);
 
   const char *do_import(char *string);
   const char *do_execute(char *string);
-  const char *do_getenv(char *env);
   const char *do_tolower(char *string);
   const char *do_toupper(char *string);
   const char *do_tostring(double x);
-  const char *do_output(char *filename);
-  const char *do_append(char *filename);
-  const char *do_error(char *error_string);
-  const char *do_get_date();
-  const char *do_get_iso_date();
-  const char *do_get_time();
-  const char *do_get_word(double n, char *string, char *delm);
-  const char *do_file_to_string(char *filename);
   const char *do_extract(char *string, char *begin, char *end);
-  const char *do_include_path(char *new_path);
   const char *do_intout(double intval);
   const char *do_print_array(array *my_array_data);
   const char *do_str_if(char *string);
@@ -153,5 +137,7 @@ namespace SEAMS {
   array *do_linear_array(double init, double final, double count);
   array *do_identity(double size);
   array *do_transpose(const array *a);
+  array *do_principal(const array *a);
   array *do_array_from_string(const char *string, const char *delm);
+  array *do_sym_tensor_from_string(const char *string, const char *delm);
 } // namespace SEAMS

@@ -221,6 +221,15 @@ KrinoRefinement::is_created(const stk::mesh::MetaData & meta)
   return refinement != nullptr;
 }
 
+KrinoRefinement &
+KrinoRefinement::get_or_create(stk::mesh::MetaData & meta)
+{
+  KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
+  if (refinement)
+    return *refinement;
+  return create(meta);
+}
+
 void
 KrinoRefinement::register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::MetaData & meta)
 {

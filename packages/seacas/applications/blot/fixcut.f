@@ -44,8 +44,7 @@ C   --   Uses NUMNP, NELBLK of /DBNUMS/
       PARAMETER (ISIN = +1, ISOUT = -1, ISCUT = 0, ISON = -2, ISSURF=2)
 
       include 'dbnums.blk'
-      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
-      LOGICAL IS3DIM
+      include 'd3nums.blk'
 
       REAL CUTPT(3), CUTNRM(3)
       REAL X(NUMNP), Y(NUMNP), Z(NUMNP)

@@ -1,10 +1,7 @@
 #include "stk_io/WriteMesh.hpp"
-#ifdef STK_BUILT_IN_SIERRA
-
 #include "create_stk_mesh.hpp"
 #include "stk_middle_mesh/field.hpp"
 #include "constants.hpp"
-#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
@@ -360,4 +357,4 @@ void StkMeshCreator::setup_edge_sharing(std::shared_ptr<mesh::Mesh> mesh, MeshFi
 } // namespace stk_interface
 } // namespace middle_mesh
 } // namespace stk
-#endif
+

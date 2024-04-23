@@ -79,7 +79,7 @@ int ex_get_init(int exoid, char *title, void_int *num_dim, void_int *num_nodes, 
   int            errval;
 
   EX_FUNC_ENTER();
-  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+  if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

@@ -1803,6 +1803,7 @@ TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity2_maxCapa
   {
     stk::mesh::EntityIdVector ids{1, 2, 3};
     stk::mesh::EntityVector newNodes;
+    m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
 
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
@@ -1813,6 +1814,7 @@ TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity2_maxCapa
 
     EXPECT_EQ(buckets[1]->size(), 1u);
     EXPECT_EQ(buckets[1]->capacity(), 2u);
+    m_bulk->modification_end();
   }
 }
 
@@ -1827,6 +1829,7 @@ TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity1_maxCapa
   {
     stk::mesh::EntityIdVector ids{1, 2, 3};
     stk::mesh::EntityVector newNodes;
+    m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
 
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
@@ -1837,6 +1840,7 @@ TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity1_maxCapa
 
     EXPECT_EQ(buckets[1]->size(), 1u);
     EXPECT_EQ(buckets[1]->capacity(), 1u);
+    m_bulk->modification_end();
   }
 }
 
@@ -2343,6 +2347,7 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity2_maxCa
     m_bulk->deactivate_field_updating();
     stk::mesh::EntityIdVector ids{1, 2, 3};
     stk::mesh::EntityVector newNodes;
+    m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
     m_bulk->allocate_field_data();
 
@@ -2351,6 +2356,7 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity2_maxCa
 
     const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
     ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    m_bulk->modification_end();
   }
 }
 
@@ -2371,6 +2377,7 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCa
     m_bulk->deactivate_field_updating();
     stk::mesh::EntityIdVector ids{1, 2, 3};
     stk::mesh::EntityVector newNodes;
+    m_bulk->modification_begin();
     m_bulk->declare_entities(stk::topology::NODE_RANK, ids, stk::mesh::PartVector{&block1}, newNodes);
     m_bulk->allocate_field_data();
 
@@ -2379,6 +2386,7 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCa
 
     const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
     ASSERT_EQ(bytesAllocated, expected_bytes_allocated(buckets, dataSize));
+    m_bulk->modification_end();
   }
 }
 

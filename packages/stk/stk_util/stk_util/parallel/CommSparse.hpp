@@ -271,7 +271,7 @@ private:
 };
 
 template<typename PACK_ALGORITHM>
-bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorithm)
+bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorithm, bool deallocateSendBuffers = true)
 {
   stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
@@ -279,13 +279,13 @@ bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorit
     algorithm();
     comm.allocate_buffers();
     algorithm();
-    return comm.communicate();
+    return comm.communicate(deallocateSendBuffers);
   } else {
     algorithm();
     const bool actuallySendingOrReceiving = comm.allocate_buffers();
     if (actuallySendingOrReceiving) {
         algorithm();
-        comm.communicate();
+        comm.communicate(deallocateSendBuffers);
     }
     return actuallySendingOrReceiving; 
   }

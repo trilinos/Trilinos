@@ -1508,13 +1508,8 @@ namespace panzer_stk {
   {
     Teuchos::ParameterList validPL;
     {
-      Teuchos::setStringToIntegralParameter<int>(
-      "Start Time Type",
-      "From Input File",
-      "Set the start time",
-      Teuchos::tuple<std::string>("From Input File","From Exodus File"),
-      &validPL
-      );
+      validPL.set<std::string>("Start Time Type", "From Input File", "Set the start time",
+        rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("From Input File","From Exodus File"))));
 
       validPL.set<double>("Start Time",0.0);
     }

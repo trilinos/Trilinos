@@ -47,16 +47,29 @@ class CalcSegment3 {
     if(lenSquared == 0.0) { return 0.0; }
     return dotValA / lenSquared;
   }
-  static Vec3d closest_point(const Vec3d & p0, const Vec3d & p1, const Vec3d &queryPt)
-  {
-    const REAL paramLoc = closest_parametric_location(p0, p1, queryPt);
-    return (1.0-paramLoc)*p0 + paramLoc*p1;
-  }
-  static void closest_point(const Vec3d & p0, const Vec3d & p1, const Vec3d &queryPt, Vec3d &closestPt, REAL &paramLoc)
+
+  static void closest_point_and_parametric_coord(const Vec3d & p0, const Vec3d & p1, const Vec3d &queryPt, Vec3d &closestPt, REAL &paramLoc)
   {
     paramLoc = closest_parametric_location(p0, p1, queryPt);
     closestPt = (1.0-paramLoc)*p0 + paramLoc*p1;
   }
+
+  static void closest_point(const Vec3d & p0, const Vec3d & p1, const Vec3d &queryPt, Vec3d &closestPt)
+  {
+    const REAL paramLoc = closest_parametric_location(p0, p1, queryPt);
+    closestPt = (1.0-paramLoc)*p0 + paramLoc*p1;
+  }
+
+  static Vec3d closest_point(const Vec3d & p0, const Vec3d & p1, const Vec3d& queryPt)
+  {
+    Vec3d closestPt(stk::math::MemberInit::NONE);
+    closest_point(p0, p1, queryPt, closestPt);
+    return closestPt;
+  }
+
+  static void closest_point_and_parametric_coord(const std::array<Vec3d,2> & coords, const Vec3d &queryPt, Vec3d &closestPt, REAL &paramLoc) { closest_point_and_parametric_coord(coords[0], coords[1], queryPt, closestPt, paramLoc); }
+  static void closest_point(const std::array<Vec3d,2> & coords, const Vec3d &queryPt, Vec3d &closestPt) { closest_point(coords[0], coords[1], queryPt, closestPt); }
+  static Vec3d closest_point(const std::array<Vec3d,2> & coords, const Vec3d &queryPt) { closest_point(coords[0], coords[1], queryPt); }
 
   static REAL distance_squared(const Vec3d & p0, const Vec3d & p1, const Vec3d& queryPt)
   {
@@ -65,8 +78,6 @@ class CalcSegment3 {
 
   static REAL length(const std::array<Vec3d,2> & coords) { return (coords[1]-coords[0]).length(); }
   static REAL length_squared(const std::array<Vec3d,2> & coords) { return (coords[1]-coords[0]).length_squared(); }
-  static Vec3d closest_point(const std::array<Vec3d,2> & coords, const Vec3d &queryPt) { return closest_point(coords[0], coords[1], queryPt); }
-  static void closest_point(const std::array<Vec3d,2> & coords, const Vec3d &queryPt, Vec3d &closestPt, REAL &paramLoc) { closest_point(coords[0], coords[1], queryPt, closestPt, paramLoc); }
   static REAL distance_squared(const std::array<Vec3d,2> & coords, const Vec3d& queryPt) { return distance_squared(coords[0], coords[1], queryPt); }
 };
 

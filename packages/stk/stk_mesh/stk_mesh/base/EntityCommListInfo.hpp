@@ -72,7 +72,7 @@ struct IsInvalid
 {
   bool operator()(const EntityCommListInfo& comm) const
   {
-    return comm.key == EntityKey() || comm.entity_comm == -1;
+    return !comm.key.is_valid() || comm.entity_comm == -1;
   }
 };
 

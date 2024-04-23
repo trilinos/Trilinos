@@ -6,6 +6,8 @@
  * See packages/seacas/LICENSE for details
  */
 
+#include "prototypes.h"
+
 /* Reverse the bits of a number. */
 int bit_reverse(int val, int nbits)
 /* value to reverse bits of */

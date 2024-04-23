@@ -15,7 +15,7 @@
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <string>                       // for string
-#include <init/Ionit_Initializer.h>     // for Initializer
+#include <Ionit_Initializer.h>     // for Initializer
 #include "stk_io/DatabasePurpose.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/GetEntities.hpp>

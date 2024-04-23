@@ -237,17 +237,10 @@ int main(int argc, char** argv) {
   Kokkos::print_configuration(std::cout);
 
 #if defined(KOKKOS_ENABLE_OPENMP)
-
   if (params.use_openmp) {
-#ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
-    KokkosKernels::Experiment::run_spgemm_jacobi<
-        size_type, lno_t, scalar_t, Kokkos::OpenMP,
-        Kokkos::Experimental::HBWSpace, Kokkos::HostSpace>(params);
-#else
     KokkosKernels::Experiment::run_spgemm_jacobi<
         size_type, lno_t, scalar_t, Kokkos::OpenMP,
         Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
-#endif
   }
 #endif
 

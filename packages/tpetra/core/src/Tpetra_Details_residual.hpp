@@ -338,14 +338,18 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        (X_colmap_lcl.data () == B_lcl.data () && X_colmap_lcl.data () != nullptr),
        std::runtime_error, "X, Y and R may not alias one another.");
   }
-      
-  SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one, zero = Teuchos::ScalarTraits<SC>::zero();    
-#ifdef TPETRA_DETAILS_USE_REFERENCE_RESIDUAL
-  // This is currently a "reference implementation" waiting until Kokkos Kernels provides
-  // a residual kernel.
-  A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
-  R.update(one,B,negone);
-#else
+
+  const bool fusedResidual = ::Tpetra::Details::Behavior::fusedResidual ();
+  if (!fusedResidual) {
+    SC one = Teuchos::ScalarTraits<SC>::one();
+    SC negone = -one;
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
+    // This is currently a "reference implementation" waiting until Kokkos Kernels provides
+    // a residual kernel.
+    A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
+    R.update(one,B,negone);
+    return;
+  }
 
   if (A_lcl.numRows() == 0) {
     return;
@@ -353,21 +357,6 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
 
   int64_t numLocalRows = A_lcl.numRows ();
   int64_t myNnz = A_lcl.nnz();
-
-  //Check for imbalanced rows. If the logic for SPMV to use merge path is triggered,
-  //use it and follow the reference residual code
-  LO maxRowImbalance = 0;
-  if(numLocalRows != 0)
-    maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
-  if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-  {
-    //note: lclOp will be wrapped in shared_ptr
-    auto lclOp = A.getLocalMultiplyOperator();
-    //Call local SPMV, requesting merge path, through A's LocalCrsMatrixOperator
-    lclOp->applyImbalancedRows (X_colmap_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
-    R.update(one,B,negone);
-    return;
-  }
 
   int team_size = -1;
   int vector_length = -1;
@@ -425,7 +414,6 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
 
     }
   }
-#endif
 }
 
 
@@ -504,21 +492,6 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
 
   int64_t numLocalRows = A_lcl.numRows ();
   int64_t myNnz = A_lcl.nnz();
-
-  // //Check for imbalanced rows. If the logic for SPMV to use merge path is triggered,
-  // //use it and follow the reference residual code
-  // LO maxRowImbalance = 0;
-  // if(numLocalRows != 0)
-  //   maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
-  // if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-  // {
-  //   //note: lclOp will be wrapped in shared_ptr
-  //   auto lclOp = A.getLocalMultiplyOperator();
-  //   //Call local SPMV, requesting merge path, through A's LocalCrsMatrixOperator
-  //   lclOp->applyImbalancedRows (X_colmap_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
-  //   R.update(one,B,negone);
-  //   return;
-  // }
 
   int team_size = -1;
   int vector_length = -1;

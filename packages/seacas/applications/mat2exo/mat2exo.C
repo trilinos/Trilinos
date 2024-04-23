@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,17 +29,18 @@
    modified by Greg Sjaardema, 07/05/2012 to use matio instead of matlab libraries.
 */
 
-#include "add_to_log.h" // for add_to_log
-#include "fmt/printf.h"
+#include "SL_tokenize.h"   // for tokenize
+#include "add_to_log.h"    // for add_to_log
 #include "matio.h"         // for matvar_t, Mat_VarFree, etc
 #include "matio_pubconf.h" // for MATIO_VERSION
-#include <SL_tokenize.h>   // for tokenize
+#include "vector_data.h"
 
 #include <array>
 #include <cstddef>    // for size_t
 #include <cstring>    // for strtok, memcpy, strlen, etc
 #include <exodusII.h> // for ex_put_variable_param, etc
-#include <numeric>    // for accumulate
+#include <fmt/printf.h>
+#include <numeric> // for accumulate
 #include <smart_assert.h>
 #include <string> // for char_traits, string
 #include <vector> // for vector
@@ -53,7 +54,7 @@ mat_t *mat_file = nullptr; /* file for binary .mat input */
 
 /**********************************************************************/
 namespace {
-  std::array<std::string, 3> qainfo{"mat2exo", "2021/09/27", "4.06"};
+  const std::array<std::string, 3> qainfo{"mat2exo", "2021/09/27", "4.06"};
 }
 
 /**********************************************************************/
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
 
   const std::string ext{".exo"};
   std::string       line(argv[1]);
-  line = line.substr(0, line.find("."));
+  line = line.substr(0, line.find('.'));
   line += ext;
   int exo_file = ex_create(line.c_str(), EX_CLOBBER, &cpu_word_size, &io_word_size);
   if (exo_file < 0) {
@@ -159,7 +160,7 @@ int main(int argc, char *argv[])
     if (num_axes > 2) {
       matGetDbl("z0", num_nodes, 1, z);
     }
-    ex_put_coord(exo_file, x.data(), y.data(), z.data());
+    ex_put_coord(exo_file, Data(x), Data(y), Data(z));
   }
 
   /* side sets */
@@ -183,12 +184,12 @@ int main(int argc, char *argv[])
 
       name = fmt::sprintf("ssside%02d", i + 1);
       matGetInt(name, num_sideset_sides[i], 1, side_list);
-      ex_put_set(exo_file, EX_SIDE_SET, ids[i], elem_list.data(), side_list.data());
+      ex_put_set(exo_file, EX_SIDE_SET, ids[i], Data(elem_list), Data(side_list));
 
       if (nssdfac[i] > 0) {
         name = fmt::sprintf("ssfac%02d", i + 1);
         matGetDbl(name, nssdfac[i], 1, dist_fact);
-        ex_put_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], dist_fact.data());
+        ex_put_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], Data(dist_fact));
       }
     }
 
@@ -212,12 +213,12 @@ int main(int argc, char *argv[])
 
       std::string name = fmt::sprintf("nsnod%02d", i + 1);
       matGetInt(name, num_nodeset_nodes[i], 1, node_list);
-      ex_put_set(exo_file, EX_NODE_SET, ids[i], node_list.data(), nullptr);
+      ex_put_set(exo_file, EX_NODE_SET, ids[i], Data(node_list), nullptr);
 
       if (ndfac[i] > 0) {
         name = fmt::sprintf("nsfac%02d", i + 1);
         matGetDbl(name, ndfac[i], 1, dist_fact);
-        ex_put_set_dist_fact(exo_file, EX_NODE_SET, ids[i], dist_fact.data());
+        ex_put_set_dist_fact(exo_file, EX_NODE_SET, ids[i], Data(dist_fact));
       }
     }
 
@@ -244,7 +245,7 @@ int main(int argc, char *argv[])
       int num_attr_per_elem = matGetInt(name);
       ex_put_block(exo_file, EX_ELEM_BLOCK, ids[i], block_names[i].c_str(), num_elem_in_block[i],
                    num_node_per_elem, 0, 0, num_attr_per_elem);
-      ex_put_conn(exo_file, EX_ELEM_BLOCK, ids[i], connect.data(), nullptr, nullptr);
+      ex_put_conn(exo_file, EX_ELEM_BLOCK, ids[i], Data(connect), nullptr, nullptr);
 
       if (num_attr_per_elem > 0) {
         get_put_attr_names(exo_file, i + 1, ids[i], num_attr_per_elem);
@@ -252,7 +253,7 @@ int main(int argc, char *argv[])
         for (int j = 0; j < num_attr_per_elem; j++) {
           name = fmt::sprintf("blk%02d_attr%02d", i + 1, j + 1);
           matGetDbl(name, num_elem_in_block[i], 1, attr_data);
-          ex_put_one_attr(exo_file, EX_ELEM_BLOCK, ids[i], j + 1, attr_data.data());
+          ex_put_one_attr(exo_file, EX_ELEM_BLOCK, ids[i], j + 1, Data(attr_data));
         }
       }
     }
@@ -332,14 +333,14 @@ int main(int argc, char *argv[])
   {
     std::vector<int> ids;
     if (matGetInt("node_num_map", num_nodes, 1, ids) == 0) {
-      ex_put_id_map(exo_file, EX_NODE_MAP, ids.data());
+      ex_put_id_map(exo_file, EX_NODE_MAP, Data(ids));
     }
   }
 
   {
     std::vector<int> ids;
     if (matGetInt("elem_num_map", num_elements, 1, ids) == 0) {
-      ex_put_id_map(exo_file, EX_ELEM_MAP, ids.data());
+      ex_put_id_map(exo_file, EX_ELEM_MAP, Data(ids));
     }
   }
 
@@ -357,7 +358,7 @@ std::vector<std::string> matGetStr(const std::string &name)
 {
   matvar_t *matvar = Mat_VarRead(mat_file, name.c_str());
   if (matvar == nullptr) {
-    return std::vector<std::string>();
+    return {};
   }
 
   if (matvar->dims[0] != 1) {
@@ -393,7 +394,7 @@ int matGetDbl(const std::string &name, size_t n1, size_t n2, std::vector<double>
   SMART_ASSERT(matvar->dims[1] == n2);
 
   data.resize(n1 * n2);
-  memcpy(data.data(), static_cast<int *>(matvar->data), n1 * n2 * sizeof(double));
+  memcpy(Data(data), static_cast<int *>(matvar->data), n1 * n2 * sizeof(double));
 
   Mat_VarFree(matvar);
   return 0;
@@ -411,7 +412,7 @@ int matGetInt(const std::string &name, size_t n1, size_t n2, std::vector<int> &d
   SMART_ASSERT(matvar->dims[1] == n2);
 
   data.resize(n1 * n2);
-  memcpy(data.data(), static_cast<int *>(matvar->data), n1 * n2 * sizeof(int));
+  memcpy(Data(data), static_cast<int *>(matvar->data), n1 * n2 * sizeof(int));
 
   Mat_VarFree(matvar);
   return 0;
@@ -468,7 +469,7 @@ void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std:
   for (int i = 0; i < num_vars; i++) {
     str2[i] = names[i].c_str();
   }
-  ex_put_variable_names(exo_file, entity, num_vars, const_cast<char **>(str2.data()));
+  ex_put_variable_names(exo_file, entity, num_vars, const_cast<char **>(Data(str2)));
 }
 
 void get_put_user_names(int exo_file, ex_entity_type entity, int num_entity, const char *mname)
@@ -479,7 +480,7 @@ void get_put_user_names(int exo_file, ex_entity_type entity, int num_entity, con
   for (int i = 0; i < num_entity; i++) {
     str2[i] = names[i].c_str();
   }
-  ex_put_names(exo_file, entity, const_cast<char **>(str2.data()));
+  ex_put_names(exo_file, entity, const_cast<char **>(Data(str2)));
 }
 
 void get_put_attr_names(int exo_file, int seq, int id, int num_attr)
@@ -492,7 +493,7 @@ void get_put_attr_names(int exo_file, int seq, int id, int num_attr)
   for (int i = 0; i < num_attr; i++) {
     str2[i] = names[i].c_str();
   }
-  ex_put_attr_names(exo_file, EX_ELEM_BLOCK, id, const_cast<char **>(str2.data()));
+  ex_put_attr_names(exo_file, EX_ELEM_BLOCK, id, const_cast<char **>(Data(str2)));
 }
 
 void get_put_vars(int exo_file, ex_entity_type type, const std::vector<int> &ids, int num_blocks,

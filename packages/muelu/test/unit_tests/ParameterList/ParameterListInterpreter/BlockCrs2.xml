@@ -5,6 +5,8 @@
   -->
 
   <!-- ===========  GENERAL ================ -->
+    <Parameter        name="aggregation: deterministic"           type="bool"     value="true"/>
+
     <Parameter        name="verbosity"                            type="string"   value="high"/>
 
     <Parameter        name="coarse: max size"                     type="int"      value="50"/>

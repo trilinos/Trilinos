@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,7 +13,7 @@
 static struct ipairs *pedges; /* perturbed edges */
 static double        *pvals;  /* perturbed values */
 
-/* Inititialize the perturbation */
+/* Initialize the perturbation */
 void perturb_init(int n /* graph size at this level */
 )
 {

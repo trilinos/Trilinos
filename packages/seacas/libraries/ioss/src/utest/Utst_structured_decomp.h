@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <cgns/Iocgns_StructuredZoneData.h>
+#include "cgns/Iocgns_StructuredZoneData.h"
 #include <vector>
 
 void cleanup(std::vector<Iocgns::StructuredZoneData *> &zones);

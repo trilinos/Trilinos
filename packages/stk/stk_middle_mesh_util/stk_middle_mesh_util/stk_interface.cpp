@@ -1,4 +1,3 @@
-#ifdef STK_BUILT_IN_SIERRA
 
 #include "stk_interface.hpp"
 #include "constants.hpp"
@@ -195,4 +194,4 @@ std::string StkInterface::get_part_name(mesh::impl::MeshInput::NamePair& p)
 } // namespace stk_interface
 } // namespace middle_mesh
 } // namespace stk
-#endif
+

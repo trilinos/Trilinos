@@ -1,24 +1,34 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include <Ioss_BoundingBox.h>  // for AxisAlignedBoundingBox
-#include <Ioss_DatabaseIO.h>   // for DatabaseIO
-#include <Ioss_Field.h>        // for Field, etc
-#include <Ioss_FieldManager.h> // for FieldManager
-#include <Ioss_Hex8.h>
-#include <Ioss_Property.h> // for Property
-#include <Ioss_Region.h>
-#include <Ioss_SmartAssert.h>
-#include <Ioss_StructuredBlock.h>
-#include <fmt/ostream.h>
-
+#include "Ioss_BoundingBox.h"  // for AxisAlignedBoundingBox
+#include "Ioss_DatabaseIO.h"   // for DatabaseIO
+#include "Ioss_Field.h"        // for Field, etc
+#include "Ioss_FieldManager.h" // for FieldManager
+#include "Ioss_Hex8.h"
+#include "Ioss_Property.h" // for Property
+#include "Ioss_SmartAssert.h"
+#include "Ioss_StructuredBlock.h"
+#include <cmath>
 #include <cstddef> // for size_t
-#include <numeric>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
+#include <iostream>
+#include <stdlib.h>
 #include <string> // for string
 #include <vector> // for vector
+
+#include "Ioss_CodeTypes.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Utils.h"
+#include "Ioss_ZoneConnectivity.h"
 
 namespace {
   template <typename T> bool vec_equal(const std::vector<T> &lhs, const std::vector<T> &rhs)
@@ -81,7 +91,6 @@ namespace {
 } // namespace
 
 namespace Ioss {
-  class Field;
 
   /** \brief Create a structured block.
    *
@@ -214,8 +223,6 @@ namespace Ioss {
     }
   }
 
-  StructuredBlock::~StructuredBlock() = default;
-
   StructuredBlock *StructuredBlock::clone(DatabaseIO *database) const
   {
     int   index_dim = properties.get("component_degree").get_int();
@@ -274,22 +281,22 @@ namespace Ioss {
   Property StructuredBlock::get_implicit_property(const std::string &my_name) const
   {
     if (my_name == "ni_global") {
-      return Ioss::Property(my_name, m_ijkGlobal[0]);
+      return {my_name, m_ijkGlobal[0]};
     }
     if (my_name == "nj_global") {
-      return Ioss::Property(my_name, m_ijkGlobal[1]);
+      return {my_name, m_ijkGlobal[1]};
     }
     if (my_name == "nk_global") {
-      return Ioss::Property(my_name, m_ijkGlobal[2]);
+      return {my_name, m_ijkGlobal[2]};
     }
     if (my_name == "offset_i") {
-      return Ioss::Property(my_name, m_offset[0]);
+      return {my_name, m_offset[0]};
     }
     if (my_name == "offset_j") {
-      return Ioss::Property(my_name, m_offset[1]);
+      return {my_name, m_offset[1]};
     }
     if (my_name == "offset_k") {
-      return Ioss::Property(my_name, m_offset[2]);
+      return {my_name, m_offset[2]};
     }
     return EntityBlock::get_implicit_property(my_name);
   }

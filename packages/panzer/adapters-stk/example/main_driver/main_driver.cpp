@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
     status = -1;
   }
   
-  Teuchos::TimeMonitor::summarize(*out,false,true,false);
+  // Teuchos::TimeMonitor::summarize(*out,false,true,false);
 
 #ifdef Panzer_BUILD_PAPI_SUPPORT
     papi_counter.stop();
