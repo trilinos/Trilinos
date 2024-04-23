@@ -80,15 +80,6 @@
 #define Teuchos_Complex_float_type_name float _Complex
 #endif
 
-// Determine the correct internal integer type for passing dimensions
-// and strides to the BLAS library. Users do not interact with this directly.
-#ifdef HAVE_TEUCHOSNUMERICS_MKL
-#include "mkl.h"
-using TeuchosNumerics_Int = MKL_INT;
-#else
-using TeuchosNumerics_Int = int;
-#endif
-
 /* B) Take care of of the link name case */
 
 
