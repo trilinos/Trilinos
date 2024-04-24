@@ -10,8 +10,8 @@ NOX::ObserverReusePreconditioner::ObserverReusePreconditioner()
     update_after_n_iterations_(false),
     num_iterations_for_update_(5),
     update_if_stalled_(false),
-    max_linear_iterations_for_stall_(-1),
     max_count_for_stall_(-1),
+    max_linear_iterations_for_stall_(-1),
     stall_count_(0),
     iterations_since_last_update_(0)
 {}
