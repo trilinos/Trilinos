@@ -17,9 +17,6 @@
 
 #include <fstream>
 
-using namespace Teuchos;
-using namespace Kokkos;
-
 const int numFields = 8;
 const int numNodes = 8;
 const int numDims  = 3;
