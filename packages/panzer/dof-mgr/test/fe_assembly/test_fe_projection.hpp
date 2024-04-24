@@ -192,8 +192,8 @@ int feProjection(int argc, char *argv[]) {
     // parse command line arguments
     int degree = 2;
     local_ordinal_t nx = 2;
-    local_ordinal_t ny            = nx;
-    local_ordinal_t nz            = (dim == 3) ? nx :1;
+    local_ordinal_t ny = nx;
+    local_ordinal_t nz = (dim == 3) ? nx :1;
     int np   = comm.getSize(); // number of processors
     int px = (dim == 2) ? std::sqrt(np) : std::cbrt(np); while(np%px!=0) --px;
     int py = (dim == 2) ? np/px : std::sqrt(np/px); while(np%py!=0) --py;
@@ -881,7 +881,7 @@ int feProjection(int argc, char *argv[]) {
           }
 
           //evaluate the boundary terms in physical space
-          double nx(sideNormal[0]), ny(sideNormal[1]), nz(sideNormal[2]);
+          double n_x(sideNormal[0]), n_y(sideNormal[1]), n_z(sideNormal[2]);
           Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceSpaceType::execution_space>(0,numBoundarySides),
               KOKKOS_LAMBDA (const int &is) {
             Fun fun(functionSpace);
@@ -898,7 +898,7 @@ int feProjection(int argc, char *argv[]) {
               case Intrepid2::FUNCTION_SPACE_HDIV: {
                 //compute f \dot n
                 double fx(fun(x,y,z,0)), fy(fun(x,y,z,1)), fz(fun(x,y,z,2));
-                physTargetAtSideEvalPoints(is,pt) = (dim == 3) ? nx*fx+ny*fy+nz*fz : nx*fx+ny*fy;
+                physTargetAtSideEvalPoints(is,pt) = (dim == 3) ? n_x*fx+n_y*fy+n_z*fz : n_x*fx+n_y*fy;
               }
               break;
               case Intrepid2::FUNCTION_SPACE_HCURL:
@@ -906,11 +906,11 @@ int feProjection(int argc, char *argv[]) {
                 //compute f \times n
                 double fx(fun(x,y,z,0)), fy(fun(x,y,z,1)), fz(fun(x,y,z,2));
                 if (dim == 3) {
-                  physTargetAtSideEvalPoints(is,pt,0) = fy*nz-fz*ny;
-                  physTargetAtSideEvalPoints(is,pt,1) = fz*nx-fx*nz;
-                  physTargetAtSideEvalPoints(is,pt,2) = fx*ny-fy*nx;
+                  physTargetAtSideEvalPoints(is,pt,0) = fy*n_z-fz*n_y;
+                  physTargetAtSideEvalPoints(is,pt,1) = fz*n_x-fx*n_z;
+                  physTargetAtSideEvalPoints(is,pt,2) = fx*n_y-fy*n_x;
                 } else {
-                  physTargetAtSideEvalPoints(is,pt) = fx*ny-fy*nx;
+                  physTargetAtSideEvalPoints(is,pt) = fx*n_y-fy*n_x;
                 }
               }
               break;
