@@ -139,7 +139,7 @@ namespace Impl {
             space, trans, uplo, alpha, X, A);                                \
       } else {                                                               \
         if (A_is_ll) {                                                       \
-          HostBlas<std::complex<double>>::zher<double>(                      \
+          HostBlas<std::complex<double>>::her<double>(                       \
               uplo[0], N, alpha.real(),                                      \
               reinterpret_cast<const std::complex<double>*>(X.data()), one,  \
               reinterpret_cast<std::complex<double>*>(A.data()), LDA);       \
@@ -188,7 +188,7 @@ namespace Impl {
             space, trans, uplo, alpha, X, A);                                \
       } else {                                                               \
         if (A_is_ll && (alpha.imag() == 0.)) {                               \
-          HostBlas<std::complex<float>>::cher<float>(                        \
+          HostBlas<std::complex<float>>::her<float>(                         \
               uplo[0], N, alpha.real(),                                      \
               reinterpret_cast<const std::complex<float>*>(X.data()), one,   \
               reinterpret_cast<std::complex<float>*>(A.data()), LDA);        \
