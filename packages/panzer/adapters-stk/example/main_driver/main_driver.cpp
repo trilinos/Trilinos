@@ -142,7 +142,8 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
     Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
     
-    *out << *input_params << std::endl;
+    if (printInputPL)
+      *out << *input_params << std::endl;
 
     Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
     input_params->remove("Solver Factories");
