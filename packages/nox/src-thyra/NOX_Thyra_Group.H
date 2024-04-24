@@ -365,6 +365,17 @@ namespace NOX {
       /// Returns true if a base point has been set.
       bool usingBasePoint() const;
 
+      /// Returns the thyra linear solver factory.
+      Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double>>
+      getLinearOpWithSolveFactory() const;
+
+      /// Returns the thyra preconditioner factory.
+      Teuchos::RCP<::Thyra::PreconditionerFactoryBase<double>>
+      getPreconditionerFactory() const;
+
+      /// User will take control of updating an already registered preconditioner. Typically used with NOX::ObserverReusePreconditioner observer.
+      void takeControlOfPreconditionerUpdates(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& prec);
+
     protected:
 
       //! resets the isValid flags to false

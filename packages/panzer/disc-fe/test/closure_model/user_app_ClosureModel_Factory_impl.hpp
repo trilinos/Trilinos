@@ -57,6 +57,7 @@
 
 // User application evaluators for this factory
 #include "user_app_ConstantModel.hpp"
+#include "user_app_TSquaredModel.hpp"
 
 #include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
@@ -207,7 +208,20 @@ buildClosureModels(const std::string& model_id,
   
           found = true;
         }
-
+        else if (plist.get<std::string>("Type") == "T Squared Source") {
+          // Required parameters
+          plist.get<double>("Multiplier");
+          plist.get<std::string>("Source Name");
+          plist.get<std::string>("Target Name");
+          {
+            Teuchos::ParameterList input = plist;
+            input.set("Data Layout", ir->dl_scalar);
+            RCP< user_app::TSquaredModel<EvalT,panzer::Traits> > e = 
+              rcp(new user_app::TSquaredModel<EvalT,panzer::Traits>(input));
+            evaluators->push_back(e);
+          }
+          found = true;
+        }
       }
       else if (plist.isType<double>("Value")) {
         { // at IP

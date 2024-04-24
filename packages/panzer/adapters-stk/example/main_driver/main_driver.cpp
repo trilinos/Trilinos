@@ -112,6 +112,8 @@ int main(int argc, char *argv[])
     int exodus_io_num_procs = 0;
     bool pauseToAttachOn = false;
     bool fluxCalculation = false;
+    bool printTimers = false;
+    bool printInputPL = false;
     {
       Teuchos::CommandLineProcessor clp;
       
@@ -119,6 +121,8 @@ int main(int argc, char *argv[])
       clp.setOption("exodus-io-num-procs", &exodus_io_num_procs, "Number of processes that can access the file system at the same time to read their portion of a sliced exodus file in parallel.  Defaults to 0 - implies all processes for the run can access the file system at the same time.");
       clp.setOption("pause-to-attach","disable-pause-to-attach", &pauseToAttachOn, "Call pause to attach, default is off.");
       clp.setOption("flux-calc","disable-flux-calc", &fluxCalculation, "Enable the flux calculation.");
+      clp.setOption("time","no-time", &printTimers, "Print the timing information.");
+      clp.setOption("pl","no-pl", &printTimers, "Print the input ParameterList at the start of the run.");
       
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
 	clp.parse(argc,argv,&std::cerr);
@@ -138,7 +142,8 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
     Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
     
-    *out << *input_params << std::endl;
+    if (printInputPL)
+      *out << *input_params << std::endl;
 
     Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
     input_params->remove("Solver Factories");
@@ -345,7 +350,7 @@ int main(int argc, char *argv[])
 
             TEUCHOS_ASSERT(response!=Teuchos::null); // should not be null!
 
-            *out << "Response Value \"" << responseIndexToName[i] << "\": " << *response << std::endl;
+            *out << "Response Value \"" << responseIndexToName[i] << "\": " << Thyra::get_ele(*response,0) << std::endl;
          }
       }
 
@@ -383,7 +388,7 @@ int main(int argc, char *argv[])
     }
 
     stackedTimer->stopBaseTimer();
-    {
+    if (printTimers) {
       Teuchos::StackedTimer::OutputOptions options;
       options.output_fraction = true;
       options.output_minmax = true;
