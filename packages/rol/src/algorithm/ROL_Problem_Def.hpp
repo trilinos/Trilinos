@@ -213,6 +213,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
     }
     // Transform optimization problem
     //std::cout << hasBounds_ << "  " << hasEquality << "  " << hasInequality << "  " << hasLinearEquality << "  " << hasLinearInequality << std::endl;
+    nobj_            = nullPtr; 
     if (hasProximableObjective){
       if (!hasEquality && !hasInequality && !hasBounds_ && !hasLinearEquality && !hasLinearInequality){
         problemType_ = TYPE_P;
@@ -235,8 +236,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
         if (!hasEquality && !hasInequality && !hasBounds_ ) {
           problemType_ = TYPE_U;
           obj_         = INPUT_obj_;
-          nobj_        = nullPtr; 
-		  		xprim_       = INPUT_xprim_;
+          xprim_       = INPUT_xprim_;
           xdual_       = INPUT_xdual_;
           bnd_         = nullPtr;
           con_         = nullPtr;
@@ -246,7 +246,6 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
         else if (!hasEquality && !hasInequality && hasBounds_) {
           problemType_ = TYPE_B;
           obj_         = INPUT_obj_;
-          nobj_        = nullPtr; 
           xprim_       = INPUT_xprim_;
           xdual_       = INPUT_xdual_;
           bnd_         = INPUT_bnd_;
@@ -258,7 +257,6 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
           ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_);
           problemType_ = TYPE_E;
           obj_         = INPUT_obj_;
-          nobj_        = nullPtr; 
           xprim_       = INPUT_xprim_;
           xdual_       = INPUT_xdual_;
           bnd_         = nullPtr;
@@ -270,7 +268,6 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
           ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
           problemType_ = TYPE_EB;
           obj_         = INPUT_obj_;
-          nobj_        = nullPtr; 
           if (cm.hasInequality()) {
             obj_      = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
           }
@@ -284,10 +281,6 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
       }
       else {
         if (!hasBounds_ && !hasLinearInequality) {
-          if (hasProximableObjective){
-            throw Exception::NotImplemented(">>> ROL::TypeP - with constraints is not supported"); 
-          }
-          nobj_ = nullPtr; 
           ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_);
           xfeas_ = cm.getOptVector()->clone(); xfeas_->set(*cm.getOptVector());
           rlc_   = makePtr<ReduceLinearConstraint<Real>>(cm.getConstraint(),xfeas_,cm.getResidual());
@@ -457,11 +450,13 @@ const Ptr<Objective<Real>>& Problem<Real>::getObjective() {
   finalize();
   return obj_;
 }
+
 template<typename Real>
 const Ptr<Objective<Real>>& Problem<Real>::getProximableObjective(){
   finalize(); 
   return nobj_; 
 }
+
 template<typename Real>
 const Ptr<Vector<Real>>& Problem<Real>::getPrimalOptimizationVector() {
   finalize();
