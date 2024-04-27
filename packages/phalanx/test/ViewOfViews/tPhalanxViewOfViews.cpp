@@ -684,16 +684,18 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
     auto c = Mat_h(1,0);
 
     // Initialize a and b
-    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
-    Kokkos::parallel_for("FadAndAssignment init",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
-      a(cell,pt).val() = double(cell) + double(pt);
-      a(cell,pt).fastAccessDx(0) = 0.0;
-      a(cell,pt).fastAccessDx(1) = 2.0 * double(cell) + double(pt);
-      b(cell,pt).val() = double(cell);
-      b(cell,pt).fastAccessDx(0) = 0.0;
-      b(cell,pt).fastAccessDx(1) = 0.0;
-    });
-    PHX::Device::execution_space().fence();
+    {
+      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
+      Kokkos::parallel_for("FadAndAssignment init",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
+        a(cell,pt).val() = double(cell) + double(pt);
+        a(cell,pt).fastAccessDx(0) = 0.0;
+        a(cell,pt).fastAccessDx(1) = 2.0 * double(cell) + double(pt);
+        b(cell,pt).val() = double(cell);
+        b(cell,pt).fastAccessDx(0) = 0.0;
+        b(cell,pt).fastAccessDx(1) = 0.0;
+      });
+      PHX::Device::execution_space().fence();
+    }
 
     // Compute c using device vov
     auto Mat = vov.getViewDevice();
@@ -707,6 +709,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
         });
       });
     } else {
+      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
       Kokkos::parallel_for("FadAndAssignement compute",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
         Mat(1,0)(cell,pt) = Mat(0,0)(cell,pt) * Mat(0,1)(cell,pt);
       });
