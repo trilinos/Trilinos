@@ -189,7 +189,7 @@ public:
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }
 
 private:
-  typedef typename GraphType::map_type map_type;  
+  typedef typename GraphType::map_type map_type;
 
   /// \brief Copy constructor (UNIMPLEMENTED; DO NOT USE).
   ///
@@ -313,7 +313,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
                              : Kokkos::ceil(static_cast<double>(RowMaxNumIndices)
                                     * Kokkos::pow(overalloc, levelfill));
                          });
-   
+
   };
 
   bool insertError;  // No error found yet while inserting entries
@@ -415,7 +415,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
           L_Graph_->getLocalRowCopy(i, CurrentRow_view, LenL);  // Get L Indices
           CurrentRow[LenL] = i;                              // Put in Diagonal
           if (LenU > 0) {
-            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,LenU);            
+            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,LenU);
             nonconst_local_inds_host_view_type URowView_v(URowView.data(),URowView.size());
 
             // Get U Indices
@@ -584,7 +584,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
 
   typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
   typedef typename Kokkos::View<data_type*, array_layout, device_type> lno_nonzero_view_t;
-  
+
   constructOverlapGraph();
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
@@ -614,7 +614,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
     catch (std::runtime_error &e) {
       symbolicError = true;
       data_type nnzL = static_cast<data_type>(Overalloc_)*L_entries.extent(0);
-      data_type nnzU = static_cast<data_type>(Overalloc_)*U_entries.extent(0);	  
+      data_type nnzU = static_cast<data_type>(Overalloc_)*U_entries.extent(0);
       KernelHandle->get_spiluk_handle()->reset_handle(NumMyRows, nnzL, nnzU);
       Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
       Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
@@ -628,17 +628,17 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
 
   Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
   Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
-  
+
   RCP<Teuchos::ParameterList> params = Teuchos::parameterList ();
   params->set ("Optimize Storage",false);
-  
+
   L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 
+                                      OverlapGraph_->getRowMap (),
                                       L_row_map, L_entries));
   U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
-                                      OverlapGraph_->getRowMap (), 
+                                      OverlapGraph_->getRowMap (),
                                       U_row_map, U_entries));
-									  
+
   RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap ();
   RCP<const map_type> L_RangeMap  = Graph_->getRangeMap ();
   RCP<const map_type> U_DomainMap = Graph_->getDomainMap ();

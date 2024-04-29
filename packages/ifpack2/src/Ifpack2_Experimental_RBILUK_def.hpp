@@ -45,13 +45,16 @@
 
 #include "Tpetra_BlockMultiVector.hpp"
 #include "Tpetra_BlockView.hpp"
+#include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
 #include "Ifpack2_OverlappingRowMatrix.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_RILUK.hpp"
+#include "KokkosSparse_trsv.hpp"
 
 //#define IFPACK2_RBILUK_INITIAL
-#define IFPACK2_RBILUK_INITIAL_NOKK
+//#define IFPACK2_RBILUK_INITIAL_NOKK
 
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
 #include "KokkosBatched_Gemm_Decl.hpp"
@@ -69,7 +72,7 @@ template<class MatrixType>
 struct LocalRowHandler
 {
   using LocalOrdinal = typename MatrixType::local_ordinal_type;
-  using row_matrix_type = Tpetra::RowMatrix< 
+  using row_matrix_type = Tpetra::RowMatrix<
       typename MatrixType::scalar_type,
       LocalOrdinal,
       typename MatrixType::global_ordinal_type,
@@ -96,7 +99,7 @@ struct LocalRowHandler
       A_->getLocalRowView(local_row,InI,InV);
       NumIn = (LocalOrdinal)InI.size();
     }
-    else 
+    else
     {
       size_t cnt;
       A_->getLocalRowCopy(local_row,ind_nc_,val_nc_,cnt);
@@ -266,7 +269,7 @@ makeLocalFilter (const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matri
 
 template<class MatrixType>
 Teuchos::RCP<const typename RBILUK<MatrixType>::crs_graph_type>
-getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A,const typename MatrixType::local_ordinal_type blockSize)
+getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A)
 {
   using local_ordinal_type = typename MatrixType::local_ordinal_type;
   using Teuchos::RCP;
@@ -289,10 +292,10 @@ getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matri
     {
       overlappedA = rcp_dynamic_cast<const OverlappingRowMatrix<row_matrix_type> > (filteredA->getUnderlyingMatrix ());
     }
-    
+
     if (! overlappedA.is_null ()) {
       A_block = rcp_dynamic_cast<const block_crs_matrix_type>(overlappedA->getUnderlyingMatrix());
-    } 
+    }
     else if (!filteredA.is_null ()){
       //If there is no overlap, filteredA could be the block CRS matrix
       A_block = rcp_dynamic_cast<const block_crs_matrix_type>(filteredA->getUnderlyingMatrix());
@@ -360,6 +363,7 @@ void RBILUK<MatrixType>::initialize ()
      "underlying graph is fill complete.");
 
   blockSize_ = this->A_->getBlockSize();
+  this->A_local_ = makeLocalFilter<MatrixType>(this->A_);
 
   Teuchos::Time timer ("RBILUK::initialize");
   double startTime = timer.wallTime();
@@ -378,12 +382,25 @@ void RBILUK<MatrixType>::initialize ()
     this->isComputed_ = false;
     this->Graph_ = Teuchos::null;
 
-    RCP<const crs_graph_type> matrixCrsGraph = getBlockCrsGraph<MatrixType>(this->A_,blockSize_);
+    RCP<const crs_graph_type> matrixCrsGraph = getBlockCrsGraph<MatrixType>(this->A_);
     this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (matrixCrsGraph,
         this->LevelOfFill_, 0));
 
-    this->Graph_->initialize ();
+    if (this->isKokkosKernelsSpiluk_) {
+      this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+      KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                           this->A_local_->getLocalNumRows(),
+                                           2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
+                                           2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
+                                           blockSize_);
+      this->Graph_->initialize(KernelHandle_); // this calls spiluk_symbolic
+    }
+    else {
+      this->Graph_->initialize ();
+    }
+
     allocate_L_and_U_blocks ();
+
 #ifdef IFPACK2_RBILUK_INITIAL
     initAllValues ();
 #endif
@@ -577,6 +594,10 @@ struct GetManagedView {
 template<class MatrixType>
 void RBILUK<MatrixType>::compute ()
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::Array;
+
   typedef impl_scalar_type IST;
   const char prefix[] = "Ifpack2::Experimental::RBILUK::compute: ";
 
@@ -627,205 +648,205 @@ void RBILUK<MatrixType>::compute ()
 
 //    const scalar_type MinDiagonalValue = STS::rmin ();
 //    const scalar_type MaxDiagonalValue = STS::one () / MinDiagonalValue;
-    initAllValues ();
+    if (!this->isKokkosKernelsSpiluk_) {
+      initAllValues ();
+      size_t NumIn;
+      LO NumL, NumU, NumURead;
 
-    size_t NumIn;
-    LO NumL, NumU, NumURead;
+      // Get Maximum Row length
+      const size_t MaxNumEntries =
+        L_block_->getLocalMaxNumRowEntries () + U_block_->getLocalMaxNumRowEntries () + 1;
 
-    // Get Maximum Row length
-    const size_t MaxNumEntries =
-      L_block_->getLocalMaxNumRowEntries () + U_block_->getLocalMaxNumRowEntries () + 1;
+      const LO blockMatSize = blockSize_*blockSize_;
 
-    const LO blockMatSize = blockSize_*blockSize_;
+      // FIXME (mfh 08 Nov 2015, 24 May 2016) We need to move away from
+      // expressing these strides explicitly, in order to finish #177
+      // (complete Kokkos-ization of BlockCrsMatrix) thoroughly.
+      const LO rowStride = blockSize_;
 
-    // FIXME (mfh 08 Nov 2015, 24 May 2016) We need to move away from
-    // expressing these strides explicitly, in order to finish #177
-    // (complete Kokkos-ization of BlockCrsMatrix) thoroughly.
-    const LO rowStride = blockSize_;
+      Teuchos::Array<int> ipiv_teuchos(blockSize_);
+      Kokkos::View<int*, Kokkos::HostSpace,
+                   Kokkos::MemoryUnmanaged> ipiv (ipiv_teuchos.getRawPtr (), blockSize_);
+      Teuchos::Array<IST> work_teuchos(blockSize_);
+      Kokkos::View<IST*, Kokkos::HostSpace,
+                   Kokkos::MemoryUnmanaged> work (work_teuchos.getRawPtr (), blockSize_);
 
-    Teuchos::Array<int> ipiv_teuchos(blockSize_);
-    Kokkos::View<int*, Kokkos::HostSpace,
-      Kokkos::MemoryUnmanaged> ipiv (ipiv_teuchos.getRawPtr (), blockSize_);
-    Teuchos::Array<IST> work_teuchos(blockSize_);
-    Kokkos::View<IST*, Kokkos::HostSpace,
-      Kokkos::MemoryUnmanaged> work (work_teuchos.getRawPtr (), blockSize_);
+      size_t num_cols = U_block_->getColMap()->getLocalNumElements();
+      Teuchos::Array<int> colflag(num_cols);
 
-    size_t num_cols = U_block_->getColMap()->getLocalNumElements();
-    Teuchos::Array<int> colflag(num_cols);
-
-    typename GetManagedView<little_block_host_type>::managed_non_const_type diagModBlock ("diagModBlock", blockSize_, blockSize_);
-    typename GetManagedView<little_block_host_type>::managed_non_const_type matTmp ("matTmp", blockSize_, blockSize_);
-    typename GetManagedView<little_block_host_type>::managed_non_const_type multiplier ("multiplier", blockSize_, blockSize_);
+      typename GetManagedView<little_block_host_type>::managed_non_const_type diagModBlock ("diagModBlock", blockSize_, blockSize_);
+      typename GetManagedView<little_block_host_type>::managed_non_const_type matTmp ("matTmp", blockSize_, blockSize_);
+      typename GetManagedView<little_block_host_type>::managed_non_const_type multiplier ("multiplier", blockSize_, blockSize_);
 
 //    Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
-    // Now start the factorization.
+      // Now start the factorization.
 
-    // Need some integer workspace and pointers
-    LO NumUU;
-    for (size_t j = 0; j < num_cols; ++j) {
-      colflag[j] = -1;
-    }
-    Teuchos::Array<LO> InI(MaxNumEntries, 0);
-    Teuchos::Array<scalar_type> InV(MaxNumEntries*blockMatSize,STM::zero());
-
-    const LO numLocalRows = L_block_->getLocalNumRows ();
-    for (LO local_row = 0; local_row < numLocalRows; ++local_row) {
-
-      // Fill InV, InI with current row of L, D and U combined
-
-      NumIn = MaxNumEntries;
-      local_inds_host_view_type colValsL;
-      values_host_view_type valsL;
-
-      L_block_->getLocalRowView(local_row, colValsL, valsL);
-      NumL = (LO) colValsL.size();
-      for (LO j = 0; j < NumL; ++j)
-      {
-        const LO matOffset = blockMatSize*j;
-        little_block_host_type lmat((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
-        little_block_host_type lmatV((typename little_block_host_type::value_type*) &InV[matOffset],blockSize_,rowStride);
-        //lmatV.assign(lmat);
-        Tpetra::COPY (lmat, lmatV);
-        InI[j] = colValsL[j];
+      // Need some integer workspace and pointers
+      LO NumUU;
+      for (size_t j = 0; j < num_cols; ++j) {
+        colflag[j] = -1;
       }
+      Teuchos::Array<LO> InI(MaxNumEntries, 0);
+      Teuchos::Array<scalar_type> InV(MaxNumEntries*blockMatSize,STM::zero());
 
-      little_block_host_type dmat = D_block_->getLocalBlockHostNonConst(local_row, local_row);
-      little_block_host_type dmatV((typename little_block_host_type::value_type*) &InV[NumL*blockMatSize], blockSize_, rowStride);
-      //dmatV.assign(dmat);
-      Tpetra::COPY (dmat, dmatV);
-      InI[NumL] = local_row;
+      const LO numLocalRows = L_block_->getLocalNumRows ();
+      for (LO local_row = 0; local_row < numLocalRows; ++local_row) {
 
-      local_inds_host_view_type colValsU;
-      values_host_view_type valsU;
-      U_block_->getLocalRowView(local_row, colValsU, valsU);
-      NumURead = (LO) colValsU.size();
-      NumU = 0;
-      for (LO j = 0; j < NumURead; ++j)
-      {
-        if (!(colValsU[j] < numLocalRows)) continue;
-        InI[NumL+1+j] = colValsU[j];
-        const LO matOffset = blockMatSize*(NumL+1+j);
-        little_block_host_type umat((typename little_block_host_type::value_type*) &valsU[blockMatSize*j], blockSize_, rowStride);
-        little_block_host_type umatV((typename little_block_host_type::value_type*) &InV[matOffset], blockSize_, rowStride);
-        //umatV.assign(umat);
-        Tpetra::COPY (umat, umatV);
-        NumU += 1;
-      }
-      NumIn = NumL+NumU+1;
+        // Fill InV, InI with current row of L, D and U combined
 
-      // Set column flags
-      for (size_t j = 0; j < NumIn; ++j) {
-        colflag[InI[j]] = j;
-      }
+        NumIn = MaxNumEntries;
+        local_inds_host_view_type colValsL;
+        values_host_view_type valsL;
+
+        L_block_->getLocalRowView(local_row, colValsL, valsL);
+        NumL = (LO) colValsL.size();
+        for (LO j = 0; j < NumL; ++j)
+        {
+          const LO matOffset = blockMatSize*j;
+          little_block_host_type lmat((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+          little_block_host_type lmatV((typename little_block_host_type::value_type*) &InV[matOffset],blockSize_,rowStride);
+          //lmatV.assign(lmat);
+          Tpetra::COPY (lmat, lmatV);
+          InI[j] = colValsL[j];
+        }
+
+        little_block_host_type dmat = D_block_->getLocalBlockHostNonConst(local_row, local_row);
+        little_block_host_type dmatV((typename little_block_host_type::value_type*) &InV[NumL*blockMatSize], blockSize_, rowStride);
+        //dmatV.assign(dmat);
+        Tpetra::COPY (dmat, dmatV);
+        InI[NumL] = local_row;
+
+        local_inds_host_view_type colValsU;
+        values_host_view_type valsU;
+        U_block_->getLocalRowView(local_row, colValsU, valsU);
+        NumURead = (LO) colValsU.size();
+        NumU = 0;
+        for (LO j = 0; j < NumURead; ++j)
+        {
+          if (!(colValsU[j] < numLocalRows)) continue;
+          InI[NumL+1+j] = colValsU[j];
+          const LO matOffset = blockMatSize*(NumL+1+j);
+          little_block_host_type umat((typename little_block_host_type::value_type*) &valsU[blockMatSize*j], blockSize_, rowStride);
+          little_block_host_type umatV((typename little_block_host_type::value_type*) &InV[matOffset], blockSize_, rowStride);
+          //umatV.assign(umat);
+          Tpetra::COPY (umat, umatV);
+          NumU += 1;
+        }
+        NumIn = NumL+NumU+1;
+
+        // Set column flags
+        for (size_t j = 0; j < NumIn; ++j) {
+          colflag[InI[j]] = j;
+        }
 
 #ifndef IFPACK2_RBILUK_INITIAL
-      for (LO i = 0; i < blockSize_; ++i)
-        for (LO j = 0; j < blockSize_; ++j){
-          {
-            diagModBlock(i,j) = 0;
+        for (LO i = 0; i < blockSize_; ++i)
+          for (LO j = 0; j < blockSize_; ++j){
+            {
+              diagModBlock(i,j) = 0;
+            }
           }
-        }
 #else
-      scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
-      Kokkos::deep_copy (diagModBlock, diagmod);
+        scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
+        Kokkos::deep_copy (diagModBlock, diagmod);
 #endif
 
-      for (LO jj = 0; jj < NumL; ++jj) {
-        LO j = InI[jj];
-        little_block_host_type currentVal((typename little_block_host_type::value_type*) &InV[jj*blockMatSize], blockSize_, rowStride); // current_mults++;
-        //multiplier.assign(currentVal);
-        Tpetra::COPY (currentVal, multiplier);
+        for (LO jj = 0; jj < NumL; ++jj) {
+          LO j = InI[jj];
+          little_block_host_type currentVal((typename little_block_host_type::value_type*) &InV[jj*blockMatSize], blockSize_, rowStride); // current_mults++;
+          //multiplier.assign(currentVal);
+          Tpetra::COPY (currentVal, multiplier);
 
-        const little_block_host_type dmatInverse = D_block_->getLocalBlockHostNonConst(j,j);
-        // alpha = 1, beta = 0
+          const little_block_host_type dmatInverse = D_block_->getLocalBlockHostNonConst(j,j);
+          // alpha = 1, beta = 0
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-        KokkosBatched::Experimental::SerialGemm
-          <KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
-          (STS::one (), currentVal, dmatInverse, STS::zero (), matTmp);
+          KokkosBatched::SerialGemm
+            <KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Algo::Gemm::Blocked>::invoke
+            (STS::one (), currentVal, dmatInverse, STS::zero (), matTmp);
 #else
-        Tpetra::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
-                      STS::zero (), matTmp);
+          Tpetra::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
+                        STS::zero (), matTmp);
 #endif
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.data ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.data ()), reinterpret_cast<impl_scalar_type*> (matTmp.data ()), blockSize_);
-        //currentVal.assign(matTmp);
-        Tpetra::COPY (matTmp, currentVal);
-        local_inds_host_view_type UUI;
-        values_host_view_type UUV;
+          //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.data ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.data ()), reinterpret_cast<impl_scalar_type*> (matTmp.data ()), blockSize_);
+          //currentVal.assign(matTmp);
+          Tpetra::COPY (matTmp, currentVal);
+          local_inds_host_view_type UUI;
+          values_host_view_type UUV;
 
-        U_block_->getLocalRowView(j, UUI, UUV);
-        NumUU = (LO) UUI.size();
+          U_block_->getLocalRowView(j, UUI, UUV);
+          NumUU = (LO) UUI.size();
 
-        if (this->RelaxValue_ == STM::zero ()) {
-          for (LO k = 0; k < NumUU; ++k) {
-            if (!(UUI[k] < numLocalRows)) continue;
-            const int kk = colflag[UUI[k]];
-            if (kk > -1) {
-              little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
+          if (this->RelaxValue_ == STM::zero ()) {
+            for (LO k = 0; k < NumUU; ++k) {
+              if (!(UUI[k] < numLocalRows)) continue;
+              const int kk = colflag[UUI[k]];
+              if (kk > -1) {
+                little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
+                little_block_host_type uumat((typename little_block_host_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+                KokkosBatched::SerialGemm
+                  <KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Algo::Gemm::Blocked>::invoke
+                  ( magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
+#else
+                Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
+                              STM::one (), kkval);
+#endif
+                //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.data ()), reinterpret_cast<impl_scalar_type*> (uumat.data ()), reinterpret_cast<impl_scalar_type*> (kkval.data ()), blockSize_, -STM::one(), STM::one());
+              }
+            }
+          }
+          else {
+            for (LO k = 0; k < NumUU; ++k) {
+              if (!(UUI[k] < numLocalRows)) continue;
+              const int kk = colflag[UUI[k]];
               little_block_host_type uumat((typename little_block_host_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
+              if (kk > -1) {
+                little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-        KokkosBatched::Experimental::SerialGemm
-          <KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
-          ( magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
+                KokkosBatched::SerialGemm
+                  <KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Algo::Gemm::Blocked>::invoke
+                  (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
 #else
-              Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
-                            STM::one (), kkval);
+                Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
+                              STM::one (), kkval);
 #endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.data ()), reinterpret_cast<impl_scalar_type*> (uumat.data ()), reinterpret_cast<impl_scalar_type*> (kkval.data ()), blockSize_, -STM::one(), STM::one());
+                //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(kkval.data ()), blockSize_, -STM::one(), STM::one());
+              }
+              else {
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
+                KokkosBatched::SerialGemm
+                  <KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Trans::NoTranspose,
+                   KokkosBatched::Algo::Gemm::Blocked>::invoke
+                  (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), diagModBlock);
+#else
+                Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
+                              STM::one (), diagModBlock);
+#endif
+                //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.data ()), blockSize_, -STM::one(), STM::one());
+              }
             }
           }
         }
-        else {
-          for (LO k = 0; k < NumUU; ++k) {
-            if (!(UUI[k] < numLocalRows)) continue;
-            const int kk = colflag[UUI[k]];
-            little_block_host_type uumat((typename little_block_host_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
-            if (kk > -1) {
-              little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
-#ifndef IFPACK2_RBILUK_INITIAL_NOKK
-        KokkosBatched::Experimental::SerialGemm
-          <KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
-          (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), kkval);
-#else
-              Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
-                            STM::one (), kkval);
-#endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(kkval.data ()), blockSize_, -STM::one(), STM::one());
-            }
-            else {
-#ifndef IFPACK2_RBILUK_INITIAL_NOKK
-        KokkosBatched::Experimental::SerialGemm
-          <KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
-          (magnitude_type(-STM::one ()), multiplier, uumat, STM::one (), diagModBlock);
-#else
-              Tpetra::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
-                            STM::one (), diagModBlock);
-#endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.data ()), blockSize_, -STM::one(), STM::one());
-            }
-          }
+        if (NumL) {
+          // Replace current row of L
+          L_block_->replaceLocalValues (local_row, InI.getRawPtr (), InV.getRawPtr (), NumL);
         }
-      }
-      if (NumL) {
-        // Replace current row of L
-        L_block_->replaceLocalValues (local_row, InI.getRawPtr (), InV.getRawPtr (), NumL);
-      }
 
-      // dmat.assign(dmatV);
-      Tpetra::COPY (dmatV, dmat);
+        // dmat.assign(dmatV);
+        Tpetra::COPY (dmatV, dmat);
 
-      if (this->RelaxValue_ != STM::zero ()) {
-        //dmat.update(this->RelaxValue_, diagModBlock);
-        Tpetra::AXPY (this->RelaxValue_, diagModBlock, dmat);
-      }
+        if (this->RelaxValue_ != STM::zero ()) {
+          //dmat.update(this->RelaxValue_, diagModBlock);
+          Tpetra::AXPY (this->RelaxValue_, diagModBlock, dmat);
+        }
 
 //      if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
 //        if (STS::real (DV[i]) < STM::zero ()) {
@@ -836,61 +857,130 @@ void RBILUK<MatrixType>::compute ()
 //        }
 //      }
 //      else
-      {
-        int lapackInfo = 0;
-        for (int k = 0; k < blockSize_; ++k) {
-          ipiv[k] = 0;
+        {
+          int lapackInfo = 0;
+          for (int k = 0; k < blockSize_; ++k) {
+            ipiv[k] = 0;
+          }
+
+          Tpetra::GETF2 (dmat, ipiv, lapackInfo);
+          //lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
+            "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETRF.");
+
+          Tpetra::GETRI (dmat, ipiv, work, lapackInfo);
+          //lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
+            "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
         }
 
-        Tpetra::GETF2 (dmat, ipiv, lapackInfo);
-        //lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
-          "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETRF.");
-
-        Tpetra::GETRI (dmat, ipiv, work, lapackInfo);
-        //lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
-          "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
-      }
-
-      for (LO j = 0; j < NumU; ++j) {
-        little_block_host_type currentVal((typename little_block_host_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
-        // scale U by the diagonal inverse
+        for (LO j = 0; j < NumU; ++j) {
+          little_block_host_type currentVal((typename little_block_host_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
+          // scale U by the diagonal inverse
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
-        KokkosBatched::Experimental::SerialGemm
-          <KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Trans::NoTranspose,
-          KokkosBatched::Experimental::Algo::Gemm::Blocked>::invoke
-          (STS::one (), dmat, currentVal, STS::zero (), matTmp);
+          KokkosBatched::SerialGemm
+            <KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Trans::NoTranspose,
+             KokkosBatched::Algo::Gemm::Blocked>::invoke
+            (STS::one (), dmat, currentVal, STS::zero (), matTmp);
 #else
-        Tpetra::GEMM ("N", "N", STS::one (), dmat, currentVal,
-                                    STS::zero (), matTmp);
+          Tpetra::GEMM ("N", "N", STS::one (), dmat, currentVal,
+                        STS::zero (), matTmp);
 #endif
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.data ()), reinterpret_cast<impl_scalar_type*>(currentVal.data ()), reinterpret_cast<impl_scalar_type*>(matTmp.data ()), blockSize_);
-        //currentVal.assign(matTmp);
-        Tpetra::COPY (matTmp, currentVal);
-      }
+          //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.data ()), reinterpret_cast<impl_scalar_type*>(currentVal.data ()), reinterpret_cast<impl_scalar_type*>(matTmp.data ()), blockSize_);
+          //currentVal.assign(matTmp);
+          Tpetra::COPY (matTmp, currentVal);
+        }
 
-      if (NumU) {
-        // Replace current row of L and U
-        U_block_->replaceLocalValues (local_row, &InI[NumL+1], &InV[blockMatSize*(NumL+1)], NumU);
-      }
+        if (NumU) {
+          // Replace current row of L and U
+          U_block_->replaceLocalValues (local_row, &InI[NumL+1], &InV[blockMatSize*(NumL+1)], NumU);
+        }
 
 #ifndef IFPACK2_RBILUK_INITIAL
-      // Reset column flags
-      for (size_t j = 0; j < NumIn; ++j) {
-        colflag[InI[j]] = -1;
-      }
+        // Reset column flags
+        for (size_t j = 0; j < NumIn; ++j) {
+          colflag[InI[j]] = -1;
+        }
 #else
-      // Reset column flags
-      for (size_t j = 0; j < num_cols; ++j) {
-        colflag[j] = -1;
-      }
+        // Reset column flags
+        for (size_t j = 0; j < num_cols; ++j) {
+          colflag[j] = -1;
+        }
 #endif
-    }
+      }
+    } // !this->isKokkosKernelsSpiluk_
+    else {
+      RCP<const block_crs_matrix_type> A_local_bcrs = Details::getBcrsMatrix(this->A_local_);
+      RCP<const crs_matrix_type> A_local_crs = Details::getCrsMatrix(this->A_local_);
+      if (A_local_bcrs.is_null()) {
+        if (A_local_crs.is_null()) {
+          local_ordinal_type numRows = this->A_local_->getLocalNumRows();
+          Array<size_t> entriesPerRow(numRows);
+          for(local_ordinal_type i = 0; i < numRows; i++) {
+            entriesPerRow[i] = this->A_local_->getNumEntriesInLocalRow(i);
+          }
+          RCP<crs_matrix_type> A_local_crs_nc =
+            rcp (new crs_matrix_type (this->A_local_->getRowMap (),
+                                      this->A_local_->getColMap (),
+                                      entriesPerRow()));
+          // copy entries into A_local_crs
+          nonconst_local_inds_host_view_type indices("indices",this->A_local_->getLocalMaxNumRowEntries());
+          nonconst_values_host_view_type values("values",this->A_local_->getLocalMaxNumRowEntries());
+          for(local_ordinal_type i = 0; i < numRows; i++) {
+            size_t numEntries = 0;
+            this->A_local_->getLocalRowCopy(i, indices, values, numEntries);
+            A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
+          }
+          A_local_crs_nc->fillComplete (this->A_local_->getDomainMap (), this->A_local_->getRangeMap ());
+          A_local_crs = Teuchos::rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+        }
+        // Create bcrs from crs
+        // We can skip fillLogicalBlocks if we know the input is already filled
+        if (blockSize_ > 1) {
+          auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_local_crs, blockSize_);
+          A_local_bcrs = Tpetra::convertToBlockCrsMatrix(*crs_matrix_block_filled, blockSize_);
+        }
+        else {
+          A_local_bcrs = Tpetra::convertToBlockCrsMatrix(*A_local_crs, blockSize_);
+        }
+      }
 
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        this->isKokkosKernelsStream_, std::runtime_error, "Ifpack2::RBILUK::compute: "
+        "streams are not yet supported.");
+
+      auto lclMtx = A_local_bcrs->getLocalMatrixDevice();
+      this->A_local_rowmap_  = lclMtx.graph.row_map;
+      this->A_local_entries_ = lclMtx.graph.entries;
+      this->A_local_values_  = lclMtx.values;
+
+      // L_block_->resumeFill ();
+      // U_block_->resumeFill ();
+
+      if (L_block_->isLocallyIndexed ()) {
+        L_block_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+        U_block_->setAllToScalar (STS::zero ());
+      }
+
+      using row_map_type = typename local_matrix_device_type::row_map_type;
+
+      auto lclL = L_block_->getLocalMatrixDevice();
+      row_map_type L_rowmap  = lclL.graph.row_map;
+      auto L_entries = lclL.graph.entries;
+      auto L_values  = lclL.values;
+
+      auto lclU = U_block_->getLocalMatrixDevice();
+      row_map_type U_rowmap  = lclU.graph.row_map;
+      auto U_entries = lclU.graph.entries;
+      auto U_values  = lclU.values;
+
+      KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
+                                                  this->A_local_rowmap_, this->A_local_entries_, this->A_local_values_,
+                                                  L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+    }
   } // Stop timing
 
   // Sync everything back to device, for efficient solves.
@@ -962,104 +1052,147 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
-    if (alpha == one && beta == zero) {
-      if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
-        // Start by solving L C = X for C.  C must have the same Map
-        // as D.  We have to use a temp multivector, since our
-        // implementation of triangular solves does not allow its
-        // input and output to alias one another.
-        //
-        // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
-        const LO numVectors = xBlock.getNumVectors();
-        BMV cBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
-        BMV rBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
-        for (LO imv = 0; imv < numVectors; ++imv)
-        {
-          for (size_t i = 0; i < D_block_->getLocalNumRows(); ++i)
+    if (!this->isKokkosKernelsSpiluk_) {
+      if (alpha == one && beta == zero) {
+        if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
+          // Start by solving L C = X for C.  C must have the same Map
+          // as D.  We have to use a temp multivector, since our
+          // implementation of triangular solves does not allow its
+          // input and output to alias one another.
+          //
+          // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
+          const LO numVectors = xBlock.getNumVectors();
+          BMV cBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
+          BMV rBlock (* (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_, numVectors);
+          for (LO imv = 0; imv < numVectors; ++imv)
           {
-            LO local_row = i;
-            const_host_little_vec_type xval = 
-                   xBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type cval = 
-                   cBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
-            //cval.assign(xval);
-            Tpetra::COPY (xval, cval);
-
-            local_inds_host_view_type colValsL;
-            values_host_view_type valsL;
-            L_block_->getLocalRowView(local_row, colValsL, valsL);
-            LO NumL = (LO) colValsL.size();
-
-            for (LO j = 0; j < NumL; ++j)
+            for (size_t i = 0; i < D_block_->getLocalNumRows(); ++i)
             {
-              LO col = colValsL[j];
-              const_host_little_vec_type prevVal = 
-                    cBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
+              LO local_row = i;
+              const_host_little_vec_type xval =
+                xBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
+              little_host_vec_type cval =
+                cBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
+              //cval.assign(xval);
+              Tpetra::COPY (xval, cval);
 
-              const LO matOffset = blockMatSize*j;
-              little_block_host_type lij((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+              local_inds_host_view_type colValsL;
+              values_host_view_type valsL;
+              L_block_->getLocalRowView(local_row, colValsL, valsL);
+              LO NumL = (LO) colValsL.size();
 
-              //cval.matvecUpdate(-one, lij, prevVal);
-              Tpetra::GEMV (-one, lij, prevVal, cval);
+              for (LO j = 0; j < NumL; ++j)
+              {
+                LO col = colValsL[j];
+                const_host_little_vec_type prevVal =
+                  cBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
+
+                const LO matOffset = blockMatSize*j;
+                little_block_host_type lij((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+
+                //cval.matvecUpdate(-one, lij, prevVal);
+                Tpetra::GEMV (-one, lij, prevVal, cval);
+              }
+            }
+          }
+
+          // Solve D R = C. Note that D has been replaced by D^{-1} at this point.
+          D_block_->applyBlock(cBlock, rBlock);
+
+          // Solve U Y = R.
+          for (LO imv = 0; imv < numVectors; ++imv)
+          {
+            const LO numRows = D_block_->getLocalNumRows();
+            for (LO i = 0; i < numRows; ++i)
+            {
+              LO local_row = (numRows-1)-i;
+              const_host_little_vec_type rval =
+                rBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
+              little_host_vec_type yval =
+                yBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
+              //yval.assign(rval);
+              Tpetra::COPY (rval, yval);
+
+              local_inds_host_view_type colValsU;
+              values_host_view_type valsU;
+              U_block_->getLocalRowView(local_row, colValsU, valsU);
+              LO NumU = (LO) colValsU.size();
+
+              for (LO j = 0; j < NumU; ++j)
+              {
+                LO col = colValsU[NumU-1-j];
+                const_host_little_vec_type prevVal =
+                  yBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
+
+                const LO matOffset = blockMatSize*(NumU-1-j);
+                little_block_host_type uij((typename little_block_host_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
+
+                //yval.matvecUpdate(-one, uij, prevVal);
+                Tpetra::GEMV (-one, uij, prevVal, yval);
+              }
             }
           }
         }
-
-        // Solve D R = C. Note that D has been replaced by D^{-1} at this point.
-        D_block_->applyBlock(cBlock, rBlock);
-
-        // Solve U Y = R.
-        for (LO imv = 0; imv < numVectors; ++imv)
-        {
-          const LO numRows = D_block_->getLocalNumRows();
-          for (LO i = 0; i < numRows; ++i)
-          {
-            LO local_row = (numRows-1)-i;
-            const_host_little_vec_type rval = 
-                   rBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type yval = 
-                   yBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
-            //yval.assign(rval);
-            Tpetra::COPY (rval, yval);
-
-            local_inds_host_view_type colValsU;
-            values_host_view_type valsU;      
-            U_block_->getLocalRowView(local_row, colValsU, valsU);
-            LO NumU = (LO) colValsU.size();
-
-            for (LO j = 0; j < NumU; ++j)
-            {
-              LO col = colValsU[NumU-1-j];
-              const_host_little_vec_type prevVal = 
-                   yBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
-
-              const LO matOffset = blockMatSize*(NumU-1-j);
-              little_block_host_type uij((typename little_block_host_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
-
-              //yval.matvecUpdate(-one, uij, prevVal);
-              Tpetra::GEMV (-one, uij, prevVal, yval);
-            }
-          }
+        else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::runtime_error,
+            "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm without KokkosKernels. ");
         }
       }
-      else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::runtime_error,
-          "Ifpack2::Experimental::RBILUK::apply: transpose apply is not implemented for the block algorithm. ");
+      else { // alpha != 1 or beta != 0
+        if (alpha == zero) {
+          if (beta == zero) {
+            Y.putScalar (zero);
+          } else {
+            Y.scale (beta);
+          }
+        } else { // alpha != zero
+          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          apply (X, Y_tmp, mode);
+          Y.update (alpha, Y_tmp, beta);
+        }
       }
     }
-    else { // alpha != 1 or beta != 0
-      if (alpha == zero) {
-        if (beta == zero) {
-          Y.putScalar (zero);
-        } else {
-          Y.scale (beta);
-        }
-      } else { // alpha != zero
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-        apply (X, Y_tmp, mode);
-        Y.update (alpha, Y_tmp, beta);
+    else {
+      // Kokkos kernels impl. For now, the only block trsv available is Sequential
+      // and must be done on host.
+      using row_map_type = typename local_matrix_host_type::row_map_type;
+      using index_type   = typename local_matrix_host_type::index_type;
+      using values_type  = typename local_matrix_host_type::values_type;
+
+      auto X_view = X.getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto Y_view = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+      auto L_row_ptrs_host = L_block_->getCrsGraph().getLocalRowPtrsHost();
+      auto L_entries_host = L_block_->getCrsGraph().getLocalIndicesHost();
+      auto U_row_ptrs_host = U_block_->getCrsGraph().getLocalRowPtrsHost();
+      auto U_entries_host = U_block_->getCrsGraph().getLocalIndicesHost();
+      auto L_values_host = L_block_->getValuesHost();
+      auto U_values_host = U_block_->getValuesHost();
+
+      row_map_type* L_row_ptrs_host_ri = reinterpret_cast<row_map_type*>(&L_row_ptrs_host);
+      index_type* L_entries_host_ri    = reinterpret_cast<index_type*>(&L_entries_host);
+      row_map_type* U_row_ptrs_host_ri = reinterpret_cast<row_map_type*>(&U_row_ptrs_host);
+      index_type* U_entries_host_ri    = reinterpret_cast<index_type*>(&U_entries_host);
+      values_type* L_values_host_ri    = reinterpret_cast<values_type*>(&L_values_host);
+      values_type* U_values_host_ri    = reinterpret_cast<values_type*>(&U_values_host);
+
+      const auto numRows = L_block_->getLocalNumRows();
+      local_matrix_host_type L_block_local_host("L_block_local_host", numRows, numRows, L_entries_host.size(), *L_values_host_ri, *L_row_ptrs_host_ri, *L_entries_host_ri, blockSize_);
+      local_matrix_host_type U_block_local_host("U_block_local_host", numRows, numRows, U_entries_host.size(), *U_values_host_ri, *U_row_ptrs_host_ri, *U_entries_host_ri, blockSize_);
+
+      if (mode == Teuchos::NO_TRANS) {
+        KokkosSparse::trsv("L", "N", "N", L_block_local_host, X_view, Y_view);
+        KokkosSparse::trsv("U", "N", "N", U_block_local_host, Y_view, Y_view);
+        KokkosBlas::axpby(alpha, Y_view, beta, Y_view);
       }
+      else {
+        KokkosSparse::trsv("U", "T", "N", U_block_local_host, X_view, Y_view);
+        KokkosSparse::trsv("L", "T", "N", L_block_local_host, Y_view, Y_view);
+        KokkosBlas::axpby(alpha, Y_view, beta, Y_view);
+      }
+
+      //Y.getWrappedDualView().sync();
     }
   } // Stop timing
 
