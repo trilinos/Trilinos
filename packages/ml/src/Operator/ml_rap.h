@@ -138,3 +138,10 @@ extern int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
 #define ML_TRUE                1
 
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

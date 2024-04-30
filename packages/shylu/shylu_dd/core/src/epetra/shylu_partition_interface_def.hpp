@@ -230,3 +230,10 @@ Epetra_MultiVector* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::re
 
 }
 #endif
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+

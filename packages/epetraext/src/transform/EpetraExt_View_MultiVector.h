@@ -79,3 +79,10 @@ class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
 } //namespace EpetraExt
 
 #endif //EpetraExt_MULTIVECTOR_VIEW_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

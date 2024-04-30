@@ -37,3 +37,10 @@ extern int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data,
 #endif
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

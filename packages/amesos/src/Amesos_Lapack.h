@@ -270,3 +270,10 @@ protected:
 
 };  // End of  class Amesos_Lapack
 #endif /* AMESOS_LAPACK_H */
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+

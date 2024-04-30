@@ -351,3 +351,10 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
 } //namespace EpetraExt
 
 #endif /* _EpetraExt_LINEARPROBLEM_CRSSINGLETONFILTER_H_ */
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

@@ -266,3 +266,10 @@ must be integer values and in those in the third column must be floating point f
 #endif
 } // namespace EpetraExt
 #endif /* EPETRAEXT_CRSMATRIXIN_H */
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

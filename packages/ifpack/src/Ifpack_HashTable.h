@@ -274,3 +274,10 @@ class Ifpack_HashTable64 : public TIfpack_HashTable<long long>
 };
 
 #endif
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

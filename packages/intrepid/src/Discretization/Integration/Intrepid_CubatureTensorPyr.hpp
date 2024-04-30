@@ -139,3 +139,10 @@ class CubatureTensorPyr : public Intrepid::CubatureTensor<Scalar,ArrayPoint,Arra
 #include <Intrepid_CubatureTensorPyrDef.hpp>
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

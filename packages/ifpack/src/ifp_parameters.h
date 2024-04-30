@@ -106,3 +106,10 @@ void set_parameters(const Teuchos::ParameterList& parameterlist,
 
 #endif //_ifp_parameters_h_
 
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

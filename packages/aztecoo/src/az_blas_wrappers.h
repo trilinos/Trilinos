@@ -132,3 +132,10 @@ void PREFIX STRSM_F77(az_fcd, az_fcd, az_fcd, az_fcd,
 #endif
 
 #endif /* _AZ_BLAS_WRAPPERS_H_ */
+
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+

@@ -207,3 +207,10 @@ void Basis_HDIV_QUAD_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
 }
 
 }// namespace Intrepid
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

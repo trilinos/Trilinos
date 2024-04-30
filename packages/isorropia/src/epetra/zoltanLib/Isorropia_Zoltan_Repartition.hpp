@@ -159,3 +159,10 @@ load_balance(MPI_Comm &comm,
 
 #endif
 
+
+#if defined(Isorropia_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Isorropia package is deprecated"
+#endif
+#endif
+

@@ -47,3 +47,10 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
 #endif
 #endif
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

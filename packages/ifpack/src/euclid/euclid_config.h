@@ -140,3 +140,10 @@ you need to write EUCLID_GET_ROW() functions: see src/getRow.c
 */
 
 #endif
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

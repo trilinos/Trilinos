@@ -76,3 +76,10 @@ extern void PREFIX PDNEUPD_F77(int *,
 #endif
 
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

@@ -43,3 +43,10 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle);
 #endif
 
 #endif /* #ifndef ML_IFPACK_H */
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

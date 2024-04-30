@@ -61,3 +61,10 @@ extern int ML_Operator_blockmat_set_M_mat_destroy(ML_Operator *blockmat,
 
 
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

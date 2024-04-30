@@ -64,3 +64,10 @@ private:
 } // namespace MLAPI
 
 #endif // MLAPI_OPERATOR_BOX_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

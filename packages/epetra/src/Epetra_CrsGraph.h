@@ -1261,3 +1261,10 @@ private:
   int ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices, int_type* targIndices) const;
 };
 #endif /* EPETRA_CRSGRAPH_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

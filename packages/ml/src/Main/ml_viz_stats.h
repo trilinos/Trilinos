@@ -35,3 +35,10 @@ typedef struct ML_Aggregate_Viz_Stats_Struct
 /*ms*/
 
 #endif /* #ifndef __MLAGGMETIS__ */
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

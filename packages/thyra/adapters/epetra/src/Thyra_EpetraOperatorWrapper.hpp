@@ -158,3 +158,10 @@ makeEpetraWrapper(const RCP<const LinearOpBase<double> > &thyraOp);
 
 
 #endif // THYRA_EPETRA_OPERATOR_WRAPPER_HPP
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraAdapters package is deprecated"
+#endif
+#endif
+

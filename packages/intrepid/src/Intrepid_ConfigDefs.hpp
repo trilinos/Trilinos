@@ -111,3 +111,10 @@ namespace Intrepid {
 
 
 #endif /* INTREPID_CONFIGDEFS_HPP */
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

@@ -52,3 +52,10 @@
 #include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
 
 #endif
+
+#if defined(PyTrilinos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The PyTrilinos package is deprecated"
+#endif
+#endif
+

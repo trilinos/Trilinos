@@ -32,3 +32,10 @@ extern int ML_PDE_GenMat(MLI_Solver*,int);
 
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

@@ -215,3 +215,10 @@ inline int calculateNumPoints(int dim, int level)
 #include <Intrepid_CubatureSparseDef.hpp>
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

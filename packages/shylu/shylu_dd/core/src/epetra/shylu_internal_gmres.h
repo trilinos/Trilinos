@@ -202,3 +202,10 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
 } // namespace IQR
 
 #endif // IQR_GMRES_H
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+

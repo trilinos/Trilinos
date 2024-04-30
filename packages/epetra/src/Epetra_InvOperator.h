@@ -166,3 +166,10 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
 
 #endif /* EPETRA_INVOPERATOR_H */
 
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

@@ -193,3 +193,10 @@ int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind_L
 } /* Epetra_Import_Util namespace */
 
 #endif /* EPETRA_IMPORT_UTIL_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

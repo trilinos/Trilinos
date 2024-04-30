@@ -77,3 +77,10 @@ extern int ML_GGraph_LabelVertices(int, int *, int, char *, char *, int,
 
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

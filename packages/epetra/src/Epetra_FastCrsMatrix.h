@@ -159,3 +159,10 @@ class Epetra_FastCrsOperator: public Epetra_CompObject, public virtual Epetra_Op
 
 };
 #endif /* EPETRA_FASTCRSMATRIX_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

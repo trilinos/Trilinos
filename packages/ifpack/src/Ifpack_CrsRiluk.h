@@ -520,3 +520,10 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
 std::ostream& operator << (std::ostream& os, const Ifpack_CrsRiluk& A);
 
 #endif /* _IFPACK_CRSRILUK_H_ */
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

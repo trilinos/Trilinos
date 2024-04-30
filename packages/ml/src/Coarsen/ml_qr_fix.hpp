@@ -23,3 +23,10 @@ struct ML_qr_fix_struct {
 typedef struct ML_qr_fix_struct ML_qr_fix;
 
 #endif //ifndef ML_QR_FIX_HPP
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

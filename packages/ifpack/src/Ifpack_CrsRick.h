@@ -475,3 +475,10 @@ class Ifpack_CrsRick: public Epetra_Object, public Epetra_CompObject, public vir
 std::ostream& operator << (std::ostream& os, const Ifpack_CrsRick& A);
 
 #endif /* _IFPACK_CRSRICK_H_ */
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

@@ -122,3 +122,10 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
 #endif
 
 #endif //SHYLU_UTIL_H
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+

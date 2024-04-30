@@ -316,3 +316,10 @@ class MatrixFreePreconditioner : public Epetra_Operator
 
 #endif // HAVE_ML_EPETRA
 #endif // ML_MATRIX_FREE_PRECONDITIONER
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+
