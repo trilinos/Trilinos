@@ -42,7 +42,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "6.5 (2024/03/14)";
+  std::string version = "6.7 (2024/05/01)";
 
   bool mem_stats = false;
 
@@ -73,13 +73,26 @@ namespace {
     options.ignore_qa_info    = interFace.ignore_qa_info;
     return options;
   }
+
+#ifdef SEACAS_HAVE_MPI
+  void mpi_finalize()
+  {
+    MPI_Comm parentcomm;
+    MPI_Comm_get_parent(&parentcomm);
+    if (parentcomm != MPI_COMM_NULL) {
+      int istatus = EXIT_SUCCESS;
+      MPI_Send(&istatus, 1, MPI_INT, 0, 0, parentcomm);
+    }
+    MPI_Finalize();
+  }
+#endif
 } // namespace
 
 int main(int argc, char *argv[])
 {
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
-  ON_BLOCK_EXIT(MPI_Finalize);
+  ON_BLOCK_EXIT(mpi_finalize);
 #endif
   Ioss::ParallelUtils pu{};
   int                 rank     = pu.parallel_rank();
