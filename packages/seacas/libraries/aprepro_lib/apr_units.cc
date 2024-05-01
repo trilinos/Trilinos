@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -28,7 +28,7 @@ namespace {
 
   void define_var(const char *name, double val, const char *label)
   {
-    aprepro->add_variable(name, val, true);
+    aprepro->add_variable(name, val, true, true);
     if (echo) {
       *(aprepro->infoStream) << comment() << " 1 " << std::left << std::setw(10) << name
                              << "\t= " << std::setw(14) << std::setprecision(7) << val << "  "
@@ -316,11 +316,11 @@ unit_systems systems[] =
     if (systems[i].name != nullptr) {
       // Found a match
       for (int j = 0; systems[i].label[j].vname != nullptr; j++) {
-        aprepro->add_variable(systems[i].label[j].vname, systems[i].label[j].value, true);
+        aprepro->add_variable(systems[i].label[j].vname, systems[i].label[j].value, true, true);
       }
 
       for (int j = 0; systems[i].base[j].vname != nullptr; j++) {
-        aprepro->add_variable(systems[i].base[j].vname, systems[i].base[j].value, true);
+        aprepro->add_variable(systems[i].base[j].vname, systems[i].base[j].value, true, true);
       }
 
       symrec *var = aprepro->getsym("_UNITS_SYSTEM");

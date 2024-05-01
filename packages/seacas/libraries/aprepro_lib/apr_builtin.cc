@@ -24,10 +24,8 @@
 #include <utility>
 #include <vector>
 
-#if defined FMT_SUPPORT
 #include <fmt/ostream.h>
 #include <fmt/printf.h>
-#endif
 
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
@@ -374,7 +372,15 @@ namespace SEAMS {
   {
     reset_error();
     double temp = exp(x);
-    SEAMS::math_error("exp");
+    // `exp` will report ERANGE error on both overflow and underflow
+    // We want no error on underflow, so see if `temp == 0` and if so,
+    // don't check math_error.
+    if (temp != 0.0) {
+      SEAMS::math_error("exp");
+    }
+    else {
+      reset_error();
+    }
     return (temp);
   }
 
@@ -592,18 +598,24 @@ namespace SEAMS {
 
   const char *do_tostring(double x)
   {
-    char       *tmp;
-    static char tmpstr[128];
+    char *tmp;
     if (x == 0.0) {
       new_string("0", &tmp);
       return (tmp);
     }
 
-    SEAMS::symrec *format;
-    format = aprepro->getsym("_FORMAT");
-    snprintf(tmpstr, 128, format->value.svar.c_str(), x);
-    new_string(tmpstr, &tmp);
-    return (tmp);
+    const SEAMS::symrec *format = aprepro->getsym("_FORMAT");
+    if (format->value.svar.empty()) {
+      std::ostringstream lines;
+      fmt::print(lines, "{}", x);
+      new_string(lines.str(), &tmp);
+      return tmp;
+    }
+    else {
+      auto tmpstr = fmt::sprintf(format->value.svar, x);
+      new_string(tmpstr.c_str(), &tmp);
+      return tmp;
+    }
   }
 
   const char *do_output(char *filename)
@@ -954,7 +966,6 @@ namespace SEAMS {
         }
         lines << "\t";
         for (int ic = 0; ic < cols; ic++) {
-#if defined FMT_SUPPORT
           const SEAMS::symrec *format = aprepro->getsym("_FORMAT");
           if (format->value.svar.empty()) {
             fmt::print(lines, "{}", my_array_data->data[idx++]);
@@ -963,9 +974,6 @@ namespace SEAMS {
             auto tmpstr = fmt::sprintf(format->value.svar, my_array_data->data[idx++]);
             lines << tmpstr;
           }
-#else
-          lines << my_array_data->data[idx++];
-#endif
           if (ic < cols - 1) {
             lines << "\t";
           }
