@@ -48,6 +48,8 @@ Create a local branch off of `develop` on which to make your changes:
 
 Do whatever work is necessary to address the issue you're tackling, breaking your work into logical, compilable commits.  Feel free to commit small chunks early and often in your local repository and then use `git rebase -i` to reorganize your commits before sharing.  Make sure the commit messages you will be sharing reference the appropriate GitHub issue numbers.
 
+Be sure you have included tests in accordance with the [Trilinos testing policy](https://github.com/trilinos/Trilinos/wiki/Trilinos-Testing-Policy).
+
 ### Update Your Branch
 
 While working on your feature in your local `<branchName>` branch, other commits will likely make it into the real Trilinos `develop` branch.  There are a variety of ways to merge these changes into your local feature branch.  One possibility is
@@ -70,6 +72,8 @@ When your changes are ready to be integrated into Trilinos' `develop` branch:
     * head fork:  `<username>/Trilinos`
     * compare:  `<branchName>`
   * On the new pull request creation page, you'll notice the *Description* field will be pre-populated with some text.  Follow the instructions in that template to give us as much information as you can such that we can review and approve the issue as soon as is practicable.
+ 
+  
 
 ### Feedback
 
