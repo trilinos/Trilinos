@@ -18,8 +18,8 @@
 #include "Ioss_SideSet.h"
 #include "exodus/Ioex_DatabaseIO.h"
 
-#include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_session.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <fmt/core.h>
 #include <stdint.h>
 #include <stdio.h>

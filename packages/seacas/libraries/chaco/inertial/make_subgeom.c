@@ -10,7 +10,7 @@ void make_subgeom(int     igeom,     /* 1, 2 or 3 dimensional geometry? */
                   float **coords,    /* x, y and z coordinates of vertices */
                   float **subcoords, /* x, y and z coordinates in subgraph */
                   int     subnvtxs,  /* number of vertices in subgraph */
-                  int *   loc2glob   /* maps from subgraph to graph numbering */
+                  int    *loc2glob   /* maps from subgraph to graph numbering */
 )
 {
   int i; /* loop counter */

@@ -48,7 +48,7 @@ inline std::string IOSS_SYM_TENSOR() { return {"sym_tensor_33"}; }
 
 #if (__cplusplus >= 201703L)
 #define IOSS_MAYBE_UNUSED [[maybe_unused]]
-#define IOSS_NODISCARD [[nodiscard]]
+#define IOSS_NODISCARD    [[nodiscard]]
 #else
 #define IOSS_MAYBE_UNUSED
 #define IOSS_NODISCARD

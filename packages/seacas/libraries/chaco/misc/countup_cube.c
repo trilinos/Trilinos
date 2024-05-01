@@ -15,11 +15,11 @@
 
 void countup_cube(struct vtx_data **graph,      /* graph data structure */
                   int               nvtxs,      /* number of vtxs in graph */
-                  int *             assignment, /* set number of each vtx (length nvtxs+1) */
+                  int              *assignment, /* set number of each vtx (length nvtxs+1) */
                   int               ndims,      /* number of cuts at each level */
                   int               ndims_tot,  /* total number of divisions of graph */
                   int               print_lev,  /* level of output */
-                  FILE *            outfile,    /* output file if not NULL */
+                  FILE             *outfile,    /* output file if not NULL */
                   int               using_ewgts /* are edge weights being used? */
 )
 {
@@ -28,7 +28,7 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
   int     nsets   = (1 << ndims_tot);
   double *cutsize = smalloc(nsets * sizeof(double));
   double *hopsize = smalloc(nsets * sizeof(double));
-  int *   setsize = smalloc(nsets * sizeof(int));
+  int    *setsize = smalloc(nsets * sizeof(int));
 
   int *setseen  = smalloc(nsets * sizeof(int));
   int *startptr = smalloc((nsets + 1) * sizeof(int));

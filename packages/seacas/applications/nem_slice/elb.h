@@ -215,46 +215,40 @@ template <typename INT> struct Graph_Description
 };
 
 /* Various constants */
-#define NODAL     0
-#define ELEMENTAL 1
+enum DecompType { NODAL, ELEMENTAL };
 
 #define UTIL_NAME "nem_slice"
 
 /* Load balance types */
-#define MULTIKL     0
-#define SPECTRAL    1
-#define INERTIAL    2
-#define LINEAR      3
-#define RANDOM      4
-#define SCATTERED   5
-#define INFILE      6
-#define KL_REFINE   7
-#define NO_REFINE   8
-#define NUM_SECTS   9
-#define CNCT_DOM    10
-#define OUTFILE     11
-#define ZPINCH      12
-#define BRICK       13
-#define ZOLTAN_RCB  14
-#define ZOLTAN_RIB  15
-#define ZOLTAN_HSFC 16
-#define IGNORE_Z    17
+enum Balance {
+  MULTIKL,
+  SPECTRAL,
+  INERTIAL,
+  LINEAR,
+  RANDOM,
+  SCATTERED,
+  INFILE,
+  KL_REFINE,
+  NO_REFINE,
+  NUM_SECTS,
+  CNCT_DOM,
+  OUTFILE,
+  ZPINCH,
+  BRICK,
+  ZOLTAN_RCB,
+  ZOLTAN_RIB,
+  ZOLTAN_HSFC,
+  IGNORE_Z
+};
 
 /* Machine types */
-#define MESH      0
-#define HCUBE     1
-#define HYPERCUBE 2
-#define CLUSTER   3
+enum MachineType { MESH, HCUBE, HYPERCUBE, CLUSTER };
 
 /* Solver options */
-#define TOLER   0
-#define USE_RQI 1
-#define VMAX    2
+enum SolverOptions { TOLER, USE_RQI, VMAX };
 
 /* ISSUES options */
-
-#define LOCAL_ISSUES  0
-#define GLOBAL_ISSUES 1
+enum Issues { LOCAL_ISSUES, GLOBAL_ISSUES };
 
 /* Weighting options */
 /*
@@ -265,10 +259,4 @@ template <typename INT> struct Graph_Description
  * currently used in the type, but are needed since they appear
  * on the command line.
  */
-#define NO_WEIGHT 0
-#define READ_EXO  1
-#define EL_BLK    2
-#define VAR_INDX  3
-#define EDGE_WGT  4
-#define TIME_INDX 5
-#define VAR_NAME  6
+enum WeightingOptions { NO_WEIGHT, READ_EXO, EL_BLK, VAR_INDX, EDGE_WGT, TIME_INDX, VAR_NAME };

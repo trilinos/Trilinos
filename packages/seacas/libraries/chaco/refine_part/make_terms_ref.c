@@ -13,9 +13,9 @@
 void make_terms_ref(struct vtx_data **graph,       /* data structure for graph */
                     int               using_ewgts, /* are edge weights being used? */
                     int               subnvtxs,    /* number of vtxs in subgraph */
-                    int *             loc2glob,    /* mapping from subgraph to graph */
+                    int              *loc2glob,    /* mapping from subgraph to graph */
                     int set0, int set1,            /* two processors I'm choosing between */
-                    int *  assignment,             /* set for each vertex */
+                    int   *assignment,             /* set for each vertex */
                     int    architecture,           /* 0 => hypercube, 1 => mesh */
                     int    mesh_dims[3],           /* if mesh, size of mesh */
                     float *term_wgts[]             /* terminal weights for each vertex */

@@ -51,7 +51,9 @@
 #include "Ioss_SurfaceSplit.h"
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
+#if defined(SEACAS_HAVE_EXODUS)
 #include "exodusII.h"
+#endif
 #include "info_interface.h"
 #if defined(SEACAS_HAVE_CGNS)
 #include <cgnslib.h>
@@ -265,7 +267,7 @@ namespace {
     Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT,
                              prefix + "\tTransient:  ", "\n\t\t" + prefix);
 
-    if (interFace.compute_bbox()) {
+    if (interFace.compute_bbox() && region.mesh_type() != Ioss::MeshType::STRUCTURED) {
       print_bbox(nb);
     }
   }
@@ -305,7 +307,11 @@ namespace {
       if (!sb->m_zoneConnectivity.empty()) {
         fmt::print("\tConnectivity with other blocks:\n");
         for (const auto &zgc : sb->m_zoneConnectivity) {
+#if defined __NVCC__
           std::cout << zgc << "\n";
+#else
+          fmt::print("{}\n", zgc);
+#endif
         }
       }
       if (!sb->m_boundaryConditions.empty()) {
@@ -319,7 +325,11 @@ namespace {
                    });
 
         for (const auto &bc : sb_bc) {
+#if defined __NVCC__
           std::cout << bc << "\n";
+#else
+          fmt::print("{}\n", bc);
+#endif
         }
       }
       if (interFace.compute_bbox()) {

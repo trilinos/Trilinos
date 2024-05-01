@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 static void assign_out_normal(int   nvtxs,  /* number of vertices to output */
-                              int * sets,   /* values to be printed */
+                              int  *sets,   /* values to be printed */
                               char *outname /* name of output file */
 )
 {
@@ -36,14 +36,14 @@ static void assign_out_normal(int   nvtxs,  /* number of vertices to output */
 }
 
 static void assign_out_inv(int   nvtxs,  /* number of vertices to output */
-                           int * sets,   /* values to be printed */
+                           int  *sets,   /* values to be printed */
                            int   nsets,  /* number of sets */
                            char *outname /* name of output file */
 )
 {
   FILE *fout;    /* output file */
-  int * size;    /* # vtxs in sets / index into inorder */
-  int * inorder; /* list of vtxs in each set */
+  int  *size;    /* # vtxs in sets / index into inorder */
+  int  *inorder; /* list of vtxs in each set */
   int   i, j;    /* loop counter */
 
   /* Print assignment in inverted format. */
@@ -105,7 +105,7 @@ static void assign_out_inv(int   nvtxs,  /* number of vertices to output */
 }
 
 void assign_out(int   nvtxs,  /* number of vertices to output */
-                int * sets,   /* values to be printed */
+                int  *sets,   /* values to be printed */
                 int   nsets,  /* number of sets */
                 char *outname /* name of output file */
 )

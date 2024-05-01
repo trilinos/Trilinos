@@ -262,7 +262,7 @@ namespace Iocatalyst {
       errmsg << "Catalyst pipeline is not a multi-input pipeline";
       IOSS_ERROR(errmsg);
     }
-    auto name = p.catalystMultiInputPipelineName;
+    const auto name = p.catalystMultiInputPipelineName;
     for (auto cp : catPipes) {
       if (cp.second.enableCatalystMultiInputPipeline &&
           cp.second.catalystMultiInputPipelineName == name) {
@@ -280,7 +280,7 @@ namespace Iocatalyst {
       errmsg << "Catalyst pipeline is not a multi-input pipeline";
       IOSS_ERROR(errmsg);
     }
-    auto name = p.catalystMultiInputPipelineName;
+    const auto name = p.catalystMultiInputPipelineName;
     for (auto &cp : catPipes) {
       if (cp.second.enableCatalystMultiInputPipeline &&
           cp.second.catalystMultiInputPipelineName == name) {
@@ -295,8 +295,8 @@ namespace Iocatalyst {
   void CatalystManager::broadCastString(IOSS_MAYBE_UNUSED std::string &s,
                                         IOSS_MAYBE_UNUSED const Ioss::ParallelUtils &putils)
   {
-    IOSS_PAR_UNUSED(s);
-    IOSS_PAR_UNUSED(putils);
+    IOSS_MAYBE_UNUSED(s);
+    IOSS_MAYBE_UNUSED(putils);
 #ifdef SEACAS_HAVE_MPI
     int size = s.size();
     putils.broadcast(size);
@@ -310,8 +310,8 @@ namespace Iocatalyst {
   void CatalystManager::broadCastStatusCode(IOSS_MAYBE_UNUSED bool &statusCode,
                                             IOSS_MAYBE_UNUSED const Ioss::ParallelUtils &putils)
   {
-    IOSS_PAR_UNUSED(statusCode);
-    IOSS_PAR_UNUSED(putils);
+    IOSS_MAYBE_UNUSED(statusCode);
+    IOSS_MAYBE_UNUSED(putils);
 #ifdef SEACAS_HAVE_MPI
 
     int code = statusCode;

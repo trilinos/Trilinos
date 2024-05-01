@@ -1292,12 +1292,6 @@ C     number element blocks, and truth table.
      $     /,9x,'if you need this capability.')
       END
 
-      SUBROUTINE INIMAP(LEN, MAP)
-      INTEGER MAP(*)
-      DO 10 I=1, LEN
-        MAP(I) = I
- 10   CONTINUE
-      END
       subroutine exgqaw(ndb, qarec, ierr)
       include 'gp_params.blk'
       character*(mxstln) qarec(4, *)

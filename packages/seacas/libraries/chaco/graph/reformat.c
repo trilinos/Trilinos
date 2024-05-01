@@ -12,23 +12,23 @@
 
 /* Change from a FORTRAN graph style to our graph data structure. */
 
-int reformat(int *              start,     /* start of edge list for each vertex */
-             int *              adjacency, /* edge list data */
+int reformat(int               *start,     /* start of edge list for each vertex */
+             int               *adjacency, /* edge list data */
              int                nvtxs,     /* number of vertices in graph */
-             int *              pnedges,   /* ptr to number of edges in graph */
-             int *              vwgts,     /* weights for all vertices */
-             float *            ewgts,     /* weights for all edges */
+             int               *pnedges,   /* ptr to number of edges in graph */
+             int               *vwgts,     /* weights for all vertices */
+             float             *ewgts,     /* weights for all edges */
              struct vtx_data ***pgraph     /* ptr to array of vtx data for graph */
 )
 {
-  extern FILE *     Output_File;      /* output file or null */
+  extern FILE      *Output_File;      /* output file or null */
   struct vtx_data **graph     = NULL; /* array of vtx data for graph */
-  struct vtx_data * links     = NULL; /* space for data for all vtxs */
-  int *             edges     = NULL; /* space for all adjacency lists */
-  float *           eweights  = NULL; /* space for all edge weights */
-  int *             eptr      = NULL; /* steps through adjacency list */
-  int *             eptr_save = NULL; /* saved index into adjacency list */
-  float *           wptr      = NULL; /* steps through edge weights list */
+  struct vtx_data  *links     = NULL; /* space for data for all vtxs */
+  int              *edges     = NULL; /* space for all adjacency lists */
+  float            *eweights  = NULL; /* space for all edge weights */
+  int              *eptr      = NULL; /* steps through adjacency list */
+  int              *eptr_save = NULL; /* saved index into adjacency list */
+  float            *wptr      = NULL; /* steps through edge weights list */
   int               self_edge;        /* number of self loops detected */
   int               size;             /* length of all edge lists */
   double            sum;              /* sum of edge weights for a vtx */

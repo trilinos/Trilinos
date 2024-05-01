@@ -35,22 +35,22 @@ namespace Ioss {
   {
   public:
     virtual ~IOFactory() = default;
-    IOSS_NODISCARD static DatabaseIO *create(const std::string &type, const std::string &filename,
-                              DatabaseUsage db_usage,
-                              Ioss_MPI_Comm communicator = Ioss::ParallelUtils::comm_world(),
-                              const Ioss::PropertyManager &properties = Ioss::PropertyManager());
+    IOSS_NODISCARD static DatabaseIO *
+    create(const std::string &type, const std::string &filename, DatabaseUsage db_usage,
+           Ioss_MPI_Comm                communicator = Ioss::ParallelUtils::comm_world(),
+           const Ioss::PropertyManager &properties   = Ioss::PropertyManager());
 
-    static int         describe(NameList *names);
+    static int                        describe(NameList *names);
     IOSS_NODISCARD static NameList    describe();
-    static void        clean();
+    static void                       clean();
     IOSS_NODISCARD static std::string show_configuration();
 
   protected:
     explicit IOFactory(const std::string &type);
 
     IOSS_NODISCARD virtual DatabaseIO *make_IO(const std::string &filename, DatabaseUsage db_usage,
-                                Ioss_MPI_Comm                communicator,
-                                const Ioss::PropertyManager &properties) const = 0;
+                                               Ioss_MPI_Comm                communicator,
+                                               const Ioss::PropertyManager &properties) const = 0;
 
     IOSS_NODISCARD virtual std::string show_config() const { return {""}; }
 

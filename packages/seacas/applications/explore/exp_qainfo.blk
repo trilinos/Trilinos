@@ -8,8 +8,8 @@ C    See packages/seacas/LICENSE for details
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20240304'
-      QAINFO(3)(:8) = '    4.01'
+      QAINFO(2)(:8) = '20240418'
+      QAINFO(3)(:8) = '    4.02'
 
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors

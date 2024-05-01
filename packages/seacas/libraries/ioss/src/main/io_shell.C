@@ -65,6 +65,8 @@ namespace {
     options.delete_timesteps  = interFace.delete_timesteps;
     options.minimum_time      = interFace.minimum_time;
     options.maximum_time      = interFace.maximum_time;
+    options.time_scale        = interFace.time_scale;
+    options.time_offset       = interFace.time_offset;
     options.data_storage_type = interFace.data_storage_type;
     options.delay             = interFace.timestep_delay;
     options.reverse           = interFace.reverse;

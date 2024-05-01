@@ -12,7 +12,7 @@
 void sorts2d(
     /* Sort the lists needed to find the splitter. */
     double *vals[4][MAXSETS],    /* lists of values to sort */
-    int *   indices[4][MAXSETS], /* indices of sorted lists */
+    int    *indices[4][MAXSETS], /* indices of sorted lists */
     int     nvtxs                /* number of vertices */
 )
 {

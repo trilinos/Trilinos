@@ -77,7 +77,10 @@ namespace Ioss {
 IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(BCType_t) t) { return BCTypeName[t]; }
 IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(DataType_t) t) { return DataTypeName[t]; }
 IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(ElementType_t) t) { return ElementTypeName[t]; }
-IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(GridConnectivityType_t) t) { return GridConnectivityTypeName[t]; }
+IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(GridConnectivityType_t) t)
+{
+  return GridConnectivityTypeName[t];
+}
 IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(GridLocation_t) t) { return GridLocationName[t]; }
 IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(PointSetType_t) t) { return PointSetTypeName[t]; }
 IOSS_NODISCARD inline auto format_as(CGNS_ENUMT(ZoneType_t) t) { return ZoneTypeName[t]; }
@@ -100,7 +103,8 @@ namespace Iocgns {
   class IOCGNS_EXPORT Utils
   {
   public:
-    IOSS_NODISCARD static std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel);
+    IOSS_NODISCARD static std::pair<std::string, int> decompose_name(const std::string &name,
+                                                                     bool is_parallel);
     IOSS_NODISCARD static std::string                 decompose_sb_name(const std::string &name);
 
     IOSS_NODISCARD static size_t index(const Ioss::Field &field);
@@ -108,11 +112,11 @@ namespace Iocgns {
     static void cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                            int processor);
 
-    static void update_db_zone_property(int cgns_file_ptr, const Ioss::Region *region,
-                                        int myProcessor, bool is_parallel, bool is_parallel_io);
-    IOSS_NODISCARD static int  get_db_zone(const Ioss::GroupingEntity *entity);
-    static void set_field_index(const Ioss::Field &field, size_t index,
-                                CGNS_ENUMT(GridLocation_t) location);
+    static void               update_db_zone_property(int cgns_file_ptr, const Ioss::Region *region,
+                                                      int myProcessor, bool is_parallel, bool is_parallel_io);
+    IOSS_NODISCARD static int get_db_zone(const Ioss::GroupingEntity *entity);
+    static void               set_field_index(const Ioss::Field &field, size_t index,
+                                              CGNS_ENUMT(GridLocation_t) location);
     IOSS_NODISCARD static bool is_cell_field(const Ioss::Field &field);
 
     template <typename INT>
@@ -274,8 +278,8 @@ namespace Iocgns {
       }
     }
 
-    IOSS_NODISCARD static std::vector<ZoneBC> parse_zonebc_sideblocks(int cgns_file_ptr, int base, int zone,
-                                                       int myProcessor);
+    IOSS_NODISCARD static std::vector<ZoneBC> parse_zonebc_sideblocks(int cgns_file_ptr, int base,
+                                                                      int zone, int myProcessor);
 
     static void
     generate_boundary_faces(Ioss::Region                                  *region,
@@ -286,8 +290,8 @@ namespace Iocgns {
                                              int state, const int *vertex_solution_index,
                                              const int *cell_center_solution_index,
                                              bool       is_parallel_io);
-    IOSS_NODISCARD static int  find_solution_index(int cgns_file_ptr, int base, int zone, int step,
-                                    CGNS_ENUMT(GridLocation_t) location);
+    IOSS_NODISCARD static int find_solution_index(int cgns_file_ptr, int base, int zone, int step,
+                                                  CGNS_ENUMT(GridLocation_t) location);
     IOSS_NODISCARD static Ioss::MeshType check_mesh_type(int cgns_file_ptr);
 
     static void output_assembly(int file_ptr, const Ioss::Assembly *assembly, bool is_parallel_io,
@@ -304,8 +308,8 @@ namespace Iocgns {
 
     IOSS_NODISCARD static CGNS_ENUMT(ElementType_t) map_topology_to_cgns(const std::string &name);
     IOSS_NODISCARD static std::string map_cgns_to_topology_type(CGNS_ENUMT(ElementType_t) type);
-    static void        add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db);
-    static void        add_assemblies(int cgns_file_ptr, Ioss::DatabaseIO *db);
+    static void                       add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db);
+    static void                       add_assemblies(int cgns_file_ptr, Ioss::DatabaseIO *db);
     static void add_to_assembly(int cgns_file_ptr, Ioss::Region *region, Ioss::EntityBlock *block,
                                 int base, int zone);
 

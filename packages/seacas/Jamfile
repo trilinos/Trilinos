@@ -1,5 +1,5 @@
 #---------------------------------------------------------------
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -1385,7 +1385,6 @@ lib aprepro_lib
     /tpl/netcdf-c//netcdf
     /tpl/fmt//fmt
   : <define>EXODUS_SUPPORT
-    <define>FMT_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1398,7 +1397,6 @@ lib aprepro_lib
     ]
   :
   : <define>EXODUS_SUPPORT
-    <define>FMT_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1866,7 +1864,7 @@ exe Utst_database_io
   [ glob $(seacas-root)/libraries/ioss/src/utest/Utst_IofxDatabaseIO.C ]
     ioinit
     /tpl/netcdf-c//netcdf
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
   : <tag>@utility-exec-tag
   ;
 
@@ -1876,7 +1874,7 @@ exe Utst_textmesh
     ioinit
     iotm
     /tpl/netcdf-c//netcdf
-    /tpl/gtest//gtest
+    /tpl/googletest//gtest
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;

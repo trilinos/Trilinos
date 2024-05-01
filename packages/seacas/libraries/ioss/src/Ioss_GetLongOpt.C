@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,22 +6,19 @@
 
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include "Ioss_GetLongOpt.h"
+#include <cstdio>
 #include <cstring>
 #include <fmt/color.h>
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 #include <sstream>
-#include <stdio.h>
 
 namespace Ioss {
   /** \brief Create an empty options database.
    *
    * \param optmark The command line symbol designating options.
    */
-  GetLongOption::GetLongOption(const char optmark) : optmarker(optmark)
-  {
-    ustring = "[valid options and arguments]";
-  }
+  GetLongOption::GetLongOption(const char optmark) : optmarker(optmark) {}
 
   /** \brief Frees dynamically allocated memory.
    *
@@ -108,8 +105,7 @@ namespace Ioss {
    */
   const char *GetLongOption::retrieve(const char *const opt) const
   {
-    Cell *t;
-    for (t = table; t != nullptr; t = t->next) {
+    for (Cell *t = table; t != nullptr; t = t->next) {
       if (strcmp(opt, t->option) == 0) {
         return t->value;
       }

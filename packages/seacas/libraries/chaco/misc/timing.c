@@ -55,7 +55,7 @@ double sim_time = 0;
 void time_out(FILE *outfile /* file to print output to */
 )
 {
-  FILE *     tempfile;    /* file name for two passes */
+  FILE      *tempfile;    /* file name for two passes */
   extern int ECHO;        /* parameter for different output styles */
   extern int OUTPUT_TIME; /* how much timing output should I print? */
   double     time_tol;    /* tolerance for ignoring time */

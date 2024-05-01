@@ -74,8 +74,8 @@ namespace Ioex {
                          bool abort_if_error) const override;
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
                             bool overwrite, bool abort_if_error) const override;
-    IOSS_NODISCARD bool check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
-                              bool abort_if_error) const;
+    IOSS_NODISCARD bool check_valid_file_ptr(bool write_message, std::string *error_msg,
+                                             int *bad_count, bool abort_if_error) const;
 
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -207,7 +207,8 @@ namespace Ioex {
     // ID Mapping functions.
     IOSS_NODISCARD const Ioss::Map &get_map(ex_entity_type type) const;
     IOSS_NODISCARD const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entity_count,
-                             ex_entity_type entity_type, ex_inquiry inquiry_type) const;
+                                            ex_entity_type entity_type,
+                                            ex_inquiry     inquiry_type) const;
 
     // Internal data handling
     int64_t handle_node_ids(void *ids, int64_t num_to_get) const;

@@ -13,11 +13,11 @@
 
 void check_internal(struct vtx_data **graph,      /* graph data structure */
                     int               nvtxs,      /* number of vertices in graph */
-                    struct bidint *   int_list,   /* sorted list of internal weights per set */
-                    struct bidint *   set_list,   /* head of vtx_elems lists */
-                    struct bidint *   vtx_elems,  /* start of vertex data */
-                    int *             total_vwgt, /* total weight in each set */
-                    int *             assign,     /* current assignment */
+                    struct bidint    *int_list,   /* sorted list of internal weights per set */
+                    struct bidint    *set_list,   /* head of vtx_elems lists */
+                    struct bidint    *vtx_elems,  /* start of vertex data */
+                    int              *total_vwgt, /* total weight in each set */
+                    int              *assign,     /* current assignment */
                     int               nsets_tot   /* total number of sets */
 )
 {

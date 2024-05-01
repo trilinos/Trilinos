@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -55,37 +55,37 @@ enum E_Type {
 extern const char *elem_name_from_enum(E_Type elem_type);
 
 extern E_Type get_elem_type(const char *elem_name, /* ExodusII element name */
-                            const int   num_nodes, /* Number of nodes in the element */
-                            const int   num_dim    /* Number of dimensions of the mesh */
+                            int         num_nodes, /* Number of nodes in the element */
+                            int         num_dim    /* Number of dimensions of the mesh */
 );
 
-extern int get_elem_info(const int    info,     /* The requested information */
-                         const E_Type elem_type /* The element type */
-);
-
-template <typename INT>
-int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT side_nodes[],
-                const int skip_check, const int partial_adj);
-
-template <typename INT>
-int get_side_id_hex_tet(const E_Type etype,       /* The element type */
-                        const INT   *conn,        /* The element connectivity */
-                        const int    nsnodes,     /* The number of side nodes */
-                        const INT    side_nodes[] /* The list of side node IDs */
+extern int get_elem_info(int    info,     /* The requested information */
+                         E_Type elem_type /* The element type */
 );
 
 template <typename INT>
-int ss_to_node_list(const E_Type etype,         /* The element type */
-                    const INT   *connect,       /* The element connectivity */
-                    int          side_num,      /* The element side number */
-                    INT          ss_node_list[] /* The list of side node IDs */
+int get_side_id(E_Type etype, const INT *connect, int nsnodes, INT side_nodes[], int skip_check,
+                int partial_adj);
+
+template <typename INT>
+int get_side_id_hex_tet(E_Type     etype,       /* The element type */
+                        const INT *conn,        /* The element connectivity */
+                        int        nsnodes,     /* The number of side nodes */
+                        const INT  side_nodes[] /* The list of side node IDs */
 );
 
 template <typename INT>
-int get_ss_mirror(const E_Type etype,             /* The element type */
-                  const INT   *ss_node_list,      /* The list of side node IDs */
-                  int          side_num,          /* The element side number */
-                  INT          mirror_node_list[] /* The list of the mirror side node IDs */
+int ss_to_node_list(E_Type     etype,         /* The element type */
+                    const INT *connect,       /* The element connectivity */
+                    int        side_num,      /* The element side number */
+                    INT        ss_node_list[] /* The list of side node IDs */
+);
+
+template <typename INT>
+int get_ss_mirror(E_Type     etype,             /* The element type */
+                  const INT *ss_node_list,      /* The list of side node IDs */
+                  int        side_num,          /* The element side number */
+                  INT        mirror_node_list[] /* The list of the mirror side node IDs */
 );
 
 /* Define element info requests */

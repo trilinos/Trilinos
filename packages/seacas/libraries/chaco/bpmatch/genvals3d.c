@@ -12,7 +12,7 @@
 void genvals3d(
     /* Create lists of sets of values to be sorted. */
     double **xvecs,            /* vectors to partition */
-    double * vals[8][MAXSETS], /* ptrs to lists of values */
+    double  *vals[8][MAXSETS], /* ptrs to lists of values */
     int      nvtxs             /* number of values */
 )
 {

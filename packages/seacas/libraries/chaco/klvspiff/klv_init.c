@@ -12,10 +12,10 @@
 
 int klv_init(struct bilist ***lbucket_ptr, /* space for left bucket sorts */
              struct bilist ***rbucket_ptr, /* space for right bucket sorts */
-             struct bilist ** llistspace,  /* space for elements of linked lists */
-             struct bilist ** rlistspace,  /* space for elements of linked lists */
-             int **           ldvals,      /* change in separator for left moves */
-             int **           rdvals,      /* change in separator for right moves */
+             struct bilist  **llistspace,  /* space for elements of linked lists */
+             struct bilist  **rlistspace,  /* space for elements of linked lists */
+             int            **ldvals,      /* change in separator for left moves */
+             int            **rdvals,      /* change in separator for right moves */
              int              nvtxs,       /* number of vertices in the graph */
              int              maxchange    /* maximum change by moving a vertex */
 )

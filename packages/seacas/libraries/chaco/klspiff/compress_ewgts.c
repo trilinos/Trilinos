@@ -20,10 +20,10 @@ void compress_ewgts(struct vtx_data **graph,      /* list of graph info for each
 )
 {
   extern double EWGT_RATIO_MAX; /* max allowed ewgt/nvtxs */
-  float *       old_ewptr;      /* loops through old edge weights */
-  float *       new_ewptr;      /* loops through old edge weights */
-  float *       self_ptr;       /* points to self edge in new_ewgts */
-  float *       new_ewgts;      /* space for new edge weights */
+  float        *old_ewptr;      /* loops through old edge weights */
+  float        *new_ewptr;      /* loops through old edge weights */
+  float        *self_ptr;       /* points to self edge in new_ewgts */
+  float        *new_ewgts;      /* space for new edge weights */
   int           ewgt;           /* new edge weight value */
   double        sum;            /* sum of all the new edge weights */
   double        ratio;          /* amount to reduce edge weights */
