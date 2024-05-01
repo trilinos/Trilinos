@@ -71,7 +71,7 @@ ordering_type GraphTools_Metis::amd_order (ordering_type n, const ordering_type 
     // trilinos_amd_l_order requires integral type UF_long==long
     return trilinos_amd_l_order(n, xadj, adjncy, perm, control, info);
   }
-  else if (std::is_same_v<ordering_type, int>) {
+  else if constexpr (std::is_same_v<ordering_type, int>) {
     // trilinos_amd_order requires integral type int
     return trilinos_amd_order(n, xadj, adjncy, perm, control, info);
   }
