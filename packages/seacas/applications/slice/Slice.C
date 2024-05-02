@@ -408,6 +408,12 @@ int main(int argc, char *argv[])
   }
 
 #ifdef SEACAS_HAVE_MPI
+  MPI_Comm parentcomm;
+  MPI_Comm_get_parent(&parentcomm);
+  if (parentcomm != MPI_COMM_NULL) {
+    int istatus = EXIT_SUCCESS;
+    MPI_Send(&istatus, 1, MPI_INT, 0, 0, parentcomm);
+  }
   MPI_Finalize();
 #endif
   fmt::print(stderr, "\nHigh-Water Memory Use: {} bytes\n",
