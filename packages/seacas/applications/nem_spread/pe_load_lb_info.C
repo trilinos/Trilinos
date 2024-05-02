@@ -16,6 +16,7 @@
 #include "rf_util.h"     // for print_line
 #include "sort_utils.h"  // for gds_qsort
 #include "vector_data.h"
+#include <array>
 #include <cassert>
 #include <cstddef> // for size_t
 #include <cstdio>  // for stderr, etc

@@ -11,10 +11,10 @@
 
 /* Set up data structures for refine_part. */
 void make_maps_ref(struct vtx_data **graph,         /* graph data structure */
-                   struct bilist *   set_list,      /* lists of vertices in each set */
-                   struct bilist *   vtx_elems,     /* start of storage for vertices */
-                   int *             assignment,    /* set assignments for graph */
-                   int *             sub_assign,    /* assignment file for subgraph */
+                   struct bilist    *set_list,      /* lists of vertices in each set */
+                   struct bilist    *vtx_elems,     /* start of storage for vertices */
+                   int              *assignment,    /* set assignments for graph */
+                   int              *sub_assign,    /* assignment file for subgraph */
                    int set1, int set2,              /* set value denoting subgraph */
                    int *glob2loc,                   /* graph -> subgraph numbering map */
                    int *loc2glob,                   /* subgraph -> graph numbering map */

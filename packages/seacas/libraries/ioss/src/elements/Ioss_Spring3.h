@@ -11,8 +11,6 @@
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
 
-// STL Includes
-
 namespace Ioss {
   class IOSS_EXPORT Spring3 : public Ioss::ElementTopology
   {
@@ -21,7 +19,6 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    Spring3(const Spring3 &) = delete;
 
     IOSS_NODISCARD ElementShape shape() const override { return ElementShape::SPRING; }
     IOSS_NODISCARD int          spatial_dimension() const override;

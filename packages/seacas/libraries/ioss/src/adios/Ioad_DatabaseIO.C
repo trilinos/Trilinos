@@ -410,7 +410,7 @@ namespace Ioad {
   template <typename T>
   void DatabaseIO::define_entity_internal(const T &entity_blocks, Ioss::Field::RoleType *role)
   {
-    using cv_removed_value_type = typename std::remove_pointer<typename T::value_type>::type;
+    using cv_removed_value_type = typename std::remove_pointer_t<typename T::value_type>;
     for (auto &entity_block : entity_blocks) {
       std::string entity_type = entity_block->type_string();
       std::string entity_name = entity_block->name();

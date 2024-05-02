@@ -1798,7 +1798,7 @@ namespace tsl {
        */
       template <
           class T                                                                      = size_type,
-	typename std::enable_if<std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
+          typename std::enable_if<std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
       static bool USE_STORED_HASH_ON_REHASH(size_type /*bucket_count*/)
       {
         return StoreHash;
@@ -1806,7 +1806,7 @@ namespace tsl {
 
       template <
           class T                                                                       = size_type,
-	typename std::enable_if<!std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
+          typename std::enable_if<!std::is_same<T, truncated_hash_type>::value>::type * = nullptr>
       static bool USE_STORED_HASH_ON_REHASH(size_type bucket_count)
       {
         (void)bucket_count;

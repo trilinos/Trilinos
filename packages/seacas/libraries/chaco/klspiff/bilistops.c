@@ -12,7 +12,7 @@
 /* Note: bi-directional lists aren't assumed to be sorted. */
 
 void add2bilist(                      /* add val to unsorted list */
-                struct bilist * lptr, /* element to add */
+                struct bilist  *lptr, /* element to add */
                 struct bilist **list  /* list added to */
 )
 {
@@ -24,7 +24,7 @@ void add2bilist(                      /* add val to unsorted list */
   *list      = lptr;
 }
 
-void removebilist(struct bilist * lptr, /* ptr to element to remove */
+void removebilist(struct bilist  *lptr, /* ptr to element to remove */
                   struct bilist **list  /* head of list to remove it from */
 )
 
@@ -41,7 +41,7 @@ void removebilist(struct bilist * lptr, /* ptr to element to remove */
   }
 }
 
-void movebilist(struct bilist * lptr,    /* ptr to element to move */
+void movebilist(struct bilist  *lptr,    /* ptr to element to move */
                 struct bilist **oldlist, /* head of list to remove it from */
                 struct bilist **newlist  /* head of list to add it to */
 )

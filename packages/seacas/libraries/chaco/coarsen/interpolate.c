@@ -15,18 +15,18 @@
    which they were collapsed.
 */
 
-void ch_interpolate(double **         vecs,       /* approximate eigenvectors for graph */
-                    double **         cvecs,      /* exact eigenvectors for coarse graph */
+void ch_interpolate(double          **vecs,       /* approximate eigenvectors for graph */
+                    double          **cvecs,      /* exact eigenvectors for coarse graph */
                     int               ndims,      /* number of vectors to interpolate */
                     struct vtx_data **graph,      /* array of vtx data for graph */
                     int               nvtxs,      /* number of vertices in graph */
-                    int *             v2cv,       /* mapping from vtxs to cvtxs */
+                    int              *v2cv,       /* mapping from vtxs to cvtxs */
                     int               using_ewgts /* are edge weights being used in fine graph? */
 )
 {
   double *vec, *cvec;  /* pointers into vecs and vecs */
-  int *   eptr;        /* loops through edge lists */
-  float * ewptr;       /* loops through edge weights */
+  int    *eptr;        /* loops through edge lists */
+  float  *ewptr;       /* loops through edge weights */
   float   ewgt;        /* value for edge weight */
   double  ewsum;       /* sum of incident edge weights */
   double  sum;         /* sum of values of neighbors */

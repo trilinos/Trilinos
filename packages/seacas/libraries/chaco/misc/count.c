@@ -13,7 +13,7 @@
 
 void count(struct vtx_data **graph, /* graph data structure */
            int               nvtxs, /* number of vtxs in graph */
-           int *             sets,  /* processor each vertex is assigned to */
+           int              *sets,  /* processor each vertex is assigned to */
            int               nsets, /* number of sets partitioned into */
            int (*hops)[MAXSETS],    /* hops metric between sets */
            int dump,                /* flag for extended output */

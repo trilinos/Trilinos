@@ -10,9 +10,9 @@
 #include "structs.h"    // for vtx_data
 
 void compute_mesh_vdata(struct refine_vdata *vdata,        /* preference data for a vertex */
-                        struct vtx_data **   comm_graph,   /* communication graph data structure */
+                        struct vtx_data    **comm_graph,   /* communication graph data structure */
                         int                  vtx,          /* current vertex */
-                        int *                vtx2node,     /* maps graph vtxs to mesh nodes */
+                        int                 *vtx2node,     /* maps graph vtxs to mesh nodes */
                         int                  mesh_dims[3], /* size of mesh */
                         int                  dim /* dimension we are currently working in */
 )

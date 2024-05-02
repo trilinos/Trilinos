@@ -13,7 +13,7 @@
 double find_maxdeg(struct vtx_data **graph,       /* graph data structure */
                    int               nvtxs,       /* number of vertices */
                    int               using_ewgts, /* are edge weights being used? */
-                   float *           pmax_ewgt    /* returns largest edge weight if not NULL */
+                   float            *pmax_ewgt    /* returns largest edge weight if not NULL */
 )
 {
   double maxdeg;   /* maximum degree of a vertex */

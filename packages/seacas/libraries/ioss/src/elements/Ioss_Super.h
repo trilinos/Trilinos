@@ -18,8 +18,6 @@ namespace Ioss {
   class ElementVariableType;
 } // namespace Ioss
 
-// STL Includes
-
 namespace Ioss {
 
   class IOSS_EXPORT Super : public Ioss::ElementTopology
@@ -30,7 +28,6 @@ namespace Ioss {
 
     static void factory();
     Super(const std::string &my_name, int node_count);
-    Super(const Super &) = delete;
     virtual ~Super() override;
 
     static void make_super(const std::string &type);

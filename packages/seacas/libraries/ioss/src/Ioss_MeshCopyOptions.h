@@ -17,6 +17,8 @@ namespace Ioss {
     double              minimum_time{0.0};
     double              maximum_time{0.0};
     double              delay{0.0};
+    double              time_scale{1.0};
+    double              time_offset{0.0};
 
     double rel_tolerance{};
     double abs_tolerance{};

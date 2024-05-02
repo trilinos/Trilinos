@@ -52,7 +52,7 @@ namespace Ioss {
     void erase(const std::string &field_name);
 
     // Checks if a field with 'field_name' exists in the database.
-    bool exists(const std::string &field_name) const;
+    IOSS_NODISCARD bool exists(const std::string &field_name) const;
 
     IOSS_NODISCARD Field        get(const std::string &field_name) const;
     IOSS_NODISCARD const Field &getref(const std::string &field_name) const;

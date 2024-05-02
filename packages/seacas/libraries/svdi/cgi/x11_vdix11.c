@@ -554,13 +554,13 @@ static int   font_height, font_width; /* char size in device coord. */
 #define map_y(yin) ((int)(x_height - (ypad + scale * (yin))))
 
 /* macros which map X Windows coords. into ndc */
-#define ndc_map_x(xin) ((float)(((xin)-xpad) / scale))
+#define ndc_map_x(xin) ((float)(((xin) - xpad) / scale))
 #define ndc_map_y(yin) ((float)(((x_height - (yin)) - ypad) / scale))
 
 /* macro to convert measure in X window units into ndc units */
 #define ndc_units(in) ((float)((in) / scale))
 /* macro to convert measure in ndc into X window measure */
-#define x_units(in) ((int)((in)*scale))
+#define x_units(in) ((int)((in) * scale))
 
 /* macro to convert ascii(integer) to char (note: machine dependent) */
 #define a_to_c(ain) ((char)(ain)) /* for ascii machine */

@@ -12,16 +12,16 @@
 
 void add_edges(struct vtx_data **graph,      /* graph data structure */
                struct edgeslist *new_edges,  /* list of edges connecting graph */
-               struct ilists **  old_edges,  /* edges data overwritten for connecting */
-               struct flists **  old_ewgts,  /* weights of edges overwritten */
+               struct ilists   **old_edges,  /* edges data overwritten for connecting */
+               struct flists   **old_ewgts,  /* weights of edges overwritten */
                int               using_ewgts /* are edge weights being used? */
 )
 {
-  struct ilists *   save_list;  /* space to save old edge list */
-  struct flists *   save_ewgts; /* space to save old edge weights */
+  struct ilists    *save_list;  /* space to save old edge list */
+  struct flists    *save_ewgts; /* space to save old edge weights */
   struct edgeslist *edges;      /* loops through new edges */
-  float *           new_ewgts;  /* new edge weights */
-  int *             new_list;   /* new edge list */
+  float            *new_ewgts;  /* new edge weights */
+  int              *new_list;   /* new edge list */
   int               nedges;     /* number of edges a vertex has */
   int               vtx, vtx2;  /* two vertices in edge to be added */
   int               i, j;       /* loop counter */

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -26,14 +26,27 @@ C   --   SCR  - TMP - temporary storage area
       real vars(*)
 c     real vars(nold, nvar)
       real scr(*)
+      logical isseq
 
 C ... VARS should really be a doubly-dimensioned array (NOLD, NVAR),
 C     The dimensions need to be in this order so we can read them
-C     in using exgev and exgnv.  But, this order doesn't work very
+C     in using exgnv.  But, this order doesn't work very
 C     well when trying to reduce the size of NOLD
 
-C ... TODO: Need to use the truth table to make sure variables
-C           exist for each element.
+      isseq = .false.
+      if (nold .eq. nnew) then
+         isseq = .true.
+         do i=1, nnew
+            if (map(i) .ne. i) then
+               isseq = .false.
+            end if
+         end do
+      end if
+
+      if (isseq) then
+         return
+      end if
+      
       do 30 ivar = 1, nvar
         do 10 i = 1, nnew
           scr(i) = vars(map(i) + nold * (ivar-1) )

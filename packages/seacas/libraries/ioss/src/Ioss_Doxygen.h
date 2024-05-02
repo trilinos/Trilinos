@@ -182,7 +182,8 @@ file. Then, the first file will be reopened and steps 0.7, 0.8, and
  Property              | Value  | Description
 -----------------------|:------:|-----------------------------------------------------------
   FILE_FORMAT          | [default], spyhis, csv, ts_csv, text, ts_text | predefined formats for heartbeat output. The ones starting with `ts_` output timestamps.
-  FLUSH_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
+  FLUSH_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds.  Set to 0 to flush every step (bad performance)
+  HEARTBEAT_FLUSH_INTERVAL | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds (Same as FLUSH_INTERVAL, but doesn't affect other database types)
   TIME_STAMP_FORMAT    | [%H:%M:%S] | Format used to format time stamp.  See strftime man page
   SHOW_TIME_STAMP      | on/off | Should the output lines be preceded by the timestamp
   FIELD_SEPARATOR      | [, ]   | separator to be used between output fields.
