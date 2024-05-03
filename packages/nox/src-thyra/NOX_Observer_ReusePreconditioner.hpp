@@ -27,6 +27,9 @@ namespace NOX {
 
     ObserverReusePreconditioner();
 
+    /** @name Initialization methods */
+    //@{
+
     /// Setup the preconditioner objects used to update the preconditioner
     void setOperatorsAndFactory(const Teuchos::RCP<::Thyra::PreconditionerBase<Scalar>>& precOperator,
                                 const Teuchos::RCP<::Thyra::PreconditionerFactoryBase<Scalar>>& precFactory);
@@ -34,7 +37,19 @@ namespace NOX {
     /** \brief Enables updating the preconditioner at the start of each nonlinear solve */
     void updateAtStartOfSolve();
 
-    /** \brief Enables updating of the preconditioner after a set number of nonlinear iteraitons.
+    /** \brief Enables updating of the preconditioner after a set number of nonlinear solves.
+
+        This is intended to reuse a preconditioner across all stages
+        of an RK method in a single time step. The parameter should
+        be set to the number of RK stages. If a nonlinear solve fails
+
+        @param [in] num_nonlinear_solves_for_update (int) Updates the preconditioner after this number of nonlinear iterations.
+        @param [in] reset_nonlinear_solve_count_on_faile_solve (bool) If set to true, when a nonlinear solve fails, the nonlinear solve count will be reset. When a nonlinear solve fails in the middle of an RK stage, we assume a new time step will start for the next nonlinear solve.
+     */
+    void updateAfterNNonlinearSolves(const int num_nonlinear_solves_for_update,
+                                     const bool reset_nonlinear_solve_count_on_failed_solve = true);
+
+    /** \brief Enables updating of the preconditioner after a set number of nonlinear iterations.
 
         @param [in] num_iterations_for_update (int) Updates the preconditioner after this number of nonlinear iterations.
      */
@@ -54,20 +69,38 @@ namespace NOX {
     void updateOnLinearSolverStall(const int max_linear_iterations,
                                    const int max_count);
 
-    // Derived from NOX::Observer
+    //@}
+
+    /** @name Methods derived from NOX::Observer */
+    //@{
     void runPreSolve(const NOX::Solver::Generic& solver) override;
     void runPreIterate(const NOX::Solver::Generic& solver) override;
     void runPostIterate(const NOX::Solver::Generic& solver) override;
+    void runPostSolve(const NOX::Solver::Generic& solver) override;
+    //@}
+
+    /** @name Query methods used in unit testing */
+    //@{
+    /// Return the number of times the preconditioner has been updated.
+    size_t getNumPreconditionerUpdates() const;
+    /// Return the number of nonlinear solves that have been run.
+    size_t getNumNonlinearSolvesCount() const;
+    //@}
 
   private:
     void updatePreconditioner(NOX::Thyra::Group& group);
     bool isInitialized() const;
 
   private:
-    bool update_at_start_of_solve_;
+    bool update_at_start_of_nonlinear_solve_;
 
-    bool update_after_n_iterations_;
-    int num_iterations_for_update_;
+    bool update_after_n_nonlinear_solves_;
+    int num_nonlinear_solves_for_update_;
+    bool reset_nonlinear_solve_count_on_failed_solve_;
+    size_t num_nonlinear_solves_count_;
+
+    bool update_after_n_linear_iterations_;
+    int num_linear_iterations_for_update_;
 
     bool update_if_stalled_;
     int max_count_for_stall_;
@@ -75,6 +108,8 @@ namespace NOX {
     int stall_count_;
 
     int iterations_since_last_update_;
+
+    size_t update_preconditioner_count_;
 
     Teuchos::RCP<::Thyra::PreconditionerBase<Scalar>> precOperator_;
     Teuchos::RCP<::Thyra::PreconditionerFactoryBase<Scalar>> precFactory_;

@@ -6,14 +6,19 @@
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 
 NOX::ObserverReusePreconditioner::ObserverReusePreconditioner()
-  : update_at_start_of_solve_(false),
-    update_after_n_iterations_(false),
-    num_iterations_for_update_(5),
+  : update_at_start_of_nonlinear_solve_(false),
+    update_after_n_nonlinear_solves_(false),
+    num_nonlinear_solves_for_update_(-1),
+    reset_nonlinear_solve_count_on_failed_solve_(false),
+    num_nonlinear_solves_count_(0),
+    update_after_n_linear_iterations_(false),
+    num_linear_iterations_for_update_(5),
     update_if_stalled_(false),
     max_count_for_stall_(-1),
     max_linear_iterations_for_stall_(-1),
     stall_count_(0),
-    iterations_since_last_update_(0)
+    iterations_since_last_update_(0),
+    update_preconditioner_count_(0)
 {}
 
 void
@@ -28,15 +33,25 @@ setOperatorsAndFactory(const Teuchos::RCP<::Thyra::PreconditionerBase<Scalar>>& 
 void
 NOX::ObserverReusePreconditioner::updateAtStartOfSolve()
 {
-  update_at_start_of_solve_ = true;
+  update_at_start_of_nonlinear_solve_ = true;
+}
+
+void
+NOX::ObserverReusePreconditioner::
+updateAfterNNonlinearSolves(const int num_nonlinear_solves_for_update,
+                            const bool reset_nonlinear_solve_count_on_failed_solve)
+{
+  update_after_n_nonlinear_solves_ = true;
+  num_nonlinear_solves_for_update_ = num_nonlinear_solves_for_update;
+  reset_nonlinear_solve_count_on_failed_solve_ = reset_nonlinear_solve_count_on_failed_solve;
 }
 
 void
 NOX::ObserverReusePreconditioner::
 updateAfterNIterations(const int num_iterations_for_update)
 {
-  update_after_n_iterations_ = true;
-  num_iterations_for_update_ = num_iterations_for_update;
+  update_after_n_linear_iterations_ = true;
+  num_linear_iterations_for_update_ = num_iterations_for_update;
 }
 
 void
@@ -57,7 +72,7 @@ void NOX::ObserverReusePreconditioner::runPreSolve(const NOX::Solver::Generic& s
     const auto& const_group = solver.getSolutionGroup();
     auto& group = const_cast<NOX::Abstract::Group&>(const_group);
     auto& thyra_group = dynamic_cast<NOX::Thyra::Group&>(group);
-    
+
     auto lows_factory = thyra_group.getLinearOpWithSolveFactory();
     TEUCHOS_ASSERT(nonnull(lows_factory));
 
@@ -83,7 +98,7 @@ void NOX::ObserverReusePreconditioner::runPreSolve(const NOX::Solver::Generic& s
     TEUCHOS_TEST_FOR_EXCEPTION(precOperator_.is_null(),std::runtime_error,"ERROR: the ReusePreconditioner observer is registered but there is no preconditioner available!");
 
     // First time through, create the preconditioner
-    this->updatePreconditioner(thyra_group);
+    // this->updatePreconditioner(thyra_group);
   }
 }
 
@@ -93,12 +108,18 @@ void NOX::ObserverReusePreconditioner::runPreIterate(const NOX::Solver::Generic&
 
   bool update_the_preconditioner = false;
 
-  if (update_at_start_of_solve_ && (solver.getNumIterations() == 0) ) {
+  if (update_at_start_of_nonlinear_solve_ && (solver.getNumIterations() == 0) ) {
     update_the_preconditioner = true;
   }
 
-  if (update_after_n_iterations_) {
-    if (solver.getNumIterations() % num_iterations_for_update_ == 0) {
+  if (update_after_n_nonlinear_solves_ && (solver.getNumIterations() == 0) ) {
+    if (num_nonlinear_solves_count_ % num_nonlinear_solves_for_update_ == 0) {
+      update_the_preconditioner = true;
+    }
+  }
+
+  if (update_after_n_linear_iterations_) {
+    if (solver.getNumIterations() % num_linear_iterations_for_update_ == 0) {
       update_the_preconditioner = true;
     }
   }
@@ -106,13 +127,13 @@ void NOX::ObserverReusePreconditioner::runPreIterate(const NOX::Solver::Generic&
   if (update_if_stalled_) {
     const int num_linear_iterations = solver.getSolverStatistics()->linearSolve.lastLinearSolve_NumIterations;
     const bool is_converged = solver.getSolverStatistics()->linearSolve.lastLinearSolve_Converged;
-      
+
     if (num_linear_iterations >= max_linear_iterations_for_stall_) {
       ++stall_count_;
     } else {  // reset count on a successful linear solve
       stall_count_ = 0;
     }
-    
+
     if ( (!is_converged) || (stall_count_ >= max_count_for_stall_) )
       update_the_preconditioner = true;
   }
@@ -128,6 +149,23 @@ void NOX::ObserverReusePreconditioner::runPreIterate(const NOX::Solver::Generic&
 void NOX::ObserverReusePreconditioner::runPostIterate(const NOX::Solver::Generic& solver)
 {++iterations_since_last_update_;}
 
+void NOX::ObserverReusePreconditioner::runPostSolve(const NOX::Solver::Generic& solver)
+{
+  ++num_nonlinear_solves_count_;
+
+  if (reset_nonlinear_solve_count_on_failed_solve_) {
+    if (solver.getStatus() == NOX::StatusTest::Failed) {
+      num_nonlinear_solves_count_ = 0;
+    }
+  }
+}
+
+size_t NOX::ObserverReusePreconditioner::getNumPreconditionerUpdates() const
+{return update_preconditioner_count_;}
+
+size_t NOX::ObserverReusePreconditioner::getNumNonlinearSolvesCount() const
+{return num_nonlinear_solves_count_;}
+
 void NOX::ObserverReusePreconditioner::updatePreconditioner(NOX::Thyra::Group& group)
 {
   TEUCHOS_ASSERT(this->isInitialized());
@@ -138,15 +176,20 @@ void NOX::ObserverReusePreconditioner::updatePreconditioner(NOX::Thyra::Group& g
   auto jacOperator = group.getScaledJacobianOperator();
 
   ::Thyra::initializePrec<double>(*precFactory_,jacOperator,precOperator_.ptr());
-  
+
   group.unscaleJacobianOperator();
 
   stall_count_ = 0;
   iterations_since_last_update_ = 0;
+
+  ++update_preconditioner_count_;
 }
 
 bool NOX::ObserverReusePreconditioner::isInitialized() const
 {
-  return ( (update_at_start_of_solve_ || update_after_n_iterations_ || update_if_stalled_) &&
+  return ( (update_at_start_of_nonlinear_solve_ ||
+            update_after_n_nonlinear_solves_ ||
+            update_after_n_linear_iterations_ ||
+            update_if_stalled_) &&
            nonnull(precOperator_) && nonnull(precFactory_) );
 }
