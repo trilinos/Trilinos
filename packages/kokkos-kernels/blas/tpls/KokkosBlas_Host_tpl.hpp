@@ -90,18 +90,11 @@ struct HostBlas {
                    KK_INT incx, const T *y, KK_INT incy, T *a, KK_INT lda);
 
   template <typename tAlpha>
-  static void cher(const char uplo, KK_INT n, const tAlpha alpha, const T *x,
-                   KK_INT incx, T *a, KK_INT lda);
+  static void her(const char uplo, KK_INT n, const tAlpha alpha, const T *x,
+                  KK_INT incx, T *a, KK_INT lda);
 
-  template <typename tAlpha>
-  static void zher(const char uplo, KK_INT n, const tAlpha alpha, const T *x,
-                   KK_INT incx, T *a, KK_INT lda);
-
-  static void cher2(const char uplo, KK_INT n, const T alpha, const T *x,
-                    KK_INT incx, const T *y, KK_INT incy, T *a, KK_INT lda);
-
-  static void zher2(const char uplo, KK_INT n, const T alpha, const T *x,
-                    KK_INT incx, const T *y, KK_INT incy, T *a, KK_INT lda);
+  static void her2(const char uplo, KK_INT n, const T alpha, const T *x,
+                   KK_INT incx, const T *y, KK_INT incy, T *a, KK_INT lda);
 
   static void trsv(const char uplo, const char transa, const char diag,
                    KK_INT m, const T *a, KK_INT lda,

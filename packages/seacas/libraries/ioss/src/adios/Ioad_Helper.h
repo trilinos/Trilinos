@@ -37,16 +37,16 @@ namespace Ioad {
   // parameters.
   template <typename T>
   auto NewEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                 const std::string & /*entity_type*/, size_t       entity_count)
-      -> IossHas3ParametersConstructor<T> *
+                 const std::string & /*entity_type*/,
+                 size_t entity_count) -> IossHas3ParametersConstructor<T> *
   {
     return new T(io_database, my_name, entity_count);
   }
 
   template <typename T>
   auto NewEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                 const std::string &entity_type, size_t entity_count)
-      -> IossHas4ParametersConstructor<T> *
+                 const std::string &entity_type,
+                 size_t             entity_count) -> IossHas4ParametersConstructor<T> *
   {
     return new T(io_database, my_name, entity_type, entity_count);
   }

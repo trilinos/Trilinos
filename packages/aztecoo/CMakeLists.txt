@@ -16,6 +16,9 @@ TRIBITS_PACKAGE(AztecOO)
 #
 # B) Set up package-specific options
 #
+
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AZLU
   HAVE_AZLU
   "Enables the azlu preconditioner.  Requires the y12m TPL."

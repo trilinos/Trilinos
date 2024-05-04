@@ -46,3 +46,10 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 
 #endif
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

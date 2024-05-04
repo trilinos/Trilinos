@@ -50,6 +50,23 @@ namespace {
 
 Excn::SystemInterface::SystemInterface(int rank) : myRank_(rank) { enroll_options(); }
 
+bool Excn::SystemInterface::remove_file_per_rank_files() const
+{
+  if (removeFilePerRankFiles_) {
+    if (partCount_ <= 0 && startPart_ == 0 && subcycle_ == -1 && cycle_ == -1) {
+      return true;
+    }
+    else {
+      fmt::print("\nNot removing the file-per-rank input files due to presence of "
+                 "start/part/subcycle options.\n\n");
+      return false;
+    }
+  }
+  else {
+    return false;
+  }
+}
+
 void Excn::SystemInterface::enroll_options()
 {
   options_.usage("[options] basename");
@@ -103,6 +120,10 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("keep_temporary", GetLongOption::NoValue,
                   "If -join_subcycles is specified, then after joining the subcycle files,\n"
                   "\t\tthey are automatically deleted unless -keep_temporary is specified.",
+                  nullptr);
+
+  options_.enroll("remove_file_per_rank_files", GetLongOption::NoValue,
+                  "Remove the input file-per-rank files after they have successfully been joined.",
                   nullptr);
 
   options_.enroll(
@@ -374,11 +395,12 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   sumSharedNodes_ = options_.retrieve("sum_shared_nodes") != nullptr;
   append_         = options_.retrieve("append") != nullptr;
 
-  subcycle_        = options_.get_option_value("subcycle", subcycle_);
-  cycle_           = options_.get_option_value("cycle", cycle_);
-  subcycleJoin_    = options_.retrieve("join_subcycles") != nullptr;
-  keepTemporary_   = options_.retrieve("keep_temporary") != nullptr;
-  verifyValidFile_ = options_.retrieve("verify_valid_file") != nullptr;
+  subcycle_               = options_.get_option_value("subcycle", subcycle_);
+  cycle_                  = options_.get_option_value("cycle", cycle_);
+  subcycleJoin_           = options_.retrieve("join_subcycles") != nullptr;
+  keepTemporary_          = options_.retrieve("keep_temporary") != nullptr;
+  removeFilePerRankFiles_ = options_.retrieve("remove_file_per_rank_files") != nullptr;
+  verifyValidFile_        = options_.retrieve("verify_valid_file") != nullptr;
 
   if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;

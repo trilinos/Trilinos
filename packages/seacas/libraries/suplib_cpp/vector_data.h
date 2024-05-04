@@ -22,9 +22,7 @@ template <typename T> constexpr T *Data(std::vector<T> &vec)
   if (vec.empty()) {
     return nullptr;
   }
-  else {
-    return vec.data();
-  }
+  return vec.data();
 }
 
 template <typename T> constexpr const T *Data(const std::vector<T> &vec)
@@ -32,9 +30,7 @@ template <typename T> constexpr const T *Data(const std::vector<T> &vec)
   if (vec.empty()) {
     return nullptr;
   }
-  else {
-    return vec.data();
-  }
+  return vec.data();
 }
 
 template <typename T, size_t N> constexpr T *Data(std::array<T, N> &arr)

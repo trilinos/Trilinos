@@ -102,3 +102,6 @@
 
 /* Define if want to build with Epetra support. */
 #cmakedefine HAVE_TRIUTILS_EPETRA
+
+#cmakedefine Triutils_SHOW_DEPRECATED_WARNINGS
+

@@ -295,3 +295,10 @@ private:
 
 } // namespace Trilinos_Util
 #endif
+
+#if defined(Triutils_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Triutils package is deprecated"
+#endif
+#endif
+

@@ -71,3 +71,10 @@ extern void ML_SuperLU_Set_Tile( int nprocs, int* tsz, int* stile,
 #endif
 
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

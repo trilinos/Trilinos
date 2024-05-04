@@ -12,11 +12,11 @@ void countcedges(
     /* Count edges in coarsened graph and construct start array. */
     struct vtx_data **graph,    /* array of vtx data for graph */
     int               nvtxs,    /* number of vertices in graph */
-    int *             start,    /* start of edgevals list for each vertex */
-    int *             seenflag, /* flags indicating vtxs already counted */
-    int *             mflag,    /* flag indicating vtx matched or not */
-    int *             v2cv,     /* mapping from fine to coarse vertices */
-    int *             pcnedges  /* number of edges in coarsened graph */
+    int              *start,    /* start of edgevals list for each vertex */
+    int              *seenflag, /* flags indicating vtxs already counted */
+    int              *mflag,    /* flag indicating vtx matched or not */
+    int              *v2cv,     /* mapping from fine to coarse vertices */
+    int              *pcnedges  /* number of edges in coarsened graph */
 )
 {
   int *jptr;       /* loops through edge list */

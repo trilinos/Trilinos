@@ -729,3 +729,10 @@ private:
 
 
 #endif // EPETRA_EXT_MODEL_EVALUATOR_SCALING_TOOLS_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

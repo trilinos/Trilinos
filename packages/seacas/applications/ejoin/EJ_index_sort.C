@@ -89,7 +89,7 @@ namespace {
 
     size_t ndx = 0;
 
-    using TT = typename std::remove_cv<T>::type;
+    using TT = typename std::remove_cv_t<T>;
     TT small = v[iv[0]];
     for (size_t i = 1; i < N; i++) {
       if (v[iv[i]] < small) {

@@ -20,3 +20,10 @@ extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
                       int start_location, int total_send, ML_Comm *comm,
                       int mask);
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

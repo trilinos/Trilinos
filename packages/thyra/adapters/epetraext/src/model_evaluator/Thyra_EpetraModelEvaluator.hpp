@@ -535,3 +535,10 @@ convert(
 
 
 #endif // THYRA_EPETRA_MODEL_EVALUATOR_HPP
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraExtAdapters package is deprecated"
+#endif
+#endif
+

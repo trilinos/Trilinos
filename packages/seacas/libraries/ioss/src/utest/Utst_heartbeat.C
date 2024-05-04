@@ -1,6 +1,6 @@
 #include "Ionit_Initializer.h"
-#include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_session.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <cstdlib>
 #include <fmt/core.h>
 #include <math.h>

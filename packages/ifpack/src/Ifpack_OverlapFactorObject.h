@@ -130,3 +130,10 @@ class Ifpack_OverlapFactorObject {
   Epetra_RowMatrix * UserMatrix_;
 };
 #endif // IFPACK_OVERLAPFACTOROBJECT_H
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

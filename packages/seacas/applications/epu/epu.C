@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
 
       ExodusFile::close_all();
 #if ENABLE_PARALLEL_EPU
-      MPI_Barrier(MPI_COMM_WORLD);  // CHECK: ALLOW MPI_COMM_WORLD
+      MPI_Barrier(MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
 #endif
     }
     else {
@@ -664,9 +664,12 @@ int main(int argc, char *argv[])
         }
       }
 
-      if (error == 0 && !interFace.keep_temporary()) {
-        ExodusFile::unlink_temporary_files();
-      }
+      bool delete_temp = error == 0 && !interFace.keep_temporary();
+      ExodusFile::handle_temporary_files(delete_temp);
+    }
+
+    if (error == 0 && interFace.remove_file_per_rank_files()) {
+      ExodusFile::unlink_input_files();
     }
 
     time_t end_time = std::time(nullptr);

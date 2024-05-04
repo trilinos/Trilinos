@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -559,14 +559,14 @@ namespace {
 
 template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
                                              const std::vector<int> &weights,
-                                             int   dummy);
+                                             IOSS_MAYBE_UNUSED int   dummy);
 template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
                                              const std::vector<int>   &weights,
-                                             int64_t dummy);
+                                             IOSS_MAYBE_UNUSED int64_t dummy);
 
 template <typename INT>
 std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                    const std::vector<int> &weights, INT dummy)
+                                    const std::vector<int> &weights, IOSS_MAYBE_UNUSED INT dummy)
 {
   progress(__func__);
   // Populate the 'elem_to_proc' vector with a mapping from element to processor.
@@ -807,13 +807,8 @@ std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface 
   return elem_to_proc;
 }
 
-template std::vector<int> line_decomp_weights(const Ioss::chain_t<int> &element_chains,
-                                              size_t                    element_count);
-template std::vector<int> line_decomp_weights(const Ioss::chain_t<int64_t> &element_chains,
-                                              size_t                        element_count);
-
 template <typename INT>
-std::vector<int> line_decomp_weights(const Ioss::chain_t<INT> &element_chains, size_t element_count)
+std::map<INT, std::vector<INT>> string_chains(const Ioss::chain_t<INT> &element_chains)
 {
   std::map<INT, std::vector<INT>> chains;
 
@@ -823,20 +818,34 @@ std::vector<int> line_decomp_weights(const Ioss::chain_t<INT> &element_chains, s
       chains[chain_entry.element].push_back(i + 1);
     }
   }
+  return chains;
+}
+
+template std::vector<int> line_decomp_weights(const Ioss::chain_t<int> &element_chains,
+                                              size_t                    element_count);
+template std::vector<int> line_decomp_weights(const Ioss::chain_t<int64_t> &element_chains,
+                                              size_t                        element_count);
+
+template <typename INT>
+std::vector<int> line_decomp_weights(const Ioss::chain_t<INT> &element_chains, size_t element_count)
+{
+  auto chains = string_chains(element_chains);
+
+  if ((debug_level & 16) != 0) {
+    for (const auto &[chain_root, chain_elements] : chains) {
+      fmt::print("Chain Root: {} contains: {}\n", chain_root, fmt::join(chain_elements, ", "));
+    }
+  }
 
   std::vector<int> weights(element_count, 1);
   // Now, for each chain...
-  for (auto &chain : chains) {
-    if ((debug_level & 16) != 0) {
-      fmt::print("Chain Root: {} contains: {}\n", chain.first, fmt::join(chain.second, ", "));
-    }
+  for (const auto &[chain_root, chain_elements] : chains) {
     // * Set the weights of all elements in the chain...
     // * non-root = 0, root = length of chain.
-    const auto &chain_elements = chain.second;
     for (const auto &element : chain_elements) {
       weights[element - 1] = 0;
     }
-    weights[chain.first - 1] = static_cast<int>(chain_elements.size());
+    weights[chain_root - 1] = static_cast<int>(chain_elements.size());
   }
   return weights;
 }
@@ -851,30 +860,18 @@ void line_decomp_modify(const Ioss::chain_t<INT> &element_chains, std::vector<in
                         int proc_count)
 {
   // Get a map of all chains and the elements in the chains.  Map key will be root.
-  std::map<INT, std::vector<INT>> chains;
-
-  for (size_t i = 0; i < element_chains.size(); i++) {
-    auto &chain_entry = element_chains[i];
-    if (chain_entry.link >= 0) {
-      chains[chain_entry.element].push_back(i + 1);
-      if ((debug_level & 16) != 0) {
-        fmt::print("[{}]: element {}, link {}, processor {}\n", i + 1, chain_entry.element,
-                   chain_entry.link, elem_to_proc[i]);
-      }
-    }
-  }
+  auto chains = string_chains(element_chains);
 
   // Delta: elements added/removed from each processor...
   std::vector<int> delta(proc_count);
 
   // Now, for each chain...
-  for (auto &chain : chains) {
+  for (const auto &[chain_root, chain_elements] : chains) {
     if ((debug_level & 16) != 0) {
-      fmt::print("Chain Root: {} contains: {}\n", chain.first, fmt::join(chain.second, ", "));
+      fmt::print("Chain Root: {} contains: {}\n", chain_root, fmt::join(chain_elements, ", "));
     }
 
     std::vector<INT> chain_proc_count(proc_count);
-    const auto      &chain_elements = chain.second;
 
     // * get processors used by elements in the chain...
     for (const auto &element : chain_elements) {
@@ -889,7 +886,7 @@ void line_decomp_modify(const Ioss::chain_t<INT> &element_chains, std::vector<in
 
     // * Assign all elements in the chain to processor at chain root
     // * Update the deltas for all processors that gain/lose elements...
-    auto root_proc = elem_to_proc[chain.first - 1];
+    auto root_proc = elem_to_proc[chain_root - 1];
     for (const auto &element : chain_elements) {
       if (elem_to_proc[element - 1] != root_proc) {
         auto old_proc             = elem_to_proc[element - 1];

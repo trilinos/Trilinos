@@ -212,3 +212,10 @@ convertArrayOfIntToPython(const Teuchos::Array<int> & tai);
 }  // Namespace PyTrilinos
 
 #endif // PYTRILINOS_EPETRAEXT_UTIL_HPP
+
+#if defined(PyTrilinos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The PyTrilinos package is deprecated"
+#endif
+#endif
+

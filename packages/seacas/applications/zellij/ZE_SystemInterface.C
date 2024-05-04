@@ -7,13 +7,13 @@
 #include "ZE_SystemInterface.h"
 #include "ZE_Version.h" // for qainfo
 
+#include <Ioss_GetLongOpt.h>
 #include <Ioss_ParallelUtils.h>
+#include <Ioss_Utils.h>
 #include <copyright.h>
-#include <cstddef> // for size_t
 #include <cstdlib> // for exit, strtod, strtoul, abs, etc
 #include <fmt/color.h>
 #include <fmt/format.h>
-#include <iosfwd> // for ostream
 #include <tokenize.h>
 
 //! \file

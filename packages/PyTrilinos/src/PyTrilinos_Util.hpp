@@ -109,3 +109,10 @@ CONST char * getStringItemObjectAttr(PyObject * object, CONST char * name, int i
 }  // Namespace PyTrilinos
 
 #endif // PYTRILINOS_UTIL_HPP
+
+#if defined(PyTrilinos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The PyTrilinos package is deprecated"
+#endif
+#endif
+

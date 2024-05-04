@@ -244,6 +244,12 @@ void IOShell::Interface::enroll_options()
   options_.enroll("Minimum_Time", Ioss::GetLongOption::MandatoryValue,
                   "Minimum time on input database to transfer to output database", nullptr);
 
+  options_.enroll("time_scale", Ioss::GetLongOption::MandatoryValue,
+                  "The output time = input_time * time_scale + time_offset", nullptr);
+
+  options_.enroll("time_offset", Ioss::GetLongOption::MandatoryValue,
+                  "The output time = input_time * time_scale + time_offset", nullptr);
+
   options_.enroll("select_times", Ioss::GetLongOption::MandatoryValue,
                   "comma-separated list of times that should be transferred to output database",
                   nullptr);
@@ -657,6 +663,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 
   maximum_time = options_.get_option_value("Maximum_Time", maximum_time);
   minimum_time = options_.get_option_value("Minimum_Time", minimum_time);
+  time_scale   = options_.get_option_value("time_scale", time_scale);
+  time_offset  = options_.get_option_value("time_offset", time_offset);
 
   {
     const char *temp = options_.retrieve("select_times");

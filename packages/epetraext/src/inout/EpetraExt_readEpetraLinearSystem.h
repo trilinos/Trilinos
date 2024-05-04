@@ -99,3 +99,10 @@ void readEpetraLinearSystem64(
 } // namespace EpetraExt
 
 #endif // EPETRAEXT_READ_EPETRA_LINEAR_SYSTEM_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

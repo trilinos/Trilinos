@@ -136,3 +136,10 @@ class LinearProblem_BTF : public SameTypeTransform<Epetra_LinearProblem> {
 } //namespace EpetraExt
 
 #endif //EpetraExt_LINEARPROBLEM_BTF_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

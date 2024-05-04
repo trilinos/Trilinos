@@ -64,3 +64,10 @@ namespace EpetraExt {
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_VECTORIN_H */
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

@@ -74,3 +74,10 @@
 #endif
 
 #endif // NUMPY_INCLUDE_HPP
+
+#if defined(PyTrilinos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The PyTrilinos package is deprecated"
+#endif
+#endif
+

@@ -228,3 +228,10 @@ const CubatureTemplate CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWe
 };
     
 } // end namespace Intrepid
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

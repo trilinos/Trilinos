@@ -146,3 +146,10 @@
 #define IFPACK_ABS(x) (((x) > 0.0) ? (x) : (-x))  /* abs function */
 
 #endif /*_IFPACK_CONFIGDEFS_H_*/
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

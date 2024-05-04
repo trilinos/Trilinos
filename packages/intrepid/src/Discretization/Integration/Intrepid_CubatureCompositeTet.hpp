@@ -122,3 +122,10 @@ inline const CubatureTemplate (& CubatureCompositeTet<Scalar,ArrayPoint,ArrayWei
 #include <Intrepid_CubatureCompositeTetDef.hpp>
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

@@ -681,3 +681,10 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetDetF() const
 
 }// namespace Intrepid
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

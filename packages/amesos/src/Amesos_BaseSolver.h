@@ -442,3 +442,10 @@ revert to their default values.
 };
 
 #endif /* _AMESOS_BASESOLVER_H_ */
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+

@@ -19,7 +19,7 @@ static struct smalloc_debug_data
 {
   int                        order; /* which smalloc call is it? */
   size_t                     size;  /* size of malloc invocation */
-  double *                   ptr;   /* memory location returned */
+  double                    *ptr;   /* memory location returned */
   struct smalloc_debug_data *next;  /* pointer to next element */
 } *top = NULL;
 
@@ -38,7 +38,7 @@ void *smalloc(size_t n)
 {
   extern FILE *Output_File;       /* output file or null */
   extern int   DEBUG_MEMORY;      /* use debug memory allocator? */
-  void *       ptr;               /* return value */
+  void        *ptr;               /* return value */
   struct smalloc_debug_data *new; /* data structure for malloc data */
   void bail(char *msg, int status);
 
@@ -87,7 +87,7 @@ void *smalloc_ret(size_t n)
 {
   extern FILE *Output_File;       /* output file or null */
   extern int   DEBUG_MEMORY;      /* use debug memory allocator? */
-  void *       ptr;               /* return value */
+  void        *ptr;               /* return value */
   struct smalloc_debug_data *new; /* data structure for malloc data */
   void bail(char *msg, int status);
 
@@ -138,8 +138,8 @@ void *smalloc_ret(size_t n)
 /* Safe version of realloc */
 void *srealloc(void *ptr, size_t n)
 {
-  extern FILE *              Output_File;  /* output file or null */
-  void *                     p;            /* returned pointer */
+  extern FILE               *Output_File;  /* output file or null */
+  void                      *p;            /* returned pointer */
   extern int                 DEBUG_MEMORY; /* use debug memory allocator? */
   struct smalloc_debug_data *dbptr;        /* loops through debug list */
   void                       bail(char *msg, int status);
@@ -187,8 +187,8 @@ void *srealloc(void *ptr, size_t n)
 /* Returns instead of dying if it fails. */
 void *srealloc_ret(void *ptr, size_t n)
 {
-  extern FILE *              Output_File;  /* output file or null */
-  void *                     p;            /* returned pointer */
+  extern FILE               *Output_File;  /* output file or null */
+  void                      *p;            /* returned pointer */
   extern int                 DEBUG_MEMORY; /* use debug memory allocator? */
   struct smalloc_debug_data *dbptr;        /* loops through debug list */
 
@@ -234,9 +234,9 @@ void *srealloc_ret(void *ptr, size_t n)
 /* Safe version of free. */
 void sfree(void *ptr)
 {
-  extern FILE *               Output_File;  /* output file or null */
+  extern FILE                *Output_File;  /* output file or null */
   extern int                  DEBUG_MEMORY; /* use debug memory allocator? */
-  struct smalloc_debug_data * dbptr;        /* loops through debug list */
+  struct smalloc_debug_data  *dbptr;        /* loops through debug list */
   struct smalloc_debug_data **prev;         /* holds previous pointer */
 
   if (DEBUG_MEMORY > 1) {

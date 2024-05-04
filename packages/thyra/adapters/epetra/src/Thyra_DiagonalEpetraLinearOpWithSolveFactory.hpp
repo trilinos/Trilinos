@@ -106,3 +106,10 @@ public:
 
 
 #endif // THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraAdapters package is deprecated"
+#endif
+#endif
+

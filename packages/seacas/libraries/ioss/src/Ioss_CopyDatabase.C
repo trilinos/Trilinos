@@ -736,7 +736,9 @@ namespace {
                      int istep, const Ioss::MeshCopyOptions &options, int rank)
   {
     double time  = region.get_state_time(istep);
-    int    ostep = output_region.add_state(time);
+    double otime = time * options.time_scale + options.time_offset;
+    int    ostep = output_region.add_state(otime);
+
     show_step(istep, time, options, rank);
 
     output_region.begin_state(ostep);

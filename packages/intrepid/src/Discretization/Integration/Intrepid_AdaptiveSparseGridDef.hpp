@@ -440,3 +440,10 @@ void AdaptiveSparseGrid<Scalar,UserVector>::buildSparseGrid(
 }
 
 } // end Intrepid namespace
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

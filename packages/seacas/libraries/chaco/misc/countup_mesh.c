@@ -15,19 +15,19 @@
 
 void countup_mesh(struct vtx_data **graph,        /* graph data structure */
                   int               nvtxs,        /* number of vtxs in graph */
-                  int *             assignment,   /* set number of each vtx (length nvtxs+1) */
+                  int              *assignment,   /* set number of each vtx (length nvtxs+1) */
                   int               mesh_dims[3], /* extent of mesh in each dimension */
                   int               print_lev,    /* level of output */
-                  FILE *            outfile,      /* output file if not NULL */
+                  FILE             *outfile,      /* output file if not NULL */
                   int               using_ewgts   /* are edge weights being used? */
 )
 {
   double *hopsize;            /* number of hops for each set */
   double *cutsize;            /* number of cuts for each set */
-  int *   setsize;            /* number or weight of vtxs in each set */
-  int *   setseen;            /* flags for sets adjacent to a particular set */
-  int *   inorder;            /* list of vtxs in each set */
-  int *   startptr;           /* indices into inorder array */
+  int    *setsize;            /* number or weight of vtxs in each set */
+  int    *setseen;            /* flags for sets adjacent to a particular set */
+  int    *inorder;            /* list of vtxs in each set */
+  int    *startptr;           /* indices into inorder array */
   double  ncuts;              /* total number of edges connecting sets */
   double  nhops;              /* total cuts weighted by mesh hops */
   double  ewgt;               /* edge weight */

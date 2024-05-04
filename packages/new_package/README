@@ -24,6 +24,16 @@
 # 
 # ************************************************************************
 
+********************************************************************
+**************************** NOTICE ********************************
+********************************************************************
+*
+* This New Package method is no longer supported. Please see the
+* following Wiki page for adding a new package:
+* https://github.com/trilinos/Trilinos/wiki/Adding-a-New-Package
+*
+********************************************************************
+
 Useful Terminology:
 	new package - A package to be added to the Trilinos Autotools
 			configure/build process.

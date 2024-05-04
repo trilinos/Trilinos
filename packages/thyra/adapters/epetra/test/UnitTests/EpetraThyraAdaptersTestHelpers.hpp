@@ -102,3 +102,10 @@ RCP<const Epetra_Comm> getEpetraComm()
 
 
 } // namespace
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraAdapters package is deprecated"
+#endif
+#endif
+

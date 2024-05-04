@@ -279,6 +279,10 @@ int main(int argc, char *argv[])
     StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stackedTimer->report(*out,CommWorld,options);
+    std::string watchrProblemName = std::string("FROSch Elasticity ") + std::to_string(Comm->getSize()) + " ranks";
+    auto xmlOut = stackedTimer->reportWatchrXML(watchrProblemName, Comm);
+    if (xmlOut.length())
+      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
 
     return(EXIT_SUCCESS);
 

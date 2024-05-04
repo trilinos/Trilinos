@@ -11,7 +11,7 @@
 
 void countup_vtx_sep(struct vtx_data **graph, /* list of graph info for each vertex */
                      int               nvtxs, /* number of vertices in graph */
-                     int *             sets   /* local partitioning of vtxs */
+                     int              *sets   /* local partitioning of vtxs */
 )
 {
   int vtx, set; /* vertex and set in graph */

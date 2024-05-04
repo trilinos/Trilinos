@@ -129,3 +129,10 @@ int GetGlobalAggregates(Epetra_RowMatrix& A, Teuchos::ParameterList& List,
 } // namespace MLAPI
 
 #endif // MLAPI_AGGREGATION_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

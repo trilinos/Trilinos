@@ -148,3 +148,10 @@ inline std::ostream& operator<<(std::ostream& os, const Ifpack_Reordering& obj)
 }
 
 #endif
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

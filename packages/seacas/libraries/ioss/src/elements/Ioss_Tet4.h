@@ -12,8 +12,6 @@
 
 #include "ioss_export.h"
 
-// STL Includes
-
 namespace Ioss {
   class IOSS_EXPORT Tet4 : public Ioss::ElementTopology
   {
@@ -22,7 +20,6 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    Tet4(const Tet4 &) = delete;
 
     IOSS_NODISCARD ElementShape shape() const override { return ElementShape::TET; }
     IOSS_NODISCARD int          spatial_dimension() const override;

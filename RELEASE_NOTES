@@ -16,6 +16,11 @@ Framework
     the user is depending on (e.g. if you depend on ThyraEpetraAdapters, enable
     that explicitly instead of Thyra and Epetra and allowing TriBITS to enable
     the adapters).
+  - Added deprecation warnings to all deprecated packages.  The warnings are able
+    to be disabled via the `Trilinos_SHOW_DEPRECATED_WARNINGS` option (this is
+    also available as a per-package option).  These warnings are intended to
+    notify users that pacakge capability they are using will be removed in upcoming
+    releases.
 
 ###############################################################################
 #                                                                             #

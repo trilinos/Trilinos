@@ -161,7 +161,6 @@ namespace LineSearch {
   is used. We let \f$\lambda_1 = \frac{1}{2} \lambda_0\f$, and otherwise
 
   \f[
-
   \lambda_k = - \frac{1}{2}
   \frac{\lambda_{k-1}^2 [\phi(\lambda_{k-2}) -\phi(0)]
   - \lambda_{k-2}^2 [\phi(\lambda_{k-1}) -\phi(0)]}

@@ -693,3 +693,10 @@ void AztecOO_StatusTest_wrapper(void * conv_test_obj,void * res_vector_obj,
 			   double * rnorm, int * r_avail); 
 #endif /* _AZTECOO_H_ */
 
+
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+

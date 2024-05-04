@@ -767,3 +767,10 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
 } // end growthRule1D
 
 } // Intrepid namespace
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

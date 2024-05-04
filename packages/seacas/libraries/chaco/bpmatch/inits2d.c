@@ -9,7 +9,7 @@
 #include "params.h"  // for MAXSETS
 #include "structs.h" // for vtx_data
 
-int findindex(int *   indices, /* indices sorting values */
+int findindex(int    *indices, /* indices sorting values */
               double *vals,    /* values sorted by indices */
               double  target,  /* target value */
               int     nvals    /* number of values */
@@ -62,14 +62,14 @@ int findindex(int *   indices, /* indices sorting values */
 }
 
 void inits2d(struct vtx_data **graph,                /* graph data structure for vertex weights */
-             double **         xvecs,                /* values to partition with */
-             double *          vals[4][MAXSETS],     /* values in sorted lists */
-             int *             indices[4][MAXSETS],  /* indices sorting lists */
+             double          **xvecs,                /* values to partition with */
+             double           *vals[4][MAXSETS],     /* values in sorted lists */
+             int              *indices[4][MAXSETS],  /* indices sorting lists */
              int               nvtxs,                /* number of vertices */
-             double *          dist,                 /* trial separation point */
+             double           *dist,                 /* trial separation point */
              int               startvtx[4][MAXSETS], /* indices defining separation */
-             double *          size,                 /* size of each set being modified */
-             int *             sets                  /* set each vertex gets assigned to */
+             double           *size,                 /* size of each set being modified */
+             int              *sets                  /* set each vertex gets assigned to */
 )
 {
   double xmid, ymid;   /* median x and y values */

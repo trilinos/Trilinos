@@ -145,3 +145,10 @@ private:
 
 }// end namespace
 #endif //end header if
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+

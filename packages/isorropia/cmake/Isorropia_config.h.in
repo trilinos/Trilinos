@@ -14,3 +14,6 @@
 
 /* define if we want to use MPI */
 #cmakedefine ISORROPIA_HAVE_OMP
+
+#cmakedefine Isorropia_SHOW_DEPRECATED_WARNINGS
+

@@ -176,3 +176,10 @@ class AztecOO_Operator: public virtual Epetra_Operator {
 
 #endif /* _AZTECOO_OPERATOR_H_ */
 
+
+#if defined(AztecOO_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The AztecOO package is deprecated"
+#endif
+#endif
+

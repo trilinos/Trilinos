@@ -977,6 +977,20 @@ TEUCHOS_UNIT_TEST( ParameterList, simpleModifierModifyReconcile )
 }
 
 
+TEUCHOS_UNIT_TEST( ParameterList, modify_CopiesModifiers ) {
+  RCP<ParameterListModifier> mod_top = rcp<ParameterListModifier>(new ParameterListModifier("Modifier Top"));
+  RCP<ParameterListModifier> mod_A = rcp<ParameterListModifier>(new ParameterListModifier("Modifier A"));
+  RCP<ParameterListModifier> mod_B = rcp<ParameterListModifier>(new ParameterListModifier("Modifier B"));
+  ParameterList input{"Plist"}, valid{"Plist", mod_top};
+  input.sublist("A").sublist("B");
+  valid.sublist("A", mod_A);
+  valid.sublist("A").sublist("B", mod_B);
+  input.modifyParameterList(valid);
+  // This calls `haveSameModifiers` to make sure they are all copied to `input`
+  TEST_EQUALITY(input, valid);
+}
+
+
 TEUCHOS_UNIT_TEST( ParameterList, nestedSublistExpansion ) {
   Teuchos::RCP<SimpleModifier> modifier = Teuchos::rcp(new SimpleModifier());
   Teuchos::RCP<SimpleSubModifier> sub_modifier = Teuchos::rcp(new SimpleSubModifier());

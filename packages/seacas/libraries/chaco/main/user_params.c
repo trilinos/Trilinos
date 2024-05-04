@@ -8,7 +8,7 @@
 
 #include "params.h" // for NAME_LENGTH
 
-#define TRUE 1
+#define TRUE  1
 #define FALSE 0
 
 /* Input and output control parameters */
@@ -96,7 +96,7 @@ long   RANDOM_SEED               = 7654321L;       /* Seed for random number gen
 int    NSQRTS                    = 1000;           /* # square roots to precompute if coarsening */
 int    MAKE_VWGTS                = FALSE;          /* Make vtx weights degrees+1? (TRUE/FALSE) */
 int    FREE_GRAPH                = TRUE;           /* Free input graph data? (TRUE/FALSE) */
-char * PARAMS_FILENAME           = "User_Params";  /* File of parameter changes */
+char  *PARAMS_FILENAME           = "User_Params";  /* File of parameter changes */
 
 /* Parameters that control debugging output */
 

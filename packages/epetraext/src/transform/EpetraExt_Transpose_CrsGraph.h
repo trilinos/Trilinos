@@ -74,3 +74,10 @@ class CrsGraph_Transpose : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 } //namespace EpetraExt
 
 #endif //EpetraExt_CRSGRAPH_TRANSPOSE_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+
