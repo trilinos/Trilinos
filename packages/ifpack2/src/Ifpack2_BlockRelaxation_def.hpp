@@ -179,6 +179,7 @@ getValidParameters () const
   validParams->set("partitioner: subparts per part", 1);
   validParams->set("partitioner: block size", -1);
   validParams->set("partitioner: print level", false);
+  validParams->set("partitioner: explicit convert to BlockCrs", false);
 
   return validParams;
 }
@@ -633,14 +634,23 @@ initialize ()
       Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
     hasBlockCrsMatrix_ = !A_bcrs.is_null();
 
+    Teuchos::RCP<const row_graph_type> graph = A_->getGraph ();
+
     if(!hasBlockCrsMatrix_ && List_.isParameter("relaxation: container") && List_.get<std::string>("relaxation: container") == "BlockTriDi" ) {
       TEUCHOS_FUNC_TIME_MONITOR("Ifpack2::BlockRelaxation::initialize::convertToBlockCrsMatrix");
       int block_size = List_.get<int>("partitioner: block size");
+      bool use_explicit_conversion = List_.isParameter("partitioner: explicit convert to BlockCrs") && List_.get<bool>("partitioner: explicit convert to BlockCrs");
       TEUCHOS_TEST_FOR_EXCEPT_MSG
-        (block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
-      A_bcrs = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, false);
-      A_ = A_bcrs;
-      hasBlockCrsMatrix_ = true;
+        (use_explicit_conversion && block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
+      if(use_explicit_conversion) {
+        A_bcrs = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, false);
+        A_ = A_bcrs;
+        hasBlockCrsMatrix_ = true;
+        graph = A_->getGraph ();
+      }
+      else {
+        graph = Tpetra::getBlockCrsGraph(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, false);
+      }
       Kokkos::DefaultExecutionSpace().fence();
     }
 
@@ -655,19 +665,19 @@ initialize ()
 
     if (PartitionerType_ == "linear") {
       Partitioner_ =
-        rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
+        rcp (new Ifpack2::LinearPartitioner<row_graph_type> (graph));
     } else if (PartitionerType_ == "line") {
       Partitioner_ =
-        rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (A_->getGraph ()));
+        rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (graph));
     } else if (PartitionerType_ == "user") {
       Partitioner_ =
-        rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
+        rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (graph ) );
     } else if (PartitionerType_ == "zoltan2") {
       #if defined(HAVE_IFPACK2_ZOLTAN2)
-      if (A_->getGraph ()->getComm ()->getSize () == 1) {
+      if (graph->getComm ()->getSize () == 1) {
         // Only one MPI, so call zoltan2 with global graph
         Partitioner_ =
-          rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (A_->getGraph ()) );
+          rcp (new Ifpack2::Zoltan2Partitioner<row_graph_type> (graph) );
       } else {
         // Form local matrix to get local graph for calling zoltan2
         Teuchos::RCP<const row_matrix_type> A_local = rcp (new LocalFilter<row_matrix_type> (A_));
