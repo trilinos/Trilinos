@@ -103,7 +103,9 @@ class SIMPLEPreconditionerFactory : public BlockPreconditionerFactory {
   // class members
   Teuchos::RCP<InverseFactory> customHFactory_;
   Teuchos::RCP<InverseFactory> invVelFactory_;
+  Teuchos::RCP<InverseFactory> precVelFactory_;
   Teuchos::RCP<InverseFactory> invPrsFactory_;
+  Teuchos::RCP<InverseFactory> precPrsFactory_;
   double alpha_;
   DiagonalType fInverseType_;
   // enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
