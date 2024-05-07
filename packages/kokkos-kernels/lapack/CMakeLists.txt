@@ -34,6 +34,12 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
   )
 ENDIF()
 
+IF (KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+  LIST(APPEND SOURCES
+   lapack/tpls/KokkosLapack_Magma_tpl.cpp
+  )
+ENDIF()
+
 ##################
 #                #
 # ETI generation #
