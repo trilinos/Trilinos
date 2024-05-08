@@ -237,9 +237,8 @@ struct SPMVHandleImpl {
   ~SPMVHandleImpl() {
     if (tpl) delete tpl;
   }
-  void set_exec_space(const ExecutionSpace& exec) {
-    if (tpl) tpl->set_exec_space(exec);
-  }
+
+  ImplType* get_impl() { return this; }
 
   /// Get the SPMVAlgorithm used by this handle
   SPMVAlgorithm get_algorithm() const { return this->algo; }

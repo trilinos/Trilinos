@@ -40,6 +40,31 @@ struct RANK_ONE {};
 struct RANK_TWO {};
 }  // namespace
 
+namespace Impl {
+template <typename ExecutionSpace, typename Handle, typename AMatrix,
+          typename XVector, class YVector>
+inline constexpr bool spmv_general_tpl_avail() {
+  constexpr bool isBSR = ::KokkosSparse::Experimental::is_bsr_matrix_v<AMatrix>;
+  if constexpr (!isBSR) {
+    // CRS
+    if constexpr (XVector::rank() == 1)
+      return spmv_tpl_spec_avail<ExecutionSpace, Handle, AMatrix, XVector,
+                                 YVector>::value;
+    else
+      return spmv_mv_tpl_spec_avail<ExecutionSpace, Handle, AMatrix, XVector,
+                                    YVector>::value;
+  } else {
+    // BSR
+    if constexpr (XVector::rank() == 1)
+      return spmv_bsrmatrix_tpl_spec_avail<ExecutionSpace, Handle, AMatrix,
+                                           XVector, YVector>::value;
+    else
+      return spmv_mv_bsrmatrix_tpl_spec_avail<ExecutionSpace, Handle, AMatrix,
+                                              XVector, YVector>::value;
+  }
+}
+}  // namespace Impl
+
 // clang-format off
 /// \brief Kokkos sparse matrix-vector multiply.
 /// Computes y := alpha*Op(A)*x + beta*y, where Op(A) is
@@ -220,6 +245,35 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[],
       typename YVector::non_const_data_type,
       typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
       typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  // Special case: XVector/YVector are rank-2 but x,y both have one column and
+  // are contiguous. If a TPL is available for rank-1 vectors but not rank-2,
+  // take rank-1 subviews of x,y and call the rank-1 version.
+  if constexpr (XVector::rank() == 2) {
+    using XVector_SubInternal = Kokkos::View<
+        typename XVector::const_value_type*,
+        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+        typename XVector::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;
+    using YVector_SubInternal = Kokkos::View<
+        typename YVector::non_const_value_type*,
+        typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+        typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    if constexpr (!Impl::spmv_general_tpl_avail<
+                      ExecutionSpace, HandleImpl, AMatrix_Internal,
+                      XVector_Internal, YVector_Internal>() &&
+                  Impl::spmv_general_tpl_avail<
+                      ExecutionSpace, HandleImpl, AMatrix_Internal,
+                      XVector_SubInternal, YVector_SubInternal>()) {
+      if (x.extent(1) == size_t(1) && x.span_is_contiguous() &&
+          y.span_is_contiguous()) {
+        XVector_SubInternal xsub(x.data(), x.extent(0));
+        YVector_SubInternal ysub(y.data(), y.extent(0));
+        spmv(space, handle->get_impl(), mode, alpha, A, xsub, beta, ysub);
+        return;
+      }
+    }
+  }
 
   XVector_Internal x_i(x);
   YVector_Internal y_i(y);

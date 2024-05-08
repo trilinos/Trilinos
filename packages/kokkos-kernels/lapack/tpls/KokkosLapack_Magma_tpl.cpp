@@ -13,20 +13,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-
-#ifndef KOKKOS_HIP_SHARED_ALLOCATION_RECORD_HPP
-#define KOKKOS_HIP_SHARED_ALLOCATION_RECORD_HPP
-
-#include <HIP/Kokkos_HIP_Space.hpp>
-#include <impl/Kokkos_SharedAlloc.hpp>
-
-#if defined(KOKKOS_ENABLE_IMPL_HIP_UNIFIED_MEMORY)
-KOKKOS_IMPL_SHARED_ALLOCATION_SPECIALIZATION(Kokkos::HIPSpace);
-#else
-KOKKOS_IMPL_HOST_INACCESSIBLE_SHARED_ALLOCATION_SPECIALIZATION(
-    Kokkos::HIPSpace);
-#endif
-KOKKOS_IMPL_SHARED_ALLOCATION_SPECIALIZATION(Kokkos::HIPHostPinnedSpace);
-KOKKOS_IMPL_SHARED_ALLOCATION_SPECIALIZATION(Kokkos::HIPManagedSpace);
-
-#endif
+#include <Kokkos_Core.hpp>
+#include <KokkosKernels_config.h>
+#include <KokkosLapack_Magma_tpl.hpp>

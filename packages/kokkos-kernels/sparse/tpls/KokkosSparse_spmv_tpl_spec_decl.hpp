@@ -111,6 +111,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
+    subhandle->set_exec_space(exec);
   } else {
     subhandle   = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
     handle->tpl = subhandle;
@@ -155,6 +156,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
+    subhandle->set_exec_space(exec);
   } else {
     /* create and set the subhandle and matrix descriptor */
     subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
@@ -423,6 +425,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for rocsparse CRS");
+    subhandle->set_exec_space(exec);
   } else {
     subhandle   = new KokkosSparse::Impl::RocSparse_CRS_SpMV_Data(exec);
     handle->tpl = subhandle;
@@ -594,6 +597,8 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL CRS");
+    // note: classic mkl only runs on synchronous host exec spaces, so no need
+    // to call set_exec_space on the subhandle here
   } else {
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
@@ -757,6 +762,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for OneMKL CRS");
+    subhandle->set_exec_space(exec);
   } else {
     subhandle   = new OneMKL_SpMV_Data(exec);
     handle->tpl = subhandle;
