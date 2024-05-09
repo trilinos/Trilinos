@@ -1641,10 +1641,8 @@ public:
       }
       // for the final dimension, the variation type is always GENERAL
       // (Some combinations, e.g. CONSTANT/CONSTANT *would* generate a CONSTANT result, but constant matrices don't make a lot of sense beyond 1x1 matrices…)
-      resultVariationTypes[resultNumActiveDims] = GENERAL;
       resultActiveDims[resultNumActiveDims]     = resultRank - 1;
       resultDataDims[resultNumActiveDims]       = rows;
-      resultExtents[resultRank-1]               = rows;
       resultNumActiveDims++;
       
       for (int i=resultRank; i<7; i++)
@@ -1652,6 +1650,8 @@ public:
         resultVariationTypes[i] = CONSTANT;
         resultExtents[i]        = 1;
       }
+      resultVariationTypes[resultRank-1] = GENERAL;
+      resultExtents[resultRank-1]        = rows;
       
       ScalarView<DataScalar,DeviceType> data;
       if (resultNumActiveDims == 1)
