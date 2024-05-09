@@ -67,8 +67,7 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
 using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
@@ -87,11 +86,9 @@ std::string getElementBlock(const Triplet & element,
   return connManager.getBlockId(localElmtId);
 }
 
-TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
+template <typename CCM, typename DofManager>
+void test_ho_gid_values(Teuchos::FancyOStream &out, bool &success)
 {
-  typedef CartesianConnManager CCM;
-  typedef panzer::DOFManager DOFManager;
-
   // build global (or serial communicator)
   #ifdef HAVE_MPI
     Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
@@ -106,12 +103,12 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
   panzer::GlobalOrdinal nx = 8, ny = 4;//, nz = 4;
   //panzer::GlobalOrdinal nx = 4, ny = 3;//, nz = 4;
   int px = np, py = 1;//, pz = 1; // npx1 processor grids
-  int bx =  1, by = 1;//, bz = 1; // 1x2 blocks
+  int bx =  1, by = 2;//, bz = 1; // 1x2 blocks
 
   const int poly_U = 4;
   const int poly_P = 3;
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_P )) );
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>>( poly_U ));
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>>( poly_P ));
 
   // build the topology
   RCP<CCM> connManager = rcp(new CCM);
@@ -179,11 +176,25 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 
 }
 
-TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 {
   using CCM = CartesianConnManager;
   using DOFManager = panzer::DOFManager;
 
+  test_ho_gid_values<CCM, DOFManager>(out, success);
+}
+
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder_Device, ho_gid_values)
+{
+  using CCM = panzer::unit_test::Experimental::CartesianConnManager<panzer::LocalOrdinal, panzer::GlobalOrdinal, Kokkos::DefaultExecutionSpace>;
+  using DOFManager = panzer::Experimental::DOFManager<panzer::LocalOrdinal, panzer::GlobalOrdinal, Kokkos::DefaultExecutionSpace>;
+
+  test_ho_gid_values<CCM, DOFManager>(out, success);
+}
+
+template <typename CCM, typename DofManager>
+void test_gid_values(Teuchos::FancyOStream &out, bool &success)
+{
   // build global (or serial communicator)
   #ifdef HAVE_MPI
     Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
@@ -278,11 +289,25 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
   }
 }
 
-TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 {
   using CCM = CartesianConnManager;
   using DOFManager = panzer::DOFManager;
 
+  test_gid_values<CCM, DOFManager>(out, success);
+}
+
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder_Device, gid_values)
+{
+  using CCM = panzer::unit_test::Experimental::CartesianConnManager<panzer::LocalOrdinal, panzer::GlobalOrdinal, Kokkos::DefaultExecutionSpace>;
+  using DOFManager = panzer::Experimental::DOFManager<panzer::LocalOrdinal, panzer::GlobalOrdinal, Kokkos::DefaultExecutionSpace>;
+
+  test_gid_values<CCM, DOFManager>(out, success);
+}
+
+template <typename CCM, typename DofManager>
+void test_quad2d(Teuchos::FancyOStream &out, bool &success)
+{
   // build global (or serial communicator)
   #ifdef HAVE_MPI
     Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
@@ -520,5 +545,20 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     
 }
 
-} // end unit test
-} // end panzer
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
+{
+  using CCM = CartesianConnManager;
+  using DOFManager = panzer::DOFManager;
+
+  test_quad2d<CCM, DOFManager>(out, success);
+}
+
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder_Device, quad2d)
+{
+  using CCM = panzer::unit_test::Experimental::CartesianConnManager<panzer::LocalOrdinal, panzer::GlobalOrdinal, Kokkos::DefaultExecutionSpace>;
+  using DOFManager = panzer::Experimental::DOFManager<panzer::LocalOrdinal, panzer::GlobalOrdinal, Kokkos::DefaultExecutionSpace>;
+
+  test_quad2d<CCM, DOFManager>(out, success);
+}
+
+} // namespace panzer::unit_test

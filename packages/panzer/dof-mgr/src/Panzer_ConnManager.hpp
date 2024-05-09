@@ -45,6 +45,8 @@
 
 #include <vector>
 
+#include "Kokkos_StaticCrsGraph.hpp"
+
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 #include "Shards_CellTopology.hpp"
@@ -52,7 +54,7 @@
 
 namespace panzer {
 
-class FieldPattern; // from DOFManager
+  class FieldPattern; // from DOFManager
 
   /// Pure virtual base class for supplying mesh connectivity information to the DOF Manager.
   class ConnManager {
@@ -61,7 +63,7 @@ class FieldPattern; // from DOFManager
     using GlobalOrdinal = panzer::GlobalOrdinal;
     using LocalOrdinal = int;
 
-    virtual ~ConnManager() {}
+    virtual ~ConnManager() = default;
 
     /** Tell the connection manager to build the connectivity assuming
      * a particular field pattern.
@@ -100,7 +102,7 @@ class FieldPattern; // from DOFManager
     virtual std::string getBlockId(LocalOrdinal localElmtId) const = 0;
 
     /** Returns the number of element blocks in this mesh */
-    virtual std::size_t numElementBlocks() const = 0;
+    virtual size_t numElementBlocks() const = 0;
 
     /** What are the blockIds included in this connection manager */
     virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0;
@@ -137,6 +139,150 @@ class FieldPattern; // from DOFManager
     virtual bool hasAssociatedNeighbors() const = 0;
   };
 
-}
+} // namespace panzer
+
+namespace panzer::Experimental {
+
+  template <typename DataType, typename... Properties>
+  using RaggedView = Kokkos::StaticCrsGraph<DataType, Properties...>;
+
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename DeviceType>
+  class ConnManager : public virtual ::panzer::ConnManager {
+    static_assert(std::is_same_v<LocalOrdinal,  int>);
+    static_assert(std::is_same_v<GlobalOrdinal, panzer::GlobalOrdinal>);
+
+  public:
+    using local_ordinal_type = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using device_type = DeviceType;
+    using execution_space = typename device_type::execution_space;
+    using memory_space = typename device_type::memory_space;
+    using node_type = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<execution_space, memory_space>;
+
+    using conn_manager_base_type = ::panzer::ConnManager;
+
+    using connectivity_device_view_type = RaggedView<global_ordinal_type, memory_space>;
+    using connectivity_host_view_type = typename connectivity_device_view_type::HostMirror;
+
+    using block_elmids_device_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+    using block_elmids_host_view_type = typename block_elmids_device_view_type::HostMirror;
+
+  public:
+    virtual ~ConnManager() = default;
+
+  public:
+    virtual connectivity_device_view_type getConnectivityDevice() const {
+      const auto connectivity_h = this->getConnectivityHost();
+      return connectivity_device_view_type(
+        Kokkos::create_mirror_view_and_copy(Kokkos::view_alloc(memory_space{}), connectivity_h.entries),
+        Kokkos::create_mirror_view_and_copy(Kokkos::view_alloc(memory_space{}), connectivity_h.row_map)
+      );
+    }
+
+    virtual typename block_elmids_device_view_type::const_type getElementBlockDevice(const std::string& blockID) const {
+      return Kokkos::create_mirror_view_and_copy(Kokkos::view_alloc(memory_space{}), this->getElementBlockHost(blockID));
+    }
+
+    virtual typename block_elmids_device_view_type::const_type getNeighborElementBlockDevice(const std::string& blockID) const {
+      return Kokkos::create_mirror_view_and_copy(Kokkos::view_alloc(memory_space{}), this->getNeighborElementBlockHost(blockID));
+    }
+
+    virtual typename block_elmids_device_view_type::const_type getAssociatedNeighborsDevice(local_ordinal_type localElmtId) const {
+      return Kokkos::create_mirror_view_and_copy(Kokkos::view_alloc(memory_space{}), this->getAssociatedNeighborsHost(localElmtId));
+    }
+
+  private:
+    connectivity_host_view_type getConnectivityHost() const {
+
+      local_ordinal_type maxLocalElmtId = 0;
+
+      std::vector<std::string> elmtBlockIds;
+      this->getElementBlockIds(elmtBlockIds);
+
+      std::for_each(
+        elmtBlockIds.cbegin(), elmtBlockIds.cend(),
+        [&maxLocalElmtId, this] (const auto& elmtBlockId) {
+          std::vector<std::vector<local_ordinal_type>> elmtBlocks{
+            this->getElementBlock(elmtBlockId),
+            this->getNeighborElementBlock(elmtBlockId)
+          };
+          std::for_each(
+            elmtBlocks.cbegin(), elmtBlocks.cend(),
+            [&maxLocalElmtId] (const auto& elmtBlock) {
+              if ( ! elmtBlock.empty())
+                maxLocalElmtId = std::max(maxLocalElmtId, *std::max_element(elmtBlock.cbegin(), elmtBlock.cend()));
+            }
+          );
+        }
+      );
+
+      typename connectivity_host_view_type::row_map_type::non_const_type offsets_h(
+        "offsets of ragged view representation of connectivity",
+        maxLocalElmtId + 2
+      );
+
+      local_ordinal_type numEntries;
+
+      Kokkos::parallel_scan(
+        "compute offsets of ragged view representation of connectivity",
+        Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, maxLocalElmtId + 1),
+        [=] (local_ordinal_type localElmtId, local_ordinal_type& partialSum, bool isFinal) {
+          partialSum += this->getConnectivitySize(localElmtId);
+          if (isFinal) offsets_h(localElmtId + 1) = partialSum;
+        }, numEntries
+      );
+
+      typename connectivity_host_view_type::entries_type entries_h(
+        Kokkos::view_alloc("entries of ragged view representation of connectivity", Kokkos::WithoutInitializing),
+        numEntries
+      );
+
+      std::for_each(
+        elmtBlockIds.cbegin(), elmtBlockIds.cend(),
+        [=] (const auto& elmtBlockId) {
+          std::vector<std::vector<local_ordinal_type>> elmtBlocks{
+            this->getElementBlock(elmtBlockId),
+            this->getNeighborElementBlock(elmtBlockId)
+          };
+      
+          std::for_each(
+            elmtBlocks.cbegin(), elmtBlocks.cend(),
+            [=] (const auto& elmtBlock) {
+              Kokkos::parallel_for(
+                "fill entries of ragged view representation of connectivity",
+                Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, elmtBlock.size()),
+                [=] (typename std::vector<local_ordinal_type>::size_type idx) {
+                  const local_ordinal_type localElmtId = elmtBlock[idx];
+                  const auto offset = offsets_h(localElmtId);
+                  for (typename connectivity_host_view_type::row_map_type::non_const_value_type jdx = 0; jdx < offsets_h(localElmtId + 1) - offsets_h(localElmtId); ++jdx) {
+                    entries_h(offset + jdx) = this->getConnectivity(localElmtId)[jdx];
+                  }
+                }
+              );
+            }
+          );
+        }
+      );
+
+      return connectivity_host_view_type(std::move(entries_h), std::move(offsets_h));
+    }
+
+    auto getElementBlockHost(const std::string& blockId) const {
+      const auto& elmtBlock = this->getElementBlock(blockId);
+      return typename block_elmids_host_view_type::const_type(elmtBlock.data(), elmtBlock.size());
+    }
+
+    auto getNeighborElementBlockHost(const std::string& blockId) const {
+      const auto& elmtBlock = this->getNeighborElementBlock(blockId);
+      return typename block_elmids_host_view_type::const_type(elmtBlock.data(), elmtBlock.size());
+    }
+
+    auto getAssociatedNeighborsHost(local_ordinal_type localElmtId) const {
+      const auto& elmtBlock = this->getAssociatedNeighbors(localElmtId);
+      return typename block_elmids_host_view_type::const_type(elmtBlock.data(), elmtBlock.size());
+    }
+  };
+
+} // namespace panzer::Experimental
 
 #endif

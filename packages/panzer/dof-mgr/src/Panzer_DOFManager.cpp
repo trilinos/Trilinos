@@ -1431,6 +1431,6 @@ DOFManager<panzer::LocalOrdinal,panzer::GlobalOrdinal>::runLocalRCMReordering(co
 }
 */
 
-} /*panzer*/
+} // namespace panzer
 
 #endif

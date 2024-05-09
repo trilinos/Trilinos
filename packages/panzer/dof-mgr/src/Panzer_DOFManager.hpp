@@ -46,6 +46,9 @@
 
 #include <mpi.h>
 
+#include "Kokkos_Sort.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
+
 #include "PanzerDofMgr_config.hpp"
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
@@ -67,7 +70,7 @@ namespace panzer {
 class DOFManager : public GlobalIndexer {
 public:
 
-  virtual ~DOFManager() {}
+  virtual ~DOFManager() = default;
 
   DOFManager();
 
@@ -450,6 +453,85 @@ protected:
   bool useNeighbors_;
 };
 
-}
+} // namespace panzer
+
+namespace panzer::Experimental
+{
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename DeviceType>
+  class DOFManager : public ::panzer::DOFManager {
+    static_assert(std::is_same_v<LocalOrdinal,  int>);
+    static_assert(std::is_same_v<GlobalOrdinal, panzer::GlobalOrdinal>);
+
+  public:
+    using local_ordinal_type = LocalOrdinal;
+    using global_ordinal_type = GlobalOrdinal;
+    using device_type = DeviceType;
+    using execution_space = typename device_type::execution_space;
+    using memory_space = typename device_type::memory_space;
+    using node_type = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<execution_space, memory_space>;
+
+    using conn_manager_type = ::panzer::Experimental::ConnManager<local_ordinal_type, global_ordinal_type, device_type>;
+
+    using global_ordinal_view_type = Kokkos::View<global_ordinal_type*, memory_space>;
+
+    using map_t = Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+
+  public:
+    Teuchos::RCP<const map_t> buildOverlapMapFromElements(const ElementBlockAccess& access) const override {
+      PANZER_FUNC_TIME_MONITOR("panzer::DOFManager::builderOverlapMapFromElements");
+
+      const auto connMngr = Teuchos::rcp_dynamic_cast<conn_manager_type>(this->connMngr_);
+
+      const auto numEntiesPerElm = static_cast<size_t>(this->ga_fp_->numberIds());
+
+      size_t numElms = 0;
+
+      for (size_t blockId_as_ordinal = 0; blockId_as_ordinal < this->blockOrder_.size(); ++blockId_as_ordinal) {
+        numElms += access.useOwned_
+          ? connMngr->getElementBlockDevice(this->blockOrder_[blockId_as_ordinal]).extent(0)
+          : connMngr->getNeighborElementBlockDevice(this->blockOrder_[blockId_as_ordinal]).extent(0);
+      }
+
+      global_ordinal_view_type overlap_view(
+          Kokkos::view_alloc("Global Ids of topological entities associated with at least one dof", Kokkos::WithoutInitializing),
+          numElms * numEntiesPerElm
+      );
+
+      const auto conn_d = connMngr->getConnectivityDevice();
+
+      local_ordinal_type offset = 0;
+      for (size_t blockId_as_ordinal = 0; blockId_as_ordinal < this->blockOrder_.size(); ++blockId_as_ordinal) {
+        const auto elmIds_d = access.useOwned_
+          ? connMngr->getElementBlockDevice(this->blockOrder_[blockId_as_ordinal])
+          : connMngr->getNeighborElementBlockDevice(this->blockOrder_[blockId_as_ordinal]);
+
+        Kokkos::parallel_for(
+          Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>({0, 0}, {numElms, numEntiesPerElm}),
+          KOKKOS_LAMBDA (const local_ordinal_type ielem, const local_ordinal_type entyId) {
+            const auto elmId = elmIds_d(ielem);
+            overlap_view(offset + ielem * numEntiesPerElm + entyId) = conn_d.rowConst(elmId).operator()(entyId);
+          }
+        );
+        offset += elmIds_d.size() * numEntiesPerElm;
+      }
+
+      Kokkos::sort(overlap_view);
+
+      const auto iter = Kokkos::Experimental::unique(
+        execution_space{},
+        Kokkos::Experimental::begin(overlap_view),
+        Kokkos::Experimental::end(overlap_view)
+      );
+
+      Kokkos::resize(
+        overlap_view,
+        Kokkos::Experimental::distance(Kokkos::Experimental::begin(overlap_view), iter)
+      );
+
+      return Teuchos::make_rcp<map_t>(Tpetra::Details::OrdinalTraits<global_ordinal_type>::invalid(), overlap_view, 0, this->communicator_);
+    }
+  };
+
+} // namespace panzer::Experimental
 
 #endif
