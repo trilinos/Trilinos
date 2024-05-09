@@ -1526,6 +1526,37 @@ public:
       return Data<DataScalar,DeviceType>(data,resultRank,resultExtents,resultVariationTypes,resultBlockPlusDiagonalLastNonDiagonal);
     }
     
+    //! Constructs a container suitable for storing the result of a contraction over the final dimensions of the two provided containers.  The two containers must have the same logical shape.
+    //! \see storeInPlaceCombination()
+    //! \param A  [in] - the first data container.
+    //! \param B  [in] - the second data container.  Must have the same logical shape as A.
+    //! \param numContractionDims [in] - the number of dimensions over which the contraction should take place.
+    //! \return A numContractionDims-rank-lower container with the same logical shape as A and B in all but the last dimensions.
+    static Data<DataScalar,DeviceType> allocateContractionResult( const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, const int &numContractionDims )
+    {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.rank() != B.rank(), std::invalid_argument, "A and B must have the same logical shape");
+      const int rank = A.rank();
+      const int resultRank = rank - numContractionDims;
+      std::vector<DimensionInfo> dimInfo(resultRank);
+      for (int d=0; d<resultRank; d++)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(d) != B.extent_int(d), std::invalid_argument, "A and B must have the same logical shape");
+        dimInfo[d] = A.combinedDataDimensionInfo(B, d);
+      }
+      Data<DataScalar,DeviceType> result(dimInfo);
+      return result;
+    }
+    
+    //! Constructs a container suitable for storing the result of a contraction over the final dimension of the two provided containers.  The two containers must have the same logical shape.
+    //! \see storeInPlaceCombination()
+    //! \param A  [in] - the first data container.
+    //! \param B  [in] - the second data container.  Must have the same logical shape as A.
+    //! \return A 1-rank-lower container with the same logical shape as A and B in all but the last dimension.
+    static Data<DataScalar,DeviceType> allocateDotProductResult( const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B )
+    {
+      return allocateContractionResult(A, B, 1);
+    }
+    
     //! Constructs a container suitable for storing the result of a matrix-vector multiply corresponding to the two provided containers.
     //! \see storeMatVec()
     static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData, const bool transposeMatrix = false )
@@ -1719,6 +1750,64 @@ public:
         case 7: return Data(rank, data7_, extents, variationTypes);
         default:
           INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled dataRank_");
+      }
+    }
+    
+    //! Places the result of a contraction along the final dimension of A and B into this data container.
+    void storeDotProduct(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      const int D_DIM = A.rank() - 1;
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(D_DIM) != B.extent_int(D_DIM), std::invalid_argument, "A and B have different extents");
+      const int vectorComponents = A.extent_int(D_DIM);
+      
+      // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
+      Data<DataScalar,DeviceType> thisData = *this;
+      
+      using ExecutionSpace = typename DeviceType::execution_space;
+      // note the use of getDataExtent() below: we only range over the possibly-distinct entries
+      if (rank_ == 1) // contraction result rank; e.g., (P)
+      {
+        Kokkos::parallel_for("compute dot product", getDataExtent(0),
+        KOKKOS_LAMBDA (const int &pointOrdinal) {
+          auto & val = thisData.getWritableEntry(pointOrdinal);
+          val = 0;
+          for (int i=0; i<vectorComponents; i++)
+          {
+            val += A(pointOrdinal,i) * B(pointOrdinal,i);
+          }
+        });
+      }
+      else if (rank_ == 2) // contraction result rank; e.g., (C,P)
+      {
+        // typical case for e.g. gradient data: (C,P,D)
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),getDataExtent(1)});
+        Kokkos::parallel_for("compute dot product", policy,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal) {
+          auto & val = thisData.getWritableEntry(cellOrdinal, pointOrdinal);
+          val = 0;
+          for (int i=0; i<vectorComponents; i++)
+          {
+            val += A(cellOrdinal,pointOrdinal,i) * B(cellOrdinal,pointOrdinal,i);
+          }
+        });
+      }
+      else if (rank_ == 3)
+      {
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),getDataExtent(2)});
+        Kokkos::parallel_for("compute dot product", policy,
+        KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &d) {
+          auto & val = thisData.getWritableEntry(cellOrdinal, pointOrdinal,d);
+          val = 0;
+          for (int i=0; i<vectorComponents; i++)
+          {
+            val += A(cellOrdinal,pointOrdinal,d,i) * B(cellOrdinal,pointOrdinal,d,i);
+          }
+        });
+      }
+      else
+      {
+        // TODO: handle other cases
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "rank not yet supported");
       }
     }
     

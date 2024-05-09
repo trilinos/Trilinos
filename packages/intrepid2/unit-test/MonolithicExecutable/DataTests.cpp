@@ -543,6 +543,35 @@ namespace
       
       printView(actualResultData.getUnderlyingView3(), out);
     }
+    
+    // now, check that u' A v = v' A' u for arbitrary vectors u,v
+    
+    // set up a second vector (v)
+    auto vector2View = getView<Scalar,DeviceType>("vector2", cellCount, pointCount, spaceDim);
+    auto vector2ViewHost = Kokkos::create_mirror(vector2View);
+    vector2ViewHost(0,0,0) =  3.0;
+    vector2ViewHost(0,0,1) =  2.0;
+    Kokkos::deep_copy(vector2View, vector2ViewHost);
+    
+    Data<Scalar,DeviceType> u_data(vectorView);
+    Data<Scalar,DeviceType> A_data(matrixView);
+    Data<Scalar,DeviceType> v_data(vector2View);
+    
+    auto AvResultData = Data<Scalar,DeviceType>::allocateMatVecResult(A_data, v_data, false);
+    AvResultData.storeMatVec(A_data, v_data, false);
+    
+    auto upAvResultData = Data<Scalar,DeviceType>::allocateDotProductResult(u_data, AvResultData);
+    upAvResultData.storeDotProduct(u_data, AvResultData);
+      
+    auto ApuResultData = Data<Scalar,DeviceType>::allocateMatVecResult(A_data, u_data, true);
+    ApuResultData.storeMatVec(A_data, u_data, true);
+    
+    auto vpAuResultData = Data<Scalar,DeviceType>::allocateDotProductResult(v_data, ApuResultData);
+    vpAuResultData.storeDotProduct(v_data, ApuResultData);
+    
+    testFloatingEquality2(upAvResultData, vpAuResultData, relTol, absTol, out, success);
+    printView(upAvResultData.getUnderlyingView2(), out);
+    printView(vpAuResultData.getUnderlyingView2(), out);
   }
 
 // #pragma mark Data: MatMat
@@ -757,6 +786,48 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     testFloatingEquality3(expectedResultView, actualResultData, relTol, absTol, out, success);
     
     printView(actualResultData.getUnderlyingView2(), out);
+  }
+
+// #pragma mark Data: VecDotProduct
+/** \brief Data provides vector dot product multiplication support.  This method checks correctness of the computed dot product for a particular case involving 2x1 vectors.
+*/
+  TEUCHOS_UNIT_TEST( Data, VecDotProduct )
+  {
+    double relTol = 1e-13;
+    double absTol = 1e-13;
+    
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    const int numCells = 1;
+    const int spaceDim = 2;
+    
+    auto vec1View = getView<Scalar,DeviceType>("vector", numCells, spaceDim);
+    auto vec1ViewHost = Kokkos::create_mirror(vec1View);
+    
+    vec1ViewHost(0,0) = 1.0;
+    vec1ViewHost(0,1) = 2.0;
+    Kokkos::deep_copy(vec1View, vec1ViewHost);
+    
+    auto vec2View = getView<Scalar,DeviceType>("vector", numCells, spaceDim);
+    auto vec2ViewHost = Kokkos::create_mirror(vec1View);
+    
+    vec2ViewHost(0,0) = 3.0;
+    vec2ViewHost(0,1) = 2.0;
+    Kokkos::deep_copy(vec2View, vec2ViewHost);
+    
+    auto expectedResultView = getView<Scalar,DeviceType>("result",numCells);
+    auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
+    
+    expectedResultViewHost(0) = vec1ViewHost(0,0) * vec2ViewHost(0,0) + vec1ViewHost(0,1) * vec2ViewHost(0,1);
+    
+    Kokkos::deep_copy(expectedResultView, expectedResultViewHost);
+    
+    Data<Scalar,DeviceType> vec1Data(vec1View);
+    Data<Scalar,DeviceType> vec2Data(vec2View);
+    auto actualResultData = Data<Scalar,DeviceType>::allocateDotProductResult(vec1Data, vec2Data);
+    actualResultData.storeDotProduct(vec1Data, vec2Data);
+    
+    testFloatingEquality1(expectedResultView, actualResultData.getUnderlyingView1(), relTol, absTol, out, success);
   }
   
   // test statically that Data supports all 7 rank operators
