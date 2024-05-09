@@ -61,7 +61,7 @@ namespace Intrepid2 {
 /** \class Intrepid2::TransformedBasisValues
     \brief Structure-preserving representation of transformed vector data; reference space values and transformations are stored separately.
  
- TransformedBasisValues provides a View-like interface of rank 4, with shape (C,F,P,D).  When the corresponding accessor is used, the transformed value is determined from corresponding reference space values and the transformation.
+ TransformedBasisValues provides a View-like interface of rank 3 or 4, with shape (C,F,P) or (C,F,P,D).  When the corresponding accessor is used, the transformed value is determined from corresponding reference space values and the transformation.
 */
   template<class Scalar, typename DeviceType>
   class TransformedBasisValues
@@ -69,13 +69,13 @@ namespace Intrepid2 {
   public:
     ordinal_type numCells_;
     
-    Data<Scalar,DeviceType> transform_; // vector case: (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform.  Scalar case: (C,P), or unset for identity.
+    Data<Scalar,DeviceType> transform_; // vector case: (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform.  Scalar case: (C,P), or unset for identity.  Contracted vector case: (C,P,D) transform, to be contracted with a vector field to produce a scalar result.
     
     BasisValues<Scalar, DeviceType> basisValues_;
     
     /**
      \brief Standard constructor.
-     \param [in] transform - the transformation (matrix), with logical shape (C,P) or (C,P,D,D)
+     \param [in] transform - the transformation (matrix), with logical shape (C,P), (C,P,D), or (C,P,D,D)
      \param [in] basisValues - the reference-space data to be transformed, with logical shape (F,P) (for scalar values) or (F,P,D) (for vector values)
     */
     TransformedBasisValues(const Data<Scalar,DeviceType> &transform, const BasisValues<Scalar,DeviceType> &basisValues)
@@ -86,6 +86,7 @@ namespace Intrepid2 {
     {
       // sanity check: when transform is diagonal, we expect there to be no pointwise variation.
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(transform_.isDiagonal() && (transform_.getVariationTypes()[1] != CONSTANT), std::invalid_argument, "When transform is diagonal, we assume in various places that there is no pointwise variation; the transform_ Data should have CONSTANT as its variation type in dimension 1.");
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((transform_.rank() < 2) || (transform_.rank() > 4), std::invalid_argument, "Only transforms of rank 2, 3, or 4 are supported");
     }
     
     /**
@@ -163,7 +164,7 @@ namespace Intrepid2 {
       }
       else
       {
-        if (transform_.rank() == 4)
+        if ((transform_.rank() == 4) || (transform_.rank() == 3))
         {
           transform_ = DataTools::multiplyByCPWeights(transform_,weightData);
         }
@@ -209,9 +210,18 @@ namespace Intrepid2 {
         // null transform is understood as the identity
         return basisValues_(fieldOrdinal,pointOrdinal);
       }
-      else
+      else if (transform_.rank() == 2)
       {
         return transform_(cellOrdinal,pointOrdinal) * basisValues_(fieldOrdinal,pointOrdinal);
+      }
+      else if (transform_.rank() == 3)
+      {
+        Scalar value = 0;
+        for (int d=0; d<transform_.extent_int(2); d++)
+        {
+          value += transform_(cellOrdinal,pointOrdinal,d) * basisValues_(fieldOrdinal,pointOrdinal,d);
+        }
+        return value;
       }
     }
     
@@ -227,13 +237,23 @@ namespace Intrepid2 {
       {
         return transform_(cellOrdinal,pointOrdinal,dim,dim) * basisValues_(fieldOrdinal,pointOrdinal,dim);
       }
-      else
+      else if (transform_.rank() == 4)
       {
         Scalar value = 0.0;
         for (int d2=0; d2<transform_.extent_int(2); d2++)
         {
           value += transform_(cellOrdinal,pointOrdinal,dim,d2) * basisValues_(fieldOrdinal,pointOrdinal,d2);
         }
+        return value;
+      }
+      else if (transform_.rank() == 3)
+      {
+        Scalar value = transform_(cellOrdinal,pointOrdinal,dim) * basisValues_(fieldOrdinal,pointOrdinal);
+        return value;
+      }
+      else // rank 2 transform
+      {
+        Scalar value = transform_(cellOrdinal,pointOrdinal) * basisValues_(fieldOrdinal,pointOrdinal,dim);
         return value;
       }
     }
@@ -249,6 +269,19 @@ namespace Intrepid2 {
       else
       {
         return transform_(cellOrdinal,pointOrdinal);
+      }
+    }
+    
+    //! Returns the specified entry in the transformation vector.
+    KOKKOS_INLINE_FUNCTION Scalar transformWeight(const int &cellOrdinal, const int &pointOrdinal, const int &d) const
+    {
+      if (!transform_.isValid())
+      {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "three-argument transformWeight() is not supported for invalid transform_ object -- no meaningful interpretation for vector-valued identity");
+      }
+      else
+      {
+        return transform_(cellOrdinal,pointOrdinal,d);
       }
     }
     
@@ -282,7 +315,27 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     unsigned rank() const
     {
-      return basisValues_.rank() + 1; // transformation adds a cell dimension
+      if ((transform_.rank() == 4) && (basisValues_.rank() == 3))
+      {
+        return 4; // (C,F,P,D)
+      }
+      else if (transform_.rank() == 2)
+      {
+        return basisValues_.rank() + 1; // transformation adds a cell dimension
+      }
+      else if (transform_.rank() == 3)
+      {
+        if (basisValues_.rank() == 3)
+        {
+          // transform contracts with basisValues in D dimension
+          return 3; // (C,F,P)
+        }
+        else if (basisValues_.rank() == 2) // (F,P)
+        {
+          return 4; // (C,F,P,D)
+        }
+      }
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "Unhandled basisValues_/transform_ rank combination");
     }
     
     //! Returns the extent in the specified dimension as an int.
