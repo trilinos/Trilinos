@@ -48,10 +48,10 @@
 
 #include "Ifpack2_Factory.hpp"
 
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class MatrixType>
 Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 build_precond (Teuchos::ParameterList& test_params,
-               const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+               const Teuchos::RCP<const MatrixType>& A)
 {
   using Teuchos::FancyOStream;
   using Teuchos::getFancyOStream;

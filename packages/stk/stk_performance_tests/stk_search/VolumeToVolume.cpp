@@ -46,72 +46,66 @@
 namespace {
 
 template<typename BoxVectorType>
-void run_search_test(const std::string& meshFileName,
-                     stk::search::SearchMethod searchMethod,
-                     bool communicateResultInfo = true)
+void run_volume_to_volume_test(const std::string& meshFileName,
+                               stk::search::SearchMethod searchMethod,
+                               bool enforceSearchResultSymmetry = true)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = 100;
-  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  const unsigned NUM_ITERS = 20;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
   batchTimer.initialize_batch_timer();
-  for (unsigned j = 0; j < NUM_RUNS; j++) {
 
-    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+
+    stk::mesh::MeshBuilder builder(comm);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
 
     stk::io::fill_mesh_with_auto_decomp(meshFileName, *bulkPtr);
 
     BoxVectorType elemBoxes;
     createBoundingBoxesForEntities(*bulkPtr, stk::topology::ELEM_RANK, elemBoxes);
-    BoxVectorType sideBoxes;
-    createBoundingBoxesForEntities(*bulkPtr, stk::topology::FACE_RANK, sideBoxes);
+
+    SearchResults searchResults;
 
     batchTimer.start_batch_timer();
-
-    for(unsigned i=0; i<NUM_ITERS; ++i) {
-      SearchResults searchResults;
-      stk::search::coarse_search(elemBoxes, sideBoxes, stk::search::KDTREE, MPI_COMM_WORLD, searchResults);
+    for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      stk::search::coarse_search(elemBoxes, elemBoxes, searchMethod, comm, searchResults, enforceSearchResultSymmetry);
     }
-
     batchTimer.stop_batch_timer();
   }
+
   batchTimer.print_batch_timing(NUM_ITERS);
 }
 
-TEST(StkSearch, hex_mesh_KDTREE_float)
+TEST(StkSearch_VolumeToVolume, generatedMesh_floatBox_KDTREE)
 {
-  run_search_test<FloatBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::KDTREE);
+  run_volume_to_volume_test<FloatBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::KDTREE);
 }
 
-TEST(StkSearch, hex_mesh_KDTREE_double)
+TEST(StkSearch_VolumeToVolume, generatedMesh_doubleBox_KDTREE)
 {
-  run_search_test<StkBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::KDTREE);
+  run_volume_to_volume_test<StkBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::KDTREE);
 }
 
-TEST(StkSearch, perf_mesh_KDTREE_float)
+TEST(StkSearch_VolumeToVolume, generatedMesh_floatBox_MORTON_LBVH)
 {
-  std::string meshFileName = stk::unit_test_util::get_option("-m", "none-specified");
-  if (meshFileName == "none-specified") {
-    std::cout<<"Skipping test, no mesh specified via '-m' command-line flag."<<std::endl;
-    return;
-  }
-
-  std::cout<<"running search test with '"<<meshFileName<<"'."<<std::endl;
-
-  run_search_test<FloatBoxVector>(meshFileName, stk::search::KDTREE);
+  run_volume_to_volume_test<FloatBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::MORTON_LBVH);
 }
 
-TEST(StkSearch, perf_mesh_KDTREE_double)
+TEST(StkSearch_VolumeToVolume, generatedMesh_doubleBox_MORTON_LBVH)
 {
-  std::string meshFileName = stk::unit_test_util::get_option("-m", "none-specified");
-  if (meshFileName == "none-specified") {
-    std::cout<<"Skipping test, no mesh specified via '-m' command-line flag."<<std::endl;
-    return;
-  }
+  run_volume_to_volume_test<StkBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::MORTON_LBVH);
+}
 
-  std::cout<<"running search test with '"<<meshFileName<<"'."<<std::endl;
+TEST(StkSearch_VolumeToVolume, generatedMesh_floatBox_ARBORX)
+{
+  run_volume_to_volume_test<FloatBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::ARBORX);
+}
 
-  run_search_test<StkBoxVector>(meshFileName, stk::search::KDTREE);
+TEST(StkSearch_VolumeToVolume, generatedMesh_doubleBox_ARBORX)
+{
+  run_volume_to_volume_test<StkBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::ARBORX);
 }
 
 } // namespace

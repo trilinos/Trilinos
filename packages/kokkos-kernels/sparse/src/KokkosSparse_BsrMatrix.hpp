@@ -362,7 +362,8 @@ class BsrMatrix {
   typedef SizeType size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits>
+  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits,
+                    size_type>
       HostMirror;
   //! Type of the graph structure of the sparse matrix.
   typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type,

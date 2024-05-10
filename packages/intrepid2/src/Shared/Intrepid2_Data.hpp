@@ -1528,17 +1528,24 @@ public:
     
     //! Constructs a container suitable for storing the result of a matrix-vector multiply corresponding to the two provided containers.
     //! \see storeMatVec()
-    static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
+    static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData, const bool transposeMatrix = false )
     {
       // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(matData.rank() != vecData.rank() + 1, std::invalid_argument, "matData and vecData have incompatible ranks");
       const int vecDim  = vecData.extent_int(vecData.rank() - 1);
-      const int matRows = matData.extent_int(matData.rank() - 2);
-      const int matCols = matData.extent_int(matData.rank() - 1);
+      
+      const int D1_DIM = matData.rank() - 2;
+      const int D2_DIM = matData.rank() - 1;
+      
+      const int matRows = matData.extent_int(D1_DIM);
+      const int matCols = matData.extent_int(D2_DIM);
+      
+      const int rows  = transposeMatrix ? matCols : matRows;
+      const int cols  = transposeMatrix ? matRows : matCols;
       
       const int resultRank = vecData.rank();
       
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(matCols != vecDim, std::invalid_argument, "matData column count != vecData dimension");
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(cols != vecDim, std::invalid_argument, "matData column count != vecData dimension");
       
       Kokkos::Array<int,7> resultExtents;                      // logical extents
       Kokkos::Array<DataVariationType,7> resultVariationTypes; // for each dimension, whether the data varies in that dimension
@@ -1605,8 +1612,8 @@ public:
       // (Some combinations, e.g. CONSTANT/CONSTANT *would* generate a CONSTANT result, but constant matrices don't make a lot of sense beyond 1x1 matrices…)
       resultVariationTypes[resultNumActiveDims] = GENERAL;
       resultActiveDims[resultNumActiveDims]     = resultRank - 1;
-      resultDataDims[resultNumActiveDims]       = matRows;
-      resultExtents[resultRank-1]               = matRows;
+      resultDataDims[resultNumActiveDims]       = rows;
+      resultExtents[resultRank-1]               = rows;
       resultNumActiveDims++;
       
       for (int i=resultRank; i<7; i++)
@@ -1748,13 +1755,19 @@ public:
     }
     
     //! Places the result of a matrix-vector multiply corresponding to the two provided containers into this Data container.  This Data container should have been constructed by a call to allocateMatVecResult(), or should match such a container in underlying data extent and variation types.
-    void storeMatVec( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
+    void storeMatVec( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData, const bool transposeMatrix = false )
     {
       // TODO: add a compile-time (SFINAE-type) guard against DataScalar types that do not support arithmetic operations.  (We support Orientation as a DataScalar type; it might suffice just to compare DataScalar to Orientation, and eliminate this method for that case.)
       // TODO: check for invalidly shaped containers.
       
-      const int matRows = matData.extent_int(matData.rank() - 2);
-      const int matCols = matData.extent_int(matData.rank() - 1);
+      const int D1_DIM = matData.rank() - 2;
+      const int D2_DIM = matData.rank() - 1;
+      
+      const int matRows = matData.extent_int(D1_DIM);
+      const int matCols = matData.extent_int(D2_DIM);
+      
+      const int rows  = transposeMatrix ? matCols : matRows;
+      const int cols  = transposeMatrix ? matRows : matCols;
       
       // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
       Data<DataScalar,DeviceType> thisData = *this;
@@ -1764,42 +1777,45 @@ public:
       if (rank_ == 3)
       {
         // typical case for e.g. gradient data: (C,P,D)
-        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),matRows});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),rows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &i) {
           auto & val_i = thisData.getWritableEntry(cellOrdinal, pointOrdinal, i);
           val_i = 0;
-          for (int j=0; j<matCols; j++)
+          for (int j=0; j<cols; j++)
           {
-            val_i += matData(cellOrdinal,pointOrdinal,i,j) * vecData(cellOrdinal,pointOrdinal,j);
+            const auto & mat_ij  = transposeMatrix ? matData(cellOrdinal,pointOrdinal,j,i) : matData(cellOrdinal,pointOrdinal,i,j);
+            val_i += mat_ij * vecData(cellOrdinal,pointOrdinal,j);
           }
         });
       }
       else if (rank_ == 2)
       {
         //
-        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),matRows});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),rows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &vectorOrdinal, const int &i) {
           auto & val_i = thisData.getWritableEntry(vectorOrdinal, i);
           val_i = 0;
-          for (int j=0; j<matCols; j++)
+          for (int j=0; j<cols; j++)
           {
-            val_i += matData(vectorOrdinal,i,j) * vecData(vectorOrdinal,j);
+            const auto & mat_ij  = transposeMatrix ? matData(vectorOrdinal,j,i) : matData(vectorOrdinal,i,j);
+            val_i += mat_ij * vecData(vectorOrdinal,j);
           }
         });
       }
       else if (rank_ == 1)
       {
         // single-vector case
-        Kokkos::RangePolicy<ExecutionSpace> policy(0,matRows);
+        Kokkos::RangePolicy<ExecutionSpace> policy(0,rows);
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &i) {
           auto & val_i = thisData.getWritableEntry(i);
           val_i = 0;
-          for (int j=0; j<matCols; j++)
+          for (int j=0; j<cols; j++)
           {
-            val_i += matData(i,j) * vecData(j);
+            const auto & mat_ij  = transposeMatrix ? matData(j,i) : matData(i,j);
+            val_i += mat_ij * vecData(j);
           }
         });
       }

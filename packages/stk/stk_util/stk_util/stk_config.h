@@ -38,11 +38,15 @@
 #ifdef STK_BUILT_IN_SIERRA
 
 #define STK_HAS_MPI
+#define STK_HAS_ARBORX
 #define STK_HAVE_BOOST
 #define STK_HAVE_KOKKOS
 #define STK_HAVE_STKMESH
 #define STK_HAVE_STKIO
 #define STK_HAVE_STKNGP_TEST
+#define STK_HAS_SEACAS_IOSS
+#define STK_HAS_SEACAS_EXODUS
+#define STK_HAS_SEACAS_NEMESIS
 
 #else
 // This file gets created by cmake during a Trilinos build

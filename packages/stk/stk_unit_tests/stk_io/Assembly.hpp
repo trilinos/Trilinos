@@ -66,9 +66,11 @@ namespace unit_test
 class Assembly : public IOMeshFixture
 {
 protected:
-  stk::mesh::Part& create_assembly(const std::string& assemblyName, int id)
+  stk::mesh::Part& create_assembly(const std::string& assemblyName, int id,
+                                   stk::mesh::EntityRank rank = stk::topology::INVALID_RANK)
   {
-    stk::mesh::Part& assemblyPart = get_meta().declare_part(assemblyName);
+    stk::mesh::Part& assemblyPart = rank==stk::topology::INVALID_RANK ?
+           get_meta().declare_part(assemblyName) : get_meta().declare_part(assemblyName, rank);
     stk::io::put_assembly_io_part_attribute(assemblyPart);
     get_meta().set_part_id(assemblyPart, id);
     return assemblyPart;
@@ -145,6 +147,7 @@ protected:
   {
     EXPECT_TRUE(stk::io::is_part_assembly_io_part(part));
     EXPECT_TRUE(stk::io::is_part_io_part(part));
+    EXPECT_FALSE(stk::mesh::is_element_block(part));
   }
 
   void test_assembly_part_attributes(const stk::mesh::PartVector& parts)

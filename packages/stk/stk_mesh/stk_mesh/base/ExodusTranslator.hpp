@@ -49,11 +49,31 @@ namespace stk
 {
 namespace mesh
 {
+namespace impl
+{
+
+inline bool is_elem_block(const stk::mesh::Part& part)
+{
+  return (part.primary_entity_rank() == stk::topology::ELEMENT_RANK && part.id() > 0);
+}
+
+inline bool is_elem_block_ptr(const stk::mesh::Part* part) {
+  return part!=nullptr && is_elem_block(*part);
+}
+
+inline bool has_subset_elem_block(const stk::mesh::Part &part)
+{
+  const PartVector& subsets = part.subsets();
+  return std::any_of(subsets.cbegin(), subsets.cend(), is_elem_block_ptr);
+}
+
+}//namespace impl
 
 inline bool is_element_block(const stk::mesh::Part &part)
 {
-    return (part.primary_entity_rank() == stk::topology::ELEMENT_RANK && part.id() > 0 );
+    return (impl::is_elem_block(part) && !impl::has_subset_elem_block(part));
 }
+
 inline bool is_node_set(const stk::mesh::Part &part)
 {
     return (part.primary_entity_rank() == stk::topology::NODE_RANK && part.id() > 0 );
@@ -72,6 +92,7 @@ inline bool has_super_set_face_part(const stk::mesh::Part &part)
   }
   return false;
 }
+
 inline bool is_side_set(const stk::mesh::Part &part)
 {
   if (part.id() > 0) {

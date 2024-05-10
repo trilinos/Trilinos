@@ -920,9 +920,12 @@ void gatherLoadBalanceDiagnostics(const std::vector<double> &vertexWeights, cons
   int numElementsThisProc = vertexWeights.size();
   diagnostics.numElementsPerProc.clear();
   diagnostics.numElementsPerProc.resize(numProcs, 0);
-  MPI_Allgatherv(&totalVertexWeight, 1, MPI_DOUBLE, &diagnostics.sumOfVertexWeightsPerProc[0], &counts[0], &displs[0], MPI_DOUBLE, communicator);
-  MPI_Allgatherv(&totalEdgeWeight, 1, MPI_DOUBLE, &diagnostics.sumOfCutEdgeWeightsPerProc[0], &counts[0], &displs[0], MPI_DOUBLE, communicator);
-  MPI_Allgatherv(&numElementsThisProc, 1, MPI_INT, &diagnostics.numElementsPerProc[0], &counts[0], &displs[0], MPI_INT, communicator);
+  MPI_Allgatherv(&totalVertexWeight, 1, MPI_DOUBLE, diagnostics.sumOfVertexWeightsPerProc.data(), counts.data(),
+      displs.data(), MPI_DOUBLE, communicator);
+  MPI_Allgatherv(&totalEdgeWeight, 1, MPI_DOUBLE, diagnostics.sumOfCutEdgeWeightsPerProc.data(), counts.data(),
+      displs.data(), MPI_DOUBLE, communicator);
+  MPI_Allgatherv(&numElementsThisProc, 1, MPI_INT, diagnostics.numElementsPerProc.data(), counts.data(), displs.data(),
+      MPI_INT, communicator);
 }
 
 void printLoadBalanceDiagnostics(const struct LoadBalanceDiagnostics &loadBalanceDiagnostics)

@@ -5,9 +5,6 @@
 // See packages/seacas/LICENSE for details
 
 #include "Ioss_CodeTypes.h"
-#include "Ioss_DatabaseIO.h"
-#include "Ioss_FileInfo.h"
-#include "Ioss_Utils.h"
 #include <cassert>
 #include <cctype>
 #include <cstdint>
@@ -35,10 +32,13 @@
 #endif
 #include <cstdio>
 
+#include "Ioss_CompositeVariableType.h"
+#include "Ioss_DatabaseIO.h"
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementTopology.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
@@ -47,6 +47,7 @@
 #include "Ioss_Region.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_State.h"
+#include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 
 #if defined(__IOSS_WINDOWS__)
@@ -606,7 +607,12 @@ namespace {
           // Are suffices upper or lowercase...
           std::vector<std::string> tmp;
           field_tokenize(names[which_names[0]], suffix_separator, tmp);
-          Ioss::Suffix suffix{tmp[tmp.size() - 1]};
+
+          // If a composite variable, then need to check the interior suffix, not the last (which
+          // will be 1,2,...)
+          bool is_composite = dynamic_cast<const Ioss::CompositeVariableType *>(
+                                  field.transformed_storage()) != nullptr;
+          Ioss::Suffix suffix{tmp[tmp.size() - (is_composite ? 2 : 1)]};
           field.set_suffices_uppercase(suffix.is_uppercase());
           field.set_index(index);
           for (const auto &which_name : which_names) {

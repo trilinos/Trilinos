@@ -233,3 +233,10 @@ namespace ML_Epetra
 #endif
 
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

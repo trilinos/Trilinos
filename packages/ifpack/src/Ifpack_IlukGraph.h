@@ -292,3 +292,10 @@ class Ifpack_IlukGraph {
 std::ostream& operator << (std::ostream& os, const Ifpack_IlukGraph& A);
 
 #endif /* _IFPACK_ILUK_GRAPH_H_ */
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

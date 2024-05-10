@@ -77,6 +77,7 @@ namespace Excn {
     bool output_shared_nodes() const { return outputSharedNodes_; }
     bool is_auto() const { return auto_; }
     bool keep_temporary() const { return keepTemporary_; }
+    bool remove_file_per_rank_files() const;
     bool verify_valid_file() const { return verifyValidFile_; }
     int  max_open_files() const
     {
@@ -158,6 +159,7 @@ namespace Excn {
     bool         outputSharedNodes_{false};
     bool         auto_{false};
     bool         keepTemporary_{false};
+    bool         removeFilePerRankFiles_{false};
     bool         verifyValidFile_{false};
     bool         addNodalCommunicationMap_{false};
 

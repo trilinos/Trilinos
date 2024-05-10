@@ -53,7 +53,7 @@
 // Static internal helper functions
 // ========================================================================
 namespace {
-  const size_t                     max_line_length = MAX_LINE_LENGTH;
+  const size_t max_line_length = MAX_LINE_LENGTH;
 
   template <typename T>
   void compute_internal_border_maps(T *entities, T *internal, size_t count, size_t entity_count)

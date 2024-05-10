@@ -1,0 +1,315 @@
+<ParameterList name="Drekar">
+
+    <ParameterList name="Mesh">
+
+        <Parameter name="Source" type="string" value="Inline Mesh" />
+
+        <ParameterList name="Exodus File">
+            <Parameter name="File Name" type="string" value="helios.exo" />
+        </ParameterList>
+
+        <ParameterList name="Inline Mesh">
+            <Parameter name="Mesh Dimension" type="int" value="2" />
+            <ParameterList name="Mesh Factory Parameter List">
+                <Parameter name="X Blocks" type="int" value="1" />
+                <Parameter name="Y Blocks" type="int" value="1" />
+                <Parameter name="X Elements" type="int" value="20" />
+                <Parameter name="Y Elements" type="int" value="20" />
+                <Parameter name="X0" type="double" value="0.0" />
+                <Parameter name="Y0" type="double" value="0.0" />
+                <Parameter name="Xf" type="double" value="1.0" />
+                <Parameter name="Yf" type="double" value="1.0" />
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="Initial Conditions">
+        <ParameterList name="eblock-0_0">
+            <ParameterList name="TEMPERATURE">
+                <Parameter name="Value" type="double" value="0.0"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Responses">
+      <ParameterList name="Volume Integral">
+         <Parameter name="Type" type="string" value="Functional"/>
+         <Parameter name="Field Name" type="string" value="Volume_Integral"/>
+         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
+         <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      </ParameterList>
+      <ParameterList name="Volume Integral2">
+         <Parameter name="Type" type="string" value="Functional"/>
+         <Parameter name="Field Name" type="string" value="Volume_Integral"/>
+         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
+         <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Block ID to Physics ID Mapping">
+        <Parameter name="eblock-0_0" type="string" value="solid"/>
+    </ParameterList>
+
+    <ParameterList name="Assembly">
+        <Parameter name="Workset Size" type="int" value="400"/>
+        <Parameter name="Use Tpetra" type="bool" value="true"/>
+    </ParameterList>
+
+    <ParameterList name="Physics Blocks">
+
+        <ParameterList name="solid">
+
+            <ParameterList name="EQ 0">
+                <Parameter name="Type" type="string" value="Energy"/>
+                <Parameter name="Basis Type" type="string" value="HGrad"/>
+                <Parameter name="Basis Order" type="int" value="1"/>
+                <Parameter name="Integration Order" type="int" value="2"/>
+                <Parameter name="Model ID" type="string" value="fluid model"/>
+                <Parameter name="Prefix" type="string" value=""/>
+            </ParameterList>
+
+        </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="Closure Models">
+
+        <ParameterList name="fluid model">
+
+            <ParameterList name="Volume Integral">
+            </ParameterList>
+
+            <!--
+            <ParameterList name="SOURCE_TEMPERATURE">
+                <Parameter name="Type" type="string" value="Parameter"/>
+            </ParameterList>
+            -->
+            <ParameterList name="SOURCE_TEMPERATURE">
+                <Parameter name="Type" type="string" value="T Squared Source"/>
+                <Parameter name="Multiplier" type="double" value="1.0"/>
+                <Parameter name="Source Name" type="string" value="TEMPERATURE"/>
+                <Parameter name="Target Name" type="string" value="SOURCE_TEMPERATURE"/>
+            </ParameterList>
+            <ParameterList name="Heat Capacity">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="Thermal Conductivity">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="DENSITY">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="HEAT_CAPACITY">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <!--
+            <ParameterList name="Global Statistics">
+                <Parameter name="Value" type="string" value="TEMPERATURE,DENSITY"/>
+                </ParameterList>
+            -->
+        </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="User Data">
+
+        <ParameterList name="function data one">
+
+        </ParameterList>
+
+        <ParameterList name="IP Coordinates">
+            <Parameter name="Integration Order" type="int" value="2"/>
+        </ParameterList>
+
+
+    </ParameterList>
+
+    <ParameterList name="Boundary Conditions">
+
+        <ParameterList>
+            <Parameter name="Type" type="string" value="Dirichlet"/>
+            <Parameter name="Sideset ID" type="string" value="top"/>
+            <Parameter name="Element Block ID" type="string" value="eblock-0_0"/>
+            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/>
+            <Parameter name="Strategy" type="string" value="Constant"/>
+            <ParameterList name="Data">
+                <Parameter name="Value" type="double" value="0.0"/>
+            </ParameterList>
+        </ParameterList>
+
+        <ParameterList>
+            <Parameter name="Type" type="string" value="Dirichlet"/>
+            <Parameter name="Sideset ID" type="string" value="bottom"/>
+            <Parameter name="Element Block ID" type="string" value="eblock-0_0"/>
+            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/>
+            <Parameter name="Strategy" type="string" value="Constant"/>
+            <ParameterList name="Data">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="Output">
+        <Parameter name="File Name" type="string" value="energy-ss-tp-delay-prec.exo"/>
+    </ParameterList>
+
+    <ParameterList name="Options">
+        <Parameter name="Write Volume Assembly Graphs" type="bool" value="true"/>
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss-tp-delay-prec"/>
+    </ParameterList>
+
+<!--
+    <ParameterList name="Active Parameters">
+        <Parameter name="Number of Parameter Vectors" type="int" value="1"/>
+        <ParameterList name="Parameter Vector 0">
+            <Parameter name="Number" type="int" value="1"/>
+            <Parameter name="Parameter 0" type="string" value="SOURCE_TEMPERATURE"/>
+            <Parameter name="Initial Value 0" type="double" value="0.0"/>
+        </ParameterList>
+    </ParameterList>
+-->
+
+    <ParameterList name="Solver Factories">
+        <ParameterList name="NOX Observers">
+            <Parameter name="New Output Format" type="bool" value="true"/>
+            <Parameter name="Delay Preconditioner Update" type="bool" value="true"/>
+            <ParameterList name="Delay Preconditioner Factory Sublist">
+                <Parameter name="Update prec at start of nonlinear solve" type="bool" value="true"/>
+                <Parameter name="Update prec after this many nonlinear iterations" type="int" value="0"/>
+                <Parameter name="Update prec after this many stalled linear solves" type="int" value="1"/>
+                <Parameter name="Max linear iterations for stall" type="int" value="50"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+
+<ParameterList name="Solution Control">
+  <Parameter name="Piro Solver" type="string" value="NOX"/>
+  <Parameter name="Compute Sensitivities" type="bool" value="0"/>
+  <Parameter name="Jacobian Operator" type="string" value="Have Jacobian"/>
+  <ParameterList name="LOCA">
+    <ParameterList name="Bifurcation"/>
+    <ParameterList name="Constraints"/>
+    <ParameterList name="Predictor">
+      <Parameter  name="Method" type="string" value="Constant"/>
+    </ParameterList>
+    <ParameterList name="Stepper">
+      <Parameter  name="Continuation Method" type="string" value="Natural"/>
+      <Parameter  name="Initial Value" type="double" value="1.0"/>
+      <Parameter  name="Continuation Parameter" type="string" value="Parameter 0"/>
+      <Parameter  name="Max Steps" type="int" value="6"/>
+      <Parameter  name="Max Value" type="double" value="12.25"/>
+      <Parameter  name="Min Value" type="double" value="0.5"/>
+      <Parameter  name="Compute Eigenvalues" type="bool" value="1"/>
+      <ParameterList name="Eigensolver">
+        <Parameter name="Method" type="string" value="Anasazi"/>
+        <Parameter name="Operator" type="string" value="Shift-Invert"/>
+        <Parameter name="Num Blocks" type="int" value="3"/>
+        <Parameter name="Num Eigenvalues" type="int" value="1"/>
+        <Parameter name="Block Size" type="int" value="1"/>
+        <Parameter name="Maximum Restarts" type="int" value="0"/>
+        <Parameter name="Shift" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Step Size">
+      <Parameter  name="Initial Step Size" type="double" value="0.5"/>
+      <Parameter  name="Aggressiveness" type="double" value="2.0"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="NOX">
+    <ParameterList name="Direction">
+      <Parameter name="Method" type="string" value="Newton"/>
+      <ParameterList name="Newton">
+        <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+        <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+        <ParameterList name="Stratimikos Linear Solver">
+          <ParameterList name="NOX Stratimikos Options">
+          </ParameterList>
+          <ParameterList name="Stratimikos">
+            <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+            <Parameter name="Preconditioner Type" type="string" value="Ifpack2"/>
+            <ParameterList name="Linear Solver Types">
+              <ParameterList name="Belos">
+                <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+                <ParameterList name="Solver Types">
+                  <ParameterList name="Block GMRES">
+                    <Parameter name="Convergence Tolerance" type="double" value="1e-5"/>
+                    <Parameter name="Output Frequency" type="int" value="10"/>
+                    <Parameter name="Output Style" type="int" value="1"/>
+                    <Parameter name="Verbosity" type="int" value="33"/>
+                    <Parameter name="Maximum Iterations" type="int" value="100"/>
+                    <Parameter name="Block Size" type="int" value="1"/>
+                    <Parameter name="Num Blocks" type="int" value="20"/>
+                    <Parameter name="Flexible Gmres" type="bool" value="0"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="Preconditioner Types">
+              <ParameterList name="Ifpack2">
+                <Parameter name="Overlap" type="int" value="3"/>
+                <Parameter name="Prec Type" type="string" value="ILUT"/>
+                <ParameterList name="Ifpack2 Settings">
+                  <Parameter name="fact: drop tolerance" type="double" value="0"/>
+                  <Parameter name="fact: ilut level-of-fill" type="double" value="3"/>
+                  <Parameter name="fact: level-of-fill" type="int" value="3"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Line Search">
+      <ParameterList name="Full Step">
+        <Parameter name="Full Step" type="double" value="1"/>
+      </ParameterList>
+      <Parameter name="Method" type="string" value="Full Step"/>
+    </ParameterList>
+    <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+    <ParameterList name="Printing">
+      <Parameter name="Output Precision" type="int" value="6"/>
+      <Parameter name="Output Processor" type="int" value="0"/>
+      <ParameterList name="Output Information">
+        <Parameter name="Error" type="bool" value="1"/>
+        <Parameter name="Warning" type="bool" value="0"/>
+        <Parameter name="Outer Iteration" type="bool" value="0"/>
+        <Parameter name="Parameters" type="bool" value="0"/>
+        <Parameter name="Details" type="bool" value="0"/>
+        <Parameter name="Linear Solver Details" type="bool" value="0"/>
+        <Parameter name="Stepper Iteration" type="bool" value="0"/>
+        <Parameter name="Stepper Details" type="bool" value="0"/>
+        <Parameter name="Stepper Parameters" type="bool" value="0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Solver Options">
+      <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+    </ParameterList>
+    <ParameterList name="Status Tests">
+      <Parameter name="Test Type" type="string" value="Combo"/>
+      <Parameter name="Combo Type" type="string" value="OR"/>
+      <Parameter name="Number of Tests" type="int" value="2"/>
+      <ParameterList name="Test 0">
+        <Parameter name="Test Type" type="string" value="Combo"/>
+        <Parameter name="Combo Type" type="string" value="AND"/>
+        <Parameter name="Number of Tests" type="int" value="2"/>
+        <ParameterList name="Test 0">
+          <Parameter name="Test Type" type="string" value="NormF"/>
+          <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+        </ParameterList>
+        <ParameterList name="Test 1">
+          <Parameter name="Test Type" type="string" value="RelativeNormF"/>
+          <Parameter name="Tolerance" type="double" value="1.0e-4"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Test 1">
+        <Parameter name="Test Type" type="string" value="MaxIters"/>
+        <Parameter name="Maximum Iterations" type="int" value="20"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+
+
+</ParameterList>

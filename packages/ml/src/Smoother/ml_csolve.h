@@ -96,3 +96,10 @@ extern int ML_CSolve_Clean_Aggr(void *, ML_CSolveFunc *);
 #endif
 
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

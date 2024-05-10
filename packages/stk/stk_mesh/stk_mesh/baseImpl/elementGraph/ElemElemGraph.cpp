@@ -1640,7 +1640,7 @@ void add_shared_side_to_element(stk::mesh::BulkData& bulkData,
                                                            parts_for_creating_side);
 
     int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
-    int owning_proc = std::min(other_proc, bulkData.parallel_rank());
+    int owning_proc = bulkData.state(side)==Created ? std::min(other_proc, bulkData.parallel_rank()) : bulkData.parallel_owner_rank(side);
     shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
 }
 

@@ -13,16 +13,16 @@
 /* Make a bipartite graph from vertex separator and neighbors. */
 
 void make_bpgraph(struct vtx_data **graph,      /* list of graph info for each vertex */
-                  int *             sets,       /* local partitioning of vtxs */
-                  int *             bndy_list,  /* list of vertices on boundary (0 ends) */
+                  int              *sets,       /* local partitioning of vtxs */
+                  int              *bndy_list,  /* list of vertices on boundary (0 ends) */
                   int               sep_size,   /* length of bndy_list */
                   int               set_match,  /* side to match against */
-                  int **            ppointers,  /* start/stop of adjacency lists */
-                  int **            pindices,   /* adjacency list for each vertex */
-                  int **            pvweight,   /* weight of each vertex */
-                  int **            ploc2glob,  /* maps bp number to full graph */
-                  int *             pnleft,     /* number of nodes in left half */
-                  int *             pnright,    /* number of nodes in right half */
+                  int             **ppointers,  /* start/stop of adjacency lists */
+                  int             **pindices,   /* adjacency list for each vertex */
+                  int             **pvweight,   /* weight of each vertex */
+                  int             **ploc2glob,  /* maps bp number to full graph */
+                  int              *pnleft,     /* number of nodes in left half */
+                  int              *pnright,    /* number of nodes in right half */
                   int               using_vwgts /* are vertices weighted? */
 )
 {

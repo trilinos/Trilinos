@@ -228,3 +228,10 @@ void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int>
 } // end getAccuracy
 
 } // end namespace Intrepid
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

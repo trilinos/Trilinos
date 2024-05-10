@@ -413,7 +413,7 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
       }
     }
     int *rbuff = 0;
-    MPI_Reduce(&areIdsBeingused[0], rbuff, numIdsToGet, MPI_INT, MPI_SUM, root, comm);
+    MPI_Reduce(areIdsBeingused.data(), rbuff, numIdsToGet, MPI_INT, MPI_SUM, root, comm);
   }
 }
 
@@ -440,7 +440,7 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
       }
     }
     int *rbuff = 0;
-    MPI_Reduce(&areIdsBeingused[0], rbuff, numIdsToGet, MPI_INT, MPI_SUM, root, comm);
+    MPI_Reduce(areIdsBeingused.data(), rbuff, numIdsToGet, MPI_INT, MPI_SUM, root, comm);
   }
 }
 
@@ -453,7 +453,7 @@ void retrieveIds(const INTMPI root, uint64_t id, MPI_Comm comm, uint64_t numIdsT
   {
     MPI_Bcast(&numIdsToGetPerProc, 1, sierra::MPI::Datatype<uint64_t>::type(), root, comm);
     std::vector<uint64_t> zeroids(numIdsToGetPerProc,0);
-    MPI_Reduce(&zeroids[0], &areIdsBeingUsed[0], numIdsToGetPerProc, MPI_INT, MPI_SUM, root, comm);
+    MPI_Reduce(zeroids.data(), areIdsBeingUsed.data(), numIdsToGetPerProc, MPI_INT, MPI_SUM, root, comm);
   }
 }
 
@@ -533,7 +533,8 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
 {
   INTMPI numprocs = mpiInfo.getNumProcs();
   std::vector<uint64_t> receivedInfo(numprocs,0);
-  MPI_Allgather(&numIdsNeeded, 1, sierra::MPI::Datatype<uint64_t>::type(), &receivedInfo[0], 1, sierra::MPI::Datatype<uint64_t>::type(), mpiInfo.getMpiComm());
+  MPI_Allgather(&numIdsNeeded, 1, sierra::MPI::Datatype<uint64_t>::type(), receivedInfo.data(), 1,
+      sierra::MPI::Datatype<uint64_t>::type(), mpiInfo.getMpiComm());
 
   std::vector<uint64_t> sortedIds(myIds.begin(), myIds.end());
   std::sort(sortedIds.begin(), sortedIds.end());
@@ -592,7 +593,8 @@ void getAvailableIds_exp(stk::mesh::BulkData &stkMeshBulkData, uint64_t numIdsNe
 {
   INTMPI numprocs = mpiInfo.getNumProcs();
   std::vector<uint64_t> receivedInfo(numprocs,0);
-  MPI_Allgather(&numIdsNeeded, 1, sierra::MPI::Datatype<uint64_t>::type(), &receivedInfo[0], 1, sierra::MPI::Datatype<uint64_t>::type(), mpiInfo.getMpiComm());
+  MPI_Allgather(&numIdsNeeded, 1, sierra::MPI::Datatype<uint64_t>::type(), receivedInfo.data(), 1,
+      sierra::MPI::Datatype<uint64_t>::type(), mpiInfo.getMpiComm());
 
   stk::mesh::EntityId largestIdHere = 0;
 

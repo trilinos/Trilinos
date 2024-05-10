@@ -9,7 +9,6 @@
 #include "Ioss_Utils.h"
 #include <cstddef>
 #include <fmt/ostream.h>
-#include <ostream>
 #include <string>
 
 #include "Ioss_CodeTypes.h"

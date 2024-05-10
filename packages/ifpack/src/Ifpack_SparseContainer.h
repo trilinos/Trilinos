@@ -633,3 +633,10 @@ std::ostream& Ifpack_SparseContainer<T>::Print(std::ostream & os) const
   return(os);
 }
 #endif // IFPACK_SPARSECONTAINER_H
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

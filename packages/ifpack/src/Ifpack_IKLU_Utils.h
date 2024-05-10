@@ -162,3 +162,10 @@ int csr_fkeep (csr *A, int (*fkeep) (int, int, double, void *), void *other);
 #define CS_TRIPLET(A) (A && (A->nz >= 0))
 
 #endif // IFPACK_IKLU_UTILS_H
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

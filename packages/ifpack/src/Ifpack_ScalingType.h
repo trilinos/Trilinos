@@ -54,3 +54,10 @@ enum Ifpack_ScalingType {None, LeftDiagonal, RightDiagonal,
 		           RowAndColSum};
 
 #endif /* _IFPACK_SCALINGTYPE_H_ */
+
+#if defined(Ifpack_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Ifpack package is deprecated"
+#endif
+#endif
+

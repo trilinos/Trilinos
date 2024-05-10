@@ -39,26 +39,4 @@ CudaLapackSingleton& CudaLapackSingleton::singleton() {
 }  // namespace KokkosLapack
 #endif  // defined (KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-#include <KokkosLapack_magma.hpp>
-
-namespace KokkosLapack {
-namespace Impl {
-
-MagmaSingleton::MagmaSingleton() {
-  magma_int_t stat = magma_init();
-  if (stat != MAGMA_SUCCESS) Kokkos::abort("MAGMA initialization failed\n");
-
-  Kokkos::push_finalize_hook([&]() { magma_finalize(); });
-}
-
-MagmaSingleton& MagmaSingleton::singleton() {
-  static MagmaSingleton s;
-  return s;
-}
-
-}  // namespace Impl
-}  // namespace KokkosLapack
-#endif  // defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-
 #endif  // KOKKOSLAPACK_CUDA_TPL_HPP_

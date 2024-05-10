@@ -319,7 +319,7 @@ class RILUK:
     <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
     HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
   typedef Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type>, kk_handle_type> iluk_graph_type;
-  
+
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
@@ -402,7 +402,7 @@ class RILUK:
   }
 
   //! Get a rough estimate of cost per iteration
-  size_t getNodeSmootherComplexity() const;  
+  size_t getNodeSmootherComplexity() const;
 
 
 
@@ -599,7 +599,7 @@ protected:
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
-  lno_row_view_t A_local_rowmap_; 
+  lno_row_view_t A_local_rowmap_;
   lno_nonzero_view_t A_local_entries_;
   scalar_nonzero_view_t A_local_values_;
   std::vector<local_matrix_device_type> A_local_diagblks;

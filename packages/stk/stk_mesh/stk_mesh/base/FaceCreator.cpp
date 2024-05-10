@@ -48,22 +48,28 @@ size_t FaceCreator::create_face_entities_per_element(size_t element_side_index, 
     return ordinals.size();
 }
 
-void FaceCreator::create_side_entities_given_sideset(const SideSet &skinnedSideSet, const stk::mesh::PartVector& skinParts)
+void FaceCreator::create_side_entities_given_sideset(const SideSet &skinnedSideSet, const stk::mesh::PartVector& skinParts, bool doLocalModCycle)
 {
-    std::vector<stk::mesh::sharing_info> sharedModified;
+  std::vector<stk::mesh::sharing_info> sharedModified;
+  if (doLocalModCycle) {
     m_bulkData.modification_begin();
-    for(size_t i=0;i<skinnedSideSet.size();)
-        i += create_face_entities_per_element(i, skinnedSideSet, skinParts, sharedModified);
+  }
+  for(size_t i=0;i<skinnedSideSet.size();) {
+    i += create_face_entities_per_element(i, skinnedSideSet, skinParts, sharedModified);
+  }
 
-    std::sort(sharedModified.begin(), sharedModified.end(), SharingInfoLess());
-    if(!sharedModified.empty())
-    {
-        for(size_t i=1; i<sharedModified.size(); i++)
-            if(sharedModified[i].m_entity == sharedModified[i-1].m_entity)
-                sharedModified[i].m_owner = sharedModified[i-1].m_owner;
+  std::sort(sharedModified.begin(), sharedModified.end(), SharingInfoLess());
+  if(!sharedModified.empty()) {
+    for(size_t i=1; i<sharedModified.size(); i++) {
+      if(sharedModified[i].m_entity == sharedModified[i-1].m_entity) {
+        sharedModified[i].m_owner = sharedModified[i-1].m_owner;
+      }
     }
+  }
 
+  if (doLocalModCycle) {
     m_bulkData.make_mesh_parallel_consistent_after_skinning(sharedModified);
+  }
 }
 
 }

@@ -52,24 +52,30 @@ GeoClassificationE get_edge_geo_classification(const MeshSpec& spec, MeshEntityP
   return static_cast<GeoClassificationE>(std::max(static_cast<int>(g1), static_cast<int>(g2)));
 }
 
-MeshEntityPtr get_closest_vert(std::shared_ptr<Mesh> mesh, const utils::Point& pt)
+MeshEntityPtr get_closest_entity(std::shared_ptr<Mesh> mesh, int dim, const utils::Point& pt, double tol=1e-13)
 {
-  MeshEntityPtr closestVert = nullptr;
+  MeshEntityPtr closestEntity = nullptr;
   double closestDistance    = std::numeric_limits<double>::max();
-  for (auto vert : mesh->get_vertices())
-    if (vert)
+  for (auto entity : mesh->get_mesh_entities(dim))
+    if (entity)
     {
-      auto ptVert        = vert->get_point_orig(0);
+      auto ptVert        = mesh::compute_centroid(entity);
       double distSquared = dot(pt - ptVert, pt - ptVert);
-      if (distSquared < closestDistance)
+      if (distSquared < closestDistance && std::sqrt(distSquared) < tol)
       {
         closestDistance = distSquared;
-        closestVert     = vert;
+        closestEntity   = entity;
       }
     }
 
-  return closestVert;
+  return closestEntity;
+}  
+
+MeshEntityPtr get_closest_vert(std::shared_ptr<Mesh> mesh, const utils::Point& pt)
+{
+  return get_closest_entity(mesh, 0, pt, 1);
 }
+
 
 void expect_near(const utils::Point& pt1, const utils::Point& pt2, double tol)
 {
@@ -586,6 +592,114 @@ TEST(Mesh, ErrorChecking)
   EXPECT_EQ(check_angles(mesh1, 2, 178), 0);
   EXPECT_NO_THROW(check_topology(mesh1));
   EXPECT_NO_THROW(check_coordinate_field(mesh1));
+}
+
+TEST(Mesh, SetDownOrientation)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  MeshSpec spec;
+  spec.numelX = 1;
+  spec.numelY = 1;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;  
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
+
+  mesh::MeshEntityPtr el1 = get_closest_entity(mesh, 2, {0.5, 0.5});
+
+  el1->set_down_orientation(0, mesh::EntityOrientation::Standard);
+  EXPECT_EQ(el1->get_down_orientation(0), mesh::EntityOrientation::Standard);
+
+  el1->set_down_orientation(0, mesh::EntityOrientation::Reversed);
+  EXPECT_EQ(el1->get_down_orientation(0), mesh::EntityOrientation::Reversed);
+}
+
+TEST(Mesh, ReplaceDown)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  MeshSpec spec;
+  spec.numelX = 1;
+  spec.numelY = 2;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;  
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
+
+  mesh::MeshEntityPtr el1 = get_closest_entity(mesh, 2, {0.5, 0.25});
+
+  mesh::MeshEntityPtr v1 = mesh->create_vertex(0,   0.5, 0);
+  mesh::MeshEntityPtr v2 = mesh->create_vertex(0.5, 0.5, 0);
+
+  mesh::MeshEntityPtr newEdge = mesh->create_edge(v1, v2);
+
+  el1->replace_down(2, newEdge, mesh::EntityOrientation::Reversed);
+  EXPECT_EQ(el1->get_down(2), newEdge);
+  EXPECT_EQ(el1->get_down_orientation(2), mesh::EntityOrientation::Reversed);
+}
+
+TEST(Mesh, EntityOrientationReverse)
+{
+  EXPECT_EQ(reverse(mesh::EntityOrientation::Standard), mesh::EntityOrientation::Reversed);
+  EXPECT_EQ(reverse(mesh::EntityOrientation::Reversed), mesh::EntityOrientation::Standard);
+}
+
+TEST(Mesh, ReverseEdge)
+{
+  if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
+    GTEST_SKIP();
+
+  MeshSpec spec;
+  spec.numelX = 1;
+  spec.numelY = 2;
+  spec.xmin   = 0;
+  spec.xmax   = 1;
+  spec.ymin   = 0;
+  spec.ymax   = 1;  
+  auto func = [&](const utils::Point& pt) { return pt; };
+
+  std::shared_ptr<Mesh> mesh = create_mesh(spec, func);
+
+  mesh::MeshEntityPtr edge = get_closest_entity(mesh, 1, {0.5, 0.5});
+  mesh::MeshEntityPtr el1  = get_closest_entity(mesh, 2,  {0.5, 0.25});
+  mesh::MeshEntityPtr el2  = get_closest_entity(mesh, 2,  {0.5, 0.75});
+  mesh::MeshEntityPtr v0   = edge->get_down(0);
+  mesh::MeshEntityPtr v1   = edge->get_down(1);
+  mesh::EntityOrientation orient1 = el1->get_down_orientation(2);
+  mesh::EntityOrientation orient2 = el2->get_down_orientation(0);
+
+  std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> verts1, verts2;
+  mesh::get_downward(el1, 0, verts1.data());
+  mesh::get_downward(el2, 0, verts2.data());
+
+  mesh::reverse_edge(edge);
+
+  EXPECT_EQ(edge->get_down(0), v1);
+  EXPECT_EQ(edge->get_down(1), v0);
+  EXPECT_EQ(el1->get_down(2), edge);
+  EXPECT_EQ(el2->get_down(0), edge);
+  EXPECT_EQ(el1->get_down_orientation(2), reverse(orient1));
+  EXPECT_EQ(el2->get_down_orientation(0), reverse(orient2));
+
+
+  std::array<mesh::MeshEntityPtr, mesh::MAX_DOWN> verts1After, verts2After;
+  mesh::get_downward(el1, 0, verts1After.data());
+  mesh::get_downward(el2, 0, verts2After.data());
+
+  for (int i=0; i < 4; ++i)
+  {
+    EXPECT_EQ(verts1[i], verts1After[i]);
+    EXPECT_EQ(verts2[i], verts2After[i]);
+  }
 }
 
 TEST(Mesh, DeleteFace)

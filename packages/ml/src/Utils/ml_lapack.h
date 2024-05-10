@@ -679,3 +679,10 @@ void PREFIX XERBLA_F77(ml_fcd, int *info);
 #endif
 
 #endif /* ML_BLAS_LAPACK_WRAPPERS_H */
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

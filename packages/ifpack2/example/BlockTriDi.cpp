@@ -318,6 +318,8 @@ main (int argc, char* argv[])
   RCP<Time> precSetupTime = Teuchos::TimeMonitor::getNewTimer ("Preconditioner setup");
   RCP<Time> precComputeTime = Teuchos::TimeMonitor::getNewTimer ("Preconditioner compute");
   RCP<Time> solveTime = Teuchos::TimeMonitor::getNewTimer ("Solve");
+  RCP<Time> normTime = Teuchos::TimeMonitor::getNewTimer ("Norm");
+  RCP<Time> warmupMatrixApplyTime = Teuchos::TimeMonitor::getNewTimer ("Preposition of the matrix on device");
   if(!args.useStackedTimer)
   {
     totalTime = Teuchos::TimeMonitor::getNewTimer ("Total");
@@ -365,6 +367,8 @@ main (int argc, char* argv[])
   RCP<IV> line_info;
 #if defined(HAVE_IFPACK2_XPETRA)
   if(args.matrixFilename == "") {
+    RCP<Time> matrixCreationTime = Teuchos::TimeMonitor::getNewTimer ("Create inline matrix");
+    Teuchos::TimeMonitor matrixCreationTimeMon (*matrixCreationTime);
     if (args.usePointMatrix) {
       std::string msg = "usePointMatrix with inline matrix is not yet implemented";
       throw std::runtime_error(msg);      
@@ -453,6 +457,8 @@ main (int argc, char* argv[])
   else
 #endif 
     {
+      RCP<Time> matrixReadingTime = Teuchos::TimeMonitor::getNewTimer ("Reading matrix input files");
+      Teuchos::TimeMonitor matrixReadingTimeMon (*matrixReadingTime);
       // Read map
       if(rank0) std::cout<<"Reading map file..."<<std::endl;
       RCP<const map_type> point_map = reader_type::readMapFile(args.mapFilename, comm);
@@ -496,7 +502,11 @@ main (int argc, char* argv[])
       
       // Convert Matrix to Block
       if(rank0) std::cout<<"Converting A from point to block..."<<std::endl;
-      Ablock = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*A, args.blockSize);
+      {
+        RCP<Time> matrixConversionTime = Teuchos::TimeMonitor::getNewTimer ("Matrix conversion");
+        Teuchos::TimeMonitor matrixConversionTimeMon (*matrixConversionTime);
+        Ablock = Tpetra::convertToBlockCrsMatrix<SC,LO,GO,NO>(*A, args.blockSize);
+      }
 
 
       // Read line information vector
@@ -521,12 +531,6 @@ main (int argc, char* argv[])
     size_t numRows = Ablock->getRowMap()->getGlobalNumElements();
     std::cout<<"Block Matrix has "<<numDomains<<" domains and "<<numRows
              << " rows with an implied block size of "<< ((double)numDomains / (double)numRows)<<std::endl;
-  }
-
-  if(args.useStackedTimer)
-  {
-    stackedTimer = rcp(new StackedTimer("BlockTriDiagonalSolver"));
-    Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
 
   // Initial Guess
@@ -571,8 +575,16 @@ main (int argc, char* argv[])
 
   // Preposition the matrix on device by letting a matvec ensure a transfer
   {
+    Teuchos::TimeMonitor warmupMatrixApplyTimeMon (*warmupMatrixApplyTime);
+
     RCP<MV> temp = rcp(new MV(Ablock->getRangeMap(),1));
     Ablock->apply(*X,*temp);
+  }
+
+  if(args.useStackedTimer)
+  {
+    stackedTimer = rcp(new StackedTimer("BlockTriDiagonalSolver"));
+    Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
 
   // Create Ifpack2 preconditioner.
@@ -625,9 +637,12 @@ main (int argc, char* argv[])
       std::cout<<"  Norm0 = "<<norm0<<" NormF = "<<normF<<std::endl;
     }
 
-
-    X->norm2(normx);
-    B->norm2(normb);
+    {
+      Teuchos::TimeMonitor normTimeMon (*normTime);
+      X->norm2(normx);
+      B->norm2(normb);
+      Kokkos::DefaultExecutionSpace().fence();
+    }
     if(rank0) {
       std::cout<<"Final norm X = "<<normx[0]<<" norm B = "<<normb[0]<<std::endl;
     }

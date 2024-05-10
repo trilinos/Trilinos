@@ -67,7 +67,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   RTOp                  packages/rtop                     PT
   Sacado                packages/sacado                   PT
   MiniTensor            packages/minitensor               PT
-  Epetra                packages/epetra                   PT
+  Epetra                packages/epetra                   ST
   SCOREClion            SCOREC/lion                       ST
   SCORECpcu             SCOREC/pcu                        ST
   SCORECgmi             SCOREC/gmi                        ST
@@ -80,22 +80,22 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   AvatarT               packages/avatart                  EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
-  Triutils              packages/triutils                 PT
-  EpetraExt             packages/epetraext                PT	
+  Triutils              packages/triutils                 ST
+  EpetraExt             packages/epetraext                ST
   Tpetra                packages/tpetra                   PT
   TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PT # Auxiliary software.
   Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT
   Xpetra                packages/xpetra                   PT
-  Isorropia             packages/isorropia                PT
+  Isorropia             packages/isorropia                ST
   Pliris                packages/pliris                   ST
-  AztecOO               packages/aztecoo                  PT
+  AztecOO               packages/aztecoo                  ST
   Galeri                packages/galeri                   PT
-  Amesos                packages/amesos                   PT
+  Amesos                packages/amesos                   ST
   Pamgen                packages/pamgen                   PT
   Zoltan2Core           packages/zoltan2/core             PT
-  Ifpack                packages/ifpack                   PT
-  ML                    packages/ml                       PT
+  Ifpack                packages/ifpack                   ST
+  ML                    packages/ml                       ST
   Belos                 packages/belos                    PT
   ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
@@ -107,7 +107,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   FEI                   packages/fei                      PT
   Teko                  packages/teko                     PT
   TriKota               packages/TriKota                  ST
-  Intrepid              packages/intrepid                 PT
+  Intrepid              packages/intrepid                 ST
   Intrepid2             packages/intrepid2                PT
   Compadre              packages/compadre                 ST
   STK                   packages/stk                      PT # Depends on boost

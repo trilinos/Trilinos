@@ -74,6 +74,6 @@ void machine_params(double *double_epsilon, double *double_max)
   */
   *double_max = max;
 #else
-  *double_max     = DBL_MAX;
+  *double_max = DBL_MAX;
 #endif
 }

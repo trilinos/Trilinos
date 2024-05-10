@@ -273,3 +273,10 @@ template<> inline std::vector< std::vector<long long> >& BlockCrsMatrix::TRowSte
 } //namespace EpetraExt
 
 #endif /* EPETRA_CRSMATRIX_H */
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

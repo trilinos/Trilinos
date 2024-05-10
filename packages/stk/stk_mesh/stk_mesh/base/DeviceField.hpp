@@ -248,7 +248,7 @@ private:
   unsigned get_component_stride() const
   {
     unsigned stride = 1;
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#ifdef STK_USE_DEVICE_MESH
     stride = bucketCapacity;
 #endif
     return stride;
@@ -311,13 +311,14 @@ private:
     return deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, component));
   }
 
-  template <typename MeshIndex> KOKKOS_FUNCTION
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
+  template <typename MeshIndex> STK_DEPRECATED KOKKOS_FUNCTION
   T& get(MeshIndex index, int component,
          const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
   {
-    fieldSyncDebugger.device_stale_access_check(this, index, component, fileName, lineNumber);
     return deviceData(deviceSelectedBucketOffset(index.bucket->bucket_id()), ORDER_INDICES(index.bucketOrd, component));
   }
+#endif
 
   KOKKOS_FUNCTION
   T& operator()(const FastMeshIndex& index, int component,
@@ -327,13 +328,14 @@ private:
     return deviceData(deviceSelectedBucketOffset(index.bucket_id), ORDER_INDICES(index.bucket_ord, component));
   }
 
-  template <typename MeshIndex> KOKKOS_FUNCTION
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
+  template <typename MeshIndex> STK_DEPRECATED KOKKOS_FUNCTION
   T& operator()(const MeshIndex& index, int component,
                 const char * fileName = DEVICE_DEBUG_FILE_NAME, int lineNumber = DEVICE_DEBUG_LINE_NUMBER) const
   {
-    fieldSyncDebugger.device_stale_access_check(this, index, component, fileName, lineNumber);
     return deviceData(deviceSelectedBucketOffset(index.bucket->bucket_id()), ORDER_INDICES(index.bucketOrd, component));
   }
+#endif
 
   KOKKOS_FUNCTION
   EntityFieldData<T> operator()(const FastMeshIndex& index,
@@ -368,9 +370,11 @@ private:
 
   const FieldBase* get_field_base() const { return hostField; }
 
-  void rotate_multistate_data() override
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
+  STK_DEPRECATED void rotate_multistate_data() override
   {
   }
+#endif
 
   void update_bucket_pointer_view() override
   {
@@ -378,6 +382,13 @@ private:
     auto hostFieldEntityRank = hostField->entity_rank();
     const BucketVector& buckets = hostBulk->get_buckets(hostFieldEntityRank, selector);
     construct_field_buckets_pointer_view(buckets);
+  }
+
+  void swap_field_views(NgpFieldBase *other) override
+  {
+    DeviceField<T,NgpDebugger>* deviceFieldT = dynamic_cast<DeviceField<T,NgpDebugger>*>(other);
+    STK_ThrowRequireMsg(deviceFieldT != nullptr, "DeviceField::swap_field_views called with class that can't dynamic_cast to DeviceField<T,NgpDebugger>");
+    swap_views(deviceData, deviceFieldT->deviceData);
   }
 
   KOKKOS_FUNCTION
@@ -521,7 +532,11 @@ private:
     if (buckets.size() > deviceView.extent(0)) {
       deviceView = ViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), impl::allocation_size(buckets.size()));
       if (hostView.extent(0) != deviceView.extent(0)) {
+#if defined STK_USE_DEVICE_MESH && !defined(STK_ENABLE_GPU)
+        hostView = Kokkos::create_mirror(deviceView);
+#else
         hostView = Kokkos::create_mirror_view(deviceView);
+#endif
       }
     }
   }

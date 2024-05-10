@@ -4,16 +4,15 @@
 namespace stk {
 namespace impl {
 
-
-DeletionGroup::DeletionGroup(MPI_Comm comm, int barrier_tag) :
-  m_comm(comm),
-  m_req(MPI_REQUEST_NULL),
-  m_barrierSemanticallyInProgress(false),
-  m_barrierActuallyInProgress(false),
-  m_entryCount(0),
-  m_ibarrier(comm, barrier_tag)
+DeletionGroup::DeletionGroup(MPI_Comm comm, int barrier_tag)
+    : m_comm(comm),
+      m_barrierSemanticallyInProgress(false),
+      m_barrierActuallyInProgress(false),
+      m_entryCount(0),
+      m_ibarrier(comm, barrier_tag)
 #ifndef NDEBUG
-  , m_req_debug(MPI_REQUEST_NULL)
+      ,
+      m_req_debug(MPI_REQUEST_NULL)
 #endif
 {
 #ifndef NDEBUG

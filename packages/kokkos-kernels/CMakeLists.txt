@@ -11,7 +11,7 @@ SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(KokkosKernels_VERSION_MAJOR 4)
 SET(KokkosKernels_VERSION_MINOR 3)
-SET(KokkosKernels_VERSION_PATCH 0)
+SET(KokkosKernels_VERSION_PATCH 1)
 SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
@@ -127,13 +127,13 @@ ELSE()
   IF (NOT KOKKOSKERNELS_HAS_TRILINOS AND NOT KOKKOSKERNELS_HAS_PARENT)
     # This is a standalone build
     FIND_PACKAGE(Kokkos REQUIRED)
-    IF((${Kokkos_VERSION} VERSION_GREATER_EQUAL "4.1.0") AND (${Kokkos_VERSION} VERSION_LESS_EQUAL "4.3.0"))
+    IF((${Kokkos_VERSION} VERSION_GREATER_EQUAL "4.1.0") AND (${Kokkos_VERSION} VERSION_LESS_EQUAL "4.3.1"))
       MESSAGE(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
       IF((${Kokkos_VERSION} VERSION_GREATER "4.3.99"))
         MESSAGE(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
       ENDIF()
     ELSE()
-      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos_VERSION 4.1.0, 4.2.0, 4.2.1 or 4.3.0")
+      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos_VERSION 4.1.0, 4.2.0, 4.2.1, 4.3.0, or 4.3.1")
     ENDIF()
   ENDIF()
 

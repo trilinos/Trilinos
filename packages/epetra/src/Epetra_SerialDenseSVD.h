@@ -524,3 +524,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSVD : public virtual Epetra_Serial
 };
 
 #endif /* _EPETRA_SERIALDENSESVD_H_ */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

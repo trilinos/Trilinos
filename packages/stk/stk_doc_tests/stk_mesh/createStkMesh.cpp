@@ -63,7 +63,7 @@ TEST(StkMeshHowTo, UseStkIO)
     meshReader.add_all_mesh_fields_as_input_fields();
     meshReader.populate_bulk_data();
 
-    unsigned numElems = stk::mesh::count_selected_entities(bulkPtr->mesh_meta_data().universal_part(), bulkPtr->buckets(stk::topology::ELEM_RANK));
+    unsigned numElems = stk::mesh::count_entities(*bulkPtr, stk::topology::ELEM_RANK, bulkPtr->mesh_meta_data().universal_part());
     EXPECT_EQ(512u, numElems);
   }
 }

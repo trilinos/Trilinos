@@ -139,3 +139,10 @@ public:
 #include "Intrepid_HDIV_QUAD_In_FEMDef.hpp"
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

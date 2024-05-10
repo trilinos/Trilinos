@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [4.3.01](https://github.com/kokkos/kokkos/tree/4.3.01)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/4.3.00...4.3.01)
+
+### Backend and Architecture Enhancements:
+
+#### HIP:
+* MI300 support unified memory support [\#6877](https://github.com/kokkos/kokkos/pull/6877)
+
+### Bug Fixes
+* Serial: Use the provided execution space instance in TeamPolicy [\#6951](https://github.com/kokkos/kokkos/pull/6951)
+* `nvcc_wrapper`: bring back support for `--fmad` option [\#6931](https://github.com/kokkos/kokkos/pull/6931)
+* Fix CUDA reduction overflow for `RangePolicy` [\#6578](https://github.com/kokkos/kokkos/pull/6578)
+
 ## [4.3.00](https://github.com/kokkos/kokkos/tree/4.3.00) (2024-03-19)
 [Full Changelog](https://github.com/kokkos/kokkos/compare/4.2.01...4.3.00)
 
@@ -39,7 +52,7 @@
 * Make the OpenACC backend asynchronous [\#6772](https://github.com/kokkos/kokkos/pull/6772)
 
 #### Threads:
-* Add missing broadcast to TeamThreadRange parallel_scan [\#6601](https://github.com/kokkos/kokkos/pull/6446)
+* Add missing broadcast to TeamThreadRange parallel_scan [\#6601](https://github.com/kokkos/kokkos/pull/6601)
 
 #### OpenMP:
 * Improve performance of view initializations and filling with zeros [\#6573](https://github.com/kokkos/kokkos/pull/6573)
@@ -98,7 +111,7 @@
 * HIP,Cuda,OpenMPTarget: Fixup use provided execution space when copying host inaccessible reduction result [\#6777](https://github.com/kokkos/kokkos/pull/6777)
 * Fix typo in `cuda_func_set_attribute[s]_wrapper` preventing proper setting of desired occupancy [\#6786](https://github.com/kokkos/kokkos/pull/6786)
 * Avoid undefined behavior due to conversion between signed and unsigned integers in shift_{right, left}_team_impl [\#6821](https://github.com/kokkos/kokkos/pull/6821)
-* Fix a bug in Makefile.kokkos when using AMD GPU architectures as `AMD_GFXYYY` [\#6892](https://github.com/kokkos/kokkos/pull/6892) 
+* Fix a bug in Makefile.kokkos when using AMD GPU architectures as `AMD_GFXYYY` [\#6892](https://github.com/kokkos/kokkos/pull/6892)
 
 ## [4.2.01](https://github.com/kokkos/kokkos/tree/4.2.01) (2023-12-07)
 [Full Changelog](https://github.com/kokkos/kokkos/compare/4.2.00...4.2.01)

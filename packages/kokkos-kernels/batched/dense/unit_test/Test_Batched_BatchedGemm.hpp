@@ -229,7 +229,11 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
     ASSERT_EQ(batchedGemmHandleCublas.vecLen, 0);
 #endif
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+    // FIXME temporary workaround to run this magma test only if cublas is not
+    // enabled the design of the BatchedGemmHandle currently does not allow
+    // simultanous testing in this way. See issue #2177
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && \
+    !defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
     magma_queue_t magma_queue;
     BatchedGemmHandle batchedGemmHandleMagma(magma_queue, GemmTplAlgos::MAGMA,
                                              0, 0);

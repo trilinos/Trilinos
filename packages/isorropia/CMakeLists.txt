@@ -11,6 +11,7 @@ TRIBITS_PACKAGE(Isorropia)
 #
 
 # ToDo: Add these as you need them!
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 #
 # C) Add the libraries, tests, and examples

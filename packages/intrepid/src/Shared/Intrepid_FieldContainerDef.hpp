@@ -1732,3 +1732,10 @@ std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar, ArrayT
 // End member, friend, and related function definitions of class FieldContainer.
 
 } // end namespace Intrepid
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

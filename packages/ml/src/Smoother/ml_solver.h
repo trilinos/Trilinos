@@ -66,3 +66,10 @@ int ML_Solver_Check( ML_Solver *sol );
 }
 #endif
 #endif
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

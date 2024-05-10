@@ -11,3 +11,6 @@
 
 #cmakedefine HAVE_SHYLU_DDCORE_AMESOS2
 
+
+#cmakedefine ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS
+

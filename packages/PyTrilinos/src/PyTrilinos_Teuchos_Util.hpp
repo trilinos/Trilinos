@@ -400,3 +400,10 @@ parameterListToNewPyDict(const Teuchos::ParameterList & plist,
 }    // Namespace PyTrilinos
 
 #endif // PYTRILINOS_TEUCHOS_UTIL_HPP
+
+#if defined(PyTrilinos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The PyTrilinos package is deprecated"
+#endif
+#endif
+

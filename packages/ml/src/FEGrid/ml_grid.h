@@ -60,3 +60,10 @@ extern int ML_Grid_Create_GridFunc( ML_Grid * );
 
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

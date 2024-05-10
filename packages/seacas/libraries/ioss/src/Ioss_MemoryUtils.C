@@ -14,8 +14,11 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#if defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__MACH__) && (defined(__arm__) || defined(__arm64__))
 #include <mach/arm/kern_return.h>
+#endif
+
+#if defined(__APPLE__) && defined(__MACH__)
 #include <mach/kern_return.h>
 #include <mach/mach_init.h>
 #include <mach/message.h>

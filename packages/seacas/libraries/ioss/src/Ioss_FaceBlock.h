@@ -31,8 +31,6 @@ namespace Ioss {
     FaceBlock(DatabaseIO *io_database, const std::string &my_name, const std::string &face_type,
               int64_t number_faces);
 
-    FaceBlock(const FaceBlock &) = default;
-
     IOSS_NODISCARD std::string type_string() const override { return "FaceBlock"; }
     IOSS_NODISCARD std::string short_type_string() const override { return "faceblock"; }
     IOSS_NODISCARD std::string contains_string() const override { return "Face"; }

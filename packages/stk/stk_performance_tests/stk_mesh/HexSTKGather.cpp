@@ -180,7 +180,7 @@ TEST(hex_gather, hex_gather)
   const double timers[NUM_TIMERS] = {mesh_create_time, gather_time, total_time};
   const char* timer_names[NUM_TIMERS] = {"Create mesh", "Gather", "Total time"};
 
-  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+  stk::print_timers_and_memory(timer_names, timers, NUM_TIMERS);
 
   stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }

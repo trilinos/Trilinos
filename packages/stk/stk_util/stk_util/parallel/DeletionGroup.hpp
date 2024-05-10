@@ -41,13 +41,12 @@ class DeletionGroup
 
 
   private:
-    MPI_Comm m_comm;
-    MPI_Request m_req;
-    bool m_barrierSemanticallyInProgress;
-    bool m_barrierActuallyInProgress;
-    EntryCountInt m_entryCount;
-    std::vector<int> m_tags;
-    IbarrierReplacement m_ibarrier;
+   MPI_Comm m_comm;
+   bool m_barrierSemanticallyInProgress;
+   bool m_barrierActuallyInProgress;
+   EntryCountInt m_entryCount;
+   std::vector<int> m_tags;
+   IbarrierReplacement m_ibarrier;
 
 #ifndef NDEBUG
     MPI_Request m_req_debug;

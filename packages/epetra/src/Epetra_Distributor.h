@@ -204,3 +204,10 @@ class Epetra_Distributor {
   //@}
 };
 #endif /* EPETRA_DISTRIBUTOR_H */
+
+#if defined(Epetra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Epetra package is deprecated"
+#endif
+#endif
+

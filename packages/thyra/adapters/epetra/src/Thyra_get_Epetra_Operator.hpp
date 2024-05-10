@@ -137,3 +137,10 @@ get_Epetra_Operator( const LinearOpBase<double> &op );
 
 
 #endif // THYRA_GET_EPETRA_OPERATOR_HPP
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraAdapters package is deprecated"
+#endif
+#endif
+

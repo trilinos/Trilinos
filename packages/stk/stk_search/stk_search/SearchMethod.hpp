@@ -35,13 +35,31 @@
 #ifndef stk_search_SearchMethod_hpp
 #define stk_search_SearchMethod_hpp
 
-namespace stk { namespace search {
+#include <ostream>
+#include "stk_util/util/ReportHandler.hpp"
+
+namespace stk::search {
 
 enum SearchMethod {
-    KDTREE,
-    MORTON_LINEARIZED_BVH,  // Coming soon!
+  ARBORX,
+  KDTREE,
+  MORTON_LBVH
 };
 
-}}
+inline
+std::ostream& operator<<(std::ostream &out, SearchMethod method)
+{
+  switch (method) {
+    case ARBORX:       out << "ARBORX"; break;
+    case KDTREE:       out << "KDTREE"; break;
+    case MORTON_LBVH:  out << "MORTON_LBVH"; break;
+    default: {
+      STK_ThrowErrorMsg("Unsupported coarse_search method supplied. Choices are: KDTREE, MORTON_LVBH, or ARBORX.");
+    }
+  }
+  return out;
+}
+
+}
 
 #endif

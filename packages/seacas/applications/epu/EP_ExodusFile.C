@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -129,12 +129,23 @@ void Excn::ExodusFile::close_all()
   }
 }
 
-void Excn::ExodusFile::unlink_temporary_files()
+void Excn::ExodusFile::unlink_input_files()
+{
+  fmt::print("\n\tUnlinking {}\n\t  ...", filenames_[0]);
+  for (int p = 0; p < partCount_; p++) {
+    unlink(filenames_[p].c_str());
+  }
+  fmt::print("\n\tUnlinking {}\n\n", filenames_[partCount_ - 1]);
+}
+
+void Excn::ExodusFile::handle_temporary_files(bool delete_them)
 {
   for (int p = 0; p < partCount_; p++) {
     if (fileids_[p] >= 0) {
       ex_close(fileids_[p]);
-      unlink(filenames_[p].c_str());
+      if (delete_them) {
+        unlink(filenames_[p].c_str());
+      }
       fileids_[p] = -1;
     }
   }

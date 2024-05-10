@@ -155,7 +155,7 @@ KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
 
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include <KokkosLapack_Cuda_tpl.hpp>
+#include <KokkosLapack_magma.hpp>
 
 namespace KokkosLapack {
 namespace Impl {

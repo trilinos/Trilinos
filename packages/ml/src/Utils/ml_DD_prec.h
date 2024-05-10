@@ -41,3 +41,10 @@ int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
 #endif /* ifdef ML_DD_PREC_H */
 
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

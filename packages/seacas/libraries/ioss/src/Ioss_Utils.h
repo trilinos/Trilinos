@@ -58,9 +58,7 @@ template <typename T> IOSS_NODISCARD constexpr T *Data(std::vector<T> &vec)
   if (vec.empty()) {
     return nullptr;
   }
-  else {
-    return vec.data();
-  }
+  return vec.data();
 }
 
 template <typename T> IOSS_NODISCARD constexpr const T *Data(const std::vector<T> &vec)
@@ -68,9 +66,7 @@ template <typename T> IOSS_NODISCARD constexpr const T *Data(const std::vector<T
   if (vec.empty()) {
     return nullptr;
   }
-  else {
-    return vec.data();
-  }
+  return vec.data();
 }
 
 template <typename T, size_t N> IOSS_NODISCARD constexpr T *Data(std::array<T, N> &arr)
@@ -88,18 +84,17 @@ namespace Ioss {
    */
   class IOSS_EXPORT Utils
   {
-  public:
-    /**
-     * \defgroup IossStreams Streams used for IOSS output
-     *@{
-     */
     static std::ostream
         *m_outputStream; ///< general informational output (very rare). Default std::cerr
     static std::ostream *m_debugStream;   ///< debug output when requested. Default std::cerr
     static std::ostream *m_warningStream; ///< IOSS warning output. Default std::cerr
     static std::string m_preWarningText;  ///< is a string that prepends all warning message output.
                                           ///< Default is "\nIOSS WARNING: "
-
+  public:
+    /**
+     * \defgroup IossStreams Streams used for IOSS output
+     *@{
+     */
     /** \brief set the stream for all streams (output, debug, and warning) to the specified
      * `out_stream`
      */
@@ -116,6 +111,8 @@ namespace Ioss {
     /** \brief get the output stream.
      */
     IOSS_NODISCARD static std::ostream &get_output_stream();
+
+    IOSS_NODISCARD static std::string &get_warning_text() { return m_preWarningText; }
 
     /** \brief set the output stream to the specified `output_stream`
      */
@@ -188,7 +185,8 @@ namespace Ioss {
       index.back() = sum;
     }
 
-    template <typename T> IOSS_NODISCARD static T find_index_location(T node, const std::vector<T> &index)
+    template <typename T>
+    IOSS_NODISCARD static T find_index_location(T node, const std::vector<T> &index)
     {
       // 0-based node numbering
       // index[p] = first node (0-based) on processor p
@@ -312,7 +310,7 @@ namespace Ioss {
     IOSS_NODISCARD static int log_power_2(uint64_t value);
 
     IOSS_NODISCARD static char **get_name_array(size_t count, int size);
-    static void   delete_name_array(char **names, int count);
+    static void                  delete_name_array(char **names, int count);
 
     /** \brief Get formatted time and date strings.
      *
@@ -327,10 +325,11 @@ namespace Ioss {
     static void time_and_date(char *time_string, char *date_string, size_t length);
 
     IOSS_NODISCARD static std::string decode_filename(const std::string &filename, int processor,
-                                       int num_processors);
+                                                      int num_processors);
     IOSS_NODISCARD static int         get_number(const std::string &suffix);
     IOSS_NODISCARD static int         extract_id(const std::string &name_id);
-    IOSS_NODISCARD static std::string encode_entity_name(const std::string &entity_type, int64_t id);
+    IOSS_NODISCARD static std::string encode_entity_name(const std::string &entity_type,
+                                                         int64_t            id);
 
     /** Return the trailing digits (if any) from `name`
      * `hex20` would return the string `20`
@@ -347,8 +346,8 @@ namespace Ioss {
      * string `1..3, 5..8`
      */
     IOSS_NODISCARD static std::string format_id_list(const std::vector<size_t> &ids,
-						    const std::string         &rng_sep = " to ",
-						    const std::string         &seq_sep = ", ");
+                                                     const std::string         &rng_sep = " to ",
+                                                     const std::string         &seq_sep = ", ");
 
     /** \brief Convert a string to lower case, and convert spaces to `_`.
      *
@@ -403,7 +402,8 @@ namespace Ioss {
      *  \param[in] spatial The spatial dimension of the element.
      *  \returns The Ioss-formatted element name.
      */
-    IOSS_NODISCARD static std::string fixup_type(const std::string &base, int nodes_per_element, int spatial);
+    IOSS_NODISCARD static std::string fixup_type(const std::string &base, int nodes_per_element,
+                                                 int spatial);
 
     /** \brief Uppercase the first letter of the string
      *
@@ -472,8 +472,9 @@ namespace Ioss {
      *  \param[in] working_directory the path to which the relative_filename path is appended.
      *  \returns The full path (working_directory + relative_filename)
      */
-    IOSS_NODISCARD static std::string local_filename(const std::string &relative_filename, const std::string &type,
-                                      const std::string &working_directory);
+    IOSS_NODISCARD static std::string local_filename(const std::string &relative_filename,
+                                                     const std::string &type,
+                                                     const std::string &working_directory);
 
     static void get_fields(int64_t entity_count, char **names, int num_names,
                            Ioss::Field::RoleType fld_role, const DatabaseIO *db, int *local_truth,
@@ -521,7 +522,10 @@ namespace Ioss {
     static void input_file(const std::string &file_name, std::vector<std::string> *lines,
                            size_t max_line_length = 0);
 
-    template <class T> IOSS_NODISCARD static std::string to_string(const T &t) { return std::to_string(t); }
+    template <class T> IOSS_NODISCARD static std::string to_string(const T &t)
+    {
+      return std::to_string(t);
+    }
 
     //! \brief Tries to shorten long variable names to an acceptable
     //! length, and converts to lowercase and spaces to `_`
@@ -541,8 +545,9 @@ namespace Ioss {
     //! characters and append a 2 character hash+separator.
     //!
     //! It also converts name to lowercase and converts spaces to `_`
-    IOSS_NODISCARD static std::string variable_name_kluge(const std::string &name, size_t component_count,
-                                           size_t copies, size_t max_var_len);
+    IOSS_NODISCARD static std::string variable_name_kluge(const std::string &name,
+                                                          size_t component_count, size_t copies,
+                                                          size_t max_var_len);
 
     IOSS_NODISCARD static std::string shape_to_string(const Ioss::ElementShape &shape);
 
@@ -600,16 +605,16 @@ namespace Ioss {
     }
   };
 
-  inline std::ostream &OUTPUT() { return *Utils::m_outputStream; }
+  inline std::ostream &OUTPUT() { return Utils::get_output_stream(); }
 
-  inline std::ostream &DebugOut() { return *Utils::m_debugStream; }
+  inline std::ostream &DebugOut() { return Utils::get_debug_stream(); }
 
   inline std::ostream &WarnOut(bool output_prewarning = true)
   {
     if (output_prewarning) {
-      *Utils::m_warningStream << Utils::m_preWarningText;
+      Utils::get_warning_stream() << Utils::get_warning_text();
     }
-    return *Utils::m_warningStream;
+    return Utils::get_warning_stream();
   }
 
 } // namespace Ioss

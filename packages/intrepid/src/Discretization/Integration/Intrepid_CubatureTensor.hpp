@@ -156,3 +156,10 @@ class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight> 
 #include <Intrepid_CubatureTensorDef.hpp>
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

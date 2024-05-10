@@ -638,7 +638,7 @@ initialize ()
       int block_size = List_.get<int>("partitioner: block size");
       TEUCHOS_TEST_FOR_EXCEPT_MSG
         (block_size == -1, "A pointwise matrix and block_size = -1 were given as inputs.");
-      A_bcrs = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size);
+      A_bcrs = Tpetra::convertToBlockCrsMatrix(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, false);
       A_ = A_bcrs;
       hasBlockCrsMatrix_ = true;
       Kokkos::DefaultExecutionSpace().fence();

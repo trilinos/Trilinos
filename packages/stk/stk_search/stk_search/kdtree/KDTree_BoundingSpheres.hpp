@@ -38,7 +38,7 @@
 #include <cmath>
 #include <Kokkos_Core.hpp>
 #include <stk_search/Sphere.hpp>
-#include <stk_search/KDTree.hpp>
+#include <stk_search/kdtree/KDTree.hpp>
 
 namespace stk {
   namespace search {

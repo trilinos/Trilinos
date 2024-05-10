@@ -594,3 +594,10 @@ TPermutation<T, int_type>::operator()( typename TPermutation<T, int_type>::Input
 } // namespace EpetraExt
 
 #endif //EpetraExt_PERMUTATION_IMPL_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

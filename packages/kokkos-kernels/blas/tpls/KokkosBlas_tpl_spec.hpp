@@ -214,21 +214,4 @@ inline rocblas_operation trans_mode_kk_to_rocblas(const char kkMode[]) {
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
-// If LAPACK TPL is enabled, it is preferred over magma's LAPACK
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include "magma_v2.h"
-
-namespace KokkosBlas {
-namespace Impl {
-
-struct MagmaSingleton {
-  MagmaSingleton();
-
-  static MagmaSingleton& singleton();
-};
-
-}  // namespace Impl
-}  // namespace KokkosBlas
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
-
 #endif  // KOKKOSBLAS_TPL_SPEC_HPP_

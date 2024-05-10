@@ -475,7 +475,7 @@ void MeshModification::delete_shared_entities_which_are_no_longer_in_owned_closu
   {
     Entity entity = i->entity;
     if (m_bulkData.is_valid(entity) && !m_bulkData.owned_closure(entity)) {
-      if (m_bulkData.in_shared(entity)) {
+      if (i->entity_comm != -1 && m_bulkData.in_shared(entity)) {
         destroy_dependent_ghosts(entity, entitiesToRemoveFromSharing, auraEntitiesToDestroy);
       }
     }

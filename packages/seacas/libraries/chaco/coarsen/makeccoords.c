@@ -14,11 +14,11 @@
 
 void makeccoords(struct vtx_data **graph,     /* array of vtx data for graph */
                  int               cnvtxs,    /* number of vertices in coarse graph */
-                 int *             cv2v_ptrs, /* vtxs corresponding to each cvtx */
-                 int *             cv2v_vals, /* indices into cv2v_vals */
+                 int              *cv2v_ptrs, /* vtxs corresponding to each cvtx */
+                 int              *cv2v_vals, /* indices into cv2v_vals */
                  int               igeom,     /* dimensions of geometric data */
-                 float **          coords,    /* coordinates for vertices */
-                 float **          ccoords    /* coordinates for coarsened vertices */
+                 float           **coords,    /* coordinates for vertices */
+                 float           **ccoords    /* coordinates for coarsened vertices */
 )
 {
   double mass; /* total mass of merged vertices */

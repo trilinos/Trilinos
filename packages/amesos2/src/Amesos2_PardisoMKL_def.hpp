@@ -291,6 +291,7 @@ namespace Amesos2 {
 
     RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
+    // Fill-in reordering: 0 = minimum degree, 2 = METIS 4.0.1 (default), 3 = METIS 5.1, 4 = AMD,
     if( parameterList->isParameter("IPARM(2)") )
     {
       RCP<const ParameterEntryValidator> fillin_validator = valid_params->getEntry("IPARM(2)").validator();
@@ -298,6 +299,7 @@ namespace Amesos2 {
       iparm_[1] = getIntegralValue<int>(*parameterList, "IPARM(2)");
     }
 
+    // Iterative-direct algorithm
     if( parameterList->isParameter("IPARM(4)") )
     {
       RCP<const ParameterEntryValidator> prec_validator = valid_params->getEntry("IPARM(4)").validator();
@@ -305,13 +307,15 @@ namespace Amesos2 {
       iparm_[3] = getIntegralValue<int>(*parameterList, "IPARM(4)");
     }
    
+    // Max numbers of iterative refinement steps
     if( parameterList->isParameter("IPARM(8)") )
     {
       RCP<const ParameterEntryValidator> refine_validator = valid_params->getEntry("IPARM(8)").validator();
       parameterList->getEntry("IPARM(8)").setValidator(refine_validator);
       iparm_[7] = getIntegralValue<int>(*parameterList, "IPARM(8)");
     }
-   
+
+    // Perturb the pivot elements
     if( parameterList->isParameter("IPARM(10)") )
     {
       RCP<const ParameterEntryValidator> pivot_perturb_validator = valid_params->getEntry("IPARM(10)").validator();
@@ -323,6 +327,7 @@ namespace Amesos2 {
     // Then solver specific options can override this.
     iparm_[11] = this->control_.useTranspose_ ? 2 : 0;
     
+    // Normal solve (0), or a transpose solve (1)
     if( parameterList->isParameter("IPARM(12)") )
     {
       RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("IPARM(12)").validator();
@@ -330,6 +335,15 @@ namespace Amesos2 {
       iparm_[11] = getIntegralValue<int>(*parameterList, "IPARM(12)");
     }
 
+    // (Non-)symmetric matchings : detault 1 for nonsymmetric and 0 for symmetric matrix (default is nonsymmetric)
+    if( parameterList->isParameter("IPARM(13)") )
+    {
+      RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("IPARM(13)").validator();
+      parameterList->getEntry("IPARM(13)").setValidator(trans_validator);
+      iparm_[12] = getIntegralValue<int>(*parameterList, "IPARM(13)");
+    }
+
+    // Output: Number of nonzeros in the factor LU
     if( parameterList->isParameter("IPARM(18)") )
     {
       RCP<const ParameterEntryValidator> report_validator = valid_params->getEntry("IPARM(18)").validator();
@@ -337,6 +351,7 @@ namespace Amesos2 {
       iparm_[17] = getIntegralValue<int>(*parameterList, "IPARM(18)");
     }
    
+    // Scheduling method for the parallel numerical factorization
     if( parameterList->isParameter("IPARM(24)") )
     {
       RCP<const ParameterEntryValidator> par_fact_validator = valid_params->getEntry("IPARM(24)").validator();
@@ -344,6 +359,7 @@ namespace Amesos2 {
       iparm_[23] = getIntegralValue<int>(*parameterList, "IPARM(24)");
     }
   
+    // Parallelization scheme for the forward and backward solv
     if( parameterList->isParameter("IPARM(25)") )
     {
       RCP<const ParameterEntryValidator> par_fbsolve_validator = valid_params->getEntry("IPARM(25)").validator();
@@ -351,6 +367,7 @@ namespace Amesos2 {
       iparm_[24] = getIntegralValue<int>(*parameterList, "IPARM(25)");
     } 
 
+    // Graph compression scheme for METIS.
     if( parameterList->isParameter("IPARM(60)") )
     {
       RCP<const ParameterEntryValidator> ooc_validator = valid_params->getEntry("IPARM(60)").validator();
@@ -433,7 +450,14 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
                                       "Transposed"),
                                       tuple<int>(0, 1, 2),
                                       pl.getRawPtr());
-    
+ 
+    setStringToIntegralParameter<int>("IPARM(13)", toString(iparm_temp[12]),
+                                      "Use weighted matching",
+                                      tuple<string>("0", "1"),
+                                      tuple<string>("No matching", "Use matching"),
+                                      tuple<int>(0, 1),
+                                      pl.getRawPtr());
+
     setStringToIntegralParameter<int>("IPARM(24)", toString(iparm_temp[23]),
                                       "Parallel factorization control",
                                       tuple<string>("0", "1"),

@@ -26,6 +26,8 @@ namespace Ioss {
 
   class IOSS_EXPORT Registry
   {
+    friend class VariableType;
+
   public:
     void           insert(const Ioss::VTM_ValuePair &value, bool delete_me);
     IOSS_NODISCARD VariableTypeMap::iterator begin() { return m_registry.begin(); }
@@ -36,11 +38,11 @@ namespace Ioss {
     }
 
     ~Registry();
-    std::map<std::string, std::string> customFieldTypes;
 
   private:
-    Ioss::VariableTypeMap             m_registry;
-    std::vector<Ioss::VariableType *> m_deleteThese;
+    std::map<std::string, std::string> customFieldTypes;
+    Ioss::VariableTypeMap              m_registry;
+    std::vector<Ioss::VariableType *>  m_deleteThese;
   };
 
   struct IOSS_EXPORT Suffix

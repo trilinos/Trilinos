@@ -153,7 +153,7 @@ TEST( hex_refine, hex_refine)
   const double timers[NUM_TIMERS] = {create_time, refine_time, total_time};
   const char* timer_names[NUM_TIMERS] = {"Create mesh", "Refine", "Total time"};
 
-  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
+  stk::print_timers_and_memory(timer_names, timers, NUM_TIMERS);
 
   stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
 }

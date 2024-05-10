@@ -1,6 +1,29 @@
 
 ###############################################################################
 #                                                                             #
+# Trilinos Release 16.0 Release Notes                      TBD May/June, 2024 #
+#                                                                             #
+###############################################################################
+
+Framework
+
+  - Marked all deprecated packages as 'Secondary Tested'.
+  - Reset default for `Trilinos_ENABLE_SECONDARY_TESTED_CODE` to `OFF`.
+    This will cause the previously-mentioned deprecated packages to NOT be
+    automatically enabled to help guide users away from them.  The old
+    behavior can be restored by setting the variable back to `ON`, but note
+    that the recommended best practice is to explicitly enable packages that
+    the user is depending on (e.g. if you depend on ThyraEpetraAdapters, enable
+    that explicitly instead of Thyra and Epetra and allowing TriBITS to enable
+    the adapters).
+  - Added deprecation warnings to all deprecated packages.  The warnings are able
+    to be disabled via the `Trilinos_SHOW_DEPRECATED_WARNINGS` option (this is
+    also available as a per-package option).  These warnings are intended to
+    notify users that pacakge capability they are using will be removed in upcoming
+    releases.
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 15.1.0 Release Notes                     February 26, 2024 #
 #                                                                             #
 ###############################################################################

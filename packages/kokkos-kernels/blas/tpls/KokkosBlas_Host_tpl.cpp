@@ -295,10 +295,10 @@ void F77_BLAS_MANGLE(dsyr, DSYR)(const char*, KK_INT*, const double*,
 
 void F77_BLAS_MANGLE(cher, CHER)(const char*, KK_INT*, const float*,
                                  const std::complex<float>*, KK_INT*,
-                                 std::complex<float>*, KK_INT*);
+                                 /* */ std::complex<float>*, KK_INT*);
 void F77_BLAS_MANGLE(zher, ZHER)(const char*, KK_INT*, const double*,
                                  const std::complex<double>*, KK_INT*,
-                                 std::complex<double>*, KK_INT*);
+                                 /* */ std::complex<double>*, KK_INT*);
 
 ///
 /// Syr2
@@ -322,12 +322,12 @@ void F77_BLAS_MANGLE(cher2, CHER2)(const char*, KK_INT*,
                                    const std::complex<float>*,
                                    const std::complex<float>*, KK_INT*,
                                    const std::complex<float>*, KK_INT*,
-                                   std::complex<float>*, KK_INT*);
+                                   /* */ std::complex<float>*, KK_INT*);
 void F77_BLAS_MANGLE(zher2, ZHER2)(const char*, KK_INT*,
                                    const std::complex<double>*,
                                    const std::complex<double>*, KK_INT*,
                                    const std::complex<double>*, KK_INT*,
-                                   std::complex<double>*, KK_INT*);
+                                   /* */ std::complex<double>*, KK_INT*);
 
 ///
 /// Trsv
@@ -901,14 +901,14 @@ void HostBlas<std::complex<float> >::gerc(
 }
 template <>
 template <>
-void HostBlas<std::complex<float> >::cher<float>(
+void HostBlas<std::complex<float> >::her<float>(
     const char uplo, KK_INT n, const float alpha, const std::complex<float>* x,
     KK_INT incx, std::complex<float>* a, KK_INT lda) {
   F77_FUNC_CHER(&uplo, &n, &alpha, (const std::complex<float>*)x, &incx,
                 (std::complex<float>*)a, &lda);
 }
 template <>
-void HostBlas<std::complex<float> >::cher2(
+void HostBlas<std::complex<float> >::her2(
     const char uplo, KK_INT n, const std::complex<float> alpha,
     const std::complex<float>* x, KK_INT incx, const std::complex<float>* y,
     KK_INT incy, std::complex<float>* a, KK_INT lda) {
@@ -1069,15 +1069,17 @@ void HostBlas<std::complex<double> >::gerc(
 }
 template <>
 template <>
-void HostBlas<std::complex<double> >::zher<double>(
-    const char uplo, KK_INT n, const double alpha,
-    const std::complex<double>* x, KK_INT incx, std::complex<double>* a,
-    KK_INT lda) {
+void HostBlas<std::complex<double> >::her<double>(const char uplo, KK_INT n,
+                                                  const double alpha,
+                                                  const std::complex<double>* x,
+                                                  KK_INT incx,
+                                                  std::complex<double>* a,
+                                                  KK_INT lda) {
   F77_FUNC_ZHER(&uplo, &n, &alpha, (const std::complex<double>*)x, &incx,
                 (std::complex<double>*)a, &lda);
 }
 template <>
-void HostBlas<std::complex<double> >::zher2(
+void HostBlas<std::complex<double> >::her2(
     const char uplo, KK_INT n, const std::complex<double> alpha,
     const std::complex<double>* x, KK_INT incx, const std::complex<double>* y,
     KK_INT incy, std::complex<double>* a, KK_INT lda) {

@@ -184,7 +184,9 @@ struct TrsvWrap {
   static void lowerTriSolveCsrUnitDiag(RangeMultiVectorType X,
                                        const CrsMatrixType& A,
                                        DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
     const lno_t numVecs                      = X.extent(1);
@@ -211,7 +213,9 @@ struct TrsvWrap {
 
   static void lowerTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
                                DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
     const lno_t numVecs                      = X.extent(1);
@@ -254,7 +258,9 @@ struct TrsvWrap {
   static void upperTriSolveCsrUnitDiag(RangeMultiVectorType X,
                                        const CrsMatrixType& A,
                                        DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
     const lno_t numVecs                      = X.extent(1);
@@ -304,7 +310,9 @@ struct TrsvWrap {
 
   static void upperTriSolveCsr(RangeMultiVectorType X, const CrsMatrixType& A,
                                DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
     const lno_t numVecs                      = X.extent(1);
@@ -371,7 +379,9 @@ struct TrsvWrap {
   static void upperTriSolveCscUnitDiag(RangeMultiVectorType X,
                                        const CrsMatrixType& A,
                                        DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
@@ -422,7 +432,9 @@ struct TrsvWrap {
 
   static void upperTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A,
                                DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
@@ -481,7 +493,9 @@ struct TrsvWrap {
   static void lowerTriSolveCscUnitDiag(RangeMultiVectorType X,
                                        const CrsMatrixType& A,
                                        DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
@@ -510,7 +524,9 @@ struct TrsvWrap {
   static void upperTriSolveCscUnitDiagConj(RangeMultiVectorType X,
                                            const CrsMatrixType& A,
                                            DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
@@ -562,7 +578,9 @@ struct TrsvWrap {
   static void upperTriSolveCscConj(RangeMultiVectorType X,
                                    const CrsMatrixType& A,
                                    DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
@@ -620,7 +638,9 @@ struct TrsvWrap {
 
   static void lowerTriSolveCsc(RangeMultiVectorType X, const CrsMatrixType& A,
                                DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
@@ -657,7 +677,9 @@ struct TrsvWrap {
   static void lowerTriSolveCscUnitDiagConj(RangeMultiVectorType X,
                                            const CrsMatrixType& A,
                                            DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;
@@ -686,7 +708,9 @@ struct TrsvWrap {
   static void lowerTriSolveCscConj(RangeMultiVectorType X,
                                    const CrsMatrixType& A,
                                    DomainMultiVectorType Y) {
-    const lno_t numRows                      = A.numRows();
+    const lno_t numRows = A.numRows();
+    if (numRows == 0) return;
+
     const lno_t numCols                      = A.numCols();
     const lno_t numPointRows                 = A.numPointRows();
     const lno_t block_size                   = numPointRows / numRows;

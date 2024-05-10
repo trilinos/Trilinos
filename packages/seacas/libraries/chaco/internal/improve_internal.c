@@ -13,17 +13,17 @@
 
 int improve_internal(struct vtx_data **graph,       /* graph data structure */
                      int               nvtxs,       /* number of vertices in graph */
-                     int *             assign,      /* current assignment */
-                     double *          goal,        /* desired set sizes */
-                     struct bidint *   int_list,    /* sorted list of internal vtx values */
-                     struct bidint *   set_list,    /* headers of vtx_elems lists */
-                     struct bidint *   vtx_elems,   /* lists of vtxs in each set */
+                     int              *assign,      /* current assignment */
+                     double           *goal,        /* desired set sizes */
+                     struct bidint    *int_list,    /* sorted list of internal vtx values */
+                     struct bidint    *set_list,    /* headers of vtx_elems lists */
+                     struct bidint    *vtx_elems,   /* lists of vtxs in each set */
                      int               set1,        /* set to try to improve */
-                     int *             locked,      /* indicates vertices not allowed to move */
-                     int *             nlocked,     /* number of vertices that can't move */
+                     int              *locked,      /* indicates vertices not allowed to move */
+                     int              *nlocked,     /* number of vertices that can't move */
                      int               using_ewgts, /* are edge weights being used? */
                      int               vwgt_max,    /* largest vertex weight */
-                     int *             total_vwgt   /* total vertex weight in each set */
+                     int              *total_vwgt   /* total vertex weight in each set */
 )
 {
   struct bidint *move_list;          /* list of vertices changing sets */

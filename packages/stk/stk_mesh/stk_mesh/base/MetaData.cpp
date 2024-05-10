@@ -42,7 +42,6 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceMin, etc
-#include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include "Shards_BasicTopologies.hpp"   // for getCellTopologyData, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -787,10 +786,11 @@ public:
       }
     });
 
+    m_errStream.str(""); //clear
     int ok = unpack_verify(comm.recv_buffer());
     stk::all_reduce(m_parallelMachine, ReduceMin<1>(&ok));
 
-    STK_ThrowRequireMsg(ok, "[p" << m_pRank << "] MetaData parallel consistency failure");
+    STK_ThrowRequireMsg(ok, "[p" << m_pRank << "] MetaData parallel consistency failure: "<<m_errStream.str());
   }
 
   virtual void pack(CommBuffer & b) = 0;
@@ -800,6 +800,7 @@ protected:
   const MetaData & m_meta;
   ParallelMachine m_parallelMachine;
   int m_pRank;
+  std::ostringstream m_errStream;
 };
 
 class VerifyPartConsistency : public VerifyConsistency
@@ -888,7 +889,7 @@ public:
   {
     bool localPartValid = true;
     if (localPart == nullptr) {
-      std::cerr << "[p" << m_pRank << "] Received extra Part (" << m_rootPartName << ") from root processor" << std::endl;
+      m_errStream << "[p" << m_pRank << "] Received extra Part (" << m_rootPartName << ") from root processor" << std::endl;
       localPartValid = false;
     }
     return localPartValid;
@@ -902,7 +903,7 @@ public:
     bool nameMatches = nameLengthMatches && (strncmp(localPartNamePtr, m_rootPartName, localPartNameLen-1) == 0);
 
     if (!nameMatches) {
-      std::cerr << "[p" << m_pRank << "] Part name (" << localPart->name()
+      m_errStream << "[p" << m_pRank << "] Part name (" << localPart->name()
                 << ") does not match Part name (" << m_rootPartName << ") on root processor" << std::endl;
     }
     return nameMatches;
@@ -914,7 +915,7 @@ public:
     bool partRankMatches = (localPartRank == m_rootPartRank);
 
     if (!partRankMatches) {
-      std::cerr << "[p" << m_pRank << "] Part " << localPart->name() << " rank (" << localPartRank
+      m_errStream << "[p" << m_pRank << "] Part " << localPart->name() << " rank (" << localPartRank
                 << ") does not match Part " << m_rootPartName << " rank (" << m_rootPartRank << ") on root processor" << std::endl;
     }
     return partRankMatches;
@@ -926,7 +927,7 @@ public:
     bool partTopologyMatches = (localPartTopology == m_rootPartTopology);
 
     if (!partTopologyMatches) {
-      std::cerr << "[p" << m_pRank << "] Part " << localPart->name() << " topology (" << localPartTopology
+      m_errStream << "[p" << m_pRank << "] Part " << localPart->name() << " topology (" << localPartTopology
                 << ") does not match Part " << m_rootPartName << " topology (" << stk::topology(m_rootPartTopology)
                 << ") on root processor" << std::endl;
     }
@@ -946,15 +947,15 @@ public:
     }
 
     if (!subsetMatches) {
-      std::cerr << "[p" << m_pRank << "] Part " << localPart->name() << " subset ordinals (";
+      m_errStream << "[p" << m_pRank << "] Part " << localPart->name() << " subset ordinals (";
       for (const stk::mesh::Part * subsetPart : localSubsetParts) {
-        std::cerr << subsetPart->mesh_meta_data_ordinal() << " ";
+        m_errStream << subsetPart->mesh_meta_data_ordinal() << " ";
       }
-      std::cerr << ") does not match Part " << m_rootPartName << " subset ordinals (";
+      m_errStream << ") does not match Part " << m_rootPartName << " subset ordinals (";
       for (const unsigned rootPartSubsetOrdinal : m_rootPartSubsetOrdinals) {
-        std::cerr << rootPartSubsetOrdinal << " ";
+        m_errStream << rootPartSubsetOrdinal << " ";
       }
-      std::cerr << ") on root processor" << std::endl;
+      m_errStream << ") on root processor" << std::endl;
     }
 
     return subsetMatches;
@@ -965,7 +966,7 @@ public:
     bool noExtraParts = true;
     for (const stk::mesh::Part * part : unprocessedParts) {
       if (!stk::mesh::impl::is_internal_part(*part)) {
-        std::cerr << "[p" << m_pRank << "] Have extra Part (" << part->name() << ") that does not exist on root processor" << std::endl;
+        m_errStream << "[p" << m_pRank << "] Have extra Part (" << part->name() << ") that does not exist on root processor" << std::endl;
         noExtraParts = false;
       }
     }
@@ -1061,7 +1062,7 @@ public:
   {
     bool localFieldValid = true;
     if (localField == nullptr) {
-      std::cerr << "[p" << m_pRank << "] Received extra Field (" << m_rootFieldName << ") from root processor" << std::endl;
+      m_errStream << "[p" << m_pRank << "] Received extra Field (" << m_rootFieldName << ") from root processor" << std::endl;
       localFieldValid = false;
     }
     return localFieldValid;
@@ -1075,7 +1076,7 @@ public:
     bool fieldNameMatches = fieldNameLengthMatches && (strncmp(localFieldNamePtr, m_rootFieldName, localFieldNameLen-1) == 0);
 
     if (!fieldNameMatches) {
-      std::cerr << "[p" << m_pRank << "] Field name (" << localField->name()
+      m_errStream << "[p" << m_pRank << "] Field name (" << localField->name()
                 << ") does not match Field name (" << m_rootFieldName << ") on root processor" << std::endl;
     }
     return fieldNameMatches;
@@ -1087,7 +1088,7 @@ public:
     bool fieldRankMatches = (localFieldRank == m_rootFieldRank);
 
     if (!fieldRankMatches) {
-      std::cerr << "[p" << m_pRank << "] Field " << localField->name() << " rank (" << localFieldRank
+      m_errStream << "[p" << m_pRank << "] Field " << localField->name() << " rank (" << localFieldRank
                 << ") does not match Field " << m_rootFieldName << " rank (" << m_rootFieldRank << ") on root processor" << std::endl;
     }
     return fieldRankMatches;
@@ -1099,7 +1100,7 @@ public:
     bool fieldNumberOfStatesMatches = (localNumberOfStates == m_rootFieldNumberOfStates);
 
     if (!fieldNumberOfStatesMatches) {
-      std::cerr << "[p" << m_pRank << "] Field " << localField->name() << " number of states (" << localNumberOfStates
+      m_errStream << "[p" << m_pRank << "] Field " << localField->name() << " number of states (" << localNumberOfStates
                 << ") does not match Field " << m_rootFieldName << " number of states (" << m_rootFieldNumberOfStates
                 << ") on root processor" << std::endl;
     }
@@ -1110,7 +1111,7 @@ public:
   {
     bool noExtraFields = true;
     for (const stk::mesh::FieldBase * field : unprocessedFields) {
-      std::cerr << "[p" << m_pRank << "] Have extra Field (" << field->name() << ") that does not exist on root processor" << std::endl;
+      m_errStream << "[p" << m_pRank << "] Have extra Field (" << field->name() << ") that does not exist on root processor" << std::endl;
       noExtraFields = false;
     }
     return noExtraFields;

@@ -38,7 +38,8 @@
 #include <iomanip>                      // for operator<<
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <string>                       // for string
 #include <vector>                       // for vector
@@ -84,20 +85,12 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldNegativeTime)
     //+ The name of the field on the database will be "temp"
     stkIo.add_field(fh, temperature, "temp");
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(),
-                            stk::topology::NODE_RANK, nodes);
-
     // Add three steps to the database
     // For each step, the value of the field is the value 'time'
     for (int i=-2; i <= 0; i++) {
       double time = i;
 
-      for(size_t inode=0; inode<nodes.size(); inode++) {
-        double *fieldData =
-            stk::mesh::field_data(temperature, nodes[inode]);
-        *fieldData = time;
-      }
+      stk::mesh::field_fill(time, temperature);
 
       stkIo.begin_output_step(fh, time);
       stkIo.write_defined_output_fields(fh);
@@ -125,9 +118,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldNegativeTime)
 
     stkIo.populate_bulk_data();
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
-
     // The name of the field on the database is "temp"
     stkIo.add_input_field(stk::io::MeshField(temperature, "temp",
                                              stk::io::MeshField::LINEAR_INTERPOLATION));
@@ -141,10 +131,11 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldNegativeTime)
       // ============================================================
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 'time'
-      for(size_t j=0; j<nodes.size(); j++) {
-        double *fieldData = stk::mesh::field_data(temperature, nodes[j]);
-        EXPECT_DOUBLE_EQ(time, *fieldData);
-      }
+      stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
+        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+          double *fieldData = stk::mesh::field_data(temperature, node);
+          EXPECT_DOUBLE_EQ(time, *fieldData);
+        });
     }
     //-END
   }

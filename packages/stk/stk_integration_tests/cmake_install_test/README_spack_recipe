@@ -1,0 +1,34 @@
+
+# recipe for creating a spack env and building trilinos/stk,
+# then building a stk-test-app using the spack-installed trilinos/stk
+
+mkdir -p /fgs/william/sandbox_spack
+cd /fgs/william/sandbox_spack
+
+git clone --depth=100 --branch=releases/v0.21 https://github.com/spack/spack.git
+source ./spack/share/spack/setup-env.sh
+
+spack env create mystkenv
+spack env activate mystkenv
+#want to add gcc 10.2.0 compiler
+module load sierra-devel
+spack compiler add
+#optionally remove old compilers that spack found
+spack compiler remove gcc@4.8.5
+spack compiler remove gcc@4.4.7
+
+spack add trilinos@master +exodus+zoltan2+stk
+
+spack concretize -f
+spack install
+
+spack load cmake
+spack load openmpi
+
+cp -r /fgs/william/code/stk/stk_integration_tests/cmake_install_test/stk_test_app .
+cd stk_test_app
+source run_cmake_in_spack_env
+#note: the run_cmake_in_spack_env script also did 'cd build' so you're now in build subdir
+make
+mpirun --np 4 ./test_stk_app
+

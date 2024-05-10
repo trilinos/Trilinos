@@ -12,8 +12,6 @@
 
 #include "ioss_export.h"
 
-// STL Includes
-
 namespace Ioss {
   class IOSS_EXPORT Sphere : public Ioss::ElementTopology
   {
@@ -22,7 +20,6 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    Sphere(const Sphere &) = delete;
 
     IOSS_NODISCARD ElementShape shape() const override { return ElementShape::SPHERE; }
     IOSS_NODISCARD int          spatial_dimension() const override;
@@ -46,8 +43,6 @@ namespace Ioss {
 
     IOSS_NODISCARD Ioss::ElementTopology *face_type(int face_number = 0) const override;
     IOSS_NODISCARD Ioss::ElementTopology *edge_type(int edge_number = 0) const override;
-
-    IOSS_NODISCARD const std::string &base_topology_permutation_name() const override;
 
   protected:
     Sphere();

@@ -300,3 +300,10 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
 #endif
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

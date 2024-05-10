@@ -68,3 +68,10 @@ typedef struct
 } shylu_config;
 
 #endif // SHYLU_CONFIG_H
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+

@@ -144,3 +144,6 @@
 
 /* Define to rpl_malloc if the replacement function should be used. */
 #cmakedefine malloc
+
+#cmakedefine AztecOO_SHOW_DEPRECATED_WARNINGS
+

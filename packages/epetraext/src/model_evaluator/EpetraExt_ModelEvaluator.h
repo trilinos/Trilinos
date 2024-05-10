@@ -2378,3 +2378,10 @@ void ModelEvaluator::OutArgsSetup::set_DgDp_mp_properties( int j, int l, const D
 } // namespace EpetraExt
 
 #endif // EPETRA_EXT_MODEL_EVALUATOR_HPP
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

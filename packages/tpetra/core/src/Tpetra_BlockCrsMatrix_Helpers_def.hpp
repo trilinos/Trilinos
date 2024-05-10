@@ -293,7 +293,7 @@ namespace Tpetra {
 
   template<class Scalar, class LO, class GO, class Node>
   Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> >
-  getBlockCrsGraph(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize)
+  getBlockCrsGraph(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_LID)
   {
 
       /*
@@ -342,7 +342,41 @@ namespace Tpetra {
 
       const offset_type bs2 = blockSize * blockSize;
 
-      {
+      if (use_LID) {
+        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillCrsGraph");
+        auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
+        auto pointRowptr = pointLocalGraph.row_map;
+        auto pointColind = pointLocalGraph.entries;
+
+        TEUCHOS_TEST_FOR_EXCEPTION(pointColind.extent(0) % bs2 != 0,
+          std::runtime_error, "Tpetra::getBlockCrsGraph: "
+          "local number of non zero entries is not a multiple of blockSize^2 ");
+
+        LO block_rows = pointRowptr.extent(0) == 0 ? 0 : (pointRowptr.extent(0)-1)/blockSize;
+        row_map_type blockRowptr("blockRowptr", block_rows+1);
+        entries_type blockColind("blockColind", pointColind.extent(0)/(bs2));
+
+        Kokkos::parallel_for("fillMesh",range_type(0,block_rows), KOKKOS_LAMBDA(const LO i) {
+
+          const LO offset_b = pointRowptr(i*blockSize)/bs2;
+          const LO offset_b_max = pointRowptr((i+1)*blockSize)/bs2;
+
+          if (i==block_rows-1)
+            blockRowptr(i+1) = offset_b_max;
+          blockRowptr(i) = offset_b;
+
+          const LO offset_p = pointRowptr(i*blockSize);
+
+          for (LO k=0; k<offset_b_max-offset_b; ++k) {
+            blockColind(offset_b + k) = pointColind(offset_p + k * blockSize)/blockSize;
+          }
+        });
+
+        meshCrsGraph = rcp(new crs_graph_type(meshRowMap, meshColMap, blockRowptr, blockColind));
+        meshCrsGraph->fillComplete(meshDomainMap,meshRangeMap);
+        Kokkos::DefaultExecutionSpace().fence();
+      }
+      else {
         TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillCrsGraph");
         auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
         auto pointRowptr = pointLocalGraph.row_map;
@@ -371,15 +405,15 @@ namespace Tpetra {
           LO filled_block = 0;
           for (LO p_i=0; p_i<offset_p_max-offset_p; ++p_i) {
             auto bcol_GID = localPointColMap.getGlobalElement(pointColind(offset_p + p_i))/blockSize;
-            auto lcol_GID = localMeshColMap.getLocalElement(bcol_GID);
+            auto bcol_LID = localMeshColMap.getLocalElement(bcol_GID);
 
             bool visited = false;
             for (LO k=0; k<filled_block; ++k) {
-              if (blockColind(offset_b + k) == lcol_GID)
+              if (blockColind(offset_b + k) == bcol_LID)
                 visited = true;
             }
             if (!visited) {
-              blockColind(offset_b + filled_block) = lcol_GID;
+              blockColind(offset_b + filled_block) = bcol_LID;
               ++filled_block;
             }
           }
@@ -395,7 +429,7 @@ namespace Tpetra {
 
   template<class Scalar, class LO, class GO, class Node>
   Teuchos::RCP<BlockCrsMatrix<Scalar, LO, GO, Node> >
-  convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize)
+  convertToBlockCrsMatrix(const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& pointMatrix, const LO &blockSize, bool use_LID)
   {
 
       /*
@@ -427,13 +461,45 @@ namespace Tpetra {
 
       const offset_type bs2 = blockSize * blockSize;
 
-      auto meshCrsGraph = getBlockCrsGraph(pointMatrix, blockSize);
+      auto meshCrsGraph = getBlockCrsGraph(pointMatrix, blockSize, use_LID);
 
-      auto localMeshColMap = meshCrsGraph->getColMap()->getLocalMap();
-      auto localPointColMap = pointMatrix.getColMap()->getLocalMap();
-
-      {
+      if (use_LID) {
         TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillBlockCrsMatrix");
+        auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
+        auto pointRowptr = pointLocalGraph.row_map;
+        auto pointColind = pointLocalGraph.entries;
+
+        offset_type block_rows = pointRowptr.extent(0) == 0 ? 0 : (pointRowptr.extent(0)-1)/blockSize;
+        values_type blockValues("values",  meshCrsGraph->getLocalNumEntries()*bs2);
+        auto pointValues = pointMatrix.getLocalValuesDevice (Access::ReadOnly);
+        auto blockRowptr = meshCrsGraph->getLocalGraphDevice().row_map;
+
+        Kokkos::parallel_for("copyblockValues",range_type(0,block_rows),KOKKOS_LAMBDA(const LO i) {
+          const offset_type blkBeg    = blockRowptr[i];
+          const offset_type numBlocks = blockRowptr[i+1] - blkBeg;
+
+          // For each block in the row...
+          for (offset_type block=0; block < numBlocks; block++) {
+
+            // For each entry in the block...
+            for(LO little_row=0; little_row<blockSize; little_row++) {
+              offset_type point_row_offset = pointRowptr[i*blockSize + little_row];
+              for(LO little_col=0; little_col<blockSize; little_col++) {
+                blockValues((blkBeg+block) * bs2 + little_row * blockSize + little_col) = 
+                  pointValues[point_row_offset + block*blockSize + little_col];
+              }
+            }
+
+          }
+          });
+        blockMatrix = rcp(new block_crs_matrix_type(*meshCrsGraph, blockValues, blockSize));
+        Kokkos::DefaultExecutionSpace().fence();
+      }
+      else {
+        TEUCHOS_FUNC_TIME_MONITOR("Tpetra::convertToBlockCrsMatrix::fillBlockCrsMatrix");
+        auto localMeshColMap = meshCrsGraph->getColMap()->getLocalMap();
+        auto localPointColMap = pointMatrix.getColMap()->getLocalMap();
+
         values_type blockValues("values",  meshCrsGraph->getLocalNumEntries()*bs2);
         {
           auto pointLocalGraph = pointMatrix.getCrsGraph()->getLocalGraphDevice();
@@ -1029,7 +1095,7 @@ namespace Tpetra {
   template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os); \
   template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
   template void writeMatrixStrip(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
-  template Teuchos::RCP<BlockCrsMatrix<S, LO, GO, NODE> > convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize); \
+  template Teuchos::RCP<BlockCrsMatrix<S, LO, GO, NODE> > convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize, bool use_LID); \
   template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > fillLogicalBlocks(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize); \
   template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > unfillFormerBlockCrs(const CrsMatrix<S, LO, GO, NODE>& pointMatrix); \
   template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > convertToCrsMatrix(const BlockCrsMatrix<S, LO, GO, NODE>& blockMatrix);

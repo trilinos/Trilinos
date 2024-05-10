@@ -75,3 +75,10 @@ class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 } //namespace EpetraExt
 
 #endif //EpetraExt_CRSGRAPH_VIEW_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

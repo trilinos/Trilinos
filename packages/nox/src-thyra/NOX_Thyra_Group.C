@@ -1000,7 +1000,7 @@ void NOX::Thyra::Group::updateLOWS() const
                           prec_,
                           shared_jacobian_->getObject(this).ptr());
     }
-    else if (nonnull(prec_factory_)) {
+    else if (nonnull(prec_factory_) && updatePreconditioner_) {
       // Automatically update using the user supplied prec factory
       prec_factory_->initializePrec(losb_, prec_.get());
 
@@ -1009,7 +1009,7 @@ void NOX::Thyra::Group::updateLOWS() const
                           prec_,
                           shared_jacobian_->getObject(this).ptr());
     }
-    else if ( nonnull(prec_) && (model_->createOutArgs().supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
+    else if ( nonnull(prec_) && (model_->createOutArgs().supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) && updatePreconditioner_) {
       // Automatically update using the ModelEvaluator
       auto in_args = model_->createInArgs();
       auto out_args = model_->createOutArgs();
@@ -1143,3 +1143,23 @@ void NOX::Thyra::Group::unsetBasePoint()
 
 bool NOX::Thyra::Group::usingBasePoint() const
 { return use_base_point_; }
+
+Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double>>
+NOX::Thyra::Group::getLinearOpWithSolveFactory() const
+{ return lows_factory_; }
+
+Teuchos::RCP<::Thyra::PreconditionerFactoryBase<double>>
+NOX::Thyra::Group::getPreconditionerFactory() const
+{ return prec_factory_; }
+
+void
+NOX::Thyra::Group::
+takeControlOfPreconditionerUpdates(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& prec)
+{
+  prec_ = prec;
+  prec_factory_ = Teuchos::null;
+  updatePreconditioner_ = false;
+
+  // Unset factory so solver doesn't automatically update preconditioner
+  Teuchos::rcp_const_cast<::Thyra::LinearOpWithSolveFactoryBase<double>>(lows_factory_)->unsetPreconditionerFactory(nullptr,nullptr);
+}

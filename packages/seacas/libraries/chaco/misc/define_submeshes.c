@@ -14,13 +14,13 @@
 /* Figure out how to divide mesh into pieces.  Return true if nonstandard. */
 int define_submeshes(int              nsets,        /* number of subsets in this partition */
                      int              cube_or_mesh, /* 0=> hypercube, d=> d-dimensional mesh */
-                     int *            mesh_dims,    /* shape of mesh */
+                     int             *mesh_dims,    /* shape of mesh */
                      struct set_info *set,          /* set data for set I'm partitioning */
                      struct set_info *set_info,     /* set data for all sets */
-                     int *            subsets,      /* subsets being created by partition */
+                     int             *subsets,      /* subsets being created by partition */
                      int              inert,        /* using inertial method? */
-                     int *            striping,     /* should I partition with parallel cuts? */
-                     int *            dir,          /* directions of each cut */
+                     int             *striping,     /* should I partition with parallel cuts? */
+                     int             *dir,          /* directions of each cut */
                      int              hop_mtx_special[MAXSETS][MAXSETS] /* hops values if unusual */
 )
 {

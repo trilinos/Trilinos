@@ -444,3 +444,10 @@ void Basis_HGRAD_QUAD_C2_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & Do
 
 }// namespace Intrepid
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

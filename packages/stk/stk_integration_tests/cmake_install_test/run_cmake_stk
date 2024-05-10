@@ -83,12 +83,14 @@ cmake \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKMiddle_mesh:BOOL=ON \
+-DTrilinos_ENABLE_STKMiddle_mesh_util:BOOL=ON \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \
 -DTPL_ENABLE_CDT:BOOL=ON \
 -DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
 -DCDT_ROOT="/fgs/william/CDT/install" \
 -DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
 -DTrilinos_ENABLE_SEACASIoss:BOOL=ON \
+-DTrilinos_ENABLE_SEACASNemesis:BOOL=ON \
 -DTPL_ENABLE_Netcdf:BOOL=ON \
 -DTPL_Netcdf_Enables_Netcdf4:BOOL=ON \
 -DTPL_Netcdf_Enables_Pnetcdf:BOOL=ON \

@@ -374,3 +374,10 @@ bool Epetra_ML_writegidviz(char* filename, int label,
 void ML_BreakForDebugger(const Epetra_Comm& comm);
 
 #endif /* _ML_EPETRA_UTILS_H_ */
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

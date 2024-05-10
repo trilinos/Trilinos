@@ -37,6 +37,7 @@ cmake \
 -DSTK_ENABLE_ALL=ON \
 -DSTK_ENABLE_MPI:BOOL=OFF \
 -DSTK_ENABLE_STKMiddle_mesh=OFF \
+-DSTK_ENABLE_STKMiddle_mesh_util=OFF \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DKokkos_DIR=/fgs/william/kokkos/install/lib64/cmake/Kokkos \
 -DGTest_DIR=/fgs/william/googletest/install/lib64/cmake/GTest \

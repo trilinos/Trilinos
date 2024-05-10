@@ -519,6 +519,7 @@ void ParameterList::modifyParameterList(ParameterList & valid_pl,
   RCP<const ParameterListModifier> modifier;
   if (nonnull(modifier = valid_pl.getModifier())) {
     modifier->modify(*this, valid_pl);
+    this->setModifier(modifier);
   }
   ConstIterator itr;
   for (itr = valid_pl.begin(); itr != valid_pl.end(); ++itr){

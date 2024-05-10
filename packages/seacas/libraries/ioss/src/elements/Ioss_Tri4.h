@@ -12,8 +12,6 @@
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
 
-// STL Includes
-
 namespace Ioss {
   class IOSS_EXPORT Tri4 : public Ioss::ElementTopology
   {
@@ -22,7 +20,6 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    Tri4(const Tri4 &) = delete;
 
     IOSS_NODISCARD ElementShape shape() const override { return ElementShape::TRI; }
     IOSS_NODISCARD int          spatial_dimension() const override;

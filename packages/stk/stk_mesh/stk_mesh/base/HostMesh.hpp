@@ -34,9 +34,9 @@
 #ifndef STK_MESH_HOSTMESH_HPP
 #define STK_MESH_HOSTMESH_HPP
 
-#include "stk_mesh/base/NgpMeshBase.hpp"
 #include <stk_util/stk_config.h>
 #include <stk_util/util/StridedArray.hpp>
+#include "stk_mesh/base/NgpMeshBase.hpp"
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/baseImpl/BucketRepository.hpp"
 #include "stk_mesh/base/Entity.hpp"
@@ -56,17 +56,23 @@
 namespace stk {
 namespace mesh {
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
 struct HostMeshIndex
 {
   const stk::mesh::Bucket *bucket;
   size_t bucketOrd;
 };
+#endif
 
 class HostMesh : public NgpMeshBase
 {
 public:
   using MeshExecSpace     = stk::ngp::HostExecSpace;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
   using MeshIndex         = HostMeshIndex;
+#else
+  using MeshIndex         = FastMeshIndex;
+#endif
   using BucketType        = stk::mesh::Bucket;
   using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;
   using ConnectedEntities = util::StridedArray<const stk::mesh::Entity>;
@@ -82,7 +88,8 @@ public:
 
   HostMesh(const stk::mesh::BulkData& b)
     : NgpMeshBase(),
-      bulk(&b)
+      bulk(&b),
+      m_syncCountWhenUpdated(bulk->synchronized_count())
   {
     require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
   }
@@ -96,6 +103,7 @@ public:
 
   void update_mesh() override
   {
+    m_syncCountWhenUpdated = bulk->synchronized_count();
   }
 
   unsigned get_spatial_dimension() const
@@ -124,11 +132,14 @@ public:
     return (*(bulk->buckets(rank)[meshIndex.bucket_id]))[meshIndex.bucket_ord];
   }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
+  STK_DEPRECATED
   ConnectedNodes get_nodes(const MeshIndex &elem) const
   {
     const stk::mesh::Bucket& bucket = *elem.bucket;
     return ConnectedNodes(bucket.begin_nodes(elem.bucketOrd), bucket.num_nodes(elem.bucketOrd));
   }
+#endif
 
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
   {
@@ -214,10 +225,12 @@ public:
     return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
   }
 
-  stk::mesh::FastMeshIndex host_mesh_index(stk::mesh::Entity entity) const
+#ifndef STK_HIDE_DEPRECATED_CODE
+STK_DEPRECATED stk::mesh::FastMeshIndex host_mesh_index(stk::mesh::Entity entity) const
   {
     return fast_mesh_index(entity);
   }
+#endif
 
   stk::mesh::FastMeshIndex device_mesh_index(stk::mesh::Entity entity) const
   {
@@ -273,10 +286,14 @@ public:
     return *bulk;
   }
 
-  bool is_up_to_date() const { return true; }
+  bool is_up_to_date() const
+  {
+    return m_syncCountWhenUpdated == bulk->synchronized_count();
+  }
 
 private:
   const stk::mesh::BulkData *bulk;
+  size_t m_syncCountWhenUpdated;
 };
 
 }

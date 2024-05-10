@@ -344,3 +344,10 @@ private:
 };  // class Amesos_Klu
 
 #endif /* AMESOS_KLU_H */
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+

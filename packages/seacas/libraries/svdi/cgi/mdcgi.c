@@ -62,8 +62,8 @@ void xcoon(anything **surface_id) /* which surface to turn output on for*/
         surf_found = surf;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   /* does surface_id point to a valid surface? */
   if (dev_found < 0) {
@@ -81,7 +81,7 @@ void xcoon(anything **surface_id) /* which surface to turn output on for*/
           devices[dev_found].statelist[devices[dev_found].num_on_surfaces - 1];
       devices[dev_found].statelist[devices[dev_found].num_on_surfaces - 1] = temp;
     } /* end if there is an off surface */
-  }   /* end if surface was off */
+  } /* end if surface was off */
 } /* end xcoon */
 
 /******************************************************************************/
@@ -102,7 +102,7 @@ void xcact(void (*device_fn)(anything **, int, anything **), anything **p_surfac
       which_device = i;
       break;
     } /* end if */
-  }   /* end for */
+  } /* end for */
 
   if (which_device < 0) {             /* if device not initialized */
     if (num_devices >= MAX_DEVICES) { /* if no room */
@@ -110,7 +110,7 @@ void xcact(void (*device_fn)(anything **, int, anything **), anything **p_surfac
       *p_surface_id = NULL;
       return;
     } /* end if no room for device */
-  }   /* end if device not initialized */
+  } /* end if device not initialized */
 
   /* call the device driver with ACTIVATE, so it can allocate a state list */
   short arg1   = ACTIVATE_FN;
@@ -190,8 +190,8 @@ void xcsol(anything **surface_id)
         dev_found = dev;
         break;
       } /* end if found on list */
-    }   /* end for */
-  }     /* end for all devices */
+    } /* end for */
+  } /* end for all devices */
 
   /* does surface_id point to a valid surface? */
   if (dev_found < 0) {

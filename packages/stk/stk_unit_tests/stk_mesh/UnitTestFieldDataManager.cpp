@@ -877,7 +877,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_eraseOneEntry)
   }
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field.size(), numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -891,7 +891,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_fasterEraseOneEntry)
   size_t numItems = field.size();
   size_t numItemsToErase = itemsToErase.size();
 
-  double* field_array = &field[0];
+  double *field_array = field.data();
   size_t field_array_length = field.size();
 
   // Erase
@@ -904,7 +904,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_fasterEraseOneEntry)
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -918,7 +918,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_slowestEraseOneEntry)
   size_t numItems = field.size();
   size_t numItemsToErase = itemsToErase.size();
 
-  double* field_array = &field[0];
+  double *field_array = field.data();
   size_t field_array_length = field.size();
 
   // Erase
@@ -935,7 +935,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_slowestEraseOneEntry)
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -950,9 +950,9 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_memcpyishEraseOneEntry
   size_t numItemsToErase = itemsToErase.size();
 
   std::vector<double> scratchField(numItems,0);
-  double* field_array = &field[0];
+  double *field_array = field.data();
   size_t field_array_length = field.size();
-  double *scratchData = &scratchField[0];
+  double *scratchData = scratchField.data();
 
   // Erase
   double startTime = stk::cpu_time();
@@ -966,7 +966,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_memcpyishEraseOneEntry
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 
@@ -988,7 +988,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_batchDeletion)
   std::vector<int> itemsThisChunk(numItemsToErase+1, 0);
   std::vector<int> distanceToSlideLeft(numItemsToErase+1,0);
 
-  startingPtr[0] = &field[0];
+  startingPtr[0] = field.data();
   itemsThisChunk[0] = itemsToErase[0];
   distanceToSlideLeft[0] = 0;
 
@@ -1013,7 +1013,7 @@ TEST(ContiguousFieldDataManagerTest, algorithmExploration_batchDeletion)
 
   double totalTime = stk::cpu_time() - startTime;
   EXPECT_EQ(field_array_length, numItems-numItemsToErase);
-  testForCheating(&field[0], numItems-numItemsToErase, valuesErased);
+  testForCheating(field.data(), numItems - numItemsToErase, valuesErased);
   std::cerr << "Time = " << totalTime << " s" << std::endl;
 }
 

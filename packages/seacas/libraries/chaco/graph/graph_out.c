@@ -14,8 +14,8 @@
 void graph_out(struct vtx_data **graph,       /* graph data structure */
                int               nvtxs,       /* number of vtxs in graph */
                int               using_ewgts, /* Are edges weighted? */
-               char *            tag,         /* message to include */
-               char *            file_name    /* output file name if not null */
+               char             *tag,         /* message to include */
+               char             *file_name    /* output file name if not null */
 )
 {
   FILE *file;        /* output file */

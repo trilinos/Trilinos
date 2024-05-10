@@ -4,6 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include "Ioss_GroupingEntity.h"
 #include "Ioss_NullEntity.h"
 
 namespace Ioss {

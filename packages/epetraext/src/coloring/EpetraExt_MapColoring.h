@@ -103,3 +103,10 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
 } //namespace EpetraExt
 
 #endif //EpetraExt_CRSGRAPH_MAPCOLORING_H
+
+#if defined(EpetraExt_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The EpetraExt package is deprecated"
+#endif
+#endif
+

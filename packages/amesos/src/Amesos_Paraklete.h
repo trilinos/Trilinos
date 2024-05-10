@@ -326,3 +326,10 @@ private:
 };  // class Amesos_Paraklete  
 
 #endif /* AMESOS_PARAKLETE_H */
+
+#if defined(Amesos_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Amesos package is deprecated"
+#endif
+#endif
+

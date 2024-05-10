@@ -53,7 +53,7 @@ TEST( PrintSimdInfo, printTypes )
   stk::unit_test_util::simple_fields::print_type(d._data);
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef STK_ENABLE_GPU
 TEST( PrintSimdInfo, printDeviceWidths )
 {
   std::cout << "width of stk::simd::Float on device " << stk::unit_test_util::get_float_width_on_device() << std::endl;

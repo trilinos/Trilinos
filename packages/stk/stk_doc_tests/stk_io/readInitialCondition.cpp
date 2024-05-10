@@ -46,6 +46,8 @@
 #include "stk_io/MeshField.hpp"         // for MeshField
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/FieldBLAS.hpp"
+#include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"
 
@@ -84,19 +86,12 @@ TEST(StkMeshIoBrokerHowTo, readInitialCondition)
     //+ The name of the field on the database will be "temp"
     stkIo.add_field(fh, temperature, "temp");
 
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(),
-                            stk::topology::NODE_RANK, nodes);
-
     // Add three steps to the database
     // For each step, the value of the field is the value 'time'
     for (size_t i=0; i < 3; i++) {
       double time = i;
 
-      for(size_t inode=0; inode<nodes.size(); inode++) {
-        double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[inode]);
-        *fieldDataForNode = time;
-      }
+      stk::mesh::field_fill(time, temperature);
 
       stkIo.begin_output_step(fh, time);
       stkIo.write_defined_output_fields(fh);
@@ -130,12 +125,12 @@ TEST(StkMeshIoBrokerHowTo, readInitialCondition)
     // ============================================================
     //+ VERIFICATION
     //+ The value of the field at all nodes should be 2.0
-    std::vector<stk::mesh::Entity> nodes;
-    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
-    for(size_t i=0; i<nodes.size(); i++) {
-      double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[i]);
-      EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
-    }
+    stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
+        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+          double *fieldDataForNode = stk::mesh::field_data(temperature, node);
+          EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
+        }
+    );
     //-END
   }
   // ============================================================

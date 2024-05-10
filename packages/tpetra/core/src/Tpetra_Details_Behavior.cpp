@@ -41,8 +41,8 @@
 // clang-format on
 #include <algorithm> // std::transform
 #include <array>
-#include <cctype>    // std::toupper
-#include <cstdlib>   // std::getenv
+#include <cctype>  // std::toupper
+#include <cstdlib> // std::getenv
 #include <functional>
 #include <map>
 #include <stdexcept>
@@ -54,6 +54,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Behavior.hpp"
+#include "KokkosKernels_config.h"  // for TPL enable macros
 
 /*! \file Tpetra_Details_Behavior.cpp
 
@@ -129,8 +130,7 @@ constexpr const std::string_view HIERARCHICAL_UNPACK =
     "TPETRA_HIERARCHICAL_UNPACK";
 constexpr const std::string_view SKIP_COPY_AND_PERMUTE =
     "TPETRA_SKIP_COPY_AND_PERMUTE";
-constexpr const std::string_view FUSED_RESIDUAL =
-    "TPETRA_FUSED_RESIDUAL";
+constexpr const std::string_view FUSED_RESIDUAL = "TPETRA_FUSED_RESIDUAL";
 constexpr const std::string_view OVERLAP = "TPETRA_OVERLAP";
 constexpr const std::string_view SPACES_ID_WARN_LIMIT =
     "TPETRA_SPACES_ID_WARN_LIMIT";
@@ -158,9 +158,8 @@ constexpr const auto RECOGNIZED_VARS = make_array(
     MULTIVECTOR_USE_MERGE_PATH, VECTOR_DEVICE_THRESHOLD,
     HIERARCHICAL_UNPACK_BATCH_SIZE, HIERARCHICAL_UNPACK_TEAM_SIZE,
     USE_TEUCHOS_TIMERS, USE_KOKKOS_PROFILING, DEBUG, VERBOSE, TIMING,
-    HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL,
-    OVERLAP, SPACES_ID_WARN_LIMIT,
-    TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
+    HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL, OVERLAP,
+    SPACES_ID_WARN_LIMIT, TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
     TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS);
 
 // clang-format off
@@ -423,44 +422,51 @@ T idempotentlyGetEnvironmentVariable(
 // clang-format on
 
 void Behavior::reject_unrecognized_env_vars() {
-  const char prefix[] = "Tpetra::Details::Behavior: ";
-  char **env;
+
+  static bool once = false;
+
+  if (!once) {
+    const char prefix[] = "Tpetra::Details::Behavior: ";
+    char **env;
 #if defined(WIN) && (_MSC_VER >= 1900)
-  env = *__p__environ();
+    env = *__p__environ();
 #else
-  env = environ; // defined at the top of this file as extern char **environ;
+    env = environ; // defined at the top of this file as extern char **environ;
 #endif
-  for (; *env; ++env) {
+    for (; *env; ++env) {
 
-    std::string name;
-    std::string value;
-    const std::string_view ev(*env);
+      std::string name;
+      std::string value;
+      const std::string_view ev(*env);
 
-    // split name=value on the first =, everything before = is name
-    split(
-        ev,
-        [&](const std::string &s) {
-          if (name.empty()) {
-            name = s;
-          } else {
-            value = s;
-          }
-        },
-        '=');
+      // split name=value on the first =, everything before = is name
+      split(
+          ev,
+          [&](const std::string &s) {
+            if (name.empty()) {
+              name = s;
+            } else {
+              value = s;
+            }
+          },
+          '=');
 
-    if (name.size() >= BehaviorDetails::RESERVED_PREFIX.size() &&
-        name.substr(0, BehaviorDetails::RESERVED_PREFIX.size()) ==
-            BehaviorDetails::RESERVED_PREFIX) {
-      const auto it = std::find(BehaviorDetails::RECOGNIZED_VARS.begin(),
-                                BehaviorDetails::RECOGNIZED_VARS.end(), name);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          it == BehaviorDetails::RECOGNIZED_VARS.end(), std::out_of_range,
-          prefix << "Environment "
-                    "variable \""
-                 << name << "\" (prefixed with \""
-                 << BehaviorDetails::RESERVED_PREFIX
-                 << "\") is not a recognized Tpetra variable.");
+      if (name.size() >= BehaviorDetails::RESERVED_PREFIX.size() &&
+          name.substr(0, BehaviorDetails::RESERVED_PREFIX.size()) ==
+              BehaviorDetails::RESERVED_PREFIX) {
+        const auto it = std::find(BehaviorDetails::RECOGNIZED_VARS.begin(),
+                                  BehaviorDetails::RECOGNIZED_VARS.end(), name);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            it == BehaviorDetails::RECOGNIZED_VARS.end(), std::out_of_range,
+            prefix << "Environment "
+                      "variable \""
+                   << name << "\" (prefixed with \""
+                   << BehaviorDetails::RESERVED_PREFIX
+                   << "\") is not a recognized Tpetra variable.");
+      }
     }
+
+    once = true;
   }
 }
 
@@ -676,13 +682,18 @@ bool Behavior::skipCopyAndPermuteIfPossible() {
 }
 
 bool Behavior::fusedResidual() {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  constexpr bool defaultValue(false);
+#else
   constexpr bool defaultValue(true);
+#endif
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
   return idempotentlyGetEnvironmentVariable(
-      value_, initialized_, BehaviorDetails::FUSED_RESIDUAL,
-      defaultValue);
+      value_, initialized_, BehaviorDetails::FUSED_RESIDUAL, defaultValue);
 }
 
 bool Behavior::overlapCommunicationAndComputation() {

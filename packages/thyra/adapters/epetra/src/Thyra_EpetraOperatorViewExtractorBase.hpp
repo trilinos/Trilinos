@@ -198,3 +198,10 @@ public:
 
 
 #endif // THYRA_EPETRA_OPERATOR_VIEW_EXTRACTOR_BASE_HPP
+
+#if defined(Thyra_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ThyraEpetraAdapters package is deprecated"
+#endif
+#endif
+

@@ -430,3 +430,10 @@ void Basis_HGRAD_HEX_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
 }// namespace Intrepid
 
 #endif
+
+#if defined(Intrepid_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The Intrepid package is deprecated"
+#endif
+#endif
+

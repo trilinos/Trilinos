@@ -125,3 +125,10 @@ class ShyLU_Probing_Operator : public virtual Epetra_Operator
 
 };
 #endif // SHYLU_PROBING_OPERATOR_H
+
+#if defined(ShyLU_DDCore_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ShyLU_DDCore package is deprecated"
+#endif
+#endif
+

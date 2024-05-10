@@ -9,6 +9,9 @@ TRIBITS_PACKAGE(Amesos)
 #
 # B) Set up package-specific options
 #
+
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 ADVANCED_SET(Amesos_Allow_SuperLUDist_Without_ParMETIS OFF
   CACHE BOOL "Allow Amesos to use the SuperLUDist TPL without the enable of the ParMETIS TPL")
 if (NOT Amesos_Allow_SuperLUDist_Without_ParMETIS)

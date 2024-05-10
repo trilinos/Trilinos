@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -209,6 +209,10 @@ namespace Iohb {
         new_this->flushInterval_ = properties.get("FLUSH_INTERVAL").get_int();
       }
 
+      if (properties.exists("HEARTBEAT_FLUSH_INTERVAL")) {
+        new_this->flushInterval_ = properties.get("HEARTBEAT_FLUSH_INTERVAL").get_int();
+      }
+
       if (properties.exists("TIME_STAMP_FORMAT")) {
         new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
@@ -332,6 +336,7 @@ namespace Iohb {
     // Flush the buffer to disk...
     // flush if there is more than 'flushInterval_' seconds since the last flush to avoid
     // the flush eating up cpu time for small fast jobs...
+    // If want a flush every step for some reason, set `flushInterval_` to 0.0.
 
     // This code is derived from code in finalize_write() in Ioex_DatabaseIO.C
     // See other comments there...

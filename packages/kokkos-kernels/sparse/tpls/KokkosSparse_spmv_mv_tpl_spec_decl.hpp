@@ -192,6 +192,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
+    subhandle->set_exec_space(exec);
   } else {
     subhandle   = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
     handle->tpl = subhandle;

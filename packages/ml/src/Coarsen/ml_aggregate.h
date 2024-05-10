@@ -453,3 +453,10 @@ extern int ML_Aggregate_VizAndStats_Clean( ML *ml);
 
 #endif
 
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

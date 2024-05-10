@@ -192,10 +192,14 @@ struct TeamFunctor<const stk::mesh::DeviceMesh, AlgorithmPerEntity> {
 template <typename Mesh, typename AlgorithmPerEntity>
 void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
 {
+  Kokkos::Profiling::pushRegion("for_each_entity_run with selector");
+
   stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
   unsigned numBuckets = bucketIds.size();
   Kokkos::parallel_for(stk::ngp::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
                        TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, bucketIds, functor));
+
+  Kokkos::Profiling::popRegion();
 }
 
 }

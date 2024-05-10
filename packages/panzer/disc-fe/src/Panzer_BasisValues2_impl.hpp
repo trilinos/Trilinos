@@ -1161,14 +1161,16 @@ getBasisValues(const bool weighted,
         }
         auto tmp_basis_scalar_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_basis_scalar_ref",num_cells,num_card,num_points);
         Kokkos::deep_copy(tmp_basis_scalar_ref.get_view(),tmp_basis_scalar_host);
+        const std::pair<int,int> cell_range(0,num_evaluate_cells_);
+        auto s_aux = Kokkos::subview(tmp_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
         if(element_space == PureBasis::HVOL){
-          const std::pair<int,int> cell_range(0,num_evaluate_cells_);
           auto s_cjd = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
-          fst::HVOLtransformVALUE(tmp_basis_scalar.get_view(),s_cjd,tmp_basis_scalar_ref.get_view());
+          fst::HVOLtransformVALUE(s_aux,s_cjd,s_ref);
         } else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST) {
-          fst::HGRADtransformVALUE(tmp_basis_scalar.get_view(),tmp_basis_scalar_ref.get_view());
+          fst::HGRADtransformVALUE(s_aux,s_ref);
         }
       } else {
 #endif
@@ -1184,14 +1186,16 @@ getBasisValues(const bool weighted,
         }
         auto tmp_basis_scalar_ref = af.buildStaticArray<Scalar,Cell,BASIS,IP>("tmp_basis_scalar_ref",num_cells,num_card,num_points);
         Kokkos::deep_copy(tmp_basis_scalar_ref.get_view(),tmp_basis_scalar_host);
+        const std::pair<int,int> cell_range(0,num_evaluate_cells_);
+        auto s_aux = Kokkos::subview(tmp_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
 
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
         if(element_space == PureBasis::HVOL){
-          const std::pair<int,int> cell_range(0,num_evaluate_cells_);
           auto s_cjd = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
-          fst::HVOLtransformVALUE(tmp_basis_scalar.get_view(),s_cjd,tmp_basis_scalar_ref.get_view());
+          fst::HVOLtransformVALUE(s_aux,s_cjd,s_ref);
         } else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST) {
-          fst::HGRADtransformVALUE(tmp_basis_scalar.get_view(),tmp_basis_scalar_ref.get_view());
+          fst::HGRADtransformVALUE(s_aux,s_ref);
         }
 #ifdef KOKKOS_ENABLE_CUDA
       }
@@ -1323,15 +1327,16 @@ getVectorBasisValues(const bool weighted,
         
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
         if(element_space == PureBasis::HCURL){
           auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-          fst::HCURLtransformVALUE(s_aux,s_jac_inv,tmp_basis_vector_ref.get_view());
+          fst::HCURLtransformVALUE(s_aux,s_jac_inv,s_ref);
         } else if(element_space == PureBasis::HDIV){
           auto s_jac = Kokkos::subview(cubature_jacobian_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
           auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
-          fst::HDIVtransformVALUE(s_aux,s_jac, s_jac_det, tmp_basis_vector_ref.get_view());
+          fst::HDIVtransformVALUE(s_aux,s_jac, s_jac_det, s_ref);
         }
       } else {
 #endif
@@ -1350,15 +1355,16 @@ getVectorBasisValues(const bool weighted,
         
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device>;
         if(element_space == PureBasis::HCURL){
           auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-          fst::HCURLtransformVALUE(s_aux,s_jac_inv,tmp_basis_vector_ref.get_view());
+          fst::HCURLtransformVALUE(s_aux,s_jac_inv,s_ref);
         } else if(element_space == PureBasis::HDIV){
           auto s_jac = Kokkos::subview(cubature_jacobian_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
           auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
-          fst::HDIVtransformVALUE(s_aux,s_jac, s_jac_det, tmp_basis_vector_ref.get_view());
+          fst::HDIVtransformVALUE(s_aux,s_jac, s_jac_det, s_ref);
         }
 #ifdef KOKKOS_ENABLE_CUDA
       }
@@ -1477,10 +1483,11 @@ getGradBasisValues(const bool weighted,
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_grad_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_grad_basis_ref.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
         
         // Apply transformation
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HGRADtransformGRAD(s_aux, s_jac_inv,tmp_grad_basis_ref.get_view());
+        fst::HGRADtransformGRAD(s_aux, s_jac_inv, s_ref);
       } else {
 #endif
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
@@ -1499,10 +1506,11 @@ getGradBasisValues(const bool weighted,
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_grad_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_grad_basis_ref.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
         
         // Apply transformation
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HGRADtransformGRAD(s_aux, s_jac_inv,tmp_grad_basis_ref.get_view());
+        fst::HGRADtransformGRAD(s_aux, s_jac_inv, s_ref);
 #ifdef KOKKOS_ENABLE_CUDA
       }
 #endif
@@ -1621,12 +1629,13 @@ getCurl2DVectorBasis(const bool weighted,
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_curl_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_curl_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         
         // note only volume deformation is needed!
         // this relates directly to this being in
         // the divergence space in 2D!
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HDIVtransformDIV(s_aux,s_jac_det,tmp_curl_basis_scalar_ref.get_view());
+        fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
       } else {
 #endif
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
@@ -1645,12 +1654,13 @@ getCurl2DVectorBasis(const bool weighted,
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_curl_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_curl_basis_scalar_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         
         // note only volume deformation is needed!
         // this relates directly to this being in
         // the divergence space in 2D!
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HDIVtransformDIV(s_aux,s_jac_det,tmp_curl_basis_scalar_ref.get_view());
+        fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
 #ifdef KOKKOS_ENABLE_CUDA
       }
 #endif
@@ -1756,7 +1766,7 @@ getCurlVectorBasis(const bool weighted,
         
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
-          auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL());
+          auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
           auto my_cell_cub_points_ref_host = Kokkos::subview(cubature_points_ref_host,cell,Kokkos::ALL(),Kokkos::ALL());
           intrepid_basis_host->getValues(my_cell_curl_basis_host,my_cell_cub_points_ref_host,Intrepid2::OPERATOR_CURL);
         }
@@ -1767,9 +1777,10 @@ getCurlVectorBasis(const bool weighted,
         auto s_aux = Kokkos::subview(tmp_curl_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac = Kokkos::subview(cubature_jacobian_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_curl_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HCURLtransformCURL(s_aux, s_jac, s_jac_det, tmp_curl_basis_vector_ref.get_view());
+        fst::HCURLtransformCURL(s_aux, s_jac, s_jac_det, s_ref);
       } else {
 #endif
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
@@ -1778,7 +1789,7 @@ getCurlVectorBasis(const bool weighted,
         
         auto intrepid_basis_host = intrepid_basis->getHostBasis();
         for(int cell=0; cell<num_evaluate_cells_; ++cell) {
-          auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL());
+          auto my_cell_curl_basis_host = Kokkos::subview(tmp_curl_basis_vector_host,cell,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
           auto my_cell_cub_points_ref_host = Kokkos::subview(cubature_points_ref_host,cell,Kokkos::ALL(),Kokkos::ALL());
           intrepid_basis_host->getValues(my_cell_curl_basis_host,my_cell_cub_points_ref_host,Intrepid2::OPERATOR_CURL);
         }
@@ -1789,9 +1800,10 @@ getCurlVectorBasis(const bool weighted,
         auto s_aux = Kokkos::subview(tmp_curl_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac = Kokkos::subview(cubature_jacobian_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_curl_basis_vector_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HCURLtransformCURL(s_aux, s_jac, s_jac_det, tmp_curl_basis_vector_ref.get_view());
+        fst::HCURLtransformCURL(s_aux, s_jac, s_jac_det, s_ref);
 #ifdef KOKKOS_ENABLE_CUDA
       }
 #endif
@@ -1905,9 +1917,10 @@ getDivVectorBasis(const bool weighted,
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_div_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_div_basis_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HDIVtransformDIV(s_aux,s_jac_det,tmp_div_basis_ref.get_view());
+        fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
       } else {
 #endif
         auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
@@ -1926,9 +1939,10 @@ getDivVectorBasis(const bool weighted,
         const std::pair<int,int> cell_range(0,num_evaluate_cells_);
         auto s_aux = Kokkos::subview(tmp_div_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         auto s_jac_det = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
+        auto s_ref = Kokkos::subview(tmp_div_basis_ref.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
         
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HDIVtransformDIV(s_aux,s_jac_det,tmp_div_basis_ref.get_view());
+        fst::HDIVtransformDIV(s_aux,s_jac_det,s_ref);
 #ifdef KOKKOS_ENABLE_CUDA
       }
 #endif

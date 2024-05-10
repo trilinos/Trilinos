@@ -41,3 +41,10 @@ class Operator;
 } // namespace MLAPI
 
 #endif  // MLAPI_SAMIS_H
+
+#if defined(ML_SHOW_DEPRECATED_WARNINGS)
+#ifdef __GNUC__
+#warning "The ML package is deprecated"
+#endif
+#endif
+

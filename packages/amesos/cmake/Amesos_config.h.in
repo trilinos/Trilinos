@@ -96,3 +96,6 @@
 
 /* Define to 1 if SuperLU's *gssvx and *gsisx routines need a GlobalLU_t argument. */
 #cmakedefine HAVE_AMESOS_SUPERLU5_API
+
+#cmakedefine Amesos_SHOW_DEPRECATED_WARNINGS
+

@@ -163,7 +163,7 @@ namespace Impl {
              ETI_SPEC_AVAIL>::syr2(space, trans, uplo, alpha, X, Y, A);       \
       } else {                                                                \
         if (A_is_ll) {                                                        \
-          HostBlas<std::complex<double>>::zher2(                              \
+          HostBlas<std::complex<double>>::her2(                               \
               uplo[0], N, alpha,                                              \
               reinterpret_cast<const std::complex<double>*>(X.data()), one,   \
               reinterpret_cast<const std::complex<double>*>(Y.data()), one,   \
@@ -220,7 +220,7 @@ namespace Impl {
              ETI_SPEC_AVAIL>::syr2(space, trans, uplo, alpha, X, Y, A);       \
       } else {                                                                \
         if (A_is_ll) {                                                        \
-          HostBlas<std::complex<float>>::cher2(                               \
+          HostBlas<std::complex<float>>::her2(                                \
               uplo[0], N, alpha,                                              \
               reinterpret_cast<const std::complex<float>*>(X.data()), one,    \
               reinterpret_cast<const std::complex<float>*>(Y.data()), one,    \

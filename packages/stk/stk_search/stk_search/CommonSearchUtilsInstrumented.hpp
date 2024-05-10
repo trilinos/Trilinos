@@ -40,8 +40,8 @@
 
 #include <set>
 #include "stk_util/environment/WallTime.hpp"
-#include "stk_search/KDTree_BoundingBox.hpp"
-#include "stk_search/KDTree.hpp"
+#include "stk_search/kdtree/KDTree_BoundingBox.hpp"
+#include "stk_search/kdtree/KDTree.hpp"
 #include "stk_search/CommonSearchUtil.hpp"
 
 namespace stk {
@@ -222,7 +222,7 @@ namespace stk {
     //
     std::vector<DomainBox> boxGather;
 
-    stk::search::AllGatherHelper(boxA_proc.GetBox(), boxGather, comm);
+    stk::search::all_gather_helper(boxA_proc.GetBox(), boxGather, comm);
 
 
 
