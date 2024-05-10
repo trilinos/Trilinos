@@ -53,6 +53,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 
 namespace Belos {
@@ -63,13 +64,13 @@ class LinearProblem;
 template <class ScalarType>
 class OutputManager;
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class StatusTest;
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class MatOrthoManager;
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
 class Iteration {
 
   public:

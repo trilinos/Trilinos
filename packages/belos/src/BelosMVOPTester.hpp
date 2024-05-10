@@ -56,14 +56,55 @@
 #include "BelosTypes.hpp"
 
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosOutputManager.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SetScientific.hpp"
-#include "Teuchos_SerialDenseHelpers.hpp"
+
+// Used in RandomSyncedMpiMatrix
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 namespace Belos {
+    //!  \brief Returns the dense matrix A with random values that is the synchronized across all 
+    //!   MPI ranks. Uses existing dimensions of A to determin the size needed.
+    //!   Note: This utility is only used within Belos MultiVectorTraits testing. 
+    //
+    //TODO: If ScalarType is complex valued and the random matrix is simply real-valued, is that
+    // still okay for the test??
+    template <class ScalarType, class DM>
+    static void RandomSyncedMpiMatrix( DM & A ) {
+      typedef Belos::DenseMatTraits<ScalarType, DM> DMT;
+      Teuchos::RCP<const Teuchos::Comm<int>> comm;
+      //TODO: is there any problem with hard-coding OrdinalType to int in the template param for comm?
+
+#ifdef HAVE_MPI
+      int mpiStarted = 0;
+      MPI_Initialized(&mpiStarted);
+      if (mpiStarted)
+        comm = Teuchos::DefaultComm<int>::getComm();
+      else
+        comm = rcp(new Teuchos::SerialComm<int>);
+#else
+        comm = Teuchos::DefaultComm<int>::getComm();
+#endif
+
+        const int procRank = rank(*comm);
+
+        // Construct a separate serial dense matrix and synchronize it to get around
+        // input matrices that are subviews of a larger matrix.
+        if (procRank == 0)
+          DMT::Randomize(A);
+        else
+          DMT::PutScalar(A);
+
+        DMT::SyncDeviceToHost(A);
+        broadcast(*comm, 0, DMT::GetNumRows(A)*DMT::GetNumCols(A), DMT::GetRawHostPtr(A));
+        DMT::SyncHostToDevice(A);
+      }
 
   /// \brief Test correctness of a MultiVecTraits specialization and
   ///   multivector implementation.
@@ -81,14 +122,15 @@ namespace Belos {
   ///   multivector to clone.)
   ///
   /// \return Test result: true if all tests passed, else false.
-  template< class ScalarType, class MV >
+  template< class ScalarType, class MV, class DM >
   bool
   TestMultiVecTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om,
                       const Teuchos::RCP<const MV> &A)
   {
     using Teuchos::SetScientific;
     using std::endl;
-    typedef MultiVecTraits<ScalarType, MV>    MVT;
+    typedef MultiVecTraits<ScalarType, MV, DM>    MVT;
+    typedef Belos::DenseMatTraits<ScalarType, DM> DMT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
     typedef typename STS::magnitudeType       MagType;
 
@@ -131,18 +173,23 @@ namespace Belos {
                  performing C=0*A+1*B will assign B to C exactly
 
          MvTimesMatAddMv
-           USER: multivecs and serialdensematrix will be of the proper shape
-             MV: input arguments will not be modified
+           USER: Multivecs and serialdensematrix will be of the proper shape.
+                 Any host-device or device-host syncs needed will be handled
+                 within this function call. Belos will NOT do any syncs
+                 before calling MvTimesMatAddMv. 
+             MV: Input arguments will not be modified
                  following arithmetic relations hold exactly:
                    A*I = A
                    0*B = B
                    1*B = B
 
          MvTransMv
-           USER: SerialDenseMatrix will be large enough to hold results.
-             MV: SerialDenseMatrix will not be resized.
+           USER: DenseMatrix will be large enough to hold results.
+             MV: DenseMatrix will not be resized.
                  Inner products will satisfy |a'*b| <= |a|*|b|
-                 alpha == 0  =>  SerialDenseMatrix == 0
+                 alpha == 0  =>  DenseMatrix == 0
+          BELOS: will call SyncDeviceToHost before calling any more
+                 DenseMatTraits functions after the MvTransMv call. 
 
          MvDot
           USER: Results vector will be large enough for results.
@@ -793,7 +840,7 @@ namespace Belos {
       Performs C = alpha * A^H * B, where
         alpha is type ScalarType
         A,B are type MV with p and q vectors, respectively
-        C is a SerialDenseMatrix<int,ScalarType> ALREADY sized to p by q
+        C is a DenseMatrix ALREADY sized to p by q
 
         Verify:
         1) C is not resized by the routine
@@ -813,7 +860,7 @@ namespace Belos {
       const int q = 9;
       Teuchos::RCP<MV> B, C;
       std::vector<MagType> normsB(p), normsC(q);
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
+      Teuchos::RCP<DM> SDM = DMT::Create(p,q);
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,q);
@@ -825,18 +872,19 @@ namespace Belos {
       MVT::MvNorm(*C,normsC);
 
       // perform SDM  = zero() * B^H * C
-      MVT::MvTransMv( zero, *B, *C, SDM );
+      MVT::MvTransMv( zero, *B, *C, *SDM );
+      DMT::SyncDeviceToHost(*SDM);
 
       // check the sizes: not allowed to have shrunk
-      if ( SDM.numRows() != p || SDM.numCols() != q ) {
+      if ( DMT::GetNumRows(*SDM) != p || DMT::GetNumCols(*SDM) != q ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-          << "Routine resized SerialDenseMatrix." << endl;
+          << "Routine resized DenseMatrix." << endl;
         return false;
       }
 
       // check that zero**A^H*B == zero
-      if ( SDM.normOne() != zero ) {
+      if (DMT::NormOne(*SDM) != zero ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
           << "Scalar argument processed incorrectly." << endl;
@@ -844,18 +892,19 @@ namespace Belos {
       }
 
       // perform SDM  = one * B^H * C
-      MVT::MvTransMv( one, *B, *C, SDM );
+      MVT::MvTransMv( one, *B, *C, *SDM );
+      DMT::SyncDeviceToHost(*SDM);
 
       // check the norms: a^H b = |a| |b| cos(theta) <= |a| |b|
       // with equality only when a and b are colinear
       for (int i=0; i<p; i++) {
         for (int j=0; j<q; j++) {
-          if (   STS::magnitude(SDM(i,j))
+          if (   STS::magnitude(DMT::ValueConst(*SDM,i,j))
                > STS::magnitude(normsB[i]*normsC[j]) ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Triangle inequality did not hold: "
-              << STS::magnitude(SDM(i,j))
+              << STS::magnitude(DMT::ValueConst(*SDM,i,j))
               << " > "
               << STS::magnitude(normsB[i]*normsC[j])
               << endl;
@@ -865,10 +914,11 @@ namespace Belos {
       }
       MVT::MvInit(*C);
       MVT::MvRandom(*B);
-      MVT::MvTransMv( one, *B, *C, SDM );
+      MVT::MvTransMv( one, *B, *C, *SDM );
+      DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<p; i++) {
         for (int j=0; j<q; j++) {
-          if ( SDM(i,j) != zero ) {
+          if ( DMT::ValueConst(*SDM,i,j) != zero ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Inner products not zero for C==0." << endl;
@@ -878,10 +928,11 @@ namespace Belos {
       }
       MVT::MvInit(*B);
       MVT::MvRandom(*C);
-      MVT::MvTransMv( one, *B, *C, SDM );
+      MVT::MvTransMv( one, *B, *C, *SDM );
+      DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<p; i++) {
         for (int j=0; j<q; j++) {
-          if ( SDM(i,j) != zero ) {
+          if ( DMT::ValueConst(*SDM,i,j) != zero ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Inner products not zero for B==0." << endl;
@@ -890,7 +941,6 @@ namespace Belos {
         }
       }
     }
-
 
     /*********** MvDot() *************************************************
         Verify:
@@ -952,7 +1002,6 @@ namespace Belos {
       }
     }
 
-
     /*********** MvAddMv() ***********************************************
        D = alpha*B + beta*C
        1) Use alpha==0,beta==1 and check that D == C
@@ -967,11 +1016,12 @@ namespace Belos {
                            normsC1(p), normsC2(p),
                            normsD1(p), normsD2(p);
 
-      Teuchos::SerialDenseMatrix<int,ScalarType> Alpha(1,1), Beta(1,1);
-      Teuchos::randomSyncedMatrix( Alpha );
-      Teuchos::randomSyncedMatrix( Beta );
-      ScalarType alpha = Alpha(0,0),
-                  beta = Beta(0,0);
+      Teuchos::RCP<DM> Alpha = DMT::Create(1,1);
+      Teuchos::RCP<DM> Beta = DMT::Create(1,1);
+      RandomSyncedMpiMatrix<ScalarType,DM>(*Alpha);
+      RandomSyncedMpiMatrix<ScalarType,DM>(*Beta);
+      ScalarType alpha = DMT::ValueConst(*Alpha,0,0),
+                 beta = DMT::ValueConst(*Beta,0,0);
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,p);
@@ -1159,7 +1209,7 @@ namespace Belos {
     {
       const int p = 7, q = 5;
       Teuchos::RCP<MV> B, C;
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
+      Teuchos::RCP<DM> SDM = DMT::Create(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
 
@@ -1171,8 +1221,8 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
+      RandomSyncedMpiMatrix<ScalarType,DM>(*SDM);
+      MVT::MvTimesMatAddMv(zero,*B,*SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {
@@ -1197,8 +1247,8 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
+      RandomSyncedMpiMatrix<ScalarType,DM>(*SDM);
+      MVT::MvTimesMatAddMv(zero,*B,*SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {
@@ -1228,11 +1278,13 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
+      DMT::Scale(*SDM,zero);
+      DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<q; i++) {
-        SDM(i,i) = one;
+        DMT::Value(*SDM,i,i) = one;
       }
-      MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
+      DMT::SyncHostToDevice(*SDM);
+      MVT::MvTimesMatAddMv(one,*B,*SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {
@@ -1261,8 +1313,8 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
-      MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
+      DMT::Scale(*SDM,zero);
+      MVT::MvTimesMatAddMv(one,*B,*SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {
@@ -1295,7 +1347,7 @@ namespace Belos {
     {
       const int p = 5, q = 7;
       Teuchos::RCP<MV> B, C;
-      Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
+      Teuchos::RCP<DM> SDM = DMT::Create(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
 
@@ -1307,8 +1359,8 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
+      RandomSyncedMpiMatrix<ScalarType,DM>(*SDM);
+      MVT::MvTimesMatAddMv(zero,*B,*SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {
@@ -1333,8 +1385,8 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      Teuchos::randomSyncedMatrix(SDM);
-      MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
+      RandomSyncedMpiMatrix<ScalarType,DM>(*SDM);
+      MVT::MvTimesMatAddMv(zero,*B,*SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {
@@ -1363,11 +1415,13 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
+      DMT::Scale(*SDM,zero);
+      DMT::SyncDeviceToHost(*SDM);
       for (int i=0; i<p; i++) {
-        SDM(i,i) = one;
+        DMT::Value(*SDM,i,i) = one;
       }
-      MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
+      DMT::SyncHostToDevice(*SDM);  
+      MVT::MvTimesMatAddMv(one,*B,*SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {
@@ -1400,8 +1454,8 @@ namespace Belos {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.scale(zero);
-      MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
+      DMT::Scale(*SDM,zero);
+      MVT::MvTimesMatAddMv(one,*B,*SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       for (int i=0; i<p; i++) {

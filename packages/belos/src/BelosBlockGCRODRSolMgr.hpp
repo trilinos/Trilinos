@@ -53,7 +53,6 @@
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGCRODRIter.hpp"
 #include "BelosBlockGmresIter.hpp"
-#include "BelosBlockFGmresIter.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -122,8 +121,8 @@ namespace Belos{
 /// multiple right-hand sides at a time; thus, it can solve sequences of block systems.
 ///
 
-template<class ScalarType, class MV, class OP>
-class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class BlockGCRODRSolMgr : public SolverManager<ScalarType, MV, OP, DM> {
 private:
 
   typedef MultiVecTraits<ScalarType,MV> MVT;
@@ -134,7 +133,6 @@ private:
   typedef Teuchos::ScalarTraits<MagnitudeType> SMT;
   typedef OrthoManagerFactory<ScalarType, MV, OP> ortho_factory_type;
   typedef Teuchos::SerialDenseMatrix<int,ScalarType> SDM;
-  typedef Teuchos::SerialDenseVector<int,ScalarType> SDV;
 
 public:
   //! @name Constructors/Destructor
@@ -297,7 +295,7 @@ private:
   //  "AugKryl" indicates  it is specialized for building a recycle space from the augmented Krylov subspace
 
   // Functions which control the building of a recycle space
-  void buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter);
+  void buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP,DM> > block_gmres_iter);
   void buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > gcrodr_iter);
 
   // Recycling with Harmonic Ritz Vectors
@@ -1206,7 +1204,7 @@ private:
   }
 
 template<class ScalarType, class MV, class OP>
-void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter){
+void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP,DM> > block_gmres_iter){
 
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1973,8 +1971,8 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         primeList.set("Num Blocks",numBlocks_-1);
       }
       //Create Block GMRES iteration object to perform one cycle of GMRES
-      Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter;
-      block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,primeList) );
+      Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP,DM> > block_gmres_iter;
+      block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,primeList) );
 
       // MLP: ADD LOGIC TO DEAL WITH USER ASKING TO GENERATE A LARGER SPACE THAN dim AS IN HEIDI'S BlockGmresSolMgr CODE (DIDN'T WE ALREADY DO THIS SOMEWHERE?)
       block_gmres_iter->setSize( blockSize_, numBlocks_-1 );

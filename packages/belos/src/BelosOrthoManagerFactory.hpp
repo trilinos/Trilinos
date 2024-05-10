@@ -78,7 +78,7 @@ namespace Belos {
   /// multivector), MV is the multivector type, and OP is the operator
   /// type.  For example: Scalar=double, MV=Epetra_MultiVector, and
   /// OP=Epetra_Operator.
-  template<class Scalar, class MV, class OP>
+  template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, Scalar>>
   class OrthoManagerFactory {
   private:
     //! List of valid OrthoManager names.
@@ -190,22 +190,22 @@ namespace Belos {
     getDefaultParameters (const std::string& name) const
     {
       if (name == "DGKS") {
-	return Belos::getDGKSDefaultParameters<Scalar, MV, OP> ();
+	return Belos::getDGKSDefaultParameters<Scalar, MV, OP, DM> ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	TsqrMatOrthoManager<Scalar, MV, OP> orthoMan;
+	TsqrMatOrthoManager<Scalar, MV, OP, DM> orthoMan;
 	return orthoMan.getValidParameters ();
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	return Belos::getICGSDefaultParameters<Scalar, MV, OP> ();
+	return Belos::getICGSDefaultParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "IMGS") {
-	return Belos::getIMGSDefaultParameters<Scalar, MV, OP> ();
+	return Belos::getIMGSDefaultParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "Simple") {
-	SimpleOrthoManager<Scalar, MV> orthoMan;
+	SimpleOrthoManager<Scalar, MV, DM> orthoMan;
 	return orthoMan.getValidParameters ();
       }
       else {
@@ -238,22 +238,22 @@ namespace Belos {
     getFastParameters (const std::string& name) const
     {
       if (name == "DGKS") {
-	return Belos::getDGKSFastParameters<Scalar, MV, OP> ();
+	return Belos::getDGKSFastParameters<Scalar, MV, OP, DM> ();
       }
 #ifdef HAVE_BELOS_TSQR
       else if (name == "TSQR") {
-	TsqrMatOrthoManager<Scalar, MV, OP> orthoMan; 
+	TsqrMatOrthoManager<Scalar, MV, OP, DM> orthoMan; 
 	return orthoMan.getFastParameters ();
       }
 #endif // HAVE_BELOS_TSQR
       else if (name == "ICGS") {
-	return Belos::getICGSFastParameters<Scalar, MV, OP> ();
+	return Belos::getICGSFastParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "IMGS") {
-	return Belos::getIMGSFastParameters<Scalar, MV, OP> ();
+	return Belos::getIMGSFastParameters<Scalar, MV, OP, DM> ();
       }
       else if (name == "Simple") {
-	SimpleOrthoManager<Scalar, MV> orthoMan;
+	SimpleOrthoManager<Scalar, MV, DM> orthoMan;
 	return orthoMan.getFastParameters ();
       }
       else {
@@ -288,7 +288,7 @@ namespace Belos {
     ///   parameter list with embedded documentation is available for
     ///   each MatOrthoManager subclass that this factory knows how to
     ///   make.
-    Teuchos::RCP<Belos::MatOrthoManager<Scalar, MV, OP> >
+    Teuchos::RCP<Belos::MatOrthoManager<Scalar, MV, OP, DM> >
     makeMatOrthoManager (const std::string& ortho, 
 			 const Teuchos::RCP<const OP>& M,
 			 const Teuchos::RCP<OutputManager<Scalar> >& /* outMan */,
@@ -305,21 +305,21 @@ namespace Belos {
       using Teuchos::rcp;
 
       if (ortho == "DGKS") {
-	typedef DGKSOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef DGKSOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       }
 #ifdef HAVE_BELOS_TSQR
       else if (ortho == "TSQR") {
-	typedef TsqrMatOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef TsqrMatOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       }
 #endif // HAVE_BELOS_TSQR
       else if (ortho == "ICGS") {
-	typedef ICGSOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef ICGSOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       }
       else if (ortho == "IMGS") {
-	typedef IMGSOrthoManager<Scalar, MV, OP> ortho_type;
+	typedef IMGSOrthoManager<Scalar, MV, OP, DM> ortho_type;
 	return rcp (new ortho_type (params, label, M));
       } 
       else if (ortho == "Simple") {
@@ -352,7 +352,7 @@ namespace Belos {
     ///   setting up the specific OrthoManager subclass.
     ///
     /// \return OrthoManager instance.
-    Teuchos::RCP<Belos::OrthoManager<Scalar, MV> >
+    Teuchos::RCP<Belos::OrthoManager<Scalar, MV, DM> >
     makeOrthoManager (const std::string& ortho, 
 		      const Teuchos::RCP<const OP>& M,
 		      const Teuchos::RCP<OutputManager<Scalar> >& outMan,
@@ -369,7 +369,7 @@ namespace Belos {
 				   "SimpleOrthoManager is not yet supported "
 				   "when the operator M is nontrivial (i.e., "
 				   "M != null).");
-	return rcp (new SimpleOrthoManager<Scalar, MV> (outMan, label, params));
+	return rcp (new SimpleOrthoManager<Scalar, MV, DM> (outMan, label, params));
       }
 #ifdef HAVE_BELOS_TSQR
       // TsqrMatOrthoManager has to store more things and do more work
@@ -381,7 +381,7 @@ namespace Belos {
       // TsqrMatOrthoManager would still be correct; this is just an
       // optimization.
       else if (ortho == "TSQR" && M.is_null()) {
-	return rcp (new TsqrOrthoManager<Scalar, MV> (params, label));
+	return rcp (new TsqrOrthoManager<Scalar, MV, DM> (params, label));
       }
 #endif // HAVE_BELOS_TSQR
       else {
