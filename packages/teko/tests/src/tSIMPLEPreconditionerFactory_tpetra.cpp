@@ -723,15 +723,14 @@ bool tSIMPLEPreconditionerFactory_tpetra::test_result(int verbosity, std::ostrea
   return true;
 }
 
-bool tSIMPLEPreconditionerFactory_tpetra::test_iterativeSolves(int verbosity, std::ostream& os)
-{
+bool tSIMPLEPreconditionerFactory_tpetra::test_iterativeSolves(int verbosity, std::ostream &os) {
   bool status    = false;
   bool allPassed = true;
 
   RCP<ParameterList> params = Teuchos::rcp(new ParameterList());
-  ParameterList& tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
+  ParameterList &tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
   tekoList.set("Inverse Type", "SIMPLE");
-  ParameterList& ifl = tekoList.sublist("Inverse Factory Library");
+  ParameterList &ifl = tekoList.sublist("Inverse Factory Library");
   ifl.sublist("SIMPLE").set("Type", "NS SIMPLE");
   ifl.sublist("SIMPLE").set("Inverse Velocity Type", "Belos");
   ifl.sublist("SIMPLE").set("Preconditioner Velocity Type", "Ifpack2");
