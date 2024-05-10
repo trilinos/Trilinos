@@ -662,8 +662,9 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null || changedOrthoType) {
     Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
       paramsOrtho->set ("depTol", orthoKappa_ );
     }
 
