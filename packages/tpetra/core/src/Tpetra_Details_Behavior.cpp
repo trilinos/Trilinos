@@ -54,6 +54,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Behavior.hpp"
+#include "KokkosKernels_config.h"  // for TPL enable macros
 
 /*! \file Tpetra_Details_Behavior.cpp
 
@@ -681,7 +682,13 @@ bool Behavior::skipCopyAndPermuteIfPossible() {
 }
 
 bool Behavior::fusedResidual() {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  constexpr bool defaultValue(false);
+#else
   constexpr bool defaultValue(true);
+#endif
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;

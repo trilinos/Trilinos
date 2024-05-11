@@ -147,21 +147,31 @@ evaluateFields(
     }
 
     // take extreme over points in each cell
-    Kokkos::parallel_for ("CellExtreme", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
-      for (std::size_t qp = 0; qp < num_pt; ++qp) {
-        auto current = mult_field(cell, qp);
-        
-        // take first point
-        if (qp == 0)
-          extreme_view(cell) = current;
+    if (extreme_max) {
+      Kokkos::parallel_for ("CellExtreme (max)", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+        for (std::size_t qp = 0; qp < num_pt; ++qp) {
+          auto current = mult_field(cell, qp);
 
-        // take largest value in the cell
-        if(extreme_max)
-          extreme_view(cell) = extreme_view(cell)<current ? current : extreme_view(cell);
-        else // use_min
-          extreme_view(cell) = extreme_view(cell)>current ? current : extreme_view(cell);
-      }
-    });
+          // take first point
+          if (qp == 0)
+            extreme_view(cell) = current;
+          else
+            extreme_view(cell) = extreme_view(cell)<current ? current : extreme_view(cell);
+        }
+      });
+    } else {
+      Kokkos::parallel_for ("CellExtreme (min)", workset.num_cells, KOKKOS_LAMBDA( const int cell) {
+        for (std::size_t qp = 0; qp < num_pt; ++qp) {
+          auto current = mult_field(cell, qp);
+        
+          // take first point
+          if (qp == 0)
+            extreme_view(cell) = current;
+          else // use_min
+            extreme_view(cell) = extreme_view(cell)>current ? current : extreme_view(cell);
+        }
+      });
+    }
 }
 
 //**********************************************************************

@@ -1,5 +1,17 @@
 # Change Log
 
+## [4.3.01](https://github.com/kokkos/kokkos-kernels/tree/4.3.01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.3.00...4.3.01)
+
+### Bug Fixes:
+- sparse: block spiluk fixes [\#2172](https://github.com/kokkos/kokkos-kernels/pull/2172)
+- magma: tpl interaction fixes [\#2176](https://github.com/kokkos/kokkos-kernels/pull/2176), [\#2178](https://github.com/kokkos/kokkos-kernels/pull/2178), [\#2181](https://github.com/kokkos/kokkos-kernels/pull/2181)
+- trsv: Add early return if numRows == 0 in trsv to avoid integer divide-by-zero error [\#2180](https://github.com/kokkos/kokkos-kernels/pull/2180)
+- blas tpl: resolve potential duplicate symbol [\#2183](https://github.com/kokkos/kokkos-kernels/pull/2183)
+- spmv: permformance fix, add back special path for rank-2 x/y with 1 column [\#2164](https://github.com/kokkos/kokkos-kernels/pull/2164), [\#2168](https://github.com/kokkos/kokkos-kernels/pull/2168)
+- BsrMatrix: Fix HostMirror typedef [\#2196](https://github.com/kokkos/kokkos-kernels/pull/2196)
+- GA: Fix macOS docs build [\#2190](https://github.com/kokkos/kokkos-kernels/pull/2190)
+
 ## [4.3.00](https://github.com/kokkos/kokkos-kernels/tree/4.3.00) (2024-03-19)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.2.01...4.3.00)
 
@@ -639,7 +651,7 @@
 ## [3.6.00](https://github.com/kokkos/kokkos-kernels/tree/3.6.00) (2022-02-18)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.5.00...3.6.00)
 
-### Features: 
+### Features:
 
 #### Batched Sparse Linear algebra
 - Kokkos Kernels is adding a new component to the library: batched sparse linear algebra.
@@ -673,7 +685,7 @@
 - SpMV: adding support for rocSPARSE TPL [\#1221](https://github.com/kokkos/kokkos-kernels/pull/1221)
 
 #### Additional new features
-- bhalf: Unit test Batched GEMM [\#1251](https://github.com/kokkos/kokkos-kernels/pull/1251) 
+- bhalf: Unit test Batched GEMM [\#1251](https://github.com/kokkos/kokkos-kernels/pull/1251)
 -   and demostrate GMRES example convergence with bhalf_t (https://github.com/kokkos/kokkos-kernels/pull/1300)
 - Stream interface: adding stream support in GEMV and GEMM [\#1131](https://github.com/kokkos/kokkos-kernels/pull/1131)
 - Improve double buffering batched gemm performance [\#1217](https://github.com/kokkos/kokkos-kernels/pull/1217)
@@ -962,7 +974,7 @@
 ## [3.1.01](https://github.com/kokkos/kokkos-kernels/tree/3.1.01) (2020-05-04)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.1.00...3.1.01)
 
-** Fixed bugs:** 
+** Fixed bugs:**
 
 - KokkosBatched QR PR breaking nightly tests [\#691](https://github.com/kokkos/kokkos-kernels/issues/691)
 

@@ -786,6 +786,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
       paramsOrtho->set ("depTol", orthoKappa_ );
     }
 

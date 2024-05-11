@@ -184,19 +184,59 @@ LinearOp SIMPLEPreconditionerFactory ::buildPreconditionerOperator(
     hatS = add(C, scale(-1.0, multiply(B, HBt)));
   }
 
+  Teko::ModifiableLinearOp& precInvF = state.getModifiableOp("precInvF");
+  if(precVelFactory_){
+    if(precInvF == Teuchos::null){
+      precInvF = precVelFactory_->buildInverse(F);
+      state.addModifiableOp("precInvF", precInvF);
+    } else {
+      Teko::rebuildInverse(*precVelFactory_, F, precInvF);
+    }
+  }
+
   // build the inverse for F
-  ModifiableLinearOp& invF = state.getModifiableOp("invF");
-  if (invF == Teuchos::null)
-    invF = buildInverse(*invVelFactory_, F);
-  else
-    rebuildInverse(*invVelFactory_, F, invF);
+  Teko::ModifiableLinearOp& invF = state.getModifiableOp("invF");
+  if (invF == Teuchos::null){
+    if(precInvF.is_null()){
+      invF = Teko::buildInverse(*invVelFactory_, F);
+    } else {
+      invF = Teko::buildInverse(*invVelFactory_, F, precInvF);
+    }
+  }
+  else{
+    if(precInvF.is_null()){
+      Teko::rebuildInverse(*invVelFactory_, F, invF);
+    } else {
+      Teko::rebuildInverse(*invVelFactory_, F, precInvF, invF);
+    }
+  }
+
+  Teko::ModifiableLinearOp& precInvS = state.getModifiableOp("precInvS");
+  if(precPrsFactory_){
+    if(precInvS == Teuchos::null){
+      precInvS = precPrsFactory_->buildInverse(hatS);
+      state.addModifiableOp("precInvS", precInvS);
+    } else {
+      Teko::rebuildInverse(*precPrsFactory_, hatS, precInvS);
+    }
+  }
 
   // build the approximate Schur complement
-  ModifiableLinearOp& invS = state.getModifiableOp("invS");
-  if (invS == Teuchos::null)
-    invS = buildInverse(*invPrsFactory_, hatS);
-  else
-    rebuildInverse(*invPrsFactory_, hatS, invS);
+  Teko::ModifiableLinearOp& invS = state.getModifiableOp("invS");
+  if (invS == Teuchos::null){
+    if(precInvS == Teuchos::null){
+      invS = Teko::buildInverse(*invPrsFactory_, hatS);
+    } else {
+      invS = Teko::buildInverse(*invPrsFactory_, hatS, precInvS);
+    }
+  }
+  else {
+    if(precInvS == Teuchos::null){
+      Teko::rebuildInverse(*invPrsFactory_, hatS, invS);
+    } else {
+      Teko::rebuildInverse(*invPrsFactory_, hatS, precInvS, invS);
+    }
+  }
 
   std::vector<LinearOp> invDiag(2);  // vector storing inverses
 
@@ -232,15 +272,19 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   fInverseType_   = Diagonal;
 
   // get string specifying inverse
-  std::string invStr = "", invVStr = "", invPStr = "";
+  std::string invStr = "", invVStr = "", invPStr = "", precVStr = "", precPStr = "";
   alpha_ = 1.0;
 
   // "parse" the parameter list
   if (pl.isParameter("Inverse Type")) invStr = pl.get<std::string>("Inverse Type");
   if (pl.isParameter("Inverse Velocity Type"))
     invVStr = pl.get<std::string>("Inverse Velocity Type");
+  if (pl.isParameter("Preconditioner Velocity Type"))
+    precVStr = pl.get<std::string>("Preconditioner Velocity Type");
   if (pl.isParameter("Inverse Pressure Type"))
     invPStr = pl.get<std::string>("Inverse Pressure Type");
+  if (pl.isParameter("Preconditioner Pressure Type"))
+    precPStr = pl.get<std::string>("Preconditioner Pressure Type");
   if (pl.isParameter("Alpha")) alpha_ = pl.get<double>("Alpha");
   if (pl.isParameter("Explicit Velocity Inverse Type")) {
     std::string fInverseStr = pl.get<std::string>("Explicit Velocity Inverse Type");
@@ -257,7 +301,9 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;
   DEBUG_STREAM << "   inv type    = \"" << invStr << "\"" << std::endl;
   DEBUG_STREAM << "   inv v type  = \"" << invVStr << "\"" << std::endl;
+  DEBUG_STREAM << "   prec v type  = \"" << precVStr << "\"" << std::endl;
   DEBUG_STREAM << "   inv p type  = \"" << invPStr << "\"" << std::endl;
+  DEBUG_STREAM << "   prec p type  = \"" << precPStr << "\"" << std::endl;
   DEBUG_STREAM << "   alpha       = " << alpha_ << std::endl;
   DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
   DEBUG_STREAM << "   vel scaling = " << getDiagonalName(fInverseType_) << std::endl;
@@ -284,9 +330,19 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   if (invVStr != invPStr)  // if different, build pressure inverse factory
     invPFact = invLib->getInverseFactory(invPStr);
 
+  RCP<InverseFactory> precVFact, precPFact;
+  if(precVStr != "")
+    precVFact = invLib->getInverseFactory(precVStr);
+
+  if(precPStr != "")
+    precPFact = invLib->getInverseFactory(precPStr);
+
   // based on parameter type build a strategy
   invVelFactory_ = invVFact;
   invPrsFactory_ = invPFact;
+
+  precVelFactory_ = precVFact;
+  precPrsFactory_ = precPFact;
 
   if (useMass_) {
     Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
@@ -302,19 +358,41 @@ Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedPa
   Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
 
   // grab parameters from F solver
-  RCP<Teuchos::ParameterList> vList = invVelFactory_->getRequestedParameters();
-  if (vList != Teuchos::null) {
-    Teuchos::ParameterList::ConstIterator itr;
-    for (itr = vList->begin(); itr != vList->end(); ++itr) pl->setEntry(itr->first, itr->second);
-    result = pl;
+  {
+    RCP<Teuchos::ParameterList> vList = invVelFactory_->getRequestedParameters();
+    if (vList != Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for (itr = vList->begin(); itr != vList->end(); ++itr) pl->setEntry(itr->first, itr->second);
+      result = pl;
+    }
+  }
+
+  if (precVelFactory_ != Teuchos::null) {
+    RCP<Teuchos::ParameterList> vList = precVelFactory_->getRequestedParameters();
+    if (vList != Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for (itr = vList->begin(); itr != vList->end(); ++itr) pl->setEntry(itr->first, itr->second);
+      result = pl;
+    }
   }
 
   // grab parameters from S solver
-  RCP<Teuchos::ParameterList> pList = invPrsFactory_->getRequestedParameters();
-  if (pList != Teuchos::null) {
-    Teuchos::ParameterList::ConstIterator itr;
-    for (itr = pList->begin(); itr != pList->end(); ++itr) pl->setEntry(itr->first, itr->second);
-    result = pl;
+  {
+    RCP<Teuchos::ParameterList> pList = invPrsFactory_->getRequestedParameters();
+    if (pList != Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for (itr = pList->begin(); itr != pList->end(); ++itr) pl->setEntry(itr->first, itr->second);
+      result = pl;
+    }
+  }
+
+  if (precPrsFactory_ != Teuchos::null) {
+    RCP<Teuchos::ParameterList> pList = precPrsFactory_->getRequestedParameters();
+    if (pList != Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for (itr = pList->begin(); itr != pList->end(); ++itr) pl->setEntry(itr->first, itr->second);
+      result = pl;
+    }
   }
 
   // grab parameters from S solver
@@ -338,6 +416,10 @@ bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::Param
   // update requested parameters in solvers
   result &= invVelFactory_->updateRequestedParameters(pl);
   result &= invPrsFactory_->updateRequestedParameters(pl);
+  if(precVelFactory_)
+    result &= precVelFactory_->updateRequestedParameters(pl);
+  if(precPrsFactory_)
+    result &= precPrsFactory_->updateRequestedParameters(pl);
   if (customHFactory_ != Teuchos::null) result &= customHFactory_->updateRequestedParameters(pl);
 
   return result;

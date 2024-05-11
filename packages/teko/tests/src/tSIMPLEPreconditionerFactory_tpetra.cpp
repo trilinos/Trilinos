@@ -272,6 +272,13 @@ int tSIMPLEPreconditionerFactory_tpetra::runTest(int verbosity, std::ostream &st
   failcount += status ? 0 : 1;
   totalrun++;
 
+  status = test_iterativeSolves(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"iterativeSolves\" ... PASSED",
+                       "   \"iterativeSolves\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
   status = test_diagonal(verbosity, failstrm, 0);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"diagonal(diag)\" ... PASSED",
                        "   \"diagonal(diag)\" ... FAILED");
@@ -713,6 +720,35 @@ bool tSIMPLEPreconditionerFactory_tpetra::test_result(int verbosity, std::ostrea
    allPassed &= status;
 
    return allPassed;*/
+  return true;
+}
+
+bool tSIMPLEPreconditionerFactory_tpetra::test_iterativeSolves(int verbosity, std::ostream& os)
+{
+  bool status    = false;
+  bool allPassed = true;
+
+  RCP<ParameterList> params = Teuchos::rcp(new ParameterList());
+  ParameterList& tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
+  tekoList.set("Inverse Type", "SIMPLE");
+  ParameterList& ifl = tekoList.sublist("Inverse Factory Library");
+  ifl.sublist("SIMPLE").set("Type", "NS SIMPLE");
+  ifl.sublist("SIMPLE").set("Inverse Velocity Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Velocity Type", "Ifpack2");
+  ifl.sublist("SIMPLE").set("Inverse Pressure Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Pressure Type", "Ifpack2");
+
+  RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("SIMPLE");
+
+  Teko::ModifiableLinearOp inv = Teko::buildInverse(*invFact, A_);
+  TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+
+  if (!inv.is_null()) {
+    Teko::rebuildInverse(*invFact, A_, inv);
+    TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+  }
+
   return true;
 }
 
