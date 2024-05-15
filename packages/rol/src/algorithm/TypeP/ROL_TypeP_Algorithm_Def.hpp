@@ -105,13 +105,14 @@ void Algorithm<Real>::run( Problem<Real> &problem,
                            std::ostream  &outStream ) {
   if (problem.getProblemType() == TYPE_P) {
     run(*problem.getPrimalOptimizationVector(),
+        *problem.getDualOptimizationVector(),
         *problem.getObjective(),
-        *problem.getProximableObjective(),
+				*problem.getProximableObjective(),
         outStream);
     problem.finalizeIteration();
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::TypeP::Algorithm::run : Optimization problem is not Type P problems!");
+    throw Exception::NotImplemented(">>> ROL::TypeP::Algorithm::run : Optimization problem is not Type P!");
   }
 }
 
