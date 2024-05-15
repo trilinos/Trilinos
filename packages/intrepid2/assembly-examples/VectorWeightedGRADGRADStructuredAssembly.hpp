@@ -113,6 +113,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureVectorWeight
     avViewHost(d) = (*vectorWeight2)[d];
   }
   Kokkos::deep_copy(avView, avViewHost);
+  Data<Scalar,DeviceType> au_data(auView, Kokkos::Array<int,3>{worksetSize,numPoints,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
+  Data<Scalar,DeviceType> av_data(avView, Kokkos::Array<int,3>{worksetSize,numPoints,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
+  
+  auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, au_data, true);
+  auto vTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, av_data, true);
   
   initialSetupTimer->stop();
   while (cellOffset < numCells)
@@ -125,27 +130,20 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureVectorWeight
     if (numCellsInWorkset != worksetSize)
     {
       const int CELL_DIM = 0; // first dimension corresponds to cell
-      jacobian.setExtent(    CELL_DIM, numCellsInWorkset);
-      jacobianDet.setExtent( CELL_DIM, numCellsInWorkset);
-      jacobianInv.setExtent( CELL_DIM, numCellsInWorkset);
+      jacobian.setExtent    (CELL_DIM, numCellsInWorkset);
+      jacobianDet.setExtent (CELL_DIM, numCellsInWorkset);
+      jacobianInv.setExtent (CELL_DIM, numCellsInWorkset);
       integralData.setExtent(CELL_DIM, numCellsInWorkset);
+      au_data.setExtent     (CELL_DIM, numCellsInWorkset);
+      av_data.setExtent     (CELL_DIM, numCellsInWorkset);
+      uTransform.setExtent  (CELL_DIM, numCellsInWorkset);
+      vTransform.setExtent  (CELL_DIM, numCellsInWorkset);
+      
       Kokkos::resize(worksetCellStiffness, numCellsInWorkset, numFields, numFields);
       
       // cellMeasures is a TensorData object with separateFirstComponent_ = true; the below sets the cell dimension…
       cellMeasures.setFirstComponentExtentInDimension0(numCellsInWorkset);
     }
-    
-    Data<Scalar,DeviceType> au_data(auView, Kokkos::Array<int,3>{numCellsInWorkset,numPoints,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
-    Data<Scalar,DeviceType> av_data(avView, Kokkos::Array<int,3>{numCellsInWorkset,numPoints,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
-    
-    auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, au_data, true);
-    auto vTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, av_data, true);
-    
-    uTransform.storeMatVec(jacobianInv, au_data, true); // true: transpose jacobianInv when multiplying
-    vTransform.storeMatVec(jacobianInv, av_data, true); // true: transpose jacobianInv when multiplying
-    
-    Intrepid2::TransformedBasisValues<double, DeviceType> uTransformedGradientValues(uTransform, gradientValues);
-    Intrepid2::TransformedBasisValues<double, DeviceType> vTransformedGradientValues(vTransform, gradientValues);
     
     geometry.setJacobian(jacobian, tensorCubaturePoints, refData, startCell, endCell);
     CellTools<DeviceType>::setJacobianDet(jacobianDet, jacobian);
@@ -155,6 +153,12 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureVectorWeight
     geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
     ExecutionSpace().fence();
     jacobianAndCellMeasureTimer->stop();
+    
+    uTransform.storeMatVec(jacobianInv, au_data, true); // true: transpose jacobianInv when multiplying
+    vTransform.storeMatVec(jacobianInv, av_data, true); // true: transpose jacobianInv when multiplying
+    
+    Intrepid2::TransformedBasisValues<double, DeviceType> uTransformedGradientValues(uTransform, gradientValues);
+    Intrepid2::TransformedBasisValues<double, DeviceType> vTransformedGradientValues(vTransform, gradientValues);
     
     bool sumInto = false;
     double approximateFlopCountIntegrateWorkset = 0;
