@@ -73,7 +73,7 @@ void Algorithm<Real>::run( Problem<Real> &problem,
     run(*problem.getPrimalOptimizationVector(),
         *problem.getDualOptimizationVector(),
         *problem.getObjective(),
-				*problem.getProximableObjective(),
+        *problem.getProximableObjective(),
         outStream);
     problem.finalizeIteration();
   }
