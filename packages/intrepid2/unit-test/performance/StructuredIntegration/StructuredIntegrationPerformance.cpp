@@ -70,6 +70,8 @@
 #include "HCURLStructuredAssembly.hpp"
 #include "HVOLStandardAssembly.hpp"
 #include "HVOLStructuredAssembly.hpp"
+#include "VectorWeightedGRADGRADStandardAssembly.hpp"
+#include "VectorWeightedGRADGRADStructuredAssembly.hpp"
 
 enum FormulationChoice
 {
@@ -205,8 +207,10 @@ getMeshWidths(int basisCardinality, int maxStiffnessEntryCount, int maxElements)
 
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationChoice formulation,
-                                        Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                        double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+                                                                   Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                                                   double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
+                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight1 = Teuchos::null,
+                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -220,6 +224,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationCh
       return performStandardQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStandardQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case VectorWeightedPoisson:
+      return performStandardQuadratureVectorWeightGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       return Intrepid2::ScalarView<Scalar,DeviceType>();
   }
@@ -227,8 +233,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationCh
 
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(FormulationChoice formulation,
-                                          Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                          double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+                                                                     Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                                                     double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
+                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight1 = Teuchos::null,
+                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -242,6 +250,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(Formulation
       return performStructuredQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStructuredQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case VectorWeightedPoisson:
+      return performStructuredQuadratureVectorWeightGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       return Intrepid2::ScalarView<Scalar,DeviceType>();
   }

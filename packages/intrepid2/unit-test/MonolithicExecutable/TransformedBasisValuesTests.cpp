@@ -480,7 +480,6 @@ namespace
     Data<Scalar,DeviceType> au_data(auView, Kokkos::Array<int,3>{numCells,pointsPerCell,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
     Data<Scalar,DeviceType> av_data(avView, Kokkos::Array<int,3>{numCells,pointsPerCell,spaceDim}, Kokkos::Array<DataVariationType,3>{CONSTANT,CONSTANT,GENERAL});
     
-    // lazily-evaluated transformed gradient values:
     auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, au_data, true);
     auto vTransform = Data<Scalar,DeviceType>::allocateMatVecResult(jacobianInv, av_data, true);
     
@@ -546,7 +545,7 @@ namespace
     FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, expandedJacobianInverse, basisGradValues);
     
     auto policy3 = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCells,numFields,numPoints});
-    Kokkos::parallel_for("fill expanded cell nodes", policy3,
+    Kokkos::parallel_for("compute expanded_{u,v}TransformedGradValues", policy3,
     KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
     {
       Scalar u_result = 0;

@@ -102,10 +102,10 @@ namespace {
 }
 
 //! General assembly for two arbitrary bases and ops that uses the classic, generic Intrepid2 paths.
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2>  // spaceDim and spaceDim2 should agree on value (differ on type)
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, int worksetSize,
-                                                                 const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
-                                                                 const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2,
+                                                                 const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight1,
+                                                                 const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight2,
                                                                  double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
@@ -210,6 +210,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   ViewType jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
   ViewType jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
   ViewType jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
+  
+  // Views used for vector-weighted case:
+  ViewType scalarTransformedValues1        ("scalar transformed values 1", worksetSize, numFields1, numPoints);
+  ViewType scalarTransformedWeightedValues2("scalar transformed weighted values 2", worksetSize, numFields2, numPoints);
 
   initialSetupTimer->stop();
   
@@ -235,6 +239,10 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
       Kokkos::resize(jacobianInverse,     numCellsInWorkset, numPoints, spaceDim, spaceDim);
       Kokkos::resize(jacobianDeterminant, numCellsInWorkset, numPoints);
       Kokkos::resize(cellMeasures,        numCellsInWorkset, numPoints);
+      Kokkos::resize(jacobianDeterminant, numCellsInWorkset, numPoints);
+      
+      Kokkos::resize(scalarTransformedValues1,         numCellsInWorkset, numFields1, numPoints);
+      Kokkos::resize(scalarTransformedWeightedValues2, numCellsInWorkset, numFields2, numPoints);
       
       if (scalarValued)
       {
@@ -269,14 +277,60 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
     OrientationTools<DeviceType>::modifyBasisByOrientation(orientedValues2, basis2Values, orientationsWorkset, basis2.get());
     transform(transformedValues1, orientedValues1, fs1, op1, jacobian, jacobianDeterminant, jacobianInverse);
     transform(transformedValues2, orientedValues2, fs2, op2, jacobian, jacobianDeterminant, jacobianInverse);
-    
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
-    FunctionSpaceTools::multiplyMeasure(transformedWeightedValues2, cellMeasures, transformedValues2);
-    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim); // multiply each entry of transformedGradValues: one flop for each.
         
     auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
     
-    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedValues1, transformedWeightedValues2);
+    FunctionSpaceTools::multiplyMeasure(transformedWeightedValues2, cellMeasures, transformedValues2);
+    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim); // multiply each entry of transformedGradValues: one flop for each.
+    
+    if (vectorWeight1 != Teuchos::null)
+    {
+      // for now, the only use case we support is for both basis1 and basis2 evaluations to be vector-valued: we take the dot product of the weight with the basis values.
+      INTREPID2_TEST_FOR_EXCEPTION(vectorWeight2 == Teuchos::null, std::invalid_argument, "if vectorWeight1 is non-null, vectorWeight2 must also not be null");
+      INTREPID2_TEST_FOR_EXCEPTION(scalarValued, std::invalid_argument, "if vectorWeight1 is non-null, both bases must be vector-valued.");
+      
+      auto uWeight = *vectorWeight1;
+      auto vWeight = *vectorWeight2;
+      
+      auto policy3 = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCellsInWorkset,numFields1,numPoints});
+      Kokkos::parallel_for("compute scalarTransformedValues1", policy3,
+      KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+      {
+        Scalar u_result = 0;
+        for (int d=0; d<spaceDim; d++)
+        {
+          u_result += uWeight[d] * transformedValues1(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+        }
+        scalarTransformedValues1(cellOrdinal,fieldOrdinal,pointOrdinal) = u_result;
+      });
+      
+      policy3 = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCellsInWorkset,numFields2,numPoints});
+      Kokkos::parallel_for("compute scalarTransformedValues2", policy3,
+      KOKKOS_LAMBDA (const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal)
+      {
+        Scalar v_result = 0;
+        for (int d=0; d<spaceDim; d++)
+        {
+          v_result += vWeight[d] * transformedWeightedValues2(cellOrdinal,fieldOrdinal,pointOrdinal,d);
+        }
+        scalarTransformedWeightedValues2(cellOrdinal,fieldOrdinal,pointOrdinal) = v_result;
+      });
+    }
+    else
+    {
+      INTREPID2_TEST_FOR_EXCEPTION(vectorWeight2 != Teuchos::null, std::invalid_argument, "if vectorWeight2 is non-null, vectorWeight1 must also not be null");
+    }
+    
+    transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields1+numFields2) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
+    
+    if (vectorWeight1 == Teuchos::null)
+    {
+      FunctionSpaceTools::integrate(cellStiffnessSubview, transformedValues1, transformedWeightedValues2);
+    }
+    else
+    {
+      FunctionSpaceTools::integrate(cellStiffnessSubview, scalarTransformedValues1, scalarTransformedWeightedValues2);
+    }
     ExecutionSpace().fence();
     fstIntegrateCall->stop();
     
@@ -289,4 +343,18 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   return cellStiffness;
 }
 
+//! General assembly for two arbitrary bases and ops that uses the classic, generic Intrepid2 paths.
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, int worksetSize,
+                                                                 const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1,
+                                                                 const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2,
+                                                                 double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+{
+  Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim> > nullVectorWeight = Teuchos::null;
+  
+  return performStandardAssembly<Scalar,BasisFamily,PointScalar,spaceDim,DeviceType>(geometry, worksetSize,
+                                                                                     polyOrder1, fs1, op1, nullVectorWeight,
+                                                                                     polyOrder2, fs2, op2, nullVectorWeight,
+                                                                                     transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+}
 #endif /* StandardAssembly_hpp */
