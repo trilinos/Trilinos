@@ -186,16 +186,16 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
   }
 
   KokkosSparse::Impl::CuSparse10_SpMV_Data *subhandle;
-  if (handle->is_set_up) {
-    subhandle =
-        dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data *>(handle->tpl);
+  if (handle->tpl_rank2) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data *>(
+        handle->tpl_rank2);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
     subhandle->set_exec_space(exec);
   } else {
-    subhandle   = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
+    handle->tpl_rank2 = subhandle;
     /* create matrix */
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
         &subhandle->mat, A.numRows(), A.numCols(), A.nnz(),
@@ -209,8 +209,6 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle,
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(
         cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
-
-    handle->is_set_up = true;
   }
 
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM(cusparseHandle, opA, opB, &alpha,
