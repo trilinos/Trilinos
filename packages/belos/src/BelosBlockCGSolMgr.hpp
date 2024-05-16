@@ -70,10 +70,13 @@
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
 #include <algorithm>
 
-/** \example BlockCG/BlockCGEpetraExFile.cpp
-    This is an example of how to use the Belos::BlockCGSolMgr solver manager.
+/** \example epetra/example/BlockCG/BlockCGEpetraExFile.cpp
+    This is an example of how to use the Belos::BlockCGSolMgr solver manager in Epetra.
 */
-/** \example BlockCG/BlockPrecCGEpetraExFile.cpp
+/** \example tpetra/example/BlockCG/BlockCGTpetraExFile.cpp
+    This is an example of how to use the Belos::BlockCGSolMgr solver manager in Tpetra.
+*/
+/** \example epetra/example/BlockCG/BlockPrecCGEpetraExFile.cpp
     This is an example of how to use the Belos::BlockCGSolMgr solver manager with an Ifpack preconditioner.
 */
 

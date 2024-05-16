@@ -62,8 +62,11 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example TFQMR/PseudoBlockTFQMREpetraExFile.cpp
-    This is an example of how to use the Belos::PseudoBlockTFQMRSolMgr solver manager.
+/** \example epetra/example/TFQMR/PseudoBlockTFQMREpetraExFile.cpp
+    This is an example of how to use the Belos::PseudoBlockTFQMRSolMgr solver manager using Epetra.
+*/
+/** \example tpetra/example/TFQMR/PseudoBlockTFQMRTpetraExFile.cpp
+    This is an example of how to use the Belos::PseudoBlockTFQMRSolMgr solver manager using Tpetra.
 */
 
 /*! \class Belos::PseudoBlockTFQMRSolMgr

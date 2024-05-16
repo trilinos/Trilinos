@@ -62,10 +62,10 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example BiCGStab/BiCGStabExFile.cpp
+/** \example epetra/example/BiCGStab/BiCGStabExFile.cpp
     This is an example of how to use the Belos::BiCGStabSolMgr solver manager.
 */
-/** \example BiCGStab/PrecBiCGStabExFile.cpp
+/** \example epetra/example/BiCGStab/PrecBiCGStabExFile.cpp
     This is an example of how to use the Belos::BiCGStabSolMgr solver manager with an Ifpack preconditioner.
 */
 
