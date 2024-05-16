@@ -1,7 +1,7 @@
 // @HEADER
 // ***********************************************************************
 //
-//                 Belos: Block Eigensolvers Package
+//                 Belos: Block Linear Solvers Package
 //                 Copyright 2004 Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
