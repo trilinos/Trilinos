@@ -54,17 +54,17 @@ void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double dist
   int numProcs = stk::parallel_machine_size(comm);
   int procId = stk::parallel_machine_rank(comm);
 
-  std::vector<std::pair<Sphere, Ident>> boxVector1;
+  std::vector<std::pair<Sphere, IdentProc>> boxVector1;
   if (procId == 0) {
     boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId));
   }
 
-  std::vector<std::pair<Sphere, Ident>> boxVector2;
+  std::vector<std::pair<Sphere, IdentProc>> boxVector2;
   if (procId == numProcs-1) {
     boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
   }
 
-  std::vector<std::pair<Ident, Ident>> boxIdPairResults;
+  SearchResults boxIdPairResults;
   stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 
   if (procId == 0 || (procId == numProcs-1)) {
@@ -78,23 +78,18 @@ void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double dist
 void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double distanceBetweenSphereCenters,
                                     const double radius, const unsigned expectedNumOverlap)
 {
-  using BoxType = stk::search::Sphere<double>;
-  using IdentProcType = stk::search::IdentProc<int,int>;
-  using BoxIdentProcType = stk::search::BoxIdentProc<BoxType, IdentProcType>;
-  using IntersectionType = stk::search::IdentProcIntersection<IdentProcType, IdentProcType>;
-
   MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(comm);
   int procId = stk::parallel_machine_rank(comm);
 
-  auto domain = Kokkos::View<BoxIdentProcType*, stk::ngp::ExecSpace>("domain box-ident-proc", 1);
-  auto range = Kokkos::View<BoxIdentProcType*, stk::ngp::ExecSpace>("range box-ident-proc", 1);
+  auto domain = Kokkos::View<SphereIdentProc*, stk::ngp::ExecSpace>("domain box-ident-proc", 1);
+  auto range = Kokkos::View<SphereIdentProc*, stk::ngp::ExecSpace>("range box-ident-proc", 1);
 
   if (procId == 0) {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(const unsigned & i) {
         domain[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoxType, IdentProcType>(0, 0, 0, radius, 1, procId);
+            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<Sphere, IdentProc>(0, 0, 0, radius, 1, procId);
     });
   }
 
@@ -103,16 +98,16 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
       KOKKOS_LAMBDA(const unsigned & i) {
         const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
         range[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoxType, IdentProcType>(axisOffset, axisOffset, 0,
+            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<Sphere, IdentProc>(axisOffset, axisOffset, 0,
                                                                                                     radius, 2, procId);
     });
   }
 
-  auto intersections = Kokkos::View<IntersectionType*, stk::ngp::ExecSpace>("intersections", 0);
+  auto intersections = Kokkos::View<IdentProcIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
   stk::search::coarse_search(domain, range, searchMethod, comm, intersections);
 
-  Kokkos::View<IntersectionType*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentProcIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   if (procId == 0 || (procId == numProcs-1)) {
@@ -246,23 +241,18 @@ void host_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod,
     const double radius,
     const unsigned expectedNumOverlap)
 {
-  using BoxType = stk::search::Sphere<double>;
-  using IdentType = int;
-  using BoxIdentType = std::pair<BoxType, IdentType>;
-  using IntersectionType = std::pair<IdentType, IdentType>;
-
-  std::vector<BoxIdentType> domain;
-  std::vector<BoxIdentType> range;
+  std::vector<SphereIdentPair> domain;
+  std::vector<SphereIdentPair> range;
 
   domain.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(0, 0, 0, radius, 1)));
+      stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1)));
 
   const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
   range.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(
+      stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(
           axisOffset, axisOffset, 0, radius, 2)));
 
-  std::vector<IntersectionType> intersections;
+  LocalSearchResults intersections;
 
   stk::search::local_coarse_search(domain, range, searchMethod, intersections);
 
@@ -277,30 +267,25 @@ void host_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod,
 void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double distanceBetweenSphereCenters,
                                     const double radius, const unsigned expectedNumOverlap)
 {
-  using BoxType = stk::search::Sphere<double>;
-  using IdentType = int;
-  using BoxIdentType = stk::search::BoxIdent<BoxType, IdentType>;
-  using IntersectionType = stk::search::IdentIntersection<IdentType, IdentType>;
-
-  auto domain = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("domain box-ident", 1);
-  auto range = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("range box-ident", 1);
+  auto domain = Kokkos::View<SphereIdent*, stk::ngp::ExecSpace>("domain box-ident", 1);
+  auto range = Kokkos::View<SphereIdent*, stk::ngp::ExecSpace>("range box-ident", 1);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
     KOKKOS_LAMBDA(const unsigned & i) {
       domain[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(0, 0, 0, radius, 1);
+          stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1);
 
       const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
       range[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(axisOffset, axisOffset, 0,
+          stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(axisOffset, axisOffset, 0,
                                                                                           radius, 2);
     });
 
-  auto intersections = Kokkos::View<IntersectionType*, stk::ngp::ExecSpace>("intersections", 0);
+  auto intersections = Kokkos::View<IdentIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
   stk::search::local_coarse_search(domain, range, searchMethod, intersections);
 
-  Kokkos::View<IntersectionType*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);
@@ -447,14 +432,14 @@ TEST(CoarseSearchCorrectness, ARBORX_FLOAT_PRECISION_SPHERES)
   stk::search::Point<SpherePrecision> rangeCenter(2.400000000001, 0.0, 0.0);
 
   stk::search::Sphere<SpherePrecision> domain(domainCenter, domainRadius);
-  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, Ident>> domainVector;
-  domainVector.push_back({domain, Ident(0,0)});
+  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, IdentProc>> domainVector;
+  domainVector.push_back({domain, IdentProc(0,0)});
 
   stk::search::Sphere<SpherePrecision> range(rangeCenter, rangeRadius);
-  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, Ident>> rangeVector;
-  rangeVector.push_back({range, Ident(0,0)});
+  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, IdentProc>> rangeVector;
+  rangeVector.push_back({range, IdentProc(0,0)});
 
-  std::vector<std::pair<Ident, Ident>> searchResultsMorton;
+  std::vector<std::pair<IdentProc, IdentProc>> searchResultsMorton;
   stk::search::coarse_search(domainVector, rangeVector, stk::search::MORTON_LBVH, MPI_COMM_WORLD, searchResultsMorton);
   EXPECT_EQ(1u, searchResultsMorton.size());
 
@@ -465,25 +450,25 @@ TEST(CoarseSearchCorrectness, ARBORX_FLOAT_PRECISION_SPHERES)
      without expanding the boxes. */
   stk::search::Box<float> naiveArborXDomain = make_naive_arbor_x_box_from_double_sphere(domain);
   stk::search::Box<float> naiveArborXRange  = make_naive_arbor_x_box_from_double_sphere(range);
-  std::vector<std::pair<stk::search::Box<float>, Ident>> naiveArborXDomainVector;
-  naiveArborXDomainVector.push_back({naiveArborXDomain, Ident(0,0)});
-  std::vector<std::pair<stk::search::Box<float>, Ident>> naiveArborXRangeVector;
-  naiveArborXRangeVector.push_back({naiveArborXRange, Ident(0,0)});
+  std::vector<std::pair<stk::search::Box<float>, IdentProc>> naiveArborXDomainVector;
+  naiveArborXDomainVector.push_back({naiveArborXDomain, IdentProc(0,0)});
+  std::vector<std::pair<stk::search::Box<float>, IdentProc>> naiveArborXRangeVector;
+  naiveArborXRangeVector.push_back({naiveArborXRange, IdentProc(0,0)});
 
-  std::vector<std::pair<Ident, Ident>> searchResultsNaiveArborX;
+  std::vector<std::pair<IdentProc, IdentProc>> searchResultsNaiveArborX;
   stk::search::coarse_search(naiveArborXDomainVector, naiveArborXRangeVector, stk::search::ARBORX, MPI_COMM_WORLD, searchResultsNaiveArborX);
   EXPECT_EQ(0u, searchResultsNaiveArborX.size());
 
   /*This case captures the "expanded" box behavior that is now the default when converting from StkBoxes to ArborX.*/
   stk::search::Sphere<SpherePrecision> domainExpanded(domainCenter, domainRadius);
-  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, Ident>> domainExpandedVector;
-  domainExpandedVector.push_back({domainExpanded, Ident(0,0)});
+  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, IdentProc>> domainExpandedVector;
+  domainExpandedVector.push_back({domainExpanded, IdentProc(0,0)});
 
   stk::search::Sphere<SpherePrecision> rangeExpanded(rangeCenter, rangeRadius);
-  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, Ident>> rangeExpandedVector;
-  rangeExpandedVector.push_back({rangeExpanded, Ident(0,0)});
+  std::vector<std::pair<stk::search::Sphere<SpherePrecision>, IdentProc>> rangeExpandedVector;
+  rangeExpandedVector.push_back({rangeExpanded, IdentProc(0,0)});
 
-  std::vector<std::pair<Ident, Ident>> searchResultsExpanded;
+  std::vector<std::pair<IdentProc, IdentProc>> searchResultsExpanded;
   stk::search::coarse_search(domainExpandedVector, rangeExpandedVector, stk::search::ARBORX, MPI_COMM_WORLD, searchResultsExpanded);
   EXPECT_EQ(1u, searchResultsExpanded.size());
 

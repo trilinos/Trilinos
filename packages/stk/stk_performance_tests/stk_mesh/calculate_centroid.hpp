@@ -171,7 +171,7 @@ inline void calculate_centroid_using_host_coord_fields(const stk::mesh::BulkData
   selector &= bulk.mesh_meta_data().locally_owned_part();
   const stk::mesh::FieldBase& coords = *bulk.mesh_meta_data().coordinate_field();
 
-  const int maxNumNodes = 8;
+  constexpr size_t maxNumNodes = 8;
   const double*elemNodeCoords[maxNumNodes];
 
   auto centroidCalculator = [&](stk::mesh::Entity elem, const stk::mesh::Entity* nodes, size_t numNodes)

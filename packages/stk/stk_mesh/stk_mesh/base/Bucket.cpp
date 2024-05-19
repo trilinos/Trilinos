@@ -183,7 +183,7 @@ void setup_connectivity(stk::topology bucket_topology,
 
 namespace impl {
 
-static const unsigned default_initial_bucket_capacity = 512;
+static const unsigned default_initial_bucket_capacity = 16;
 static const unsigned default_maximum_bucket_capacity = 512;
 
 struct OverwriteEntityFunctor

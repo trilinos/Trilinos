@@ -50,13 +50,8 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { struct Entity; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
-
-namespace stk { namespace io { class MetaData; } }
-namespace stk { namespace io { class BulkData; } }
 
 namespace stk {
 namespace io {

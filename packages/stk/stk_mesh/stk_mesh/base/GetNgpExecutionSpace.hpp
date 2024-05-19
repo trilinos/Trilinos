@@ -74,9 +74,9 @@ struct ExecSpaceAndCudaStreamDeleter {
   }
 
   void operator()(stk::ngp::ExecSpace* e) const {
+    delete e;
     cudaStreamDestroy(*streamPtr);
     delete streamPtr;
-    delete e;
   }
 
   cudaStream_t* streamPtr;

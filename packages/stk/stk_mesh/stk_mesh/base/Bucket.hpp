@@ -356,9 +356,12 @@ public:
     return get_connected_entities(offsetIntoBucket, stk::topology::ELEM_RANK);
   }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2024/06/26
+  STK_DEPRECATED
   stk::mesh::Entity host_get_entity(unsigned offsetIntoBucket) const {
     return (*this)[offsetIntoBucket];
   }
+#endif
 
   void set_ngp_field_bucket_id(unsigned fieldOrdinal, unsigned ngpFieldBucketId);
   unsigned get_ngp_field_bucket_id(unsigned fieldOrdinal) const;

@@ -120,6 +120,7 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_preExistingNgpFieldsNeedSync)
 
   stk::io::fill_mesh("generated:1x1x1", *bulkPtr);
 
+  //BEGINNgpMultiStateField
   EXPECT_EQ(stk::mesh::StateNew, stkFieldNew.state());
   stk::mesh::Field<double>& stkFieldOld = stkFieldNew.field_of_state(stk::mesh::StateOld);
   EXPECT_EQ(stk::mesh::StateOld, stkFieldOld.state());
@@ -152,6 +153,7 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_preExistingNgpFieldsNeedSync)
 
   check_field_on_device(ngpMesh, ngpFieldOld, newValue);
   check_field_on_device(ngpMesh, ngpFieldNew, oldValue);
+  //ENDNgpMultiStateField
 }
 
 NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
@@ -172,6 +174,7 @@ NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
   stk::mesh::Field<double>& stkFieldOld = stkFieldNew.field_of_state(stk::mesh::StateOld);
   EXPECT_EQ(stk::mesh::StateOld, stkFieldOld.state());
 
+  //BEGINNgpMultiStateFieldRotateOnDevice
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
   stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(stkFieldOld);
   stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(stkFieldNew);
@@ -194,6 +197,7 @@ NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
 
   check_field_on_device(ngpMesh, ngpFieldOld, newValue);
   check_field_on_device(ngpMesh, ngpFieldNew, oldValue);
+  //ENDNgpMultiStateFieldRotateOnDevice
 }
 
 }

@@ -78,9 +78,9 @@ class DeviceField : public NgpFieldBase
 {
 private:
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
-  using ExecSpace = stk::ngp::ExecSpace;
 
  public:
+  using ExecSpace = stk::ngp::ExecSpace;
   using value_type = T;
 
   KOKKOS_FUNCTION

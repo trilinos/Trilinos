@@ -40,7 +40,7 @@
 namespace
 {
 
-void printGoldResults(const FloatBoxVector &domainBoxes, const std::vector< std::pair<Sphere, Ident> > &spheres)
+void printGoldResults(const FloatBoxIdentProcVector &domainBoxes, const std::vector< std::pair<Sphere, IdentProc> > &spheres)
 {
     SearchResults boxIdPairResults;
     for (size_t i=0;i<domainBoxes.size();++i)
@@ -56,7 +56,7 @@ void printGoldResults(const FloatBoxVector &domainBoxes, const std::vector< std:
     std::cerr << "Gold: Found " << boxIdPairResults.size() << " interactions.\n";
 }
 
-void printGoldResults(const FloatBoxVector &domainBoxes, const FloatBoxVector &spheres)
+void printGoldResults(const FloatBoxIdentProcVector &domainBoxes, const FloatBoxIdentProcVector &spheres)
 {
     SearchResults boxIdPairResults;
     for (size_t i=0;i<domainBoxes.size();++i)
@@ -181,10 +181,10 @@ TEST(NaluPerformance, BoxSphereIntersections)
     Options options = getOptionsForTest();
 
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector< std::pair<Sphere, Ident> > spheres;
+    std::vector< std::pair<Sphere, IdentProc> > spheres;
     fillBoundingVolumesUsingNodesFromFile(comm, options.mSphereFile, spheres);
 
-    FloatBoxVector domainBoxes;
+    FloatBoxIdentProcVector domainBoxes;
     fillBoxesUsingElementBlocksFromFile(comm, options.mVolumeFile, domainBoxes);
 
     SearchResults searchResults;
@@ -247,10 +247,10 @@ TEST(NaluPerformance, BoxBoxIntersections)
 
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    FloatBoxVector spheres;
+    FloatBoxIdentProcVector spheres;
     fillBoundingVolumesUsingNodesFromFile(comm, options.mSphereFile, spheres);
 
-    FloatBoxVector domainBoxes;
+    FloatBoxIdentProcVector domainBoxes;
     fillBoxesUsingElementBlocksFromFile(comm, options.mVolumeFile, domainBoxes);
 
     SearchResults searchResults;
