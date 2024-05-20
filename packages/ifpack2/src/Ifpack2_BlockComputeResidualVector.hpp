@@ -214,10 +214,7 @@ namespace Ifpack2 {
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view;
       using impl_scalar_type_2d_view_tpetra = typename impl_type::impl_scalar_type_2d_view_tpetra; // block multivector (layout left)
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
-      using btdm_scalar_type_2d_view = typename impl_type::btdm_scalar_type_2d_view;
-      using btdm_scalar_type_3d_view = typename impl_type::btdm_scalar_type_3d_view;
       using btdm_scalar_type_4d_view = typename impl_type::btdm_scalar_type_4d_view;
-      using size_type_1d_view_tpetra = Kokkos::View<size_t*,typename impl_type::node_device_type>;
       static constexpr int vector_length = impl_type::vector_length;
 
       /// team policy member type (used in cuda)
@@ -233,8 +230,6 @@ namespace Ifpack2 {
       Unmanaged<impl_scalar_type_2d_view_tpetra> y;
       Unmanaged<vector_type_3d_view> y_packed;
       Unmanaged<btdm_scalar_type_4d_view> y_packed_scalar;
-
-      btdm_scalar_type_3d_view AA_view;
 
       // AmD information
       const ConstUnmanaged<size_type_1d_view> rowptr, rowptr_remote;
@@ -283,36 +278,30 @@ namespace Ifpack2 {
           dm2cm(dm2cm_),
           is_dm2cm_active(dm2cm_.span() > 0),
           hasBlockCrsMatrix(A_block_rowptr.extent(0) == A_point_rowptr.extent(0))
-      { 
-        if (!hasBlockCrsMatrix) {
-          size_t size_0 = rowptr.extent(0) - 1 > rowidx2part.extent(0) ? rowptr.extent(0) - 1 : rowidx2part.extent(0);
-          AA_view = btdm_scalar_type_3d_view("AA_view", size_0, blocksize_requested, blocksize_requested);
-        }
-      }
+      { }
 
-      KOKKOS_INLINE_FUNCTION
-      btdm_scalar_type*
-      SerialExtractBlock(
-        const local_ordinal_type &blocksize,
-        const local_ordinal_type &lclRowID,
-        const local_ordinal_type &lclColID,
-        const ConstUnmanaged<local_ordinal_type_1d_view>colindsub_,
-        btdm_scalar_type* tmp_scalar_values
-      ) const {
-        using tlb = BlockHelperDetails::TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
-        //const size_type Aj_r = A_block_rowptr(lclRowID);
+      inline
+      void
+      SerialDot(const local_ordinal_type &blocksize,
+                const local_ordinal_type &lclRowID,
+                const local_ordinal_type &lclColID,
+                const local_ordinal_type &ii,
+                const ConstUnmanaged<local_ordinal_type_1d_view>colindsub_,
+                const impl_scalar_type * const KOKKOS_RESTRICT xx,
+                /* */ impl_scalar_type * KOKKOS_RESTRICT yy) const {
         const size_type Aj_c = colindsub_(lclColID);
-        for (local_ordinal_type ii=0;ii<blocksize;++ii) {
-          auto point_row_offset = A_point_rowptr(lclRowID*blocksize + ii);
-          for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-            if ( point_row_offset + Aj_c*blocksize + jj < tpetra_values.extent(0))
-              tmp_scalar_values[tlb::getFlatIndex(ii,jj,blocksize)] = 
-                tpetra_values(point_row_offset + Aj_c*blocksize + jj);
-          }
-        }
-        return tmp_scalar_values;
+        auto point_row_offset = A_point_rowptr(lclRowID*blocksize + ii) + Aj_c*blocksize;
+        impl_scalar_type val = 0;
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#   pragma ivdep
+#endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#   pragma unroll
+#endif
+        for (local_ordinal_type k1=0;k1<blocksize;++k1)
+          val += tpetra_values(point_row_offset + k1) * xx[k1];
+        yy[ii] -= val;
       }
-
 
       inline
       void
@@ -451,11 +440,15 @@ namespace Ifpack2 {
           const size_type A_k0 = A_block_rowptr[i];
           for (size_type k=rowptr[i];k<rowptr[i+1];++k) {
             const size_type j = A_k0 + colindsub[k];
-            const impl_scalar_type * const AA = hasBlockCrsMatrix ? 
-              &tpetra_values(j*blocksize_square) : 
-              SerialExtractBlock(blocksize, i, k, colindsub, &AA_view(i,0,0));
             const impl_scalar_type * const xx = &x(A_colind[j]*blocksize, col);
-            SerialGemv(blocksize,AA,xx,yy);
+            if (hasBlockCrsMatrix) {
+              const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
+              SerialGemv(blocksize,AA,xx,yy);
+            }
+            else {
+              for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                SerialDot(blocksize, i, k, k0, colindsub, xx, yy);
+            }
           }
         }
       }
@@ -547,18 +540,32 @@ namespace Ifpack2 {
           const size_type A_k0 = A_block_rowptr[lr];
           for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
             const size_type j = A_k0 + colindsub[k];
-            const impl_scalar_type * const AA = hasBlockCrsMatrix ? 
-              &tpetra_values(j*blocksize_square) :
-              SerialExtractBlock(blocksize, lr, k, colindsub, &AA_view(rowidx,0,0));
             const local_ordinal_type A_colind_at_j = A_colind[j];
-            if (A_colind_at_j < num_local_rows) {
-              const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-              const impl_scalar_type * const xx = &x(loc*blocksize, col);
-              SerialGemv(blocksize, AA,xx,yy);
-            } else {
-              const auto loc = A_colind_at_j - num_local_rows;
-              const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
-              SerialGemv(blocksize, AA,xx_remote,yy);
+            if (hasBlockCrsMatrix) {
+              const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
+              
+              if (A_colind_at_j < num_local_rows) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                const impl_scalar_type * const xx = &x(loc*blocksize, col);
+                SerialGemv(blocksize, AA,xx,yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
+                SerialGemv(blocksize, AA,xx_remote,yy);
+              }
+            }
+            else {
+              if (A_colind_at_j < num_local_rows) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                const impl_scalar_type * const xx = &x(loc*blocksize, col);
+                for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                  SerialDot(blocksize, lr, k, k0, colindsub, xx, yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
+                for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                  SerialDot(blocksize, lr, k, k0, colindsub, xx_remote, yy);
+              }
             }
           }
           // move yy to y_packed
@@ -686,18 +693,31 @@ namespace Ifpack2 {
           const size_type A_k0 = A_block_rowptr[lr];
           for (size_type k=rowptr_used[lr];k<rowptr_used[lr+1];++k) {
             const size_type j = A_k0 + colindsub_used[k];
-            const impl_scalar_type * const AA = hasBlockCrsMatrix ? 
-              &tpetra_values(j*blocksize_square):
-              SerialExtractBlock(blocksize, lr, k, colindsub_used, &AA_view(rowidx,0,0));
             const local_ordinal_type A_colind_at_j = A_colind[j];
-            if (P == 0) {
-              const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-              const impl_scalar_type * const xx = &x(loc*blocksize, col);
-              SerialGemv(blocksize,AA,xx,yy);
-            } else {
-              const auto loc = A_colind_at_j - num_local_rows;
-              const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
-              SerialGemv(blocksize,AA,xx_remote,yy);
+            if (hasBlockCrsMatrix) {
+              const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
+              if (P == 0) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                const impl_scalar_type * const xx = &x(loc*blocksize, col);
+                SerialGemv(blocksize,AA,xx,yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
+                SerialGemv(blocksize,AA,xx_remote,yy);
+              }
+            }
+            else {
+              if (P == 0) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                const impl_scalar_type * const xx = &x(loc*blocksize, col);
+                for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                  SerialDot(blocksize, lr, k, k0, colindsub_used, xx, yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
+                for (local_ordinal_type k0=0;k0<blocksize;++k0)
+                  SerialDot(blocksize, lr, k, k0, colindsub_used, xx_remote, yy);
+              }
             }
           }
           // move yy to y_packed
