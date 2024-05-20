@@ -2866,9 +2866,6 @@ namespace Ifpack2 {
             A_values = const_cast<block_crs_matrix_type*>(A_bcrs.get())->getValuesDeviceNonConst();
           }
           else {
-#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-            printf("A->getLocalNumRows = %ld, G->getLocalNumRows = %ld, block size = %ld, blocksize= %ld \n",  A_->getLocalNumRows(), G_->getLocalNumRows(), A_->getLocalNumRows()/ G_->getLocalNumRows(), blocksize);
-#endif
             A_point_rowptr = A_crs->getCrsGraph()->getLocalGraphDevice().row_map;
             A_values = A_crs->getLocalValuesDevice (Tpetra::Access::ReadOnly);
           }
@@ -2936,18 +2933,11 @@ namespace Ifpack2 {
             else {
               const size_type pi = kps + j;
 
-#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-              printf("Extract pointwise pi = %ld, ri0 + tr = %d, kfs + j = %d\n", pi, ri0[0] + tr, kfs[0] + j);
-#endif  
               for (local_ordinal_type vi=0;vi<npacks;++vi) {
                 const size_type Aj_c = A_colindsub(kfs[vi] + j);
 
                 for (local_ordinal_type ii=0;ii<blocksize;++ii) {
                   auto point_row_offset = A_point_rowptr(lclrow(ri0[vi] + tr)*blocksize + ii);
-
-#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-                  printf("lclrow = %ld, Aj_r = %ld, Aj_c = %ld, point_row_offset = %ld, A_values.extent(0) = %ld, point_row_offset + Aj_c*blocksize = %ld\n", lclrow(ri0[vi] + tr), Aj_r, Aj_c, point_row_offset, A_values.extent(0), point_row_offset + Aj_c*blocksize);
-#endif  
 
                   for (local_ordinal_type jj=0;jj<blocksize;++jj) {
                     scalar_values(pi, ii, jj, vi) = A_values(point_row_offset + Aj_c*blocksize + jj);
@@ -3062,9 +3052,6 @@ namespace Ifpack2 {
                 for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
                   const size_type Aj_c = A_colindsub(kfs + j);
                   const size_type pi = kps + j;
-#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-                  printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d, tr = %d, lbeg = %d, lend = %d, l = %d\n", pi, ri0 + tr, kfs + j, tr, lbeg, lend, l);
-#endif
                   Kokkos::parallel_for
                     (Kokkos::TeamThreadRange(member,blocksize),
                     [&](const local_ordinal_type &ii) {
