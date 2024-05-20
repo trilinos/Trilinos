@@ -1257,6 +1257,14 @@ int main( int argc, char* argv[] )
       return -1;
     }
     
+    if (mode == Test)
+    {
+      // then overwrite poly orders to match the test cases we define in getWorksetSizeMap
+      polyOrderFixed = -1;
+      polyOrderMin = 1;
+      polyOrderMax = 3;
+    }
+    
     using Scalar = double;
     using ExecutionSpace = Kokkos::DefaultExecutionSpace;
     using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
@@ -1284,16 +1292,31 @@ int main( int argc, char* argv[] )
     map<int, Kokkos::Array<int,spaceDim> > gridCellCountsForPolyOrder;
     for (int p=polyOrderMin; p<=polyOrderMax; p++)
     {
-      int maxBasisCardinality = 1;
-      for (auto formulationChoice : formulationChoices)
+      if (mode != Test)
       {
-        for (auto basisFamilyChoice : basisFamilyChoices)
+        int maxBasisCardinality = 1;
+        for (auto formulationChoice : formulationChoices)
         {
-          auto basis = getHypercubeBasisForFormulation<Scalar, Scalar, DeviceType, spaceDim>(formulationChoice, basisFamilyChoice, p);
-          maxBasisCardinality = std::max(basis->getCardinality(), maxBasisCardinality);
+          for (auto basisFamilyChoice : basisFamilyChoices)
+          {
+            auto basis = getHypercubeBasisForFormulation<Scalar, Scalar, DeviceType, spaceDim>(formulationChoice, basisFamilyChoice, p);
+            maxBasisCardinality = std::max(basis->getCardinality(), maxBasisCardinality);
+          }
         }
+        gridCellCountsForPolyOrder[p] = getMeshWidths<spaceDim>(maxBasisCardinality, maxEntryCount, maxCellCount);
       }
-      gridCellCountsForPolyOrder[p] = getMeshWidths<spaceDim>(maxBasisCardinality, maxEntryCount, maxCellCount);
+      else // mode == Test; set the gridCellCounts according to mesh widths indicated in getWorksetSizes above.
+      {
+        Kokkos::Array<int,spaceDim> meshWidths_8, meshWidths_4;
+        for (int d=0; d<spaceDim; d++)
+        {
+          meshWidths_4[d] = 4;
+          meshWidths_8[d] = 8;
+        }
+        gridCellCountsForPolyOrder[1] = meshWidths_8;
+        gridCellCountsForPolyOrder[2] = meshWidths_8;
+        gridCellCountsForPolyOrder[3] = meshWidths_4;
+      }
       
       int cellCount = 1;
       for (int d=0; d<spaceDim; d++)
