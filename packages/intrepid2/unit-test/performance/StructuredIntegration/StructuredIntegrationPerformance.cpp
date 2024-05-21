@@ -392,7 +392,6 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
   {
     // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
     // 1 is best for polyOrder 8, so it'll be the best for the rest.
-    int worksetSize = 1;
     for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
     {
       for (auto formulation : allFormulationChoices)
