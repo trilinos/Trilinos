@@ -48,6 +48,7 @@
 #include "ROL_TypeB_AlgorithmFactory.hpp"
 #include "ROL_TypeE_AlgorithmFactory.hpp"
 #include "ROL_TypeG_AlgorithmFactory.hpp"
+#include "ROL_TypeP_AlgorithmFactory.hpp"
 #include "ROL_Problem.hpp"
 
 #include "ROL_ParameterList.hpp"
@@ -71,6 +72,7 @@ private:
   Ptr<TypeB::Algorithm<Real>> algoB_;
   Ptr<TypeE::Algorithm<Real>> algoE_;
   Ptr<TypeG::Algorithm<Real>> algoG_;
+  Ptr<TypeP::Algorithm<Real>> algoP_; 
 
 public:
 

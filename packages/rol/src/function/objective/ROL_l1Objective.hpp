@@ -105,7 +105,8 @@ public:
     Pv.applyBinary(psb_, *weights_);
     Pv.scale(t);
     Pv.plus(v);
-  } 
+  }
+//TODO: input prox jacobian	
 }; // class l1Objective
 
 } // namespace ROL
