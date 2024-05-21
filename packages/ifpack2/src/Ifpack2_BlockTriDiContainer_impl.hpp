@@ -1035,6 +1035,7 @@ namespace Ifpack2 {
 
       auto bA = Teuchos::rcp_dynamic_cast<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type>(A);
 
+      TEUCHOS_ASSERT(!bA.is_null() || G->getLocalNumRows() != 0);
       const local_ordinal_type blocksize = bA.is_null() ? A->getLocalNumRows() / G->getLocalNumRows() : A->getBlockSize();
       constexpr int vector_length = impl_type::vector_length;
       constexpr int internal_vector_length = impl_type::internal_vector_length;
@@ -1869,6 +1870,7 @@ namespace Ifpack2 {
       auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
 
       bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+      TEUCHOS_ASSERT(hasBlockCrsMatrix || g->getLocalNumRows() != 0);
       const local_ordinal_type blocksize = hasBlockCrsMatrix ? A->getBlockSize() : A->getLocalNumRows()/g->getLocalNumRows();
 
       // mirroring to host
@@ -2861,7 +2863,7 @@ namespace Ifpack2 {
 
           hasBlockCrsMatrix = ! A_bcrs.is_null ();
 
-          A_block_rowptr = G_->getLocalGraphDevice().row_map; // not sure about that
+          A_block_rowptr = G_->getLocalGraphDevice().row_map;
           if (hasBlockCrsMatrix) {
             A_values = const_cast<block_crs_matrix_type*>(A_bcrs.get())->getValuesDeviceNonConst();
           }
