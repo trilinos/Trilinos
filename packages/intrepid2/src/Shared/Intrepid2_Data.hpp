@@ -26,7 +26,7 @@ namespace Intrepid2 {
 \class  Intrepid2::ZeroView
 \brief  A singleton class for a DynRankView containing exactly one zero entry.  (Technically, the entry is DataScalar(), the default value for the scalar type.)  This allows View-wrapping classes to return a reference to zero, even when that zero is not explicitly stored in the wrapped views.
  
-This is used by Interpid2::Data for its getEntry() and getWritableEntry() methods.
+This is used by Intrepid2::Data for its getEntry() and getWritableEntry() methods.
  
  \note There is no protection against the zero value being overwritten; perhaps we should add some (i.e., const-qualify DataScalar).  Because of implementation details in Intrepid2::Data, we don't do so yet.
  */
@@ -1482,43 +1482,37 @@ public:
         resultExtents[i]        = 1;
       }
       
-      ScalarView<DataScalar,DeviceType> data;
+      ScalarView<DataScalar,DeviceType> data; // new view will match this one in layout and fad dimension, if any
+      auto viewToMatch = A_MatData.getUnderlyingView();
       if (resultNumActiveDims == 1)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView1(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0]);
       }
       else if (resultNumActiveDims == 2)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView2(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1]);
       }
       else if (resultNumActiveDims == 3)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView3(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2]);
       }
       else if (resultNumActiveDims == 4)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView4(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3]);
       }
       else if (resultNumActiveDims == 5)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView5(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4]);
       }
       else if (resultNumActiveDims == 6)
       {
-        auto viewToMatch = A_MatData.getUnderlyingView6(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4], resultDataDims[5]);
       }
       else // resultNumActiveDims == 7
       {
-        auto viewToMatch = A_MatData.getUnderlyingView7(); // new view will match this one in layout and fad dimension, if any
         data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4], resultDataDims[5], resultDataDims[6]);
       }
