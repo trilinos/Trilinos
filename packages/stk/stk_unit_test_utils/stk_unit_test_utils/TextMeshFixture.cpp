@@ -21,16 +21,6 @@ namespace unit_test_util
 {
 namespace {
 struct PartLessByName {
-
-  inline bool operator()( const mesh::Part & lhs , const mesh::Part & rhs ) const
-    { return strcasecmp(lhs.name().c_str(), rhs.name().c_str()) < 0; }
-
-  inline bool operator()( const mesh::Part & lhs , const mesh::Part * rhs ) const
-    { return strcasecmp(lhs.name().c_str(), rhs->name().c_str()) < 0; }
-
-  inline bool operator()( const mesh::Part * lhs , const mesh::Part & rhs ) const
-    { return strcasecmp(lhs->name().c_str(), rhs.name().c_str()) < 0; }
-
   inline bool operator()( const mesh::Part * lhs , const mesh::Part * rhs ) const
     { return strcasecmp(lhs->name().c_str(), rhs->name().c_str()) < 0; }
 };

@@ -200,6 +200,11 @@ bool checkIfSideIsNotCollapsed(stk::mesh::EntityVector& sideNodes, const stk::me
     unsigned dim = bulkData.mesh_meta_data().spatial_dimension();
     if(dim==1) return true;
 
+    stk::topology sideTopo = bucket.topology().sub_topology(bulkData.mesh_meta_data().side_rank(), sideOrdinal);
+    if (sideTopo.num_vertices() < dim) {
+      return false; //side is "collapsed", possibly because this is an edge-side of a 3D shell...
+    }
+
     sideNodes.resize(bucket.topology().sub_topology(bulkData.mesh_meta_data().side_rank(), sideOrdinal).num_nodes());
     bucket.topology().side_nodes(bulkData.begin_nodes(element), sideOrdinal, sideNodes.data());
     stk::util::sort_and_unique(sideNodes);

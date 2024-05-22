@@ -97,7 +97,7 @@ void finalize_reporters() {
   Kokkos::kokkos_free(global::getDeviceReporterAddress());
 }
 
-NGP_TEST_INLINE HostReporter* get_host_reporter() {
+inline HostReporter* get_host_reporter() {
   return global::getHostReporter();
 }
 

@@ -116,7 +116,7 @@ struct create_face_impl
   {}
 
   template <typename Topology>
-  void operator()(Topology t)
+  void operator()(Topology)
   {
     typedef topology::topology_type< Topology::value> ElemTopology;
 

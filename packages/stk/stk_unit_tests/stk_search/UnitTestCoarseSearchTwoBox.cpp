@@ -54,17 +54,17 @@ void runTwoBoxTest(stk::search::SearchMethod searchMethod, const double distance
   int numProcs = stk::parallel_machine_size(comm);
   int procId = stk::parallel_machine_rank(comm);
 
-  std::vector<std::pair<StkBox, Ident>> boxVector1;
+  std::vector<std::pair<StkBox, IdentProc>> boxVector1;
   if (procId == 0) {
     boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<StkBox>(0, 0, 0, boxSize/2, 1, procId));
   }
 
-  std::vector<std::pair<StkBox, Ident>> boxVector2;
+  std::vector<std::pair<StkBox, IdentProc>> boxVector2;
   if (procId == numProcs-1) {
     boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<StkBox>(distanceBetweenBoxCenters, 0, 0, boxSize/2, 2, procId));
   }
 
-  std::vector<std::pair<Ident, Ident>> boxIdPairResults;
+  SearchResults boxIdPairResults;
   stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 
   if (procId == 0 || (procId == numProcs-1)) {
@@ -78,23 +78,18 @@ void runTwoBoxTest(stk::search::SearchMethod searchMethod, const double distance
 void device_runTwoBoxTest(stk::search::SearchMethod searchMethod, const double distanceBetweenBoxCenters,
                                 const double boxSize, const unsigned expectedNumOverlap)
 {
-  using BoxType = stk::search::Box<double>;
-  using IdentProcType = stk::search::IdentProc<int,int>;
-  using BoxIdentProcType = stk::search::BoxIdentProc<BoxType, IdentProcType>;
-  using IntersectionType = stk::search::IdentProcIntersection<IdentProcType, IdentProcType>;
-
   MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(comm);
   int procId = stk::parallel_machine_rank(comm);
 
-  auto domain = Kokkos::View<BoxIdentProcType*, stk::ngp::ExecSpace>("domain box-ident", 1);
-  auto range = Kokkos::View<BoxIdentProcType*, stk::ngp::ExecSpace>("range box-ident", 1);
+  auto domain = Kokkos::View<StkBoxIdentProc*, stk::ngp::ExecSpace>("domain box-ident", 1);
+  auto range = Kokkos::View<StkBoxIdentProc*, stk::ngp::ExecSpace>("range box-ident", 1);
 
   if (procId == 0) {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(const unsigned & i) {
         domain[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoxType, IdentProcType>(0, 0, 0, boxSize/2, 1, procId);
+            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<StkBox, IdentProc>(0, 0, 0, boxSize/2, 1, procId);
       });
   }
 
@@ -102,16 +97,16 @@ void device_runTwoBoxTest(stk::search::SearchMethod searchMethod, const double d
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(const unsigned & i) {
         range[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoxType, IdentProcType>(distanceBetweenBoxCenters, 0, 0,
+            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<StkBox, IdentProc>(distanceBetweenBoxCenters, 0, 0,
                                                                                           boxSize/2, 2, procId);
       });
   }
 
-  auto intersections = Kokkos::View<IntersectionType*, stk::ngp::ExecSpace>("intersections", 0);
+  auto intersections = Kokkos::View<IdentProcIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
   stk::search::coarse_search(domain, range, searchMethod, comm, intersections);
 
-  Kokkos::View<IntersectionType*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentProcIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   if (procId == 0 || (procId == numProcs-1)) {
@@ -245,22 +240,17 @@ void host_local_runTwoBoxTest(stk::search::SearchMethod searchMethod,
     const double boxSize,
     const unsigned expectedNumOverlap)
 {
-  using BoxType = stk::search::Box<double>;
-  using IdentType = int;
-  using BoxIdentType = std::pair<BoxType, IdentType>;
-  using IntersectionType = std::pair<IdentType, IdentType>;
-
-  std::vector<BoxIdentType> domain;
-  std::vector<BoxIdentType> range;
+  StkBoxIdentVector domain;
+  StkBoxIdentVector range;
 
   domain.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(0, 0, 0, boxSize / 2, 1)));
+      stk::unit_test_util::simple_fields::device_generateBoxIdent<StkBox, Ident>(0, 0, 0, boxSize / 2, 1)));
 
   range.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(
+      stk::unit_test_util::simple_fields::device_generateBoxIdent<StkBox, Ident>(
           distanceBetweenBoxCenters, 0, 0, boxSize / 2, 2)));
 
-  std::vector<IntersectionType> intersections;
+  LocalSearchResults intersections;
 
   stk::search::local_coarse_search(domain, range, searchMethod, intersections);
 
@@ -275,29 +265,24 @@ void host_local_runTwoBoxTest(stk::search::SearchMethod searchMethod,
 void device_local_runTwoBoxTest(stk::search::SearchMethod searchMethod, const double distanceBetweenBoxCenters,
                                 const double boxSize, const unsigned expectedNumOverlap)
 {
-  using BoxType = stk::search::Box<double>;
-  using IdentType = int;
-  using BoxIdentType = stk::search::BoxIdent<BoxType, IdentType>;
-  using IntersectionType = stk::search::IdentIntersection<IdentType, IdentType>;
-
-  auto domain = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("domain box-ident", 1);
-  auto range = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("range box-ident", 1);
+  auto domain = Kokkos::View<StkBoxIdent*, stk::ngp::ExecSpace>("domain box-ident", 1);
+  auto range = Kokkos::View<StkBoxIdent*, stk::ngp::ExecSpace>("range box-ident", 1);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
     KOKKOS_LAMBDA(const unsigned & i) {
       domain[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(0, 0, 0, boxSize/2, 1);
+          stk::unit_test_util::simple_fields::device_generateBoxIdent<StkBox, Ident>(0, 0, 0, boxSize/2, 1);
 
       range[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<BoxType, IdentType>(distanceBetweenBoxCenters, 0, 0,
+          stk::unit_test_util::simple_fields::device_generateBoxIdent<StkBox, Ident>(distanceBetweenBoxCenters, 0, 0,
                                                                                           boxSize/2, 2);
     });
 
-  auto intersections = Kokkos::View<IntersectionType*, stk::ngp::ExecSpace>("intersections", 0);
+  auto intersections = Kokkos::View<IdentIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
   stk::search::local_coarse_search(domain, range, searchMethod, intersections);
 
-  Kokkos::View<IntersectionType*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);

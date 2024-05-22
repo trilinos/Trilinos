@@ -57,10 +57,8 @@ namespace mesh {
 template<typename T, template <typename> class NgpDebugger>
 class HostField : public NgpFieldBase
 {
- private:
-  using ExecSpace = stk::ngp::ExecSpace;
-
  public:
+  using ExecSpace = stk::ngp::ExecSpace;
   using value_type = T;
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
 

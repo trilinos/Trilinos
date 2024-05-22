@@ -77,7 +77,7 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
   {
     stk::mesh::Entity element = sset[i].element;
     stk::mesh::EntityId elemId = bulk_data.identifier(element);
-    int zero_based_side_ord = sset[i].side;
+    int zero_based_side_ord = sset[i].side - sideOrdOffset;
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair_of_rank(bulk_data, element, zero_based_side_ord, sideRank);
     if(bulk_data.is_valid(side))
     {
@@ -105,7 +105,7 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
 
           if (selectedByBucket && selectedByParent && selectedByOutput) {
             elem_side_ids.push_back(elemId);
-            elem_side_ids.push_back(zero_based_side_ord - sideOrdOffset + 1);
+            elem_side_ids.push_back(zero_based_side_ord + 1);
             sides.push_back(side);
           }
         }

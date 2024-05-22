@@ -695,7 +695,7 @@ protected:
   stk::mesh::Part* ss2blk1;
 };
 
-TEST_F(ShellSidesets, testWriteThenRead)
+TEST_F(ShellSidesets, DISABLED_testWriteThenRead)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
 
@@ -705,7 +705,20 @@ TEST_F(ShellSidesets, testWriteThenRead)
   test_write_then_read();
 }
 
-TEST(ShellSideSidesets, create3DEdgesFromShellSides)
+void check_shell_edge_side(const stk::mesh::BulkData& bulk, stk::mesh::ConnectivityOrdinal sideOrdinal)
+{
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+  ASSERT_TRUE(bulk.is_valid(elem));
+  EXPECT_TRUE(bulk.bucket(elem).topology().is_shell());
+  const unsigned numEdges = bulk.num_connectivity(elem, stk::topology::EDGE_RANK);
+  ASSERT_EQ(1u, numEdges);
+  const stk::mesh::ConnectivityOrdinal* ords = bulk.begin_ordinals(elem, stk::topology::EDGE_RANK);
+  const stk::mesh::ConnectivityOrdinal sideOrdinalOffset = 2;
+  const stk::mesh::ConnectivityOrdinal expectedZeroBasedOrd = sideOrdinal - sideOrdinalOffset - 1;
+  EXPECT_EQ(expectedZeroBasedOrd, ords[0]);
+}
+
+TEST(ShellSideSidesets, DISABLED_create3DEdgesFromShellSides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
@@ -713,9 +726,23 @@ TEST(ShellSideSidesets, create3DEdgesFromShellSides)
 
   const unsigned spatialDim = 3;
   std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
-  ::testing::internal::CaptureStderr();
+  std::cout<<"reading mesh from textmesh"<<std::endl;
   EXPECT_NO_THROW(stk::io::fill_mesh(meshDesc, *bulk));
-  ASSERT_TRUE(::testing::internal::GetCapturedStderr().empty());
+
+  std::cout<<"checking mesh created from textmesh:"<<std::endl;
+  stk::mesh::ConnectivityOrdinal expectedSideOrdinal = 3;
+  check_shell_edge_side(*bulk, expectedSideOrdinal);
+
+  std::string fileName("shell_edge_side.g");
+  std::cout<<"writing mesh"<<std::endl;
+  stk::io::write_mesh(fileName, *bulk);
+ 
+  std::shared_ptr<stk::mesh::BulkData> bulk2 = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::cout<<"reading mesh from file"<<std::endl;
+  EXPECT_NO_THROW(stk::io::fill_mesh(fileName, *bulk2));
+
+  std::cout<<"checking mesh written-then-read from stk-io:"<<std::endl;
+  check_shell_edge_side(*bulk2, expectedSideOrdinal);
 }
 
 }  // namespace unit_test

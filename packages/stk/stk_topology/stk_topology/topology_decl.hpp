@@ -413,14 +413,14 @@ struct topology
 //***************************************************************************
 //increment and decrement rank_t
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator++(stk::topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r+1);
   return r;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator++(stk::topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
@@ -428,14 +428,14 @@ topology::rank_t operator++(stk::topology::rank_t &r,int)
   return tmp;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator--(stk::topology::rank_t &r)
 {
   r = static_cast<topology::rank_t>(r-1);
   return r;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::rank_t operator--(stk::topology::rank_t &r,int)
 {
   topology::rank_t tmp = r;
@@ -446,14 +446,14 @@ topology::rank_t operator--(stk::topology::rank_t &r,int)
 //***************************************************************************
 //increment and decrement topology_t
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator++(stk::topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t+1);
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator++(stk::topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
@@ -461,14 +461,14 @@ topology::topology_t operator++(stk::topology::topology_t &t,int)
   return tmp;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator--(stk::topology::topology_t &t)
 {
   t = static_cast<topology::topology_t>(t-1);
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology::topology_t operator--(stk::topology::topology_t &t,int)
 {
   topology::topology_t tmp = t;
@@ -479,14 +479,14 @@ topology::topology_t operator--(stk::topology::topology_t &t,int)
 //***************************************************************************
 //increment and decrement topology
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology operator++(topology &t)
 {
   ++t.m_value;
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology operator++(topology &t,int)
 {
   topology tmp = t;
@@ -494,14 +494,14 @@ topology operator++(topology &t,int)
   return tmp;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology operator--(topology &t)
 {
   --t.m_value;
   return t;
 }
 
-inline
+STK_INLINE_FUNCTION
 topology operator--(topology &t,int)
 {
   topology tmp = t;
@@ -512,42 +512,42 @@ topology operator--(topology &t,int)
 //***************************************************************************
 //create superelement
 //***************************************************************************
-inline
+STK_INLINE_FUNCTION
 topology create_superedge_topology(unsigned num_nodes)
 {
   if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPEREDGE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superedge_topology(int num_nodes)
 {
   if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPEREDGE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superface_topology(unsigned num_nodes)
 {
   if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPERFACE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superface_topology(int num_nodes)
 {
   if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPERFACE_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superelement_topology(unsigned num_nodes)
 {
   if ( num_nodes < 1u ) return topology::INVALID_TOPOLOGY;
   return static_cast<topology::topology_t>(num_nodes + topology::SUPERELEMENT_START);
 }
 
-inline
+STK_INLINE_FUNCTION
 topology create_superelement_topology(int num_nodes)
 {
   if ( num_nodes < 1 ) return topology::INVALID_TOPOLOGY;

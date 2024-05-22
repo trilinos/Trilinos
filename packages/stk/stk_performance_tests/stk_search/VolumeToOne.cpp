@@ -38,11 +38,14 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_io/FillMesh.hpp>
+#include <stk_search/LocalCoarseSearch.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
 #include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
 #include <stk_unit_test_utils/timer.hpp>
 #include "stk_search/SearchMethod.hpp"
+#include <Kokkos_Core.hpp>
+#include "stk_util/ngp/NgpSpaces.hpp"
 
 namespace {
 
@@ -91,20 +94,180 @@ void run_volume_to_one_test(const std::string& meshFileName,
   batchTimer.print_batch_timing(NUM_ITERS);
 }
 
+template<typename BoxIdentProcType>
+void run_volume_to_one_test_with_views(const std::string& meshFileName,
+                                       stk::search::SearchMethod searchMethod,
+                                       bool enforceSearchResultSymmetry = true)
+{
+
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 1000;
+  const int pRank = stk::parallel_machine_rank(comm);
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+
+    stk::mesh::MeshBuilder builder(comm);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+
+    stk::io::fill_mesh_with_auto_decomp(meshFileName, *bulkPtr);
+
+    Kokkos::View<BoxIdentProcType *, ExecSpace> elemBoxes = createBoundingBoxesForEntities<BoxIdentProcType>(*bulkPtr, stk::topology::ELEM_RANK);
+
+    Kokkos::View<BoxIdentProcType *, ExecSpace> supersetBoxes("Range Boxes", 1);
+    supersetBoxes(0) = {elemBoxes[0].box, IdentProc(pRank, pRank)};
+
+    for (unsigned i = 0; i != elemBoxes.extent(0); ++i) {
+      stk::search::add_to_box(supersetBoxes(0).box, elemBoxes(i).box);
+    }
+
+    Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
+
+    batchTimer.start_batch_timer();
+    for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      stk::search::coarse_search(elemBoxes, supersetBoxes, searchMethod, comm, searchResults,
+                                 ExecSpace{}, enforceSearchResultSymmetry);
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
 TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_KDTREE)
 {
-  run_volume_to_one_test<FloatBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::KDTREE);
+  run_volume_to_one_test<FloatBoxIdentProcVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::KDTREE);
 }
 
 TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_MORTON_LBVH)
 {
-  run_volume_to_one_test<FloatBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::MORTON_LBVH);
+  run_volume_to_one_test<FloatBoxIdentProcVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::MORTON_LBVH);
 }
 
 TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_ARBORX)
 {
-  run_volume_to_one_test<FloatBoxVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::ARBORX);
+  run_volume_to_one_test<FloatBoxIdentProcVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::ARBORX);
 }
 
+TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_with_views_MORTON_LBVH)
+{
+  run_volume_to_one_test_with_views<FloatBoxIdentProc>("generated:40x80x20|sideset:xXyYzZ", stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_with_views_ARBORX)
+{
+  run_volume_to_one_test_with_views<FloatBoxIdentProc>("generated:40x80x20|sideset:xXyYzZ", stk::search::ARBORX);
+}
+
+template<typename BoxVectorType>
+void run_volume_to_one_test_local(const std::string& meshFileName,
+                                  stk::search::SearchMethod searchMethod)
+{
+  using BoxType = typename BoxVectorType::value_type::first_type;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 1000;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+
+    stk::mesh::MeshBuilder builder(comm);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+
+    stk::io::fill_mesh_with_auto_decomp(meshFileName, *bulkPtr);
+
+    BoxVectorType elemBoxes;
+    createBoundingBoxesForEntities(*bulkPtr, stk::topology::ELEM_RANK, elemBoxes);
+
+    BoxVectorType supersetBoxVec { elemBoxes[0] };
+    auto & [supersetBox, ident] = supersetBoxVec[0];
+
+    for (const auto & [box, ident] : elemBoxes) {
+      stk::search::add_to_box(supersetBox, box);
+    }
+
+    LocalSearchResults searchResults;
+
+    batchTimer.start_batch_timer();
+    for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      stk::search::local_coarse_search(elemBoxes, supersetBoxVec, searchMethod, searchResults);
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+template<typename BoxIdentType>
+void run_volume_to_one_test_local_with_views(const std::string& meshFileName,
+                                             stk::search::SearchMethod searchMethod)
+{
+
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = 1000;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+
+    stk::mesh::MeshBuilder builder(comm);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+
+    stk::io::fill_mesh_with_auto_decomp(meshFileName, *bulkPtr);
+
+    Kokkos::View<BoxIdentType *, ExecSpace> elemBoxes = createBoundingBoxesForEntities<BoxIdentType>(*bulkPtr, stk::topology::ELEM_RANK);
+
+    Kokkos::View<BoxIdentType *, ExecSpace> supersetBoxes("Range Boxes", 1);
+    supersetBoxes(0) = {elemBoxes[0].box, stk::parallel_machine_rank(comm)};
+
+    for (unsigned i = 0; i != elemBoxes.extent(0); ++i) {
+      stk::search::add_to_box(supersetBoxes(0).box, elemBoxes(i).box);
+    }
+
+    Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
+
+    batchTimer.start_batch_timer();
+    for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      stk::search::local_coarse_search(elemBoxes, supersetBoxes, searchMethod, searchResults, ExecSpace{});
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_local_KDTREE)
+{
+  run_volume_to_one_test_local<FloatBoxIdentVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::KDTREE);
+}
+
+TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_local_MORTON_LBVH)
+{
+  run_volume_to_one_test_local<FloatBoxIdentVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_local_ARBORX)
+{
+  run_volume_to_one_test_local<FloatBoxIdentVector>("generated:40x80x20|sideset:xXyYzZ", stk::search::ARBORX);
+}
+
+TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_local_with_views_MORTON_LBVH)
+{
+  run_volume_to_one_test_local_with_views<FloatBoxIdent>("generated:40x80x20|sideset:xXyYzZ", stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_VolumeToOne, generatedMesh_floatBox_local_with_views_ARBORX)
+{
+  run_volume_to_one_test_local_with_views<FloatBoxIdent>("generated:40x80x20|sideset:xXyYzZ", stk::search::ARBORX);
+}
 } // namespace
 
