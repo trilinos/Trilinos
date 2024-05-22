@@ -203,7 +203,8 @@ struct SPMV_MV<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, false,
                KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const ExecutionSpace& space, Handle* handle,
+  // TODO: pass handle through to implementation and use tuning parameters
+  static void spmv_mv(const ExecutionSpace& space, Handle* /* handle */,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
