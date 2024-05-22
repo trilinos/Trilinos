@@ -410,6 +410,48 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandar
     (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 1;
+  const int spaceDim = 2;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  
+  double weight = 1.0;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = weight;
+    weight /= 2.0;
+  }
+  
+  weight = 0.5;
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight2)[d] = weight;
+    weight *= 2.0;
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+    (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P2_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
 {
   using DataScalar  = double;
@@ -543,7 +585,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStan
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P2, HVOL,  VALUE, HGRAD, VALUE)
 
 // 2D vector-weighted tests
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P1_P1, HGRAD, GRAD, HGRAD, GRAD)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P2_P1, HGRAD, GRAD, HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P1_P1, HCURL, VALUE, HDIV,  VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorWeighted_D2_P2_P1, HCURL, VALUE, HDIV,  VALUE)
 
 // 3D tests: curls of H(curl) are vectors
