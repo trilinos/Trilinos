@@ -291,11 +291,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   (void)MUELU_TEST_AND_SET_VAR(paramList, "debug: graph level", int, this->graphOutputLevel_);
 
-  // Generic data saving (this saves the data on all levels)
-  if (paramList.isParameter("save data"))
-    this->dataToSave_ = Teuchos::getArrayFromStringParameter<std::string>(paramList, "save data");
+  // Generic data keeping (this keeps the data on all levels)
+  if (paramList.isParameter("keep data"))
+    this->dataToKeep_ = Teuchos::getArrayFromStringParameter<std::string>(paramList, "keep data");  
 
-  // Save level data
+  // Export level data
   if (paramList.isSublist("export data")) {
     ParameterList printList = paramList.sublist("export data");
 
@@ -1665,6 +1665,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: print partition distribution", bool, repartParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts", bool, repartParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values", int, repartParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: save importer", bool, repartParams);
     repartFactory->SetParameterList(repartParams);
     repartFactory->SetFactory("A", manager.GetFactory("A"));
     repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
@@ -2307,7 +2308,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if (hieraList.isParameter("number of vectors")) {
-      this->numDesiredLevel_ = hieraList.get<int>("number of vectors");
+      this->sizeOfMultiVectors_ = hieraList.get<int>("number of vectors");
       hieraList.remove("number of vectors");
     }
 

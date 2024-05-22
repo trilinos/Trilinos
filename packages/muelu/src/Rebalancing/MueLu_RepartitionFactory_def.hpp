@@ -89,6 +89,7 @@ RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal,
   SET_VALID_ENTRY("repartition: remap num values");
   SET_VALID_ENTRY("repartition: remap accept partition");
   SET_VALID_ENTRY("repartition: node repartition level");
+  SET_VALID_ENTRY("repartition: save importer");
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
@@ -102,7 +103,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
   Input(currentLevel, "A");
   Input(currentLevel, "number of partitions");
-  Input(currentLevel, "Partition");
+  Input(currentLevel, "Partition");  
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -402,6 +403,12 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
 
   Set(currentLevel, "Importer", rowMapImporter);
 
+  // Importer saving
+  bool save_importer = pL.get<bool>("repartition: save importer");
+  if(save_importer) {
+    currentLevel.Set("Importer",rowMapImporter,NoFactory::get());
+    currentLevel.AddKeepFlag("Importer", NoFactory::get(), MueLu::Final);
+  }
   // ======================================================================================================
   // Print some data
   // ======================================================================================================

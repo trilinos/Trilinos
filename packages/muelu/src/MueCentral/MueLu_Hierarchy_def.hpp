@@ -1270,6 +1270,10 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::Fan
   if (comm->getRank() == root && verbLevel & (Statistics0 | Test)) {
     std::vector<Xpetra::global_size_t> nnzPerLevel;
     std::vector<Xpetra::global_size_t> rowsPerLevel;
+    //CMS
+    std::vector<int> mpi_ranks_in_comm;
+    std::vector<int> P_mpi_ranks_in_comm;
+    
     std::vector<int> numProcsPerLevel;
     bool someOpsNotMatrices             = false;
     const Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
@@ -1287,13 +1291,57 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::Fan
         nnzPerLevel.push_back(INVALID);
         rowsPerLevel.push_back(A->getDomainMap()->getGlobalNumElements());
         numProcsPerLevel.push_back(A->getDomainMap()->getComm()->getSize());
+
+        //CMS
+        mpi_ranks_in_comm.push_back(A->getRangeMap()->getComm()->getSize());
+        mpi_ranks_in_comm.push_back(-1);
+        mpi_ranks_in_comm.push_back(-1);
+        mpi_ranks_in_comm.push_back(A->getDomainMap()->getComm()->getSize());
+
       } else {
         LO storageblocksize       = Am->GetStorageBlockSize();
         Xpetra::global_size_t nnz = Am->getGlobalNumEntries() * storageblocksize * storageblocksize;
         nnzPerLevel.push_back(nnz);
         rowsPerLevel.push_back(Am->getGlobalNumRows() * storageblocksize);
         numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
+
+        //CMS
+        mpi_ranks_in_comm.push_back(Am->getRangeMap()->getComm()->getSize());
+        mpi_ranks_in_comm.push_back(Am->getRowMap()->getComm()->getSize());
+        mpi_ranks_in_comm.push_back(Am->getColMap()->getComm()->getSize());
+        mpi_ranks_in_comm.push_back(Am->getDomainMap()->getComm()->getSize());
+        
       }
+
+      //CMS
+      RCP<Operator> P;
+      if(Levels_[i]->IsAvailable("P")) {
+        RCP<Operator> P = Levels_[i]->template Get<RCP<Operator> >("P");
+        TEUCHOS_TEST_FOR_EXCEPTION(P.is_null(), Exceptions::RuntimeError,
+                                   "Operator P on level " << i << " is null.");
+        RCP<Matrix> Pm = rcp_dynamic_cast<Matrix>(P);
+        if(Pm.is_null()) {
+          P_mpi_ranks_in_comm.push_back(-2);
+          P_mpi_ranks_in_comm.push_back(-2);
+          P_mpi_ranks_in_comm.push_back(-2);
+          P_mpi_ranks_in_comm.push_back(-2);
+        }
+        else {
+          P_mpi_ranks_in_comm.push_back(Pm->getRangeMap()->getComm()->getSize());
+          P_mpi_ranks_in_comm.push_back(Pm->getRowMap()->getComm()->getSize());
+          P_mpi_ranks_in_comm.push_back(Pm->getColMap()->getComm()->getSize());
+          P_mpi_ranks_in_comm.push_back(Pm->getDomainMap()->getComm()->getSize());
+        }
+      }
+      else {
+        P_mpi_ranks_in_comm.push_back(-1);
+        P_mpi_ranks_in_comm.push_back(-1);
+        P_mpi_ranks_in_comm.push_back(-1);
+        P_mpi_ranks_in_comm.push_back(-1);
+      }
+        
+
+      
     }
     if (someOpsNotMatrices)
       GetOStream(Warnings0) << "Some level operators are not matrices, statistics calculation are incomplete" << std::endl;
@@ -1375,7 +1423,25 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::Fan
           oss << std::setw(9) << as<double>(rowsPerLevel[i - 1]) / rowsPerLevel[i];
         else
           oss << std::setw(9) << "     ";
-        oss << "    " << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
+
+        //oss << "    " << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
+        //CMS
+        int base = 4*i;
+        oss << "    " <<
+          mpi_ranks_in_comm[base] << "/" <<
+          mpi_ranks_in_comm[base+1] << "/" <<
+          mpi_ranks_in_comm[base+2] << "/" <<
+          mpi_ranks_in_comm[base+3];
+
+        oss << "    " <<
+          P_mpi_ranks_in_comm[base] << "/" <<
+          P_mpi_ranks_in_comm[base+1] << "/" <<
+          P_mpi_ranks_in_comm[base+2] << "/" <<
+          P_mpi_ranks_in_comm[base+3];
+        oss << std::endl;
+
+
+
       }
       oss << std::endl;
       for (int i = 0; i < GetNumLevels(); ++i) {

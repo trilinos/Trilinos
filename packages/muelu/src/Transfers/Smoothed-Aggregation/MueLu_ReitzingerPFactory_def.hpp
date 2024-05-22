@@ -129,6 +129,17 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   RCP<Matrix> NodeMatrix = Get<RCP<Matrix> >(fineLevel, "NodeAggMatrix");
   RCP<Matrix> Pn         = Get<RCP<Matrix> >(coarseLevel, "Pnodal");
 
+  int rank = fineLevel.GetComm()->getRank();
+  int level = fineLevel.GetLevelID();
+  
+  printf("[%d] RS Level %d Edge/D0/Node/Pn = %d/%d/%d/%d\n",rank,level,
+         !EdgeMatrix.is_null(),
+         !D0.is_null(),
+         !NodeMatrix.is_null(),
+         !Pn.is_null());
+  fflush(stdout);
+         
+  
   const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 

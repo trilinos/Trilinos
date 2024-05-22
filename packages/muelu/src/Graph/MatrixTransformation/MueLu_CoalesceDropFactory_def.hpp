@@ -183,7 +183,21 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   if (predrop_ != Teuchos::null)
     GetOStream(Parameters0) << predrop_->description();
 
+  // CMSCMS Filter out the (2,2) block
+  static int CMS_level0_call_count = 0;
+  bool CMS_print_me=false;
+  if(currentLevel.GetLevelID()==0) {
+    if(CMS_level0_call_count==1)
+      CMS_print_me=true;
+    CMS_level0_call_count++;
+  }
+
+  int rank = currentLevel.GetComm()->getRank();
+  int level = currentLevel.GetLevelID();
+  if(CMS_print_me){printf("[%d] CDF Level %d Checkpoint #0\n",rank,level);fflush(stdout);}//CMSCMS  
   RCP<Matrix> realA              = Get<RCP<Matrix>>(currentLevel, "A");
+  if(CMS_print_me){printf("[%d] CDF Level %d Checkpoint #0.1\n",rank,level);fflush(stdout);}//CMSCMS
+
   RCP<AmalgamationInfo> amalInfo = Get<RCP<AmalgamationInfo>>(currentLevel, "UnAmalgamationInfo");
   const ParameterList& pL        = GetParameterList();
   bool doExperimentalWrap        = pL.get<bool>("lightweight wrap");
@@ -414,8 +428,12 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
     const LO BlockSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
+    if(CMS_print_me){printf("[%d] Checkpoint #1\n",A->getRowMap()->getComm()->getRank());fflush(stdout);}//CMSCMS
+    //    A->getRowMap()->getComm()->barrier();
+
     /************************** RS or SA-style Classical Dropping (and variants) **************************/
     if (algo == "classical") {
+      if(CMS_print_me){printf("[%d] Checkpoint #1.1\n",A->getRowMap()->getComm()->getRank());fflush(stdout);}//CMSCMS
       if (predrop_ == null) {
         // ap: this is a hack: had to declare predrop_ as mutable
         predrop_ = rcp(new PreDropFunctionConstVal(threshold));
@@ -436,6 +454,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       //     (predrop_ != null)
       // Therefore, it is sufficient to check only threshold
       if (BlockSize == 1 && threshold == STS::zero() && !useSignedClassicalRS && !useSignedClassicalSA && A->hasCrsGraph()) {
+        if(CMS_print_me){printf("[%d] Checkpoint #1.2\n",A->getRowMap()->getComm()->getRank());fflush(stdout);}//CMSCMS
         // Case 1:  scalar problem, no dropping => just use matrix graph
         RCP<LWGraph> graph = rcp(new LWGraph(A->getCrsGraph(), "graph of A"));
         // Detect and record rows that correspond to Dirichlet boundary conditions
@@ -446,6 +465,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         graph->SetBoundaryNodeMap(boundaryNodes);
         numTotal = A->getLocalNumEntries();
 
+        if(CMS_print_me){printf("[%d] Checkpoint #1.3\n",A->getRowMap()->getComm()->getRank());fflush(stdout);}//CMSCMS
         if (GetVerbLevel() & Statistics1) {
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
@@ -456,6 +476,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
           GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
         }
+        if(CMS_print_me){printf("[%d] Checkpoint #1.4\n",A->getRowMap()->getComm()->getRank());fflush(stdout);}//CMSCMS
 
         Set(currentLevel, "DofsPerNode", 1);
         Set(currentLevel, "Graph", graph);
@@ -1400,7 +1421,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           }  // for (LO row = 0; row < numRows; row++)
 
         }  // subtimer
-
+      
         if (use_stop_array) {
           // Do symmetrization of the cut matrix
           // NOTE: We assume nested row/column maps here
@@ -1467,6 +1488,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       }
     }
 
+    if(CMS_print_me){printf("[%d] Checkpoint #2\n",A->getRowMap()->getComm()->getRank());fflush(stdout);}//CMSCMS
+
     if ((GetVerbLevel() & Statistics1) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
       RCP<const Teuchos::Comm<int>> comm = A->getRowMap()->getComm();
       GO numGlobalTotal, numGlobalDropped;
@@ -1477,6 +1500,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         GetOStream(Statistics1) << " (" << 100 * Teuchos::as<double>(numGlobalDropped) / Teuchos::as<double>(numGlobalTotal) << "%)";
       GetOStream(Statistics1) << std::endl;
     }
+    if(CMS_print_me){printf("[%d] Checkpoint #2.1\n",A->getRowMap()->getComm()->getRank());fflush(stdout);}//CMSCMS
 
   } else {
     // what Tobias has implemented
