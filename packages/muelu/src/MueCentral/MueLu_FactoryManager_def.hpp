@@ -237,8 +237,8 @@ const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal,
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Print() const {
   std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
-  //  Teuchos::FancyOStream& fancy = GetOStream(Debug);
-   auto & fancy = std::cout;// For debugging
+  Teuchos::FancyOStream& fancy = GetOStream(Debug);
+  // auto & fancy = std::cout;// For debugging
 
   fancy << "Users factory table (factoryTable_):" << std::endl;
   for (it = factoryTable_.begin(); it != factoryTable_.end(); it++) {
