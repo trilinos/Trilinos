@@ -1984,7 +1984,7 @@ public:
         {
           Kokkos::parallel_for("compute mat-mat", policy,
           KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal) {
-            for (int i=0; i<leftCols; i++)
+            for (int i=0; i<leftRows; i++)
             {
               for (int j=0; j<rightCols; j++)
               {

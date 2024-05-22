@@ -638,6 +638,82 @@ namespace
     printView(actualResultData.getUnderlyingView3(), out);
   }
 
+/** \brief Data provides matrix-matrix multiplication support.  This method checks correctness of the computed mat-mat for a case arising from taking the outer product of two vectors.
+*/
+  TEUCHOS_UNIT_TEST( Data, MatMatOuterProduct )
+  {
+    double relTol = 1e-13;
+    double absTol = 1e-13;
+    
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    const int spaceDim = 2;
+    const int cellCount = 1;
+    const int pointCount = 1;
+    auto leftVectorView = getView<Scalar,DeviceType>("left vector", cellCount, pointCount, spaceDim);
+    auto leftVectorViewHost = Kokkos::create_mirror(leftVectorView);
+    leftVectorViewHost(0,0,0) = 1.0;
+    leftVectorViewHost(0,0,1) = 0.5;
+    Kokkos::deep_copy(leftVectorView, leftVectorViewHost);
+    
+    Data<Scalar,DeviceType> leftVector(leftVectorView);
+    
+    auto rightVectorView = getView<Scalar,DeviceType>("right vector", cellCount, pointCount, spaceDim);
+    auto rightVectorViewHost = Kokkos::create_mirror(rightVectorView);
+    rightVectorViewHost(0,0,0) = 0.5;
+    rightVectorViewHost(0,0,1) = 1.0;
+    Kokkos::deep_copy(rightVectorView, rightVectorViewHost);
+    Data<Scalar,DeviceType> rightVector(rightVectorView);
+    
+    // re-cast leftVector as a rank 4 (C,P,D,1) object -- a D x 1 matrix at each (C,P).
+    const int newRank   = 4;
+    auto extents        = leftVector.getExtents();
+    auto variationTypes = leftVector.getVariationTypes();
+    auto leftMatrix = leftVector.shallowCopy(newRank, extents, variationTypes);
+    
+    // re-cast rightVector as a rank 4 (C,P,1,D) object -- a 1 x D matrix at each (C,P)
+    extents           = rightVector.getExtents();
+    extents[3]        = extents[2];
+    extents[2]        = 1;
+    variationTypes    = rightVector.getVariationTypes();
+    variationTypes[3] = variationTypes[2];
+    variationTypes[2] = CONSTANT;
+    auto rightMatrix  = rightVector.shallowCopy(newRank, extents, variationTypes);
+    
+    auto expectedResultView = getView<Scalar,DeviceType>("result matrix", cellCount, pointCount, spaceDim, spaceDim);
+    auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
+    
+    const int cellOrdinal = 0;
+    for (int i=0; i<spaceDim; i++)
+    {
+      for (int j=0; j<spaceDim; j++)
+      {
+        const auto & left  =  leftVectorViewHost(cellOrdinal,0,i);
+        const auto & right = rightVectorViewHost(cellOrdinal,0,j);
+        Scalar result = left * right;
+        expectedResultViewHost(cellOrdinal,0,i,j) = result;
+      }
+    }
+    Kokkos::deep_copy(expectedResultView, expectedResultViewHost);
+    
+    const bool transposeA = false;
+    const bool transposeB = false;
+    
+    auto actualResultData = Data<Scalar,DeviceType>::allocateMatMatResult(transposeA, leftMatrix, transposeB, rightMatrix);
+    
+    TEST_EQUALITY(         4, actualResultData.rank());
+    TEST_EQUALITY( cellCount, actualResultData.extent_int(0));
+    TEST_EQUALITY(pointCount, actualResultData.extent_int(1));
+    TEST_EQUALITY(  spaceDim, actualResultData.extent_int(2));
+    TEST_EQUALITY(  spaceDim, actualResultData.extent_int(3));
+    
+    actualResultData.storeMatMat(transposeA, leftMatrix, transposeB, rightMatrix);
+    
+    testFloatingEquality4(expectedResultView, actualResultData, relTol, absTol, out, success);
+    
+    printView(actualResultData.getUnderlyingView(), out);
+  }
+
 // #pragma mark Data: MatMatExplicitIdentity_PDD
 /** \brief Data provides matrix-matrix multiplication support.  This method checks correctness of the computed mat-mat for several cases involving 3x3 identity matrices.  Here, the logical dimensions (C,P,D,D) differ from the stored dimensions of (P,D,D).  We test each possible transpose combination.
 */
