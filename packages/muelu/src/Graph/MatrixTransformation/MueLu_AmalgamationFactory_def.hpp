@@ -73,8 +73,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   FactoryMonitor m(*this, "Build", currentLevel);
 
   RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");
-  printf("[%d] Level %d AMF - Checkpoint B.1\n",currentLevel.GetComm()->getRank(),currentLevel.GetLevelID());
-  
+
   /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
      fullblocksize is the number of storage blocks that must kept together during the amalgamation process.
 
@@ -178,8 +177,6 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
   // store (un)amalgamation information on current level
   Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
-  printf("[%d] Level %d AMF - Checkpoint B.2\n",currentLevel.GetComm()->getRank(),currentLevel.GetLevelID());
-
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
