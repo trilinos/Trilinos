@@ -60,6 +60,9 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
+/** \example epetra/example/BlockGmres/BlockGmresPolyEpetraExFile.cpp
+    This is an example of how to use the Belos::GmresPolySolMgr with Epetra.
+*/
 
 namespace Belos {
 
@@ -90,7 +93,6 @@ class GmresPolySolMgrPolynomialFailure : public BelosError {public:
 /// \brief Hybrid block GMRES iterative linear solver.
 /// \author Heidi Thornquist and Jennifer Loe
 /// \ingroup belos_solver_framework
-/// \example BlockGmres/BlockGmresPolyEpetraExFile.cpp
 ///
 /// The GMRES polynomial solver manager can perform two types of linear
 /// solves. First the solver runs block GMRES, storing the resulting 
