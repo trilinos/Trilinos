@@ -2257,15 +2257,14 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
     const bool transposeRight = false;
 //    auto timer = Teuchos::TimeMonitor::getNewTimer("mat-mat");
 //    timer->start();
-    // transforms can be matrices -- (C,P,D,D): rank 4 -- or scalar weights -- (C,P): rank 2
-    const bool matrixTransform = (leftTransform.rank() == 4) || (rightTransform.rank() == 4);
+    // transforms can be matrices -- (C,P,D,D): rank 4 -- or scalar weights -- (C,P): rank 2 -- or vector weights -- (C,P,D): rank 3
     Data<Scalar,DeviceType> composedTransform;
     // invalid/empty transforms are used when the identity is intended.
     if (leftTransform.isValid() && rightTransform.isValid())
     {
-      if (matrixTransform)
+      if ((leftTransform.rank() == 4) || (rightTransform.rank() == 4)) // (C,P,D,D)
       {
-        composedTransform = leftTransform.allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
+        composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
         composedTransform.storeMatMat(transposeLeft, leftTransform, transposeRight, rightTransform);
         
         // if the composedTransform matrices are full, the following is a good estimate.  If they have some diagonal portions, this will overcount.
@@ -2274,12 +2273,37 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           *approximateFlops += composedTransform.getUnderlyingViewSize() * (spaceDim - 1) * 2;
         }
       }
-      else
+      else if ((leftTransform.rank() == 3) && (rightTransform.rank() == 3)) // (C,P,D)
+      {
+        // re-cast leftTransform as a rank 4 (C,P,D,1) object -- a D x 1 matrix at each (C,P).
+        const int newRank   = 4;
+        auto extents        = leftTransform.getExtents();
+        auto variationTypes = leftTransform.getVariationTypes();
+        auto leftTransformMatrix = leftTransform.shallowCopy(newRank, extents, variationTypes);
+        
+        // re-cast rightTransform as a rank 4 (C,P,1,D) object -- a 1 x D matrix at each (C,P)
+        extents                  = rightTransform.getExtents();
+        extents[3]               = extents[2];
+        extents[2]               = 1;
+        variationTypes           = rightTransform.getVariationTypes();
+        variationTypes[3]        = variationTypes[2];
+        variationTypes[2]        = CONSTANT;
+        auto rightTransformMatrix = rightTransform.shallowCopy(newRank, extents, variationTypes);
+        
+        composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(false, leftTransformMatrix, false, rightTransformMatrix); // false: don't transpose
+        composedTransform.storeMatMat(transposeLeft, leftTransformMatrix, transposeRight, rightTransformMatrix);
+        
+        if (approximateFlops != NULL)
+        {
+          *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
+        }
+      }
+      else if ((leftTransform.rank() == 2) && (rightTransform.rank() == 2))
       {
         composedTransform = leftTransform.allocateInPlaceCombinationResult(leftTransform, rightTransform);
         composedTransform.storeInPlaceProduct(leftTransform, rightTransform);
         
-        // re-cast composedTranform as a rank 4 (C,P,D,D) object -- a 1 x 1 matrix at each (C,P).
+        // re-cast composedTranform as a rank 4 (C,P,1,1) object -- a 1 x 1 matrix at each (C,P).
         const int newRank   = 4;
         auto extents        = composedTransform.getExtents();
         auto variationTypes = composedTransform.getVariationTypes();
@@ -2288,6 +2312,10 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
         {
           *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
         }
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported transform combination");
       }
     }
     else if (leftTransform.isValid())
