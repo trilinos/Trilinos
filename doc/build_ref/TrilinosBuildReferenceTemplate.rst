@@ -206,7 +206,7 @@ on, configure with::
   -D CMAKE_CXX_STANDARD:STRING=20
 
 As mentioned above, that will also result in all downstream C++ software built
-CMake to be built with C++20 compiler options turned on as well.
+with CMake to be built with C++20 compiler options turned on as well.
 
 However, Trilinos is currently only rigorously tested with C++17 compiler
 options so trying to build and use with a higher language standard may not
