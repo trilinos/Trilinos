@@ -43,8 +43,8 @@ inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
   Subhandle* subhandle;
   const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
   MKLScalar* y_mkl       = reinterpret_cast<MKLScalar*>(y);
-  if (handle->is_set_up) {
-    subhandle = dynamic_cast<Subhandle*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<Subhandle*>(handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
@@ -54,7 +54,7 @@ inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
     subhandle             = new Subhandle(ExecSpace());
-    handle->tpl           = subhandle;
+    handle->tpl_rank1     = subhandle;
     subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
     subhandle->descr.diag = SPARSE_DIAG_NON_UNIT;
@@ -87,7 +87,6 @@ inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
           const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries),
           Avalues_mkl));
     }
-    handle->is_set_up = true;
   }
   MKLScalar alpha_mkl = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(alpha);
   MKLScalar beta_mkl  = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(beta);
@@ -124,8 +123,8 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
   Subhandle* subhandle;
   const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
   MKLScalar* y_mkl       = reinterpret_cast<MKLScalar*>(y);
-  if (handle->is_set_up) {
-    subhandle = dynamic_cast<Subhandle*>(handle->tpl);
+  if (handle->tpl_rank2) {
+    subhandle = dynamic_cast<Subhandle*>(handle->tpl_rank2);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
@@ -135,7 +134,7 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
     // Use the default execution space instance, as classic MKL does not use
     // a specific instance.
     subhandle             = new Subhandle(ExecSpace());
-    handle->tpl           = subhandle;
+    handle->tpl_rank2     = subhandle;
     subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
     subhandle->descr.diag = SPARSE_DIAG_NON_UNIT;
@@ -168,7 +167,6 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
           const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries),
           Avalues_mkl));
     }
-    handle->is_set_up = true;
   }
   MKLScalar alpha_mkl = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(alpha);
   MKLScalar beta_mkl  = KokkosSparse::Impl::KokkosToMKLScalar<Scalar>(beta);
@@ -390,23 +388,22 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
 
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
-  if (handle->is_set_up) {
-    subhandle =
-        dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(
+        handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
     subhandle->set_exec_space(exec);
   } else {
     /* create and set the subhandle and matrix descriptor */
-    subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
+    handle->tpl_rank1 = subhandle;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
-    handle->is_set_up = true;
   }
 
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
@@ -518,23 +515,22 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle,
 
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
-  if (handle->is_set_up) {
-    subhandle =
-        dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(handle->tpl);
+  if (handle->tpl_rank2) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(
+        handle->tpl_rank2);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
     subhandle->set_exec_space(exec);
   } else {
     /* create and set the subhandle and matrix descriptor */
-    subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
+    handle->tpl_rank2 = subhandle;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
-    handle->is_set_up = true;
   }
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
 
@@ -886,16 +882,16 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle,
   rocsparse_value_type* y_ = reinterpret_cast<rocsparse_value_type*>(y.data());
 
   KokkosSparse::Impl::RocSparse_BSR_SpMV_Data* subhandle;
-  if (handle->is_set_up) {
-    subhandle =
-        dynamic_cast<KokkosSparse::Impl::RocSparse_BSR_SpMV_Data*>(handle->tpl);
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::RocSparse_BSR_SpMV_Data*>(
+        handle->tpl_rank1);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for rocsparse BSR");
     subhandle->set_exec_space(exec);
   } else {
-    subhandle   = new KokkosSparse::Impl::RocSparse_BSR_SpMV_Data(exec);
-    handle->tpl = subhandle;
+    subhandle         = new KokkosSparse::Impl::RocSparse_BSR_SpMV_Data(exec);
+    handle->tpl_rank1 = subhandle;
     KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
         rocsparse_create_mat_descr(&subhandle->mat));
     // *_ex* functions deprecated in introduced in 6+
@@ -949,7 +945,6 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle,
                     "unsupported value type for rocsparse_*bsrmv");
     }
 #endif
-    handle->is_set_up = true;
   }
 
   // *_ex* functions deprecated in introduced in 6+
