@@ -101,6 +101,9 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_BLAS_EXT(false)
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+// Disabled because native has better performance.
+// See tpl_spec_avail file for more details
+#if 0
 #include <KokkosBlas_tpl_spec.hpp>
 
 namespace KokkosBlas {
@@ -173,6 +176,7 @@ KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(true)
 KOKKOSBLAS1_DOT_TPL_SPEC_DECL_CUBLAS_EXT(false)
 }  // namespace Impl
 }  // namespace KokkosBlas
+#endif
 #endif
 
 // rocBLAS

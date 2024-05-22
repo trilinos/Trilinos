@@ -89,8 +89,14 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
   KOKKOSBLAS1_DOT_TPL_SPEC(Kokkos::complex<double>, LAYOUT, EXECSPACE, MEMSPACE)
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+// Note BMK: CUBLAS dot is consistently slower than our native dot
+// (measured 11.2, 11.8, 12.0 using perf test, and all are similar)
+// If a future version improves performance, re-enable it here and
+// in the tpl_spec_decl file.
+#if 0
 KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Cuda,
                                Kokkos::CudaSpace)
+#endif
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
