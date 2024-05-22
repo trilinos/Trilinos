@@ -2291,8 +2291,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
         auto rightTransformMatrix = rightTransform.shallowCopy(newRank, extents, variationTypes);
         
         composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(false, leftTransformMatrix, false, rightTransformMatrix); // false: don't transpose
-        composedTransform.storeMatMat(transposeLeft, leftTransformMatrix, transposeRight, rightTransformMatrix);
-        
+        composedTransform.storeMatMat(false, leftTransformMatrix, false, rightTransformMatrix);
+                
         if (approximateFlops != NULL)
         {
           *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
