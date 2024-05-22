@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -79,7 +78,8 @@ enum FormulationChoice
   Hgrad,   // (grad, grad) + (value, value)
   Hdiv,    // (div, div)   + (value, value)
   Hcurl,   // (curl, curl) + (value, value)
-  L2       // (value, value)
+  L2,      // (value, value)
+  VectorWeightedPoisson
 };
 
 enum AlgorithmChoice
@@ -225,7 +225,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationCh
     case L2:
       return performStandardQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case VectorWeightedPoisson:
-      return performStandardQuadratureVectorWeightGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      return performStandardQuadratureVectorWeightedGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       return Intrepid2::ScalarView<Scalar,DeviceType>();
   }
@@ -251,7 +251,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(Formulation
     case L2:
       return performStructuredQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case VectorWeightedPoisson:
-      return performStructuredQuadratureVectorWeightGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      return performStructuredQuadratureVectorWeightedGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       return Intrepid2::ScalarView<Scalar,DeviceType>();
   }
@@ -263,11 +263,12 @@ typename BasisFamily::BasisPtr getBasisForFormulation(FormulationChoice formulat
   Intrepid2::EFunctionSpace fs;
   switch (formulation)
   {
-    case Poisson: fs = FUNCTION_SPACE_HGRAD; break;
-    case Hgrad:   fs = FUNCTION_SPACE_HGRAD; break;
-    case Hdiv:    fs = FUNCTION_SPACE_HDIV;  break;
-    case Hcurl:   fs = FUNCTION_SPACE_HCURL; break;
-    case L2:      fs = FUNCTION_SPACE_HVOL;  break;
+    case Poisson:               fs = FUNCTION_SPACE_HGRAD; break;
+    case Hgrad:                 fs = FUNCTION_SPACE_HGRAD; break;
+    case Hdiv:                  fs = FUNCTION_SPACE_HDIV;  break;
+    case Hcurl:                 fs = FUNCTION_SPACE_HCURL; break;
+    case L2:                    fs = FUNCTION_SPACE_HVOL;  break;
+    case VectorWeightedPoisson: fs = FUNCTION_SPACE_HGRAD; break;
   }
   
   auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
