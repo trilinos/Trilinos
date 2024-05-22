@@ -208,7 +208,8 @@ namespace Intrepid2 {
     static constexpr ordinal_type  MaxPolylibOrder =
         (Parameters::MaxOrder > Parameters::MaxCubatureDegreeEdge) ? Parameters::MaxOrder :
                                                                      Parameters::MaxCubatureDegreeEdge;
-    static constexpr ordinal_type  MaxPolylibPoint = MaxPolylibOrder/2+2;
+    // NVR: HVOL bases on tri/tet use Polylib with order + spaceDim + 2 points; in 3D this can be up to Parameters::MaxOrder + 5.
+    static constexpr ordinal_type  MaxPolylibPoint = (MaxPolylibOrder/2+2 > Parameters::MaxOrder + 5) ? MaxPolylibOrder/2+2 : Parameters::MaxOrder + 5;
 
     struct Serial {
 
