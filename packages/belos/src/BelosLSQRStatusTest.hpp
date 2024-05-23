@@ -52,7 +52,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosLSQRIter.hpp"
 
-/*!  \class LSQRStatusTest:
+/*!  \class Belos::LSQRStatusTest
   \brief A Belos::StatusTest class for specifying convergence of LSQR.  The outer status tests passes if an inner
   status passes a user specified number of times consecutively.  The inner status test depends on information
   specific to LSQR iteration.

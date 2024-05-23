@@ -47,10 +47,6 @@
 #include <tuple>
 #include <vector>
 
-typedef stk::search::Point<double> Point;
-typedef stk::search::Box<double> StkBox;
-typedef std::vector< std::pair<StkBox,Ident> > BoxVector;
-
 namespace std {
 template <typename Ident, typename Proc>
 std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<Ident,Proc>,stk::search::IdentProc<Ident,Proc> > const& ip)
@@ -64,9 +60,6 @@ namespace {
 template <typename SearchResultsView>
 void expect_search_results_with_views(int num_procs, int proc_id, SearchResultsView const& searchResults)
 {
-  using IdentProc = stk::search::IdentProc<int,int>;
-  using IdentProcIntersection = stk::search::IdentProcIntersection<IdentProc, IdentProc>;
-
   if (num_procs == 1) {
     ASSERT_EQ(searchResults.extent(0), 2u);
     EXPECT_EQ(searchResults[0], (IdentProcIntersection{IdentProc(0, 0), IdentProc(2, 0)}) );
@@ -103,32 +96,32 @@ void expect_search_results(int num_procs, int proc_id, const SearchResults&  sea
 {
   if (num_procs == 1) {
     ASSERT_EQ(searchResults.size(), 2u);
-    EXPECT_EQ(searchResults[0], std::make_pair(Ident(0, 0), Ident(2, 0)));
-    EXPECT_EQ(searchResults[1], std::make_pair(Ident(1, 0), Ident(3, 0)));
+    EXPECT_EQ(searchResults[0], std::make_pair(IdentProc(0, 0), IdentProc(2, 0)));
+    EXPECT_EQ(searchResults[1], std::make_pair(IdentProc(1, 0), IdentProc(3, 0)));
   } else {
     if (proc_id == 0) {
       ASSERT_EQ(searchResults.size(), 4u);
-      EXPECT_EQ(searchResults[0], std::make_pair(Ident(0, 0), Ident(2, 0)));
-      EXPECT_EQ(searchResults[1], std::make_pair(Ident(1, 0), Ident(3, 0)));
-      EXPECT_EQ(searchResults[2], std::make_pair(Ident(4, 1), Ident(2, 0)));
-      EXPECT_EQ(searchResults[3], std::make_pair(Ident(5, 1), Ident(3, 0)));
+      EXPECT_EQ(searchResults[0], std::make_pair(IdentProc(0, 0), IdentProc(2, 0)));
+      EXPECT_EQ(searchResults[1], std::make_pair(IdentProc(1, 0), IdentProc(3, 0)));
+      EXPECT_EQ(searchResults[2], std::make_pair(IdentProc(4, 1), IdentProc(2, 0)));
+      EXPECT_EQ(searchResults[3], std::make_pair(IdentProc(5, 1), IdentProc(3, 0)));
     } else if (proc_id == num_procs - 1) {
       ASSERT_EQ(searchResults.size(), 4u);
       int prev = proc_id - 1;
-      EXPECT_EQ(searchResults[0], std::make_pair(Ident(proc_id * 4, proc_id), Ident(prev * 4 + 2, prev)));
-      EXPECT_EQ(searchResults[1], std::make_pair(Ident(proc_id * 4, proc_id), Ident(proc_id * 4 + 2, proc_id)));
-      EXPECT_EQ(searchResults[2], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(prev * 4 + 3, prev)));
-      EXPECT_EQ(searchResults[3], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(proc_id * 4 + 3, proc_id)));
+      EXPECT_EQ(searchResults[0], std::make_pair(IdentProc(proc_id * 4, proc_id), IdentProc(prev * 4 + 2, prev)));
+      EXPECT_EQ(searchResults[1], std::make_pair(IdentProc(proc_id * 4, proc_id), IdentProc(proc_id * 4 + 2, proc_id)));
+      EXPECT_EQ(searchResults[2], std::make_pair(IdentProc(proc_id * 4 + 1, proc_id), IdentProc(prev * 4 + 3, prev)));
+      EXPECT_EQ(searchResults[3], std::make_pair(IdentProc(proc_id * 4 + 1, proc_id), IdentProc(proc_id * 4 + 3, proc_id)));
     } else {
       ASSERT_EQ(searchResults.size(), 6u);
       int prev = proc_id - 1;
       int next = proc_id + 1;
-      EXPECT_EQ(searchResults[0], std::make_pair(Ident(proc_id * 4, proc_id), Ident(prev * 4 + 2, prev)));
-      EXPECT_EQ(searchResults[1], std::make_pair(Ident(proc_id * 4, proc_id), Ident(proc_id * 4 + 2, proc_id)));
-      EXPECT_EQ(searchResults[2], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(prev * 4 + 3, prev)));
-      EXPECT_EQ(searchResults[3], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(proc_id * 4 + 3, proc_id)));
-      EXPECT_EQ(searchResults[4], std::make_pair(Ident(next * 4, next), Ident(proc_id * 4 + 2, proc_id)));
-      EXPECT_EQ(searchResults[5], std::make_pair(Ident(next * 4 + 1, next), Ident(proc_id * 4 + 3, proc_id)));
+      EXPECT_EQ(searchResults[0], std::make_pair(IdentProc(proc_id * 4, proc_id), IdentProc(prev * 4 + 2, prev)));
+      EXPECT_EQ(searchResults[1], std::make_pair(IdentProc(proc_id * 4, proc_id), IdentProc(proc_id * 4 + 2, proc_id)));
+      EXPECT_EQ(searchResults[2], std::make_pair(IdentProc(proc_id * 4 + 1, proc_id), IdentProc(prev * 4 + 3, prev)));
+      EXPECT_EQ(searchResults[3], std::make_pair(IdentProc(proc_id * 4 + 1, proc_id), IdentProc(proc_id * 4 + 3, proc_id)));
+      EXPECT_EQ(searchResults[4], std::make_pair(IdentProc(next * 4, next), IdentProc(proc_id * 4 + 2, proc_id)));
+      EXPECT_EQ(searchResults[5], std::make_pair(IdentProc(next * 4 + 1, next), IdentProc(proc_id * 4 + 3, proc_id)));
     }
   }
 }
@@ -139,10 +132,10 @@ void test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algor
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
+  using HostSpace = Kokkos::DefaultHostExecutionSpace;
   using ExecSpace = Kokkos::DefaultExecutionSpace;
   using BoxType = stk::search::Box<FloatType>;
   using PointType = stk::search::Point<FloatType>;
-  using IdentProc = stk::search::IdentProc<int,int>;
   using BoxIdentProcType = stk::search::BoxIdentProc<BoxType, IdentProc>;
   using BoxIdentProcViewType = Kokkos::View<BoxIdentProcType*, ExecSpace>;
   using SearchResultsViewType = Kokkos::View<stk::search::IdentProcIntersection<IdentProc, IdentProc>*, ExecSpace>;
@@ -152,8 +145,8 @@ void test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algor
   auto domain = BoxIdentProcViewType("domain test view", 2);
   auto range = BoxIdentProcViewType("range test view", 2);
 
-  auto domainHost = Kokkos::create_mirror_view_and_copy(ExecSpace{}, domain);
-  auto rangeHost = Kokkos::create_mirror_view_and_copy(ExecSpace{}, range);
+  auto domainHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, domain);
+  auto rangeHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, range);
 
   box = BoxType( PointType(proc_id + 0.1, 0.0, 0.0), PointType(proc_id + 0.9, 1.0, 1.0));
   identProc = IdentProc(proc_id * 4, proc_id);
@@ -178,7 +171,7 @@ void test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algor
 
   stk::search::coarse_search(domain, range, algorithm, comm, searchResults);
 
-  auto searchResultsHost = Kokkos::create_mirror_view_and_copy(ExecSpace{}, searchResults);
+  auto searchResultsHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, searchResults);
 
   expect_search_results_with_views(num_procs, proc_id, searchResultsHost);
 }
@@ -191,26 +184,26 @@ void test_coarse_search_for_algorithm(stk::search::SearchMethod algorithm, MPI_C
 
   using BoxType = stk::search::Box<FloatType>;
   using PointType = stk::search::Point<FloatType>;
-  using BoxIdentProcVectorType = std::vector<std::pair<BoxType, Ident>>;
+  using BoxIdentProcVectorType = std::vector<std::pair<BoxType, IdentProc>>;
 
   BoxIdentProcVectorType domain, range;
   BoxType box;
-  Ident identProc;
+  IdentProc identProc;
 
   box = BoxType( PointType(proc_id + 0.1, 0.0, 0.0), PointType(proc_id + 0.9, 1.0, 1.0));
-  identProc = Ident(proc_id * 4, proc_id);
+  identProc = IdentProc(proc_id * 4, proc_id);
   domain.push_back(std::make_pair(box, identProc));
 
   box = BoxType( PointType(proc_id + 0.1, 2.0, 0.0), PointType(proc_id + 0.9, 3.0, 1.0));
-  identProc = Ident(proc_id * 4+1, proc_id);
+  identProc = IdentProc(proc_id * 4+1, proc_id);
   domain.push_back(std::make_pair(box, identProc));
 
   box = BoxType( PointType(proc_id + 0.6, 0.5, 0.0), PointType(proc_id + 1.4, 1.5, 1.0));
-  identProc = Ident(proc_id * 4+2, proc_id);
+  identProc = IdentProc(proc_id * 4+2, proc_id);
   range.push_back(std::make_pair(box, identProc));
 
   box = BoxType( PointType(proc_id + 0.6, 2.5, 0.0), PointType(proc_id + 1.4, 3.5, 1.0));
-  identProc = Ident(proc_id * 4+3, proc_id);
+  identProc = IdentProc(proc_id * 4+3, proc_id);
   range.push_back(std::make_pair(box, identProc));
 
   SearchResults searchResults;
@@ -287,9 +280,7 @@ void host_local_test_coarse_search_for_algorithm(stk::search::SearchMethod algor
 {
   using BoxType = stk::search::Box<FloatType>;
   using PointType = stk::search::Point<FloatType>;
-  using IdentType = int;
-  using BoxIdentType = std::pair<BoxType, IdentType>;
-  using IntersectionType = std::pair<IdentType, IdentType>;
+  using BoxIdentType = std::pair<BoxType, Ident>;
 
   std::vector<BoxIdentType> domain;
   std::vector<BoxIdentType> range;
@@ -299,7 +290,7 @@ void host_local_test_coarse_search_for_algorithm(stk::search::SearchMethod algor
   range.emplace_back(BoxType(PointType(0.6, 0.5, 0.0), PointType(1.4, 1.5, 1.0)), 2);
   range.emplace_back(BoxType(PointType(0.6, 2.5, 0.0), PointType(1.4, 3.5, 1.0)), 3);
 
-  std::vector<IntersectionType> intersections;
+  LocalSearchResults intersections;
 
   stk::search::local_coarse_search(domain, range, algorithm, intersections);
 
@@ -311,9 +302,7 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
 {
   using BoxType = stk::search::Box<FloatType>;
   using PointType = stk::search::Point<FloatType>;
-  using IdentType = int;
-  using BoxIdentType = stk::search::BoxIdent<BoxType, IdentType>;
-  using IntersectionType = stk::search::IdentIntersection<IdentType, IdentType>;
+  using BoxIdentType = stk::search::BoxIdent<BoxType, Ident>;
 
   auto domain = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("domain box-ident", 2);
   auto range = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("range box-ident", 2);
@@ -326,11 +315,11 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
       range[1]  = {BoxType(PointType(0.6, 2.5, 0.0), PointType(1.4, 3.5, 1.0)), 3};
     });
 
-  auto intersections = Kokkos::View<IntersectionType*, stk::ngp::ExecSpace>("intersections", 0);
+  auto intersections = Kokkos::View<IdentIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
   stk::search::local_coarse_search(domain, range, algorithm, intersections);
 
-  Kokkos::View<IntersectionType*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   local_expect_search_results(hostIntersections);
@@ -378,16 +367,16 @@ TEST(stk_search, Local_CoarseSearchFloatBoxes_KDTREE)
 }
 
 
-std::pair<BoxVector, BoxVector> build_range_boxes_and_nested_domain_boxes(int num_procs, int proc_id, int sizeParam=1)
+std::pair<StkBoxIdentProcVector, StkBoxIdentProcVector> build_range_boxes_and_nested_domain_boxes(int num_procs, int proc_id, int sizeParam=1)
 {
-  BoxVector local_domain, local_range;
+  StkBoxIdentProcVector local_domain, local_range;
 
   int startID = 0;
   if (proc_id == 0) {
     for (int i = 0; i < sizeParam; ++i) {
       for (int j = 0; j < sizeParam; ++j, ++startID) {
         StkBox box( Point(num_procs*i, num_procs*j, 0.0), Point(num_procs*(i+1), num_procs*(j+1), 1.0));
-        Ident id(startID, proc_id);
+        IdentProc id(startID, proc_id);
         local_range.push_back(std::make_pair(box,id));
       }
     }
@@ -397,7 +386,7 @@ std::pair<BoxVector, BoxVector> build_range_boxes_and_nested_domain_boxes(int nu
     for (int i = 0; i < sizeParam; ++i) {
       for (int j = 0; j < sizeParam; ++j, ++startID) {
         StkBox box( Point(procShift*sizeParam+i, sizeParam*proc_id+j, 0.0), Point(procShift*sizeParam+i+1.0, sizeParam*proc_id+j+1, 1.0));
-        Ident id(startID, proc_id);
+        IdentProc id(startID, proc_id);
         local_domain.push_back(std::make_pair(box,id));
       }
     }
@@ -415,8 +404,8 @@ void expect_coarse_search_range_box_communication(int num_procs,
   if (num_procs == 1) {
     ASSERT_EQ(searchResultsCommunicateOn.size(), 1u);
     ASSERT_EQ(searchResultsCommunicateOff.size(), 1u);
-    EXPECT_EQ(searchResultsCommunicateOn[0], std::make_pair(Ident(1, 0), Ident(0, 0)));
-    EXPECT_EQ(searchResultsCommunicateOff[0], std::make_pair(Ident(1, 0), Ident(0, 0)));
+    EXPECT_EQ(searchResultsCommunicateOn[0], std::make_pair(IdentProc(1, 0), IdentProc(0, 0)));
+    EXPECT_EQ(searchResultsCommunicateOff[0], std::make_pair(IdentProc(1, 0), IdentProc(0, 0)));
   }
 
   else {
@@ -438,11 +427,11 @@ void expect_coarse_search_range_box_communication(int num_procs,
 void test_coarse_search_range_box_communication(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
 
-  BoxVector local_domain, local_range;
+  StkBoxIdentProcVector local_domain, local_range;
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
-  std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id);  
+  std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id);
 
   SearchResults searchResultsCommunicateOn;
   SearchResults searchResultsCommunicateOff;
@@ -466,11 +455,11 @@ TEST(stk_search, coarse_search_range_box_communication_MORTON_LBVH)
 void test_coarse_search_determine_domain_and_range_communicate_on(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
 
-  BoxVector local_domain, local_range;
+  StkBoxIdentProcVector local_domain, local_range;
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
-  std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id);  
+  std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id);
 
   SearchResults searchResultsDetermineOn;
   SearchResults searchResultsDetermineOff;
@@ -504,14 +493,14 @@ TEST(stk_search, coarse_search_determine_domain_and_range_communicate_on_ARBORX)
 
 void test_coarse_search_two_pass(stk::search::SearchMethod algorithm, MPI_Comm comm, int sizeParam)
 {
-  BoxVector local_domain, local_range, additional_domain;
+  StkBoxIdentProcVector local_domain, local_range, additional_domain;
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
   std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id, sizeParam);
   if (proc_id == num_procs - 1) {
     StkBox box( Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0));
-    Ident id(local_domain.size(), proc_id);
+    IdentProc id(local_domain.size(), proc_id);
     additional_domain.push_back(std::make_pair(box,id));
   }
 
@@ -557,11 +546,9 @@ TEST(stk_search, coarse_search_two_pass_ARBORX)
 
 void test_ident_proc_with_search_with_views(stk::search::SearchMethod searchMethod)
 {
-  using IdentProc = Ident;
   using ExecSpace = Kokkos::DefaultExecutionSpace;
-  using BoxIdentProcType = stk::search::BoxIdentProc<FloatBox, IdentProc>;
-  using BoxIdentProcViewType = Kokkos::View<BoxIdentProcType*, ExecSpace>;
-  using SearchResultsViewType = Kokkos::View<stk::search::IdentProcIntersection<IdentProc, IdentProc>*, ExecSpace>;
+  using BoxIdentProcViewType = Kokkos::View<FloatBoxIdentProc*, ExecSpace>;
+  using SearchResultsViewType = Kokkos::View<IdentProcIntersection*, ExecSpace>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int procId = -1;
@@ -572,8 +559,8 @@ void test_ident_proc_with_search_with_views(stk::search::SearchMethod searchMeth
   if (numProcs != 1) {
     FloatBox box1(0, 0, 0, 1, 1, 1);
     FloatBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
-    Ident id1(1, 0);
-    Ident id2(1, 1);
+    IdentProc id1(1, 0);
+    IdentProc id2(1, 1);
 
     BoxIdentProcViewType boxes("", 1);
     if (procId == 0) {
@@ -588,8 +575,8 @@ void test_ident_proc_with_search_with_views(stk::search::SearchMethod searchMeth
 
     SearchResultsViewType goldResults("", 3);
 
-    Ident goldId1(1, 0);
-    Ident goldId2(1, 1);
+    IdentProc goldId1(1, 0);
+    IdentProc goldId2(1, 1);
 
     if (procId == 0) {
       goldResults(0) = {goldId1, goldId1};
@@ -624,10 +611,10 @@ void test_ident_proc_with_search(stk::search::SearchMethod searchMethod)
   if (numProcs != 1) {
     FloatBox box1(0, 0, 0, 1, 1, 1);
     FloatBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
-    Ident id1(1, 0);
-    Ident id2(1, 1);
+    IdentProc id1(1, 0);
+    IdentProc id2(1, 1);
 
-    FloatBoxVector boxes;
+    FloatBoxIdentProcVector boxes;
     if (procId == 0) {
       boxes.push_back(std::make_pair(box1, id1));
     } else if (procId == 1) {
@@ -640,8 +627,8 @@ void test_ident_proc_with_search(stk::search::SearchMethod searchMethod)
 
     SearchResults goldResults;
 
-    Ident goldId1(1, 0);
-    Ident goldId2(1, 1);
+    IdentProc goldId1(1, 0);
+    IdentProc goldId2(1, 1);
 
     if (procId == 0) {
       goldResults.push_back(std::make_pair(goldId1, goldId1));
@@ -692,7 +679,7 @@ void test_coarse_search_one_point(stk::search::SearchMethod searchMethod)
 
     Point min_corner, max_corner;
 
-    BoxVector local_domain, local_range;
+    StkBoxIdentProcVector local_domain, local_range;
     // what if identifier is NOT unique
     // x_min <= x_max
     // y_min <= y_max
@@ -703,7 +690,7 @@ void test_coarse_search_one_point(stk::search::SearchMethod searchMethod)
 
     // One bounding box on processor 0 with the label:  0
     // All other processors have empty domain.
-    Ident domainBox1(0, 0);
+    IdentProc domainBox1(0, 0);
     if (proc_id == 0) {
       local_domain.push_back(std::make_pair(StkBox(min_corner, max_corner), domainBox1));
     }
@@ -713,7 +700,7 @@ void test_coarse_search_one_point(stk::search::SearchMethod searchMethod)
 
     // One range target on processor 0 with the label:  1
     // All other processors have empty range.
-    Ident rangeBox1(1, 0);
+    IdentProc rangeBox1(1, 0);
     if (proc_id == 0) {
       local_range.push_back(std::make_pair(StkBox(min_corner, max_corner), rangeBox1));
     }
@@ -754,7 +741,7 @@ void test_coarse_search_for_determining_sharing_all_all_case(stk::search::Search
     const int p_rank = stk::parallel_machine_rank(comm);
     const int p_size = stk::parallel_machine_size(comm);
 
-    typedef std::vector< std::pair<Sphere,Ident> > SphereVector;
+    typedef std::vector< std::pair<Sphere,IdentProc> > SphereVector;
 
     SphereVector source_bbox_vector;
 
@@ -762,7 +749,7 @@ void test_coarse_search_for_determining_sharing_all_all_case(stk::search::Search
     double radius = 1.0e-6;
     Sphere node(coords, radius);
     uint64_t global_id = 1000 + p_rank;
-    Ident id = Ident(global_id, p_rank);
+    IdentProc id = IdentProc(global_id, p_rank);
 
     source_bbox_vector.push_back(std::make_pair(node, id));
 
@@ -822,7 +809,7 @@ void test_coarse_search_for_determining_sharing_linear_adjacent_case(
     const int p_rank = stk::parallel_machine_rank(comm);
     const int p_size = stk::parallel_machine_size(comm);
 
-    typedef std::vector< std::pair<Sphere,Ident> > SphereVector;
+    typedef std::vector< std::pair<Sphere,IdentProc> > SphereVector;
 
     SphereVector source_bbox_vector;
 
@@ -830,7 +817,7 @@ void test_coarse_search_for_determining_sharing_linear_adjacent_case(
     double radius = 0.6;
     Sphere node(coords, radius);
     uint64_t global_id = 1000 + p_rank;
-    Ident id = Ident(global_id, p_rank);
+    IdentProc id = IdentProc(global_id, p_rank);
 
     source_bbox_vector.push_back(std::make_pair(node, id));
 

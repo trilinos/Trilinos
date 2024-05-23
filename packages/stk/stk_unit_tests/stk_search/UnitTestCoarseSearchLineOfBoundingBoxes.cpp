@@ -63,8 +63,8 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
 
   const double paramCoord = procId * distanceBetweenCenters;
 
-  std::vector<std::pair<BoundingBoxType, Ident>> boxVector1;
-  std::vector<std::pair<BoundingBoxType, Ident>> boxVector2;
+  std::vector<std::pair<BoundingBoxType, IdentProc>> boxVector1;
+  std::vector<std::pair<BoundingBoxType, IdentProc>> boxVector2;
   if (procId % 2 == 0) {
     switch(axis)
     {
@@ -94,7 +94,7 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
     }
   }
 
-  std::vector<std::pair<Ident, Ident>> boxIdPairResults;
+  SearchResults boxIdPairResults;
   stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 
   int numProcs = stk::parallel_machine_size(comm);
@@ -117,10 +117,8 @@ template<class BoundingBoxType>
 void device_runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis axis)
 {
 
-  using IdentProcType = stk::search::IdentProc<int,int>;
-  using InnerBoxIdentProcType = stk::search::BoxIdentProc<BoundingBoxType, IdentProcType>;
-  using OuterBoxIdentProcType = stk::search::BoxIdentProc<BoundingBoxType, IdentProcType>;
-  using IntersectionType = stk::search::IdentProcIntersection<IdentProcType, IdentProcType>;
+  using InnerBoxIdentProcType = stk::search::BoxIdentProc<BoundingBoxType, IdentProc>;
+  using OuterBoxIdentProcType = stk::search::BoxIdentProc<BoundingBoxType, IdentProc>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int procId = stk::parallel_machine_rank(comm);
@@ -139,13 +137,13 @@ void device_runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum 
         switch(axis) 
         {
         case xDim:
-          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProcType>(paramCoord, 0, 0, radius, 1, procId);
+          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(paramCoord, 0, 0, radius, 1, procId);
           break;
         case yDim:
-          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProcType>(0, paramCoord, 0, radius, 1, procId);
+          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, paramCoord, 0, radius, 1, procId);
           break;
         case zDim:
-          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProcType>(0, 0, paramCoord, radius, 1, procId);
+          domain[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, 0, paramCoord, radius, 1, procId);
           break;
         }
       });
@@ -157,19 +155,19 @@ void device_runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum 
         switch(axis) 
         {
         case xDim:
-          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProcType>(paramCoord, 0, 0, radius, 1, procId);
+          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(paramCoord, 0, 0, radius, 1, procId);
           break;
         case yDim:
-          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProcType>(0, paramCoord, 0, radius, 1, procId);
+          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, paramCoord, 0, radius, 1, procId);
           break;
         case zDim:
-          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProcType>(0, 0, paramCoord, radius, 1, procId);
+          range[0] = stk::unit_test_util::simple_fields::device_generateBoxIdentProc<BoundingBoxType, IdentProc>(0, 0, paramCoord, radius, 1, procId);
           break;
         }
       });
   }
 
-  auto searchResults = Kokkos::View<IntersectionType*, stk::ngp::ExecSpace>("searchResults", 0);
+  auto searchResults = Kokkos::View<IdentProcIntersection*, stk::ngp::ExecSpace>("searchResults", 0);
   stk::search::coarse_search(domain, range, searchMethod, comm, searchResults);
 
   int numProcs = stk::parallel_machine_size(comm);

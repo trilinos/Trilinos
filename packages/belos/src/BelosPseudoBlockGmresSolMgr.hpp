@@ -61,11 +61,14 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example BlockGmres/PseudoBlockGmresEpetraExFile.cpp
-    This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager.
+/** \example epetra/example/BlockGmres/PseudoBlockGmresEpetraExFile.cpp
+    This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager using Epetra.
 */
-/** \example BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp
+/** \example epetra/example/BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager with an Ifpack preconditioner.
+*/
+/** \example tpetra/example/BlockGmres/PseudoBlockGmresTpetraExFile.cpp
+    This is an example of how to use the Belos::PseudoBlockGmresSolMgr solver manager using Tpetra.
 */
 
 namespace Belos {
@@ -786,6 +789,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
       paramsOrtho->set ("depTol", orthoKappa_ );
     }
 

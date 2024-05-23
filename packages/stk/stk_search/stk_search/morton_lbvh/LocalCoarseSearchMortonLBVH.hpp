@@ -198,6 +198,8 @@ void local_coarse_search_morton_lbvh(
   else {
     insert_only_confirmed_intersections_into_results(domain, range, collisionList, searchResults);
   }
+
+  Kokkos::Profiling::popRegion();
 }
 
 template <typename DomainBoxType, typename DomainIdentType, typename RangeBoxType, typename RangeIdentType,
@@ -212,7 +214,7 @@ void local_coarse_search_morton_lbvh(
 
   using ValueType = typename DomainBoxType::value_type;
 
-  Kokkos::Profiling::pushRegion("Fill domain and range trees");
+  Kokkos::Profiling::pushRegion("STK Fill domain and range trees");
   const bool supportHostBoxes = false;
   stk::search::MortonAabbTree<ValueType, ExecutionSpace> domainTree("Domain Tree", domain.extent(0), supportHostBoxes);
   stk::search::MortonAabbTree<ValueType, ExecutionSpace> rangeTree("Range Tree", range.extent(0), supportHostBoxes);
@@ -223,10 +225,12 @@ void local_coarse_search_morton_lbvh(
   rangeTree.sync_to_device();
   Kokkos::Profiling::popRegion();
 
+  Kokkos::Profiling::pushRegion("STK Morton Search");
   stk::search::CollisionList<ExecutionSpace> collisionList("Collision List");
   stk::search::morton_lbvh_search<ValueType, ExecutionSpace>(domainTree, rangeTree, collisionList);
+  Kokkos::Profiling::popRegion();
 
-  Kokkos::Profiling::pushRegion("Aggregate search results");
+  Kokkos::Profiling::pushRegion("STK Aggregate search results");
   const int numCollisions = collisionList.get_num_collisions();
   searchResults = Kokkos::View<IdentIntersection<DomainIdentType, RangeIdentType>*, ExecutionSpace>(
         Kokkos::ViewAllocateWithoutInitializing(searchResults.label()), numCollisions);
@@ -239,6 +243,8 @@ void local_coarse_search_morton_lbvh(
   else {
     insert_only_confirmed_intersections_into_results(domain, range, collisionList, searchResults);
   }
+
+  Kokkos::Profiling::popRegion();
 }
 
 }

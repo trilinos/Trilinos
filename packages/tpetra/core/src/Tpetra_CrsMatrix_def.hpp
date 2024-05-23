@@ -5087,9 +5087,24 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #if KOKKOSKERNELS_VERSION >= 40299
     auto A_lcl = getLocalMatrixDevice();
+
     if(!applyHelper.get()) {
       // The apply helper does not exist, so create it.
-      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
+      // Decide now whether to use the imbalanced row path, or the default.
+      bool useMergePath = false;
+      LocalOrdinal nrows = getLocalNumRows();
+      LocalOrdinal maxRowImbalance = 0;
+      if(nrows != 0)
+        maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
+      //TODO: when https://github.com/kokkos/kokkos-kernels/issues/2166 is fixed and,
+      //we can use SPMV_MERGE_PATH for the native spmv as well.
+      //Take out this ifdef to enable that.
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+      if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+        useMergePath = true;
+#endif
+      applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map,
+          useMergePath ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT);
     }
 
     // Translate mode (Teuchos enum) to KokkosKernels (1-character string)

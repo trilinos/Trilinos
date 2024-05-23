@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   StructuredIntegrationPerformance.cpp
-    \brief  Main for performance tests comparing structured integration performance to standard.
+    \brief  Driver for performance tests comparing structured integration performance to standard.
  */
 
 #include "Teuchos_GlobalMPISession.hpp"
@@ -79,7 +79,8 @@ enum FormulationChoice
   Hdiv,    // (div, div)   + (value, value)
   Hcurl,   // (curl, curl) + (value, value)
   L2,      // (value, value)
-  VectorWeightedPoisson
+  VectorWeightedPoisson,
+  UnknownFormulation
 };
 
 enum AlgorithmChoice
@@ -124,6 +125,66 @@ std::string to_string(FormulationChoice choice)
     case VectorWeightedPoisson: return "VectorWeightedPoisson";
     
     default:      return "Unknown FormulationChoice";
+  }
+}
+
+AlgorithmChoice algorithm_from_string(const std::string &algorithmString)
+{
+  if (algorithmString == "Standard")
+  {
+    return Standard;
+  }
+  else if (algorithmString == "AffineNonTensor")
+  {
+    return AffineNonTensor;
+  }
+  else if (algorithmString == "NonAffineTensor")
+  {
+    return NonAffineTensor;
+  }
+  else if (algorithmString == "AffineTensor")
+  {
+    return AffineTensor;
+  }
+  else if (algorithmString == "DiagonalJacobian")
+  {
+    return DiagonalJacobian;
+  }
+  else if (algorithmString == "Uniform")
+  {
+    return Uniform;
+  }
+  else
+  {
+    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unrecognized algorithm");
+  }
+}
+
+FormulationChoice formulation_from_string(const std::string &formulationString)
+{
+  if (formulationString == "Poisson")
+  {
+    return Poisson;
+  }
+  else if (formulationString == "Hgrad")
+  {
+    return Hgrad;
+  }
+  else if (formulationString == "Hcurl")
+  {
+    return Hcurl;
+  }
+  else if (formulationString == "Hdiv")
+  {
+    return Hdiv;
+  }
+  else if (formulationString == "L2")
+  {
+    return L2;
+  }
+  else
+  {
+    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unrecognized formulation");
   }
 }
 
@@ -270,6 +331,7 @@ typename BasisFamily::BasisPtr getBasisForFormulation(FormulationChoice formulat
     case Hcurl:                 fs = FUNCTION_SPACE_HCURL; break;
     case L2:                    fs = FUNCTION_SPACE_HVOL;  break;
     case VectorWeightedPoisson: fs = FUNCTION_SPACE_HGRAD; break;
+    case UnknownFormulation:    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown formulation");
   }
   
   auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
@@ -310,6 +372,671 @@ BasisPtr<DeviceType,Scalar,Scalar> getHypercubeBasisForFormulation(FormulationCh
   return Teuchos::null;
 }
 
+using std::map;
+using std::tuple;
+using std::vector;
+
+enum Mode
+{
+  Calibration,
+  Test,
+  BestSerial,
+  BestOpenMP_16,
+  BestCuda,
+  Precalibrated
+};
+
+map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeMap(const std::string &precalibrationFile,
+                                                                                   const map<int,int> &cellCountForPolyOrder,
+                                                                                   const int &polyOrderMin,
+                                                                                   const int &polyOrderMax)
+{
+  const int spaceDim = 3;
+  
+  map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > worksetSizeMap; // keys are maps p -> worksetSize
+  
+  vector<AlgorithmChoice> allAlgorithmChoices {Standard, NonAffineTensor, AffineTensor, Uniform};
+  vector<FormulationChoice> allFormulationChoices {Poisson, Hgrad, Hdiv, Hcurl, L2};
+  
+  // skip calibration case; want that to span workset sizes in a particular way…
+  vector<Mode> allModes {Test,BestSerial,BestOpenMP_16,BestCuda,Precalibrated};
+  
+  for (auto mode : allModes)
+  {
+    // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
+    // 1 is best for polyOrder 8, so it'll be the best for the rest.
+    for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
+    {
+      for (auto formulation : allFormulationChoices)
+      {
+        for (auto algorithm : allAlgorithmChoices)
+        {
+          tuple<Mode,FormulationChoice,AlgorithmChoice> key {mode,formulation,algorithm};
+          worksetSizeMap[key][polyOrder] = 1;
+        }
+      }
+    }
+    
+    // best choice for Uniform: whole mesh (cellCount)
+    for (auto formulation : allFormulationChoices)
+    {
+      tuple<Mode,FormulationChoice,AlgorithmChoice> key {mode,formulation,Uniform};
+      worksetSizeMap[key] = cellCountForPolyOrder;
+    }
+    
+    switch (mode) {
+      case Test:
+      {
+        // for test run, use the same modestly-sized tuples for each AlgorithmChoice
+        // (note that meshWidth varies here)
+        vector< tuple<int,int,int> > testCases { tuple<int,int,int> {1,8,512},
+                                                 tuple<int,int,int> {2,8,256},
+                                                 tuple<int,int,int> {3,4,64},
+                                                 tuple<int,int,int> {3,4,9} // test case whose workset size does not evenly divide the cell count
+        };
+        
+        for (auto testCase : testCases )
+        {
+          int polyOrder   = std::get<0>(testCase);
+          int meshWidth   = std::get<1>(testCase);
+          
+          int numCells = 1;
+          for (int d=0; d<spaceDim; d++)
+          {
+            numCells *= meshWidth;
+          }
+          
+          for (auto formulation : allFormulationChoices)
+          {
+            for (auto algorithm : allAlgorithmChoices)
+            {
+              tuple<Mode,FormulationChoice,AlgorithmChoice> key {mode,formulation,algorithm};
+              
+              worksetSizeMap[key][polyOrder] = (algorithm != Uniform) ? std::get<2>(testCase) : numCells;
+            }
+          }
+        }
+      } // Test mode case
+      break;
+      case BestSerial:
+      {
+        // manually calibrated workset sizes on Mac Pro (2.5 GHz Xeon W, 28-core, running in serial)
+        {
+          // Poisson formulation
+          FormulationChoice formulation = Poisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 8192;
+          worksetSizeMap[standardKey][2] = 4096;
+          worksetSizeMap[standardKey][3] =   64;
+          worksetSizeMap[standardKey][4] =   16;
+          worksetSizeMap[standardKey][5] =   16;
+          worksetSizeMap[standardKey][6] =    1;
+          worksetSizeMap[standardKey][7] =    1;
+          worksetSizeMap[standardKey][8] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 2048;
+          worksetSizeMap[nonAffineTensorKey][2] =  256;
+          worksetSizeMap[nonAffineTensorKey][3] =  128;
+          worksetSizeMap[nonAffineTensorKey][4] =   16;
+          worksetSizeMap[nonAffineTensorKey][5] =    2;
+          worksetSizeMap[nonAffineTensorKey][6] =    1;
+          worksetSizeMap[nonAffineTensorKey][7] =    1;
+          worksetSizeMap[nonAffineTensorKey][8] =    1;
+          
+          worksetSizeMap[affineTensorKey][1] = 4096;
+          worksetSizeMap[affineTensorKey][2] =   64;
+          worksetSizeMap[affineTensorKey][3] =   32;
+          worksetSizeMap[affineTensorKey][4] =    4;
+          worksetSizeMap[affineTensorKey][5] =    2;
+          worksetSizeMap[affineTensorKey][6] =    1;
+          worksetSizeMap[affineTensorKey][7] =    1;
+          worksetSizeMap[affineTensorKey][8] =    1;
+        }
+        {
+          // Hgrad formulation
+          FormulationChoice formulation = Hgrad;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 32768;
+          worksetSizeMap[standardKey][2] = 16384;
+          worksetSizeMap[standardKey][3] =   512;
+          worksetSizeMap[standardKey][4] =   512;
+          worksetSizeMap[standardKey][5] =   512;
+          worksetSizeMap[standardKey][6] =     2;
+          worksetSizeMap[standardKey][7] =     1;
+          worksetSizeMap[standardKey][8] =     1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 4096;
+          worksetSizeMap[nonAffineTensorKey][2] =  512;
+          worksetSizeMap[nonAffineTensorKey][3] =  128;
+          worksetSizeMap[nonAffineTensorKey][4] =   32;
+          worksetSizeMap[nonAffineTensorKey][5] =   16;
+          worksetSizeMap[nonAffineTensorKey][6] =    1;
+          worksetSizeMap[nonAffineTensorKey][7] =    1;
+          worksetSizeMap[nonAffineTensorKey][8] =    1;
+          
+          worksetSizeMap[affineTensorKey][1] = 8192;
+          worksetSizeMap[affineTensorKey][2] =  512;
+          worksetSizeMap[affineTensorKey][3] =  128;
+          worksetSizeMap[affineTensorKey][4] =   64;
+          worksetSizeMap[affineTensorKey][5] =   16;
+          worksetSizeMap[affineTensorKey][6] =    1;
+          worksetSizeMap[affineTensorKey][7] =    1;
+          worksetSizeMap[affineTensorKey][8] =    1;
+        }
+        {
+          // Hdiv formulation
+          FormulationChoice formulation = Hdiv;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
+          worksetSizeMap[standardKey][1] = 256;
+          worksetSizeMap[standardKey][2] =  64;
+          worksetSizeMap[standardKey][3] =  64;
+          worksetSizeMap[standardKey][4] =  16;
+          worksetSizeMap[standardKey][5] =   4;
+          worksetSizeMap[standardKey][6] =   1;
+          worksetSizeMap[standardKey][7] =   1;
+          worksetSizeMap[standardKey][8] =   1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 4096;
+          worksetSizeMap[nonAffineTensorKey][2] =  256;
+          worksetSizeMap[nonAffineTensorKey][3] =   64;
+          worksetSizeMap[nonAffineTensorKey][4] =   16;
+          worksetSizeMap[nonAffineTensorKey][5] =    4;
+          worksetSizeMap[nonAffineTensorKey][6] =    1;
+          worksetSizeMap[nonAffineTensorKey][7] =    1;
+          worksetSizeMap[nonAffineTensorKey][8] =    1;
+          
+          worksetSizeMap[affineTensorKey][1] = 8192;
+          worksetSizeMap[affineTensorKey][2] =  512;
+          worksetSizeMap[affineTensorKey][3] =   64;
+          worksetSizeMap[affineTensorKey][4] =   16;
+          worksetSizeMap[affineTensorKey][5] =    8;
+          worksetSizeMap[affineTensorKey][6] =    1;
+          worksetSizeMap[affineTensorKey][7] =    1;
+          worksetSizeMap[affineTensorKey][8] =    1;
+        }
+        {
+          // Hcurl formulation
+          FormulationChoice formulation = Hcurl;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hcurl - these are for meshes that range from 32768 for p=1 to 64 for p=8
+          worksetSizeMap[standardKey][1] = 1024;
+          worksetSizeMap[standardKey][2] =  512;
+          worksetSizeMap[standardKey][3] =  256;
+          worksetSizeMap[standardKey][4] =    4;
+          worksetSizeMap[standardKey][5] =    1;
+          worksetSizeMap[standardKey][6] =    1;
+          worksetSizeMap[standardKey][7] =    1;
+          worksetSizeMap[standardKey][8] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 512;
+          worksetSizeMap[nonAffineTensorKey][2] =  64;
+          worksetSizeMap[nonAffineTensorKey][3] =  16;
+          worksetSizeMap[nonAffineTensorKey][4] =   4;
+          worksetSizeMap[nonAffineTensorKey][5] =   1;
+          worksetSizeMap[nonAffineTensorKey][6] =   1;
+          worksetSizeMap[nonAffineTensorKey][7] =   1;
+          worksetSizeMap[nonAffineTensorKey][8] =   1;
+          
+          worksetSizeMap[affineTensorKey][1] = 1024;
+          worksetSizeMap[affineTensorKey][2] =  128;
+          worksetSizeMap[affineTensorKey][3] =   16;
+          worksetSizeMap[affineTensorKey][4] =    4;
+          worksetSizeMap[affineTensorKey][5] =    1;
+          worksetSizeMap[affineTensorKey][6] =    1;
+          worksetSizeMap[affineTensorKey][7] =    1;
+          worksetSizeMap[affineTensorKey][8] =    1;
+        }
+        {
+          // L^2 formulation
+          FormulationChoice formulation = L2;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for L^2 - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 1024;
+          worksetSizeMap[standardKey][2] =  256;
+          worksetSizeMap[standardKey][3] =   64;
+          worksetSizeMap[standardKey][4] =   16;
+          worksetSizeMap[standardKey][5] =   16;
+          worksetSizeMap[standardKey][6] =   16;
+          worksetSizeMap[standardKey][7] =    1;
+          worksetSizeMap[standardKey][8] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 16384;
+          worksetSizeMap[nonAffineTensorKey][2] =   512;
+          worksetSizeMap[nonAffineTensorKey][3] =   256;
+          worksetSizeMap[nonAffineTensorKey][4] =    64;
+          worksetSizeMap[nonAffineTensorKey][5] =    16;
+          worksetSizeMap[nonAffineTensorKey][6] =     8;
+          worksetSizeMap[nonAffineTensorKey][7] =     2;
+          worksetSizeMap[nonAffineTensorKey][8] =     1;
+          
+          worksetSizeMap[affineTensorKey][1] = 32768;
+          worksetSizeMap[affineTensorKey][2] =  1024;
+          worksetSizeMap[affineTensorKey][3] =   256;
+          worksetSizeMap[affineTensorKey][4] =   128;
+          worksetSizeMap[affineTensorKey][5] =    16;
+          worksetSizeMap[affineTensorKey][6] =     8;
+          worksetSizeMap[affineTensorKey][7] =     1;
+          worksetSizeMap[affineTensorKey][8] =     1;
+        }
+      } // BestSerial case
+        break;
+      case BestOpenMP_16:
+      {
+        // manually calibrated workset sizes on Mac Pro (2.5 GHz Xeon W, 28-core, running with OpenMP, OMP_NUM_THREADS=16)
+        // Calibration for sum factorization cases was run while usePointCacheForRank3Tensor = true.
+        
+        
+        // manually calibrated workset sizes on Mac Pro (2.5 GHz Xeon W, 28-core, running in serial)
+        {
+          // Poisson formulation
+          FormulationChoice formulation = Poisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 4096;
+          worksetSizeMap[standardKey][2] = 2048;
+          worksetSizeMap[standardKey][3] = 2048;
+          worksetSizeMap[standardKey][4] = 2048;
+          worksetSizeMap[standardKey][5] = 2048;
+          worksetSizeMap[standardKey][6] = 2048;
+          worksetSizeMap[standardKey][7] =    4;
+          worksetSizeMap[standardKey][8] =    2;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 2048;
+          worksetSizeMap[nonAffineTensorKey][2] =  512;
+          worksetSizeMap[nonAffineTensorKey][3] =  256;
+          worksetSizeMap[nonAffineTensorKey][4] =  128;
+          worksetSizeMap[nonAffineTensorKey][5] =   64;
+          worksetSizeMap[nonAffineTensorKey][6] =   32;
+          worksetSizeMap[nonAffineTensorKey][7] =   16;
+          worksetSizeMap[nonAffineTensorKey][8] =   16;
+          
+          worksetSizeMap[affineTensorKey][1] = 8192;
+          worksetSizeMap[affineTensorKey][2] = 4096;
+          worksetSizeMap[affineTensorKey][3] = 1024;
+          worksetSizeMap[affineTensorKey][4] =  256;
+          worksetSizeMap[affineTensorKey][5] =   64;
+          worksetSizeMap[affineTensorKey][6] =   32;
+          worksetSizeMap[affineTensorKey][7] =   16;
+          worksetSizeMap[affineTensorKey][8] =   16;
+        }
+        {
+          // Hgrad formulation
+          FormulationChoice formulation = Hgrad;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 16384;
+          worksetSizeMap[standardKey][2] =  8192;
+          worksetSizeMap[standardKey][3] =  8192;
+          worksetSizeMap[standardKey][4] =  2048;
+          worksetSizeMap[standardKey][5] =   512;
+          worksetSizeMap[standardKey][6] =   512;
+          worksetSizeMap[standardKey][7] =   512;
+          worksetSizeMap[standardKey][8] =     1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 16384;
+          worksetSizeMap[nonAffineTensorKey][2] =  8192;
+          worksetSizeMap[nonAffineTensorKey][3] =   256;
+          worksetSizeMap[nonAffineTensorKey][4] =   256;
+          worksetSizeMap[nonAffineTensorKey][5] =    64;
+          worksetSizeMap[nonAffineTensorKey][6] =    32;
+          worksetSizeMap[nonAffineTensorKey][7] =    16;
+          worksetSizeMap[nonAffineTensorKey][8] =    16;
+          
+          worksetSizeMap[affineTensorKey][1] = 8192;
+          worksetSizeMap[affineTensorKey][2] = 4096;
+          worksetSizeMap[affineTensorKey][3] = 1024;
+          worksetSizeMap[affineTensorKey][4] =  256;
+          worksetSizeMap[affineTensorKey][5] =   64;
+          worksetSizeMap[affineTensorKey][6] =   32;
+          worksetSizeMap[affineTensorKey][7] =   16;
+          worksetSizeMap[affineTensorKey][8] =   16;
+        }
+        {
+          // Hdiv formulation
+          FormulationChoice formulation = Hdiv;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
+          worksetSizeMap[standardKey][1] = 32768;
+          worksetSizeMap[standardKey][2] = 32768;
+          worksetSizeMap[standardKey][3] =   512;
+          worksetSizeMap[standardKey][4] =   256;
+          worksetSizeMap[standardKey][5] =    64;
+          worksetSizeMap[standardKey][6] =     2;
+          worksetSizeMap[standardKey][7] =     2;
+          worksetSizeMap[standardKey][8] =     1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 32768;
+          worksetSizeMap[nonAffineTensorKey][2] = 16384;
+          worksetSizeMap[nonAffineTensorKey][3] =  8192;
+          worksetSizeMap[nonAffineTensorKey][4] =    64;
+          worksetSizeMap[nonAffineTensorKey][5] =    16;
+          worksetSizeMap[nonAffineTensorKey][6] =    16;
+          worksetSizeMap[nonAffineTensorKey][7] =    16;
+          worksetSizeMap[nonAffineTensorKey][8] =    16;
+          
+          worksetSizeMap[affineTensorKey][1] = 16384;
+          worksetSizeMap[affineTensorKey][2] =  4096;
+          worksetSizeMap[affineTensorKey][3] =   256;
+          worksetSizeMap[affineTensorKey][4] =   128;
+          worksetSizeMap[affineTensorKey][5] =    64;
+          worksetSizeMap[affineTensorKey][6] =    16;
+          worksetSizeMap[affineTensorKey][7] =    16;
+          worksetSizeMap[affineTensorKey][8] =    16;
+        }
+        {
+          // Hcurl formulation
+          FormulationChoice formulation = Hcurl;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hcurl - these are for meshes that range from 32768 for p=1 to 64 for p=8
+          worksetSizeMap[standardKey][1] = 4096;
+          worksetSizeMap[standardKey][2] =  128;
+          worksetSizeMap[standardKey][3] =  128;
+          worksetSizeMap[standardKey][4] =   32;
+          worksetSizeMap[standardKey][5] =    4;
+          worksetSizeMap[standardKey][6] =    1;
+          worksetSizeMap[standardKey][7] =    1;
+          worksetSizeMap[standardKey][8] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 16384;
+          worksetSizeMap[nonAffineTensorKey][2] =   512;
+          worksetSizeMap[nonAffineTensorKey][3] =   128;
+          worksetSizeMap[nonAffineTensorKey][4] =    64;
+          worksetSizeMap[nonAffineTensorKey][5] =    32;
+          worksetSizeMap[nonAffineTensorKey][6] =    16;
+          worksetSizeMap[nonAffineTensorKey][7] =    16;
+          worksetSizeMap[nonAffineTensorKey][8] =    16;
+          
+          worksetSizeMap[affineTensorKey][1] = 32768;
+          worksetSizeMap[affineTensorKey][2] =  4096;
+          worksetSizeMap[affineTensorKey][3] =   128;
+          worksetSizeMap[affineTensorKey][4] =    64;
+          worksetSizeMap[affineTensorKey][5] =    16;
+          worksetSizeMap[affineTensorKey][6] =    16;
+          worksetSizeMap[affineTensorKey][7] =    16;
+          worksetSizeMap[affineTensorKey][8] =    16;
+        }
+        {
+          // L^2 formulation
+          FormulationChoice formulation = L2;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for L^2 - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 8192;
+          worksetSizeMap[standardKey][2] =  512;
+          worksetSizeMap[standardKey][3] =   32;
+          worksetSizeMap[standardKey][4] =   32;
+          worksetSizeMap[standardKey][5] =   32;
+          worksetSizeMap[standardKey][6] =    1;
+          worksetSizeMap[standardKey][7] =    1;
+          worksetSizeMap[standardKey][8] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 16384;
+          worksetSizeMap[nonAffineTensorKey][2] =  4096;
+          worksetSizeMap[nonAffineTensorKey][3] =  1024;
+          worksetSizeMap[nonAffineTensorKey][4] =   256;
+          worksetSizeMap[nonAffineTensorKey][5] =    64;
+          worksetSizeMap[nonAffineTensorKey][6] =    32;
+          worksetSizeMap[nonAffineTensorKey][7] =    16;
+          worksetSizeMap[nonAffineTensorKey][8] =    16;
+          
+          worksetSizeMap[affineTensorKey][1] = 32768;
+          worksetSizeMap[affineTensorKey][2] =  4096;
+          worksetSizeMap[affineTensorKey][3] =  1024;
+          worksetSizeMap[affineTensorKey][4] =   256;
+          worksetSizeMap[affineTensorKey][5] =   128;
+          worksetSizeMap[affineTensorKey][6] =    32;
+          worksetSizeMap[affineTensorKey][7] =    16;
+          worksetSizeMap[affineTensorKey][8] =    16;
+        }
+      } // BestOpenMP_16 case
+        break;
+      case BestCuda:
+      {
+        {
+          // Poisson formulation
+          FormulationChoice formulation = Poisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 16384;
+          worksetSizeMap[standardKey][2] =   512;
+          worksetSizeMap[standardKey][3] =   128;
+          worksetSizeMap[standardKey][4] =     8;
+          worksetSizeMap[standardKey][5] =     4;
+          worksetSizeMap[standardKey][6] =     1;
+          worksetSizeMap[standardKey][7] =     1;
+          worksetSizeMap[standardKey][8] =     1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 32768;
+          worksetSizeMap[nonAffineTensorKey][2] = 32768;
+          worksetSizeMap[nonAffineTensorKey][3] = 16384;
+          worksetSizeMap[nonAffineTensorKey][4] =  8192;
+          worksetSizeMap[nonAffineTensorKey][5] =  4096;
+          worksetSizeMap[nonAffineTensorKey][6] =  2048;
+          worksetSizeMap[nonAffineTensorKey][7] =   256;
+          worksetSizeMap[nonAffineTensorKey][8] =   256;
+          
+          worksetSizeMap[affineTensorKey][1] = 8192;
+          worksetSizeMap[affineTensorKey][2] = 8192;
+          worksetSizeMap[affineTensorKey][3] = 8192;
+          worksetSizeMap[affineTensorKey][4] = 8192;
+          worksetSizeMap[affineTensorKey][5] = 4096;
+          worksetSizeMap[affineTensorKey][6] = 2048;
+          worksetSizeMap[affineTensorKey][7] =  256;
+          worksetSizeMap[affineTensorKey][8] =  128;
+        }
+        {
+          // Hgrad formulation
+          FormulationChoice formulation = Hgrad;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 32768;
+          worksetSizeMap[standardKey][2] =   512;
+          worksetSizeMap[standardKey][3] =   128;
+          worksetSizeMap[standardKey][4] =    16;
+          worksetSizeMap[standardKey][5] =     4;
+          worksetSizeMap[standardKey][6] =     1;
+          worksetSizeMap[standardKey][7] =     1;
+          worksetSizeMap[standardKey][8] =     1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 32768;
+          worksetSizeMap[nonAffineTensorKey][2] = 32768;
+          worksetSizeMap[nonAffineTensorKey][3] = 16384;
+          worksetSizeMap[nonAffineTensorKey][4] =  8192;
+          worksetSizeMap[nonAffineTensorKey][5] =  4096;
+          worksetSizeMap[nonAffineTensorKey][6] =  2048;
+          worksetSizeMap[nonAffineTensorKey][7] =   256;
+          worksetSizeMap[nonAffineTensorKey][8] =   256;
+          
+          worksetSizeMap[affineTensorKey][1] = 32768;
+          worksetSizeMap[affineTensorKey][2] = 32768;
+          worksetSizeMap[affineTensorKey][3] =  8192;
+          worksetSizeMap[affineTensorKey][4] =  8192;
+          worksetSizeMap[affineTensorKey][5] =  4096;
+          worksetSizeMap[affineTensorKey][6] =  2048;
+          worksetSizeMap[affineTensorKey][7] =   256;
+          worksetSizeMap[affineTensorKey][8] =   256;
+        }
+        {
+          // Hdiv formulation
+          FormulationChoice formulation = Hdiv;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
+          worksetSizeMap[standardKey][1] = 32768;
+          worksetSizeMap[standardKey][2] =   512;
+          worksetSizeMap[standardKey][3] =    32;
+          worksetSizeMap[standardKey][4] =     4;
+          worksetSizeMap[standardKey][5] =     1;
+          worksetSizeMap[standardKey][6] =     1;
+          worksetSizeMap[standardKey][7] =     1;
+          worksetSizeMap[standardKey][8] =     1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 32768;
+          worksetSizeMap[nonAffineTensorKey][2] = 32768;
+          worksetSizeMap[nonAffineTensorKey][3] = 16384;
+          worksetSizeMap[nonAffineTensorKey][4] =  4096;
+          worksetSizeMap[nonAffineTensorKey][5] =  1024;
+          worksetSizeMap[nonAffineTensorKey][6] =   256;
+          worksetSizeMap[nonAffineTensorKey][7] =   128;
+          worksetSizeMap[nonAffineTensorKey][8] =    64;
+          
+          worksetSizeMap[affineTensorKey][1] = 32768;
+          worksetSizeMap[affineTensorKey][2] = 32768;
+          worksetSizeMap[affineTensorKey][3] = 16384;
+          worksetSizeMap[affineTensorKey][4] =  4096;
+          worksetSizeMap[affineTensorKey][5] =  1024;
+          worksetSizeMap[affineTensorKey][6] =   256;
+          worksetSizeMap[affineTensorKey][7] =   128;
+          worksetSizeMap[affineTensorKey][8] =    64;
+        }
+        {
+          // Hcurl formulation
+          FormulationChoice formulation = Hcurl;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for Hcurl - these are for meshes that range from 32768 for p=1 to 64 for p=8
+          worksetSizeMap[standardKey][1] = 1024;
+          worksetSizeMap[standardKey][2] =  128;
+          worksetSizeMap[standardKey][3] =   16;
+          worksetSizeMap[standardKey][4] =    4;
+          worksetSizeMap[standardKey][5] =    1;
+          worksetSizeMap[standardKey][6] =    1;
+          worksetSizeMap[standardKey][7] =    1;
+          worksetSizeMap[standardKey][8] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 32768;
+          worksetSizeMap[nonAffineTensorKey][2] = 32768;
+          worksetSizeMap[nonAffineTensorKey][3] =  8192;
+          worksetSizeMap[nonAffineTensorKey][4] =  2048;
+          worksetSizeMap[nonAffineTensorKey][5] =   512;
+          worksetSizeMap[nonAffineTensorKey][6] =   256;
+          worksetSizeMap[nonAffineTensorKey][7] =   128;
+          worksetSizeMap[nonAffineTensorKey][8] =    64;
+          
+          worksetSizeMap[affineTensorKey][1] = 32768;
+          worksetSizeMap[affineTensorKey][2] = 32768;
+          worksetSizeMap[affineTensorKey][3] =  8192;
+          worksetSizeMap[affineTensorKey][4] =  2048;
+          worksetSizeMap[affineTensorKey][5] =   512;
+          worksetSizeMap[affineTensorKey][6] =   256;
+          worksetSizeMap[affineTensorKey][7] =   128;
+          worksetSizeMap[affineTensorKey][8] =    64;
+        }
+        {
+          // L^2 formulation
+          FormulationChoice formulation = L2;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for L^2 - these are for meshes that range from 32768 for p=1 to 256 for p=8
+          worksetSizeMap[standardKey][1] = 32768;
+          worksetSizeMap[standardKey][2] =  1024;
+          worksetSizeMap[standardKey][3] =   128;
+          worksetSizeMap[standardKey][4] =    16;
+          worksetSizeMap[standardKey][5] =     4;
+          worksetSizeMap[standardKey][6] =     1;
+          worksetSizeMap[standardKey][7] =     1;
+          worksetSizeMap[standardKey][8] =     1;
+          
+          worksetSizeMap[nonAffineTensorKey][1] = 32768;
+          worksetSizeMap[nonAffineTensorKey][2] = 32768;
+          worksetSizeMap[nonAffineTensorKey][3] = 16384;
+          worksetSizeMap[nonAffineTensorKey][4] =  8192;
+          worksetSizeMap[nonAffineTensorKey][5] =  4096;
+          worksetSizeMap[nonAffineTensorKey][6] =  2048;
+          worksetSizeMap[nonAffineTensorKey][7] =   256;
+          worksetSizeMap[nonAffineTensorKey][8] =   128;
+          
+          worksetSizeMap[affineTensorKey][1] = 8192;
+          worksetSizeMap[affineTensorKey][2] = 8192;
+          worksetSizeMap[affineTensorKey][3] = 8192;
+          worksetSizeMap[affineTensorKey][4] = 8192;
+          worksetSizeMap[affineTensorKey][5] = 4096;
+          worksetSizeMap[affineTensorKey][6] = 2048;
+          worksetSizeMap[affineTensorKey][7] =  256;
+          worksetSizeMap[affineTensorKey][8] =  128;
+        } // L^2 formulation
+    } // BestCuda case
+        break;
+      case Precalibrated:
+      {
+        if (precalibrationFile != "")
+        {
+          std::ifstream calibrationFileStream (precalibrationFile, std::ios::in);
+          
+          while (calibrationFileStream.good())
+          {
+            std::string formulationString, algorithmString;
+            int polyOrder, worksetSize;
+            
+            std::string line;
+            std::getline(calibrationFileStream, line, '\n');
+            if (line == "") continue;
+            std::istringstream linestream(line);
+            linestream >> formulationString;
+            linestream >> algorithmString;
+            linestream >> polyOrder;
+            linestream >> worksetSize;
+            
+            AlgorithmChoice algorithm     = algorithm_from_string(algorithmString);
+            FormulationChoice formulation = formulation_from_string(formulationString);
+            
+            tuple<Mode,FormulationChoice,AlgorithmChoice> key { mode, formulation, algorithm };
+            worksetSizeMap[key][polyOrder] = worksetSize;
+          }
+        }
+      }
+        break;
+      default:
+        std::cout << "WARNING: Unhandled mode.\n";
+    } // mode switch
+  } // mode for loop
+  return worksetSizeMap;
+}
+
 int main( int argc, char* argv[] )
 {
   // Note that the dtor for GlobalMPISession will call Kokkos::finalize_all() but does not call Kokkos::initialize()...
@@ -331,14 +1058,6 @@ int main( int argc, char* argv[] )
     
     const int spaceDim = 3;
     
-    enum Mode
-    {
-      Calibration,
-      Test,
-      BestSerial,
-      BestOpenMP_16,
-      BestCuda
-    };
     Mode mode;
     
     vector<AlgorithmChoice> allAlgorithmChoices {Standard, NonAffineTensor, AffineTensor, Uniform};
@@ -358,6 +1077,7 @@ int main( int argc, char* argv[] )
     
     bool saveTimingsToFile = false;
     string outputDir = ".";
+    string precalibrationFile = "";
     
     cmdp.setOption("algorithm", &algorithmChoiceString, "Options: All, Standard, NonAffineTensor, AffineTensor, Uniform");
     cmdp.setOption("formulation", &formulationChoiceString, "Options: Poisson, Hgrad, Hdiv, Hcurl, L2");
@@ -368,6 +1088,7 @@ int main( int argc, char* argv[] )
     cmdp.setOption("basisFamily", &basisFamilyChoiceString, "Options: Nodal, Hierarchical, Serendipity");
     cmdp.setOption("saveTimings", "dontSaveTimings", &saveTimingsToFile, "Save timings to a file in outputDir.");
     cmdp.setOption("outputDir", &outputDir, "Directory for saving timings file");
+    cmdp.setOption("precalibrationFile", &precalibrationFile, "File into which calibration output has been written");
     
     Teuchos::RCP<std::ofstream> timingsFileStream;
     
@@ -547,6 +1268,10 @@ int main( int argc, char* argv[] )
     {
       mode = Test;
     }
+    else if (modeChoiceString == "Precalibrated")
+    {
+      mode = Precalibrated;
+    }
     else
     {
       cout << "Unrecognized mode choice: " << modeChoiceString << endl;
@@ -554,6 +1279,14 @@ int main( int argc, char* argv[] )
       MPI_Finalize();
 #endif
       return -1;
+    }
+    
+    if (mode == Test)
+    {
+      // then overwrite poly orders to match the test cases we define in getWorksetSizeMap
+      polyOrderFixed = -1;
+      polyOrderMin = 1;
+      polyOrderMax = 3;
     }
     
     using Scalar = double;
@@ -571,7 +1304,7 @@ int main( int argc, char* argv[] )
     
     using WorksetForAlgorithmChoice = map<AlgorithmChoice, int>;
     
-    vector< tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice> > polyOrderGridDimsWorksetTestCases;
+    vector< tuple<int,FormulationChoice,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice> > polyOrderGridDimsWorksetTestCases;
     
     const int maxStiffnessGB = 2;
     const int maxEntryCount = maxStiffnessGB * 1024 * (1024 * 1024 / sizeof(Scalar));
@@ -583,16 +1316,31 @@ int main( int argc, char* argv[] )
     map<int, Kokkos::Array<int,spaceDim> > gridCellCountsForPolyOrder;
     for (int p=polyOrderMin; p<=polyOrderMax; p++)
     {
-      int maxBasisCardinality = 1;
-      for (auto formulationChoice : formulationChoices)
+      if (mode != Test)
       {
-        for (auto basisFamilyChoice : basisFamilyChoices)
+        int maxBasisCardinality = 1;
+        for (auto formulationChoice : formulationChoices)
         {
-          auto basis = getHypercubeBasisForFormulation<Scalar, Scalar, DeviceType, spaceDim>(formulationChoice, basisFamilyChoice, p);
-          maxBasisCardinality = std::max(basis->getCardinality(), maxBasisCardinality);
+          for (auto basisFamilyChoice : basisFamilyChoices)
+          {
+            auto basis = getHypercubeBasisForFormulation<Scalar, Scalar, DeviceType, spaceDim>(formulationChoice, basisFamilyChoice, p);
+            maxBasisCardinality = std::max(basis->getCardinality(), maxBasisCardinality);
+          }
         }
+        gridCellCountsForPolyOrder[p] = getMeshWidths<spaceDim>(maxBasisCardinality, maxEntryCount, maxCellCount);
       }
-      gridCellCountsForPolyOrder[p] = getMeshWidths<spaceDim>(maxBasisCardinality, maxEntryCount, maxCellCount);
+      else // mode == Test; set the gridCellCounts according to mesh widths indicated in getWorksetSizes above.
+      {
+        Kokkos::Array<int,spaceDim> meshWidths_8, meshWidths_4;
+        for (int d=0; d<spaceDim; d++)
+        {
+          meshWidths_4[d] = 4;
+          meshWidths_8[d] = 8;
+        }
+        gridCellCountsForPolyOrder[1] = meshWidths_8;
+        gridCellCountsForPolyOrder[2] = meshWidths_8;
+        gridCellCountsForPolyOrder[3] = meshWidths_4;
+      }
       
       int cellCount = 1;
       for (int d=0; d<spaceDim; d++)
@@ -602,6 +1350,8 @@ int main( int argc, char* argv[] )
       
       cellCountForPolyOrder[p] = cellCount;
     }
+    
+    auto worksetSizeMap = getWorksetSizeMap(precalibrationFile, cellCountForPolyOrder, polyOrderMin, polyOrderMax);
     
     vector<int> worksetSizes {1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768};
     
@@ -615,8 +1365,9 @@ int main( int argc, char* argv[] )
     minWorksetSizeForPolyOrder[7] = 1;
     minWorksetSizeForPolyOrder[8] = 1;
     
-    switch (mode) {
-      case Calibration:
+    if (mode == Calibration)
+    {
+      for (auto formulationChoice : formulationChoices)
       {
         for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
         {
@@ -637,671 +1388,51 @@ int main( int argc, char* argv[] )
               worksetForAlgorithmChoice[algorithmChoice] = worksetSize;
             }
             auto gridDims = gridCellCountsForPolyOrder[polyOrder];
-            polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
+            polyOrderGridDimsWorksetTestCases.push_back(tuple<int,FormulationChoice,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,formulationChoice,gridDims,worksetForAlgorithmChoice} );
           }
         }
       }
-      break;
-      case Test:
+    }
+    else
+    {
+     std::vector<AlgorithmChoice> algorithmChoices {Standard,NonAffineTensor,AffineTensor,Uniform};
+      WorksetForAlgorithmChoice worksetForAlgorithmChoice;
+      for (auto formulationChoice : formulationChoices)
       {
-        // DEBUGGING -- for ease of debugging, a single test case.
-//        vector< tuple<int,int,int> > testCases { tuple<int,int,int> {1,1,1} };
-        // for test run, use the same modestly-sized tuples for each AlgorithmChoice
-        // (note that meshWidth varies here)
-        vector< tuple<int,int,int> > testCases { tuple<int,int,int> {1,8,512},
-                                                 tuple<int,int,int> {2,8,256},
-                                                 tuple<int,int,int> {3,4,64},
-                                                 tuple<int,int,int> {3,4,9} // test case whose workset size does not evenly divide the cell count
-        };
-        
-        for (auto testCase : testCases )
+        for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
         {
-          int polyOrder   = std::get<0>(testCase);
-          int meshWidth   = std::get<1>(testCase);
-          
-          int numCells = 1;
-          for (int d=0; d<spaceDim; d++)
-          {
-            numCells *= meshWidth;
-          }
-          
-          WorksetForAlgorithmChoice worksetForAlgorithmChoice;
           for (auto algorithmChoice : algorithmChoices)
           {
-            worksetForAlgorithmChoice[algorithmChoice] = std::get<2>(testCase);
+            worksetForAlgorithmChoice[algorithmChoice] = worksetSizeMap[{mode,formulationChoice,algorithmChoice}][polyOrder];
           }
-          worksetForAlgorithmChoice[Uniform] = numCells;
-          Kokkos::Array<int,spaceDim> gridDims;
-          for (int d=0; d<spaceDim; d++)
-          {
-            gridDims[d] = meshWidth;
-          }
-          polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
-        }
-      }
-      break;
-      case BestSerial:
-      {
-        if (formulationChoices.size() != 1)
-        {
-          std::cout << "BestSerial mode is not supported when running multiple formulations.\n";
-          exit(-1);
-        }
-        
-        auto formulationChoice = formulationChoices[0];
-        
-        // manually calibrated workset sizes on Mac Pro (2.5 GHz Xeon W, 28-core, running in serial)
-        
-        map<int,int> standardWorksetForPolyOrder;
-        map<int,int> nonAffineTensorWorksetForPolyOrder;
-        map<int,int> affineTensorWorksetForPolyOrder;
-        
-        switch(formulationChoice)
-        {
-          case Poisson:
-          {
-            // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
-            standardWorksetForPolyOrder[1] = 8192;
-            standardWorksetForPolyOrder[2] = 4096;
-            standardWorksetForPolyOrder[3] =   64;
-            standardWorksetForPolyOrder[4] =   16;
-            standardWorksetForPolyOrder[5] =   16;
-            standardWorksetForPolyOrder[6] =    1;
-            standardWorksetForPolyOrder[7] =    1;
-            standardWorksetForPolyOrder[8] =    1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 2048;
-            nonAffineTensorWorksetForPolyOrder[2] =  256;
-            nonAffineTensorWorksetForPolyOrder[3] =  128;
-            nonAffineTensorWorksetForPolyOrder[4] =   16;
-            nonAffineTensorWorksetForPolyOrder[5] =    2;
-            nonAffineTensorWorksetForPolyOrder[6] =    1;
-            nonAffineTensorWorksetForPolyOrder[7] =    1;
-            nonAffineTensorWorksetForPolyOrder[8] =    1;
-            
-            affineTensorWorksetForPolyOrder[1] = 4096;
-            affineTensorWorksetForPolyOrder[2] =   64;
-            affineTensorWorksetForPolyOrder[3] =   32;
-            affineTensorWorksetForPolyOrder[4] =    4;
-            affineTensorWorksetForPolyOrder[5] =    2;
-            affineTensorWorksetForPolyOrder[6] =    1;
-            affineTensorWorksetForPolyOrder[7] =    1;
-            affineTensorWorksetForPolyOrder[8] =    1;
-          }
-            break;
-          case Hgrad:
-          {
-            // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
-            standardWorksetForPolyOrder[1] = 32768;
-            standardWorksetForPolyOrder[2] = 16384;
-            standardWorksetForPolyOrder[3] =   512;
-            standardWorksetForPolyOrder[4] =   512;
-            standardWorksetForPolyOrder[5] =   512;
-            standardWorksetForPolyOrder[6] =     2;
-            standardWorksetForPolyOrder[7] =     1;
-            standardWorksetForPolyOrder[8] =     1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 4096;
-            nonAffineTensorWorksetForPolyOrder[2] =  512;
-            nonAffineTensorWorksetForPolyOrder[3] =  128;
-            nonAffineTensorWorksetForPolyOrder[4] =   32;
-            nonAffineTensorWorksetForPolyOrder[5] =   16;
-            nonAffineTensorWorksetForPolyOrder[6] =    1;
-            nonAffineTensorWorksetForPolyOrder[7] =    1;
-            nonAffineTensorWorksetForPolyOrder[8] =    1;
-            
-            affineTensorWorksetForPolyOrder[1] = 8192;
-            affineTensorWorksetForPolyOrder[2] =  512;
-            affineTensorWorksetForPolyOrder[3] =  128;
-            affineTensorWorksetForPolyOrder[4] =   64;
-            affineTensorWorksetForPolyOrder[5] =   16;
-            affineTensorWorksetForPolyOrder[6] =    1;
-            affineTensorWorksetForPolyOrder[7] =    1;
-            affineTensorWorksetForPolyOrder[8] =    1;
-          }
-            break;
-          case Hdiv:
-          {
-            // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
-            standardWorksetForPolyOrder[1] = 256;
-            standardWorksetForPolyOrder[2] =  64;
-            standardWorksetForPolyOrder[3] =  64;
-            standardWorksetForPolyOrder[4] =  16;
-            standardWorksetForPolyOrder[5] =   4;
-            standardWorksetForPolyOrder[6] =   1;
-            standardWorksetForPolyOrder[7] =   1;
-            standardWorksetForPolyOrder[8] =   1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 4096;
-            nonAffineTensorWorksetForPolyOrder[2] =  256;
-            nonAffineTensorWorksetForPolyOrder[3] =   64;
-            nonAffineTensorWorksetForPolyOrder[4] =   16;
-            nonAffineTensorWorksetForPolyOrder[5] =    4;
-            nonAffineTensorWorksetForPolyOrder[6] =    1;
-            nonAffineTensorWorksetForPolyOrder[7] =    1;
-            nonAffineTensorWorksetForPolyOrder[8] =    1;
-            
-            affineTensorWorksetForPolyOrder[1] = 8192;
-            affineTensorWorksetForPolyOrder[2] =  512;
-            affineTensorWorksetForPolyOrder[3] =   64;
-            affineTensorWorksetForPolyOrder[4] =   16;
-            affineTensorWorksetForPolyOrder[5] =    8;
-            affineTensorWorksetForPolyOrder[6] =    1;
-            affineTensorWorksetForPolyOrder[7] =    1;
-            affineTensorWorksetForPolyOrder[8] =    1;
-          }
-            break;
-          case Hcurl:
-          {
-            // best for Hcurl - these are for meshes that range from 32768 for p=1 to 64 for p=8
-            standardWorksetForPolyOrder[1] = 1024;
-            standardWorksetForPolyOrder[2] =  512;
-            standardWorksetForPolyOrder[3] =  256;
-            standardWorksetForPolyOrder[4] =    4;
-            standardWorksetForPolyOrder[5] =    1;
-            standardWorksetForPolyOrder[6] =    1;
-            standardWorksetForPolyOrder[7] =    1;
-            standardWorksetForPolyOrder[8] =    1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 512;
-            nonAffineTensorWorksetForPolyOrder[2] =  64;
-            nonAffineTensorWorksetForPolyOrder[3] =  16;
-            nonAffineTensorWorksetForPolyOrder[4] =   4;
-            nonAffineTensorWorksetForPolyOrder[5] =   1;
-            nonAffineTensorWorksetForPolyOrder[6] =   1;
-            nonAffineTensorWorksetForPolyOrder[7] =   1;
-            nonAffineTensorWorksetForPolyOrder[8] =   1;
-            
-            affineTensorWorksetForPolyOrder[1] = 1024;
-            affineTensorWorksetForPolyOrder[2] =  128;
-            affineTensorWorksetForPolyOrder[3] =   16;
-            affineTensorWorksetForPolyOrder[4] =    4;
-            affineTensorWorksetForPolyOrder[5] =    1;
-            affineTensorWorksetForPolyOrder[6] =    1;
-            affineTensorWorksetForPolyOrder[7] =    1;
-            affineTensorWorksetForPolyOrder[8] =    1;
-          }
-            break;
-          case L2:
-          {
-            // best for L^2 - these are for meshes that range from 32768 for p=1 to 256 for p=8
-            standardWorksetForPolyOrder[1] = 1024;
-            standardWorksetForPolyOrder[2] =  256;
-            standardWorksetForPolyOrder[3] =   64;
-            standardWorksetForPolyOrder[4] =   16;
-            standardWorksetForPolyOrder[5] =   16;
-            standardWorksetForPolyOrder[6] =   16;
-            standardWorksetForPolyOrder[7] =    1;
-            standardWorksetForPolyOrder[8] =    1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 16384;
-            nonAffineTensorWorksetForPolyOrder[2] =   512;
-            nonAffineTensorWorksetForPolyOrder[3] =   256;
-            nonAffineTensorWorksetForPolyOrder[4] =    64;
-            nonAffineTensorWorksetForPolyOrder[5] =    16;
-            nonAffineTensorWorksetForPolyOrder[6] =     8;
-            nonAffineTensorWorksetForPolyOrder[7] =     2;
-            nonAffineTensorWorksetForPolyOrder[8] =     1;
-            
-            affineTensorWorksetForPolyOrder[1] = 32768;
-            affineTensorWorksetForPolyOrder[2] =  1024;
-            affineTensorWorksetForPolyOrder[3] =   256;
-            affineTensorWorksetForPolyOrder[4] =   128;
-            affineTensorWorksetForPolyOrder[5] =    16;
-            affineTensorWorksetForPolyOrder[6] =     8;
-            affineTensorWorksetForPolyOrder[7] =     1;
-            affineTensorWorksetForPolyOrder[8] =     1;
-          }
-            break;
-        }
-        
-        // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
-        // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
-        int worksetSize = 1;
-        for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
-        {
-          nonAffineTensorWorksetForPolyOrder[polyOrder] = worksetSize;
-          affineTensorWorksetForPolyOrder[polyOrder]    = worksetSize;
-          standardWorksetForPolyOrder[polyOrder]        = worksetSize;
-        }
-        
-        for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
-        {
-          WorksetForAlgorithmChoice worksetForAlgorithmChoice;
-          worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
-          worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
-          
           const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
           
-          polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
+          polyOrderGridDimsWorksetTestCases.push_back(tuple<int,FormulationChoice,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,formulationChoice,gridDims,worksetForAlgorithmChoice} );
         }
       }
-        break;
-      
-      case BestOpenMP_16:
-      {
-        if (formulationChoices.size() != 1)
-        {
-          std::cout << "BestOpenMP_16 mode is not supported when running multiple formulations.\n";
-          exit(-1);
-        }
-        
-        auto formulationChoice = formulationChoices[0];
-        
-        // manually calibrated workset sizes on Mac Pro (2.5 GHz Xeon W, 28-core, running with OpenMP, OMP_NUM_THREADS=16)
-        // Calibration for sum factorization cases was run while usePointCacheForRank3Tensor = true.
-        
-        map<int,int> standardWorksetForPolyOrder;
-        map<int,int> nonAffineTensorWorksetForPolyOrder;
-        map<int,int> affineTensorWorksetForPolyOrder;
-        
-        switch(formulationChoice)
-        {
-          case Poisson:
-          {
-            // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
-            standardWorksetForPolyOrder[1] = 4096;
-            standardWorksetForPolyOrder[2] = 2048;
-            standardWorksetForPolyOrder[3] = 2048;
-            standardWorksetForPolyOrder[4] = 2048;
-            standardWorksetForPolyOrder[5] = 2048;
-            standardWorksetForPolyOrder[6] = 2048;
-            standardWorksetForPolyOrder[7] =    4;
-            standardWorksetForPolyOrder[8] =    2;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 2048;
-            nonAffineTensorWorksetForPolyOrder[2] =  512;
-            nonAffineTensorWorksetForPolyOrder[3] =  256;
-            nonAffineTensorWorksetForPolyOrder[4] =  128;
-            nonAffineTensorWorksetForPolyOrder[5] =   64;
-            nonAffineTensorWorksetForPolyOrder[6] =   32;
-            nonAffineTensorWorksetForPolyOrder[7] =   16;
-            nonAffineTensorWorksetForPolyOrder[8] =   16;
-            
-            affineTensorWorksetForPolyOrder[1] = 8192;
-            affineTensorWorksetForPolyOrder[2] = 4096;
-            affineTensorWorksetForPolyOrder[3] = 1024;
-            affineTensorWorksetForPolyOrder[4] =  256;
-            affineTensorWorksetForPolyOrder[5] =   64;
-            affineTensorWorksetForPolyOrder[6] =   32;
-            affineTensorWorksetForPolyOrder[7] =   16;
-            affineTensorWorksetForPolyOrder[8] =   16;
-          }
-            break;
-          case Hgrad:
-          {
-            // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
-            standardWorksetForPolyOrder[1] = 16384;
-            standardWorksetForPolyOrder[2] =  8192;
-            standardWorksetForPolyOrder[3] =  8192;
-            standardWorksetForPolyOrder[4] =  2048;
-            standardWorksetForPolyOrder[5] =   512;
-            standardWorksetForPolyOrder[6] =   512;
-            standardWorksetForPolyOrder[7] =   512;
-            standardWorksetForPolyOrder[8] =     1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 16384;
-            nonAffineTensorWorksetForPolyOrder[2] =  8192;
-            nonAffineTensorWorksetForPolyOrder[3] =   256;
-            nonAffineTensorWorksetForPolyOrder[4] =   256;
-            nonAffineTensorWorksetForPolyOrder[5] =    64;
-            nonAffineTensorWorksetForPolyOrder[6] =    32;
-            nonAffineTensorWorksetForPolyOrder[7] =    16;
-            nonAffineTensorWorksetForPolyOrder[8] =    16;
-            
-            affineTensorWorksetForPolyOrder[1] =  8192;
-            affineTensorWorksetForPolyOrder[2] =  4096;
-            affineTensorWorksetForPolyOrder[3] =  1024;
-            affineTensorWorksetForPolyOrder[4] =   256;
-            affineTensorWorksetForPolyOrder[5] =    64;
-            affineTensorWorksetForPolyOrder[6] =    32;
-            affineTensorWorksetForPolyOrder[7] =    16;
-            affineTensorWorksetForPolyOrder[8] =    16;
-          }
-            break;
-          case Hdiv:
-          {
-            // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
-            standardWorksetForPolyOrder[1] = 32768;
-            standardWorksetForPolyOrder[2] = 32768;
-            standardWorksetForPolyOrder[3] =   512;
-            standardWorksetForPolyOrder[4] =   256;
-            standardWorksetForPolyOrder[5] =    64;
-            standardWorksetForPolyOrder[6] =     2;
-            standardWorksetForPolyOrder[7] =     2;
-            standardWorksetForPolyOrder[8] =     1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 32768;
-            nonAffineTensorWorksetForPolyOrder[2] = 16384;
-            nonAffineTensorWorksetForPolyOrder[3] =  8192;
-            nonAffineTensorWorksetForPolyOrder[4] =    64;
-            nonAffineTensorWorksetForPolyOrder[5] =    16;
-            nonAffineTensorWorksetForPolyOrder[6] =    16;
-            nonAffineTensorWorksetForPolyOrder[7] =    16;
-            nonAffineTensorWorksetForPolyOrder[8] =    16;
-            
-            affineTensorWorksetForPolyOrder[1] = 16384;
-            affineTensorWorksetForPolyOrder[2] =  4096;
-            affineTensorWorksetForPolyOrder[3] =   256;
-            affineTensorWorksetForPolyOrder[4] =   128;
-            affineTensorWorksetForPolyOrder[5] =    64;
-            affineTensorWorksetForPolyOrder[6] =    16;
-            affineTensorWorksetForPolyOrder[7] =    16;
-            affineTensorWorksetForPolyOrder[8] =    16;
-          }
-            break;
-          case Hcurl:
-          {
-            // best for Hcurl - these are for meshes that range from 32768 for p=1 to 64 for p=8
-            standardWorksetForPolyOrder[1] = 4096;
-            standardWorksetForPolyOrder[2] =  128;
-            standardWorksetForPolyOrder[3] =  128;
-            standardWorksetForPolyOrder[4] =   32;
-            standardWorksetForPolyOrder[5] =    4;
-            standardWorksetForPolyOrder[6] =    1;
-            standardWorksetForPolyOrder[7] =    1;
-            standardWorksetForPolyOrder[8] =    1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 16384;
-            nonAffineTensorWorksetForPolyOrder[2] =   512;
-            nonAffineTensorWorksetForPolyOrder[3] =   128;
-            nonAffineTensorWorksetForPolyOrder[4] =    64;
-            nonAffineTensorWorksetForPolyOrder[5] =    32;
-            nonAffineTensorWorksetForPolyOrder[6] =    16;
-            nonAffineTensorWorksetForPolyOrder[7] =    16;
-            nonAffineTensorWorksetForPolyOrder[8] =    16;
-            
-            affineTensorWorksetForPolyOrder[1] = 32768;
-            affineTensorWorksetForPolyOrder[2] =  4096;
-            affineTensorWorksetForPolyOrder[3] =   128;
-            affineTensorWorksetForPolyOrder[4] =    64;
-            affineTensorWorksetForPolyOrder[5] =    16;
-            affineTensorWorksetForPolyOrder[6] =    16;
-            affineTensorWorksetForPolyOrder[7] =    16;
-            affineTensorWorksetForPolyOrder[8] =    16;
-          }
-            break;
-          case L2:
-          {
-            // best for L^2 - these are for meshes that range from 32768 for p=1 to 256 for p=8
-            standardWorksetForPolyOrder[1] = 8192;
-            standardWorksetForPolyOrder[2] =  512;
-            standardWorksetForPolyOrder[3] =   32;
-            standardWorksetForPolyOrder[4] =   32;
-            standardWorksetForPolyOrder[5] =   32;
-            standardWorksetForPolyOrder[6] =    1;
-            standardWorksetForPolyOrder[7] =    1;
-            standardWorksetForPolyOrder[8] =    1;
-            
-            nonAffineTensorWorksetForPolyOrder[1] = 16384;
-            nonAffineTensorWorksetForPolyOrder[2] =  4096;
-            nonAffineTensorWorksetForPolyOrder[3] =  1024;
-            nonAffineTensorWorksetForPolyOrder[4] =   256;
-            nonAffineTensorWorksetForPolyOrder[5] =    64;
-            nonAffineTensorWorksetForPolyOrder[6] =    32;
-            nonAffineTensorWorksetForPolyOrder[7] =    16;
-            nonAffineTensorWorksetForPolyOrder[8] =    16;
-            
-            affineTensorWorksetForPolyOrder[1] = 32768;
-            affineTensorWorksetForPolyOrder[2] =  4096;
-            affineTensorWorksetForPolyOrder[3] =  1024;
-            affineTensorWorksetForPolyOrder[4] =   256;
-            affineTensorWorksetForPolyOrder[5] =   128;
-            affineTensorWorksetForPolyOrder[6] =    32;
-            affineTensorWorksetForPolyOrder[7] =    16;
-            affineTensorWorksetForPolyOrder[8] =    16;
-          }
-            break;
-        }
-        
-        // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
-        // Standard: 1 is best for polyOrder 8, so it'll be the best for the rest.
-        // NonAffineTensor, AffineTensor: we seem to bottom out at the number of OpenMP threads: here, 16.
-        int standardWorksetSize = 1;
-        int tensorWorksetSize = 16;
-        for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
-        {
-          nonAffineTensorWorksetForPolyOrder[polyOrder] = tensorWorksetSize;
-          affineTensorWorksetForPolyOrder[polyOrder]    = tensorWorksetSize;
-          standardWorksetForPolyOrder[polyOrder]        = standardWorksetSize;
-        }
-        
-        for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
-        {
-          WorksetForAlgorithmChoice worksetForAlgorithmChoice;
-          worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
-          worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
-          const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
-          
-          polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
-        }
-      }
-        break;
-      case BestCuda:
-      {
-        {
-          if (formulationChoices.size() != 1)
-          {
-            std::cout << "BestCuda mode is not supported when running multiple formulations.\n";
-            exit(-1);
-          }
-          
-          auto formulationChoice = formulationChoices[0];
-          
-          // STANDARD
-          // manually calibrated workset size on P100 (weaver)
-          map<int,int> standardWorksetForPolyOrder;
-          map<int,int> nonAffineTensorWorksetForPolyOrder;
-          map<int,int> affineTensorWorksetForPolyOrder;
-          
-          switch(formulationChoice)
-          {
-            case Poisson:
-            {
-              // best for Poisson - these are for meshes that range from 32768 for p=1 to 256 for p=8
-              standardWorksetForPolyOrder[1] = 16384;
-              standardWorksetForPolyOrder[2] =   512;
-              standardWorksetForPolyOrder[3] =   128;
-              standardWorksetForPolyOrder[4] =     8;
-              standardWorksetForPolyOrder[5] =     4;
-              standardWorksetForPolyOrder[6] =     1;
-              standardWorksetForPolyOrder[7] =     1;
-              standardWorksetForPolyOrder[8] =     1;
-              
-              nonAffineTensorWorksetForPolyOrder[1] = 32768;
-              nonAffineTensorWorksetForPolyOrder[2] = 32768;
-              nonAffineTensorWorksetForPolyOrder[3] = 16384;
-              nonAffineTensorWorksetForPolyOrder[4] =  8192;
-              nonAffineTensorWorksetForPolyOrder[5] =  4096;
-              nonAffineTensorWorksetForPolyOrder[6] =  2048;
-              nonAffineTensorWorksetForPolyOrder[7] =   256;
-              nonAffineTensorWorksetForPolyOrder[8] =   256;
-              
-              affineTensorWorksetForPolyOrder[1] = 8192;
-              affineTensorWorksetForPolyOrder[2] = 8192;
-              affineTensorWorksetForPolyOrder[3] = 8192;
-              affineTensorWorksetForPolyOrder[4] = 8192;
-              affineTensorWorksetForPolyOrder[5] = 4096;
-              affineTensorWorksetForPolyOrder[6] = 2048;
-              affineTensorWorksetForPolyOrder[7] =  256;
-              affineTensorWorksetForPolyOrder[8] =  128;
-            }
-              break;
-            case Hgrad:
-            {
-              // best for Hgrad - these are for meshes that range from 32768 for p=1 to 256 for p=8
-              standardWorksetForPolyOrder[1] = 32768;
-              standardWorksetForPolyOrder[2] =   512;
-              standardWorksetForPolyOrder[3] =   128;
-              standardWorksetForPolyOrder[4] =    16;
-              standardWorksetForPolyOrder[5] =     4;
-              standardWorksetForPolyOrder[6] =     1;
-              standardWorksetForPolyOrder[7] =     1;
-              standardWorksetForPolyOrder[8] =     1;
-              
-              nonAffineTensorWorksetForPolyOrder[1] = 32768;
-              nonAffineTensorWorksetForPolyOrder[2] = 32768;
-              nonAffineTensorWorksetForPolyOrder[3] = 16384;
-              nonAffineTensorWorksetForPolyOrder[4] =  8192;
-              nonAffineTensorWorksetForPolyOrder[5] =  4096;
-              nonAffineTensorWorksetForPolyOrder[6] =  2048;
-              nonAffineTensorWorksetForPolyOrder[7] =   256;
-              nonAffineTensorWorksetForPolyOrder[8] =   256;
-              
-              affineTensorWorksetForPolyOrder[1] = 32768;
-              affineTensorWorksetForPolyOrder[2] = 32768;
-              affineTensorWorksetForPolyOrder[3] =  8192;
-              affineTensorWorksetForPolyOrder[4] =  8192;
-              affineTensorWorksetForPolyOrder[5] =  4096;
-              affineTensorWorksetForPolyOrder[6] =  2048;
-              affineTensorWorksetForPolyOrder[7] =   256;
-              affineTensorWorksetForPolyOrder[8] =   256;
-            }
-              break;
-            case Hdiv:
-            {
-              // best for Hdiv - these are for meshes that range from 32768 for p=1 to 64 for p=8
-              standardWorksetForPolyOrder[1] = 32768;
-              standardWorksetForPolyOrder[2] =   512;
-              standardWorksetForPolyOrder[3] =    32;
-              standardWorksetForPolyOrder[4] =     4;
-              standardWorksetForPolyOrder[5] =     1;
-              standardWorksetForPolyOrder[6] =     1;
-              standardWorksetForPolyOrder[7] =     1;
-              standardWorksetForPolyOrder[8] =     1;
-              
-              nonAffineTensorWorksetForPolyOrder[1] = 32768;
-              nonAffineTensorWorksetForPolyOrder[2] = 32768;
-              nonAffineTensorWorksetForPolyOrder[3] = 16384;
-              nonAffineTensorWorksetForPolyOrder[4] =  4096;
-              nonAffineTensorWorksetForPolyOrder[5] =  1024;
-              nonAffineTensorWorksetForPolyOrder[6] =   256;
-              nonAffineTensorWorksetForPolyOrder[7] =   128;
-              nonAffineTensorWorksetForPolyOrder[8] =    64;
-              
-              affineTensorWorksetForPolyOrder[1] = 32768;
-              affineTensorWorksetForPolyOrder[2] = 32768;
-              affineTensorWorksetForPolyOrder[3] = 16384;
-              affineTensorWorksetForPolyOrder[4] =  4096;
-              affineTensorWorksetForPolyOrder[5] =  1024;
-              affineTensorWorksetForPolyOrder[6] =   256;
-              affineTensorWorksetForPolyOrder[7] =   128;
-              affineTensorWorksetForPolyOrder[8] =    64;
-            }
-              break;
-            case Hcurl:
-            {
-              standardWorksetForPolyOrder[1] = 1024;
-              standardWorksetForPolyOrder[2] =  128;
-              standardWorksetForPolyOrder[3] =   16;
-              standardWorksetForPolyOrder[4] =    4;
-              standardWorksetForPolyOrder[5] =    1;
-              standardWorksetForPolyOrder[6] =    1;
-              standardWorksetForPolyOrder[7] =    1;
-              standardWorksetForPolyOrder[8] =    1;
-              
-              nonAffineTensorWorksetForPolyOrder[1] = 32768;
-              nonAffineTensorWorksetForPolyOrder[2] = 32768;
-              nonAffineTensorWorksetForPolyOrder[3] =  8192;
-              nonAffineTensorWorksetForPolyOrder[4] =  2048;
-              nonAffineTensorWorksetForPolyOrder[5] =   512;
-              nonAffineTensorWorksetForPolyOrder[6] =   256;
-              nonAffineTensorWorksetForPolyOrder[7] =   128;
-              nonAffineTensorWorksetForPolyOrder[8] =    64;
-              
-              affineTensorWorksetForPolyOrder[1] = 32768;
-              affineTensorWorksetForPolyOrder[2] = 32768;
-              affineTensorWorksetForPolyOrder[3] =  8192;
-              affineTensorWorksetForPolyOrder[4] =  2048;
-              affineTensorWorksetForPolyOrder[5] =   512;
-              affineTensorWorksetForPolyOrder[6] =   256;
-              affineTensorWorksetForPolyOrder[7] =   128;
-              affineTensorWorksetForPolyOrder[8] =    64;
-            }
-              break;
-            case L2:
-            {
-              standardWorksetForPolyOrder[1] = 32768;
-              standardWorksetForPolyOrder[2] =  1024;
-              standardWorksetForPolyOrder[3] =   128;
-              standardWorksetForPolyOrder[4] =    16;
-              standardWorksetForPolyOrder[5] =     4;
-              standardWorksetForPolyOrder[6] =     1;
-              standardWorksetForPolyOrder[7] =     1;
-              standardWorksetForPolyOrder[8] =     1;
-              
-              nonAffineTensorWorksetForPolyOrder[1] = 32768;
-              nonAffineTensorWorksetForPolyOrder[2] = 32768;
-              nonAffineTensorWorksetForPolyOrder[3] = 16384;
-              nonAffineTensorWorksetForPolyOrder[4] =  8192;
-              nonAffineTensorWorksetForPolyOrder[5] =  4096;
-              nonAffineTensorWorksetForPolyOrder[6] =  2048;
-              nonAffineTensorWorksetForPolyOrder[7] =   256;
-              nonAffineTensorWorksetForPolyOrder[8] =   128;
-              
-              affineTensorWorksetForPolyOrder[1] = 8192;
-              affineTensorWorksetForPolyOrder[2] = 8192;
-              affineTensorWorksetForPolyOrder[3] = 8192;
-              affineTensorWorksetForPolyOrder[4] = 8192;
-              affineTensorWorksetForPolyOrder[5] = 4096;
-              affineTensorWorksetForPolyOrder[6] = 2048;
-              affineTensorWorksetForPolyOrder[7] =  256;
-              affineTensorWorksetForPolyOrder[8] =  128;
-            }
-              break;
-          }
-          
-          // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
-          int standardWorksetSize  = 1;  // 1 is best for polyOrder 8, so it'll be the best for the rest.
-          // for the rest under CUDA, we observe that in most cases, the optimal workset size for non-affine tensor is the cell count.  For affine, it's lower by a factor of 2 or 4 in most cases.
-          for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
-          {
-            nonAffineTensorWorksetForPolyOrder[polyOrder] = cellCountForPolyOrder[polyOrder];
-            affineTensorWorksetForPolyOrder[polyOrder]    = cellCountForPolyOrder[polyOrder] / 2;
-            standardWorksetForPolyOrder[polyOrder] = standardWorksetSize;
-          }
-          
-          for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
-          {
-            WorksetForAlgorithmChoice worksetForAlgorithmChoice;
-            worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
-            worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-            worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
-            worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
-            
-            const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
-            
-            polyOrderGridDimsWorksetTestCases.push_back(tuple<int,Kokkos::Array<int,spaceDim>,WorksetForAlgorithmChoice>{polyOrder,gridDims,worksetForAlgorithmChoice} );
-          }
-        }
-        break;
-        
-      default:
-        break;
-    }
     }
     
     cout << std::setprecision(2) << std::scientific;
     
-    map< AlgorithmChoice, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrderCore;  // values are (throughput in GFlops/sec, worksetSize)
-    map< AlgorithmChoice, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrderTotal; // values are (throughput in GFlops/sec, worksetSize)
+    map< pair<FormulationChoice,AlgorithmChoice>, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrderCore;  // values are (throughput in GFlops/sec, worksetSize)
+    map< pair<FormulationChoice,AlgorithmChoice>, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrderTotal; // values are (throughput in GFlops/sec, worksetSize)
     
     const int charWidth = 15;
     
+    FormulationChoice previousFormulation = UnknownFormulation;
     for (auto basisFamilyChoice : basisFamilyChoices)
     {
-      for (auto formulation : formulationChoices)
+      for (auto & testCase : polyOrderGridDimsWorksetTestCases)
       {
-        std::cout << "\n\n***** Formulation: " << to_string(formulation) << " *******\n";
-        for (auto & testCase : polyOrderGridDimsWorksetTestCases)
-        {
           int polyOrder       = std::get<0>(testCase);
-          auto gridDims       = std::get<1>(testCase);
-          auto worksetSizeMap = std::get<2>(testCase);
+          auto formulation    = std::get<1>(testCase);
+          auto gridDims       = std::get<2>(testCase);
+          auto worksetSizeMap = std::get<3>(testCase);
+          if (formulation != previousFormulation)
+          {
+            std::cout << "\n\n***** Formulation: " << to_string(formulation) << " *******\n";
+            previousFormulation = formulation;
+          }
           std::cout << "\n\n";
           std::cout << "Running with polyOrder = " << polyOrder << ", mesh dims = ";
           for (int d=0; d<spaceDim; d++)
@@ -1319,7 +1450,7 @@ int main( int argc, char* argv[] )
             {
               // if this workset size is bigger than the optimal for p-1, skip it -- it's highly
               // unlikely that for a larger p, the optimal workset size will be *larger*.
-              const auto & bestThroughputs = maxAlgorithmThroughputForPolyOrderCore[algorithmChoice];
+              const auto & bestThroughputs = maxAlgorithmThroughputForPolyOrderCore[{formulation,algorithmChoice}];
               if (bestThroughputs.find(polyOrder-1) != bestThroughputs.end() )
               {
                 int bestWorksetSize = bestThroughputs.find(polyOrder-1)->second.second;
@@ -1473,10 +1604,10 @@ int main( int argc, char* argv[] )
             const double approximateFlopCountTotal = transformIntegrateFlopCount + jacobianCellMeasureFlopCount;
             const double overallThroughputInGFlops = approximateFlopCountTotal / elapsedTimeSeconds / 1.0e9;
             
-            const double previousMaxThroughput = maxAlgorithmThroughputForPolyOrderTotal[algorithmChoice][polyOrder].first;
+            const double previousMaxThroughput = maxAlgorithmThroughputForPolyOrderTotal[{formulation,algorithmChoice}][polyOrder].first;
             if (overallThroughputInGFlops > previousMaxThroughput)
             {
-              maxAlgorithmThroughputForPolyOrderTotal[algorithmChoice][polyOrder] = make_pair(overallThroughputInGFlops,worksetSize);
+              maxAlgorithmThroughputForPolyOrderTotal[{formulation,algorithmChoice}][polyOrder] = make_pair(overallThroughputInGFlops,worksetSize);
             }
             
             // timing details
@@ -1492,10 +1623,10 @@ int main( int argc, char* argv[] )
             const double transformIntegrateThroughputInGFlops = transformIntegrateFlopCount  / integrateCallTime / 1.0e9;
             const double jacobiansThroughputInGFlops          = jacobianCellMeasureFlopCount / jacobianTime      / 1.0e9;
             
-            const double previousMaxThroughputCore = maxAlgorithmThroughputForPolyOrderCore[algorithmChoice][polyOrder].first;
+            const double previousMaxThroughputCore = maxAlgorithmThroughputForPolyOrderCore[{formulation,algorithmChoice}][polyOrder].first;
             if (transformIntegrateThroughputInGFlops > previousMaxThroughputCore)
             {
-              maxAlgorithmThroughputForPolyOrderCore[algorithmChoice][polyOrder] = make_pair(transformIntegrateThroughputInGFlops,worksetSize);
+              maxAlgorithmThroughputForPolyOrderCore[{formulation,algorithmChoice}][polyOrder] = make_pair(transformIntegrateThroughputInGFlops,worksetSize);
             }
             
             cout << "Time (core integration)      " << setw(charWidth) << std::scientific << integrateCallTime << " seconds (" << std::fixed << integrateCallPercentage << "%)." << endl;
@@ -1559,28 +1690,48 @@ int main( int argc, char* argv[] )
 //              printFunctor3(secondMatrix, std::cout, algorithmName2);
             }
           }
-        }
-      }
+        } // testCase for loop
+        if (mode == Calibration)
+        {
+          std::ostringstream fileNameStream;
+          fileNameStream << outputDir << "/";
+          fileNameStream << "bestWorkset_";
+          if (polyOrderFixed != -1)
+          {
+            fileNameStream << "p" << polyOrderFixed;
+          }
+          else
+          {
+            fileNameStream << "p" << polyOrderMin << "_to_p" << polyOrderMax << "_";
+          }
+          fileNameStream << basisFamilyChoiceString;
+          fileNameStream << ".dat";
+
+          auto calibrationFilePath = fileNameStream.str();
+          auto calibrationFileStream = Teuchos::rcp( new std::ofstream(calibrationFilePath, std::ios::out) );
+
+          cout << "Best workset sizes (as determined by 'core integration' throughput, which includes basis transforms, but not setup and/or Jacobian computations):\n";
+          for (auto & formulation : formulationChoices)
+          {
+            for (auto & algorithmChoice : algorithmChoices)
+            {
+              if (algorithmChoice == Uniform) continue; // workset size is not meaningful for uniform (workset is always effectively one cell, or all cells, depending on how you choose to frame it).
+              for (auto & maxThroughputEntry : maxAlgorithmThroughputForPolyOrderCore[{formulation,algorithmChoice}])
+              {
+                int polyOrder   = maxThroughputEntry.first;
+                int worksetSize = maxThroughputEntry.second.second;
+                *calibrationFileStream << to_string(formulation) << "\t" << to_string(algorithmChoice) << "\t" << polyOrder << "\t" << worksetSize << std::endl;
+                
+                double throughput = maxThroughputEntry.second.first;
+                cout << to_string(formulation) << "\t" << to_string(algorithmChoice) << "\t" << polyOrder << "\t" << worksetSize << " (" << throughput << " GFlops/sec)\n";
+              }
+            }
+          } // formulation loop
+          
+          calibrationFileStream->close();
+        } // if (Calibration)
     } // basisFamilyChoices
     
-    if (mode == Calibration)
-    {
-      cout << "Best workset sizes (as determined by 'core integration' throughput, which includes basis transforms, but not setup and/or Jacobian computations):\n";
-      for (auto & algorithmChoice : algorithmChoices)
-      {
-        if (algorithmChoice == Uniform) continue; // workset size is not meaningful for uniform (workset is always effectively one cell, or all cells, depending on how you choose to frame it).
-        
-        cout << "Best workset sizes for " << to_string(algorithmChoice) << ":" << endl;
-        
-        for (auto & maxThroughputEntry : maxAlgorithmThroughputForPolyOrderCore[algorithmChoice])
-        {
-          int polyOrder   = maxThroughputEntry.first;
-          int worksetSize = maxThroughputEntry.second.second;
-          double throughput = maxThroughputEntry.second.first;
-          cout << "p = " << polyOrder << ":" << setw(5) << worksetSize << " (" << throughput << " GFlops/sec)\n";
-        }
-      }
-    }
     if (success)
     {
       return 0;

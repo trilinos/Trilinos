@@ -44,7 +44,10 @@ ENDIF()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockGMRES_hb_test
   SOURCES test_bl_gmres_hb.cpp
-  ARGS "--verbose"
+  ARGS 
+    "--verbose --ortho-type=DGKS"
+    "--verbose --ortho-type=ICGS"
+    "--verbose --ortho-type=IMGS"
   COMM serial mpi
   )
 

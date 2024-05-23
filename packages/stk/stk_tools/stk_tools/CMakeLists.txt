@@ -89,7 +89,7 @@ else()
   target_link_libraries(stk_block_extractor PUBLIC stk_util_command_line)
 
   if(STK_HAS_SEACAS_NEMESIS)
-    add_library(stk_pmesh_lib ${TRANSFER_UTILS_SOURCES})
+    add_library(stk_pmesh_lib ${PMESH_LIB_SOURCES})
     target_link_libraries(stk_pmesh_lib PUBLIC stk_io)
     target_link_libraries(stk_pmesh_lib PUBLIC stk_io_util)
     target_link_libraries(stk_pmesh_lib PUBLIC stk_tools_lib)
@@ -108,6 +108,10 @@ target_include_directories(stk_tools_lib PUBLIC
 if(STK_HAS_SEACAS_NEMESIS)
   target_include_directories(stk_pmesh_lib PUBLIC
     $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_tools>
+    $<INSTALL_INTERFACE:include>
+  )
+  target_include_directories(stk_pmesh_lib PUBLIC
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_tools/stk_tools/pmesh_lib>
     $<INSTALL_INTERFACE:include>
   )
 endif()

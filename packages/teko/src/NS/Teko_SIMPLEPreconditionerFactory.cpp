@@ -185,8 +185,8 @@ LinearOp SIMPLEPreconditionerFactory ::buildPreconditionerOperator(
   }
 
   Teko::ModifiableLinearOp& precInvF = state.getModifiableOp("precInvF");
-  if(precVelFactory_){
-    if(precInvF == Teuchos::null){
+  if (precVelFactory_) {
+    if (precInvF == Teuchos::null) {
       precInvF = precVelFactory_->buildInverse(F);
       state.addModifiableOp("precInvF", precInvF);
     } else {
@@ -196,15 +196,14 @@ LinearOp SIMPLEPreconditionerFactory ::buildPreconditionerOperator(
 
   // build the inverse for F
   Teko::ModifiableLinearOp& invF = state.getModifiableOp("invF");
-  if (invF == Teuchos::null){
-    if(precInvF.is_null()){
+  if (invF == Teuchos::null) {
+    if (precInvF.is_null()) {
       invF = Teko::buildInverse(*invVelFactory_, F);
     } else {
       invF = Teko::buildInverse(*invVelFactory_, F, precInvF);
     }
-  }
-  else{
-    if(precInvF.is_null()){
+  } else {
+    if (precInvF.is_null()) {
       Teko::rebuildInverse(*invVelFactory_, F, invF);
     } else {
       Teko::rebuildInverse(*invVelFactory_, F, precInvF, invF);
@@ -212,8 +211,8 @@ LinearOp SIMPLEPreconditionerFactory ::buildPreconditionerOperator(
   }
 
   Teko::ModifiableLinearOp& precInvS = state.getModifiableOp("precInvS");
-  if(precPrsFactory_){
-    if(precInvS == Teuchos::null){
+  if (precPrsFactory_) {
+    if (precInvS == Teuchos::null) {
       precInvS = precPrsFactory_->buildInverse(hatS);
       state.addModifiableOp("precInvS", precInvS);
     } else {
@@ -223,15 +222,14 @@ LinearOp SIMPLEPreconditionerFactory ::buildPreconditionerOperator(
 
   // build the approximate Schur complement
   Teko::ModifiableLinearOp& invS = state.getModifiableOp("invS");
-  if (invS == Teuchos::null){
-    if(precInvS == Teuchos::null){
+  if (invS == Teuchos::null) {
+    if (precInvS == Teuchos::null) {
       invS = Teko::buildInverse(*invPrsFactory_, hatS);
     } else {
       invS = Teko::buildInverse(*invPrsFactory_, hatS, precInvS);
     }
-  }
-  else {
-    if(precInvS == Teuchos::null){
+  } else {
+    if (precInvS == Teuchos::null) {
       Teko::rebuildInverse(*invPrsFactory_, hatS, invS);
     } else {
       Teko::rebuildInverse(*invPrsFactory_, hatS, precInvS, invS);
@@ -331,11 +329,9 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
     invPFact = invLib->getInverseFactory(invPStr);
 
   RCP<InverseFactory> precVFact, precPFact;
-  if(precVStr != "")
-    precVFact = invLib->getInverseFactory(precVStr);
+  if (precVStr != "") precVFact = invLib->getInverseFactory(precVStr);
 
-  if(precPStr != "")
-    precPFact = invLib->getInverseFactory(precPStr);
+  if (precPStr != "") precPFact = invLib->getInverseFactory(precPStr);
 
   // based on parameter type build a strategy
   invVelFactory_ = invVFact;
@@ -416,10 +412,8 @@ bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::Param
   // update requested parameters in solvers
   result &= invVelFactory_->updateRequestedParameters(pl);
   result &= invPrsFactory_->updateRequestedParameters(pl);
-  if(precVelFactory_)
-    result &= precVelFactory_->updateRequestedParameters(pl);
-  if(precPrsFactory_)
-    result &= precPrsFactory_->updateRequestedParameters(pl);
+  if (precVelFactory_) result &= precVelFactory_->updateRequestedParameters(pl);
+  if (precPrsFactory_) result &= precPrsFactory_->updateRequestedParameters(pl);
   if (customHFactory_ != Teuchos::null) result &= customHFactory_->updateRequestedParameters(pl);
 
   return result;

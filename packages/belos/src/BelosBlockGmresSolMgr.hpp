@@ -67,14 +67,20 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example BlockGmres/BlockGmresEpetraExFile.cpp
-    This is an example of how to use the Belos::BlockGmresSolMgr solver manager.
+/** \example epetra/example/BlockGmres/BlockGmresEpetraExFile.cpp
+    This is an example of how to use the Belos::BlockGmresSolMgr solver manager using Epetra.
 */
-/** \example BlockGmres/BlockPrecGmresEpetraExFile.cpp
+/** \example epetra/example/BlockGmres/BlockPrecGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with an Ifpack preconditioner.
 */
-/** \example BlockGmres/BlockFlexGmresEpetraExFile.cpp
+/** \example epetra/example/BlockGmres/BlockFlexGmresEpetraExFile.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager with flexible Gmres.
+*/
+/** \example tpetra/example/BlockGmres/BlockGmresTpetraExFile.cpp
+    This is an example of how to use the Belos::BlockGmresSolMgr solver manager using Tpetra.
+*/
+/** \example tpetra/example/BlockGmres/BlockGmresTpetraGaleriEx.cpp
+    This is an example of how to use the Belos::BlockGmresSolMgr solver manager using Tpetra and Galeri.
 */
 
 namespace Belos {
@@ -662,8 +668,9 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null || changedOrthoType) {
     Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
       paramsOrtho->set ("depTol", orthoKappa_ );
     }
 

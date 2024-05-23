@@ -69,10 +69,13 @@
 #  include <type_traits>
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
-/** \example GCRODR/GCRODREpetraExFile.cpp
-    This is an example of how to use the Belos::GCRODRSolMgr solver manager.
+/** \example epetra/example/GCRODR/GCRODREpetraExFile.cpp
+    This is an example of how to use the Belos::GCRODRSolMgr solver manager using Epetra.
 */
-/** \example GCRODR/PrecGCRODREpetraExFile.cpp
+/** \example tpetra/example/GCRODR/GCRODRTpetraExFile.cpp
+    This is an example of how to use the Belos::GCRODRSolMgr solver manager using Tpetra.
+*/
+/** \example epetra/example/GCRODR/PrecGCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager with an Ifpack preconditioner.
 */
 

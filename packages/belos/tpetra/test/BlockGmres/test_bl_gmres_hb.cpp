@@ -156,6 +156,8 @@ int main(int argc, char *argv[]) {
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     belosList.set( "Orthogonalization", ortho );           // Orthogonalization type
+    if ( ortho == "DGKS" )
+      belosList.set( "Orthogonalization Constant",  1.41421356);
 
     int verbLevel = Belos::Errors + Belos::Warnings;
     if (debug) {

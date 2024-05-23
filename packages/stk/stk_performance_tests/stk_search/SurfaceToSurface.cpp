@@ -39,6 +39,7 @@
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_io/FillMesh.hpp>
+#include <stk_search/LocalCoarseSearch.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
 #include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
@@ -119,7 +120,59 @@ void run_imported_surface_to_surface_test(const std::string& boxFileBaseName,
     batchTimer.start_batch_timer();
     for (int i = 0; i < numIterations; ++i) {
       stk::search::coarse_search(diceBoxes, toolBoxes, searchMethod, comm, searchResults, enforceSearchResultSymmetry);
-//      std::cout << "Num intersections = " << searchResults.size() << std::endl;
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(numIterations);
+}
+
+template<typename BoxIdentProcType>
+void run_imported_surface_to_surface_test_with_views(const std::string& boxFileBaseName,
+                                                     const int numIterations,
+                                                     stk::search::SearchMethod searchMethod,
+                                                     bool enforceSearchResultSymmetry = true)
+{
+  using BoxType = typename BoxIdentProcType::box_type;
+  using IdentProcType = typename BoxIdentProcType::ident_proc_type;
+  using BoxVectorType = typename std::vector<std::pair<BoxType, IdentProcType>>;
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  BoxVectorType diceBoxesVector = read_boxes_from_file<BoxVectorType>(boxFileBaseName + ".txt_dice", comm);
+  BoxVectorType toolBoxesVector = read_boxes_from_file<BoxVectorType>(boxFileBaseName + ".txt_tool", comm);
+
+  Kokkos::View<BoxIdentProcType *, ExecSpace> diceBoxes("diceBoxes", diceBoxesVector.size());
+  Kokkos::View<BoxIdentProcType *, ExecSpace> toolBoxes("diceBoxes", toolBoxesVector.size());
+  auto diceBoxesHost = Kokkos::create_mirror_view(diceBoxes);
+  auto toolBoxesHost = Kokkos::create_mirror_view(toolBoxes);
+
+  for (unsigned i = 0; i < diceBoxesVector.size(); i++) {
+    auto boxIdentProcPair = diceBoxesVector[i];
+    BoxIdentProcType domainBoxIdentProc{boxIdentProcPair.first, boxIdentProcPair.second};
+    diceBoxesHost(i) = domainBoxIdentProc;
+  }
+
+  for (unsigned i = 0; i < toolBoxesVector.size(); i++) {
+    auto boxIdentProcPair = toolBoxesVector[i];
+    BoxIdentProcType rangeBoxIdentProc{boxIdentProcPair.first, boxIdentProcPair.second};
+    toolBoxesHost(i) = rangeBoxIdentProc;
+  }
+
+  Kokkos::deep_copy(diceBoxes, diceBoxesHost);
+  Kokkos::deep_copy(toolBoxes, toolBoxesHost);
+
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+    Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
+
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < numIterations; ++i) {
+      stk::search::coarse_search(diceBoxes, toolBoxes, searchMethod, comm, searchResults,
+                                 ExecSpace{}, enforceSearchResultSymmetry);
     }
     batchTimer.stop_batch_timer();
   }
@@ -134,7 +187,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_KDTREE)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
   const int numIterations = 4;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
 }
 
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_MORTON_LBVH)
@@ -144,7 +197,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_MORTON_LBVH)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
   const int numIterations = 4;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_ARBORX)
@@ -154,7 +207,27 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_ARBORX)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
   const int numIterations = 4;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const int numIterations = 4;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const int numIterations = 4;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
 
 
@@ -165,7 +238,7 @@ TEST(StkSearch_SurfaceToSurface, newtonCradle_floatBox_KDTREE)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 16) GTEST_SKIP();
 
   const int numIterations = 2000;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
 }
 
 TEST(StkSearch_SurfaceToSurface, newtonCradle_floatBox_MORTON_LBVH)
@@ -175,7 +248,7 @@ TEST(StkSearch_SurfaceToSurface, newtonCradle_floatBox_MORTON_LBVH)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 16) GTEST_SKIP();
 
   const int numIterations = 2000;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
 TEST(StkSearch_SurfaceToSurface, newtonCradle_floatBox_ARBORX)
@@ -185,7 +258,27 @@ TEST(StkSearch_SurfaceToSurface, newtonCradle_floatBox_ARBORX)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 16) GTEST_SKIP();
 
   const int numIterations = 2000;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, newtonCradle_floatBox_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 16) GTEST_SKIP();
+
+  const int numIterations = 2000;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, newtonCradle_floatBox_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 16) GTEST_SKIP();
+
+  const int numIterations = 2000;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
 
 
@@ -196,7 +289,7 @@ TEST(StkSearch_SurfaceToSurface, b61NoseCrush_floatBox_KDTREE)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 200;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
 }
 
 TEST(StkSearch_SurfaceToSurface, b61NoseCrush_floatBox_MORTON_LBVH)
@@ -206,7 +299,7 @@ TEST(StkSearch_SurfaceToSurface, b61NoseCrush_floatBox_MORTON_LBVH)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 200;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
 TEST(StkSearch_SurfaceToSurface, b61NoseCrush_floatBox_ARBORX)
@@ -216,7 +309,27 @@ TEST(StkSearch_SurfaceToSurface, b61NoseCrush_floatBox_ARBORX)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 200;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, b61NoseCrush_floatBox_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
+
+  const int numIterations = 200;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, b61NoseCrush_floatBox_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
+
+  const int numIterations = 200;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
 
 
@@ -227,7 +340,7 @@ TEST(StkSearch_SurfaceToSurface, coneCrush_floatBox_KDTREE)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 200;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
 }
 
 TEST(StkSearch_SurfaceToSurface, coneCrush_floatBox_MORTON_LBVH)
@@ -237,7 +350,7 @@ TEST(StkSearch_SurfaceToSurface, coneCrush_floatBox_MORTON_LBVH)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 200;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
 TEST(StkSearch_SurfaceToSurface, coneCrush_floatBox_ARBORX)
@@ -247,7 +360,27 @@ TEST(StkSearch_SurfaceToSurface, coneCrush_floatBox_ARBORX)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 200;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, coneCrush_floatBox_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
+
+  const int numIterations = 200;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, coneCrush_floatBox_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
+
+  const int numIterations = 200;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
 
 
@@ -258,7 +391,7 @@ TEST(StkSearch_SurfaceToSurface, jenga_floatBox_KDTREE)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 500;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
 }
 
 TEST(StkSearch_SurfaceToSurface, jenga_floatBox_MORTON_LBVH)
@@ -268,7 +401,7 @@ TEST(StkSearch_SurfaceToSurface, jenga_floatBox_MORTON_LBVH)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 500;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
 TEST(StkSearch_SurfaceToSurface, jenga_floatBox_ARBORX)
@@ -278,7 +411,27 @@ TEST(StkSearch_SurfaceToSurface, jenga_floatBox_ARBORX)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
 
   const int numIterations = 500;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, jenga_floatBox_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
+
+  const int numIterations = 500;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, jenga_floatBox_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 32) GTEST_SKIP();
+
+  const int numIterations = 500;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
 
 
@@ -289,7 +442,7 @@ TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_KDTREE)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 128) GTEST_SKIP();
 
   const int numIterations = 20;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
 }
 
 TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_MORTON_LBVH)
@@ -299,7 +452,7 @@ TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_MORTON_LBVH)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 128) GTEST_SKIP();
 
   const int numIterations = 20;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
 TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_ARBORX)
@@ -309,7 +462,180 @@ TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_ARBORX)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 128) GTEST_SKIP();
 
   const int numIterations = 20;
-  run_imported_surface_to_surface_test<FloatBoxVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+  run_imported_surface_to_surface_test<FloatBoxIdentProcVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 128) GTEST_SKIP();
+
+  const int numIterations = 20;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 128) GTEST_SKIP();
+
+  const int numIterations = 20;
+  run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+template <typename BoxVectorType>
+BoxVectorType read_local_boxes_from_file_and_number(const std::string& baseName)
+{
+  const std::string fileName = baseName + "_1.0";
+  std::ifstream infile(fileName);
+  STK_ThrowRequireMsg(infile.good(), "Unable to open file " + fileName);
+
+  BoxVectorType boxVector;
+  std::string line;
+  while (std::getline(infile, line)) {
+    if (line.size() == 0) continue;
+    if (line[0] == '#') continue;
+    std::istringstream iss(line);
+    boxVector.emplace_back();
+    auto & [box, ident] = boxVector.back();
+    iss >> box;
+  }
+
+  unsigned long id = 0;
+  for (auto & boxIdent : boxVector) {
+    boxIdent.second = id;
+    id++;
+  } 
+
+  return boxVector;
+}
+template<typename BoxVectorType>
+void run_imported_surface_to_surface_test_local(const std::string& boxFileBaseName,
+                                                const int numIterations,
+                                                stk::search::SearchMethod searchMethod)
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  BoxVectorType diceBoxes = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_dice");
+  BoxVectorType toolBoxes = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_tool");
+
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+    LocalSearchResults searchResults;
+
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < numIterations; ++i) {
+      stk::search::local_coarse_search(diceBoxes, toolBoxes, searchMethod, searchResults);
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(numIterations);
+}
+
+template<typename BoxIdentType>
+void run_imported_surface_to_surface_test_local_with_views(const std::string& boxFileBaseName,
+                                                           const int numIterations,
+                                                           stk::search::SearchMethod searchMethod)
+{
+  using BoxType = typename BoxIdentType::box_type;
+  using IdentType = typename BoxIdentType::second_type;
+  using BoxVectorType = typename std::vector<std::pair<BoxType, IdentType>>;
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  BoxVectorType diceBoxesVector = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_dice");
+  BoxVectorType toolBoxesVector = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_tool");
+
+  Kokkos::View<BoxIdentType *, ExecSpace> diceBoxes("diceBoxes", diceBoxesVector.size());
+  Kokkos::View<BoxIdentType *, ExecSpace> toolBoxes("diceBoxes", toolBoxesVector.size());
+  auto diceBoxesHost = Kokkos::create_mirror_view(diceBoxes);
+  auto toolBoxesHost = Kokkos::create_mirror_view(toolBoxes);
+
+  for (unsigned i = 0; i < diceBoxesVector.size(); i++) {
+    auto boxIdentPair = diceBoxesVector[i];
+    BoxIdentType domainBoxIdent{boxIdentPair.first, boxIdentPair.second};
+    diceBoxesHost(i) = domainBoxIdent;
+  }
+
+  for (unsigned i = 0; i < toolBoxesVector.size(); i++) {
+    auto boxIdentPair = toolBoxesVector[i];
+    BoxIdentType rangeBoxIdent{boxIdentPair.first, boxIdentPair.second};
+    toolBoxesHost(i) = rangeBoxIdent;
+  }
+
+  Kokkos::deep_copy(diceBoxes, diceBoxesHost);
+  Kokkos::deep_copy(toolBoxes, toolBoxesHost);
+
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+    Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
+
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < numIterations; ++i) {
+      stk::search::local_coarse_search(diceBoxes, toolBoxes, searchMethod, searchResults, ExecSpace{});
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(numIterations);
+}
+
+
+TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_KDTREE)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const int numIterations = 4;
+  run_imported_surface_to_surface_test_local<FloatBoxIdentVector>(boxFileBaseName, numIterations, stk::search::KDTREE);
+}
+
+TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const int numIterations = 4;
+  run_imported_surface_to_surface_test_local<FloatBoxIdentVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const int numIterations = 4;
+  run_imported_surface_to_surface_test_local<FloatBoxIdentVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const int numIterations = 4;
+  run_imported_surface_to_surface_test_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
+
+TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const int numIterations = 4;
+  run_imported_surface_to_surface_test_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
 
 } // namespace

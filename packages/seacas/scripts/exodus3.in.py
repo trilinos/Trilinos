@@ -1,5 +1,5 @@
 """
-exodus.py v 1.21.2 (seacas-py3) is a python wrapper of some of the exodus library
+exodus.py v 1.21.3 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -78,10 +78,10 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.21.2 (seacas-py3)"
+EXODUS_PY_VERSION = "1.21.3 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.21.2 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.21.3 (seacas-py3), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013-2023 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -6761,7 +6761,9 @@ def internal_transfer_variables(exoFrom, exo_to, obj_type, additionalVariables, 
     if nVars > 0:
         exo_to.set_variable_number(obj_type, nVars)
         origVarNames = exoFrom.get_variable_names(obj_type)
-        origVarNames.extend(newVariableNames)
+        varNames = []
+        varNames.extend(origVarNames)
+        varNames.extend(newVariableNames)
         truthTable = []
         if nOrigVars > 0:
             truthTable = exoFrom.get_variable_truth_table(obj_type)
@@ -6780,7 +6782,7 @@ def internal_transfer_variables(exoFrom, exo_to, obj_type, additionalVariables, 
             truthTable = newTruth
         exo_to.set_variable_truth_table(obj_type, truthTable)
         for nameIndex in range(nVars):
-            varName = origVarNames[nameIndex]
+            varName = varNames[nameIndex]
             exo_to.put_variable_name(obj_type, varName, nameIndex + 1)
         truthIndex = 0
         for blkId in blkIds:

@@ -207,7 +207,7 @@ public:
     while ( x_end != x ) { *x++ = 0 ; }
   }
 
-  void destroy( void * v , std::size_t n ) const {}
+  void destroy( void *, std::size_t ) const {}
 
   void pack( CommBuffer & buf , const void * v , std::size_t n ) const
   {
@@ -247,10 +247,10 @@ public:
     }
   }
 
-  virtual void max( void * vx , const void * vy , std::size_t n ) const
+  virtual void max( void * , const void * , std::size_t ) const
   { STK_ThrowErrorMsg( "not supported" ); }
 
-  virtual void min( void * vx , const void * vy , std::size_t n ) const
+  virtual void min( void * , const void * , std::size_t ) const
   { STK_ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_and( void * , const void * , std::size_t ) const

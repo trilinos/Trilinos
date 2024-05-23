@@ -47,6 +47,7 @@ ELSE()
   add_library(stk_util_env ${SOURCES})
 
   target_link_libraries(stk_util_env PUBLIC stk_util_util)
+  target_link_libraries(stk_util_env PUBLIC stk_util_parallel)
 ENDIF()
 
 target_include_directories(stk_util_env PUBLIC

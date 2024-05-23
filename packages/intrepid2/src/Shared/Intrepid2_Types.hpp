@@ -120,7 +120,7 @@ namespace Intrepid2 {
     /// The maximum number of points to eval in serial mode.
     static constexpr ordinal_type MaxNumPtsPerBasisEval= 1;
     /// The maximum reconstruction order.
-    static constexpr ordinal_type MaxOrder             = 8;
+    static constexpr ordinal_type MaxOrder             = 10;
     /// The maximum number of integration points for direct cubature rules.
     static constexpr ordinal_type MaxIntegrationPoints = 4893;    
     /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.

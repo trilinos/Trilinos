@@ -1353,7 +1353,7 @@ shards::CellTopology get_cell_topology(stk::topology t)
     return shards::CellTopology(shards::getCellTopologyData<shards::Triangle<6>>());
   case stk::topology::QUAD_4:
     return shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4>>());
-  case stk::topology::QUAD_6:
+  case stk::topology::QUAD_6: break;
     //NOTE: shards does not define a topology for a 6-noded quadrilateral element
     // return shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<6>>());
   case stk::topology::QUAD_8:
@@ -1421,7 +1421,7 @@ shards::CellTopology get_cell_topology(stk::topology t)
     return shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<14>>());
   case stk::topology::WEDGE_6:
     return shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6>>());
-  case stk::topology::WEDGE_12:
+  case stk::topology::WEDGE_12: break;
     //NOTE: shards does not define a topology for a 12-noded wedge
     // return shards::CellTopology(shards::getCellTopologyData<shards::Wedge<12>>());
   case stk::topology::WEDGE_15:

@@ -160,11 +160,13 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
             const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_element_ordinals(side);
 
             for(unsigned i=0;i<numElements;++i) {
-                bool isOwned = bulkData.bucket(elements[i]).owned();
-                bool isSelected = elementSelector(bulkData.bucket(elements[i]));
+                const stk::mesh::Bucket& bucket = bulkData.bucket(elements[i]);
+                bool isOwned = bucket.owned();
+                bool isSelected = elementSelector(bucket);
 
                 if(isOwned && isSelected) {
-                    newSides.emplace_back(elements[i], ordinals[i]);
+                    stk::mesh::ConnectivityOrdinal sideOrdOffset = bulkData.entity_rank(side) == stk::topology::FACE_RANK ? 0 : bucket.topology().num_faces();
+                    newSides.emplace_back(elements[i], ordinals[i] + sideOrdOffset);
                 }
             }
         }
