@@ -163,14 +163,32 @@ namespace {
 
     // skip test if Scalar is not (float or double)
     if constexpr (!(std::is_same_v<Scalar, float> || std::is_same_v<Scalar, double>)) {
+      out << "SKIP: unsupported scalar type" << std::endl;
       TEST_EQUALITY_CONST(1,1); // SKIP
       return;
     }
     // skip test if LO != int
     if constexpr (!std::is_same_v<LO, int>) {
+      out << "SKIP: unsupported local ordinal type" << std::endl;
       TEST_EQUALITY_CONST(1,1); // SKIP
       return;
     }
+    // skip test if CUDA enables and not CUDA space
+  #if defined(HAVE_TPETRA_CUDA) || defined(HAVE_TPETRACORE_CUDA)
+    if constexpr (!std::is_same_v<typename Node::execution_space, Kokkos::Cuda>) {
+      out << "SKIP: non-CUDA exec space" << std::endl;
+      TEST_EQUALITY_CONST(1,1); // SKIP
+      return;
+    }
+  #endif
+  // skip test if HIP enabled and not HIP space
+  #if defined(HAVE_TPETRA_HIP) || defined(HAVE_TPETRACORE_HIP)
+    if constexpr (!std::is_same_v<typename Node::execution_space, Kokkos::HIP>) {
+      out << "SKIP: non-HIP exec space" << std::endl;
+      TEST_EQUALITY_CONST(1,1); // SKIP
+      return;
+    }
+  #endif
 
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -252,7 +270,7 @@ namespace {
     reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_EQUALITY_CONST( gblSuccess, 1 );
     if (gblSuccess != 1) {
-      out << "CrsMatrix apply TPL use test fails on some process!" << endl;
+      out << "KokkosKernels TPL use was not detected where it was expected!" << endl;
     }
   }
 
