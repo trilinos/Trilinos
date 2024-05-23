@@ -231,7 +231,7 @@ namespace Test {
               for (int j=0;j<numPoints;++j) {
                 const scalar_type  exactVal = (i == j);
                 const auto val = get_scalar_value(valsHost(i,j));
-                if (std::isnan(val) || std::abs(val-exactVal) > tol) {
+                if (std::isnan(val) || std::abs(val-exactVal) > 100.0 * tol) { // NVR: we relax tol here, now that we allow up to order 20 polynomials on the line.
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                   *outStream << " Basis function at i= " << i << ", j=" << j << ": "

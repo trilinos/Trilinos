@@ -65,12 +65,13 @@ namespace Intrepid2 {
     typename cubWeightViewType::value_type
     computeRefVolume(const ordinal_type      numPoints,
                      const cubWeightViewType cubWeights) {
-      typename cubWeightViewType::value_type r_val = 0.0;
+      typename cubWeightViewType::value_type r_val;
+      Kokkos::parallel_reduce("computeRefVolume",
+                              Kokkos::RangePolicy<typename cubWeightViewType::execution_space>(0, numPoints),
+      KOKKOS_LAMBDA (const int& i, double& lsum) {
+          lsum += cubWeights(i);
+      }, r_val);
       Kokkos::fence();
-      auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
-      for (auto i=0;i<numPoints;++i) {
-        r_val += cubWeights_host(i);
-      }
 
       return r_val;
     }
