@@ -328,7 +328,11 @@ public:
     // numPairs_ field (remembering the size of the input array of
     // keys).
     if (this->hasContiguousValues ()) {
-      return val_.extent (0) + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
+       // NOTE: We need this check for a newly initialied FHT.
+         if(minVal_ == ::Kokkos::ArithTraits<ValueType>::max())
+             return val_.extent (0);
+          else
+             return val_.extent (0) + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
     }
     else {
       return val_.extent (0);
