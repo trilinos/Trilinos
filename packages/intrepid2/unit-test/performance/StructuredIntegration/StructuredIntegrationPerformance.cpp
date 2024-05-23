@@ -116,11 +116,12 @@ std::string to_string(AlgorithmChoice choice)
 std::string to_string(FormulationChoice choice)
 {
   switch (choice) {
-    case Poisson: return "Poisson";
-    case Hgrad:   return "Hgrad";
-    case Hdiv:    return "Hdiv";
-    case Hcurl:   return "Hcurl";
-    case L2:      return "L2";
+    case Poisson:               return "Poisson";
+    case Hgrad:                 return "Hgrad";
+    case Hdiv:                  return "Hdiv";
+    case Hcurl:                 return "Hcurl";
+    case L2:                    return "L2";
+    case VectorWeightedPoisson: return "VectorWeightedPoisson";
     
     default:      return "Unknown FormulationChoice";
   }
@@ -205,12 +206,12 @@ getMeshWidths(int basisCardinality, int maxStiffnessEntryCount, int maxElements)
   return meshWidths;
 }
 
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2=spaceDim>
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationChoice formulation,
                                                                    Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
                                                                    double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
-                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight1 = Teuchos::null,
-                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight2 = Teuchos::null)
+                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight1 = Teuchos::null,
+                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -231,12 +232,12 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationCh
   }
 }
 
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2=spaceDim>
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(FormulationChoice formulation,
                                                                      Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
                                                                      double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
-                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight1 = Teuchos::null,
-                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight2 = Teuchos::null)
+                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight1 = Teuchos::null,
+                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -452,6 +453,7 @@ int main( int argc, char* argv[] )
       return -1;
     }
     
+    Teuchos::RCP<Kokkos::Array<double,spaceDim>> vectorWeight1, vectorWeight2; // used for VectorWeightedPoisson
     vector<FormulationChoice> formulationChoices;
     if (formulationChoiceString == "All")
     {
@@ -476,6 +478,17 @@ int main( int argc, char* argv[] )
     else if (formulationChoiceString == "L2")
     {
       formulationChoices = vector<FormulationChoice>{L2};
+    }
+    else if (formulationChoiceString == "VectorWeightedPoisson")
+    {
+      formulationChoices = vector<FormulationChoice>{VectorWeightedPoisson};
+      vectorWeight1 = Teuchos::rcp( new Kokkos::Array<double, spaceDim>() );
+      vectorWeight2 = Teuchos::rcp( new Kokkos::Array<double, spaceDim>() );
+      for (int d=0; d<spaceDim; d++)
+      {
+        (*vectorWeight1)[d] = 1.0;
+        (*vectorWeight2)[d] = 1.0;
+      }
     }
     else
     {
@@ -1342,13 +1355,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:
@@ -1370,13 +1383,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:
@@ -1399,13 +1412,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:
@@ -1434,13 +1447,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:
