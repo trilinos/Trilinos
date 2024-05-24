@@ -649,7 +649,7 @@ initialize ()
         graph = A_->getGraph ();
       }
       else {
-        graph = Tpetra::getBlockCrsGraph(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, false);
+        graph = Tpetra::getBlockCrsGraph(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, true);
       }
       Kokkos::DefaultExecutionSpace().fence();
     }
