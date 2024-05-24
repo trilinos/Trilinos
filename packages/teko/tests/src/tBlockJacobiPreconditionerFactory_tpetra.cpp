@@ -195,6 +195,13 @@ int tBlockJacobiPreconditionerFactory_tpetra::runTest(int verbosity, std::ostrea
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
+  
+  status = test_hierarchicalBlockScheme(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"test_hierarchicalBlockScheme\" ... PASSED",
+                "   \"test_hierarchicalBlockScheme\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
 
   status = allTests;
   if (verbosity >= 10) {
@@ -462,6 +469,66 @@ bool tBlockJacobiPreconditionerFactory_tpetra::test_iterativeSolves(int verbosit
 
   RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
   RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("BGS");
+
+  Teko::ModifiableLinearOp inv = Teko::buildInverse(*invFact, blkOp);
+  TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+
+  if (!inv.is_null()) {
+    Teko::rebuildInverse(*invFact, blkOp, inv);
+    TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+  }
+
+  return allPassed;
+}
+
+bool tBlockJacobiPreconditionerFactory_tpetra::test_hierarchicalBlockScheme(int verbosity,
+                                                                            std::ostream& os) {
+  using Thyra::zero;
+
+  bool status    = false;
+  bool allPassed = true;
+
+  // allocate new linear operator
+  const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > blkOp = Thyra::defaultBlockedLinearOp<ST>();
+  blkOp->beginBlockFill(3, 3);
+  blkOp->setBlock(0, 0, F_);
+  blkOp->setBlock(0, 1, Bt_);
+  blkOp->setBlock(1, 0, B_);
+  blkOp->setBlock(1, 1, C_);
+  blkOp->setBlock(1, 2, B_);
+  blkOp->setBlock(2, 1, Bt_);
+  blkOp->setBlock(2, 2, F_);
+  blkOp->endBlockFill();
+
+  // build stratimikos factory, adding Teko's version
+  Stratimikos::DefaultLinearSolverBuilder stratFactory;
+  stratFactory.setPreconditioningStrategyFactory(
+      Teuchos::abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,
+                                  Teko::StratimikosFactory>(),
+      "Teko");
+  RCP<ParameterList> params = Teuchos::rcp(new ParameterList(*stratFactory.getValidParameters()));
+  ParameterList& tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
+  tekoList.set("Write Block Operator", false);
+  tekoList.set("Test Block Operator", false);
+  tekoList.set("Strided Blocking", "1 1");
+  tekoList.set("Inverse Type", "HBGS");
+  ParameterList& ifl = tekoList.sublist("Inverse Factory Library");
+  ifl.sublist("HBGS").set("Type", "Hierarchical Block Gauss-Seidel");
+
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Included Subblocks", "1");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Inverse Type", "SINGLE_BGS");
+
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Included Subblocks", "2,3");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Inverse Type", "BGS");
+
+  ifl.sublist("SINGLE_BGS").set("Type", "Block Gauss-Seidel");
+  ifl.sublist("SINGLE_BGS").set("Inverse Type", "Ifpack2");
+
+  ifl.sublist("BGS").set("Type", "Block Gauss-Seidel");
+  ifl.sublist("BGS").set("Inverse Type", "Ifpack2");
+
+  RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("HBGS");
 
   Teko::ModifiableLinearOp inv = Teko::buildInverse(*invFact, blkOp);
   TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
