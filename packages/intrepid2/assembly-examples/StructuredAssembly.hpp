@@ -144,18 +144,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
   BasisValues<Scalar,DeviceType> basis2Values = basis2->allocateBasisValues(tensorCubaturePoints, op2);
   basis2->getValues(basis2Values, tensorCubaturePoints, op2);
   
-  if (vectorWeight1 != Teuchos::null)
-  {
-    // for now, the only use case we support for vector-weighted evaluation is for both basis1 and basis2 evaluations to be vector-valued: we take the dot product of the weight with the basis values.
-    const bool vectorValued = basis1Values.rank() == 3; // (F,P,D)
-    INTREPID2_TEST_FOR_EXCEPTION(vectorWeight2 == Teuchos::null, std::invalid_argument, "if vectorWeight1 is non-null, vectorWeight2 must also not be null");
-    INTREPID2_TEST_FOR_EXCEPTION(!vectorValued, std::invalid_argument, "if vectorWeight1 is non-null, both bases must be vector-valued.");
-  }
-  else
-  {
-    INTREPID2_TEST_FOR_EXCEPTION(vectorWeight2 != Teuchos::null, std::invalid_argument, "if vectorWeight2 is non-null, vectorWeight1 must also not be null");
-  }
-  
   int cellOffset = 0;
   
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
@@ -232,6 +220,19 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
       }
       Kokkos::deep_copy(auView, auViewHost);
       
+      Kokkos::Array<int,3> extents {numCellsInWorkset,numPoints,spaceDim};
+      Kokkos::Array<DataVariationType,3> variationTypes {CONSTANT, CONSTANT, GENERAL};
+      
+      Data<Scalar,DeviceType> au_data(auView, extents, variationTypes);
+      auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(transformedBasis1Values.transform(), au_data, true);
+      uTransform.storeMatVec(transformedBasis1Values.transform(), au_data, true); // true: transpose basis transform when multiplying
+      transformedBasis1Values = Intrepid2::TransformedBasisValues<double, DeviceType>(uTransform, basis1Values);
+      
+      // TODO: modify transformIntegrateFlopCount to include an estimate for above mat-vecs (but note that these will not be a dominant cost, especially at high order).
+    }
+    
+    if (vectorWeight2 != Teuchos::null)
+    {
       ScalarView<Scalar,DeviceType> avView("a_v", spaceDim);
       auto avViewHost = Kokkos::create_mirror(avView);
       
@@ -244,16 +245,9 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredAssembly(Intrepid2::Ce
       Kokkos::Array<int,3> extents {numCellsInWorkset,numPoints,spaceDim};
       Kokkos::Array<DataVariationType,3> variationTypes {CONSTANT, CONSTANT, GENERAL};
       
-      Data<Scalar,DeviceType> au_data(auView, extents, variationTypes);
       Data<Scalar,DeviceType> av_data(avView, extents, variationTypes);
-      
-      auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(transformedBasis1Values.transform(), au_data, true);
       auto vTransform = Data<Scalar,DeviceType>::allocateMatVecResult(transformedBasis2Values.transform(), av_data, true);
-      
-      uTransform.storeMatVec(transformedBasis1Values.transform(), au_data, true); // true: transpose basis transform when multiplying
       vTransform.storeMatVec(transformedBasis2Values.transform(), av_data, true); // true: transpose basis transform when multiplying
-      
-      transformedBasis1Values = Intrepid2::TransformedBasisValues<double, DeviceType>(uTransform, basis1Values);
       transformedBasis2Values = Intrepid2::TransformedBasisValues<double, DeviceType>(vTransform, basis2Values);
       
       // TODO: modify transformIntegrateFlopCount to include an estimate for above mat-vecs (but note that these will not be a dominant cost, especially at high order).
