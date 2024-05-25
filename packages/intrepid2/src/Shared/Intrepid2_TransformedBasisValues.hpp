@@ -199,7 +199,22 @@ namespace Intrepid2 {
     //! Returns the logical extent in the space dimension, which is the 3 dimension in this container.
     KOKKOS_INLINE_FUNCTION int spaceDim() const
     {
-      return basisValues_.extent_int(2);
+      if ((transform_.rank() == 3) && (basisValues_.rank() == 3)) // (C,P,D) contracted in D against (F,P,D)
+      {
+        return 1; // spaceDim contracted away
+      }
+      else if ((transform_.rank() == 3) && (basisValues_.rank() == 2)) // (C,P,D) weighting (F,P)
+      {
+        return transform_.extent_int(2);
+      }
+      else if (transform_.isValid())
+      {
+        return transform_.extent_int(2);
+      }
+      else
+      {
+        return basisValues_.extent_int(2);
+      }
     }
     
     //! Scalar accessor, with arguments (C,F,P).
