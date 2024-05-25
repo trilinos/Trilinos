@@ -5093,7 +5093,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Decide now whether to use the imbalanced row path, or the default.
       bool useMergePath = false;
       LocalOrdinal nrows = getLocalNumRows();
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       LocalOrdinal maxRowImbalance = 0;
       if(nrows != 0)
         maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
