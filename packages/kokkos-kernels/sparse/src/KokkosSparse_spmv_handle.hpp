@@ -235,7 +235,8 @@ struct SPMVHandleImpl {
                 "SPMVHandleImpl: Ordinal must not be a const type");
   SPMVHandleImpl(SPMVAlgorithm algo_) : algo(algo_) {}
   ~SPMVHandleImpl() {
-    if (tpl) delete tpl;
+    if (tpl_rank1) delete tpl_rank1;
+    if (tpl_rank2) delete tpl_rank2;
   }
 
   ImplType* get_impl() { return this; }
@@ -243,9 +244,9 @@ struct SPMVHandleImpl {
   /// Get the SPMVAlgorithm used by this handle
   SPMVAlgorithm get_algorithm() const { return this->algo; }
 
-  bool is_set_up                     = false;
-  const SPMVAlgorithm algo           = SPMV_DEFAULT;
-  TPL_SpMV_Data<ExecutionSpace>* tpl = nullptr;
+  const SPMVAlgorithm algo                 = SPMV_DEFAULT;
+  TPL_SpMV_Data<ExecutionSpace>* tpl_rank1 = nullptr;
+  TPL_SpMV_Data<ExecutionSpace>* tpl_rank2 = nullptr;
   // Expert tuning parameters for native SpMV
   // TODO: expose a proper Experimental interface to set these. Currently they
   // can be assigned directly in the SPMVHandle as they are public members.

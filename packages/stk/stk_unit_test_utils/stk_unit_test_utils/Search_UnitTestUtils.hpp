@@ -51,17 +51,36 @@
 
 #include <iomanip>
 
-typedef stk::search::IdentProc<int,int> Ident;
 typedef stk::search::Point<double> Point;
 typedef stk::search::Sphere<double> Sphere;
-typedef stk::search::Box<double> StkBox;
-typedef std::pair<StkBox,Ident> StkBoxWithId;
-typedef std::vector< StkBoxWithId > StkBoxVector;
-
 typedef stk::search::Box<float> FloatBox;
-typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-typedef std::pair<FloatBox, Ident> FloatBoxWithId;
-typedef std::vector<FloatBoxWithId> FloatBoxVector;
+typedef stk::search::Box<double> StkBox;
+
+typedef int Ident;
+typedef stk::search::IdentProc<int,int> IdentProc;
+
+typedef std::pair<FloatBox, Ident> FloatBoxIdentPair;
+typedef std::pair<StkBox,Ident> StkBoxIdentPair;
+typedef std::pair<Sphere,Ident> SphereIdentPair;
+typedef std::pair<FloatBox, IdentProc> FloatBoxIdentProcPair;
+typedef std::pair<StkBox,IdentProc> StkBoxIdentProcPair;
+
+typedef std::vector<FloatBoxIdentProcPair> FloatBoxIdentProcVector;
+typedef std::vector<StkBoxIdentProcPair> StkBoxIdentProcVector;
+typedef std::vector<FloatBoxIdentPair> FloatBoxIdentVector;
+typedef std::vector<StkBoxIdentPair> StkBoxIdentVector;
+
+typedef stk::search::BoxIdent<FloatBox, Ident> FloatBoxIdent;
+typedef stk::search::BoxIdent<StkBox, Ident> StkBoxIdent;
+typedef stk::search::BoxIdent<Sphere, Ident> SphereIdent;
+typedef stk::search::BoxIdentProc<FloatBox, IdentProc> FloatBoxIdentProc;
+typedef stk::search::BoxIdentProc<StkBox, IdentProc> StkBoxIdentProc;
+typedef stk::search::BoxIdentProc<Sphere, IdentProc> SphereIdentProc;
+
+typedef stk::search::IdentProcIntersection<IdentProc, IdentProc> IdentProcIntersection;
+typedef stk::search::IdentIntersection<Ident, Ident> IdentIntersection;
+typedef std::vector<std::pair<IdentProc,IdentProc>> SearchResults;
+typedef std::vector<std::pair<Ident,Ident>> LocalSearchResults;
 
 namespace stk {
 namespace unit_test_util {
@@ -101,9 +120,9 @@ StkBox generateBoundingVolume< StkBox >(double x, double y, double z, double rad
 }
 
 template <typename VolumeType>
-std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
+std::pair<VolumeType, IdentProc> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
 {
-  return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), Ident(id,proc));
+  return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), IdentProc(id,proc));
 }
 
 //======================
@@ -134,7 +153,7 @@ inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResul
         {
             for (size_t j=0;j<boxIdPairResults.size();++j)
             {
-                commSparse.send_buffer(procIdDestination).pack< std::pair<Ident, Ident> >(boxIdPairResults[j]);
+                commSparse.send_buffer(procIdDestination).pack< std::pair<IdentProc, IdentProc> >(boxIdPairResults[j]);
             }
         }
 
@@ -153,8 +172,8 @@ inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResul
             stk::CommBuffer &buf = commSparse.recv_buffer( p );
             while ( buf.remaining() )
             {
-                std::pair<Ident, Ident> temp;
-                buf.unpack< std::pair<Ident, Ident> >( temp );
+                std::pair<IdentProc, IdentProc> temp;
+                buf.unpack< std::pair<IdentProc, IdentProc> >( temp );
                 boxIdPairResults.push_back(temp);
             }
         }
@@ -229,9 +248,9 @@ StkBox generateBoundingVolume< StkBox >(double x, double y, double z, double rad
 }
 
 template <typename VolumeType>
-std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
+std::pair<VolumeType, IdentProc> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
 {
-  return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), Ident(id,proc));
+  return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), IdentProc(id,proc));
 }
 
 

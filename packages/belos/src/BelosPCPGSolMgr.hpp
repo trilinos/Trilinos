@@ -67,6 +67,13 @@
 #  include <type_traits>
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
+/** \example epetra/example/PCPG/PCPGEpetraExFile.cpp
+    This is an example of how to use the Belos::PCPGSolMgr with an ML preconditioner.
+*/
+/** \example tpetra/example/PCPG/PCPGTpetraExFile.cpp
+    This is an example of how to use Belos::PCPGSolMgr with Tpetra.
+*/
+
 namespace Belos {
 
   //! @name PCPGSolMgr Exceptions
@@ -124,9 +131,6 @@ namespace Belos {
   /// One often sees PCPG in context with the FETI domain
   /// decomposition method.
   ///
-  /// \example PCPG/PCPGEpetraExFile.cpp
-  ///
-  /// The provided example uses PCPGSolMgr with an ML preconditioner.
 
   // Partial specialization for complex ScalarType.
   // This contains a trivial implementation.

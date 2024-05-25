@@ -660,7 +660,7 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToDeviceAsyncTiming)
 
 TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
 {
-  if(get_parallel_size() != 1) return;
+  if(get_parallel_size() != 1) { GTEST_SKIP(); }
 
   unsigned NUM_RUNS = 5;
   unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);
@@ -749,19 +749,19 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
     batchTimer2.stop_batch_timer();
   }
 
-    double blockingSyncTime = batchTimer.get_min_batch_time();
-    double nonBlockingSyncTime = batchTimer2.get_min_batch_time();
-    double speedup = blockingSyncTime / nonBlockingSyncTime;
+  double blockingSyncTime = batchTimer.get_min_batch_time();
+  double nonBlockingSyncTime = batchTimer2.get_min_batch_time();
+  double speedup = blockingSyncTime / nonBlockingSyncTime;
 
-    EXPECT_GE(speedup, 1.0);
-    EXPECT_LE(speedup, numStreams + SPEEDUP_DELTA);
+  EXPECT_GE(speedup, 1.0);
+  EXPECT_LE(speedup, numStreams + SPEEDUP_DELTA);
 
   batchTimer2.print_batch_timing(NUM_ITERS);
 }
 
 TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
 {
-  if(get_parallel_size() != 1) return;
+  if(get_parallel_size() != 1) { GTEST_SKIP(); }
 
   unsigned NUM_RUNS = 5;
   unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);

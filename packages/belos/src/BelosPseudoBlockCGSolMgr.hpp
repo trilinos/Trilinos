@@ -65,10 +65,13 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example BlockCG/PseudoBlockCGEpetraExFile.cpp
-    This is an example of how to use the Belos::PseudoBlockCGSolMgr solver manager.
+/** \example epetra/example/BlockCG/PseudoBlockCGEpetraExFile.cpp
+    This is an example of how to use the Belos::PseudoBlockCGSolMgr solver manager using Epetra.
 */
-/** \example BlockCG/PseudoBlockPrecCGEpetraExFile.cpp
+/** \example tpetra/example/BlockCG/PseudoBlockCGTpetraExFile.cpp
+    This is an example of how to use the Belos::PseudoBlockCGSolMgr solver manager using Tpetra.
+*/
+/** \example epetra/example/BlockCG/PseudoBlockPrecCGEpetraExFile.cpp
     This is an example of how to use the Belos::PseudoBlockCGSolMgr solver manager with an Ifpack preconditioner.
 */
 

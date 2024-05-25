@@ -303,7 +303,7 @@ fillDomainBoxes(MPI_Comm comm)
     return domainBoxes;
 }
 
-inline void convertFloatBoxesToDoubleBoxes(const FloatBoxVector &floatBoxes, StkBoxVector& doubleBoxes)
+inline void convertFloatBoxesToDoubleBoxes(const FloatBoxIdentProcVector &floatBoxes, StkBoxIdentProcVector& doubleBoxes)
 {
   doubleBoxes.resize(floatBoxes.size());
   for (size_t i=0;i<floatBoxes.size();i++) {
@@ -313,21 +313,21 @@ inline void convertFloatBoxesToDoubleBoxes(const FloatBoxVector &floatBoxes, Stk
   }
 }
 
-inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
+inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxIdentProcVector& stkBoxes)
 {
     for (size_t i=0;i<domainBoxes.size();i++)
     {
         Point min(domainBoxes[i].get_x_min(), domainBoxes[i].get_y_min(), domainBoxes[i].get_z_min());
         Point max(domainBoxes[i].get_x_max(), domainBoxes[i].get_y_max(), domainBoxes[i].get_z_max());
-        Ident domainBoxId(i, procId);
+        IdentProc domainBoxId(i, procId);
         stkBoxes[i] = std::make_pair(StkBox(min,max), domainBoxId);
     }
 }
 
-template<typename BoxType>
+template<typename BoxType, typename IdentProcType>
 inline void createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
                                            stk::mesh::EntityRank rank,
-                                           std::vector<std::pair<BoxType,Ident>>& boundingBoxes)
+                                           std::vector<std::pair<BoxType,IdentProcType>>& boundingBoxes)
 {
     stk::mesh::EntityVector entities;
     const bool sortById = true;
@@ -354,7 +354,13 @@ inline void createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
         }
         findBoundingBoxCoordinates(coordinates, boxCoordinates);
         unsigned id = bulk.identifier(entities[i]);
-        Ident domainBoxId(id, bulk.parallel_rank());
+        IdentProcType domainBoxId;
+        if constexpr (std::is_same_v<IdentProcType, IdentProc>) {
+          domainBoxId = IdentProc(id, bulk.parallel_rank());
+        }
+        else {
+            domainBoxId = id;
+        }
         boundingBoxes[i] = std::make_pair(BoxType(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
                                                   boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
                                                   domainBoxId);
@@ -362,12 +368,62 @@ inline void createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
     }
 }
 
-inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxVector& domainBoxes)
+template<typename BoxIdentProcType>
+inline Kokkos::View<BoxIdentProcType *>
+createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
+                                     stk::mesh::EntityRank rank)
+{
+
+  using BoxType = typename BoxIdentProcType::box_type;  
+  using IdentProcType = typename BoxIdentProcType::second_type;  
+  stk::mesh::EntityVector entities;
+  const bool sortById = true;
+  stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities, sortById);
+
+  size_t numberBoundingBoxes = entities.size();
+  Kokkos::View<BoxIdentProcType *> boundingBoxes("Bounding Boxes", numberBoundingBoxes);
+  auto boundingBoxesHost = Kokkos::create_mirror_view(boundingBoxes);
+
+  stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
+
+  std::vector<double> boxCoordinates(6);
+
+  for (size_t i = 0; i < entities.size(); ++i) {
+    unsigned num_nodes = bulk.num_nodes(entities[i]);
+    std::vector<double> coordinates(3*num_nodes,0);
+    const stk::mesh::Entity* nodes = bulk.begin_nodes(entities[i]);
+    for (unsigned j = 0; j < num_nodes; ++j) {
+      double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
+      coordinates[3*j] = data[0];
+      coordinates[3*j+1] = data[1];
+      coordinates[3*j+2] = data[2];
+    }
+    findBoundingBoxCoordinates(coordinates, boxCoordinates);
+
+    int id = bulk.identifier(entities[i]);
+    IdentProcType domainBoxId;
+    if constexpr (std::is_same_v<IdentProcType, IdentProc>) {
+      domainBoxId = IdentProc(id, bulk.parallel_rank());
+    }
+    else {
+        domainBoxId = id;
+    }
+
+    boundingBoxesHost(i) = {BoxType(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
+                                                 boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]), domainBoxId};
+  }
+
+  Kokkos::deep_copy(boundingBoxes, boundingBoxesHost);
+
+  return boundingBoxes;
+}
+
+inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxIdentProcVector& domainBoxes)
 {
   createBoundingBoxesForEntities(bulk, stk::topology::ELEM_RANK, domainBoxes);
 }
 
-inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string& volumeFilename, FloatBoxVector &domainBoxes)
+inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string& volumeFilename, FloatBoxIdentProcVector &domainBoxes)
 {
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
     stk::io::fill_mesh(volumeFilename, *bulk);
@@ -376,7 +432,7 @@ inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string
 }
 
 inline void fillBoundingVolumesUsingNodesFromFile(
-        MPI_Comm comm, const std::string& sphereFilename, std::vector< std::pair<Sphere, Ident> > &spheres)
+        MPI_Comm comm, const std::string& sphereFilename, std::vector< std::pair<Sphere, IdentProc> > &spheres)
 {
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
@@ -403,11 +459,11 @@ inline void fillBoundingVolumesUsingNodesFromFile(
 
         double radius=1e-5;
         unsigned id = bulk->identifier(node);
-        spheres[i] = std::make_pair(Sphere(Point(x,y,z), radius), Ident(id, bulk->parallel_rank()));
+        spheres[i] = std::make_pair(Sphere(Point(x,y,z), radius), IdentProc(id, bulk->parallel_rank()));
     }
 }
 
-inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::string& sphereFilename, FloatBoxVector &spheres)
+inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::string& sphereFilename, FloatBoxIdentProcVector &spheres)
 {
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
@@ -435,7 +491,7 @@ inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::stri
         double radius=1e-5;
         unsigned id = bulk->identifier(node);
         FloatBox box(x-radius, y-radius, z-radius, x+radius, y+radius, z+radius);
-        spheres[i] = std::make_pair(box, Ident(id, bulk->parallel_rank()));
+        spheres[i] = std::make_pair(box, IdentProc(id, bulk->parallel_rank()));
     }
 }
 
@@ -695,23 +751,23 @@ fillDomainBoxes(MPI_Comm comm)
     return domainBoxes;
 }
 
-inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
+inline void fillStkBoxesUsingFloatBoxes(const std::vector<FloatBox> &domainBoxes, const int procId, StkBoxIdentProcVector& stkBoxes)
 {
     for (size_t i=0;i<domainBoxes.size();i++)
     {
         Point min(domainBoxes[i].get_x_min(), domainBoxes[i].get_y_min(), domainBoxes[i].get_z_min());
         Point max(domainBoxes[i].get_x_max(), domainBoxes[i].get_y_max(), domainBoxes[i].get_z_max());
-        Ident domainBoxId(i, procId);
+        IdentProc domainBoxId(i, procId);
         stkBoxes[i] = std::make_pair(StkBox(min,max), domainBoxId);
     }
 }
 
-inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxVector& domainBoxes)
+inline void createBoundingBoxesForElementsInElementBlocks(const stk::mesh::BulkData &bulk, FloatBoxIdentProcVector& domainBoxes)
 {
   createBoundingBoxesForEntities(bulk, stk::topology::ELEM_RANK, domainBoxes);
 }
 
-inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string& volumeFilename, FloatBoxVector &domainBoxes)
+inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string& volumeFilename, FloatBoxIdentProcVector &domainBoxes)
 {
     std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
     stk::io::fill_mesh(volumeFilename, *bulk);
@@ -720,7 +776,7 @@ inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string
 }
 
 inline void fillBoundingVolumesUsingNodesFromFile(
-        MPI_Comm comm, const std::string& sphereFilename, std::vector< std::pair<Sphere, Ident> > &spheres)
+        MPI_Comm comm, const std::string& sphereFilename, std::vector< std::pair<Sphere, IdentProc> > &spheres)
 {
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, comm);
     stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
@@ -748,11 +804,11 @@ inline void fillBoundingVolumesUsingNodesFromFile(
 
         double radius=1e-5;
         unsigned id = bulk.identifier(node);
-        spheres[i] = std::make_pair(Sphere(Point(x,y,z), radius), Ident(id, bulk.parallel_rank()));
+        spheres[i] = std::make_pair(Sphere(Point(x,y,z), radius), IdentProc(id, bulk.parallel_rank()));
     }
 }
 
-inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::string& sphereFilename, FloatBoxVector &spheres)
+inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::string& sphereFilename, FloatBoxIdentProcVector &spheres)
 {
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, comm);
     stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
@@ -781,7 +837,7 @@ inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::stri
         double radius=1e-5;
         unsigned id = bulk.identifier(node);
         FloatBox box(x-radius, y-radius, z-radius, x+radius, y+radius, z+radius);
-        spheres[i] = std::make_pair(box, Ident(id, bulk.parallel_rank()));
+        spheres[i] = std::make_pair(box, IdentProc(id, bulk.parallel_rank()));
     }
 }
 

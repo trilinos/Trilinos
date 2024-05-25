@@ -323,9 +323,9 @@ namespace PHX {
     /// execution space instance, the function does not internally
     /// fence. Be sure to manually fence as needed.
     template<typename ExecSpace,typename... Extents>
-    ViewOfViews3(const ExecSpace& exec_space,const std::string name,Extents... extents)
+    ViewOfViews3(const ExecSpace& e_space,const std::string name,Extents... extents)
       : view_host_(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...),
-        view_device_(Kokkos::view_alloc(exec_space,name),extents...),
+        view_device_(Kokkos::view_alloc(e_space,name),extents...),
         device_view_is_synced_(false),
         is_initialized_(true),
         use_count_(0),
@@ -388,10 +388,10 @@ namespace PHX {
     /// instance, the function does not internally fence. Be sure to
     /// manually fence as needed.
     template<typename ExecSpace,typename... Extents>
-    void initialize(const ExecSpace& exec_space,const std::string name,Extents... extents)
+    void initialize(const ExecSpace& e_space,const std::string name,Extents... extents)
     {
       view_host_ = typename OuterViewType::HostMirror(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...);
-      view_device_ = OuterViewType(Kokkos::view_alloc(exec_space,name),extents...);
+      view_device_ = OuterViewType(Kokkos::view_alloc(e_space,name),extents...);
       view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
       device_view_is_synced_ = false;
       is_initialized_ = true;
@@ -450,10 +450,10 @@ namespace PHX {
     /// supplies the execution space instance, the function does not
     /// internally fence. Be sure to manually fence as needed.
     template<typename ExecSpace>
-    void syncHostToDevice(const ExecSpace& exec_space)
+    void syncHostToDevice(const ExecSpace& e_space)
     {
       TEUCHOS_ASSERT(is_initialized_);
-      Kokkos::deep_copy(exec_space,view_device_,view_host_unmanaged_);
+      Kokkos::deep_copy(e_space,view_device_,view_host_unmanaged_);
       device_view_is_synced_ = true;
     }
 

@@ -37,6 +37,7 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+#include <stk_search/CommonSearchUtil.hpp>
 #endif
 
 #include "stk_search/kdtree/KDTree.hpp"

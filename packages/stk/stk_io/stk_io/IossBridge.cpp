@@ -44,6 +44,7 @@
 #include <memory>                                   // for allocator_traits<...
 #include <stdexcept>                                // for runtime_error
 #include <unordered_map>
+#include <tuple>
 #include <stk_mesh/base/BulkData.hpp>               // for BulkData
 #include <stk_mesh/base/Comm.hpp>                   // for comm_mesh_counts
 #include <stk_mesh/base/CoordinateSystems.hpp>      // for Cartesian, FullTe...
@@ -1535,7 +1536,14 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
         stk::topology stkTopology = map_ioss_topology_to_stk(topology, meta.spatial_dimension());
         if (stkTopology != stk::topology::INVALID_TOPOLOGY) {
-          stk::mesh::set_topology(*part, stkTopology);
+          if (stkTopology.rank() != part->primary_entity_rank() && entity->entity_count() == 0) {
+            std::ostringstream os;
+            os<<"stk_io WARNING: failed to obtain sensible topology for Ioss::GroupingEntity: " << entity->name()<<", iossTopology: "<<topology->name()<<", stk-part: "<<part->name()<<", rank: "<<part->primary_entity_rank()<<", stk-topology: "<<stkTopology<<". Probably because this GroupingEntity is empty on this MPI rank. Unable to set correct stk topology hierarchy. Proceeding, but beware of unexpected behavior."<<std::endl;
+            std::cerr<<os.str();
+          }
+          else {
+            stk::mesh::set_topology(*part, stkTopology);
+          }
         } else {
           handler(*part);
         }
@@ -2326,6 +2334,74 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       ioss_add_fields(part, stk::topology::NODE_RANK, ns, Ioss::Field::ATTRIBUTE);
     }
 
+      int64_t get_side_offset(const Ioss::ElementTopology* sideTopo,
+                              const Ioss::ElementTopology* parentTopo)
+      {
+        int64_t sideOffset = 0;
+        if ((sideTopo != nullptr) && (parentTopo != nullptr)) {
+          int sideTopoDim = sideTopo->parametric_dimension();
+          int elemTopoDim = parentTopo->parametric_dimension();
+          int elemSpatDim = parentTopo->spatial_dimension();
+
+          if (sideTopoDim + 1 < elemSpatDim && sideTopoDim < elemTopoDim) {
+            sideOffset = parentTopo->number_faces();
+          }
+        }
+        return sideOffset;
+      }
+
+      std::tuple<std::string, const Ioss::ElementTopology *, stk::topology>
+      get_touching_element_block_topology_from_side_block_by_tokenization(stk::io::OutputParams &params, const stk::mesh::Part& part)
+      {
+        const stk::mesh::BulkData &bulk = params.bulk_data();
+
+        std::string elementTopoName = "unknown";
+        const Ioss::ElementTopology *elementTopo = nullptr;
+        stk::topology invalidTopology = stk::topology::INVALID_TOPOLOGY;
+        stk::topology stkElementTopology = invalidTopology;
+
+        // Try to decode from part name...not always consistent since it is client dependent
+        std::vector<std::string> tokens;
+        std::string sideBlockName = getPartName(part);
+        stk::util::tokenize(sideBlockName, "_", tokens);
+
+        if (tokens.size() >= 3) {
+          // If the sideset has a "canonical" name as in "surface_{id}",
+          // Then the sideblock name will be of the form:
+          //  * "surface_eltopo_sidetopo_id" or
+          //  * "surface_block_id_sidetopo_id"
+          // If the sideset does *not* have a canonical name, then
+          // the sideblock name will be of the form:
+          //  * "{sideset_name}_eltopo_sidetopo" or
+          //  * "{sideset_name}_block_id_sidetopo"
+
+          // Check the last token and see if it is an integer...
+          const bool allDigits = tokens.back().find_first_not_of("0123456789") == std::string::npos;
+          if (allDigits) {
+            elementTopo = Ioss::ElementTopology::factory(tokens[1], true);
+          } else {
+            const std::string& elemTopoToken = tokens[tokens.size()-2];
+            const bool subAllDigits = elemTopoToken.find_first_not_of("0123456789") == std::string::npos;
+            if (!subAllDigits) {
+              elementTopo = Ioss::ElementTopology::factory(elemTopoToken, true);
+            }
+          }
+
+          if (elementTopo != nullptr) {
+            elementTopoName = elementTopo->name();
+            stkElementTopology = map_ioss_topology_to_stk(elementTopo, bulk.mesh_meta_data().spatial_dimension());
+          }
+        }
+
+        return std::make_tuple(elementTopoName, elementTopo, stkElementTopology);
+      }
+
+      std::tuple<std::string, const Ioss::ElementTopology *, stk::topology>
+      get_touching_element_block_topology_from_side_block(stk::io::OutputParams &params, const stk::mesh::Part& part)
+      {
+        return get_touching_element_block_topology_from_side_block_by_tokenization(params, part);
+      }
+
       void define_side_block(stk::io::OutputParams &params,
                              stk::mesh::Selector selector,
                              stk::mesh::Part &part,
@@ -2341,42 +2417,30 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         stk::topology sideTopology = part.topology();
         std::string ioTopo = map_stk_topology_to_ioss(sideTopology);
         std::string elementTopoName = "unknown";
+        const Ioss::ElementTopology *elementTopo = nullptr;
+        stk::topology stkElementTopology = stk::topology::INVALID_TOPOLOGY;
+
+        std::tie(elementTopoName, elementTopo, stkElementTopology) =
+            get_touching_element_block_topology_from_side_block(params, part);
 
         const stk::mesh::BulkData &bulk = params.bulk_data();
 
-        // Get sideblock parent element topology quantities...
-        // Try to decode from part name...
-        std::vector<std::string> tokens;
-        stk::util::tokenize(getPartName(part), "_", tokens);
-        const Ioss::ElementTopology *elementTopo = nullptr;
-        stk::topology stkElementTopology = stk::topology::INVALID_TOPOLOGY;
-        if (tokens.size() >= 4) {
-          // If the sideset has a "canonical" name as in "surface_{id}",
-          // Then the sideblock name will be of the form:
-          //  * "surface_eltopo_sidetopo_id" or
-          //  * "surface_block_id_sidetopo_id"
-          // If the sideset does *not* have a canonical name, then
-          // the sideblock name will be of the form:
-          //  * "{sideset_name}_eltopo_sidetopo" or
-          //  * "{sideset_name}_block_id_sidetopo"
+        const stk::mesh::Part *parentElementBlock = get_parent_element_block(bulk, params.io_region(), part.name());
 
-          // Check the last token and see if it is an integer...
-          bool allDigits = tokens.back().find_first_not_of("0123456789") == std::string::npos;
-          if (allDigits) {
-            elementTopo = Ioss::ElementTopology::factory(tokens[1], true);
+        if (elementTopo != nullptr && !elementTopo->is_element()) {
+          if(parentElementBlock != nullptr) {
+            stkElementTopology = parentElementBlock->topology();
+            elementTopoName = map_stk_topology_to_ioss(stkElementTopology);
           } else {
-            elementTopo = Ioss::ElementTopology::factory(tokens[tokens.size() - 2], true);
-          }
-
-          if (elementTopo != nullptr) {
-            elementTopoName = elementTopo->name();
-            stkElementTopology = map_ioss_topology_to_stk(elementTopo, bulk.mesh_meta_data().spatial_dimension());
+            elementTopoName = "unknown";
+            elementTopo = nullptr;
+            stkElementTopology = stk::topology::INVALID_TOPOLOGY;
           }
         }
 
-        const stk::mesh::Part *parentElementBlock = get_parent_element_block(bulk, params.io_region(), part.name());
-
-        size_t sideCount = get_number_sides_in_sideset(params, part, stkElementTopology, parentElementBlock);
+        const Ioss::ElementTopology* iossSideTopo = Ioss::ElementTopology::factory(ioTopo, true);
+        int64_t sideOffset = get_side_offset(iossSideTopo, elementTopo);
+        size_t sideCount = get_number_sides_in_sideset(params, part, stkElementTopology, parentElementBlock, sideOffset);
 
         std::string name = getPartName(part);
         Ioss::SideBlock *sideBlock = sset->get_side_block(name);

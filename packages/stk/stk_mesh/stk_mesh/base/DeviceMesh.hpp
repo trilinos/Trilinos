@@ -67,29 +67,28 @@ struct DeviceBucket {
 
   KOKKOS_FUNCTION
   DeviceBucket()
-    : bucketId(0), entityRank(stk::topology::NODE_RANK), entities(),
-      nodeConnectivity(), hostNodeConnectivity(),
-      nodeOffsets(), hostNodeOffsets(),
-      nodeOrdinals(),
-      owningMesh(nullptr), bucketCapacity(0)
+    : m_owningMesh(nullptr),
+      m_bucketSize(0),
+      m_bucketCapacity(0),
+      m_bucketId(0),
+      m_bucketTopology(),
+      m_entityRank(stk::topology::NODE_RANK)
   {}
 
-  void initialize_bucket_attributes(const stk::mesh::Bucket &bucket);
-  void allocate(const stk::mesh::Bucket &bucket);
-  void initialize_from_host(const stk::mesh::Bucket &bucket);
-  void update_from_host(const stk::mesh::Bucket &bucket);
+  KOKKOS_FUNCTION
+  unsigned bucket_id() const { return m_bucketId; }
 
   KOKKOS_FUNCTION
-  unsigned bucket_id() const { return bucketId; }
+  size_t size() const { return m_bucketSize; }
 
   KOKKOS_FUNCTION
-  size_t size() const { return bucketSize; }
+  size_t capacity() const { return m_bucketCapacity; }
 
   KOKKOS_FUNCTION
-  stk::mesh::EntityRank entity_rank() const { return entityRank; }
+  stk::mesh::EntityRank entity_rank() const { return m_entityRank; }
 
   KOKKOS_FUNCTION
-  stk::topology topology() const { return bucketTopology; }
+  stk::topology topology() const { return m_bucketTopology; }
 
   KOKKOS_INLINE_FUNCTION
   ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
@@ -119,45 +118,54 @@ struct DeviceBucket {
 
   KOKKOS_FUNCTION
   stk::mesh::Entity operator[](unsigned offsetIntoBucket) const {
-    return entities(offsetIntoBucket);
+    return m_entities(offsetIntoBucket);
   }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2024/06/26
+  STK_DEPRECATED
   stk::mesh::Entity host_get_entity(unsigned offsetIntoBucket) const {
-    return hostEntities(offsetIntoBucket);
+    return m_hostEntities(offsetIntoBucket);
   }
+#endif
 
   KOKKOS_FUNCTION
   bool member(stk::mesh::PartOrdinal partOrdinal) const
   {
-    for(unsigned i=0; i<partOrdinals.size(); i++) {
-      if(partOrdinals(i) == partOrdinal) {
+    for(unsigned i=0; i<m_partOrdinals.size(); i++) {
+      if(m_partOrdinals(i) == partOrdinal) {
         return true;
       }
     }
     return false;
   }
 
-  unsigned bucketId;
-  stk::mesh::EntityRank entityRank;
-  stk::topology bucketTopology;
+  void initialize_bucket_attributes(const stk::mesh::Bucket &bucket);
+  void initialize_fixed_data_from_host(const stk::mesh::Bucket &bucket);
+  void update_entity_data_from_host(const stk::mesh::Bucket &bucket);
 
-  EntityViewType entities;
-  HostEntityViewType hostEntities;
+  void resize_device_views(const stk::mesh::Bucket &bucket);
+  std::pair<unsigned, unsigned> scan_entities_for_nodal_connectivity(const stk::mesh::Bucket & bucket);
 
-  BucketConnectivityType nodeConnectivity;
-  BucketConnectivityType::HostMirror hostNodeConnectivity;
+  EntityViewType m_entities;
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2024/06/26
+  HostEntityViewType m_hostEntities;
+#endif
 
-  OrdinalViewType nodeOffsets;
-  OrdinalViewType::HostMirror hostNodeOffsets;
+  BucketConnectivityType m_nodeConnectivity;
+  OrdinalViewType m_nodeConnectivityOffsets;
 
-  OrdinalViewType nodeOrdinals;
+  OrdinalViewType m_nodeOrdinals;
 
-  PartOrdinalViewType partOrdinals;
-  HostPartOrdinalViewType hostPartOrdinals;
+  PartOrdinalViewType m_partOrdinals;
 
-  const stk::mesh::DeviceMesh* owningMesh;
-  unsigned bucketCapacity;
-  unsigned bucketSize;
+  const stk::mesh::DeviceMesh* m_owningMesh;
+
+  unsigned m_bucketSize;
+  unsigned m_bucketCapacity;
+
+  unsigned m_bucketId;
+  stk::topology m_bucketTopology;
+  stk::mesh::EntityRank m_entityRank;
 };
 
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2024
@@ -426,7 +434,7 @@ STK_DEPRECATED const stk::mesh::FastMeshIndex& host_mesh_index(stk::mesh::Entity
   KOKKOS_FUNCTION
   const DeviceBucket &get_bucket(stk::mesh::EntityRank rank, unsigned index) const
   {
-    buckets[rank](index).owningMesh = this;
+    buckets[rank](index).m_owningMesh = this;
     return buckets[rank](index);
   }
 
@@ -538,13 +546,13 @@ DeviceBucket::ConnectedEntities
 DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   STK_NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
   if (connectedRank == stk::topology::NODE_RANK) {
-    const unsigned numNodes = nodeOffsets(offsetIntoBucket+1)-nodeOffsets(offsetIntoBucket);
-    const size_t nodeOffset = nodeOffsets(offsetIntoBucket);
-    return ConnectedEntities(&nodeConnectivity(nodeOffset), numNodes, 1);
+    const unsigned numNodes = m_nodeConnectivityOffsets(offsetIntoBucket+1)-m_nodeConnectivityOffsets(offsetIntoBucket);
+    const size_t nodeOffset = m_nodeConnectivityOffsets(offsetIntoBucket);
+    return ConnectedEntities(&m_nodeConnectivity(nodeOffset), numNodes, 1);
   }
-  STK_NGP_ThrowAssert(owningMesh != nullptr);
+  STK_NGP_ThrowAssert(m_owningMesh != nullptr);
   stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};
-  return owningMesh->get_connected_entities(entity_rank(), meshIndex, connectedRank);
+  return m_owningMesh->get_connected_entities(entity_rank(), meshIndex, connectedRank);
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -552,12 +560,12 @@ DeviceBucket::ConnectedOrdinals
 DeviceBucket::get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   STK_NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
   if (connectedRank == stk::topology::NODE_RANK) {
-    const unsigned numNodes = nodeOffsets(offsetIntoBucket+1)-nodeOffsets(offsetIntoBucket);
-    return ConnectedOrdinals(nodeOrdinals.data(), numNodes, 1);
+    const unsigned numNodes = m_nodeConnectivityOffsets(offsetIntoBucket+1)-m_nodeConnectivityOffsets(offsetIntoBucket);
+    return ConnectedOrdinals(m_nodeOrdinals.data(), numNodes, 1);
   }
-  STK_NGP_ThrowAssert(owningMesh != nullptr);
+  STK_NGP_ThrowAssert(m_owningMesh != nullptr);
   stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};
-  return owningMesh->get_connected_ordinals(entity_rank(), meshIndex, connectedRank);
+  return m_owningMesh->get_connected_ordinals(entity_rank(), meshIndex, connectedRank);
 }
 
 }
