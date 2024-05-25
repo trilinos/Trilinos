@@ -34,8 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov),
-//                    Mauro Perego  (mperego@sandia.gov), or
+// Questions? Contact Mauro Perego  (mperego@sandia.gov) or
 //                    Nate Roberts  (nvrober@sandia.gov)
 //
 // ************************************************************************
@@ -49,6 +48,7 @@
 #ifndef __INTREPID2_INTEGRATIONTOOLS_DEF_HPP__
 #define __INTREPID2_INTEGRATIONTOOLS_DEF_HPP__
 
+#include "Intrepid2_DataTools.hpp"
 #include "Intrepid2_FunctorIterator.hpp"
 #include "Intrepid2_TensorArgumentIterator.hpp"
 
@@ -1974,16 +1974,15 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
   // we require that the number of tensor components in the vectors are the same for each vector entry
   // this is not strictly necessary, but it makes implementation easier, and we don't at present anticipate other use cases
   int numTensorComponentsLeft = -1;
-  const bool isVectorValued = basisValuesLeft.vectorData().isValid();
-  if (isVectorValued)
+  const bool leftIsVectorValued = basisValuesLeft.vectorData().isValid();
+  
+  if (leftIsVectorValued)
   {
     const bool rightIsVectorValued = basisValuesRight.vectorData().isValid();
-    INTREPID2_TEST_FOR_EXCEPTION(!rightIsVectorValued, std::invalid_argument, "left and right must either both be vector-valued, or both scalar-valued");
     const auto &refVectorLeft   = basisValuesLeft.vectorData();
     int numFamiliesLeft         = refVectorLeft.numFamilies();
     int numVectorComponentsLeft = refVectorLeft.numComponents();
     Kokkos::Array<int,7> maxFieldsForComponentLeft  {0,0,0,0,0,0,0};
-    Kokkos::Array<int,7> maxFieldsForComponentRight {0,0,0,0,0,0,0};
     for (int familyOrdinal=0; familyOrdinal<numFamiliesLeft; familyOrdinal++)
     {
       for (int vectorComponent=0; vectorComponent<numVectorComponentsLeft; vectorComponent++)
@@ -2003,10 +2002,24 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
         }
       }
     }
-    int numTensorComponentsRight = -1;
+  }
+  else
+  {
+    numTensorComponentsLeft = basisValuesLeft.basisValues().tensorData(0).numTensorComponents(); // family ordinal 0
+    for (int familyOrdinal = 0; familyOrdinal < leftFamilyCount; familyOrdinal++)
+    {
+      INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.basisValues().tensorData(familyOrdinal).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "All families must match in the number of tensor components");
+    }
+  }
+  int numTensorComponentsRight = -1;
+  const bool rightIsVectorValued = basisValuesRight.vectorData().isValid();
+  
+  if (rightIsVectorValued)
+  {
     const auto &refVectorRight   = basisValuesRight.vectorData();
     int numFamiliesRight         = refVectorRight.numFamilies();
     int numVectorComponentsRight = refVectorRight.numComponents();
+    Kokkos::Array<int,7> maxFieldsForComponentRight {0,0,0,0,0,0,0};
     for (int familyOrdinal=0; familyOrdinal<numFamiliesRight; familyOrdinal++)
     {
       for (int vectorComponent=0; vectorComponent<numVectorComponentsRight; vectorComponent++)
@@ -2026,17 +2039,11 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
         }
       }
     }
-    INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsLeft != numVectorComponentsRight, std::invalid_argument, "Left and right vector entries must have the same number of tensorial components");
+    INTREPID2_TEST_FOR_EXCEPTION(numTensorComponentsRight != numTensorComponentsLeft, std::invalid_argument, "Right families must match left in the number of tensor components");
   }
   else
   {
-    numTensorComponentsLeft = basisValuesLeft.basisValues().tensorData(0).numTensorComponents(); // family ordinal 0
-    for (int familyOrdinal = 0; familyOrdinal < leftFamilyCount; familyOrdinal++)
-    {
-      INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.basisValues().tensorData(familyOrdinal).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "All families must match in the number of tensor components");
-    }
-    
-    // check that right tensor component count also agrees
+    // check that right tensor component count agrees with left
     for (int familyOrdinal=0; familyOrdinal< rightFamilyCount; familyOrdinal++)
     {
       INTREPID2_TEST_FOR_EXCEPTION(basisValuesRight.basisValues().tensorData(familyOrdinal).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "Right families must match left in the number of tensor components");
@@ -2076,11 +2083,11 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
       int a_offset = 0; // left vector component offset
       int leftFieldOffset = basisValuesLeft.basisValues().familyFieldOrdinalOffset(leftFamilyOrdinal);
       
-      const int leftVectorComponentCount = isVectorValued ? basisValuesLeft.vectorData().numComponents() : 1;
+      const int leftVectorComponentCount = leftIsVectorValued ? basisValuesLeft.vectorData().numComponents() : 1;
       for (int leftVectorComponentOrdinal = 0; leftVectorComponentOrdinal < leftVectorComponentCount; leftVectorComponentOrdinal++)
       {
-        TensorData<Scalar,DeviceType> leftComponent = isVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftVectorComponentOrdinal)
-                                                                     : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
+        TensorData<Scalar,DeviceType> leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftVectorComponentOrdinal)
+                                                                         : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
         if (!leftComponent.isValid())
         {
           a_offset++; // empty components are understood to take up one dimension
@@ -2095,11 +2102,11 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           int b_offset = 0; // right vector component offset
           int rightFieldOffset = basisValuesRight.vectorData().familyFieldOrdinalOffset(rightFamilyOrdinal);
 
-          const int rightVectorComponentCount = isVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
+          const int rightVectorComponentCount = rightIsVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
           for (int rightVectorComponentOrdinal = 0; rightVectorComponentOrdinal < rightVectorComponentCount; rightVectorComponentOrdinal++)
           {
-            TensorData<Scalar,DeviceType> rightComponent = isVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightVectorComponentOrdinal)
-                                                                          : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
+            TensorData<Scalar,DeviceType> rightComponent = rightIsVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightVectorComponentOrdinal)
+                                                                               : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
             if (!rightComponent.isValid())
             {
               b_offset++; // empty components are understood to take up one dimension
@@ -2260,9 +2267,18 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
     // transforms can be matrices -- (C,P,D,D): rank 4 -- or scalar weights -- (C,P): rank 2 -- or vector weights -- (C,P,D): rank 3
     Data<Scalar,DeviceType> composedTransform;
     // invalid/empty transforms are used when the identity is intended.
+    const int leftRank  = leftTransform.rank();
+    const int rightRank = rightTransform.rank();
+    
     if (leftTransform.isValid() && rightTransform.isValid())
     {
-      if ((leftTransform.rank() == 4) || (rightTransform.rank() == 4)) // (C,P,D,D)
+      const bool bothRank4 = (leftRank == 4) && (rightRank == 4);
+      const bool bothRank3 = (leftRank == 3) && (rightRank == 3);
+      const bool bothRank2 = (leftRank == 2) && (rightRank == 2);
+      const bool ranks32   = ((leftRank == 3) && (rightRank == 2)) || ((leftRank == 2) && (rightRank == 3));
+      const bool ranks42   = ((leftRank == 4) && (rightRank == 2)) || ((leftRank == 2) && (rightRank == 4));
+      
+      if (bothRank4) // (C,P,D,D)
       {
         composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
         composedTransform.storeMatMat(transposeLeft, leftTransform, transposeRight, rightTransform);
@@ -2273,32 +2289,36 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           *approximateFlops += composedTransform.getUnderlyingViewSize() * (spaceDim - 1) * 2;
         }
       }
-      else if ((leftTransform.rank() == 3) && (rightTransform.rank() == 3)) // (C,P,D)
+      else if (bothRank3) // (C,P,D)
       {
-        // re-cast leftTransform as a rank 4 (C,P,D,1) object -- a D x 1 matrix at each (C,P).
+        // re-cast leftTransform as a rank 4 (C,P,1,D) object -- a 1 x D matrix at each (C,P).
         const int newRank   = 4;
         auto extents        = leftTransform.getExtents();
         auto variationTypes = leftTransform.getVariationTypes();
+        extents[3]               = extents[2];
+        extents[2]               = 1;
+        variationTypes[3]        = variationTypes[2];
+        variationTypes[2]        = CONSTANT;
         auto leftTransformMatrix = leftTransform.shallowCopy(newRank, extents, variationTypes);
         
         // re-cast rightTransform as a rank 4 (C,P,1,D) object -- a 1 x D matrix at each (C,P)
         extents                  = rightTransform.getExtents();
+        variationTypes           = rightTransform.getVariationTypes();
         extents[3]               = extents[2];
         extents[2]               = 1;
-        variationTypes           = rightTransform.getVariationTypes();
         variationTypes[3]        = variationTypes[2];
         variationTypes[2]        = CONSTANT;
         auto rightTransformMatrix = rightTransform.shallowCopy(newRank, extents, variationTypes);
         
-        composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(false, leftTransformMatrix, false, rightTransformMatrix); // false: don't transpose
-        composedTransform.storeMatMat(false, leftTransformMatrix, false, rightTransformMatrix);
+        composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(transposeLeft, leftTransformMatrix, transposeRight, rightTransformMatrix); // false: don't transpose
+        composedTransform.storeMatMat(transposeLeft, leftTransformMatrix, transposeRight, rightTransformMatrix);
                 
         if (approximateFlops != NULL)
         {
           *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
         }
       }
-      else if ((leftTransform.rank() == 2) && (rightTransform.rank() == 2))
+      else if (bothRank2)
       {
         composedTransform = leftTransform.allocateInPlaceCombinationResult(leftTransform, rightTransform);
         composedTransform.storeInPlaceProduct(leftTransform, rightTransform);
@@ -2313,6 +2333,49 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
         }
       }
+      else if (ranks32) // rank 2 / rank 3 combination.
+      {
+        const auto & rank3Transform = (leftRank == 3) ? leftTransform : rightTransform;
+        const auto & rank2Transform = (leftRank == 2) ? leftTransform : rightTransform;
+        
+        composedTransform = DataTools::multiplyByCPWeights(rank3Transform, rank2Transform);
+        
+        // re-cast composedTransform as a rank 4 object:
+        // logically, the original rank-3 transform can be understood as a 1xD matrix.  The composed transform is leftTransform^T * rightTransform, so:
+        // - if left  has the rank-3 transform, composedTransform should be a (C,P,D,1) object -- a D x 1 matrix at each (C,P).
+        // - if right has the rank-3 transform, composedTransform should be a (C,P,1,D) object -- a 1 x D matrix at each (C,P).
+        const int newRank   = 4;
+        auto extents        = composedTransform.getExtents();
+        auto variationTypes = composedTransform.getVariationTypes();
+        if (leftRank == 3)
+        {
+          // extents[3] and variationTypes[3] will already be 1 and CONSTANT, respectively
+          // extents[3]               = 1;
+          // variationTypes[3]        = CONSTANT;
+        }
+        else
+        {
+          extents[3]               = extents[2];
+          extents[2]               = 1;
+          variationTypes[3]        = variationTypes[2];
+          variationTypes[2]        = CONSTANT;
+        }
+        composedTransform = composedTransform.shallowCopy(newRank, extents, variationTypes);
+      }
+      else if (ranks42) // rank 4 / rank 2 combination.
+      {
+        if (leftRank == 4)
+        {
+          // want to transpose left matrix, and multiply by the values from rightTransform
+          // start with the multiplication:
+          auto composedTransformTransposed = DataTools::multiplyByCPWeights(leftTransform, rightTransform);
+          composedTransform = DataTools::transposeMatrix(composedTransformTransposed);
+        }
+        else // (leftRank == 2)
+        {
+          composedTransform = DataTools::multiplyByCPWeights(rightTransform, leftTransform);
+        }
+      }
       else
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported transform combination");
@@ -2321,12 +2384,49 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
     else if (leftTransform.isValid())
     {
       // rightTransform is the identity
-      composedTransform = leftTransform;
+      switch (leftRank)
+      {
+        case 4: composedTransform = DataTools::transposeMatrix(leftTransform); break;
+        case 3:
+        {
+          // - if left  has the rank-3 transform, composedTransform should be a (C,P,D,1) object -- a D x 1 matrix at each (C,P).
+          const int newRank   = 4;
+          auto extents        = leftTransform.getExtents();
+          auto variationTypes = leftTransform.getVariationTypes();
+          
+          composedTransform = leftTransform.shallowCopy(newRank, extents, variationTypes);
+        }
+          break;
+        case 2: composedTransform = leftTransform; break;
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported transform combination");
+      }
     }
     else if (rightTransform.isValid())
     {
       // leftTransform is the identity
       composedTransform = rightTransform;
+      switch (rightRank)
+      {
+        case 4: composedTransform = rightTransform; break;
+        case 3:
+        {
+          // - if right has the rank-3 transform, composedTransform should be a (C,P,1,D) object -- a 1 x D matrix at each (C,P).
+          const int newRank   = 4;
+          auto extents        = rightTransform.getExtents();
+          auto variationTypes = rightTransform.getVariationTypes();
+          extents[3]          = extents[2];
+          variationTypes[3]   = variationTypes[2];
+          extents[2]          = 1;
+          variationTypes[2]   = CONSTANT;
+          
+          composedTransform = rightTransform.shallowCopy(newRank, extents, variationTypes);
+        }
+          break;
+        case 2: composedTransform = rightTransform; break;
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported transform combination");
+      }
     }
     else
     {
@@ -2345,8 +2445,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
     
     const int leftFamilyCount     = basisValuesLeft. basisValues().numFamilies();
     const int rightFamilyCount    = basisValuesRight.basisValues().numFamilies();
-    const int leftComponentCount  = isVectorValued ? basisValuesLeft. vectorData().numComponents() : 1;
-    const int rightComponentCount = isVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
+    const int leftComponentCount  = leftIsVectorValued ? basisValuesLeft. vectorData().numComponents() : 1;
+    const int rightComponentCount = rightIsVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
     
     int leftFieldOrdinalOffset = 0; // keeps track of the number of fields in prior families
     for (int leftFamilyOrdinal=0; leftFamilyOrdinal<leftFamilyCount; leftFamilyOrdinal++)
@@ -2357,8 +2457,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
       bool haveLaunchedContributionToCurrentFamilyLeft = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
       for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
       {
-        TensorData<Scalar,DeviceType> leftComponent = isVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
-                                                                     : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
+        TensorData<Scalar,DeviceType> leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
+                                                                         : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
         if (!leftComponent.isValid())
         {
            // represents zero
@@ -2375,8 +2475,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           int b_offset = 0;
           for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
           {
-            TensorData<Scalar,DeviceType> rightComponent = isVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
-                                                                          : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
+            TensorData<Scalar,DeviceType> rightComponent = rightIsVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
+                                                                               : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
             if (!rightComponent.isValid())
             {
                // represents zero
@@ -2478,13 +2578,13 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
                 }
               }
             }
-            b_offset += isVectorValued ? basisValuesRight.vectorData().numDimsForComponent(rightComponentOrdinal) : 1;
+            b_offset += rightIsVectorValued ? basisValuesRight.vectorData().numDimsForComponent(rightComponentOrdinal) : 1;
           }
-          rightFieldOrdinalOffset += isVectorValued ? basisValuesRight.vectorData().numFieldsInFamily(rightFamilyOrdinal) : basisValuesRight.basisValues().numFieldsInFamily(rightFamilyOrdinal);
+          rightFieldOrdinalOffset += rightIsVectorValued ? basisValuesRight.vectorData().numFieldsInFamily(rightFamilyOrdinal) : basisValuesRight.basisValues().numFieldsInFamily(rightFamilyOrdinal);
         }
-        a_offset += isVectorValued ? basisValuesLeft.vectorData().numDimsForComponent(leftComponentOrdinal) : 1;
+        a_offset += leftIsVectorValued ? basisValuesLeft.vectorData().numDimsForComponent(leftComponentOrdinal) : 1;
       }
-      leftFieldOrdinalOffset += isVectorValued ? basisValuesLeft.vectorData().numFieldsInFamily(leftFamilyOrdinal) : basisValuesLeft.basisValues().numFieldsInFamily(leftFamilyOrdinal);
+      leftFieldOrdinalOffset += leftIsVectorValued ? basisValuesLeft.vectorData().numFieldsInFamily(leftFamilyOrdinal) : basisValuesLeft.basisValues().numFieldsInFamily(leftFamilyOrdinal);
     }
   }
 //  if (approximateFlops != NULL)
