@@ -43,10 +43,6 @@
 #include "Kokkos_Core.hpp"
 #include "KokkosSparse_spmv_handle.hpp"
 
-#if KOKKOSKERNELS_VERSION < 40299
-#error "Tpetra::Details::MatrixApplyHelper can only be included with KokkosKernels 4.3+"
-#endif
-
 namespace Tpetra {
 namespace Details {
 
