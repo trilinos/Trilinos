@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8; mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """
 """
