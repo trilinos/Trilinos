@@ -3938,6 +3938,7 @@ public:
     getValuesViewDeviceNonConst (const RowInfo& rowinfo);
 
 #if KOKKOSKERNELS_VERSION >= 40299
+public:
     // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
     // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
     //
