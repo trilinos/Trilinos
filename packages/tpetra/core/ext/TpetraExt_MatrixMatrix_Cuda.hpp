@@ -224,32 +224,30 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   scalar_view_t   valuesC;
 
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-
   const bool useIntRowptrs = 
      irph.shouldUseIntRowptrs() && 
     Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
-
   if (useIntRowptrs) {
-    IntKernelHandle ikh;
-    ikh.create_spgemm_handle(alg_enum);
-    ikh.set_team_work_size(team_work_size);
+    IntKernelHandle kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
 
     int_view_t int_row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
 
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
-    KokkosSparse::Experimental::spgemm_symbolic(&ikh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
+    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
 
-    size_t c_nnz_size = ikh.get_spgemm_handle()->get_c_nnz();
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
-    KokkosSparse::Experimental::spgemm_numeric(&ikh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,Aint.values,false,Bint.graph.row_map,Bint.graph.entries,Bint.values,false,int_row_mapC,entriesC,valuesC);
+    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,Aint.values,false,Bint.graph.row_map,Bint.graph.entries,Bint.values,false,int_row_mapC,entriesC,valuesC);
     // transfer the integer rowptrs back to the correct rowptr type
     Kokkos::parallel_for(int_row_mapC.size(), KOKKOS_LAMBDA(int i){ row_mapC(i) = int_row_mapC(i);});
-    ikh.destroy_spgemm_handle();
+    kh.destroy_spgemm_handle();
 
   } else {
     KernelHandle kh;
@@ -752,6 +750,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosCudaWrapperNode>::local_matrix_device_type;
   using graph_t = typename matrix_t::StaticCrsGraphType;
   using lno_view_t = typename graph_t::row_map_type::non_const_type;
+  using int_view_t = Kokkos::View<int *,
+                                  typename lno_view_t::array_layout,
+                                  typename lno_view_t::memory_space,
+                                  typename lno_view_t::memory_traits>;
   using c_lno_view_t = typename graph_t::row_map_type::const_type;
   using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
   using scalar_view_t = typename matrix_t::values_type::non_const_type;
@@ -761,16 +763,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
     typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space >;
 
-  // Get the rowPtr, colInd and vals of importMatrix
-  c_lno_view_t Irowptr;
-  lno_nnz_view_t Icolind;
-  scalar_view_t Ivals;
-  if(!Bview.importMatrix.is_null()) {
-    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
-    Irowptr = lclB.graph.row_map;
-    Icolind = lclB.graph.entries;
-    Ivals   = lclB.values;
-  }
+  using int_handle_t = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+    typename int_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+    typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space >;
 
   // Merge the B and Bimport matrices
   const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getLocalNumElements());
@@ -782,10 +777,6 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
   typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();
   typename handle_t::nnz_lno_t BnumCols = Bmerged.numCols();
-
-  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmerged.graph.row_map;
-  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmerged.graph.entries;
-  const scalar_view_t Avals = Amat.values, Bvals = Bmerged.values;
 
   // Arrays of the output matrix
   lno_view_t row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), AnumRows + 1);
@@ -803,34 +794,71 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   }
 
   // Get the algorithm mode
-  std::string nodename("Cuda");
-  std::string alg = nodename + std::string(" algorithm");
+  std::string alg("Cuda algorithm");
   if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
+  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+  const bool useIntRowptrs = 
+    irph.shouldUseIntRowptrs() && 
+    Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
-  // KokkosKernels call
-  handle_t kh;
-  kh.create_spgemm_handle(alg_enum);
-  kh.set_team_work_size(team_work_size);
+  if (useIntRowptrs) {
+    int_handle_t kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
 
-  KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
-					      Arowptr, Acolind, false,
-					      Browptr, Bcolind, false,
-					      row_mapC);
+    int_view_t int_row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
 
-  size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-  if (c_nnz_size){
-    entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
+    auto Bint = irph.getIntRowptrMatrix(Bmerged);
+
+    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                  Aint.graph.row_map, Aint.graph.entries, false,
+                  Bint.graph.row_map, Bint.graph.entries, false,
+                  int_row_mapC);
+
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size){
+      entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+
+    // TODO: no TPL for this, so it can just be called on the native datatypes even if integer-typed row pointers are used for symbolic step TPLs
+    KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
+                Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
+                int_row_mapC, entriesC, valuesC,
+                omega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    // transfer the integer rowptrs back to the correct rowptr type
+    Kokkos::parallel_for(int_row_mapC.size(), KOKKOS_LAMBDA(int i){ row_mapC(i) = int_row_mapC(i);});
+    kh.destroy_spgemm_handle();
+  } else {
+    // KokkosKernels call
+    handle_t kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                  Amat.graph.row_map, Amat.graph.entries, false,
+                  Bmerged.graph.row_map, Bmerged.graph.entries, false,
+                  row_mapC);
+
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size){
+      entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+
+    KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
+                Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false,
+                row_mapC, entriesC, valuesC,
+                omega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    kh.destroy_spgemm_handle();
   }
 
-  KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
-					    Arowptr, Acolind, Avals, false,
-					    Browptr, Bcolind, Bvals, false,
-					    row_mapC, entriesC, valuesC,
-					    omega, Dinv.getLocalViewDevice(Access::ReadOnly));
-  kh.destroy_spgemm_handle();
+
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix CudaSort"))));
