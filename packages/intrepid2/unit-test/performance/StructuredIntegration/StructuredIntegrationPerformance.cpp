@@ -636,6 +636,48 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
           worksetSizeMap[affineTensorKey][7] =     1;
           worksetSizeMap[affineTensorKey][8] =     1;
         }
+        {
+          // VectorWeightedPoisson
+          // These calibrations were run 5-25-24 on an M2 Ultra, on a fork expected to be merged into Trilinos develop soon.
+          FormulationChoice formulation = VectorWeightedPoisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for VectorWeightedPoisson - these are for meshes that range from 32,768 for p=1 to 128 for p=10
+          worksetSizeMap[standardKey][1]  = 4096;
+          worksetSizeMap[standardKey][2]  = 1024;
+          worksetSizeMap[standardKey][3]  =   32;
+          worksetSizeMap[standardKey][4]  =    4;
+          worksetSizeMap[standardKey][5]  =    1;
+          worksetSizeMap[standardKey][6]  =    1;
+          worksetSizeMap[standardKey][7]  =    1;
+          worksetSizeMap[standardKey][8]  =    1;
+          worksetSizeMap[standardKey][9]  =    1;
+          worksetSizeMap[standardKey][10] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1]  = 2048;
+          worksetSizeMap[nonAffineTensorKey][2]  = 2048;
+          worksetSizeMap[nonAffineTensorKey][3]  = 128;
+          worksetSizeMap[nonAffineTensorKey][4]  = 16;
+          worksetSizeMap[nonAffineTensorKey][5]  = 2;
+          worksetSizeMap[nonAffineTensorKey][6]  = 1;
+          worksetSizeMap[nonAffineTensorKey][7]  = 1;
+          worksetSizeMap[nonAffineTensorKey][8]  = 1;
+          worksetSizeMap[nonAffineTensorKey][9]  = 1;
+          worksetSizeMap[nonAffineTensorKey][10] = 1;
+           
+          worksetSizeMap[affineTensorKey][1]  = 32768;
+          worksetSizeMap[affineTensorKey][2]  =  8192;
+          worksetSizeMap[affineTensorKey][3]  =   128;
+          worksetSizeMap[affineTensorKey][4]  =     8;
+          worksetSizeMap[affineTensorKey][5]  =     2;
+          worksetSizeMap[affineTensorKey][6]  =     1;
+          worksetSizeMap[affineTensorKey][7]  =     1;
+          worksetSizeMap[affineTensorKey][8]  =     1;
+          worksetSizeMap[affineTensorKey][9]  =     1;
+          worksetSizeMap[affineTensorKey][10] =     1;
+        }
       } // BestSerial case
         break;
       case BestOpenMP_16:
@@ -820,6 +862,48 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
           worksetSizeMap[affineTensorKey][7] =    16;
           worksetSizeMap[affineTensorKey][8] =    16;
         }
+        {
+          // VectorWeightedPoisson
+          // These calibrations were run 5-25-24 on an M2 Ultra, on a fork expected to be merged into Trilinos develop soon.
+          FormulationChoice formulation = VectorWeightedPoisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for VectorWeightedPoisson - these are for meshes that range from 32,768 for p=1 to 128 for p=10
+          worksetSizeMap[standardKey][1]  = 16384;
+          worksetSizeMap[standardKey][2]  = 16384;
+          worksetSizeMap[standardKey][3]  =  8192;
+          worksetSizeMap[standardKey][4]  =  1024;
+          worksetSizeMap[standardKey][5]  =  1024;
+          worksetSizeMap[standardKey][6]  =  1024;
+          worksetSizeMap[standardKey][7]  =   512;
+          worksetSizeMap[standardKey][8]  =   256;
+          worksetSizeMap[standardKey][9]  =   128;
+          worksetSizeMap[standardKey][10] =    32;
+          
+          worksetSizeMap[nonAffineTensorKey][1]  = 32768;
+          worksetSizeMap[nonAffineTensorKey][2]  =  8192;
+          worksetSizeMap[nonAffineTensorKey][3]  =  8192;
+          worksetSizeMap[nonAffineTensorKey][4]  =  4096;
+          worksetSizeMap[nonAffineTensorKey][5]  =  4096;
+          worksetSizeMap[nonAffineTensorKey][6]  =    64;
+          worksetSizeMap[nonAffineTensorKey][7]  =    32;
+          worksetSizeMap[nonAffineTensorKey][8]  =    32;
+          worksetSizeMap[nonAffineTensorKey][9]  =    16;
+          worksetSizeMap[nonAffineTensorKey][10] =    16;
+           
+          worksetSizeMap[affineTensorKey][1]  = 32768;
+          worksetSizeMap[affineTensorKey][2]  = 16384;
+          worksetSizeMap[affineTensorKey][3]  =  8192;
+          worksetSizeMap[affineTensorKey][4]  =  4096;
+          worksetSizeMap[affineTensorKey][5]  =  4096;
+          worksetSizeMap[affineTensorKey][6]  =  2048;
+          worksetSizeMap[affineTensorKey][7]  =    32;
+          worksetSizeMap[affineTensorKey][8]  =    16;
+          worksetSizeMap[affineTensorKey][9]  =    16;
+          worksetSizeMap[affineTensorKey][10] =    16;
+        }
       } // BestOpenMP_16 case
         break;
       case BestCuda:
@@ -999,6 +1083,10 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
           worksetSizeMap[affineTensorKey][7] =  256;
           worksetSizeMap[affineTensorKey][8] =  128;
         } // L^2 formulation
+        {
+          // VectorWeightedPoisson
+          // TODO: set this
+        }
     } // BestCuda case
         break;
       case Precalibrated:
@@ -1445,7 +1533,9 @@ int main( int argc, char* argv[] )
           std::map<AlgorithmChoice, Intrepid2::ScalarView<Scalar,DeviceType> > assembledMatrices;
           for (auto algorithmChoice : algorithmChoices)
           {
-            int worksetSize = worksetSizeMap[algorithmChoice];
+            int worksetSize = 1;
+            if (worksetSizeMap.find(algorithmChoice) != worksetSizeMap.end())
+              worksetSize = worksetSizeMap[algorithmChoice];
             if (mode == Calibration)
             {
               // if this workset size is bigger than the optimal for p-1, skip it -- it's highly
