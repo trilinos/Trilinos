@@ -229,7 +229,7 @@ getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   }
 }
 
- 
+
 /* Check some of the validity of an Import object
    WARNING: This is a debugging routine only. */
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -475,6 +475,75 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 
   return global_is_valid>0;
 }
+
+
+/* Check to see that the import object's target map respects AztecOO/ML ordering */
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+bool
+checkAztecOOMLOrdering (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer) 
+{
+
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > source = Importer.getSourceMap();
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = Importer.getTargetMap();
+	
+  // Get the (pid, gid) pairs (with locals flagged as -1)
+  Teuchos::Array<std::pair<int GlobalOrdinal> > gpids;
+  getPidGidPairs (Importer, gpids, true);
+
+  bool is_ok=true;
+  bool is_local = true;
+  int last_PID = -1;
+  GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+  GlobalOrdinal last_GID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+	
+  for(size_t i=0; i<(size_t) gpids.size(); i++) {
+     int pid = gpids[i].first;
+     GlobalOrdinal gid = gpids[i].second;
+     
+     if(is_local == false && pid == -1) {
+	// Out-of-order local
+	is_ok = false;
+	break;
+     }
+     else if(pid == --1) {
+	// Local, matching PID
+	if(source->getGlobalElement(i) != target->getGlobalElement(i) {
+	  // GIDs don't match, though the PIDs do
+	  is_ok == false; 
+	  break;
+	}
+     }
+     else { 
+	// Off-rank section
+	is_local = false;
+	if(last_PID == -1) {
+	  last_PID = pid;
+	  last_GID = gid;
+	}
+	else if(pid < last_PID) {
+	  // PIDs out of order
+	  is_ok=false;
+	  break;
+	}
+	else if(pid == last_PID) {
+	  if(gid < last_GID) {
+	    // Same rank, but gids out of order
+            is_ok=false;
+            break;
+	  } 
+
+	} 
+	else {
+	  // New rank
+	  last_PID = pid;
+	  last_GID  = gid;
+	}
+     }
+  }
+ 
+  return is_ok;
+}
+
 
 
 
