@@ -3592,10 +3592,14 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
       });
 
     KCRS newmat("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind);
+    // trigger int-typed row-pointer creation, to be consumed by the call to KokkosSparse::SpGEMM
+    newmat.getApplyHelper();
     return newmat;
   }
   else {
     // We don't have a Bimport (the easy case)
+    // trigger int-typed row-pointer creation, to be consumed by the call to KokkosSparse::SpGEMM
+    Bk.getApplyHelper();
     return Bk;
   }
 }//end merge_matrices
@@ -3700,10 +3704,14 @@ merge_matrices(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& 
 
     // Build and return merged KokkosSparse matrix
     KBCRS newmat("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind, blocksize);
+    // trigger int-typed row-pointer creation, to be consumed by the call to KokkosSparse::SpGEMM
+    newmat.getApplyHelper();
     return newmat;
   }
   else {
     // We don't have a Bimport (the easy case)
+    // trigger int-typed row-pointer creation, to be consumed by the call to KokkosSparse::SpGEMM
+    Bk.getApplyHelper();
     return Bk;
   }
 }//end merge_matrices
