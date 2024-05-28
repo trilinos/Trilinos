@@ -61,7 +61,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     PASS_REGULAR_EXPRESSION "PASS BASICS"
     NUM_MPI_PROCS 4
     OUTPUT_FILE PIE-ConvTest-20
-  TEST_2 CMND python
+  TEST_2 CMND python3
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
          PIE-ConvTest-
          10
@@ -82,7 +82,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     PASS_REGULAR_EXPRESSION "PASS BASICS"
     NUM_MPI_PROCS 4
     OUTPUT_FILE PIE-ConvTest-8
-  TEST_2 CMND python
+  TEST_2 CMND python3
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
          PIE-ConvTest-
          4
