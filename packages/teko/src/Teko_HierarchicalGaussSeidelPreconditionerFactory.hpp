@@ -55,36 +55,28 @@
 #include <map>
 #include <vector>
 
+namespace Teko {
 
-namespace Teko
-{
-
-class NestedBlockGS : public BlockImplicitLinearOp
-{
-public:
-  NestedBlockGS(const std::map<int, std::vector<int>> & blockToRow_,
-      const std::map<int, LinearOp> & blockToInvOp_,
-      BlockedLinearOp & A_,
-      bool useLowerTriangle_ = false);
+class NestedBlockGS : public BlockImplicitLinearOp {
+ public:
+  NestedBlockGS(const std::map<int, std::vector<int>>& blockToRow_,
+                const std::map<int, LinearOp>& blockToInvOp_, BlockedLinearOp& A_,
+                bool useLowerTriangle_ = false);
 
   VectorSpace range() const override { return productRange_; }
   VectorSpace domain() const override { return productDomain_; }
 
-  void implicitApply(const BlockedMultiVector & r,
-      BlockedMultiVector & z,
-      const double alpha = 1.0,
-      const double beta = 0.0) const override;
+  void implicitApply(const BlockedMultiVector& r, BlockedMultiVector& z, const double alpha = 1.0,
+                     const double beta = 0.0) const override;
 
-private:
-  void upperTriangularImplicitApply(std::vector<BlockedMultiVector> & r,
-      std::vector<BlockedMultiVector> & z,
-      const double alpha = 1.0,
-      const double beta = 0.0) const;
+ private:
+  void upperTriangularImplicitApply(std::vector<BlockedMultiVector>& r,
+                                    std::vector<BlockedMultiVector>& z, const double alpha = 1.0,
+                                    const double beta = 0.0) const;
 
-  void lowerTriangularImplicitApply(std::vector<BlockedMultiVector> & r,
-      std::vector<BlockedMultiVector> & z,
-      const double alpha = 1.0,
-      const double beta = 0.0) const;
+  void lowerTriangularImplicitApply(std::vector<BlockedMultiVector>& r,
+                                    std::vector<BlockedMultiVector>& z, const double alpha = 1.0,
+                                    const double beta = 0.0) const;
 
   // block operators
   std::map<int, std::vector<int>> blockToRow;
@@ -94,29 +86,26 @@ private:
   std::vector<BlockedLinearOp> Ab;
   bool useLowerTriangle = false;
 
-  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double>> productRange_; ///< Range vector space.
+  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double>> productRange_;  ///< Range vector space.
   Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double>>
-      productDomain_; ///< Domain vector space.
+      productDomain_;  ///< Domain vector space.
 };
 
-class HierarchicalGaussSeidelPreconditionerFactory : public BlockPreconditionerFactory
-{
-public:
+class HierarchicalGaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
+ public:
   ~HierarchicalGaussSeidelPreconditionerFactory() override = default;
   HierarchicalGaussSeidelPreconditionerFactory();
 
-  LinearOp buildPreconditionerOperator(BlockedLinearOp & blo, BlockPreconditionerState & state) const override;
+  LinearOp buildPreconditionerOperator(BlockedLinearOp& blo,
+                                       BlockPreconditionerState& state) const override;
 
-protected:
-  void initializeFromParameterList(const Teuchos::ParameterList & pl) override;
+ protected:
+  void initializeFromParameterList(const Teuchos::ParameterList& pl) override;
   using BlockPreconditionerFactory::buildPreconditionerOperator;
 
-private:
-
-LinearOp buildBlockInverse(const InverseFactory & invFact,
-    const BlockedLinearOp & matrix,
-    BlockPreconditionerState & state,
-    int hierarchicalBlockNum) const;
+ private:
+  LinearOp buildBlockInverse(const InverseFactory& invFact, const BlockedLinearOp& matrix,
+                             BlockPreconditionerState& state, int hierarchicalBlockNum) const;
 
   std::map<int, std::vector<int>> blockToRow;
   std::map<int, Teuchos::RCP<InverseFactory>> blockToInverse;
@@ -124,6 +113,6 @@ LinearOp buildBlockInverse(const InverseFactory & invFact,
 
   bool useLowerTriangle = false;
 };
-} // end namespace Teko
+}  // end namespace Teko
 
 #endif

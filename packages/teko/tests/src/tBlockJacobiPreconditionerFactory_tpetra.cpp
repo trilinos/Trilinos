@@ -195,7 +195,7 @@ int tBlockJacobiPreconditionerFactory_tpetra::runTest(int verbosity, std::ostrea
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
-  
+
   status = test_hierarchicalBlockScheme(verbosity, failstrm);
   Teko_TEST_MSG(stdstrm, 1, "   \"test_hierarchicalBlockScheme\" ... PASSED",
                 "   \"test_hierarchicalBlockScheme\" ... FAILED");

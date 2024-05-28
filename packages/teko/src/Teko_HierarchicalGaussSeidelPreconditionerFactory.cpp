@@ -50,20 +50,16 @@
 using Teuchos::rcp;
 using Teuchos::RCP;
 
-namespace Teko
-{
+namespace Teko {
 
-namespace
-{
+namespace {
 
-BlockedMultiVector
-extractSubBlockVector(const BlockedMultiVector & blo, const std::vector<int> & rows)
-{
+BlockedMultiVector extractSubBlockVector(const BlockedMultiVector& blo,
+                                         const std::vector<int>& rows) {
   const int nrows = rows.size();
   TEUCHOS_ASSERT(blockCount(blo) >= nrows);
   std::vector<MultiVector> subVectors;
-  for (int row_id = 0; row_id < nrows; ++row_id)
-  {
+  for (int row_id = 0; row_id < nrows; ++row_id) {
     const auto row = rows[row_id];
     subVectors.push_back(getBlock(row, blo));
   }
@@ -71,20 +67,18 @@ extractSubBlockVector(const BlockedMultiVector & blo, const std::vector<int> & r
   return buildBlockedMultiVector(subVectors);
 }
 
-BlockedLinearOp extractSubblockMatrix(const BlockedLinearOp & blo, const std::vector<int> & rows, const std::vector<int> & cols)
-{
+BlockedLinearOp extractSubblockMatrix(const BlockedLinearOp& blo, const std::vector<int>& rows,
+                                      const std::vector<int>& cols) {
   {
     int nrows = blockRowCount(blo);
-    for (auto && row : rows)
-    {
+    for (auto&& row : rows) {
       TEUCHOS_ASSERT(row < nrows);
     }
   }
 
   {
     int ncols = blockColCount(blo);
-    for (auto && col : cols)
-    {
+    for (auto&& col : cols) {
       TEUCHOS_ASSERT(col < ncols);
     }
   }
@@ -97,12 +91,10 @@ BlockedLinearOp extractSubblockMatrix(const BlockedLinearOp & blo, const std::ve
 
   // build new operator
   subblock->beginBlockFill(nrows, ncols);
-  for (int row_id = 0U; row_id < nrows; ++row_id)
-  {
-    for (int col_id = 0U; col_id < ncols; ++col_id)
-    {
+  for (int row_id = 0U; row_id < nrows; ++row_id) {
+    for (int col_id = 0U; col_id < ncols; ++col_id) {
       auto [row, col] = std::make_tuple(rows[row_id], cols[col_id]);
-      auto A_row_col = blo->getBlock(row, col);
+      auto A_row_col  = blo->getBlock(row, col);
 
       if (A_row_col != Teuchos::null) subblock->setBlock(row_id, col_id, A_row_col);
     }
@@ -113,12 +105,10 @@ BlockedLinearOp extractSubblockMatrix(const BlockedLinearOp & blo, const std::ve
   return subblock;
 }
 
-std::vector<std::string> tokenize_input(std::string input, const std::string & delimiter)
-{
+std::vector<std::string> tokenize_input(std::string input, const std::string& delimiter) {
   size_t pos = 0;
   std::vector<std::string> tokens;
-  while ((pos = input.find(delimiter)) != std::string::npos)
-  {
+  while ((pos = input.find(delimiter)) != std::string::npos) {
     tokens.push_back(input.substr(0, pos));
     input.erase(0, pos + delimiter.length());
   }
@@ -129,47 +119,38 @@ std::vector<std::string> tokenize_input(std::string input, const std::string & d
 // Parse hierarchical block number from:
 // <ParameterList name="Hierarchical Block 1">
 // </ParameterList>
-std::optional<int>
-extract_hierarchical_block_number(const Teuchos::ParameterList & params, const std::string & key)
-{
+std::optional<int> extract_hierarchical_block_number(const Teuchos::ParameterList& params,
+                                                     const std::string& key) {
   const std::string blockHierarchy = "Hierarchical Block ";
   if (key.find(blockHierarchy) == std::string::npos) return {};
   if (!params.isSublist(key)) return {};
 
   int blockNumber = -1;
-  try
-  {
+  try {
     auto tokens = tokenize_input(key, " ");
     blockNumber = std::stoi(tokens.back());
-  }
-  catch (std::exception & err)
-  {
+  } catch (std::exception& err) {
     std::ostringstream ss;
     ss << "Error occured when trying to parse entry with key " << key << "\n";
     ss << "It said:\n" << err.what() << "\n";
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, ss.str());
   }
-  return blockNumber - 1; // adjust to 0-based indexing
+  return blockNumber - 1;  // adjust to 0-based indexing
 }
 
-std::vector<int> extract_block_numbers(const Teuchos::ParameterList & params)
-{
+std::vector<int> extract_block_numbers(const Teuchos::ParameterList& params) {
   const std::string includedBlocks = "Included Subblocks";
 
   std::ostringstream ss;
   ss << "Parameter 'Included Subblocks' is missing for params:\n" << params;
   TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter(includedBlocks), std::runtime_error, ss.str());
   std::vector<int> blocks;
-  try
-  {
+  try {
     auto blockStrs = tokenize_input(params.get<std::string>(includedBlocks), ",");
-    for (const auto & blockStr : blockStrs)
-    {
-      blocks.emplace_back(std::stoi(blockStr) - 1); // adjust to 0-based indexing
+    for (const auto& blockStr : blockStrs) {
+      blocks.emplace_back(std::stoi(blockStr) - 1);  // adjust to 0-based indexing
     }
-  }
-  catch (std::exception & err)
-  {
+  } catch (std::exception& err) {
     std::ostringstream ss;
     ss << "Error occured when trying to parse 'Included SubBlocks' for params:\n" << params << "\n";
     ss << "It said:\n" << err.what() << "\n";
@@ -180,137 +161,109 @@ std::vector<int> extract_block_numbers(const Teuchos::ParameterList & params)
 
 unsigned index(unsigned i, unsigned j, unsigned N) { return i * N + j; }
 
-} // namespace
+}  // namespace
 
-NestedBlockGS::NestedBlockGS(const std::map<int, std::vector<int>> & blockToRow_,
-    const std::map<int, LinearOp> & blockToInvOp_,
-    BlockedLinearOp & A_,
-    bool useLowerTriangle_)
+NestedBlockGS::NestedBlockGS(const std::map<int, std::vector<int>>& blockToRow_,
+                             const std::map<int, LinearOp>& blockToInvOp_, BlockedLinearOp& A_,
+                             bool useLowerTriangle_)
     : blockToRow(blockToRow_),
       blockToInvOp(blockToInvOp_),
       A(A_),
-      useLowerTriangle(useLowerTriangle_)
-{
-  productRange_ = A->productRange();
-  productDomain_ = A->productDomain();
+      useLowerTriangle(useLowerTriangle_) {
+  productRange_    = A->productRange();
+  productDomain_   = A->productDomain();
   const auto Nrows = blockToRow.size();
   Ab.resize(Nrows * Nrows);
-  for (auto [hierchicalBlockRow, rows] : blockToRow)
-  {
-    for (auto [hierchicalBlockCol, cols] : blockToRow)
-    {
+  for (auto [hierchicalBlockRow, rows] : blockToRow) {
+    for (auto [hierchicalBlockCol, cols] : blockToRow) {
       Ab[index(hierchicalBlockRow, hierchicalBlockCol, Nrows)] =
           extractSubblockMatrix(A, rows, cols);
     }
   }
 }
 
-void NestedBlockGS::implicitApply(const BlockedMultiVector & r,
-    BlockedMultiVector & z,
-    const double alpha,
-    const double beta) const
-{
+void NestedBlockGS::implicitApply(const BlockedMultiVector& r, BlockedMultiVector& z,
+                                  const double alpha, const double beta) const {
   const int blocks = blockToRow.size();
 
   auto src = deepcopy(r);
   std::vector<BlockedMultiVector> rVec;
   std::vector<BlockedMultiVector> zVec;
 
-  for (int b = 0; b < blocks; b++)
-  {
+  for (int b = 0; b < blocks; b++) {
     rVec.push_back(extractSubBlockVector(src, blockToRow.at(b)));
     zVec.push_back(extractSubBlockVector(z, blockToRow.at(b)));
   }
 
-  if (useLowerTriangle)
-  {
+  if (useLowerTriangle) {
     lowerTriangularImplicitApply(rVec, zVec, alpha, beta);
-  }
-  else
-  {
+  } else {
     upperTriangularImplicitApply(rVec, zVec, alpha, beta);
   }
 }
 
-void NestedBlockGS::upperTriangularImplicitApply(std::vector<BlockedMultiVector> & r,
-    std::vector<BlockedMultiVector> & z,
-    const double /* alpha */ ,
-    const double /* beta */) const
-{
+void NestedBlockGS::upperTriangularImplicitApply(std::vector<BlockedMultiVector>& r,
+                                                 std::vector<BlockedMultiVector>& z,
+                                                 const double /* alpha */,
+                                                 const double /* beta */) const {
   const int blocks = blockToRow.size();
 
-  for (int b = blocks - 1; b >= 0; b--)
-  {
-
+  for (int b = blocks - 1; b >= 0; b--) {
     applyOp(blockToInvOp.at(b), r[b], z[b]);
 
-    for (int i = 0; i < b; i++)
-    {
+    for (int i = 0; i < b; i++) {
       auto u_ib = Ab[index(i, b, blocks)];
-      if (u_ib != Teuchos::null)
-      {
+      if (u_ib != Teuchos::null) {
         applyOp(u_ib, z[b], r[i], -1.0, 1.0);
       }
     }
   }
 }
 
-void NestedBlockGS::lowerTriangularImplicitApply(std::vector<BlockedMultiVector> & r,
-    std::vector<BlockedMultiVector> & z,
-    const double /* alpha */,
-    const double /* beta */) const
-{
+void NestedBlockGS::lowerTriangularImplicitApply(std::vector<BlockedMultiVector>& r,
+                                                 std::vector<BlockedMultiVector>& z,
+                                                 const double /* alpha */,
+                                                 const double /* beta */) const {
   const int blocks = blockToRow.size();
 
-  for (int b = 0; b < blocks; b++)
-  {
+  for (int b = 0; b < blocks; b++) {
     applyOp(blockToInvOp.at(b), r[b], z[b]);
 
     // loop over each row
-    for (int i = b + 1; i < blocks; i++)
-    {
+    for (int i = b + 1; i < blocks; i++) {
       auto l_ib = Ab[index(i, b, blocks)];
-      if (l_ib != Teuchos::null)
-      {
+      if (l_ib != Teuchos::null) {
         applyOp(l_ib, z[b], r[i], -1.0, 1.0);
       }
     }
   }
 }
 
-HierarchicalGaussSeidelPreconditionerFactory::HierarchicalGaussSeidelPreconditionerFactory() = default;
+HierarchicalGaussSeidelPreconditionerFactory::HierarchicalGaussSeidelPreconditionerFactory() =
+    default;
 
 LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildPreconditionerOperator(
-    BlockedLinearOp & blo, BlockPreconditionerState & state) const
-{
-  for (auto [hierarchicalBlockNum, blocks] : blockToRow)
-  {
-    auto A_bb = extractSubblockMatrix(blo, blocks, blocks);
+    BlockedLinearOp& blo, BlockPreconditionerState& state) const {
+  for (auto [hierarchicalBlockNum, blocks] : blockToRow) {
+    auto A_bb                          = extractSubblockMatrix(blo, blocks, blocks);
     blockToInvOp[hierarchicalBlockNum] = this->buildBlockInverse(
-      *blockToInverse.at(hierarchicalBlockNum),
-      A_bb,
-      state,
-      hierarchicalBlockNum
-    );
+        *blockToInverse.at(hierarchicalBlockNum), A_bb, state, hierarchicalBlockNum);
   }
 
   return Teuchos::rcp(new NestedBlockGS(blockToRow, blockToInvOp, blo, useLowerTriangle));
 }
 
-LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildBlockInverse(const InverseFactory & invFact,
-    const BlockedLinearOp & matrix,
-    BlockPreconditionerState & state,
-    int hierarchicalBlockNum) const
-{
+LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildBlockInverse(
+    const InverseFactory& invFact, const BlockedLinearOp& matrix, BlockPreconditionerState& state,
+    int hierarchicalBlockNum) const {
   std::stringstream ss;
   ss << "hierarchical_block_" << hierarchicalBlockNum;
 
-  ModifiableLinearOp & invOp = state.getModifiableOp(ss.str());
+  ModifiableLinearOp& invOp = state.getModifiableOp(ss.str());
 
   if (invOp == Teuchos::null) {
     invOp = buildInverse(invFact, matrix);
-  }
-  else {
+  } else {
     rebuildInverse(invFact, matrix, invOp);
   }
 
@@ -318,30 +271,30 @@ LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildBlockInverse(const I
 }
 
 void HierarchicalGaussSeidelPreconditionerFactory::initializeFromParameterList(
-    const Teuchos::ParameterList & pl)
-{
+    const Teuchos::ParameterList& pl) {
   RCP<const InverseLibrary> invLib = getInverseLibrary();
 
-  for (const auto & entry : pl)
-  {
-    const auto key = entry.first;
-    const auto value = entry.second;
+  for (const auto& entry : pl) {
+    const auto key               = entry.first;
+    const auto value             = entry.second;
     auto hierarchicalBlockNumber = extract_hierarchical_block_number(pl, key);
     if (!hierarchicalBlockNumber) continue;
-    const auto & hierarchicalParams = pl.sublist(key);
+    const auto& hierarchicalParams       = pl.sublist(key);
     blockToRow[*hierarchicalBlockNumber] = extract_block_numbers(hierarchicalParams);
 
     std::ostringstream ss;
-    ss << "Missing required parameter \"Inverse Type\" for hierarchical block " << *hierarchicalBlockNumber << "\n";
-    TEUCHOS_TEST_FOR_EXCEPTION(!hierarchicalParams.isParameter("Inverse Type"), std::runtime_error, ss.str());
-    auto invStr = hierarchicalParams.get<std::string>("Inverse Type");
+    ss << "Missing required parameter \"Inverse Type\" for hierarchical block "
+       << *hierarchicalBlockNumber << "\n";
+    TEUCHOS_TEST_FOR_EXCEPTION(!hierarchicalParams.isParameter("Inverse Type"), std::runtime_error,
+                               ss.str());
+    auto invStr                              = hierarchicalParams.get<std::string>("Inverse Type");
     blockToInverse[*hierarchicalBlockNumber] = invLib->getInverseFactory(invStr);
   }
 
   useLowerTriangle = false;
-  if(pl.isParameter("Use Upper Triangle")){
+  if (pl.isParameter("Use Upper Triangle")) {
     useLowerTriangle = !pl.get<bool>("Use Upper Triangle");
   }
 }
 
-} // namespace tftk::solv::experimental
+}  // namespace Teko
