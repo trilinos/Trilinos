@@ -238,6 +238,7 @@ namespace Intrepid2 {
         }
         return value;
       }
+      return 0; // should not be reachable
     }
     
     //! Vector accessor, with arguments (C,F,P,D).
