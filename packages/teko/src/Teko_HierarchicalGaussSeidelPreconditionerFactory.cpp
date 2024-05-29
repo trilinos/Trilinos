@@ -151,10 +151,11 @@ std::vector<int> extract_block_numbers(const Teuchos::ParameterList& params) {
       blocks.emplace_back(std::stoi(blockStr) - 1);  // adjust to 0-based indexing
     }
   } catch (std::exception& err) {
-    std::ostringstream ss;
-    ss << "Error occured when trying to parse 'Included SubBlocks' for params:\n" << params << "\n";
-    ss << "It said:\n" << err.what() << "\n";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, ss.str());
+    std::ostringstream errSS;
+    errSS << "Error occured when trying to parse 'Included SubBlocks' for params:\n"
+          << params << "\n";
+    errSS << "It said:\n" << err.what() << "\n";
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, errSS.str());
   }
   return blocks;
 }
