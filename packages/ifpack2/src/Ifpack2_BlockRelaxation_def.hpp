@@ -54,6 +54,7 @@
 #include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers_decl.hpp"
+#include "Tpetra_Import_Util.hpp"
 
 namespace Ifpack2 {
 
@@ -180,6 +181,7 @@ getValidParameters () const
   validParams->set("partitioner: block size", -1);
   validParams->set("partitioner: print level", false);
   validParams->set("partitioner: explicit convert to BlockCrs", false);
+  validParams->set("partitioner: checkAztecOOMLOrdering", true);
 
   return validParams;
 }
@@ -649,6 +651,13 @@ initialize ()
         graph = A_->getGraph ();
       }
       else {
+        if ( !List_.isParameter("partitioner: checkAztecOOMLOrdering") || List_.get<bool>("partitioner: checkAztecOOMLOrdering")) {
+          if ( !A_->getGraph ()->getImporter().is_null()) {
+            TEUCHOS_TEST_FOR_EXCEPT_MSG
+              (!Tpetra::Import_Util::checkAztecOOMLOrdering(*(A_->getGraph ()->getImporter())), 
+              "The pointwise graph of the input matrix A pointwise does not follow the AztecOOMLOrdering.");
+          }
+        }
         graph = Tpetra::getBlockCrsGraph(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, true);
       }
       Kokkos::DefaultExecutionSpace().fence();
