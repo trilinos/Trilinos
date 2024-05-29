@@ -408,6 +408,7 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
   if(save_importer) {
     currentLevel.Set("Importer",rowMapImporter,NoFactory::get());
     currentLevel.AddKeepFlag("Importer", NoFactory::get(), MueLu::Final);
+    currentLevel.RemoveKeepFlag("Importer", NoFactory::get(), MueLu::UserData);//FIXME: This is a hack
   }
   // ======================================================================================================
   // Print some data

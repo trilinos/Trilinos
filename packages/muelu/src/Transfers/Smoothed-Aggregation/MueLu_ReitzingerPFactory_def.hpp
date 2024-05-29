@@ -216,7 +216,8 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   size_t Nn = NodeMatrix->getLocalNumRows();
 
   // Upper bound on local number of coarse edges
-  size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn + 1) / 2;
+  //size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn + 1) / 2;
+  size_t max_edges = NodeMatrix->getLocalNumEntries();//FIXME: FOUL HAX
   ArrayRCP<size_t> D0_rowptr(Ne + 1);
   ArrayRCP<LO> D0_colind(max_edges);
   ArrayRCP<SC> D0_values(max_edges);

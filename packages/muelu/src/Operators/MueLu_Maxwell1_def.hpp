@@ -271,6 +271,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
      ReitzingerPFactory to generate the edge P and A matrices.
    */
 
+  
 #ifdef HAVE_MUELU_CUDA
   if (parameterList_.get<bool>("maxwell1: cuda profile setup", false)) cudaProfilerStart();
 #endif
@@ -282,6 +283,9 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     timerLabel = "MueLu Maxwell1: compute";
   RCP<Teuchos::TimeMonitor> tmCompute = getTimer(timerLabel);
   int rank = SM_Matrix_->getRowMap()->getComm()->getRank();//CMSCMS
+
+  if(rank == 0)
+    std::cout<<"*** Maxwell1 Parameters ***"<<std::endl<<parameterList_<<"****************"<<std::endl;
   
   printf("[%d] M1 Checkpoint #A.1\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
 
@@ -328,8 +332,8 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     if (repartition) {
       // FIXME: We should probably update rather than clobber
       precList22_.set("repartition: save importer",true);
+      //precList22_.set("repartition: rebalance P and R", false);
       precList22_.set("repartition: rebalance P and R", true);
-            //precList22_.set("repartition: rebalance P and R", false);
     }
 
     if (precList22_.isParameter("repartition: use subcommunicators")) {
@@ -485,12 +489,12 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     Hierarchy11_->AddNewLevel();
     RCP<Level> NodeL          = Hierarchy22_->GetLevel(i);
     RCP<Level> EdgeL          = Hierarchy11_->GetLevel(i);
-    RCP<Operator> NodeOp      = NodeL->Get<RCP<Operator> >("A");
-    RCP<Matrix> NodeAggMatrix = rcp_dynamic_cast<Matrix>(NodeOp);
+    RCP<Operator> NodeAggOp   = NodeL->Get<RCP<Operator> >("A");
+    RCP<Matrix> NodeAggMatrix = rcp_dynamic_cast<Matrix>(NodeAggOp);
     std::string labelstr      = FormattingHelper::getColonLabel(EdgeL->getObjectLabel());
 
     printf("[%d] M1 Level %d NodeAggMatrix Operator? %d Matrix? %d\n",rank,i,
-           (int)(!NodeOp.is_null()),
+           (int)(!NodeAggOp.is_null()),
            (int)(!NodeAggMatrix.is_null()));
     
     fflush(stdout);
@@ -524,16 +528,23 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
       if (NodeL->IsAvailable("Importer")) {
         importer = NodeL->Get<RCP<const Import> >("Importer");
         EdgeL->Set("NodeImporter", importer);
-        printf("[%d] Got importer from Node Hierarchy\n",SM_Matrix_->getRowMap()->getComm()->getRank());
+        printf("[%d] M1 Level %d Got importer from Node Hierarchy\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);
       }
       else {
-        printf("[%d] NO importer from Node Hierarchy\n",SM_Matrix_->getRowMap()->getComm()->getRank());
+        printf("[%d] M1 Level %d NO importer from Node Hierarchy\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);
       }
-      
+
+
+
+      printf("[%d] M1 Level %d OldSmootherMatrix? %d NodalP_ones? %d have_generated_Kn? %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
+             (int)!OldSmootherMatrix.is_null(),
+             (int)!NodalP_ones.is_null(),
+             (int)have_generated_Kn);
+             
+             
       // If we repartition a processor away, a RCP<Operator> is stuck
       // on the level instead of an RCP<Matrix>
       if (!OldSmootherMatrix.is_null() && !NodalP_ones.is_null()) {
-          //      if(1){
         EdgeL->Set("NodeAggMatrix", NodeAggMatrix);
         if (!have_generated_Kn) {
           // The user gave us a Kn on the fine level, so we're using a seperate aggregation
@@ -561,31 +572,44 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
           RAPlist.set("rap: fix zero diagonals", false);
           RCP<Matrix> NewKn = Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(OldSmootherMatrix, NodalP_ones, RAPlist, labelstr);
 
-          printf("[%d] 6.%d.1 map ranks NewSmootherMatrix(pre-repart) = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
+          printf("[%d] ML 6.%d.1 map ranks / unknowns NewSmootherMatrix(pre-repart) = %d/%d/%d/%d %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
                  NewKn->getRangeMap()->getComm()->getSize(),
                  NewKn->getRowMap()->getComm()->getSize(),
                  NewKn->getColMap()->getComm()->getSize(),
-                 NewKn->getDomainMap()->getComm()->getSize());//CMSCMS
+                 NewKn->getDomainMap()->getComm()->getSize(),
+                 (int)NewKn->getRangeMap()->getLocalNumElements(),
+                 (int)NewKn->getRowMap()->getLocalNumElements(),
+                 (int)NewKn->getColMap()->getLocalNumElements(),
+                 (int)NewKn->getDomainMap()->getLocalNumElements());
+
 
           if(!NodeAggMatrix.is_null()){
-            printf("[%d] 6.%d.1 map ranks NodeAggMatrix = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
+            printf("[%d] ML 6.%d.1 map ranks NodeAggMatrix = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
                    NodeAggMatrix->getRangeMap()->getComm()->getSize(),
                    NodeAggMatrix->getRowMap()->getComm()->getSize(),
                    NodeAggMatrix->getColMap()->getComm()->getSize(),
                    NodeAggMatrix->getDomainMap()->getComm()->getSize());//CMSCMS
           }
+          else if(!NodeAggOp.is_null()){
+            printf("[%d] ML 6.%d.1 map ranks NodeAggOp = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
+                   NodeAggOp->getRangeMap()->getComm()->getSize(),
+                   -1,
+                   -1,
+                   NodeAggOp->getDomainMap()->getComm()->getSize());//CMSCMS
+          }
           else {
-            printf("[%d] M1 6.%d.1 map ranks NodeAggMatrix = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,-1,-1,-1,-1);
+            printf("[%d] M1 6.%d.1 map ranks NodeAggMatrix/Op = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,-1,-1,-1,-1);
           }
           fflush(stdout);
+
           
           // If the RowMap of the NewKn doesn't match the NewAggMatrix, then we need to rebalance-in-place.
           // FIXME: We need to make sure the subcomm settings here match that of the algorithm and we need to add this to the list.
           //          if ( ! NewKn.is_null() && ( NodeAggMatrix.is_null() ||  !NewKn->getRowMap()->isSameAs(*NodeAggMatrix->getRowMap()))) {
           if (!importer.is_null()) {
             printf("[%d] Need to repartition at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-
-
+#define THE_NEW_HOTNESS
+#ifdef THE_NEW_HOTNESS
             ParameterList rebAcParams;
             rebAcParams.set("repartition: use subcommunicators", true);
             rebAcParams.set("repartition: use subcommunicators in place", true);
@@ -593,12 +617,34 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
             newAfact->SetParameterList(rebAcParams);
             RCP<const Map> InPlaceMap = NodeAggMatrix.is_null() ? Teuchos::null : NodeAggMatrix->getRowMap();
 
-            // OLD AND BUSTED
-            /*
-            Level cLevel;
-            cLevel.Set("InPlaceMap", InPlaceMap);
-            cLevel.Request("A", newA.get());
-            */
+            Level fLevel, cLevel;
+            cLevel.SetPreviousLevel(Teuchos::rcpFromRef(fLevel));
+            cLevel.Set("InPlaceMap",InPlaceMap);
+            cLevel.Set("A",NewKn);
+            cLevel.Request("A", newAfact.get());
+            printf("[%d] Just about to Build at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
+            newAfact->Build(fLevel,cLevel);
+
+            cLevel.print(std::cout,Debug);
+            printf("[%d] Just about to Get at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
+            NewKn = cLevel.Get<RCP<Matrix> >("A", newAfact.get());
+            
+#else
+
+
+
+            ParameterList rebAcParams;
+            rebAcParams.set("repartition: use subcommunicators", true);
+            rebAcParams.set("repartition: use subcommunicators in place", false);
+            auto newAfact = rcp(new RebalanceAcFactory());
+            newAfact->SetParameterList(rebAcParams);
+            //            RCP<const Map> InPlaceMap = NodeAggMatrix.is_null() ? Teuchos::null : NodeAggMatrix->getRowMap();
+
+
+            printf("[%d] M1 Level %d NewKn.RowMap.num_els = %d Importer.SourceMap.num_els = %d\n",
+                   SM_Matrix_->getRowMap()->getComm()->getRank(),i,
+                   NewKn.is_null() ? -1 : (int)NewKn->getRowMap()->getLocalNumElements(),
+                   (int)importer->getSourceMap()->getLocalNumElements());
             
             Level fLevel, cLevel;
             cLevel.Set("Importer",importer);
@@ -608,6 +654,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
             printf("[%d] Just about to Get at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
             NewKn = cLevel.Get<RCP<Matrix> >("A", newAfact.get());
 
+#endif
             /*
             printf("[%d] Just about to call removeEmptyProcessesInPlace at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
             NewKn->removeEmptyProcessesInPlace(InPlaceMap);
@@ -654,8 +701,8 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
         }
       } else {
         // We've partitioned things away.
-        EdgeL->Set("NodeMatrix", NodeOp);
-        EdgeL->Set("NodeAggMatrix", NodeOp);
+        EdgeL->Set("NodeMatrix", NodeAggOp);
+        EdgeL->Set("NodeAggMatrix", NodeAggOp);
       }
 
       OldEdgeLevel = EdgeL;

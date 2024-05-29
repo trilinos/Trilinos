@@ -105,6 +105,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                                        LocalOrdinal, GlobalOrdinal, Node>
       realvaluedmultivector_type;
 
+  
   for (ParameterList::ConstIterator nonSerialEntry = nonSerialList.begin(); nonSerialEntry != nonSerialList.end(); nonSerialEntry++) {
     const std::string& levelName = nonSerialEntry->first;
     // Check for match of the form "level X" where X is a positive integer
