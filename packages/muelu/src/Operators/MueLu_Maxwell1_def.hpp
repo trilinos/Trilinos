@@ -282,12 +282,6 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   else
     timerLabel = "MueLu Maxwell1: compute";
   RCP<Teuchos::TimeMonitor> tmCompute = getTimer(timerLabel);
-  int rank = SM_Matrix_->getRowMap()->getComm()->getRank();//CMSCMS
-
-  if(rank == 0)
-    std::cout<<"*** Maxwell1 Parameters ***"<<std::endl<<parameterList_<<"****************"<<std::endl;
-  
-  printf("[%d] M1 Checkpoint #A.1\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
 
   ////////////////////////////////////////////////////////////////////////////////
   // Generate Kn and apply BCs (if needed)
@@ -309,9 +303,6 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
                                                                         MasterList::getDefault<double>("rap: fix zero diagonals replacement")));
     Xpetra::MatrixUtils<SC, LO, GO, NO>::CheckRepairMainDiagonal(Kn_Matrix_, true, GetOStream(Warnings1), threshold, replacement);
   }
-
-  //  printf("[%d] Checkpoint #A.2\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-  //SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
   ////////////////////////////////////////////////////////////////////////////////
   // Generate the (2,2) Hierarchy
@@ -356,16 +347,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   } else
     precList11_.remove("repartition: enable", false);
 
-
-  // CMSCMS HAX
-  /*
-  precList11_.set("repartition: use subcommunicators", false);
-  precList22_.set("repartition: use subcommunicators", false);
-  precList11_.set("repartition: use subcommunicators in place", false);
-  precList22_.set("repartition: use subcommunicators in place", false);
-  */
   precList22_.set("repartition: start level",1);
-  //  precList22_.set("repartition: min rows per proc",500);
 
   ////////////////////////////////////////////////////////////////////////////////
   // Remove explicit zeros from matrices
@@ -380,9 +362,6 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*SM_Matrix_, "SM_Matrix", params);
   }
   */
-
-  //  printf("[%d] Checkpoint #A.3\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-  //  SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
   ////////////////////////////////////////////////////////////////////////////////
   // Detect Dirichlet boundary conditions
@@ -417,16 +396,9 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     precList22_.set("max levels", 1);
   }
 
-  //  printf("[%d] Checkpoint #A.4\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-  //  SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
   ////////////////////////////////////////////////////////////////////////////////
   // Build (2,2) hierarchy  
   Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
-
-
-  printf("[%d] M1 Checkpoint #A.5\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-  //  SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
   ////////////////////////////////////////////////////////////////////////////////
   // Apply boundary conditions to D0 (if needed)
@@ -471,21 +443,12 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     Kn_Smoother_0 = generate_kn();
   }
 
-  printf("[%d] M1 Checkpoint #A.6\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-  //  SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
- 
-  printf("[%d] Checkpoint #A.6.X #levels = %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),Hierarchy22_->GetNumLevels());
-
   ////////////////////////////////////////////////////////////////////////////////
   // Copy the relevant (2,2) data to the (1,1) hierarchy
   Hierarchy11_ = rcp(new Hierarchy("Maxwell1 (1,1)"));
   RCP<Matrix> OldSmootherMatrix;
   RCP<Level> OldEdgeLevel;
   for (int i = 0; i < Hierarchy22_->GetNumLevels(); i++) {
-    printf("****** [%d],Computing Level %d ******\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-    printf("[%d] M1 Checkpoint #A.6.%d.0\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-    //    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
     Hierarchy11_->AddNewLevel();
     RCP<Level> NodeL          = Hierarchy22_->GetLevel(i);
     RCP<Level> EdgeL          = Hierarchy11_->GetLevel(i);
@@ -493,18 +456,6 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     RCP<Matrix> NodeAggMatrix = rcp_dynamic_cast<Matrix>(NodeAggOp);
     std::string labelstr      = FormattingHelper::getColonLabel(EdgeL->getObjectLabel());
 
-    printf("[%d] M1 Level %d NodeAggMatrix Operator? %d Matrix? %d\n",rank,i,
-           (int)(!NodeAggOp.is_null()),
-           (int)(!NodeAggMatrix.is_null()));
-    
-    fflush(stdout);
-    //    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
-    if(SM_Matrix_->getRowMap()->getComm()->getRank() ==0) {
-      NodeL->print(std::cout,Debug);
-    }
-    //    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-    
     if (i == 0) {
       EdgeL->Set("A", SM_Matrix_);
       EdgeL->Set("D0", D0_Matrix_);
@@ -528,19 +479,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
       if (NodeL->IsAvailable("Importer")) {
         importer = NodeL->Get<RCP<const Import> >("Importer");
         EdgeL->Set("NodeImporter", importer);
-        printf("[%d] M1 Level %d Got importer from Node Hierarchy\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);
       }
-      else {
-        printf("[%d] M1 Level %d NO importer from Node Hierarchy\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);
-      }
-
-
-
-      printf("[%d] M1 Level %d OldSmootherMatrix? %d NodalP_ones? %d have_generated_Kn? %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-             (int)!OldSmootherMatrix.is_null(),
-             (int)!NodalP_ones.is_null(),
-             (int)have_generated_Kn);
-             
              
       // If we repartition a processor away, a RCP<Operator> is stuck
       // on the level instead of an RCP<Matrix>
@@ -555,59 +494,16 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
           // We can see this behavior from ML, though it isn't 100% clear from the code *how* it happens.
           // So, here we turn the fix off, then once we've generated the new matrix, we fix the old one.
 
-
-          printf("[%d] M1 Checkpoint #A.6.%d.1\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-          printf("[%d] M1 6.%d.1 map ranks OldSmootherMatrix = %d/%d/%d/%d NodalP_ones = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-                 OldSmootherMatrix->getRangeMap()->getComm()->getSize(),
-                 OldSmootherMatrix->getRowMap()->getComm()->getSize(),
-                 OldSmootherMatrix->getColMap()->getComm()->getSize(),
-                 OldSmootherMatrix->getDomainMap()->getComm()->getSize(),
-                 NodalP_ones->getRangeMap()->getComm()->getSize(),
-                 NodalP_ones->getRowMap()->getComm()->getSize(),
-                 NodalP_ones->getColMap()->getComm()->getSize(),
-                 NodalP_ones->getDomainMap()->getComm()->getSize());
-
           // Generate the new matrix
           Teuchos::ParameterList RAPlist;
           RAPlist.set("rap: fix zero diagonals", false);
           RCP<Matrix> NewKn = Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(OldSmootherMatrix, NodalP_ones, RAPlist, labelstr);
-
-          printf("[%d] ML 6.%d.1 map ranks / unknowns NewSmootherMatrix(pre-repart) = %d/%d/%d/%d %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-                 NewKn->getRangeMap()->getComm()->getSize(),
-                 NewKn->getRowMap()->getComm()->getSize(),
-                 NewKn->getColMap()->getComm()->getSize(),
-                 NewKn->getDomainMap()->getComm()->getSize(),
-                 (int)NewKn->getRangeMap()->getLocalNumElements(),
-                 (int)NewKn->getRowMap()->getLocalNumElements(),
-                 (int)NewKn->getColMap()->getLocalNumElements(),
-                 (int)NewKn->getDomainMap()->getLocalNumElements());
-
-
-          if(!NodeAggMatrix.is_null()){
-            printf("[%d] ML 6.%d.1 map ranks NodeAggMatrix = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-                   NodeAggMatrix->getRangeMap()->getComm()->getSize(),
-                   NodeAggMatrix->getRowMap()->getComm()->getSize(),
-                   NodeAggMatrix->getColMap()->getComm()->getSize(),
-                   NodeAggMatrix->getDomainMap()->getComm()->getSize());//CMSCMS
-          }
-          else if(!NodeAggOp.is_null()){
-            printf("[%d] ML 6.%d.1 map ranks NodeAggOp = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-                   NodeAggOp->getRangeMap()->getComm()->getSize(),
-                   -1,
-                   -1,
-                   NodeAggOp->getDomainMap()->getComm()->getSize());//CMSCMS
-          }
-          else {
-            printf("[%d] M1 6.%d.1 map ranks NodeAggMatrix/Op = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,-1,-1,-1,-1);
-          }
-          fflush(stdout);
 
           
           // If the RowMap of the NewKn doesn't match the NewAggMatrix, then we need to rebalance-in-place.
           // FIXME: We need to make sure the subcomm settings here match that of the algorithm and we need to add this to the list.
           //          if ( ! NewKn.is_null() && ( NodeAggMatrix.is_null() ||  !NewKn->getRowMap()->isSameAs(*NodeAggMatrix->getRowMap()))) {
           if (!importer.is_null()) {
-            printf("[%d] Need to repartition at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
 #define THE_NEW_HOTNESS
 #ifdef THE_NEW_HOTNESS
             ParameterList rebAcParams;
@@ -655,44 +551,20 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
             NewKn = cLevel.Get<RCP<Matrix> >("A", newAfact.get());
 
 #endif
-            /*
-            printf("[%d] Just about to call removeEmptyProcessesInPlace at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-            NewKn->removeEmptyProcessesInPlace(InPlaceMap);
-            printf("[%d] Just finished calling removeEmptyProcessesInPlace at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-            */
             EdgeL->Set("NodeMatrix", NewKn);
-
-            printf("[%d] M1 6.%d.1 map ranks NewSmootherMatrix(post-repart) = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-                   NewKn.is_null() ? -1 : NewKn->getRangeMap()->getComm()->getSize(),
-                  NewKn.is_null() ? -1 : NewKn->getRowMap()->getComm()->getSize(),
-                  NewKn.is_null() ? -1 : NewKn->getColMap()->getComm()->getSize(),
-                  NewKn.is_null() ? -1 : NewKn->getDomainMap()->getComm()->getSize());//CMSCMS
-            fflush(stdout);
-            
           }
           else {
             EdgeL->Set("NodeMatrix", NewKn);
-            printf("[%d] M1 6.%d.1 map ranks NewSmootherMatrix(no-repart) = %d/%d/%d/%d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-                 NewKn->getRangeMap()->getComm()->getSize(),
-                 NewKn->getRowMap()->getComm()->getSize(),
-                 NewKn->getColMap()->getComm()->getSize(),
-                 NewKn->getDomainMap()->getComm()->getSize());//CMSCMS
-          fflush(stdout);
-            
           }
-
-          printf("[%d] M1 Checkpoint #A.6.%d.2\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
 
           // Fix the old one
           double thresh = parameterList_.get("maxwell1: nodal smoother fix zero diagonal threshold", 1e-10);
           if (thresh > 0.0) {
-            printf("CMS: Reparing diagonal after next level generation\n");
+            GetOStream(Runtime0) << "Maxwell1::compute(): Fixing zero diagonal for nodal smoother matrix" << std::endl;
             Scalar replacement = Teuchos::ScalarTraits<Scalar>::one();
             Xpetra::MatrixUtils<SC, LO, GO, NO>::CheckRepairMainDiagonal(OldSmootherMatrix, true, GetOStream(Warnings1), thresh, replacement);
           }
           OldEdgeLevel->Set("NodeMatrix", OldSmootherMatrix);
-
-          printf("[%d] M1 Checkpoint #A.6.%d.3\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
 
           OldSmootherMatrix = NewKn;
         } else {
@@ -706,59 +578,10 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
       }
 
       OldEdgeLevel = EdgeL;
-      printf("[%d] M1 Checkpoint #A.6.%d.5\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-      //SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
     }
 
   }  // end Hierarchy22 loop
-  SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
-    for(int i=0; i< Hierarchy11_->GetNumLevels(); i++) {
-      RCP<Level> EdgeL          = Hierarchy11_->GetLevel(i);
-      EdgeL->print(std::cout,Debug);
-      if(EdgeL->IsAvailable("NodeMatrix")) {
-        RCP<Operator> Mat = EdgeL->Get<RCP<Operator> >("NodeMatrix");
-        if(!Mat.is_null()) {
-          RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(Mat);
-          if(!Am.is_null()) {
-            printf("[%d] Level %d SmooMatrix Comm = %d/%d/%d/%d\n",rank,i,
-                   Am->getRangeMap()->getComm()->getSize(),
-                   Am->getRowMap()->getComm()->getSize(),
-                   Am->getColMap()->getComm()->getSize(),
-                   Am->getDomainMap()->getComm()->getSize());
-          }
-          else {
-            printf("[%d] Level %d SmooOperator COmm = %d/%d/%d/%d\n",rank,i,
-                   Mat->getRangeMap()->getComm()->getSize(),
-                   -1,
-                   -1,
-                   Mat->getDomainMap()->getComm()->getSize());
-          }          
-        }
-        else {
-          RCP<Matrix> Am = EdgeL->Get<RCP<Matrix> >("NodeMatrix");
-          if(!Am.is_null()) {
-            printf("[%d] Level %d SmooMatrix Comm = %d/%d/%d/%d\n",rank,i,
-                   Am->getRangeMap()->getComm()->getSize(),
-                   Am->getRowMap()->getComm()->getSize(),
-                   Am->getColMap()->getComm()->getSize(),
-                   Am->getDomainMap()->getComm()->getSize());
-          }
-          else {            
-            printf("[%d] Level %d Smoo available but no Operator\n",rank,i);
-          }
-        }
-      }
-      else {
-        printf("[%d] Level %d No SmooMatrix\n",rank,i);
-      }
-      fflush(stdout);
-    }
-
-  
-  printf("[%d] M1 Checkpoint #A.7\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-  SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
   ////////////////////////////////////////////////////////////////////////////////
   // Generating the (1,1) Hierarchy
@@ -783,48 +606,16 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
 
     // Stick the non-serializible data on the hierarchy.
-    printf("[%d] M1 Checkpoint #A.8.1\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
-    printf("[%d] M1 Checkpoint #A.8.2\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-    
     if(nonSerialList11.numParams() > 0) {
-      printf("[%d] M1 Checkpoint #A.8.3\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-      SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
       HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *Hierarchy11_, nonSerialList11);
     }
-
-    printf("[%d] M1 Checkpoint #A.8.4\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-    
-    printf("[%d] M1 Checkpoint #A.9.1 numDesiredLevel_ = %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),mueLuFactory->GetNumDesiredLevel());fflush(stdout);//CMSCMS
-
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
     // Attempt to sync the numDesiredLevel_    
     int oldLevels = mueLuFactory->GetNumDesiredLevel(), newLevels;
     Teuchos::reduceAll(*SM_Matrix_->getRowMap()->getComm(), Teuchos::REDUCE_MAX, 1, &oldLevels, &newLevels);
     mueLuFactory->SetNumDesiredLevel(newLevels);
-    
-    
-    printf("[%d] M1 Checkpoint #A.9.2 numDesiredLevel_ = %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),mueLuFactory->GetNumDesiredLevel());fflush(stdout);//CMSCMS
-
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
-
-    
+        
     mueLuFactory->SetupHierarchy(*Hierarchy11_);
-
-    printf("[%d] M1 Checkpoint #A.10\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
-    SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
     
     if (refmaxwellCoarseSolve) {
