@@ -40,6 +40,7 @@
 // @HEADER
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
 #define TPETRA_MATRIXMATRIX_DEF_HPP
+#include "TpetraExt_MatrixMatrix_fwd.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "TpetraExt_MatrixMatrix_decl.hpp"

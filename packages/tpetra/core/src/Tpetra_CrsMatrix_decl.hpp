@@ -45,6 +45,7 @@
 /// \brief Declaration of the Tpetra::CrsMatrix class
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
+#include "TpetraExt_MatrixMatrix_fwd.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #if KOKKOSKERNELS_VERSION >= 40299
@@ -61,36 +62,13 @@
 #include "Tpetra_Details_ExecutionSpacesUser.hpp"
 #include "Teuchos_DataAccess.hpp"
 
+
 #include <memory> // std::shared_ptr
 
 namespace Tpetra {
 
   // Forward declaration for CrsMatrix::swap() test
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class crsMatrix_Swap_Tester;
-
-  // Forward declaration for Matrix Matrix helper struct
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class CrsMatrixStruct;
-
-  // Forward declaration for Tpetra Matrix Multiply kernels
-  namespace MMdetails {
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType> struct KernelWrappers;
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType> struct KernelWrappers2;
-  // Forward declaration for Tpetra Matrix Matrix utility function
-  template<class Scalar,
-           class LocalOrdinal,
-           class GlobalOrdinal,
-           class Node>
-  void import_and_extract_views(
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
-    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >   targetMap,
-    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   Aview,
-    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
-    bool                                                          userAssertsThereAreNoRemotes,
-    const std::string&                                            label,
-    const Teuchos::RCP<Teuchos::ParameterList>&                   params);
-
-  }
-
 
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
   /// \relatesalso CrsMatrix
