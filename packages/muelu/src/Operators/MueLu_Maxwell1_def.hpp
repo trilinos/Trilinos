@@ -500,12 +500,8 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
           RCP<Matrix> NewKn = Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(OldSmootherMatrix, NodalP_ones, RAPlist, labelstr);
 
           
-          // If the RowMap of the NewKn doesn't match the NewAggMatrix, then we need to rebalance-in-place.
-          // FIXME: We need to make sure the subcomm settings here match that of the algorithm and we need to add this to the list.
-          //          if ( ! NewKn.is_null() && ( NodeAggMatrix.is_null() ||  !NewKn->getRowMap()->isSameAs(*NodeAggMatrix->getRowMap()))) {
+          // If there's an importer, we need to Rebalance the NewKn
           if (!importer.is_null()) {
-#define THE_NEW_HOTNESS
-#ifdef THE_NEW_HOTNESS
             ParameterList rebAcParams;
             rebAcParams.set("repartition: use subcommunicators", true);
             rebAcParams.set("repartition: use subcommunicators in place", true);
@@ -518,39 +514,9 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
             cLevel.Set("InPlaceMap",InPlaceMap);
             cLevel.Set("A",NewKn);
             cLevel.Request("A", newAfact.get());
-            printf("[%d] Just about to Build at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
             newAfact->Build(fLevel,cLevel);
 
-            cLevel.print(std::cout,Debug);
-            printf("[%d] Just about to Get at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
             NewKn = cLevel.Get<RCP<Matrix> >("A", newAfact.get());
-            
-#else
-
-
-
-            ParameterList rebAcParams;
-            rebAcParams.set("repartition: use subcommunicators", true);
-            rebAcParams.set("repartition: use subcommunicators in place", false);
-            auto newAfact = rcp(new RebalanceAcFactory());
-            newAfact->SetParameterList(rebAcParams);
-            //            RCP<const Map> InPlaceMap = NodeAggMatrix.is_null() ? Teuchos::null : NodeAggMatrix->getRowMap();
-
-
-            printf("[%d] M1 Level %d NewKn.RowMap.num_els = %d Importer.SourceMap.num_els = %d\n",
-                   SM_Matrix_->getRowMap()->getComm()->getRank(),i,
-                   NewKn.is_null() ? -1 : (int)NewKn->getRowMap()->getLocalNumElements(),
-                   (int)importer->getSourceMap()->getLocalNumElements());
-            
-            Level fLevel, cLevel;
-            cLevel.Set("Importer",importer);
-            cLevel.Set("A",NewKn);
-            printf("[%d] Just about to Build at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-            newAfact->Build(fLevel,cLevel);
-            printf("[%d] Just about to Get at level %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i);fflush(stdout);//CMSCMS
-            NewKn = cLevel.Get<RCP<Matrix> >("A", newAfact.get());
-
-#endif
             EdgeL->Set("NodeMatrix", NewKn);
           }
           else {
