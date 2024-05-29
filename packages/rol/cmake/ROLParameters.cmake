@@ -12,15 +12,17 @@ if( ROL_ENABLE_PARAMETERLIST_VALIDATION )
   set( ROL_BINARY_DIR "${PROJECT_BINARY_DIR}/packages/rol" )
 	set( ROL_PARAMETERS_BINARY_DIR "${ROL_BINARY_DIR}/rol_parameters" )
 
-  set( REQUIREMENTS_FILE "${ROL_PARAMETERS_SOURCE_DIR}/requirements.txt" )
+	#  set( REQUIREMENTS_FILE "${ROL_PARAMETERS_SOURCE_DIR}/requirements.txt" )
 	set( VENV_PATH "${ROL_PARAMETERS_BINARY_DIR}/venv" )
 
-  # Set up Python virtual environment
-	add_custom_target( setup_venv 
-		                 COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_EXECUTABLE} -m venv ${VENV_PATH}
-	                   COMMAND ${CMAKE_COMMAND} -E env ${VENV_PATH}/bin/python -m pip install -r ${REQUIREMENTS_FILE} 
-										 COMMENT "Setting up virtual environment and installing required Python packages"
-										 WORKING_DIRECTORY ${CMAKE_BINARY_DIR} )
+  add_custom_target( setup_venv
+                     COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_EXECUTABLE} -m venv ${VENV_PATH}
+                     # Install poetry in the virtual environment
+                     COMMAND ${CMAKE_COMMAND} -E env ${VENV_PATH}/bin/pip install poetry
+                     # Use poetry to install dependencies from pyproject.toml
+                     COMMAND ${CMAKE_COMMAND} -E env ${VENV_PATH}/bin/poetry install
+                     COMMENT "Setting up virtual environment and installing required Python packages with poetry"
+                     WORKING_DIRECTORY ${ROL_PARAMETERS_SOURCE_DIR} )
 
 	message( "Python virtual environment path: ${VENV_PATH}" )
 	message( STATUS "Run 'make setup_venv` or your equivalent build system command (e.g. ninja setup_venv') to setup the Python virtual environment before building rol_parameters")
