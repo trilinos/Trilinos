@@ -68,6 +68,16 @@ namespace Tpetra {
   // Forward declaration for CrsMatrix::swap() test
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class crsMatrix_Swap_Tester;
 
+  // Forward declaration for Tpetra Matrix Multiply
+  namespace MMdetails {
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalOrdinalViewType>
+     struct KernelWrappers;
+  }
+
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
   /// \relatesalso CrsMatrix
   /// \tparam CrsMatrixType A specialization of CrsMatrix.
@@ -3970,6 +3980,12 @@ public:
 
     // Friend the tester for CrsMatrix::swap
     friend class Tpetra::crsMatrix_Swap_Tester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // Friend the matrix multiply implementations so they can access internally-cached integer
+    // row pointers without making them part of the interface
+    friend struct Tpetra::MMdetails::KernelWrappers<
+     Scalar, LocalOrdinal, GlobalOrdinal, Node, 
+     typename local_graph_device_type::entries_type::non_const_type>;
 
     /// \brief Swaps the data from *this with the data and maps from crsMatrix
     ///
