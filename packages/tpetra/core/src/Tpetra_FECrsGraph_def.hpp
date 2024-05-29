@@ -260,10 +260,11 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     this->doExport(*this,*ownedRowsImporter_,CM,true);
 
     // Under the "if you own an element, you own at least one of its nodes" assumption,
-    // we can start by making a columnmap for ownedPlusShared
+    // we can start by making a columnmap for ownedPlusShared.  We use the ownedMap to
+    // ensure AztecOO/ML ordering of the final output colmap
     if(!this->hasColMap()) {
       Teuchos::Array<int> remotePIDs (0);
-      this->makeColMap(remotePIDs);
+      this->makeColMap(remotePIDs,ownedDomainMap_);
     }
 
     // Now run CrsGraph's fillComplete to get the final importer
