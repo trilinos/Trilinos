@@ -393,6 +393,9 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 
   }  // SetupHierarchy
 
+  //! Set the number of desired levels.
+  void SetNumDesiredLevel(int numDesiredLevel_){numDesiredLevel = numDesiredLevel_;}
+  
   //@}
 
   typedef std::map<std::string, RCP<const FactoryBase>> FactoryMap;
@@ -427,10 +430,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 
   //! @group Hierarchy parameters
   //! @{
-
-public://CMSCMS
   mutable int numDesiredLevel_;
-protected://CMSCMS
   Xpetra::global_size_t maxCoarseSize_;
   MsgType verbosity_;
 
