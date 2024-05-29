@@ -394,8 +394,11 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
   }  // SetupHierarchy
 
   //! Set the number of desired levels.
-  void SetNumDesiredLevel(int numDesiredLevel_){numDesiredLevel = numDesiredLevel_;}
-  
+  void SetNumDesiredLevel(int numDesiredLevel){numDesiredLevel_ = numDesiredLevel;}
+
+  //! Get the number of desired levels.
+  int GetNumDesiredLevel(){return numDesiredLevel_;}
+
   //@}
 
   typedef std::map<std::string, RCP<const FactoryBase>> FactoryMap;

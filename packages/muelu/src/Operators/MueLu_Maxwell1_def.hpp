@@ -804,17 +804,17 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     printf("[%d] M1 Checkpoint #A.8.4\n",SM_Matrix_->getRowMap()->getComm()->getRank());fflush(stdout);//CMSCMS
     SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
     
-    printf("[%d] M1 Checkpoint #A.9.1 numDesiredLevel_ = %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),mueLuFactory->numDesiredLevel_);fflush(stdout);//CMSCMS
+    printf("[%d] M1 Checkpoint #A.9.1 numDesiredLevel_ = %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),mueLuFactory->GetNumDesiredLevel());fflush(stdout);//CMSCMS
 
     SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
 
     // Attempt to sync the numDesiredLevel_    
-    int newLevels;
-    Teuchos::reduceAll(*SM_Matrix_->getRowMap()->getComm(), Teuchos::REDUCE_MAX, 1, &mueLuFactory->numDesiredLevel_, &newLevels);
-    mueLuFactory->numDesiredLevel_ = newLevels;
+    int oldLevels = mueLuFactory->GetNumDesiredLevel(), newLevels;
+    Teuchos::reduceAll(*SM_Matrix_->getRowMap()->getComm(), Teuchos::REDUCE_MAX, 1, &oldLevels, &newLevels);
+    mueLuFactory->SetNumDesiredLevel(newLevels);
     
     
-    printf("[%d] M1 Checkpoint #A.9.2 numDesiredLevel_ = %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),mueLuFactory->numDesiredLevel_);fflush(stdout);//CMSCMS
+    printf("[%d] M1 Checkpoint #A.9.2 numDesiredLevel_ = %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),mueLuFactory->GetNumDesiredLevel());fflush(stdout);//CMSCMS
 
     SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
     SM_Matrix_->getRowMap()->getComm()->barrier();//CMSCMS
