@@ -69,34 +69,57 @@ BlockedMultiVector extractSubBlockVector(const BlockedMultiVector& blo,
 
 BlockedLinearOp extractSubblockMatrix(const BlockedLinearOp& blo, const std::vector<int>& rows,
                                       const std::vector<int>& cols) {
-  {
-    int nrows = blockRowCount(blo);
-    for (auto&& row : rows) {
-      TEUCHOS_ASSERT(row < nrows);
-    }
+  int nOuterBlockRows = blockRowCount(blo);
+  for (auto&& row : rows) {
+    TEUCHOS_ASSERT(row < nOuterBlockRows);
   }
-
-  {
-    int ncols = blockColCount(blo);
-    for (auto&& col : cols) {
-      TEUCHOS_ASSERT(col < ncols);
-    }
+  int nOuterBlockCols = blockColCount(blo);
+  for (auto&& col : cols) {
+    TEUCHOS_ASSERT(col < nOuterBlockCols);
   }
 
   // allocate new operator
   auto subblock = createBlockedOp();
 
-  const int nrows = rows.size();
-  const int ncols = cols.size();
+  const int nInnerBlockRows = rows.size();
+  const int nInnerBlockCols = cols.size();
 
   // build new operator
-  subblock->beginBlockFill(nrows, ncols);
-  for (int row_id = 0U; row_id < nrows; ++row_id) {
-    for (int col_id = 0U; col_id < ncols; ++col_id) {
-      auto [row, col] = std::make_tuple(rows[row_id], cols[col_id]);
-      auto A_row_col  = blo->getBlock(row, col);
+  subblock->beginBlockFill(nInnerBlockRows, nInnerBlockCols);
+  for (int innerBlockRow = 0U; innerBlockRow < nInnerBlockRows; ++innerBlockRow) {
+    for (int innerBlockCol = 0U; innerBlockCol < nInnerBlockCols; ++innerBlockCol) {
+      auto [outerBlockRow, outerBlockCol] =
+          std::make_tuple(rows[innerBlockRow], cols[innerBlockCol]);
+      auto A_row_col = blo->getBlock(outerBlockRow, outerBlockCol);
 
-      if (A_row_col != Teuchos::null) subblock->setBlock(row_id, col_id, A_row_col);
+      if (A_row_col != Teuchos::null) {
+        subblock->setBlock(innerBlockRow, innerBlockCol, A_row_col);
+      } else {
+        // scan to find first non-null range/domain, construct zero operator
+        VectorSpace range;
+        VectorSpace domain;
+
+        for (int outerBlock = 0; outerBlock < nOuterBlockCols; ++outerBlock) {
+          auto A_ij = blo->getBlock(outerBlockRow, outerBlock);
+          if (A_ij != Teuchos::null) {
+            range = A_ij->range();
+            break;
+          }
+        }
+
+        for (int outerBlock = 0; outerBlock < nOuterBlockRows; ++outerBlock) {
+          auto A_ij = blo->getBlock(outerBlock, outerBlockCol);
+          if (A_ij != Teuchos::null) {
+            domain = A_ij->domain();
+            break;
+          }
+        }
+
+        TEUCHOS_ASSERT(range != Teuchos::null);
+        TEUCHOS_ASSERT(domain != Teuchos::null);
+
+        subblock->setBlock(innerBlockRow, innerBlockCol, zero(range, domain));
+      }
     }
   }
 
