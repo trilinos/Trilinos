@@ -4384,7 +4384,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  makeColMap (Teuchos::Array<int>& remotePIDs)
+  makeColMap (Teuchos::Array<int>& remotePIDs, const Teuchos::RCP<const map_type> userDomainMap)
   {
     using Details::ProfilingRegion;
     using std::endl;
@@ -4423,7 +4423,7 @@ namespace Tpetra {
       std::ostringstream errStrm;
       const int lclErrCode =
         Details::makeColMap (colMap, remotePIDs,
-          getDomainMap (), *this, sortEachProcsGids, &errStrm);
+          userDomainMap, *this, sortEachProcsGids, &errStrm);
       auto comm = this->getComm ();
       if (! comm.is_null ()) {
         const int lclSuccess = (lclErrCode == 0) ? 1 : 0;
@@ -4443,7 +4443,7 @@ namespace Tpetra {
     }
     else {
       (void) Details::makeColMap (colMap, remotePIDs,
-        getDomainMap (), *this, sortEachProcsGids, nullptr);
+        userDomainMap, *this, sortEachProcsGids, nullptr);
     }
     // See above.  We want to admit the possibility of makeColMap
     // actually revising an existing column Map, even though that
