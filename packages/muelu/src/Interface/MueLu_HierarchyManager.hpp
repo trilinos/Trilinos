@@ -145,14 +145,6 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     RCP<Level> l0    = H.GetLevel(0);
     RCP<Operator> Op = l0->Get<RCP<Operator>>("A");
 
-    static int call_count =-1;
-    call_count++;
-    int rank = Op.is_null()? -1: Op->getRangeMap()->getComm()->getRank();
-    RCP<const Teuchos::Comm<int> > comm = Op.is_null() ? Teuchos::null : Op->getRangeMap()->getComm();
-
-    printf("[%d] Call %d SH Checkpoint #S.1\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    
     // Compare nullspace dimension to NumPDEs and throw/warn based on user input
     if (l0->IsAvailable("Nullspace")) {
       RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(Op);
@@ -187,28 +179,19 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 
     // Setup Matrix
     // TODO: I should certainly undo this somewhere...
-    printf("[%d] Call %d SH Checkpoint #S.2.0\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    
+
     Xpetra::UnderlyingLib lib = Op->getDomainMap()->lib();
     H.setlib(lib);
 
     SetupOperator(*Op);
     SetupExtra(H);
 
-    printf("[%d] Call %d SH Checkpoint #S.2.1\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    
     // Setup Hierarchy
     H.SetMaxCoarseSize(maxCoarseSize_);
     VerboseObject::SetDefaultVerbLevel(verbosity_);
     if (graphOutputLevel_ >= 0 || graphOutputLevel_ == -1)
       H.EnableGraphDumping("dep_graph", graphOutputLevel_);
 
-
-    printf("[%d] Call %d SH Checkpoint #S.2.2\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    
     if (VerboseObject::IsPrint(Statistics2)) {
       RCP<Matrix> Amat = rcp_dynamic_cast<Matrix>(Op);
 
@@ -223,32 +206,13 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
       }
     }
 
-
-    printf("[%d] Call %d SH Checkpoint #S.2.3\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-
     H.SetPRrebalance(doPRrebalance_);
-    printf("[%d] Call %d SH Checkpoint #S.2.4\n",rank,call_count);fflush(stdout);
-
-    if(!comm.is_null()) comm->barrier();    
 
     H.SetPRViaCopyrebalance(doPRViaCopyrebalance_);
-    printf("[%d] Call %d SH Checkpoint #S.2.5\n",rank,call_count);fflush(stdout);
     H.SetImplicitTranspose(implicitTranspose_);
-    printf("[%d] Call %d SH Checkpoint #S.2.6\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
     H.SetFuseProlongationAndUpdate(fuseProlongationAndUpdate_);
-    printf("[%d] Call %d SH Checkpoint #S.3.1\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
 
     H.Clear();
-    
-    printf("[%d] Call %d SH Checkpoint #S.3.2\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
     
 
     // There are few issues with using Keep in the interpreter:
@@ -269,11 +233,6 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     //      that level
     //   3. For each level, we call Keep(name, factory) for each keep_
 
-    printf("[%d] Call %d SH Checkpoint #S.3.3 numDesiredLevel_ = %d\n",rank,call_count,numDesiredLevel_);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-
     for (int i = 0; i < numDesiredLevel_; i++) {
       std::map<int, std::vector<keep_pair>>::const_iterator it = keep_.find(i);
       if (it != keep_.end()) {
@@ -287,20 +246,11 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
         H.AddLevel(newLevel);
       }
     }
-    printf("[%d] Call %d SH Checkpoint #S.4.1\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
     
     // Matrices to print
     for (auto iter = matricesToPrint_.begin(); iter != matricesToPrint_.end(); iter++)
       ExportDataSetKeepFlags(H, iter->second, iter->first);
 
-    printf("[%d] Call %d SH Checkpoint #S.4.2\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    
     // Vectors, aggregates and other things that need special case handling
     ExportDataSetKeepFlags(H, nullspaceToPrint_, "Nullspace");
     ExportDataSetKeepFlags(H, coordinatesToPrint_, "Coordinates");
@@ -310,37 +260,15 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     ExportDataSetKeepFlags(H, elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
 
-    printf("[%d] Call %d SH Checkpoint #S.4.3\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-
     // Data to keep only (these do not have a level, so we do all levels)
     for (int i = 0; i < dataToKeep_.size(); i++)
-      ExportDataSetKeepFlagsAll(H, dataToKeep_[i]);
-
-    printf("[%d] Call %d SH Checkpoint #S.5.1\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-
-    
-    printf("[%d] Call %d SH Checkpoint #S.5.2\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-
-
-    
-    
+      ExportDataSetKeepFlagsAll(H, dataToKeep_[i]);    
     
     int levelID      = 0;
     int lastLevelID  = numDesiredLevel_ - 1;
     bool isLastLevel = false;
 
     while (!isLastLevel) {
-      printf("[%d] Call %d SH Checkpoint #S.6.%d\n",rank,call_count,levelID);fflush(stdout);
-      //      if(!comm.is_null()) comm->barrier();
       bool r = H.Setup(levelID,
                        LvlMngr(levelID - 1, lastLevelID),
                        LvlMngr(levelID, lastLevelID),
@@ -351,10 +279,6 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
       isLastLevel = r || (levelID == lastLevelID);
       levelID++;
     }
-    printf("[%d] Call %d SH Checkpoint #S.7\n",rank,call_count);fflush(stdout);
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
-    if(!comm.is_null()) comm->barrier();
     
     if (!matvecParams_.is_null())
       H.SetMatvecParams(matvecParams_);
