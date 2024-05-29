@@ -226,7 +226,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
   const bool useIntRowptrs = 
      irph.shouldUseIntRowptrs() && 
-    Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
+     Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
     IntKernelHandle kh;

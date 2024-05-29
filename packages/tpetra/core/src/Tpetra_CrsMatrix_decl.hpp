@@ -68,7 +68,10 @@ namespace Tpetra {
   // Forward declaration for CrsMatrix::swap() test
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class crsMatrix_Swap_Tester;
 
-  // Forward declaration for Tpetra Matrix Multiply
+  // Forward declaration for Matrix Matrix helper struct
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class CrsMatrixStruct;
+
+  // Forward declaration for Tpetra Matrix Multiply kernels
   namespace MMdetails {
   template<class Scalar,
            class LocalOrdinal,
@@ -76,7 +79,22 @@ namespace Tpetra {
            class Node,
            class LocalOrdinalViewType>
      struct KernelWrappers;
+  // Forward declaration for Tpetra Matrix Matrix utility function
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
+  void import_and_extract_views(
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >   targetMap,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   Aview,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
+    bool                                                          userAssertsThereAreNoRemotes,
+    const std::string&                                            label,
+    const Teuchos::RCP<Teuchos::ParameterList>&                   params);
+
   }
+
 
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
   /// \relatesalso CrsMatrix
@@ -3948,7 +3966,7 @@ public:
     getValuesViewDeviceNonConst (const RowInfo& rowinfo);
 
 #if KOKKOSKERNELS_VERSION >= 40299
-public:
+private:
     // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
     // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
     //
@@ -3986,6 +4004,17 @@ public:
     friend struct Tpetra::MMdetails::KernelWrappers<
      Scalar, LocalOrdinal, GlobalOrdinal, Node, 
      typename local_graph_device_type::entries_type::non_const_type>;
+
+    // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
+    friend 
+    void Tpetra::MMdetails::import_and_extract_views<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >   targetMap,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   Aview,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
+    bool                                                          userAssertsThereAreNoRemotes,
+    const std::string&                                            label,
+    const Teuchos::RCP<Teuchos::ParameterList>&                   params);
 
     /// \brief Swaps the data from *this with the data and maps from crsMatrix
     ///
