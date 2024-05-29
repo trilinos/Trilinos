@@ -1759,7 +1759,7 @@ public:
     ///   column Map's "remote" (not on the calling process in the
     ///   domain Map) indices.
     /// \param userDomainMap [in] User-provided alternative to the domainMap.
-    void makeColMap (Teuchos::Array<int>& remotePIDs, const Teuchos::RCP<const map_type> userDomainMap = getDomainMap());
+    void makeColMap (Teuchos::Array<int>& remotePIDs, const Teuchos::RCP<const map_type> userDomainMap = Teuchos::null);
 
     /// \brief Convert column indices from global to local.
     ///

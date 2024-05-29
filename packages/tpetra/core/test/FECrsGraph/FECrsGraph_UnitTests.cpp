@@ -578,14 +578,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   CG  g11(pack.uniqueMap,9);
   g11.doExport(g0,import,Tpetra::INSERT);
   g11.fillComplete(pack.uniqueMap,pack.uniqueMap);
+  out<<"Comparing g11/g1"<<std::endl;
   success = compare_final_graph_structure(out,g11,g1);
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
+  out<<"Comparing g1/g2"<<std::endl;
   success = compare_final_graph_structure(out,g1,g2) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
   // Passing a domain map different from the uniqueMap should cause a rearrangement of
   // off-rank indices in the column map. Other than that, the graphs should still coincide.
+  out<<"Comparing g1/g3"<<std::endl;
   success = compare_final_graph_structure_relaxed(out,g1,g3) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
@@ -600,6 +603,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   auto importer = g12.getImporter();
   g12.replaceDomainMapAndImporter(pack.uniqueMap,importer);
 
+  out<<"Comparing g12/g3"<<std::endl;
   success = compare_final_graph_structure(myout,g12,g3) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 }
