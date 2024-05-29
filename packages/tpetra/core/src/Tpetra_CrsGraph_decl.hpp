@@ -1758,7 +1758,8 @@ public:
     /// \param remotePIDs [out] The process ranks corresponding to the
     ///   column Map's "remote" (not on the calling process in the
     ///   domain Map) indices.
-    void makeColMap (Teuchos::Array<int>& remotePIDs);
+    /// \param userDomainMap [in] User-provided alternative to the domainMap.
+    void makeColMap (Teuchos::Array<int>& remotePIDs, const Teuchos::RCP<const map_type> userDomainMap = getDomainMap());
 
     /// \brief Convert column indices from global to local.
     ///
