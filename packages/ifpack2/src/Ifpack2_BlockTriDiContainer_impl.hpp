@@ -1054,7 +1054,9 @@ namespace Ifpack2 {
 
         n_subparts_per_part = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
 
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
         printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
+#endif
       }
       else {
         n_subparts_per_part = n_subparts_per_part_in;
