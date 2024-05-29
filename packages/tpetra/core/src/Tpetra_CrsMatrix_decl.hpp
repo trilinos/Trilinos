@@ -73,12 +73,8 @@ namespace Tpetra {
 
   // Forward declaration for Tpetra Matrix Multiply kernels
   namespace MMdetails {
-  template<class Scalar,
-           class LocalOrdinal,
-           class GlobalOrdinal,
-           class Node,
-           class LocalOrdinalViewType>
-     struct KernelWrappers;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType> struct KernelWrappers;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType> struct KernelWrappers2;
   // Forward declaration for Tpetra Matrix Matrix utility function
   template<class Scalar,
            class LocalOrdinal,
@@ -3999,11 +3995,11 @@ private:
     // Friend the tester for CrsMatrix::swap
     friend class Tpetra::crsMatrix_Swap_Tester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-    // Friend the matrix multiply implementations so they can access internally-cached integer
-    // row pointers without making them part of the interface
-    friend struct Tpetra::MMdetails::KernelWrappers<
-     Scalar, LocalOrdinal, GlobalOrdinal, Node, 
-     typename local_graph_device_type::entries_type::non_const_type>;
+    // Friend the matrix multiply kernels so they can access internally-cached integer
+    // row pointers without making them part of the CrsMatrix interface
+    template<typename S, typename LO, typename GO, typename NODE, typename LOV> friend struct Tpetra::MMdetails::KernelWrappers;
+    template<typename S, typename LO, typename GO, typename NODE, typename LOV> friend struct Tpetra::MMdetails::KernelWrappers2;
+
 
     // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
     friend 
