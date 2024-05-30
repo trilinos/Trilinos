@@ -279,7 +279,7 @@ LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildPreconditionerOperat
 }
 
 LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildBlockInverse(
-    const InverseFactory& invFact, Teuchos::RCP<InverseFactory>& precFact,
+    const InverseFactory& invFact, const Teuchos::RCP<InverseFactory>& precFact,
     const BlockedLinearOp& matrix, BlockPreconditionerState& state,
     int hierarchicalBlockNum) const {
   std::stringstream ss;

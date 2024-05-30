@@ -104,7 +104,8 @@ class HierarchicalGaussSeidelPreconditionerFactory : public BlockPreconditionerF
   using BlockPreconditionerFactory::buildPreconditionerOperator;
 
  private:
-  LinearOp buildBlockInverse(const InverseFactory& invFact, Teuchos::RCP<InverseFactory>& precFact,
+  LinearOp buildBlockInverse(const InverseFactory& invFact,
+                             const Teuchos::RCP<InverseFactory>& precFact,
                              const BlockedLinearOp& matrix, BlockPreconditionerState& state,
                              int hierarchicalBlockNum) const;
 
