@@ -280,32 +280,36 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
             if (seq_method && overlap_comm) continue;
             for (const bool nonuniform_lines : {false, true}) {
               for (const bool pointwise : {false, true}) {
-                if (jacobi && nonuniform_lines) continue;
-                for (const int nvec : {1, 3}) {
-                  std::stringstream ss;
-                  ss << "test_BR_BTDC:"
-                    << " bs " << bs
-                    << (contiguous ? " contig" : " noncontig")
-                    << (jacobi ? " jacobi" : " tridiag")
-                    << (seq_method ? " seq_method" : "")
-                    << (overlap_comm ? " overlap_comm" : "")
-                    << (pointwise ? " point_wise" : "")
-                    << (nonuniform_lines ? " nonuniform_lines" : " uniform_lines")
-                    << " nvec " << nvec;
-                  const std::string details = ss.str();
-                  bool threw = false;
-                  try {
-                    ne = btdct::test_BR_BTDC(in.comm, sb, sbp, bs, nvec, nonuniform_lines,
-                                            different_maps, jacobi, overlap_comm, seq_method, pointwise,
-                                            details);
-                    nerr += ne;
-                  } catch (const std::exception& e) {
-                    threw = true;
-                  }
-                  if (threw)
-                    printf("Exception threw from rank %d, %s\n", in.comm->getRank(), details.c_str());
+                for (const bool explicitConversion : {false, true}) {
+                  if (jacobi && nonuniform_lines) continue;
+                  if (!pointwise && explicitConversion) continue;
+                  for (const int nvec : {1, 3}) {
+                    std::stringstream ss;
+                    ss << "test_BR_BTDC:"
+                      << " bs " << bs
+                      << (contiguous ? " contig" : " noncontig")
+                      << (jacobi ? " jacobi" : " tridiag")
+                      << (seq_method ? " seq_method" : "")
+                      << (overlap_comm ? " overlap_comm" : "")
+                      << (pointwise ? " point_wise" : "")
+                      << (explicitConversion ? " explicit_block_conversion" : "")
+                      << (nonuniform_lines ? " nonuniform_lines" : " uniform_lines")
+                      << " nvec " << nvec;
+                    const std::string details = ss.str();
+                    bool threw = false;
+                    try {
+                      ne = btdct::test_BR_BTDC(in.comm, sb, sbp, bs, nvec, nonuniform_lines,
+                                              different_maps, jacobi, overlap_comm, seq_method, pointwise,
+                                              explicitConversion, details);
+                      nerr += ne;
+                    } catch (const std::exception& e) {
+                      threw = true;
+                    }
+                    if (threw)
+                      printf("Exception threw from rank %d, %s\n", in.comm->getRank(), details.c_str());
 
-                  TEUCHOS_TEST(ne == 0 && ! threw, details);
+                    TEUCHOS_TEST(ne == 0 && ! threw, details);
+                  }
                 }
               }
             }
