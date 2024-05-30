@@ -73,6 +73,7 @@ class tSIMPLEPreconditionerFactory_tpetra : public UnitTest {
   bool test_uninitializePrec(int verbosity, std::ostream& os);
   bool test_isCompatable(int verbosity, std::ostream& os);
   bool test_iterativeSolves(int verbosity, std::ostream& os);
+  bool test_hierarchicalSolves(int verbosity, std::ostream& os);
 
   // non-member tests
   bool test_result(int verbosity, std::ostream& os, int use_blocking);
