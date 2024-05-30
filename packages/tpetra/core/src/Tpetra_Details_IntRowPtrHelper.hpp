@@ -40,30 +40,31 @@
 #ifndef TPETRA_INTROWPTR_HELPER_HPP
 #define TPETRA_INTROWPTR_HELPER_HPP
 
+#include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosSparse_spmv_handle.hpp"
 
 namespace Tpetra {
 namespace Details {
 
-/// Helper for CrsMatrix::apply and BlockCrsMatrix::apply. Converts rowptrs
+/// Helper for CrsMatrix BlockCrsMatrix. Converts rowptrs
 /// of the local matrix to int if it's not already int-valued, and overflow won't occur.
-/// This enables TPLs to be used in KokkosSparse::spmv.
+/// This enables TPLs to be used in KokkosSparse::spmv and KokkosSparse::spgemm
 ///
 /// This functionality is temporary. When KokkosKernels 4.4 is released, the default offset (rowptrs element type)
 /// in KK's ETI will switch to int, and Tpetra's matrix types will also switch to int. This will make the int rowptrs handling
 /// here unnecessary, and CrsMatrix/BlockCrsMatrix can simply store the SPMVHandle themselves.
-template<typename LocalMatrix>
-struct IntRowPtrHelper
-{
-  using Rowptrs = typename LocalMatrix::row_map_type;
-
-  using IntLocalMatrix = typename KokkosSparse::CrsMatrix<typename LocalMatrix::value_type,
+/// \tparam IntLocalMatrix: if LocalMatrix is a CrsMatrix, this parameter is automatically a CrsMatrix with integer-typed rows pointers. Otherwise (BlockCrsMatrix), a corresponding integer-typed BlockCrsMatrix will need to be provided by the 
+template<typename LocalMatrix, 
+         typename IntLocalMatrix = KokkosSparse::CrsMatrix<typename LocalMatrix::value_type,
                               typename LocalMatrix::ordinal_type,
                               typename LocalMatrix::device_type,
-                              void,
-                              int>;
+                              void, int>>
+struct IntRowPtrHelper
+{
+  static_assert(is_crs_matrix_v<LocalMatrix> == is_crs_matrix_v<IntLocalMatrix>, "Expected both to be CrsMatrix or BlockCrsMatrix");
 
+  using Rowptrs = typename LocalMatrix::row_map_type;
   using IntRowptrs = typename IntLocalMatrix::row_map_type;
 
   IntRowPtrHelper(size_t nnz, const typename LocalMatrix::row_map_type& rowptrs)

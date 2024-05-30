@@ -779,7 +779,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   typename handle_t::nnz_lno_t BnumCols = Bmerged.numCols();
 
   // Arrays of the output matrix
-  lno_view_t row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), AnumRows + 1);
+  lno_view_t row_mapC (Kokkos::ViewAllocateWithoutInitializing("row_mapC"), AnumRows + 1);
   lno_nnz_view_t entriesC;
   scalar_view_t valuesC;
 
@@ -798,6 +798,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
+  // decide whether to use integer-typed row pointers for this spgemm
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
   const bool useIntRowptrs = 
     irph.shouldUseIntRowptrs() && 
@@ -808,7 +809,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
 
-    int_view_t int_row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
+    int_view_t int_row_mapC (Kokkos::ViewAllocateWithoutInitializing("int_row_mapC"), AnumRows + 1);
 
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
@@ -824,7 +825,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
-    // TODO: no TPL for this, so it can just be called on the native datatypes even if integer-typed row pointers are used for symbolic step TPLs
+    // even though there is no TPL for this, we have to use the same handle that was used in the symbolic phase,
+    // so need to have a special int-typed call for this as well.
     KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
                 Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
                 Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
@@ -834,7 +836,6 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     Kokkos::parallel_for(int_row_mapC.size(), KOKKOS_LAMBDA(int i){ row_mapC(i) = int_row_mapC(i);});
     kh.destroy_spgemm_handle();
   } else {
-    // KokkosKernels call
     handle_t kh;
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
