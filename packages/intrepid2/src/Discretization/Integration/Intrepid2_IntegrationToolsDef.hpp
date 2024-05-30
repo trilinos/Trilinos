@@ -1244,7 +1244,6 @@ namespace Intrepid2 {
         const int GyEntryCount     = pointBounds_z; // for each thread: store one Gy value per z coordinate
         Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GxIntegrals; // for caching Gx values: we integrate out the first component dimension for each coordinate in the remaining dimensios
         Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GyIntegrals; // for caching Gy values (each thread gets a stack, of the same height as tensorComponents - 1)
-        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GzIntegral;  // for one Gz value that we sum into before summing into the destination matrix
         Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure; shared by team
         
         Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_x, rightFields_x;
@@ -1253,7 +1252,6 @@ namespace Intrepid2 {
         if (fad_size_output_ > 0) {
           GxIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   pointsInNonzeroComponentDimensions, fad_size_output_);
           GyIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   GyEntryCount * numThreads,          fad_size_output_);
-          GzIntegral    = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   numThreads,                         fad_size_output_);
           pointWeights  = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1),   fad_size_output_);
           
           leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x, fad_size_output_);
@@ -1266,7 +1264,6 @@ namespace Intrepid2 {
         else {
           GxIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  pointsInNonzeroComponentDimensions);
           GyIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  GyEntryCount * numThreads);
-          GzIntegral    = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  numThreads);
           pointWeights  = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(),  composedTransform_.extent_int(1));
         
           leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x);
@@ -1410,43 +1407,67 @@ namespace Intrepid2 {
                   const int i1 = i1j1 % leftFieldBounds_y;
                   const int j1 = i1j1 / leftFieldBounds_y;
                   
-                  int Gy_index = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
+                  int Gy_index_offset = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
                   
-                  int pointEnumerationIndex = 0; // incremented at bottom of lz loop below.
                   for (int lz=0; lz<pointBounds_z; lz++)
                   {
-                    Scalar & Gy = GyIntegrals(Gy_index);
-                    Gy = 0.0;
-                    
-                    for (int ly=0; ly<pointBounds_y; ly++)
+                    int pointEnumerationIndex = lz * pointBounds_y;
+                    if (fad_size_output_ == 0)
                     {
-                      const Scalar &  leftValue =  leftFields_y(i1,ly);
-                      const Scalar & rightValue = rightFields_y(j1,ly);
-                    
-                      Gy += leftValue * rightValue * GxIntegrals(pointEnumerationIndex);
+                      Scalar Gy_local = 0;
                       
-                      pointEnumerationIndex++;
+                      // not a Fad type; we're allow to have a vector range
+                      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, pointBounds_y), [&] (const int &ly, Scalar &integralThusFar)
+                      {
+                        const Scalar &  leftValue =  leftFields_y(i1,ly);
+                        const Scalar & rightValue = rightFields_y(j1,ly);
+                        
+                        integralThusFar += leftValue * rightValue * GxIntegrals(pointEnumerationIndex + ly);
+                      }, Gy_local);
+                      
+                    GyIntegrals(Gy_index_offset + lz) = Gy_local;
                     }
-                    Gy_index++;
+                    else
+                    {
+                      Scalar & Gy = GyIntegrals(Gy_index_offset + lz);
+                      for (int ly=0; ly<pointBounds_y; ly++)
+                      {
+                        const Scalar &  leftValue =  leftFields_y(i1,ly);
+                        const Scalar & rightValue = rightFields_y(j1,ly);
+                      
+                        Gy += leftValue * rightValue * GxIntegrals(pointEnumerationIndex + ly);
+                      }
+                    }
                   }
                       
-                  Scalar & Gz = GzIntegral(threadNumber); // one entry per thread
                   for (int i2=0; i2<leftFieldBounds_z; i2++)
                   {
                     for (int j2=0; j2<rightFieldBounds_z; j2++)
                     {
-                      Gz = 0.0;
+                      Scalar Gz = 0.0;
                       
-                      int Gy_index = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
+                      int Gy_index_offset = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
                       
-                      for (int lz=0; lz<pointBounds_z; lz++)
+                      if (fad_size_output_ == 0)
                       {
-                        const Scalar &  leftValue =  leftFields_z(i2,lz);
-                        const Scalar & rightValue = rightFields_z(j2,lz);
-                        
-                        Gz += leftValue * rightValue * GyIntegrals(Gy_index);
-                        
-                        Gy_index++;
+                        // not a Fad type; we're allow to have a vector range
+                        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, pointBounds_z), [&] (const int &lz, Scalar &integralThusFar)
+                        {
+                          const Scalar &  leftValue =  leftFields_z(i2,lz);
+                          const Scalar & rightValue = rightFields_z(j2,lz);
+                          
+                          integralThusFar += leftValue * rightValue * GyIntegrals(Gy_index_offset+lz);
+                        }, Gz);
+                      }
+                      else
+                      {
+                        for (int lz=0; lz<pointBounds_z; lz++)
+                        {
+                          const Scalar &  leftValue =  leftFields_z(i2,lz);
+                          const Scalar & rightValue = rightFields_z(j2,lz);
+                          
+                          Gz += leftValue * rightValue * GyIntegrals(Gy_index_offset+lz);
+                        }
                       }
                       
                       const int i =  leftFieldOrdinalOffset + i0 + (i1 + i2 *  leftFieldBounds_y) *  leftFieldBounds_x;
@@ -1455,7 +1476,9 @@ namespace Intrepid2 {
 //                      const int i = relativeEnumerationIndex( leftArguments,  leftFieldBounds, 0) +  leftFieldOrdinalOffset;
 //                      const int j = relativeEnumerationIndex(rightArguments, rightFieldBounds, 0) + rightFieldOrdinalOffset;
                       
-                      integralViewEntry<integralViewRank>(integralView, cellDataOrdinal, i, j) += Gz;
+                      Kokkos::single (Kokkos::PerThread(teamMember), [&] () {
+                        integralViewEntry<integralViewRank>(integralView, cellDataOrdinal, i, j) += Gz;
+                      });
                     }
                   }
                 });
@@ -1800,7 +1823,6 @@ namespace Intrepid2 {
         {
           shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions, fad_size_output_); // GxIntegrals: entries with x integrated away
           shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads,          fad_size_output_); // GyIntegrals: entries with x,y integrated away
-          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(           1 * numThreads,          fad_size_output_); // GzIntegral:  entry   with x,y,z integrated away
           shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1), fad_size_output_); // pointWeights
           
           shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0], fad_size_output_); // leftFields_x
@@ -1814,7 +1836,6 @@ namespace Intrepid2 {
         {
           shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions);  // GxIntegrals: entries with x integrated away
           shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads);           // GyIntegrals: entries with x,y integrated away
-          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( 1 * numThreads);                     // GzIntegral:  entry   with x,y,z integrated away
           shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1)); // pointWeights
           
           shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0]); // leftFields_x
