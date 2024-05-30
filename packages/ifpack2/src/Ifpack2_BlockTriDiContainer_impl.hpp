@@ -1072,7 +1072,7 @@ namespace Ifpack2 {
           SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
           recommended_team_size(blocksize, vector_length, internal_vector_length);
 
-        const local_ordinal_type num_teams = execution_space().concurrency() / (team_size * vector_length);
+        const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
 
         n_subparts_per_part = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
 
