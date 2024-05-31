@@ -43,6 +43,7 @@
 #ifndef IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 #define IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 
+#include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"

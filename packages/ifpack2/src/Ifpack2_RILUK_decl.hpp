@@ -578,6 +578,10 @@ private:
   static void checkOrderingConsistency (const row_matrix_type& A);
   void initAllValues (const row_matrix_type& A);
 
+  void compute_serial();
+  void compute_kkspiluk();
+  void compute_kkspiluk_stream();
+
   /// \brief Return A, wrapped in a LocalFilter, if necessary.
   ///
   /// "If necessary" means that if A is already a LocalFilter, or if
@@ -599,6 +603,8 @@ protected:
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
+  Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
   lno_row_view_t A_local_rowmap_;
   lno_nonzero_view_t A_local_entries_;
   scalar_nonzero_view_t A_local_values_;
