@@ -227,6 +227,7 @@ private:
     // TODO: Implement the paramter options - confirm which we want and which have been implemented
     int method;
     int variant;
+    int small_problem_threshold_size;
     // int num_kokkos_threads;
     // int max_num_superblocks;
   } data_;

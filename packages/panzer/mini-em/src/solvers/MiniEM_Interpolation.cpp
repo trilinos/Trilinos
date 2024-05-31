@@ -340,9 +340,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     numCells = static_cast<int>(worksetSize);
   DynRankDeviceView             ho_dofCoords_d("ho_dofCoords_d", hoCardinality, dim);
   DynRankDeviceView             basisCoeffsLIOriented_d("basisCoeffsLIOriented_d", numCells, hoCardinality, loCardinality);
-  typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  numCells);
-  typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes_h("elemNodes_h", numCells, numElemVertices);
-  typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>             elemNodes_d("elemNodes_d", numCells, numElemVertices);
+
 
   // the ranks of these depend on dimension
   DynRankDeviceView ho_dofCoeffs_d;
@@ -370,6 +368,13 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
   auto entryFilterTol = 100*Teuchos::ScalarTraits<typename STS::magnitudeType>::eps();
 
+
+  // HO dof coordinates and coefficients
+  ho_basis->getDofCoords(ho_dofCoords_d);
+
+  // compute values of op * (LO basis) at HO dof coords on reference element
+  lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
+
   // loop over element blocks
   std::vector<std::string> elementBlockIds;
   blockedDOFMngr->getElementBlockIds(elementBlockIds);
@@ -381,44 +386,48 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
     Kokkos::View<int *, DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
     Kokkos::deep_copy(elementIds_d, elementIds_h);
 
-    for(std::size_t elemIter = 0; elemIter < elementIds.size(); elemIter += numCells) {
+    // get element orientations
+    typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  elementIds.size());
+    {
+      typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes_h("elemNodes_h", elementIds.size(), numElemVertices);
+      typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>             elemNodes_d("elemNodes_d", elementIds.size(), numElemVertices);
 
-      // get element orientations
-      for (int cellNo = 0; cellNo < numCells; cellNo++) {
-        if (elemIter+cellNo >= elementIds.size())
-          continue;
-        const GlobalOrdinal* node_ids = node_conn->getConnectivity(elementIds[elemIter+cellNo]);
+      for (int cellNo = 0; cellNo < elementIds.size(); cellNo++) {
+        const GlobalOrdinal* node_ids = node_conn->getConnectivity(elementIds[cellNo]);
         for(int i = 0; i < numElemVertices; i++)
           elemNodes_h(cellNo, i) = node_ids[i];
       }
       Kokkos::deep_copy(elemNodes_d, elemNodes_h);
 
       ots::getOrientation(elemOrts_d, elemNodes_d, topology);
+    }
 
-      // HO dof coordinates and coefficients
-      ho_basis->getDofCoords(ho_dofCoords_d);
+    for(std::size_t elemIter = 0; elemIter < elementIds.size(); elemIter += numCells) {
 
-      // compute values of op * (LO basis) at HO dof coords on reference element
-      lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
+      int endCellRange =
+          std::min(numCells, Teuchos::as<int>(elementIds.size()) -
+                                 Teuchos::as<int>(elemIter));
+
+      // get subviews on workset
+      auto elemOrtsWorkset_d = Kokkos::subview(elemOrts_d, Kokkos::make_pair(elemIter, std::min(elemIter + numCells, elementIds.size())));
+      auto valuesAtDofCoordsOrientedWorkset_d = Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::make_pair(0, endCellRange), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      auto basisCoeffsLIOrientedWorkset_d = Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::make_pair(0, endCellRange), Kokkos::ALL(), Kokkos::ALL());
 
       // apply orientations for LO basis
       // shuffles things in the second dimension, i.e. wrt LO basis
-      ots::modifyBasisByOrientation(valuesAtDofCoordsOriented_d,
+      ots::modifyBasisByOrientation(valuesAtDofCoordsOrientedWorkset_d,
                                     valuesAtDofCoordsNonOriented_d,
-                                    elemOrts_d,
+                                    elemOrtsWorkset_d,
                                     lo_basis.get());
 
       //get basis coefficients of LO basis functions wrt HO basis
       for(size_t loIter=0; loIter<loCardinality; loIter++)
         // Get basis coeffs wrt HO basis on reference element.
         // basisCoeffsLI has dimensions (numCells, numFields=hoCardinality, loCardinality)
-        li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), loIter),
-                           Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
-                           ho_basis.get(), elemOrts_d);
-
-      int endCellRange =
-          std::min(numCells, Teuchos::as<int>(elementIds.size()) -
-                                 Teuchos::as<int>(elemIter));
+        li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), loIter),
+                           Kokkos::subview(valuesAtDofCoordsOrientedWorkset_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
+                           ho_basis.get(),
+                           elemOrtsWorkset_d);
 
 #ifdef PANZER_HAVE_EPETRA_STACK
       if (tblof.is_null()) { // Epetra fill
@@ -426,7 +435,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 	Kokkos::View<LocalOrdinal*,DeviceSpace> indices_d("indices", loCardinality);
 	Kokkos::View<Scalar*,      DeviceSpace> values_d ("values",  loCardinality);
 
-	
+
         for (int cellNo = 0; cellNo < endCellRange; cellNo++) {
           auto elemId = elementIds_d(elemIter+cellNo);
 
