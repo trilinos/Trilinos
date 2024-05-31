@@ -605,9 +605,6 @@ protected:
   Teuchos::RCP<const row_matrix_type> A_local_;
   Teuchos::RCP<const crs_matrix_type> A_local_crs_;
   Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
-  lno_row_view_t A_local_rowmap_;
-  lno_nonzero_view_t A_local_entries_;
-  scalar_nonzero_view_t A_local_values_;
   std::vector<local_matrix_device_type> A_local_diagblks;
   std::vector< lno_row_view_t > A_local_diagblks_rowmap_v_;
   std::vector< lno_nonzero_view_t > A_local_diagblks_entries_v_;

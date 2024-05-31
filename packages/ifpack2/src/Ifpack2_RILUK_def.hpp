@@ -998,11 +998,6 @@ void RILUK<MatrixType>::compute_serial ()
 template<class MatrixType>
 void RILUK<MatrixType>::compute_kkspiluk()
 {
-  auto lclMtx = A_local_crs_->getLocalMatrixDevice();
-  A_local_rowmap_  = lclMtx.graph.row_map;
-  A_local_entries_ = lclMtx.graph.entries;
-  A_local_values_  = lclMtx.values;
-
   L_->resumeFill ();
   U_->resumeFill ();
 
@@ -1024,8 +1019,9 @@ void RILUK<MatrixType>::compute_kkspiluk()
   auto U_entries = lclU.graph.entries;
   auto U_values  = lclU.values;
 
+  auto lclMtx = A_local_crs_->getLocalMatrixDevice();
   KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_,
-                                              A_local_rowmap_, A_local_entries_, A_local_values_,
+                                              lclMtx.graph.row_map, lclMtx.graph.entries, lclMtx.values,
                                               L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
 
   L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
