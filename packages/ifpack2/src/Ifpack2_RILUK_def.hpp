@@ -656,12 +656,6 @@ void RILUK<MatrixType>::initialize ()
       L_solver_->setMatrices (L_v_);
     }
     L_solver_->initialize ();
-    //NOTE (Nov-09-2022):
-    //For Cuda >= 11.3 (using cusparseSpSV), skip trisolve computes here.
-    //Instead, call trisolve computes within RILUK compute
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
-    L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
-#endif
 
     if (!isKokkosKernelsStream_) {
       U_solver_->setMatrix (U_);
@@ -671,9 +665,6 @@ void RILUK<MatrixType>::initialize ()
       U_solver_->setMatrices (U_v_);
     }
     U_solver_->initialize ();
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || !defined(KOKKOS_ENABLE_CUDA) || (CUDA_VERSION < 11030)
-    U_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
-#endif
 
     // Do not call initAllValues. compute() always calls initAllValues to
     // fill L and U with possibly new numbers. initialize() is concerned
@@ -1001,12 +992,8 @@ void RILUK<MatrixType>::compute_kkspiluk()
   L_->resumeFill ();
   U_->resumeFill ();
 
-  if (L_->isStaticGraph () || L_->isLocallyIndexed ()) {
-    L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
-    U_->setAllToScalar (STS::zero ());
-  } else {
-    throw std::runtime_error("err");
-  }
+  L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+  U_->setAllToScalar (STS::zero ());
 
   using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
   auto lclL = L_->getLocalMatrixDevice();
@@ -1027,10 +1014,8 @@ void RILUK<MatrixType>::compute_kkspiluk()
   L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
   U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
 
-  L_solver_->setMatrix (L_);
-  U_solver_->setMatrix (U_);
-  L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
-  U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+  L_solver_->compute ();
+  U_solver_->compute ();
 }
 
 template<class MatrixType>
@@ -1055,12 +1040,8 @@ void RILUK<MatrixType>::compute_kkspiluk_stream()
     L_v_[i]->resumeFill ();
     U_v_[i]->resumeFill ();
 
-    if (L_v_[i]->isStaticGraph () || L_v_[i]->isLocallyIndexed ()) {
-      L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
-      U_v_[i]->setAllToScalar (STS::zero ());
-    } else {
-      throw std::runtime_error("err");
-    }
+    L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+    U_v_[i]->setAllToScalar (STS::zero ());
   }
   std::vector<lno_row_view_t>        L_rowmap_v(num_streams_);
   std::vector<lno_nonzero_view_t>    L_entries_v(num_streams_);
@@ -1090,10 +1071,8 @@ void RILUK<MatrixType>::compute_kkspiluk_stream()
     U_v_[i]->fillComplete ();
   }
 
-  L_solver_->setMatrices (L_v_);
-  U_solver_->setMatrices (U_v_);
-  L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
-  U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
+  L_solver_->compute ();
+  U_solver_->compute ();
 }
 
 template<class MatrixType>
