@@ -576,7 +576,7 @@ initialize ()
       kh_ = Teuchos::rcp (new k_handle());
       const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
 
-      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_, true);
       auto Alocal = A_crs->getLocalMatrixDevice();
       auto ptr    = Alocal.graph.row_map;
       auto ind    = Alocal.graph.entries;
@@ -605,7 +605,7 @@ initialize ()
       kh_v_ = std::vector< Teuchos::RCP<k_handle> >(num_streams_);
       for (int i = 0; i < num_streams_; i++) {
         kh_v_[i] = Teuchos::rcp (new k_handle ());
-        auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i]);
+        auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i], true);
         auto Alocal_i = A_crs_i->getLocalMatrixDevice();
         auto ptr_i    = Alocal_i.graph.row_map;
         auto ind_i    = Alocal_i.graph.entries;
@@ -684,6 +684,31 @@ compute ()
     (! isInitialized_, std::logic_error, prefix << "initialize() should have "
      "been called by this point, but isInitialized_ is false.  "
      "Please report this bug to the Ifpack2 developers.");
+
+//NOTE (Nov-09-2022): 
+//For Cuda >= 11.3 (using cusparseSpSV), always call symbolic during compute
+//even when matrix values are changed with the same sparsity pattern.
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
+  if(this->isKokkosKernelsSptrsv_) {
+    if (!isKokkosKernelsStream_) {
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_, true);
+      auto Alocal = A_crs->getLocalMatrixDevice();
+      auto ptr    = Alocal.graph.row_map;
+      auto ind    = Alocal.graph.entries;
+      auto val    = Alocal.values;
+      KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
+    } else {
+      for (int i = 0; i < num_streams_; i++) {
+        auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i], true);
+        auto Alocal_i = A_crs_i->getLocalMatrixDevice();
+        auto ptr_i    = Alocal_i.graph.row_map;
+        auto ind_i    = Alocal_i.graph.entries;
+        auto val_i    = Alocal_i.values;
+        KokkosSparse::Experimental::sptrsv_symbolic(exec_space_instances_[i], kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
+      }
+    }
+  }
+#endif
 
   if (! isComputed_) {//Only compute if not computed before
     if (Teuchos::nonnull (htsImpl_))
@@ -1215,14 +1240,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     if (Teuchos::nonnull (htsImpl_))
       htsImpl_->reset ();
   } // pointers are not the same
-
-  //NOTE (Nov-09-2022): 
-  //For Cuda >= 11.3 (using cusparseSpSV), always call compute before apply,
-  //even when matrix values are changed with the same sparsity pattern.
-  //So, force isComputed_ to FALSE here
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
-  isComputed_ = false;
-#endif
 }
 
 template<class MatrixType>
@@ -1277,14 +1294,6 @@ setMatrices (const std::vector< Teuchos::RCP<crs_matrix_type> >& A_crs_v)
       }
     } // pointers are not the same
   }
-
-  //NOTE (Nov-09-2022): 
-  //For Cuda >= 11.3 (using cusparseSpSV), always call compute before apply,
-  //even when matrix values are changed with the same sparsity pattern.
-  //So, force isComputed_ to FALSE here
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
-  isComputed_ = false;
-#endif
 }
 
 } // namespace Ifpack2
