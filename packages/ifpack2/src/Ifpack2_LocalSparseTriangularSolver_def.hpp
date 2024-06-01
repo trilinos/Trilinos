@@ -685,26 +685,53 @@ compute ()
      "been called by this point, but isInitialized_ is false.  "
      "Please report this bug to the Ifpack2 developers.");
 
-//NOTE (Nov-09-2022): 
-//For Cuda >= 11.3 (using cusparseSpSV), always call symbolic during compute
-//even when matrix values are changed with the same sparsity pattern.
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA) && (CUDA_VERSION >= 11030)
-  if(this->isKokkosKernelsSptrsv_) {
-    if (!isKokkosKernelsStream_) {
-      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_, true);
-      auto Alocal = A_crs->getLocalMatrixDevice();
-      auto ptr    = Alocal.graph.row_map;
-      auto ind    = Alocal.graph.entries;
-      auto val    = Alocal.values;
-      KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
-    } else {
-      for (int i = 0; i < num_streams_; i++) {
-        auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i], true);
-        auto Alocal_i = A_crs_i->getLocalMatrixDevice();
-        auto ptr_i    = Alocal_i.graph.row_map;
-        auto ind_i    = Alocal_i.graph.entries;
-        auto val_i    = Alocal_i.values;
-        KokkosSparse::Experimental::sptrsv_symbolic(exec_space_instances_[i], kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
+// NOTE (Nov-09-2022):
+// For Cuda >= 11.3 (using cusparseSpSV), always call symbolic during compute
+// even when matrix values are changed with the same sparsity pattern.
+// For Cuda >= 12.1 has a new cusparseSpSV_updateMatrix function just for updating the
+// values that is substantially faster.
+// This would all be much better handled via a KokkosSparse::Experimental::sptrsv_numeric(...)
+// that could hide the Cuda implementation details.
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11030)
+  if constexpr ( std::is_same_v<typename crs_matrix_type::execution_space, Kokkos::Cuda> )
+  {
+    if(this->isKokkosKernelsSptrsv_) {
+      if (!isKokkosKernelsStream_) {
+        auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_, true);
+        auto Alocal = A_crs->getLocalMatrixDevice();
+        auto val    = Alocal.values;
+  #if (CUSPARSE_VERSION >= 12100)
+        auto *sptrsv_handle = kh_->get_sptrsv_handle();
+        auto cusparse_handle = sptrsv_handle->get_cuSparseHandle();
+        cusparseSpSV_updateMatrix(cusparse_handle->handle,
+                          cusparse_handle->spsvDescr,
+                          val.data(),
+                          CUSPARSE_SPSV_UPDATE_GENERAL);
+  #else
+        auto ptr    = Alocal.graph.row_map;
+        auto ind    = Alocal.graph.entries;
+        KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
+  #endif
+      } else {
+        for (int i = 0; i < num_streams_; i++) {
+          auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i], true);
+          auto Alocal_i = A_crs_i->getLocalMatrixDevice();
+          auto val_i    = Alocal_i.values;
+  #if (CUSPARSE_VERSION >= 12100)
+          auto *sptrsv_handle = kh_v_[i]->get_sptrsv_handle();
+          auto cusparse_handle = sptrsv_handle->get_cuSparseHandle();
+          KOKKOS_CUSPARSE_SAFE_CALL(
+              cusparseSetStream(cusparse_handle->handle, exec_space_instances_[i].cuda_stream()));
+          cusparseSpSV_updateMatrix(cusparse_handle->handle,
+                            cusparse_handle->spsvDescr,
+                            val_i.data(),
+                            CUSPARSE_SPSV_UPDATE_GENERAL);
+  #else
+          auto ptr_i    = Alocal_i.graph.row_map;
+          auto ind_i    = Alocal_i.graph.entries;
+          KokkosSparse::Experimental::sptrsv_symbolic(exec_space_instances_[i], kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
+  #endif
+        }
       }
     }
   }
