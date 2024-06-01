@@ -580,7 +580,14 @@ private:
 
   void compute_serial();
   void compute_kkspiluk();
+// Workaround Cuda limitation of KOKKOS_LAMBDA in private/protected member functions
+#ifdef KOKKOS_ENABLE_CUDA
+public:
+#endif KOKKOS_ENABLE_CUDA
   void compute_kkspiluk_stream();
+#ifdef KOKKOS_ENABLE_CUDA
+private:
+#endif
 
   /// \brief Return A, wrapped in a LocalFilter, if necessary.
   ///
