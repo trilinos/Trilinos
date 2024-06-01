@@ -89,21 +89,26 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   LO print_freq = max_iter/10;
   print_freq = std::min(print_freq, 50);
   print_freq = std::max(print_freq, 1);
+  Kokkos::fence();
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
     p->update(1.0,*x,0.0,*x,0.0);
+    Kokkos::fence();
   }
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(matvecTimerName));
     A->apply(*p, *Ap);
+    Kokkos::fence();
   }
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
     r->update(1.0,*b,-1.0,*Ap,0.0);
+    Kokkos::fence();
   }
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
     rtrans = r->dot(*r);
+    Kokkos::fence();
   }
 
   normr = std::sqrt(rtrans);
@@ -118,17 +123,20 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
     if (k == 1) {
         TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
         p->update(1.0,*r,0.0);
+        Kokkos::fence();
     }
     else {
       oldrtrans = rtrans;
       {
         TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
         rtrans = r->dot(*r);
+        Kokkos::fence();
       }
       {
         TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
         magnitude_type beta = rtrans/oldrtrans;
         p->update(1.0,*r,beta);
+        Kokkos::fence();
       }
     }
     normr = std::sqrt(rtrans);
@@ -141,10 +149,12 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
     {
       TimeMonitor t(*TimeMonitor::getNewTimer(matvecTimerName));
       A->apply(*p, *Ap);
+      Kokkos::fence();
     }
     {
       TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
       p_ap_dot = Ap->dot(*p);
+      Kokkos::fence();
     }
     {
       TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
@@ -158,11 +168,14 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
       alpha = rtrans / p_ap_dot;
       x->update(alpha,*p,1.0);
       r->update(-alpha,*Ap,1.0);
+      Kokkos::fence();
     }
   }
   {
+    Kokkos::fence();
     TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
     rtrans = r->dot(*r);
+    Kokkos::fence();
   }
 
   normr = std::sqrt(rtrans);
@@ -266,6 +279,11 @@ int run()
   // The vector x on input is the initial guess for the CG solve.
   // On output, it is the approximate solution.
   RCP<vec_type> x (new vec_type (A->getDomainMap ()));
+
+  // Untimed warm-up apply
+  A->apply(*b, *x);
+  // Zero out x again
+  x->putScalar(0);
 
   // Solve the linear system Ax=b using CG.
   RCP<StackedTimer> timer = rcp(new StackedTimer("CG: global"));

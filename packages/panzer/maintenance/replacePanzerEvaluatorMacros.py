@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This script will read a file and replace any Panzer Evaluator macros it
 # finds with their contents.
