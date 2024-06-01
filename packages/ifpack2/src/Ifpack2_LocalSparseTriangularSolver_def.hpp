@@ -574,11 +574,64 @@ initialize ()
   {
     if (!isKokkosKernelsStream_) {
       kh_ = Teuchos::rcp (new k_handle());
-    }
-	else {
+      const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
+
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+      auto Alocal = A_crs->getLocalMatrixDevice();
+      auto ptr    = Alocal.graph.row_map;
+      auto ind    = Alocal.graph.entries;
+      auto val    = Alocal.values;
+
+      auto numRows = Alocal.numRows();    
+  #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+      // CuSparse only supports int type ordinals 
+      // and scalar types of float, double, float complex and double complex
+      if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
+          std::is_same<int, local_ordinal_type>::value &&
+        (std::is_same<scalar_type, float>::value ||
+          std::is_same<scalar_type, double>::value ||
+          std::is_same<scalar_type, Kokkos::complex<float>>::value ||
+          std::is_same<scalar_type, Kokkos::complex<double>>::value))
+      {
+        kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows, is_lower_tri);
+      }
+      else
+  #endif
+      {
+        kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows, is_lower_tri);
+      }
+      KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
+    } else {
       kh_v_ = std::vector< Teuchos::RCP<k_handle> >(num_streams_);
       for (int i = 0; i < num_streams_; i++) {
         kh_v_[i] = Teuchos::rcp (new k_handle ());
+        auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i]);
+        auto Alocal_i = A_crs_i->getLocalMatrixDevice();
+        auto ptr_i    = Alocal_i.graph.row_map;
+        auto ind_i    = Alocal_i.graph.entries;
+        auto val_i    = Alocal_i.values;
+    
+        auto numRows_i = Alocal_i.numRows();
+
+        const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
+  #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+        // CuSparse only supports int type ordinals 
+        // and scalar types of float, double, float complex and double complex
+        if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
+            std::is_same<int, local_ordinal_type>::value &&
+          (std::is_same<scalar_type, float>::value ||
+            std::is_same<scalar_type, double>::value ||
+            std::is_same<scalar_type, Kokkos::complex<float>>::value ||
+            std::is_same<scalar_type, Kokkos::complex<double>>::value))
+        {
+          kh_v_[i]->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows_i, is_lower_tri);
+        }
+        else
+  #endif
+        {
+          kh_v_[i]->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows_i, is_lower_tri);
+        }
+        KokkosSparse::Experimental::sptrsv_symbolic(kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
       }
       kh_v_nonnull_ = true;
     }
@@ -633,78 +686,11 @@ compute ()
      "Please report this bug to the Ifpack2 developers.");
 
   if (! isComputed_) {//Only compute if not computed before
-  if (Teuchos::nonnull (htsImpl_))
-    htsImpl_->compute (*A_crs_, out_);
+    if (Teuchos::nonnull (htsImpl_))
+      htsImpl_->compute (*A_crs_, out_);
 
-  if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_) {
-    const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
-  
-    auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-    auto Alocal = A_crs->getLocalMatrixDevice();
-    auto ptr    = Alocal.graph.row_map;
-    auto ind    = Alocal.graph.entries;
-    auto val    = Alocal.values;
-
-    auto numRows = Alocal.numRows();    
-
-    // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
-    kh_->destroy_sptrsv_handle();
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
-    // CuSparse only supports int type ordinals 
-    // and scalar types of float, double, float complex and double complex
-    if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
-        std::is_same<int, local_ordinal_type>::value &&
-       (std::is_same<scalar_type, float>::value ||
-        std::is_same<scalar_type, double>::value ||
-        std::is_same<scalar_type, Kokkos::complex<float>>::value ||
-        std::is_same<scalar_type, Kokkos::complex<double>>::value))
-    {
-      kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows, is_lower_tri);
-    }
-    else
-#endif
-    {
-      kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows, is_lower_tri);
-    }
-    KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
-  }
-  else if (kh_v_nonnull_ && this->isKokkosKernelsSptrsv_) {
-    const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
-
-    for (int i = 0; i < num_streams_; i++) {
-      auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i]);
-      auto Alocal_i = A_crs_i->getLocalMatrixDevice();
-      auto ptr_i    = Alocal_i.graph.row_map;
-      auto ind_i    = Alocal_i.graph.entries;
-      auto val_i    = Alocal_i.values;
-   
-      auto numRows_i = Alocal_i.numRows();
-
-      // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
-      kh_v_[i]->destroy_sptrsv_handle();
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
-      // CuSparse only supports int type ordinals 
-      // and scalar types of float, double, float complex and double complex
-      if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
-          std::is_same<int, local_ordinal_type>::value &&
-         (std::is_same<scalar_type, float>::value ||
-          std::is_same<scalar_type, double>::value ||
-          std::is_same<scalar_type, Kokkos::complex<float>>::value ||
-          std::is_same<scalar_type, Kokkos::complex<double>>::value))
-      {
-        kh_v_[i]->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows_i, is_lower_tri);
-      }
-      else
-#endif
-      {
-        kh_v_[i]->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows_i, is_lower_tri);
-      }
-      KokkosSparse::Experimental::sptrsv_symbolic(kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
-    }
-  }
-
-  isComputed_ = true;
-  ++numCompute_;
+    isComputed_ = true;
+    ++numCompute_;
   }
 }
 
