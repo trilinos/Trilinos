@@ -597,12 +597,40 @@ void RILUK<MatrixType>::initialize ()
                                                                              LevelOfFill_, 0, Overalloc_));
       }
       else {
+        std::vector<int> weights(num_streams_);
+        std::fill(weights.begin(), weights.end(), 1);
+        exec_space_instances_ = Kokkos::Experimental::partition_space(execution_space(), weights);
+
         auto lclMtx = A_local_crs_->getLocalMatrixDevice();
-        if (!hasStreamReordered_)
+        if (!hasStreamReordered_) {
           KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
-        else
+        } else {
           perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
+          reverse_perm_v_.resize(perm_v_.size());
+          for(int istream=0; istream < perm_v_.size(); ++istream) {
+            using perm_type = typename lno_nonzero_view_t::non_const_type;
+            const auto perm = perm_v_[istream];
+            const auto perm_length = perm.extent(0);
+            perm_type reverse_perm(
+                Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm"),
+                perm_length);
+            Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(exec_space_instances_[istream], 0, perm_length),
+              KOKKOS_LAMBDA(const local_ordinal_type ii) {
+                reverse_perm(perm(ii)) = ii;
+              });
+            reverse_perm_v_[istream] = reverse_perm;
+          }
+        }
+
+        A_local_diagblks_rowmap_v_  = std::vector<lno_row_view_t>(num_streams_);
+        A_local_diagblks_entries_v_ = std::vector<lno_nonzero_view_t>(num_streams_);
+        A_local_diagblks_values_v_  = std::vector<scalar_nonzero_view_t>(num_streams_);
+
         for(int i = 0; i < num_streams_; i++) {
+          A_local_diagblks_rowmap_v_[i]  = A_local_diagblks[i].graph.row_map;
+          A_local_diagblks_entries_v_[i] = A_local_diagblks[i].graph.entries;
+          A_local_diagblks_values_v_[i]  = A_local_diagblks[i].values;
+
           Teuchos::RCP<const crs_map_type> A_local_diagblks_RowMap = rcp (new crs_map_type(A_local_diagblks[i].numRows(),
                                                                                            A_local_diagblks[i].numRows(),
                                                                                            A_local_crs_->getRowMap()->getComm()));
@@ -637,9 +665,6 @@ void RILUK<MatrixType>::initialize ()
                                                     2*A_local_diagblks[i].nnz()*(LevelOfFill_+1) );
           Graph_v_[i]->initialize (KernelHandle_v_[i]); // this calls spiluk_symbolic
         }
-        std::vector<int> weights(num_streams_);
-        std::fill(weights.begin(), weights.end(), 1);
-        exec_space_instances_ = Kokkos::Experimental::partition_space(execution_space(), weights);
       }
     }
     else {
@@ -1021,21 +1046,6 @@ void RILUK<MatrixType>::compute_kkspiluk()
 template<class MatrixType>
 void RILUK<MatrixType>::compute_kkspiluk_stream()
 {
-  auto lclMtx = A_local_crs_->getLocalMatrixDevice();
-  if (!hasStreamReordered_)
-    KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
-  else
-    perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
-
-  A_local_diagblks_rowmap_v_  = std::vector<lno_row_view_t>(num_streams_);
-  A_local_diagblks_entries_v_ = std::vector<lno_nonzero_view_t>(num_streams_);
-  A_local_diagblks_values_v_  = std::vector<scalar_nonzero_view_t>(num_streams_);
-  for(int i = 0; i < num_streams_; i++) {
-    A_local_diagblks_rowmap_v_[i]  = A_local_diagblks[i].graph.row_map;
-    A_local_diagblks_entries_v_[i] = A_local_diagblks[i].graph.entries;
-    A_local_diagblks_values_v_[i]  = A_local_diagblks[i].values;
-  }
-
   for(int i = 0; i < num_streams_; i++) {
     L_v_[i]->resumeFill ();
     U_v_[i]->resumeFill ();
@@ -1062,6 +1072,42 @@ void RILUK<MatrixType>::compute_kkspiluk_stream()
     U_values_v[i]  = lclU.values;
     KernelHandle_rawptr_v_[i] = KernelHandle_v_[i].getRawPtr();
   }
+
+  {
+    auto lclMtx = A_local_crs_->getLocalMatrixDevice();
+    // A_local_diagblks was already setup during initialize, just copy the corresponding
+    // values from A_local_crs_ in parallel now.
+    using TeamPolicy = Kokkos::TeamPolicy<execution_space>;
+    const auto A_nrows = lclMtx.numRows();
+    auto rows_per_block = ((A_nrows % num_streams_) == 0)
+                                      ? (A_nrows / num_streams_)
+                                      : (A_nrows / num_streams_ + 1);
+    for(int i = 0; i < num_streams_; i++) {
+      const auto start_row_offset = i * rows_per_block;
+      auto rowptrs = A_local_diagblks_rowmap_v_[i];
+      auto colindices = A_local_diagblks_entries_v_[i];
+      auto values = A_local_diagblks_values_v_[i];
+      const bool reordered = hasStreamReordered_;
+      typename lno_nonzero_view_t::non_const_type reverse_perm = hasStreamReordered_ ? reverse_perm_v_[i] : typename lno_nonzero_view_t::non_const_type{};
+      TeamPolicy pol(exec_space_instances_[i], A_local_diagblks_rowmap_v_[i].extent(0) - 1, Kokkos::AUTO);
+      Kokkos::parallel_for(pol, KOKKOS_LAMBDA (const typename TeamPolicy::member_type &team) {
+        const auto irow = team.league_rank();
+        const auto irow_A = start_row_offset + (reordered ? reverse_perm(irow) : irow);
+        const auto A_local_crs_row = lclMtx.rowConst(irow_A);
+        const auto begin_row = rowptrs(irow);
+        const auto num_entries = rowptrs(irow + 1) - begin_row;
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, num_entries), [&](const int j) {
+          const auto colidx = colindices(begin_row + j);
+          const auto colidx_A = start_row_offset + (reordered ? reverse_perm(colidx) : colidx);
+          // Find colidx in A_local_crs_row
+          const int offset = KokkosSparse::findRelOffset(
+            &A_local_crs_row.colidx(0), A_local_crs_row.length, colidx_A, 0, false);
+          values(begin_row + j) = A_local_crs_row.value(offset);
+        });
+      });
+    }
+  }
+
   KokkosSparse::Experimental::spiluk_numeric_streams( exec_space_instances_, KernelHandle_rawptr_v_, LevelOfFill_,
                                                       A_local_diagblks_rowmap_v_, A_local_diagblks_entries_v_, A_local_diagblks_values_v_,
                                                       L_rowmap_v, L_entries_v, L_values_v,
