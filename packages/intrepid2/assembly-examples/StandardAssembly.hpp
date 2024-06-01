@@ -329,10 +329,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
     ExecutionSpace().fence();
     jacobianAndCellMeasureTimer->stop();
     
-    // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
-    fstIntegrateCall->start();
     OrientationTools<DeviceType>::modifyBasisByOrientation(orientedValues1, basis1Values, orientationsWorkset, basis1.get());
     OrientationTools<DeviceType>::modifyBasisByOrientation(orientedValues2, basis2Values, orientationsWorkset, basis2.get());
+    
+    // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
+    fstIntegrateCall->start();
     transform(transformedValues1, orientedValues1, fs1, op1, jacobian, jacobianDeterminant, jacobianInverse);
     transform(transformedValues2, orientedValues2, fs2, op2, jacobian, jacobianDeterminant, jacobianInverse);
         

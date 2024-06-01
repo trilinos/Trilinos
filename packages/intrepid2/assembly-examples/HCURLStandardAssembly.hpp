@@ -181,8 +181,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedCurlValues, transformedWeightedCurlValues);
     
     FunctionSpaceTools::HCURLtransformVALUE(unorientedTransformedBasisValues, jacobianInverse, basisValues);
+	// we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
+    fstIntegrateCall->stop();
     OrientationTools<DeviceType>::modifyBasisByOrientation(transformedBasisValues, unorientedTransformedBasisValues,
                                                            orientationsWorkset, basis.get());
+    fstIntegrateCall->start();
     FunctionSpaceTools::multiplyMeasure(transformedWeightedBasisValues, cellMeasures, transformedBasisValues);
     bool sumInto = true; // add the (value,value) integral to the (curl,curl) that we've already integrated
     FunctionSpaceTools::integrate(cellStiffnessSubview, transformedBasisValues, transformedWeightedBasisValues, sumInto);
