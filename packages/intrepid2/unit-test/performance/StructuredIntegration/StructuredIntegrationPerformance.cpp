@@ -396,7 +396,7 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
   map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > worksetSizeMap; // keys are maps p -> worksetSize
   
   vector<AlgorithmChoice> allAlgorithmChoices {Standard, NonAffineTensor, AffineTensor, Uniform};
-  vector<FormulationChoice> allFormulationChoices {Poisson, Hgrad, Hdiv, Hcurl, L2};
+  vector<FormulationChoice> allFormulationChoices {Poisson, Hgrad, Hdiv, Hcurl, L2, VectorWeightedPoisson};
   
   // skip calibration case; want that to span workset sizes in a particular way…
   vector<Mode> allModes {Test,BestSerial,BestOpenMP_16,BestCuda,Precalibrated};
@@ -1085,7 +1085,20 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
         } // L^2 formulation
         {
           // VectorWeightedPoisson
-          // TODO: set this
+          // TODO: set this with some actual calibration result values.  For now, we just borrow from Poisson
+          
+          FormulationChoice formulation = VectorWeightedPoisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey_Poisson {mode,Poisson,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey_Poisson {mode,Poisson,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey_Poisson {mode,Poisson,AffineTensor};
+          
+          worksetSizeMap[standardKey]        = worksetSizeMap[standardKey_Poisson];
+          worksetSizeMap[nonAffineTensorKey] = worksetSizeMap[nonAffineTensorKey_Poisson];
+          worksetSizeMap[affineTensorKey]    = worksetSizeMap[affineTensorKey_Poisson];
         }
     } // BestCuda case
         break;
