@@ -70,9 +70,9 @@ jobs:
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.number }} \
+            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
             --genconfig-build-name rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
-            --pullrequest-number ${{ github.event.number }} \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
             --jenkins-job-number 0 \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
@@ -138,9 +138,9 @@ jobs:
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.number }} \
+            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
             --genconfig-build-name rhel8_gcc-serial_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
-            --pullrequest-number ${{ github.event.number }} \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
             --jenkins-job-number 0 \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
