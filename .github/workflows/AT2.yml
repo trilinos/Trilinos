@@ -69,7 +69,7 @@ jobs:
           # should print unknown if $AT2_IMAGE env. variable cannot be found
           echo "image: ${AT2_IMAGE:-unknown}"
 
-          python ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -140,7 +140,7 @@ jobs:
           # should print unknown if $AT2_IMAGE env. variable cannot be found
           echo "image: ${AT2_IMAGE:-unknown}"
 
-          python ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
