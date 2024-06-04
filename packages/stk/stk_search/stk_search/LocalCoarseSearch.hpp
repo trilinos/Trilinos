@@ -86,12 +86,12 @@ void local_coarse_search(
     Kokkos::View<BoxIdent<RangeBoxType, RangeIdentType>*, ExecutionSpace> const & range,
     SearchMethod method,
     Kokkos::View<IdentIntersection<DomainIdentType, RangeIdentType>*, ExecutionSpace> & intersections,
-    ExecutionSpace const& execSpace = Kokkos::DefaultExecutionSpace{})
+    ExecutionSpace const& execSpace = ExecutionSpace{})
 {
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX
-      local_coarse_search_arborx(domain, range, intersections);
+      local_coarse_search_arborx(domain, range, intersections, execSpace);
 #else
       STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX. Please use KDTREE or MORTON_LBVH.");
 #endif
@@ -102,7 +102,7 @@ void local_coarse_search(
       break;
     }
     case MORTON_LBVH: {
-      local_coarse_search_morton_lbvh(domain, range, intersections);
+      local_coarse_search_morton_lbvh(domain, range, intersections, execSpace);
       break;
     }
     default: {

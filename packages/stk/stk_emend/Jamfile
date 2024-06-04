@@ -89,9 +89,6 @@ alias install-targets
     $(installed-developer-files)
   ;
 
-explicit install-serial-targets ;
-alias install-serial-targets : ;
-
 #
 # SECTION 3: End-user install
 #
