@@ -877,7 +877,7 @@ void RILUK<MatrixType>::compute_serial ()
   Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
   Teuchos::Array<scalar_type> InV(MaxNumEntries);
   size_t num_cols = U_->getColMap()->getLocalNumElements();
-  Teuchos::Array<int> colflag(num_cols);
+  Teuchos::Array<int> colflag(num_cols, -1);
 
   auto DV = Kokkos::subview(D_->getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
 

@@ -586,7 +586,7 @@ initialize ()
   #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
       // CuSparse only supports int type ordinals 
       // and scalar types of float, double, float complex and double complex
-      if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
+      if constexpr (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
           std::is_same<int, local_ordinal_type>::value &&
         (std::is_same<scalar_type, float>::value ||
           std::is_same<scalar_type, double>::value ||
@@ -617,7 +617,7 @@ initialize ()
   #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
         // CuSparse only supports int type ordinals 
         // and scalar types of float, double, float complex and double complex
-        if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
+        if constexpr (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
             std::is_same<int, local_ordinal_type>::value &&
           (std::is_same<scalar_type, float>::value ||
             std::is_same<scalar_type, double>::value ||
