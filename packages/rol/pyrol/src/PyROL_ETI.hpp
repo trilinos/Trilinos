@@ -26,8 +26,10 @@
 #include <ROL_RiskNeutralObjective.hpp>
 #include <ROL_SampleGenerator.hpp>
 #include <ROL_SerialConstraint.hpp>
+#include <ROL_SerialObjective.hpp>
 #include <ROL_SimConstraint.hpp>
 #include <ROL_Solver.hpp>
+#include <ROL_ValidateFunction.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_Vector_SimOpt.hpp>
 
@@ -55,7 +57,11 @@
   BINDER_ETI_ABSTRACT(DynamicConstraintCheck<SCALAR>) \
   BINDER_ETI_ABSTRACT(DynamicObjectiveCheck<SCALAR>) \
   BINDER_ETI_ABSTRACT(ReducedDynamicObjective<SCALAR>) \
-  BINDER_ETI_ABSTRACT(SerialConstraint<SCALAR>)
+  BINDER_ETI_ABSTRACT(SerialConstraint<SCALAR>) \
+  BINDER_ETI_ABSTRACT(SerialObjective<SCALAR>)
+
+#define BINDER_ROL_UTILS(SCALAR) \
+  BINDER_ETI_ABSTRACT(ValidateFunction<SCALAR>)
 
 #define BINDER_ROL_STOCHASTIC(SCALAR) \
   BINDER_ETI_ABSTRACT(MonteCarloGenerator<SCALAR>) \
@@ -72,9 +78,14 @@ namespace ROL {
   BINDER_ROL_DYNAMIC(double)
   BINDER_ROL_STOCHASTIC(double)
 
+namespace details {
+  BINDER_ROL_UTILS(double)
+}
+
 namespace OED {
   BINDER_ROL_OED(double)
 }
+
 
 }
 
