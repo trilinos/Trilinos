@@ -190,6 +190,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
       ExtMatrixDynGraph->getDomainMap(),
       ExtMatrixDynGraph->getRangeMap()));
     ExtMatrix_ = rcp (new crs_matrix_type(ExtMatrixStaticGraph, ExtLclMatrix.values));
+    ExtMatrix_->fillComplete ();
   }
 
   // fix indices for overlapping matrix
