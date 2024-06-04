@@ -150,7 +150,7 @@ void Driver<VT, DT>::setLevelSetOptionDeviceFunctionThreshold(const ordinal_type
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
-  if (variant > 2 || variant < 0) {
+  if (variant > 3 || variant < 0) {
     std::logic_error("levelset algorithm variants range from 0 to 2");
   }
   _variant = variant;
