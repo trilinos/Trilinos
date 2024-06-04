@@ -1123,7 +1123,6 @@ namespace Teuchos {
       TimeMonitor monitor (*timer);
       // Timer has started; record current fence count
       fenceCountAfterStart = KokkosFenceCounter::numFences;
-      sleep(1);
     }
     // Timer has stopped; record again
     fenceCountAfterStop = KokkosFenceCounter::numFences;
