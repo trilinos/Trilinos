@@ -883,9 +883,6 @@ void RILUK<MatrixType>::compute_serial ()
 
   // Now start the factorization.
 
-  for (size_t j = 0; j < num_cols; ++j) {
-    colflag[j] = -1;
-  }
   using IST = typename row_matrix_type::impl_scalar_type;
   for (size_t i = 0; i < L_->getLocalNumRows (); ++i) {
     local_ordinal_type local_row = i;
