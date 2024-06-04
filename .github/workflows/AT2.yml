@@ -66,6 +66,9 @@ jobs:
           sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
+          # should print unknown if $AT2_IMAGE env. variable cannot be found
+          echo "image: ${AT2_IMAGE:-unknown}"
+
           python ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
@@ -133,6 +136,9 @@ jobs:
 
           sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
+
+          # should print unknown if $AT2_IMAGE env. variable cannot be found
+          echo "image: ${AT2_IMAGE:-unknown}"
 
           python ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --source-repo-url ${GITHUB_WORKSPACE} \
