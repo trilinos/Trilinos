@@ -66,7 +66,9 @@ jobs:
           sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
-          python ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+          echo "image: ${AT2_IMAGE:-unknown}"
+
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -134,7 +136,9 @@ jobs:
           sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
           printf "\n\n\n"
 
-          python ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+          echo "image: ${AT2_IMAGE:-unknown}"
+
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
