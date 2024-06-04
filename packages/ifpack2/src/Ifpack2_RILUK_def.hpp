@@ -1223,8 +1223,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "fixed.  There is a FIXME in this file about this very issue.");
 #ifdef HAVE_IFPACK2_DEBUG
   {
-    const magnitude_type D_nrm1 = D_->norm1 ();
-    TEUCHOS_TEST_FOR_EXCEPTION( STM::isnaninf (D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
+    if (!isKokkosKernelsStream_) {
+      const magnitude_type D_nrm1 = D_->norm1 ();
+      TEUCHOS_TEST_FOR_EXCEPTION( STM::isnaninf (D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
+    }
     Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
     X.norm1 (norms ());
     bool good = true;
