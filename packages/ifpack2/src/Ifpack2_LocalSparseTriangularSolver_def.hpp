@@ -683,8 +683,8 @@ compute ()
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11030)
   if constexpr ( std::is_same_v<typename crs_matrix_type::execution_space, Kokkos::Cuda> )
   {
-    if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_) {
-      if (!isKokkosKernelsStream_) {
+    if (this->isKokkosKernelsSptrsv_) {
+      if (Teuchos::nonnull(kh_) && !isKokkosKernelsStream_) {
         auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_, true);
         auto Alocal = A_crs->getLocalMatrixDevice();
         auto val    = Alocal.values;
@@ -700,7 +700,7 @@ compute ()
         auto ind    = Alocal.graph.entries;
         KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
   #endif
-      } else {
+      } else if (kh_v_nonnull_) {
         for (int i = 0; i < num_streams_; i++) {
           auto A_crs_i = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_crs_v_[i], true);
           auto Alocal_i = A_crs_i->getLocalMatrixDevice();
