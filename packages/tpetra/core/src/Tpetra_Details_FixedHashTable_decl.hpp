@@ -328,7 +328,7 @@ public:
     // numPairs_ field (remembering the size of the input array of
     // keys).
     if (this->hasContiguousValues ()) {
-             return val_.extent (0) + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
+      return val_.extent (0) + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
     }
     else {
       return val_.extent (0);
