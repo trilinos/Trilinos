@@ -98,7 +98,7 @@ void BlockLowerTriInverseOp::implicitApply(const BlockedMultiVector& src, Blocke
   BlockedMultiVector dstCopy;
   if (beta != 0.0) {
     Thyra::assign<double>(dstScrap_.ptr(), *dst);
-    dstCopy   = dstScrap_;
+    dstCopy = dstScrap_;
   } else
     dstCopy = dst;  // shallow copy
 
