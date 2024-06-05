@@ -47,7 +47,6 @@ template <typename ExecutionSpace>
 struct CollisionList
 {
   using LVBH_types = MortonLbvhTypes<ExecutionSpace>;
-  using execution_space = typename LVBH_types::execution_space;
   using memory_space = typename LVBH_types::memory_space;
   using data_val_type      = typename LVBH_types::local_ordinal_pairs_t;
   using host_data_val_type = typename data_val_type::HostMirror;

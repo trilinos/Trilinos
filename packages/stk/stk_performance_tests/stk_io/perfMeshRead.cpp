@@ -53,8 +53,8 @@ TEST(StkIo, meshRead_hex_noAura)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = 5;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 50);
+  const unsigned NUM_ITERS = 10;
+  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 80);
   std::string elems = std::to_string(ELEMS_PER_DIM);
   std::string meshSpec = "generated:"+elems+"x"+elems+"x"+elems;
 
@@ -89,8 +89,8 @@ TEST(StkIo, meshRead_hex_shells_sidesets_aura)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = 5;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 50);
+  const unsigned NUM_ITERS = 10;
+  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 80);
   std::string elems = std::to_string(ELEMS_PER_DIM);
   std::string meshSpec = "generated:"+elems+"x"+elems+"x"+elems+"|shell:xyzXYZ|sideset:xyzXYZ";
 

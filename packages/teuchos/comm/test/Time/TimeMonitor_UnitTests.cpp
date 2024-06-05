@@ -67,6 +67,10 @@ void sleep(int sec)
 }
 #endif
 
+#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+#include "Kokkos_Core.hpp"
+#endif
+
 namespace {
 
   void func_time_monitor1()
@@ -1077,5 +1081,57 @@ namespace Teuchos {
     // This sets up for the next unit test (if there is one).
     TimeMonitor::clearCounters ();
   }
+
+  //
+  // Test that Time::start() and Time::stop() call Kokkos::fence(),
+  // if the option to do that is enabled.
+  //
+  #ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+  namespace KokkosFenceCounter
+  {
+    static int numFences;
+
+    void reset()
+    {
+      numFences = 0;
+    }
+
+    void begin_fence_callback(const char*, const uint32_t deviceId, uint64_t*) {
+      using namespace Kokkos::Tools::Experimental;
+      // Only count global device fences on the default space. Otherwise fences
+      // could be counted multiple times, depending on how many backends are enabled.
+      DeviceType fenceDevice = identifier_from_devid(deviceId).type;
+      DeviceType defaultDevice = DeviceTypeTraits<Kokkos::DefaultExecutionSpace>::id;
+      if(fenceDevice == defaultDevice)
+        numFences++;
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( TimeMonitor, CheckTimerKokkosFences )
+  {
+    // This test doesn't care about the comm size or rank because Kokkos
+    // fences and profiling is purely local to each rank.
+    //
+    // Set up the fence counter (reset count to 0 and set the callback)
+    KokkosFenceCounter::reset();
+    Kokkos::Tools::Experimental::set_begin_fence_callback(KokkosFenceCounter::begin_fence_callback);
+    int fenceCountAfterStart = 0;
+    int fenceCountAfterStop = 0;
+
+    {
+      RCP<Time> timer = TimeMonitor::getNewCounter ("Timer XYZ");
+      TimeMonitor monitor (*timer);
+      // Timer has started; record current fence count
+      fenceCountAfterStart = KokkosFenceCounter::numFences;
+    }
+    // Timer has stopped; record again
+    fenceCountAfterStop = KokkosFenceCounter::numFences;
+    TEST_EQUALITY(fenceCountAfterStart, 1);
+    TEST_EQUALITY(fenceCountAfterStop, 2);
+
+    // This sets up for the next unit test (if there is one).
+    TimeMonitor::clearCounters ();
+  }
+  #endif
 
 } // namespace Teuchos

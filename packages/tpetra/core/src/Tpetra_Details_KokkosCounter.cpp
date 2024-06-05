@@ -38,11 +38,13 @@
 // ************************************************************************
 // @HEADER
 */
+// clang-format off
 #include "Tpetra_Details_KokkosCounter.hpp"
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
 #include "Teuchos_TestForException.hpp"
 #include <cstring>
+#include <string>
 
 namespace Tpetra {
 namespace Details {
@@ -201,6 +203,54 @@ namespace Details {
     TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,std::string("Error: ") + device + std::string(" is not a device known to Tpetra"));
   }
 
+// clang-format on
+namespace KokkosRegionCounterDetails {
+std::vector<std::string> regions;
+
+void push_region_callback(const char *label) { regions.push_back(label); }
+static_assert(std::is_same_v<decltype(&push_region_callback),
+                             Kokkos_Profiling_pushFunction>,
+              "Unexpected Kokkos profiling interface API. This is an internal "
+              "Tpetra developer error, please report this.");
+
+} // namespace KokkosRegionCounterDetails
+
+void KokkosRegionCounter::start() {
+  Kokkos::Tools::Experimental::set_push_region_callback(
+      KokkosRegionCounterDetails::push_region_callback);
+}
+
+void KokkosRegionCounter::reset() {
+  KokkosRegionCounterDetails::regions.clear();
+}
+
+void KokkosRegionCounter::stop() {
+  Kokkos::Tools::Experimental::set_push_region_callback(nullptr);
+}
+
+size_t
+KokkosRegionCounter::get_count_region_contains(const std::string &needle) {
+  size_t count = 0;
+  for (const auto &region : KokkosRegionCounterDetails::regions) {
+    count += (region.find(needle) != std::string::npos);
+  }
+  return count;
+}
+
+void KokkosRegionCounter::dump_regions(Teuchos::FancyOStream &os) {
+  for (const auto &region : KokkosRegionCounterDetails::regions) {
+    os << region << "\n";
+  }
+}
+
+void KokkosRegionCounter::dump_regions(std::ostream &os) {
+  for (const auto &region : KokkosRegionCounterDetails::regions) {
+    os << region << "\n";
+  }
+}
+
+
+// clang-format off
 
 
 } // namespace Details

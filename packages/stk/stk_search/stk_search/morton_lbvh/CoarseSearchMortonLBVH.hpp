@@ -61,6 +61,8 @@ inline void coarse_search_morton_lbvh(std::vector<std::pair<DomainBoxType, Domai
                                       std::vector<std::pair<DomainIdentProcType, RangeIdentProcType>> & searchResults,
                                       bool enforceSearchResultSymmetry = true)
 {
+  using HostSpace = Kokkos::DefaultHostExecutionSpace;
+
   STK_ThrowRequireMsg((std::is_same_v<typename DomainBoxType::value_type, typename RangeBoxType::value_type>),
                       "The domain and range boxes must have the same floating-point precision");
 
@@ -68,12 +70,12 @@ inline void coarse_search_morton_lbvh(std::vector<std::pair<DomainBoxType, Domai
 
   Kokkos::Profiling::pushRegion("Parallel consistency: extend range box list");
   const auto [extendedRangeBoxes, remoteRangeIdentProcs] =
-      morton_extend_local_range_with_remote_boxes_that_might_intersect(localDomain, localRange, comm);
+      morton_extend_local_range_with_remote_boxes_that_might_intersect<HostSpace>(localDomain, localRange, comm, HostSpace{});
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("Fill domain and range trees");
-  stk::search::MortonAabbTree<ValueType, Kokkos::DefaultExecutionSpace> domainTree("Domain Tree", localDomain.size());
-  stk::search::MortonAabbTree<ValueType, Kokkos::DefaultExecutionSpace> rangeTree("Range Tree", extendedRangeBoxes.size());
+  stk::search::MortonAabbTree<ValueType, HostSpace> domainTree("Domain Tree", localDomain.size());
+  stk::search::MortonAabbTree<ValueType, HostSpace> rangeTree("Range Tree", extendedRangeBoxes.size());
 
   stk::search::export_from_box_ident_proc_vec_to_morton_tree(localDomain, domainTree);
   stk::search::export_from_box_vec_to_morton_tree(extendedRangeBoxes, rangeTree);
@@ -82,8 +84,8 @@ inline void coarse_search_morton_lbvh(std::vector<std::pair<DomainBoxType, Domai
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("Perform Morton query");
-  stk::search::CollisionList<Kokkos::DefaultExecutionSpace> collisionList("Collision List");
-  stk::search::morton_lbvh_search<ValueType, Kokkos::DefaultExecutionSpace>(domainTree, rangeTree, collisionList);
+  stk::search::CollisionList<HostSpace> collisionList("Collision List");
+  stk::search::morton_lbvh_search<ValueType, HostSpace>(domainTree, rangeTree, collisionList, HostSpace{});
   collisionList.sync_from_device();
   Kokkos::Profiling::popRegion();
 
@@ -137,12 +139,11 @@ inline void coarse_search_morton_lbvh(
     Kokkos::View<BoxIdentProc<RangeBoxType, RangeIdentProcType>*, ExecutionSpace> const& localRange,
     MPI_Comm comm,
     Kokkos::View<IdentProcIntersection<DomainIdentProcType, RangeIdentProcType>*, ExecutionSpace>& searchResults,
+    ExecutionSpace const& execSpace = ExecutionSpace{},
     bool enforceSearchResultSymmetry = true)
 {
 
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
-  auto execSpace = ExecutionSpace{};
-  auto hostSpace = HostSpace{};
 
   STK_ThrowRequireMsg((std::is_same_v<typename DomainBoxType::value_type, typename RangeBoxType::value_type>),
                       "The domain and range boxes must have the same floating-point precision");
@@ -150,8 +151,8 @@ inline void coarse_search_morton_lbvh(
   using ValueType = typename DomainBoxType::value_type;
 
   Kokkos::Profiling::pushRegion("Move device results to host and convert into compatible data type.");
-  auto localDomainHost = Kokkos::create_mirror_view_and_copy(hostSpace, localDomain);
-  auto localRangeHost  = Kokkos::create_mirror_view_and_copy(hostSpace, localRange);
+  auto localDomainHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, localDomain);
+  auto localRangeHost  = Kokkos::create_mirror_view_and_copy(HostSpace{}, localRange);
 
   std::vector<std::pair<DomainBoxType, DomainIdentProcType>> localDomainVec(localDomainHost.size());
   std::vector<std::pair<RangeBoxType, RangeIdentProcType>> localRangeVec(localRangeHost.size());
@@ -171,23 +172,23 @@ inline void coarse_search_morton_lbvh(
 
   Kokkos::Profiling::pushRegion("Parallel consistency: extend range box list");
   const auto [extendedRangeBoxes, remoteRangeIdentProcs] =
-      morton_extend_local_range_with_remote_boxes_that_might_intersect(localDomainVec, localRangeVec, comm);
+      morton_extend_local_range_with_remote_boxes_that_might_intersect<ExecutionSpace>(localDomainVec, localRangeVec, comm, execSpace);
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("Fill domain and range trees");
-  stk::search::MortonAabbTree<ValueType, Kokkos::DefaultExecutionSpace> domainTree("Domain Tree", localDomainHost.size());
-  stk::search::MortonAabbTree<ValueType, Kokkos::DefaultExecutionSpace> rangeTree("Range Tree", extendedRangeBoxes.size());
+  stk::search::MortonAabbTree<ValueType, ExecutionSpace> domainTree("Domain Tree", localDomainHost.size());
+  stk::search::MortonAabbTree<ValueType, ExecutionSpace> rangeTree("Range Tree", extendedRangeBoxes.size());
 
   stk::search::export_from_box_ident_proc_vec_to_morton_tree(localDomainVec, domainTree);
-  stk::search::export_from_box_vec_to_morton_tree(extendedRangeBoxes, rangeTree);
+  stk::search::export_from_box_vec_to_morton_tree<ValueType, ExecutionSpace>(extendedRangeBoxes, rangeTree);
 
   domainTree.sync_to_device();
   rangeTree.sync_to_device();
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("Perform Morton query");
-  stk::search::CollisionList<Kokkos::DefaultExecutionSpace> collisionList("Collision List");
-  stk::search::morton_lbvh_search<ValueType, Kokkos::DefaultExecutionSpace>(domainTree, rangeTree, collisionList);
+  stk::search::CollisionList<ExecutionSpace> collisionList("Collision List");
+  stk::search::morton_lbvh_search<ValueType, ExecutionSpace>(domainTree, rangeTree, collisionList, execSpace);
   collisionList.sync_from_device();
   Kokkos::Profiling::popRegion();
 
@@ -196,7 +197,7 @@ inline void coarse_search_morton_lbvh(
   searchResults = Kokkos::View<IdentProcIntersection<DomainIdentProcType, RangeIdentProcType>*, ExecutionSpace>(
       Kokkos::ViewAllocateWithoutInitializing(searchResults.label()), numCollisions);
 
-  auto searchResultsHost = Kokkos::create_mirror_view_and_copy(hostSpace, searchResults);
+  auto searchResultsHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, searchResults);
 
   const unsigned numLocalRange = localRangeHost.size();
   unsigned searchResultIndex = 0;
@@ -221,7 +222,7 @@ inline void coarse_search_morton_lbvh(
       insert_into_results(domainIdx, rangeIdx, searchResultIndex);
     }
     else {
-      if (intersects(localDomain(domainIdx).box, extendedRangeBoxes[rangeIdx])) {
+      if (intersects(localDomainHost(domainIdx).box, extendedRangeBoxes[rangeIdx])) {
         insert_into_results(domainIdx, rangeIdx, searchResultIndex);
       }
     }

@@ -57,7 +57,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const Scalar threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow)
+ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const magnitudeType threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow)
   : varName_(ename)
   , threshold_(threshold)
   , keepDiagonal_(keepDiagonal)

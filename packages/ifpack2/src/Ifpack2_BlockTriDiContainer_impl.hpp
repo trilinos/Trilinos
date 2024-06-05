@@ -193,15 +193,24 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     typename Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_import_type>
-    createBlockCrsTpetraImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
+    createBlockCrsTpetraImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A) {
       IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::CreateBlockCrsTpetraImporter");
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using tpetra_map_type = typename impl_type::tpetra_map_type;
       using tpetra_mv_type = typename impl_type::tpetra_block_multivector_type;
       using tpetra_import_type = typename impl_type::tpetra_import_type;
+      using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
+      using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
-      const auto g = A->getCrsGraph();  // tpetra crs graph object
-      const auto blocksize = A->getBlockSize();
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
+
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+      // This is OK here to use the graph of the A_crs matrix and a block size of 1
+      const auto g = hasBlockCrsMatrix ? A_bcrs->getCrsGraph() : *(A_crs->getCrsGraph()); // tpetra crs graph object
+
+      const auto blocksize = hasBlockCrsMatrix ? A_bcrs->getBlockSize() : 1;
       const auto src = Teuchos::rcp(new tpetra_map_type(tpetra_mv_type::makePointMap(*g.getDomainMap(), blocksize)));
       const auto tgt = Teuchos::rcp(new tpetra_map_type(tpetra_mv_type::makePointMap(*g.getColMap()   , blocksize)));
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -883,15 +892,24 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     Teuchos::RCP<AsyncableImport<MatrixType> >
-    createBlockCrsAsyncImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
+    createBlockCrsAsyncImporter(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A) {
       using impl_type = BlockHelperDetails::ImplType<MatrixType>;
       using tpetra_map_type = typename impl_type::tpetra_map_type;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using global_ordinal_type = typename impl_type::global_ordinal_type;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
+      using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
+      using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
-      const auto g = A->getCrsGraph();  // tpetra crs graph object
-      const auto blocksize = A->getBlockSize();
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
+
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+      // This is OK here to use the graph of the A_crs matrix and a block size of 1
+      const auto g = hasBlockCrsMatrix ? A_bcrs->getCrsGraph() : *(A_crs->getCrsGraph()); // tpetra crs graph object
+
+      const auto blocksize = hasBlockCrsMatrix ? A_bcrs->getBlockSize() : 1;
       const auto domain_map = g.getDomainMap();
       const auto column_map = g.getColMap();
 
@@ -1004,7 +1022,8 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     BlockHelperDetails::PartInterface<MatrixType>
-    createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+    createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                        const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &G,
                         const Teuchos::Array<Teuchos::Array<typename BlockHelperDetails::ImplType<MatrixType>::local_ordinal_type> > &partitions,
                         const typename BlockHelperDetails::ImplType<MatrixType>::local_ordinal_type n_subparts_per_part_in) {
       IFPACK2_BLOCKHELPER_TIMER("createPartInterface");
@@ -1014,7 +1033,10 @@ namespace Ifpack2 {
       using local_ordinal_type_2d_view = typename impl_type::local_ordinal_type_2d_view;
       using size_type = typename impl_type::size_type;
 
-      const auto blocksize = A->getBlockSize();
+      auto bA = Teuchos::rcp_dynamic_cast<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type>(A);
+
+      TEUCHOS_ASSERT(!bA.is_null() || G->getLocalNumRows() != 0);
+      const local_ordinal_type blocksize = bA.is_null() ? A->getLocalNumRows() / G->getLocalNumRows() : A->getBlockSize();
       constexpr int vector_length = impl_type::vector_length;
       constexpr int internal_vector_length = impl_type::internal_vector_length;
 
@@ -1023,7 +1045,7 @@ namespace Ifpack2 {
       BlockHelperDetails::PartInterface<MatrixType> interf;
 
       const bool jacobi = partitions.size() == 0;
-      const local_ordinal_type A_n_lclrows = A->getLocalNumRows();
+      const local_ordinal_type A_n_lclrows = G->getLocalNumRows();
       const local_ordinal_type nparts = jacobi ? A_n_lclrows : partitions.size();
 
       typedef std::pair<local_ordinal_type,local_ordinal_type> size_idx_pair_type;
@@ -1050,7 +1072,7 @@ namespace Ifpack2 {
           SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
           recommended_team_size(blocksize, vector_length, internal_vector_length);
 
-        const local_ordinal_type num_teams = execution_space().concurrency() / (team_size * vector_length);
+        const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
 
         n_subparts_per_part = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
 
@@ -1819,7 +1841,8 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     void
-    performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+    performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                         const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &g,
                          const BlockHelperDetails::PartInterface<MatrixType> &interf,
                          BlockTridiags<MatrixType> &btdm,
                          BlockHelperDetails::AmD<MatrixType> &amd,
@@ -1838,15 +1861,19 @@ namespace Ifpack2 {
       using size_type_1d_view = typename impl_type::size_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using vector_type_4d_view = typename impl_type::vector_type_4d_view;
+      using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
       using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
       constexpr int vector_length = impl_type::vector_length;
 
       const auto comm = A->getRowMap()->getComm();
 
-      const auto& g = A->getCrsGraph();
+      auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A);
 
-      const auto blocksize = A->getBlockSize();
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+      TEUCHOS_ASSERT(hasBlockCrsMatrix || g->getLocalNumRows() != 0);
+      const local_ordinal_type blocksize = hasBlockCrsMatrix ? A->getBlockSize() : A->getLocalNumRows()/g->getLocalNumRows();
 
       // mirroring to host
       const auto partptr = Kokkos::create_mirror_view_and_copy     (Kokkos::HostSpace(), interf.partptr);
@@ -1863,9 +1890,9 @@ namespace Ifpack2 {
       
       Kokkos::deep_copy(col2row, Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
       {
-        const auto rowmap = g.getRowMap();
-        const auto colmap = g.getColMap();
-        const auto dommap = g.getDomainMap();
+        const auto rowmap = g->getRowMap();
+        const auto colmap = g->getColMap();
+        const auto dommap = g->getDomainMap();
         TEUCHOS_ASSERT( !(rowmap.is_null() || colmap.is_null() || dommap.is_null()));
 
 #if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
@@ -1890,7 +1917,7 @@ namespace Ifpack2 {
 
       // construct the D and R graphs in A = D + R.
       {
-        const auto local_graph = g.getLocalGraphHost();
+        const auto local_graph = g->getLocalGraphHost();
         const auto local_graph_rowptr = local_graph.row_map;
         TEUCHOS_ASSERT(local_graph_rowptr.size() == static_cast<size_t>(nrows + 1));
         const auto local_graph_colidx = local_graph.entries;
@@ -2118,8 +2145,11 @@ namespace Ifpack2 {
           }
 
           // Allocate or view values.
-          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->getValuesDeviceNonConst());
-                               
+          if (hasBlockCrsMatrix)
+            amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A_bcrs.get())->getValuesDeviceNonConst());
+          else {
+            amd.tpetra_values = (const_cast<crs_matrix_type*>(A_crs.get()))->getLocalValuesDevice (Tpetra::Access::ReadWrite);
+          }
         }
 
         // Allocate view for E and initialize the values with B:
@@ -2715,7 +2745,8 @@ namespace Ifpack2 {
       using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
       /// tpetra interface
-      using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
+      using row_matrix_type = typename impl_type::tpetra_row_matrix_type;
+      using crs_graph_type = typename impl_type::tpetra_crs_graph_type;
       /// views
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using local_ordinal_type_2d_view = typename impl_type::local_ordinal_type_2d_view;
@@ -2748,8 +2779,9 @@ namespace Ifpack2 {
       const local_ordinal_type max_partsz;
       // block crs matrix (it could be Kokkos::UVMSpace::size_type, which is int)
       using size_type_1d_view_tpetra = Kokkos::View<size_t*,typename impl_type::node_device_type>;
-      const ConstUnmanaged<size_type_1d_view_tpetra> A_rowptr;
-      const ConstUnmanaged<impl_scalar_type_1d_view_tpetra> A_values;
+      ConstUnmanaged<size_type_1d_view_tpetra> A_block_rowptr;
+      ConstUnmanaged<size_type_1d_view_tpetra> A_point_rowptr;
+      ConstUnmanaged<impl_scalar_type_1d_view_tpetra> A_values;
       // block tridiags
       const ConstUnmanaged<size_type_2d_view> pack_td_ptr, flat_td_ptr, pack_td_ptr_schur;
       const ConstUnmanaged<local_ordinal_type_1d_view> A_colindsub;
@@ -2764,10 +2796,13 @@ namespace Ifpack2 {
       const local_ordinal_type vector_loop_size;
       const local_ordinal_type vector_length_value;
 
+      bool hasBlockCrsMatrix;
+
     public:
       ExtractAndFactorizeTridiags(const BlockTridiags<MatrixType> &btdm_,
                                   const BlockHelperDetails::PartInterface<MatrixType> &interf_,
-                                  const Teuchos::RCP<const block_crs_matrix_type> &A_,
+                                  const Teuchos::RCP<const row_matrix_type> &A_,
+                                  const Teuchos::RCP<const crs_graph_type> &G_,
                                   const magnitude_type& tiny_) :
         // interface
         partptr(interf_.partptr),
@@ -2779,9 +2814,6 @@ namespace Ifpack2 {
         part2packrowidx0_sub(interf_.part2packrowidx0_sub),
         packindices_schur(interf_.packindices_schur),
         max_partsz(interf_.max_partsz),
-        // block crs matrix
-        A_rowptr(A_->getCrsGraph().getLocalGraphDevice().row_map),
-        A_values(const_cast<block_crs_matrix_type*>(A_.get())->getValuesDeviceNonConst()),
         // block tridiags
         pack_td_ptr(btdm_.pack_td_ptr),
         flat_td_ptr(btdm_.flat_td_ptr),
@@ -2824,7 +2856,24 @@ namespace Ifpack2 {
         // diagonal weight to avoid zero pivots
         tiny(tiny_),
         vector_loop_size(vector_length/internal_vector_length),
-        vector_length_value(vector_length) {}
+        vector_length_value(vector_length) {
+          using crs_matrix_type = typename impl_type::tpetra_crs_matrix_type;
+          using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
+
+          auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
+          auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A_);
+
+          hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+          A_block_rowptr = G_->getLocalGraphDevice().row_map;
+          if (hasBlockCrsMatrix) {
+            A_values = const_cast<block_crs_matrix_type*>(A_bcrs.get())->getValuesDeviceNonConst();
+          }
+          else {
+            A_point_rowptr = A_crs->getCrsGraph()->getLocalGraphDevice().row_map;
+            A_values = A_crs->getLocalValuesDevice (Tpetra::Access::ReadOnly);
+          }
+        }
 
     private:
 
@@ -2863,25 +2912,44 @@ namespace Ifpack2 {
 #endif
         for (local_ordinal_type tr=tr_min,j=0;tr<tr_max;++tr) {
           for (local_ordinal_type e=0;e<3;++e) {
-            const impl_scalar_type* block[vector_length] = {};
-            for (local_ordinal_type vi=0;vi<npacks;++vi) {
-              const size_type Aj = A_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
-              block[vi] = &A_values(Aj*blocksize_square);
-            }
-            const size_type pi = kps + j;
+            if (hasBlockCrsMatrix) {
+              const impl_scalar_type* block[vector_length] = {};
+              for (local_ordinal_type vi=0;vi<npacks;++vi) {
+                const size_type Aj = A_block_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
+
+                block[vi] = &A_values(Aj*blocksize_square);
+              }
+              const size_type pi = kps + j;
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-            printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d\n", pi, ri0[0] + tr, kfs[0] + j);
+              printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d\n", pi, ri0[0] + tr, kfs[0] + j);
 #endif            
-            ++j;
-            for (local_ordinal_type ii=0;ii<blocksize;++ii) {
-              for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                const auto idx = tlb::getFlatIndex(ii, jj, blocksize);
-                auto& v = internal_vector_values(pi, ii, jj, 0);
-                for (local_ordinal_type vi=0;vi<npacks;++vi)
-                  v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
+              ++j;            
+              for (local_ordinal_type ii=0;ii<blocksize;++ii) {
+                for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                  const auto idx = tlb::getFlatIndex(ii, jj, blocksize);
+                  auto& v = internal_vector_values(pi, ii, jj, 0);
+                  for (local_ordinal_type vi=0;vi<npacks;++vi) {
+                    v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
+                  }
+                }
               }
             }
+            else {
+              const size_type pi = kps + j;
 
+              for (local_ordinal_type vi=0;vi<npacks;++vi) {
+                const size_type Aj_c = A_colindsub(kfs[vi] + j);
+
+                for (local_ordinal_type ii=0;ii<blocksize;++ii) {
+                  auto point_row_offset = A_point_rowptr(lclrow(ri0[vi] + tr)*blocksize + ii);
+
+                  for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                    scalar_values(pi, ii, jj, vi) = A_values(point_row_offset + Aj_c*blocksize + jj);
+                  }
+                }
+              }
+              ++j;
+            }
             if (nrows[0] == 1) break;
             if (local_subpartidx % 2 == 0) {
               if (e == 1 && (tr == 0 || tr+1 == nrows[0])) break;
@@ -2967,20 +3035,36 @@ namespace Ifpack2 {
                   lend = 1;
                 }
               }
-              for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
-                const size_type Aj = A_rowptr(lclrow(ri0 + tr)) + A_colindsub(kfs + j);
-                const impl_scalar_type* block = &A_values(Aj*blocksize_square);
-                const size_type pi = kps + j;
+              if (hasBlockCrsMatrix) {
+                for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
+                  const size_type Aj = A_block_rowptr(lclrow(ri0 + tr)) + A_colindsub(kfs + j);
+                  const impl_scalar_type* block = &A_values(Aj*blocksize_square);
+                  const size_type pi = kps + j;
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-                printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d, tr = %d, lbeg = %d, lend = %d, l = %d\n", pi, ri0 + tr, kfs + j, tr, lbeg, lend, l);
+                  printf("Extract pi = %ld, ri0 + tr = %d, kfs + j = %d, tr = %d, lbeg = %d, lend = %d, l = %d\n", pi, ri0 + tr, kfs + j, tr, lbeg, lend, l);
 #endif
-                Kokkos::parallel_for
-                  (Kokkos::TeamThreadRange(member,blocksize),
-                   [&](const local_ordinal_type &ii) {
-                    for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[tlb::getFlatIndex(ii,jj,blocksize)]);
-                    }
-                  });
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member,blocksize),
+                    [&](const local_ordinal_type &ii) {
+                      for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                        scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[tlb::getFlatIndex(ii,jj,blocksize)]);
+                      }
+                    });
+                }
+              }
+              else {
+                for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
+                  const size_type Aj_c = A_colindsub(kfs + j);
+                  const size_type pi = kps + j;
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member,blocksize),
+                    [&](const local_ordinal_type &ii) {
+                      auto point_row_offset = A_point_rowptr(lclrow(ri0 + tr)*blocksize + ii);
+                      for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                        scalar_values(pi, ii, jj, v) = A_values(point_row_offset + Aj_c*blocksize + jj);
+                      }
+                    });
+                }
               }
             }
           }
@@ -3480,12 +3564,13 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     void
-    performNumericPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+    performNumericPhase(const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                        const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &G,
                         const BlockHelperDetails::PartInterface<MatrixType> &interf,
                         BlockTridiags<MatrixType> &btdm,
                         const typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type tiny) {
       IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::NumericPhase");
-      ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, tiny);
+      ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, G, tiny);
       function.run();
       IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     }
@@ -4738,7 +4823,8 @@ namespace Ifpack2 {
     template<typename MatrixType>
     int
     applyInverseJacobi(// importer
-                       const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+                       const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_row_matrix_type> &A,
+                       const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_crs_graph_type> &G,
                        const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_import_type> &tpetra_importer,
                        const Teuchos::RCP<AsyncableImport<MatrixType> > &async_importer,
                        const bool overlap_communication_and_computation,
@@ -4840,8 +4926,18 @@ namespace Ifpack2 {
                                                damping_factor, is_norm_manager_active);
 
       const local_ordinal_type_1d_view dummy_local_ordinal_type_1d_view;
+
+
+      auto A_crs = Teuchos::rcp_dynamic_cast<const typename impl_type::tpetra_crs_matrix_type>(A);
+      auto A_bcrs = Teuchos::rcp_dynamic_cast<const typename impl_type::tpetra_block_crs_matrix_type>(A);
+
+      bool hasBlockCrsMatrix = ! A_bcrs.is_null ();
+
+      // This is OK here to use the graph of the A_crs matrix and a block size of 1
+      const auto g = hasBlockCrsMatrix ? A_bcrs->getCrsGraph() : *(A_crs->getCrsGraph()); // tpetra crs graph object
+
       BlockHelperDetails::ComputeResidualVector<MatrixType>
-        compute_residual_vector(amd, A->getCrsGraph().getLocalGraphDevice(), blocksize, interf,
+        compute_residual_vector(amd, G->getLocalGraphDevice(), g.getLocalGraphDevice(), blocksize, interf,
                                 is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
 
       // norm manager workspace resize
@@ -4925,7 +5021,8 @@ namespace Ifpack2 {
       using async_import_type = AsyncableImport<MatrixType>;
 
       // distructed objects
-      Teuchos::RCP<const typename impl_type::tpetra_block_crs_matrix_type> A;
+      Teuchos::RCP<const typename impl_type::tpetra_row_matrix_type> A;
+      Teuchos::RCP<const typename impl_type::tpetra_crs_graph_type> blockGraph;
       Teuchos::RCP<const typename impl_type::tpetra_import_type> tpetra_importer;
       Teuchos::RCP<async_import_type> async_importer;
       bool overlap_communication_and_computation;
