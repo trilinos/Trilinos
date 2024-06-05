@@ -1,18 +1,37 @@
-#ifndef _MiniEM_MatrixFreeInterpolationOp_hpp_
-#define _MiniEM_MatrixFreeInterpolationOp_hpp_
+#ifndef __Panzer_Interpolation_hpp__
+#define __Panzer_Interpolation_hpp__
+
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
+#ifdef PANZER_HAVE_EPETRA_STACK
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#endif
+
+#ifdef PANZER_HAVE_EPETRA_STACK
+#include "Thyra_EpetraThyraWrappers.hpp"
+#endif
 
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_Import.hpp>
 
-#include "Panzer_Traits.hpp"
-#include "Panzer_DOFManager.hpp"
-#include "Panzer_LinearObjFactory.hpp"
-#include "Panzer_BlockedDOFManager.hpp"
-#include "Panzer_IntrepidBasisFactory.hpp"
-#include "Panzer_STKConnManager.hpp"
+
+namespace panzer {
+
+  Teuchos::RCP<Thyra::LinearOpBase<double>> buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
+                                                               const std::string &lo_basis_name, const std::string &ho_basis_name,
+                                                               Intrepid2::EOperator op = Intrepid2::OPERATOR_VALUE,
+                                                               size_t worksetSize = 1000,
+                                                               const bool matrixFree = false);
 
 
-namespace mini_em {
+  Teuchos::RCP<Thyra::LinearOpBase<double>> buildInterpolation(const Teuchos::RCP<const panzer::ConnManager> &conn,
+                                                               const Teuchos::RCP<panzer::DOFManager> &lo_ugi,
+                                                               const Teuchos::RCP<panzer::DOFManager> &ho_ugi,
+                                                               const std::string &lo_basis_name, const std::string &ho_basis_name,
+                                                               Intrepid2::EOperator op = Intrepid2::OPERATOR_VALUE,
+                                                               size_t worksetSize = 1000, const bool forceVectorial = false,
+                                                               const bool useTpetra = true,
+                                                               const bool matrixFree = false);
+
 
   template <class Scalar = Tpetra::Operator<>::scalar_type,
             class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
@@ -24,8 +43,9 @@ namespace mini_em {
 
     typedef PHX::Device DeviceSpace;
 
-    MatrixFreeInterpolationOp(const std::string& _name,
-                              Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > _linObjFactory,
+    MatrixFreeInterpolationOp(const Teuchos::RCP<const panzer::ConnManager> &conn,
+                              const Teuchos::RCP<panzer::DOFManager> &_lo_ugi,
+                              const Teuchos::RCP<panzer::DOFManager> &_ho_ugi,
                               const std::string& _lo_basis_name,
                               const std::string& _ho_basis_name,
                               Intrepid2::EOperator _op=Intrepid2::OPERATOR_VALUE,
@@ -34,7 +54,7 @@ namespace mini_em {
     void allocateColumnMapVector(size_t numVectors);
 
     // Pre-compute elements that own a DoF
-    void precomputeOwners();
+    void precomputeOwnersAndOrientations(const Teuchos::RCP<const panzer::ConnManager> &conn);
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -72,8 +92,9 @@ namespace mini_em {
       return true;
     };
 
-    void
-    setupNodeOnlyConnManager();
+    void setName(std::string &_name) {
+      name = _name;
+    };
 
   private:
 
@@ -85,20 +106,16 @@ namespace mini_em {
     Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > import_;
     Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colmapMV_;
 
-    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     std::string lo_basis_name;
     std::string ho_basis_name;
     Intrepid2::EOperator op;
     size_t worksetSize;
 
-    Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
     Teuchos::RCP<panzer::DOFManager> lo_ugi;
     Teuchos::RCP<panzer::DOFManager> ho_ugi;
 
     Kokkos::View<LocalOrdinal*,DeviceSpace> owner_d_;
-
-    Teuchos::RCP<panzer_stk::STKConnManager> node_conn_;
+    std::map<std::string, Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> > orientations_;
   };
-
 }
 #endif
