@@ -429,9 +429,7 @@ private:
   /// In Tpetra::Map, this corresponds to the maximum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-  KeyType maxKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
-                    ::Kokkos::ArithTraits<KeyType>::min() :
-                   -::Kokkos::ArithTraits<KeyType>::max();
+  KeyType maxKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Minimum value.
   ///
@@ -461,9 +459,7 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType lastContigKey_ = ::Kokkos::ArithTraits<KeyType>::is_integer ?
-                           ::Kokkos::ArithTraits<KeyType>::min() :
-                          -::Kokkos::ArithTraits<KeyType>::max();
+  KeyType lastContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
 
   /// \brief Whether the table was created using one of the
   ///   constructors that assume contiguous values.
