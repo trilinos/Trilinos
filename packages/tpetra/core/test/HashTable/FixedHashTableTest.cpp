@@ -1094,8 +1094,8 @@ namespace { // (anonymous)
     out << "Got to the end!" << endl;
   }
 
-  // Test as proposed in issue #13034
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnInit, ValueType, KeyType, DeviceType)
+//! @test Check that a default-initialized @ref FixedHashTable claims 0 pairs. This test was proposed in issue #13034.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnDefaultInit, ValueType, KeyType, DeviceType)
   {
     using fixed_hash_table_t = Tpetra::Details::FixedHashTable<KeyType,ValueType,DeviceType>;
     
