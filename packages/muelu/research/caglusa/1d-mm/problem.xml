@@ -13,8 +13,4 @@
             <Parameter name="drop tolerance" type="double" value="0.1"/>
             <Parameter name="coordinates" type="string" value="1d-mm/coords"/>
 
-            <ParameterList name="params">
-            <Parameter name="keepTransfers" type="int" value="-1"/>
             </ParameterList>
-            </ParameterList>
-            
