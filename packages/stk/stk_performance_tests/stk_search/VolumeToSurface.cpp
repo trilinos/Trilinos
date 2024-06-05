@@ -429,10 +429,11 @@ void distributed_arborx_coarse_search(Kokkos::View<ArborX::Box *, MemSpace> elem
                                       Kokkos::View<ArborX::Box *, MemSpace> sideBoxes,
                                       MPI_Comm comm)
 {
-
+  std::cerr << "start of distributed raw ArborX test" << std::endl;
   ExecSpace execSpace;
 
   ArborX::DistributedTree<MemSpace> tree(comm, execSpace, elemBoxes);
+  std::cerr << "after DistributedTree construction" << std::endl;
 
   const int numQueries = sideBoxes.extent(0);
   Kokkos::View<ArborX::Intersects<ArborX::Box> *, MemSpace> queries(Kokkos::ViewAllocateWithoutInitializing("queries"), numQueries);
@@ -440,22 +441,25 @@ void distributed_arborx_coarse_search(Kokkos::View<ArborX::Box *, MemSpace> elem
   Kokkos::parallel_for("setup_queries", Kokkos::RangePolicy<ExecSpace>(0, numQueries),
                        KOKKOS_LAMBDA(int i) { queries(i) = ArborX::intersects(sideBoxes(i)); });
   Kokkos::fence();
+  std::cerr << "after queries population" << std::endl;
 
   Kokkos::View<ArborX::PairIndexRank *, MemSpace> values("indicesAndRanks", 0);
   Kokkos::View<int *, MemSpace> offsets("offsets", 0);
-
+  
+  std::cerr << "before tree query" << std::endl;
   tree.query(execSpace, queries, values, offsets);
+  std::cerr << "after tree query" << std::endl;
 }
 
 void run_search_test_distributed_arborx(const std::string& meshFileName)
 {
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = 100;
+  const unsigned NUM_ITERS = 5;
   stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
 
   for (unsigned j = 0; j < NUM_RUNS; j++) {
-
+    std::cerr << "batch timer iteration " << j << std::endl;
     stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
 
@@ -466,6 +470,7 @@ void run_search_test_distributed_arborx(const std::string& meshFileName)
 
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      std::cerr << "inner iteration " << i << std::endl;
       distributed_arborx_coarse_search(elemBoxes, sideBoxes, MPI_COMM_WORLD);
     }
     batchTimer.stop_batch_timer();

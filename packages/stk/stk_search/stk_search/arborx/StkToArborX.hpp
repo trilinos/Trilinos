@@ -52,18 +52,6 @@ namespace stk::search
 {
 namespace impl
 {
-template <typename T>
-bool constexpr is_stk_box =
-    std::is_same_v<T, Box<typename T::value_type>> || std::is_base_of_v<Box<typename T::value_type>, T>;
-
-template <typename T>
-bool constexpr is_stk_sphere =
-    std::is_same_v<T, Sphere<typename T::value_type>> || std::is_base_of_v<Sphere<typename T::value_type>, T>;
-
-template <typename T>
-bool constexpr is_stk_point =
-    std::is_same_v<T, Point<typename T::value_type>> || std::is_base_of_v<Point<typename T::value_type>, T>;
-
 template <typename T, typename = void>
 struct StkToArborX {
 };

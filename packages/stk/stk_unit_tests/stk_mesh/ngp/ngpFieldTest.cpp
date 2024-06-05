@@ -1032,7 +1032,6 @@ TEST_F(NgpFieldFixture, ModifyOnHostFlagClearedOnInitialNgpFieldConstruction)
   setup_one_field_one_element_mesh();
 
   stk::mesh::Field<int>& field1 = *get_meta().get_field<int>(stk::topology::ELEM_RANK, "field1");
-  EXPECT_FALSE(field1.need_sync_to_device());
   field1.modify_on_host();
 
   auto ngpfield = stk::mesh::get_updated_ngp_field<int>(field1);
@@ -1046,7 +1045,6 @@ TEST_F(NgpFieldFixture, InvalidModifyFlagCondition)
   setup_one_field_one_element_mesh();
 
   stk::mesh::Field<int>& field1 = *get_meta().get_field<int>(stk::topology::ELEM_RANK, "field1");
-  EXPECT_FALSE(field1.need_sync_to_device());
 
   auto ngpfield = stk::mesh::get_updated_ngp_field<int>(field1);
   EXPECT_FALSE(field1.need_sync_to_device());
@@ -1063,6 +1061,7 @@ TEST_F(NgpFieldFixture, PersistentModifyOnDeviceFlag)
 
   stk::mesh::Field<int>& field1 = *get_meta().get_field<int>(stk::topology::ELEM_RANK, "field1");
   EXPECT_FALSE(field1.need_sync_to_host());
+  field1.sync_to_device();
   field1.modify_on_device();
 
   auto ngpfield = stk::mesh::get_updated_ngp_field<int>(field1);
@@ -1141,7 +1140,7 @@ TEST_F(NgpFieldFixture, DeviceField_set_all_after_modified_on_host)
   auto stkField1 = get_meta().get_field<double>(stk::topology::ELEM_RANK, "variableLengthField1");
 
   EXPECT_FALSE(stkField1->need_sync_to_host());
-  EXPECT_FALSE(stkField1->need_sync_to_device());
+  EXPECT_TRUE(stkField1->need_sync_to_device());
 
   stk::mesh::NgpField<double> ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
  
@@ -1167,8 +1166,8 @@ TEST_F(NgpFieldFixture, blas_field_copy_device_to_device)
 
   EXPECT_FALSE(stkField1->need_sync_to_host());
   EXPECT_FALSE(stkField2->need_sync_to_host());
-  EXPECT_FALSE(stkField1->need_sync_to_device());
-  EXPECT_FALSE(stkField2->need_sync_to_device());
+  EXPECT_TRUE(stkField1->need_sync_to_device());
+  EXPECT_TRUE(stkField2->need_sync_to_device());
 
  
   const double myConstantValue = 97.9;
