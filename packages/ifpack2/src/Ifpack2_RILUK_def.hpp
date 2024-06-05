@@ -426,6 +426,11 @@ setParameters (const Teuchos::ParameterList& params)
 
   LevelOfFill_ = fillLevel;
   Overalloc_ = overalloc;
+#ifdef KOKKOS_ENABLE_OPENMP
+  if constexpr (std::is_same_v<execution_space, Kokkos::OpenMP>) {
+    nstreams = std::min(nstreams, execution_space{}.concurrency());
+  }
+#endif
   num_streams_ = nstreams;
 
   if (num_streams_ >= 1) {
