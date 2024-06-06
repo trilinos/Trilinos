@@ -616,7 +616,7 @@ const char* CssMKL<Matrix,Vector>::name = "CSSMKL";
 
 template <class Matrix, class Vector>
 const typename CssMKL<Matrix,Vector>::int_t
-CssMKL<Matrix,Vector>::msglvl_ = 1;
+CssMKL<Matrix,Vector>::msglvl_ = 0;  // set to be one, for more CSS messages
 
 template <class Matrix, class Vector>
 const typename CssMKL<Matrix,Vector>::int_t
