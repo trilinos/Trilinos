@@ -279,6 +279,13 @@ int tSIMPLEPreconditionerFactory_tpetra::runTest(int verbosity, std::ostream &st
   failcount += status ? 0 : 1;
   totalrun++;
 
+  status = test_hierarchicalSolves(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"hierarchicalSolves\" ... PASSED",
+                       "   \"hierarchicalSolves\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
   status = test_diagonal(verbosity, failstrm, 0);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"diagonal(diag)\" ... PASSED",
                        "   \"diagonal(diag)\" ... FAILED");
@@ -745,6 +752,57 @@ bool tSIMPLEPreconditionerFactory_tpetra::test_iterativeSolves(int verbosity, st
 
   if (!inv.is_null()) {
     Teko::rebuildInverse(*invFact, A_, inv);
+    TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+  }
+
+  return true;
+}
+
+bool tSIMPLEPreconditionerFactory_tpetra::test_hierarchicalSolves(int verbosity, std::ostream &os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  const RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > blkOp = Thyra::defaultBlockedLinearOp<ST>();
+  blkOp->beginBlockFill(3, 3);
+  blkOp->setBlock(0, 0, F_);
+  blkOp->setBlock(0, 1, Bt_);
+  blkOp->setBlock(1, 0, B_);
+  blkOp->setBlock(1, 1, C_);
+  blkOp->setBlock(1, 2, B_);
+  blkOp->setBlock(2, 1, Bt_);
+  blkOp->setBlock(2, 2, F_);
+  blkOp->endBlockFill();
+
+  RCP<ParameterList> params = Teuchos::rcp(new ParameterList());
+  ParameterList &tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
+  tekoList.set("Inverse Type", "HBGS");
+  ParameterList &ifl = tekoList.sublist("Inverse Factory Library");
+
+  ifl.sublist("HBGS").set("Type", "Hierarchical Block Gauss-Seidel");
+
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Included Subblocks", "1,2");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Inverse Type", "SIMPLE");
+
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Included Subblocks", "3");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Inverse Type", "SINGLE_BGS");
+
+  ifl.sublist("SIMPLE").set("Type", "NS SIMPLE");
+  ifl.sublist("SIMPLE").set("Inverse Velocity Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Velocity Type", "Ifpack2");
+  ifl.sublist("SIMPLE").set("Inverse Pressure Type", "Belos");
+  ifl.sublist("SIMPLE").set("Preconditioner Pressure Type", "Ifpack2");
+
+  ifl.sublist("SINGLE_BGS").set("Type", "Block Gauss-Seidel");
+  ifl.sublist("SINGLE_BGS").set("Inverse Type", "Ifpack2");
+
+  RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromParameterList(ifl);
+  RCP<const Teko::InverseFactory> invFact = invLib->getInverseFactory("HBGS");
+
+  Teko::ModifiableLinearOp inv = Teko::buildInverse(*invFact, blkOp);
+  TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
+
+  if (!inv.is_null()) {
+    Teko::rebuildInverse(*invFact, blkOp, inv);
     TEST_ASSERT(!inv.is_null(), "Constructed preconditioner is null");
   }
 

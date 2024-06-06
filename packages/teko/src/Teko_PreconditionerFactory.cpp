@@ -53,6 +53,7 @@
 // Specific preconditioners included for dynamic creation
 #include "Teko_JacobiPreconditionerFactory.hpp"
 #include "Teko_GaussSeidelPreconditionerFactory.hpp"
+#include "Teko_HierarchicalGaussSeidelPreconditionerFactory.hpp"
 #include "Teko_AddPreconditionerFactory.hpp"
 #include "Teko_MultPreconditionerFactory.hpp"
 #include "Teko_LU2x2PreconditionerFactory.hpp"
@@ -277,6 +278,9 @@ void PreconditionerFactory::initializePrecFactoryBuilder() {
 
   clone = rcp(new AutoClone<GaussSeidelPreconditionerFactory>());
   precFactoryBuilder_.addClone("Block Gauss-Seidel", clone);
+
+  clone = rcp(new AutoClone<HierarchicalGaussSeidelPreconditionerFactory>());
+  precFactoryBuilder_.addClone("Hierarchical Block Gauss-Seidel", clone);
 
   clone = rcp(new AutoClone<AddPreconditionerFactory>());
   precFactoryBuilder_.addClone("Block Add", clone);

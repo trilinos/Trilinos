@@ -56,6 +56,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_ThresholdAFilterFactory_fwd.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace MueLu {
 
@@ -73,12 +74,14 @@ class ThresholdAFilterFactory : public SingleLevelFactoryBase {
 #undef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+
  public:
   //! @name Constructors/Destructors.
   //@{
 
   //! Constructor.
-  ThresholdAFilterFactory(const std::string& ename, const Scalar threshold, const bool keepDiagonal = true, const GlobalOrdinal expectedNNZperRow = -1);
+  ThresholdAFilterFactory(const std::string& ename, const magnitudeType threshold, const bool keepDiagonal = true, const GlobalOrdinal expectedNNZperRow = -1);
 
   //! Input
   //@{
@@ -96,8 +99,8 @@ class ThresholdAFilterFactory : public SingleLevelFactoryBase {
   //@}
 
  private:
-  std::string varName_;     ///< name of input and output variable
-  const Scalar threshold_;  ///< threshold parameter
+  std::string varName_;            ///< name of input and output variable
+  const magnitudeType threshold_;  ///< threshold parameter
   const bool keepDiagonal_;
   const GlobalOrdinal expectedNNZperRow_;
 

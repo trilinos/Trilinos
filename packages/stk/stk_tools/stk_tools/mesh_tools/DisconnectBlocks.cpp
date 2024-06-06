@@ -35,7 +35,7 @@
 #include "stk_tools/mesh_tools/DisconnectBlocks.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_tools/mesh_tools/CustomAura.hpp"
+#include "stk_mesh/base/MeshUtils.hpp"
 #include "stk_tools/mesh_tools/DetectHingesImpl.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocksImpl.hpp"
 #include "stk_util/environment/WallTime.hpp"

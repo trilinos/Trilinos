@@ -43,6 +43,7 @@
 #include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
+#include "stk_search/BoxIdent.hpp"
 #include "stk_search/kdtree/KDTree_BoundingBox.hpp"
 #include "stk_search/kdtree/KDTree.hpp"
 
@@ -301,6 +302,20 @@ void communicate_views(stk::ParallelMachine arg_comm,
       search_relations(keep++) = val;
     }
   }
+}
+
+namespace impl {
+template <typename T>
+bool constexpr is_stk_box =
+    std::is_same_v<T, Box<typename T::value_type>> || std::is_base_of_v<Box<typename T::value_type>, T>;
+
+template <typename T>
+bool constexpr is_stk_sphere =
+    std::is_same_v<T, Sphere<typename T::value_type>> || std::is_base_of_v<Sphere<typename T::value_type>, T>;
+
+template <typename T>
+bool constexpr is_stk_point =
+    std::is_same_v<T, Point<typename T::value_type>> || std::is_base_of_v<Point<typename T::value_type>, T>;
 }
 
 } // end namespace stk::search

@@ -60,7 +60,7 @@ FOREACH( ORDER 1 2 3 4 )
       PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-32
-    TEST_4 CMND python
+    TEST_4 CMND python3
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
            ${ORDER}
            MPE-ConvTest-Quad-${ORDER}-
@@ -92,7 +92,7 @@ FOREACH( ORDER 1 )
       PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-Multiblock-ConvTest-Quad-${ORDER}-32
-    TEST_3 CMND python
+    TEST_3 CMND python3
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
            ${ORDER}
            MPE-Multiblock-ConvTest-Quad-${ORDER}-
@@ -128,7 +128,7 @@ ENDFOREACH()
 #       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
 #       NUM_MPI_PROCS 4
 #       OUTPUT_FILE MPE-ConvTest-Tri-${ORDER}-32
-#     TEST_4 CMND python
+#     TEST_4 CMND python3
 #       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
 #            ${ORDER}
 #            MPE-ConvTest-Tri-${ORDER}-
@@ -165,7 +165,7 @@ ENDFOREACH()
 #       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
 #       NUM_MPI_PROCS 4
 #       OUTPUT_FILE MPE-ConvTest-Hex-${ORDER}-32
-#     TEST_4 CMND python
+#     TEST_4 CMND python3
 #       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
 #            ${ORDER}
 #            MPE-ConvTest-Hex-${ORDER}-

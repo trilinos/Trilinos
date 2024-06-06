@@ -54,7 +54,6 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 
 // Tpetra includes
-#include "mpi.h"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
@@ -64,9 +63,6 @@
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_BlockedTpetraOperator.hpp"
-#include "Teko_LSCPreconditionerFactory.hpp"
-#include "Teko_InvLSCStrategy.hpp"
-#include "Teko_SIMPLEPreconditionerFactory.hpp"
 #include "Teko_TpetraInverseFactoryOperator.hpp"
 
 #include "Thyra_TpetraLinearOp.hpp"

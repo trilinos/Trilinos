@@ -81,7 +81,7 @@ namespace { // (anonymous)
   typedef Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace> test_device_type;
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode test_node_type;
 #elif defined(KOKKOS_ENABLE_SYCL)
-  typedef Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSpace> test_device_type;
+  typedef Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace> test_device_type;
   typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode test_node_type;
 #endif
   typedef Tpetra::Map<>::local_ordinal_type LO;

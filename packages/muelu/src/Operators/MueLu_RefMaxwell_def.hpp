@@ -2074,7 +2074,13 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setupSubSolve(Teucho
         }
         if ((coarseType == "" ||
              coarseType == "Klu" ||
-             coarseType == "Klu2") &&
+             coarseType == "Klu2" ||
+             coarseType == "Superlu" ||
+             coarseType == "Superlu_dist" ||
+             coarseType == "Superludist" ||
+             coarseType == "Basker" ||
+             coarseType == "Cusolver" ||
+             coarseType == "Tacho") &&
             (!params.isSublist("coarse: params") ||
              !params.sublist("coarse: params").isParameter("fix nullspace")))
           params.sublist("coarse: params").set("fix nullspace", true);

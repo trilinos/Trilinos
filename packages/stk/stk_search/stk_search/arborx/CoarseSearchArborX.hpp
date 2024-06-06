@@ -200,7 +200,6 @@ inline void coarse_search_arborx(std::vector<std::pair<DomainBoxType, DomainIden
   using DomainValueType = typename DomainBoxType::value_type;
   using RangeValueType = typename RangeBoxType::value_type;
   using ArborXDomainType = typename impl::StkToArborX<DomainBoxType>::ArborXType;
-  using ArborXRangeType = typename impl::StkToArborX<RangeBoxType>::ArborXType;
   using DomainView = Kokkos::View<const std::pair<DomainBoxType, DomainIdentProcType>*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using RangeView  = Kokkos::View<const std::pair<RangeBoxType, RangeIdentProcType>*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
@@ -226,14 +225,12 @@ inline void coarse_search_arborx(std::vector<std::pair<DomainBoxType, DomainIden
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("Fill searchResults (on host)");
-  auto valuesHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, values);
-  auto offsetsHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, offsets);
 
   const int numCollisions = values.extent(0);
   searchResults.clear();
   searchResults.reserve(numCollisions);
 
-  impl::fill_search_results(localDomain, localRange, valuesHost, offsetsHost, comm, searchResults);
+  impl::fill_search_results(localDomain, localRange, values, offsets, comm, searchResults);
   Kokkos::Profiling::popRegion();
 
   if (enforceSearchResultSymmetry) {
@@ -254,20 +251,18 @@ inline void coarse_search_arborx(
     Kokkos::View<BoxIdentProc<RangeBoxType, RangeIdentProcType>*, ExecutionSpace> const& localRange,
     MPI_Comm comm,
     Kokkos::View<IdentProcIntersection<DomainIdentProcType, RangeIdentProcType>*, ExecutionSpace>& searchResults,
+    ExecutionSpace const& execSpace = ExecutionSpace{},
     bool enforceSearchResultSymmetry = true)
 {
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
-  using ExecSpace = Kokkos::DefaultExecutionSpace;
+  using ExecSpace = ExecutionSpace;
   using MemSpace = typename ExecSpace::memory_space;
   using DomainValueType = typename DomainBoxType::value_type;
   using RangeValueType = typename RangeBoxType::value_type;
   using ArborXDomainType = typename impl::StkToArborX<DomainBoxType>::ArborXType;
-  using ArborXRangeType = typename impl::StkToArborX<RangeBoxType>::ArborXType;
 
   STK_ThrowRequireMsg((std::is_same_v<DomainValueType, RangeValueType>),
       "The domain and range boxes must have the same floating-point precision");
-
-  auto execSpace = ExecSpace{};
 
   Kokkos::View<ArborX::PairIndexRank*, MemSpace> values(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "Indices_And_Ranks"), 0);
