@@ -126,6 +126,7 @@
 
 #ifdef HAVE_AMESOS2_PARDISO_MKL // MKL version of Pardiso
 #include "Amesos2_PardisoMKL.hpp"
+#include "Amesos2_CssMKL.hpp"
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK
@@ -645,6 +646,14 @@ struct throw_no_matrix_support_exception {
        (solverName == "pardisomkl")){
       return handle_solver_matrix_and_type_support<PardisoMKL,Matrix,Vector>::apply(A, X, B);
     }
+#ifdef HAVE_MPI
+    if((solverName == "amesos2_css_mkl") ||
+       (solverName == "css_mkl") ||
+       (solverName == "amesos2_cssmkl")  ||
+       (solverName == "cssmkl")){
+      return handle_solver_matrix_and_type_support<CssMKL,Matrix,Vector>::apply(A, X, B);
+    }
+#endif
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK

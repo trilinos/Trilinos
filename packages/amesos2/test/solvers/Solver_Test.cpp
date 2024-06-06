@@ -66,6 +66,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_StackedTimer.hpp>
 #include <Teuchos_Comm.hpp>
 
 #include <Tpetra_Core.hpp>
@@ -104,6 +105,7 @@ using Teuchos::CONJ_TRANS;
 using Teuchos::ParameterList;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
+using Teuchos::StackedTimer;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 
@@ -211,15 +213,13 @@ int main(int argc, char*argv[])
 {
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
-  TimeMonitor TotalTimer(*total_timer);
-
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-
   int root = 0;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   string xml_file("solvers_test.xml"); // default xml file
   string src_memory_space_name("Undefined"); // default src memory space (no special testing)
   bool allprint = false;
+  bool useStackedTimer = true;
   Teuchos::CommandLineProcessor cmdp;
   cmdp.setDocString("A test driver for Amesos2 solvers.  It reads parameters\n"
                     "from a given (or default) xml file which describes:\n"
@@ -240,6 +240,14 @@ int main(int argc, char*argv[])
   } catch (const Teuchos::CommandLineProcessor::HelpPrinted& hp) {
     return EXIT_SUCCESS;        // help was printed, exit gracefully.
   }
+
+  RCP<StackedTimer> stackedTimer;
+  if(useStackedTimer)
+  {
+    stackedTimer = rcp(new StackedTimer("Amesos2 Solve-Test"));
+    Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+  }
+  TimeMonitor TotalTimer(*total_timer);
 
   // set up output streams based on command-line parameters
   fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -271,7 +279,6 @@ int main(int argc, char*argv[])
     verbosity = test_params.get<int>("verbosity");
   }
 
-
   // Go through the input parameters and execute tests accordingly.
   bool success = true;
   ParameterList::ConstIterator mat_it;
@@ -286,6 +293,17 @@ int main(int argc, char*argv[])
   // The summary table is very verbose
   if( verbosity > 3 ){
     TimeMonitor::summarize();
+  }
+  if(useStackedTimer)
+  {
+    stackedTimer->stopBaseTimer();
+    StackedTimer::OutputOptions options;
+    options.num_histogram=3;
+    options.print_warnings = false;
+    options.output_histogram = true;
+    options.output_fraction=true;
+    options.output_minmax = true;
+    stackedTimer->report(std::cout, comm, options);
   }
 
   // This output is used to indicate a passed test, the test framework
@@ -624,15 +642,30 @@ do_solve_routine(const string& solver_name,
     solver->setParameters( rcpFromRef(solve_params) );
     switch (phase) {
     case Amesos2::CLEAN:
+      if (verbosity > 2) {
+        *fos << endl << " ** CLEAN **" << std::endl << std::flush;
+      }
       break;
     case Amesos2::PREORDERING:
+      if (verbosity > 2) {
+        *fos << endl << " ** preOrdering **" << std::endl << std::flush;
+      }
       solver->preOrdering ();
       break;
     case Amesos2::SYMBFACT:
+      if (verbosity > 2) {
+        *fos << endl << " ** symbolicFactorization **" << std::endl << std::flush;
+      }
       solver->symbolicFactorization ();
       break;
     case Amesos2::NUMFACT:
+      if (verbosity > 2) {
+        *fos << endl << " ** numlicFactorization **" << std::endl << std::flush;
+      }
       solver->numericFactorization ();
+    }
+    if (verbosity > 2) {
+      *fos << endl << " ** done **" << std::endl << std::flush;
     }
     ++phase;
   }
@@ -673,20 +706,32 @@ do_solve_routine(const string& solver_name,
     // Do first solve according to our current style
     switch( style ){
     case SOLVE_VERBOSE:
+      if (verbosity > 2) {
+        *fos << endl << " ++ VERBOSE ++" << std::endl << std::flush;
+      }
       solver->preOrdering();
       solver->symbolicFactorization();
       solver->numericFactorization();
       solver->solve();
       break;
     case SOLVE_XB:
+      if (verbosity > 2) {
+        *fos << endl << " ++ SOLVE_XB ++" << std::endl << std::flush;
+      }
       solver->preOrdering();
       solver->symbolicFactorization();
       solver->numericFactorization();
       solver->solve(outArg(*Xhat), ptrInArg(**rhs_it));
       break;
     case SOLVE_SHORT:
+      if (verbosity > 2) {
+        *fos << endl << " ++ SOLVE_SHORT ++" << std::endl << std::flush;
+      }
       solver->solve(outArg(*Xhat), ptrInArg(**rhs_it));
       break;
+    }
+    if (verbosity > 2) {
+      *fos << endl << " ++ DONE ++" << std::endl << std::flush;
     }
 
     success &= checker(*x_it, Xhat);
