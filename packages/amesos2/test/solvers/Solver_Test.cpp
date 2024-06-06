@@ -219,7 +219,7 @@ int main(int argc, char*argv[])
   string xml_file("solvers_test.xml"); // default xml file
   string src_memory_space_name("Undefined"); // default src memory space (no special testing)
   bool allprint = false;
-  bool useStackedTimer = true;
+  bool useStackedTimer = false;
   Teuchos::CommandLineProcessor cmdp;
   cmdp.setDocString("A test driver for Amesos2 solvers.  It reads parameters\n"
                     "from a given (or default) xml file which describes:\n"
@@ -231,6 +231,7 @@ int main(int argc, char*argv[])
 
   cmdp.setOption("xml-params", &xml_file, "XML Parameters file");
   cmdp.setOption("all-print","root-print",&allprint,"All processors print to out");
+  cmdp.setOption("stacked-timer","no-stacked-timer",&useStackedTimer,"Add Stacked Timers");
   cmdp.setOption("filedir", &filedir, "Directory to search for matrix files");
   cmdp.setOption("verbosity", &verbosity, "Set verbosity level of output");
   cmdp.setOption("multiple-solves","single-solve", &multiple_solves, "Perform multiple solves with different RHS arguments");
