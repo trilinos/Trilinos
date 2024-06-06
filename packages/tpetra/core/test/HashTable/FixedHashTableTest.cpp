@@ -1127,7 +1127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnDefaultInit, Valu
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, DuplicateKeys, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, CopyCtorNoDupKeys, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, CopyCtorDupKeys, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, ZeroPairsOnInit, LO, GO, DEVICE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, ZeroPairsOnDefaultInit, LO, GO, DEVICE )
 
   // The typedefs below are there because macros don't like arguments
   // with commas in them.
