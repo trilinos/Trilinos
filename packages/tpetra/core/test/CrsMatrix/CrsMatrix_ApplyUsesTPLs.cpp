@@ -231,7 +231,6 @@ namespace {
     //
     //
     //
-    const int numVecs  = 3;
     RCP<const map_type> rowmap (new map_type (INVALID, M, 0, comm));
     RCP<const map_type> lclmap = createLocalMapWithNode<LO,GO,Node> (P, comm);
 
@@ -243,24 +242,57 @@ namespace {
       }
     }
     // call fillComplete()
-    A.fillComplete(lclmap,rowmap);
-    // build the input multivector X
-    MV X(lclmap,numVecs);
-    for (GO i=0; i<static_cast<GO>(P); ++i) {
-      for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
-        X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
-      }
-    }
-    // allocate output multivec
-    MV Bout(rowmap,numVecs);
-    // test the action
-    Bout.randomize();
-    Tpetra::Details::KokkosRegionCounter::reset();
-    Tpetra::Details::KokkosRegionCounter::start();
-    A.apply(X,Bout);
-    Tpetra::Details::KokkosRegionCounter::stop();
+    A.fillComplete(lclmap, rowmap);
 
-    TEST_COMPARE(Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_"), ==, 1);
+    {
+      // build the input multivector X with 1 vector
+      const int numVecs  = 1;
+      MV X(lclmap,numVecs);
+      for (GO i=0; i<static_cast<GO>(P); ++i) {
+        for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
+          X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
+        }
+      }
+      // allocate output multivec
+      MV Bout(rowmap,numVecs);
+      // test the action
+      Bout.randomize();
+      Tpetra::Details::KokkosRegionCounter::reset();
+      Tpetra::Details::KokkosRegionCounter::start();
+      A.apply(X,Bout);
+      Tpetra::Details::KokkosRegionCounter::stop();
+
+      TEST_COMPARE(Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_"), ==, 1);
+    }
+
+    {
+      // build the input multivector X with 3 vectors
+      const int numVecs  = 3;
+      MV X(lclmap,numVecs);
+      for (GO i=0; i<static_cast<GO>(P); ++i) {
+        for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
+          X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
+        }
+      }
+      // allocate output multivec
+      MV Bout(rowmap,numVecs);
+      // test the action
+      Bout.randomize();
+      Tpetra::Details::KokkosRegionCounter::reset();
+      Tpetra::Details::KokkosRegionCounter::start();
+      A.apply(X,Bout);
+      Tpetra::Details::KokkosRegionCounter::stop();
+
+#if defined(HAVE_TPETRA_CUDA) || defined(HAVE_TPETRACORE_CUDA)
+      if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>)
+        TEST_COMPARE(Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_"), ==, 1);
+#endif
+#if defined(HAVE_TPETRA_HIP) || defined(HAVE_TPETRACORE_HIP)
+      // The multivector case is not yet hooked up in Kokkos Kernels.
+      if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>)
+        TEST_COMPARE(Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_"), ==, 0);
+#endif
+    }
 
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
