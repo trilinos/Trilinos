@@ -47,8 +47,7 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-// #include "Kokkos_DynRankView.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
@@ -69,34 +68,29 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
-typedef CartesianConnManager<int,panzer::GlobalOrdinal>::Triplet<panzer::GlobalOrdinal> Triplet;
+using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
-typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
-
-template <typename Intrepid2Type>
-RCP<const panzer::FieldPattern> buildFieldPattern()
-{
+RCP<const panzer::FieldPattern> buildFieldPattern(
+  RCP<Intrepid2::Basis<PHX::Device, double, double>> basis
+) {
   // build a geometric pattern from a single basis
-  RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
-  RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
-  return pattern;
+  return Teuchos::make_rcp<panzer::Intrepid2FieldPattern>(basis);
 }
 
-std::string getElementBlock(const Triplet & element,
-                                    const CartesianConnManager<int,panzer::GlobalOrdinal> & connManager)
-                                    
-{
+std::string getElementBlock(
+  const Triplet & element,
+  const CartesianConnManager & connManager
+) {
   int localElmtId = connManager.computeLocalBrickElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 {
-  typedef CartesianConnManager<int,panzer::GlobalOrdinal> CCM;
-  typedef panzer::DOFManager<int,panzer::GlobalOrdinal> DOFManager;
+  using CCM = CartesianConnManager;
+  using DOFManager = panzer::DOFManager;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -114,18 +108,18 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   int bx =  1, by = 2, bz = 1;
 
   // build velocity, temperature and pressure fields
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
-  RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<double,FieldContainer> >();
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HDIV_HEX_I1_FEM< PHX::Device, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::Device, double, double>>());
 
   // build the topology
-  RCP<CCM> connManager = rcp(new CCM);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
 
   // build the dof manager, and assocaite with the topology
-  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  const auto dofManager = Teuchos::make_rcp<DOFManager>();
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
   // add TEMPERATURE field to all element blocks (MHD and solid)
@@ -309,7 +303,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
       Teuchos::send(comm,Teuchos::as<int>(gid_sub_l.size()),&gid_sub_l[0],rank-1);
     }
 
-    // recieve right, check 
+    // receive right, check 
     if(rank!=np-1) {
       std::vector<panzer::GlobalOrdinal> gid_remote(gid_sub_r.size(),-1);
       Teuchos::receive(comm,rank+1,Teuchos::as<int>(gid_sub_r.size()),&gid_remote[0]);
@@ -321,5 +315,4 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
     
 }
 
-} // end unit test
-} // end panzer
+} // namespace panzer::unit_test
