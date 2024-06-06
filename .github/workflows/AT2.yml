@@ -202,7 +202,11 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          alias python=python3
+          mkdir bin
+          pushd bin
+          ln -s $(type -p python3) python
+          export PATH=$(pwd):${PATH}
+          popd
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
@@ -211,7 +215,7 @@ jobs:
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE:-unknown}"
-
+          type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --source-repo-url ${GITHUB_WORKSPACE} \
             --target-repo-url ${GITHUB_WORKSPACE} \
