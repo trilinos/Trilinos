@@ -60,6 +60,7 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
@@ -130,6 +131,7 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
@@ -200,6 +202,7 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
