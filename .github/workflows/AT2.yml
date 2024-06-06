@@ -56,24 +56,36 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh --container"
-      - name: Generate PR cmake fragment
+      - name: PullRequestLinuxDriverTest.py
+        shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --force --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
-      - name: Generate enable packages cmake fragment
-        working-directory: /home/Trilinos/build
-        run: |
-          bash -l -c "TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD origin/develop package-enables.cmake ctest-labels.cmake" || bash -l -c "cat TribitsDumpDepsXmlScript.log"
-      - name: configure trilinos
-        working-directory: /home/Trilinos/build
-        run: |
-          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
-      - name: build trilinos
-        working-directory: /home/Trilinos/build
-        run: bash -l -c "ninja -j16"
-      - name: ctest
-        working-directory: /home/Trilinos/build
-        run: bash -l -c "ctest -j16"
+          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+
+          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
+          printf "\n\n\n"
+
+          echo "image: ${AT2_IMAGE:-unknown}"
+
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+            --source-repo-url ${GITHUB_WORKSPACE} \
+            --target-repo-url ${GITHUB_WORKSPACE} \
+            --target-branch-name ${{ github.event.pull_request.base.ref }} \
+            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
+            --genconfig-build-name rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
+            --jenkins-job-number 0 \
+            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
+            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
+            --workspace-dir /home/runner/_work/Trilinos \
+            --source-dir ${GITHUB_WORKSPACE} \
+            --build-dir /home/Trilinos/build \
+            --dashboard-build-name `cat /etc/hostname` \
+            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
+            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --filename-subprojects ./package_subproject_list.cmake \
+            --filename-packageenables ./packageEnables.cmake
 
   gcc830-serial-EXPERIMENTAL:
     runs-on: [self-hosted, gcc-8.3.0_serial]
@@ -114,24 +126,36 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh --container"
-      - name: Generate PR cmake fragment
+      - name: PullRequestLinuxDriverTest.py
+        shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          bash -l -c "source ${GITHUB_WORKSPACE}/packages/framework/GenConfig/gen-config.sh rhel8_gcc-serial_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables --force --cmake-fragment PR-configuration.cmake ${GITHUB_WORKSPACE}"
-      - name: Generate enable packages cmake fragment
-        working-directory: /home/Trilinos/build
-        run: |
-          bash -l -c "TRILINOS_DIR=${GITHUB_WORKSPACE} ${GITHUB_WORKSPACE}/commonTools/framework/get-changed-trilinos-packages.sh HEAD origin/develop package-enables.cmake ctest-labels.cmake" || bash -l -c "cat TribitsDumpDepsXmlScript.log"
-      - name: configure trilinos
-        working-directory: /home/Trilinos/build
-        run: |
-          bash -l -c "cmake -C PR-configuration.cmake -C package-enables.cmake ${GITHUB_WORKSPACE}"
-      - name: build trilinos
-        working-directory: /home/Trilinos/build
-        run: bash -l -c "ninja -j16"
-      - name: ctest
-        working-directory: /home/Trilinos/build
-        run: bash -l -c "ctest -j16"
+          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+
+          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
+          printf "\n\n\n"
+
+          echo "image: ${AT2_IMAGE:-unknown}"
+
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+            --source-repo-url ${GITHUB_WORKSPACE} \
+            --target-repo-url ${GITHUB_WORKSPACE} \
+            --target-branch-name ${{ github.event.pull_request.base.ref }} \
+            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
+            --genconfig-build-name rhel8_gcc-serial_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
+            --jenkins-job-number 0 \
+            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
+            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
+            --workspace-dir /home/runner/_work/Trilinos \
+            --source-dir ${GITHUB_WORKSPACE} \
+            --build-dir /home/Trilinos/build \
+            --dashboard-build-name `cat /etc/hostname` \
+            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
+            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --filename-subprojects ./package_subproject_list.cmake \
+            --filename-packageenables ./packageEnables.cmake
 
   cuda11-EXPERIMENTAL:
     runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]

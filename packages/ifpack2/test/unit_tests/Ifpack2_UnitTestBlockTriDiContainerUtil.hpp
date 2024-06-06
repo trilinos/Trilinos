@@ -159,7 +159,8 @@ struct BlockTriDiContainerTester {
                 const bool nonuniform_lines = false,
                 const bool zero_starting_soln = true,
                 const int num_sweeps = 1,
-                const bool jacobi = false) {
+                const bool jacobi = false,
+                const bool explicitConversion = false) {
     Teuchos::Array<Teuchos::ArrayRCP<LO> > parts;
     // make_parts modifies entries of A so the call to convertToCrsMatrix
     // needs to happen after make_parts
@@ -178,6 +179,7 @@ struct BlockTriDiContainerTester {
       p.set("partitioner: parts", parts);
       p.set("partitioner: subparts per part", 1);
       p.set("partitioner: block size", A->getBlockSize());
+      p.set("partitioner: explicit convert to BlockCrs", explicitConversion);
       T->setParameters(p);
     }
     return T;
@@ -207,6 +209,7 @@ struct BlockTriDiContainerTester {
       p.set("partitioner: parts", parts);
       p.set("partitioner: subparts per part", 1);
       p.set("partitioner: block size", -1);
+      p.set("partitioner: explicit convert to BlockCrs", false);
       T->setParameters(p);
     }
     return T;
@@ -219,7 +222,8 @@ struct BlockTriDiContainerTester {
   make_BTDC_PW (const StructuredBlock& sb, const StructuredBlockPart& sbp,
              const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
              const bool overlap_comm = false, const bool nonuniform_lines = false,
-             const bool jacobi = false, const bool seq_method = false) {
+             const bool jacobi = false, const bool seq_method = false,
+             const bool explicitConversion = false) {
     Teuchos::Array<Teuchos::Array<LO> > parts;
     // make_parts modifies entries of A so the call to convertToCrsMatrix
     // needs to happen after make_parts
@@ -227,7 +231,7 @@ struct BlockTriDiContainerTester {
     auto A_pw = Tpetra::convertToCrsMatrix(*A);
 
     return Teuchos::rcp(new Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>(
-                          A_pw, parts, 1, overlap_comm, seq_method, A->getBlockSize()));
+                          A_pw, parts, 1, overlap_comm, seq_method, A->getBlockSize(), explicitConversion));
   }
 
   // Make a bare BlockTriDiContainer.
@@ -248,7 +252,8 @@ struct BlockTriDiContainerTester {
                 const StructuredBlock& sb, const StructuredBlockPart& sbp,
                 const Int bs, const Int nvec, const bool nonuniform_lines,
                 const bool different_maps, const bool jacobi, const bool overlap_comm,
-                const bool seq_method, const bool pointwise, const std::string& details) {
+                const bool seq_method, const bool pointwise, const bool explicitConversion, 
+                const std::string& details) {
 #define TEST_BR_BTDC_FAIL(msg) do {             \
       ++nerr;                                   \
       if (comm->getRank() == 0) {               \
@@ -286,13 +291,13 @@ struct BlockTriDiContainerTester {
       const Magnitude tol = 1e-3;
       const auto T_br = use_br ?
         ( pointwise ?
-          make_BR_BTDC_PW(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi): 
+          make_BR_BTDC_PW(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi, explicitConversion): 
           make_BR_BTDC(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi) 
         ):
         Teuchos::null;
       const auto T_bare = use_br ? Teuchos::null :
         ( pointwise ?
-          make_BTDC_PW(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method): 
+          make_BTDC_PW(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method, explicitConversion): 
           make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method) 
         );
       if ( ! T_br.is_null()) {

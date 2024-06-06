@@ -110,7 +110,7 @@ class UtilitiesBase {
 
     NOTE -- it's assumed that A has been fillComplete'd.
   */
-  static RCP<CrsMatrixWrap> GetThresholdedMatrix(const RCP<Matrix>& Ain, const Scalar threshold, const bool keepDiagonal = true, const GlobalOrdinal expectedNNZperRow = -1);
+  static RCP<CrsMatrixWrap> GetThresholdedMatrix(const RCP<Matrix>& Ain, const Magnitude threshold, const bool keepDiagonal = true, const GlobalOrdinal expectedNNZperRow = -1);
 
   /*! @brief Threshold a graph
 

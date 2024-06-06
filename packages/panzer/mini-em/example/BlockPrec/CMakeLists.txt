@@ -23,7 +23,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   darcyTetAnalytic.xml darcyHexAnalytic.xml
   solverCG.xml solverGMRES.xml
   solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
-  solverMueLuOpenMP.xml solverMueLuCuda.xml solverMueLuTruncated.xml
+  solverMueLuOpenMP.xml solverMueLuCuda.xml solverMueLuTruncated.xml solverMueLuTPL.xml
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
   solverML.xml
@@ -99,6 +99,17 @@ TRIBITS_ADD_TEST(
    )
 
 
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+  TRIBITS_ADD_TEST(
+    BlockPrec
+    NAME "Maxwell_MueLu"
+    POSTFIX_AND_ARGS_0 "order1_tpl"    --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --tpl
+    ENVIRONMENT TPETRA_FUSED_RESIDUAL=OFF
+    NUM_MPI_PROCS 4
+  )
+ ENDIF()
+
+
  # Large performance-testing runs of 3D BlockPrec_RefMaxwell (4 and 16 ranks)
 TRIBITS_ADD_TEST(
    BlockPrec
@@ -119,6 +130,32 @@ TRIBITS_ADD_TEST(
    CATEGORIES PERFORMANCE
    RUN_SERIAL
    )
+
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+
+  TRIBITS_ADD_TEST(
+    BlockPrec
+    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4_tpl"
+    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --tpl --test-name=\"MiniEM 3D RefMaxwell TPL\""
+    ENVIRONMENT TPETRA_FUSED_RESIDUAL=OFF
+    COMM mpi
+    NUM_MPI_PROCS 4
+    CATEGORIES PERFORMANCE
+    RUN_SERIAL
+  )
+
+  TRIBITS_ADD_TEST(
+    BlockPrec
+    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_tpl"
+    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --tpl --test-name=\"MiniEM 3D RefMaxwell TPL\""
+    ENVIRONMENT TPETRA_FUSED_RESIDUAL=OFF
+    COMM mpi
+    NUM_MPI_PROCS 16
+    CATEGORIES PERFORMANCE
+    RUN_SERIAL
+  )
+
+ENDIF()
 
  TRIBITS_ADD_TEST(
    BlockPrec

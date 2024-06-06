@@ -110,7 +110,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   {
     // defaults for command-line options
     int x_elements=-1,y_elements=-1,z_elements=-1,basis_order=1;
-    int workset_size=20;
+    int workset_size=2000;
     std::string pCoarsenScheduleStr = "1";
     double dt=0.0;
     std::string meshFile = "";
@@ -120,6 +120,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     std::string xml = "";
     solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
     const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
+    bool preferTPLs = false;
     bool truncateMueLuHierarchy = false;
     solverType solver = MUELU;
     int numTimeSteps = 1;
@@ -147,6 +148,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
     clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+    clp.setOption("tpl", "no-tpl", &preferTPLs, "Prefer TPL usage over fused kernels");
     clp.setOption("truncateMueLuHierarchy", "no-truncateMueLuHierarchy", &truncateMueLuHierarchy, "Truncate the MueLu hierarchy");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("finalTime",&finalTime);
@@ -292,7 +294,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         throw;
     }
 
-    RCP<Teuchos::ParameterList> lin_solver_pl = mini_em::getSolverParameters(linAlgebra, physics, solver, dim, comm, out, xml, basis_order, truncateMueLuHierarchy);
+    RCP<Teuchos::ParameterList> lin_solver_pl = mini_em::getSolverParameters(linAlgebra, physics, solver, dim, comm, out, xml, basis_order, preferTPLs, truncateMueLuHierarchy);
 
     if (lin_solver_pl->sublist("Preconditioner Types").isSublist("Teko") &&
         lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library")) {

@@ -155,8 +155,10 @@ void SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& c
   RCP<const MapExtractor> rangeMapExtractor  = A->getRangeMapExtractor();
   RCP<const MapExtractor> domainMapExtractor = A->getDomainMapExtractor();
 
-  RCP<const Map> rangeMap  = rangeMapExtractor->getMap(row);
-  RCP<const Map> domainMap = domainMapExtractor->getMap(col);
+  bool thyraMode = rangeMapExtractor->getThyraMode();
+
+  RCP<const Map> rangeMap  = rangeMapExtractor->getMap(row, thyraMode);
+  RCP<const Map> domainMap = domainMapExtractor->getMap(col, thyraMode);
 
   // use user-specified striding information if available. Otherwise try to use internal striding information from the submaps!
   if (bRangeUserSpecified)

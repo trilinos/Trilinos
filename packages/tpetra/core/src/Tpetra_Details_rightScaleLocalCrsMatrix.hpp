@@ -76,6 +76,8 @@ public:
   static_assert (ScalingFactorsViewType::rank == 1,
                  "scalingFactors must be a rank-1 Kokkos::View.");
   using device_type = typename LocalSparseMatrixType::device_type;
+  using LO = typename LocalSparseMatrixType::ordinal_type;
+  using policy_type = Kokkos::TeamPolicy<typename device_type::execution_space, LO>;
 
   /// \param A_lcl [in/out] The local sparse matrix.
   ///
@@ -96,14 +98,14 @@ public:
   {}
 
   KOKKOS_INLINE_FUNCTION void
-  operator () (const typename LocalSparseMatrixType::ordinal_type lclRow) const
+  operator () (const typename policy_type::member_type & team) const
   {
-    using LO = typename LocalSparseMatrixType::ordinal_type;
     using KAM = Kokkos::ArithTraits<mag_type>;
 
+    const LO lclRow = team.league_rank();
     auto curRow = A_lcl_.row (lclRow);
     const LO numEnt = curRow.length;
-    for (LO k = 0; k < numEnt; ++k) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k) {
       const LO lclColInd = curRow.colidx(k);
       const mag_type curColNorm = scalingFactors_(lclColInd);
       // Users are responsible for any divisions or multiplications by
@@ -116,7 +118,7 @@ public:
       else {
         curRow.value(k) = curRow.value(k) * scalingFactor;
       }
-    }
+    });
   }
 
 private:
@@ -148,7 +150,7 @@ rightScaleLocalCrsMatrix (const LocalSparseMatrixType& A_lcl,
   using device_type = typename LocalSparseMatrixType::device_type;
   using execution_space = typename device_type::execution_space;
   using LO = typename LocalSparseMatrixType::ordinal_type;
-  using range_type = Kokkos::RangePolicy<execution_space, LO>;
+  using policy_type = Kokkos::TeamPolicy<execution_space, LO>;
 
   const LO lclNumRows = A_lcl.numRows ();
   if (divide) {
@@ -157,7 +159,7 @@ rightScaleLocalCrsMatrix (const LocalSparseMatrixType& A_lcl,
         typename ScalingFactorsViewType::const_type, true>;
     functor_type functor (A_lcl, scalingFactors, assumeSymmetric);
     Kokkos::parallel_for ("rightScaleLocalCrsMatrix",
-                          range_type (0, lclNumRows), functor);
+                          policy_type (lclNumRows, Kokkos::AUTO), functor);
   }
   else {
     using functor_type =
@@ -165,7 +167,7 @@ rightScaleLocalCrsMatrix (const LocalSparseMatrixType& A_lcl,
         typename ScalingFactorsViewType::const_type, false>;
     functor_type functor (A_lcl, scalingFactors, assumeSymmetric);
     Kokkos::parallel_for ("rightScaleLocalCrsMatrix",
-                          range_type (0, lclNumRows), functor);
+                          policy_type (lclNumRows, Kokkos::AUTO), functor);
   }
 }
 

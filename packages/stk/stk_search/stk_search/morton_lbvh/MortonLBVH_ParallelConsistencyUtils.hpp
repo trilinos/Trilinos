@@ -30,12 +30,13 @@ gather_all_processor_superset_domain_boxes(const std::vector<std::pair<DomainBox
 }
 
 
-template<typename DomainBoxType, typename DomainIdentProcType, typename RangeBoxType, typename RangeIdentProcType>
+template<typename ExecutionSpace, typename DomainBoxType, typename DomainIdentProcType, typename RangeBoxType, typename RangeIdentProcType>
 std::pair<std::vector<RangeBoxType>, std::vector<RangeIdentProcType>>
 morton_extend_local_range_with_remote_boxes_that_might_intersect(
     const std::vector<std::pair<DomainBoxType, DomainIdentProcType>> & localDomain,
     const std::vector<std::pair<RangeBoxType, RangeIdentProcType>> & localRange,
-    MPI_Comm comm)
+    MPI_Comm comm,
+    ExecutionSpace const& execSpace)
 {
   using DomainValueType = typename DomainBoxType::value_type;
 
@@ -44,9 +45,9 @@ morton_extend_local_range_with_remote_boxes_that_might_intersect(
 
   const auto globalSupersetBoxes = gather_all_processor_superset_domain_boxes(localDomain, comm);
 
-  stk::search::MortonAabbTree<DomainValueType, Kokkos::DefaultExecutionSpace> domainTree("Proc Domain Tree",
+  stk::search::MortonAabbTree<DomainValueType, ExecutionSpace> domainTree("Proc Domain Tree",
                                                                                         localRange.size());
-  stk::search::MortonAabbTree<DomainValueType, Kokkos::DefaultExecutionSpace> rangeTree("Proc Range Tree",
+  stk::search::MortonAabbTree<DomainValueType, ExecutionSpace> rangeTree("Proc Range Tree",
                                                                                        globalSupersetBoxes.size());
 
   export_from_box_ident_proc_vec_to_morton_tree(localRange, domainTree);
@@ -54,8 +55,8 @@ morton_extend_local_range_with_remote_boxes_that_might_intersect(
   domainTree.sync_to_device();
   rangeTree.sync_to_device();
 
-  stk::search::CollisionList<Kokkos::DefaultExecutionSpace> collisionList("Proc Collision List");
-  stk::search::morton_lbvh_search<DomainValueType, Kokkos::DefaultExecutionSpace>(domainTree, rangeTree, collisionList);
+  stk::search::CollisionList<ExecutionSpace> collisionList("Proc Collision List");
+  stk::search::morton_lbvh_search<DomainValueType, ExecutionSpace>(domainTree, rangeTree, collisionList, execSpace);
   collisionList.sync_from_device();
 
   using GlobalIdType = typename RangeIdentProcType::ident_type;

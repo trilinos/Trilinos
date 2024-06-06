@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """
 This file contains the base class for the Pull Request test driver.
@@ -482,7 +482,7 @@ class TrilinosPRConfigurationBase(object):
 
         PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
         """
-        if self.arg_pullrequest_cdash_track == "Pull Request":
+        if "Pull Request" in self.arg_pullrequest_cdash_track:
             output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
         elif self.arg_dashboard_build_name != "__UNKNOWN__":
             output = self.arg_dashboard_build_name

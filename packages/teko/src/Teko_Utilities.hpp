@@ -343,6 +343,10 @@ typedef Teuchos::RCP<Thyra::LinearOpBase<ST> > ModifiableLinearOp;
 //! Build a square zero operator from a single vector space
 inline LinearOp zero(const VectorSpace &vs) { return Thyra::zero<ST>(vs, vs); }
 
+inline LinearOp zero(const VectorSpace &range, const VectorSpace &domain) {
+  return Thyra::zero<ST>(range, domain);
+}
+
 //! Replace nonzeros with a scalar value, used to zero out an operator
 #ifdef TEKO_HAVE_EPETRA
 void putScalar(const ModifiableLinearOp &op, double scalar);

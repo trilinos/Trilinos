@@ -335,6 +335,8 @@ namespace Ifpack2 {
       typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> tpetra_map_type;
       typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> tpetra_import_type;
       typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_row_matrix_type;
+      typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_crs_matrix_type;
+      typedef Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> tpetra_crs_graph_type;
       typedef Tpetra::BlockCrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_crs_matrix_type;
       typedef typename tpetra_block_crs_matrix_type::little_block_type tpetra_block_access_view_type;
       typedef Tpetra::BlockMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_multivector_type;
@@ -375,6 +377,7 @@ namespace Ifpack2 {
       typedef Kokkos::View<internal_vector_type***,Kokkos::LayoutRight,device_type> internal_vector_type_3d_view;
       typedef Kokkos::View<internal_vector_type****,Kokkos::LayoutRight,device_type> internal_vector_type_4d_view;
       typedef Kokkos::View<internal_vector_type*****,Kokkos::LayoutRight,device_type> internal_vector_type_5d_view;
+      typedef Kokkos::View<btdm_scalar_type**,Kokkos::LayoutRight,device_type> btdm_scalar_type_2d_view;
       typedef Kokkos::View<btdm_scalar_type***,Kokkos::LayoutRight,device_type> btdm_scalar_type_3d_view;
       typedef Kokkos::View<btdm_scalar_type****,Kokkos::LayoutRight,device_type> btdm_scalar_type_4d_view;
       typedef Kokkos::View<btdm_scalar_type*****,Kokkos::LayoutRight,device_type> btdm_scalar_type_5d_view;

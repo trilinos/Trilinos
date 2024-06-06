@@ -107,6 +107,7 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 
     data_.solver.setSolutionMethod(data_.method);
     data_.solver.setLevelSetOptionAlgorithmVariant(data_.variant);
+    data_.solver.setSmallProblemThresholdsize(data_.small_problem_threshold_size);
 
     // TODO: Confirm param options
     // data_.solver.setMaxNumberOfSuperblocks(data_.max_num_superblocks);
@@ -247,6 +248,8 @@ TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
   }
   // solver type
   data_.variant = parameterList->get<int> ("variant", 2);
+  // small problem threshold
+  data_.small_problem_threshold_size = parameterList->get<int> ("small problem threshold size", 1024);
   // TODO: Confirm param options
   // data_.num_kokkos_threads = parameterList->get<int>("kokkos-threads", 1);
   // data_.max_num_superblocks = parameterList->get<int>("max-num-superblocks", 4);
@@ -264,6 +267,7 @@ TachoSolver<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("method", "chol", "Type of factorization, chol, ldl, or lu");
     pl->set("variant", 2, "Type of solver variant, 0, 1, or 2");
+    pl->set("small problem threshold size", 1024, "Problem size threshold below with Tacho uses LAPACK.");
 
     // TODO: Confirm param options
     // pl->set("kokkos-threads", 1, "Number of threads");

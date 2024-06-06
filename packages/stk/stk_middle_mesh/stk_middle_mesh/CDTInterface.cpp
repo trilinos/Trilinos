@@ -10,7 +10,7 @@ void CDTInterface::triangulate(const utils::impl::Projection& proj)
 {
   assert(m_mesh->get_elements().size() == 0);
 
-  CDT::Triangulation<double> tri(CDT::FindingClosestPoint::ClosestRandom);
+  CDT::Triangulation<double> tri(CDT::VertexInsertionOrder::Enum::AsProvided);
 
   // make vertices
   tri.insertVertices(
