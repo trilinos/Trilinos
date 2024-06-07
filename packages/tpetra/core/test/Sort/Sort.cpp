@@ -69,22 +69,24 @@ shellSortKeysAndValues (KeyType keys[],
                         ValueType values[],
                         const int n)
 {
-  int i = 0;
+  const int ZERO = 0;
+  int midpoint = n / 2;
 
-  while (i < n) {
-    auto x1 = keys[i];
-    auto x2 = values[i];
-    int j = i;
-    while (j >= 0 && keys[j-1] > x1)
-    {
-        keys[j] = keys[j-1];
-        values[j] = values[j-1];
-        --j;
+  while (midpoint > ZERO) {
+    // Avoid names like "max" in case they collide with macros.
+    const int theMax = n - midpoint;
+    for (int j = 0; j < theMax; ++j) {
+      // int is signed, so it's legit to compare >= 0.
+      for (int k = j; k >= 0; k -= midpoint) {
+        if (keys[k + midpoint] >= keys[k]) {
+          break;
+        }
+        std::swap (keys[k + midpoint], keys[k]);
+        std::swap (values[k + midpoint], values[k]);
+      }
     }
-    keys[j] = x1;
-    values[j] = x2;
-    ++i;
-  }  
+    midpoint = midpoint / 2;
+  }
 }
 
 // Is the given range of keys sorted?
