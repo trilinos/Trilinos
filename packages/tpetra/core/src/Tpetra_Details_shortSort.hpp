@@ -357,21 +357,27 @@ shellSortKeysAndValues (KeyType keys[],
                  "This implementation does a count-down loop, "
                  "and may thus loop forever "
                  "if one attempts to use it with unsigned IndexType.");
-  IndexType i = 0;
+  constexpr IndexType ZERO = 0;
+  IndexType midpoint = n / static_cast<IndexType> (2);
 
-  while (i < n) {
-    auto x1 = keys[i];
-    auto x2 = values[i];
-    IndexType j = i;
-    while (j >= 0 && keys[j-1] > x1)
-    {
-        keys[j] = keys[j-1];
-        values[j] = values[j-1];
-        --j;
+  while (midpoint > ZERO) {
+    // Avoid names like "max" in case they collide with macros.
+    const IndexType theMax = n - midpoint;
+    for (IndexType j = 0; j < theMax; ++j) {
+      // IndexType is signed, so it's legit to compare >= 0.
+      for (IndexType k = j; k >= 0; k -= midpoint) {
+        if (keys[k + midpoint] >= keys[k]) {
+          break;
+        }
+        const KeyType tmpKey = keys[k + midpoint];
+        keys[k + midpoint] = keys[k];
+        keys[k] = tmpKey;
+        const ValueType tmpVal = values[k + midpoint];
+        values[k + midpoint] = values[k];
+        values[k] = tmpVal;
+      }
     }
-    keys[j] = x1;
-    values[j] = x2;
-    ++i;
+    midpoint = midpoint / 2;
   }
 }
 
