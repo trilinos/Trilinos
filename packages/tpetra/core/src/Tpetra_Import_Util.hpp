@@ -229,7 +229,7 @@ getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   }
 }
 
-
+ 
 /* Check some of the validity of an Import object
    WARNING: This is a debugging routine only. */
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -544,6 +544,29 @@ checkAztecOOMLOrdering (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& I
 }
 
 
+/* Check to see that the import object's target map respects AztecOO/ML ordering */
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+bool 
+checkBlockConsistency(const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& map, size_t block_size) {
+  bool consistent_block = true;
+
+  for (size_t lid = 0; lid < map.getLocalNumElements (); lid += block_size) {
+    auto lbid = floor(double(lid)/block_size);
+    auto gbid = floor(double(map.getGlobalElement(lid))/block_size);
+
+    for (size_t lid2 = 1; lid2 < block_size; ++lid2) {
+      auto lbid_n = floor(double(lid+lid2)/block_size);
+      auto gbid_n = floor(double(map.getGlobalElement(lid+lid2))/block_size);
+      auto old_consistent_block = consistent_block;
+      if (consistent_block)
+        consistent_block = (lbid == lbid_n);
+      if (consistent_block)
+        consistent_block = (gbid == gbid_n);
+    }
+  }
+
+  return consistent_block;
+}
 
 
 } // namespace Import_Util

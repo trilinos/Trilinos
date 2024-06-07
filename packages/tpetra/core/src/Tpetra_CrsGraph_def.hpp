@@ -4384,13 +4384,12 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  makeColMap (Teuchos::Array<int>& remotePIDs, const Teuchos::RCP<const map_type> userDomainMap)
+  makeColMap (Teuchos::Array<int>& remotePIDs)
   {
     using Details::ProfilingRegion;
     using std::endl;
     const char tfecfFuncName[] = "makeColMap";
 
-    
     ProfilingRegion regionSortAndMerge ("Tpetra::CrsGraph::makeColMap");
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -4400,9 +4399,6 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
-    // If the user doesn't provide a domainMap we use the one from this matrix
-    Teuchos::RCP<const map_type> myDomainMap = userDomainMap.is_null() ? getDomainMap() : userDomainMap;
-    
     // this->colMap_ should be null at this point, but we accept the
     // future possibility that it might not be (esp. if we decide
     // later to support graph structure changes after first
@@ -4427,7 +4423,7 @@ namespace Tpetra {
       std::ostringstream errStrm;
       const int lclErrCode =
         Details::makeColMap (colMap, remotePIDs,
-          myDomainMap, *this, sortEachProcsGids, &errStrm);
+          getDomainMap (), *this, sortEachProcsGids, &errStrm);
       auto comm = this->getComm ();
       if (! comm.is_null ()) {
         const int lclSuccess = (lclErrCode == 0) ? 1 : 0;
@@ -4447,7 +4443,7 @@ namespace Tpetra {
     }
     else {
       (void) Details::makeColMap (colMap, remotePIDs,
-                                  myDomainMap, *this, sortEachProcsGids, nullptr);
+        getDomainMap (), *this, sortEachProcsGids, nullptr);
     }
     // See above.  We want to admit the possibility of makeColMap
     // actually revising an existing column Map, even though that
