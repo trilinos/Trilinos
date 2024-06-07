@@ -181,7 +181,7 @@ getValidParameters () const
   validParams->set("partitioner: block size", -1);
   validParams->set("partitioner: print level", false);
   validParams->set("partitioner: explicit convert to BlockCrs", false);
-  validParams->set("partitioner: checkAztecOOMLOrdering", true);
+  validParams->set("partitioner: checkBlockConsistency", true);
 
   return validParams;
 }
@@ -651,11 +651,11 @@ initialize ()
         graph = A_->getGraph ();
       }
       else {
-        if ( !List_.isParameter("partitioner: checkAztecOOMLOrdering") || List_.get<bool>("partitioner: checkAztecOOMLOrdering")) {
+        if ( !List_.isParameter("partitioner: checkBlockConsistency") || List_.get<bool>("partitioner: checkBlockConsistency")) {
           if ( !A_->getGraph ()->getImporter().is_null()) {
             TEUCHOS_TEST_FOR_EXCEPT_MSG
-              (!Tpetra::Import_Util::checkAztecOOMLOrdering(*(A_->getGraph ()->getImporter())), 
-              "The pointwise graph of the input matrix A pointwise does not follow the AztecOOMLOrdering.");
+              (!Tpetra::Import_Util::checkBlockConsistency(*(A_->getGraph ()->getColMap()), block_size), 
+              "The pointwise graph of the input matrix A pointwise is not consistent with block_size.");
           }
         }
         graph = Tpetra::getBlockCrsGraph(*Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_), block_size, true);
