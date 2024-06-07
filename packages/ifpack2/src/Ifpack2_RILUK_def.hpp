@@ -1196,6 +1196,16 @@ void RILUK<MatrixType>::compute ()
   computeTime_ += (timer.wallTime() - startTime);
 }
 
+namespace Impl {
+template <typename MV, typename Map>
+void resetMultiVecIfNeeded(std::unique_ptr<MV> &mv_ptr, const Map &map, const int numVectors, bool initialize)
+{
+  if(!mv_ptr || mv_ptr->getNumVectors() != numVectors) {
+    mv_ptr.reset(new MV(map, numVectors, initialize));
+  }
+}
+}
+
 template<class MatrixType>
 void
 RILUK<MatrixType>::
@@ -1254,11 +1264,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
       if (isKokkosKernelsSpiluk_ && isKokkosKernelsStream_ && hasStreamReordered_) {
-        MV ReorderedX (X.getMap(), X.getNumVectors());
-        MV ReorderedY (Y.getMap(), Y.getNumVectors());
+        Impl::resetMultiVecIfNeeded(reordered_x_, X.getMap(), X.getNumVectors(), false);
+        Impl::resetMultiVecIfNeeded(reordered_y_, Y.getMap(), Y.getNumVectors(), false);
         for (size_t j = 0; j < X.getNumVectors(); j++) {
           auto X_j = X.getVector(j);
-          auto ReorderedX_j = ReorderedX.getVectorNonConst(j);
+          auto ReorderedX_j = reordered_x_->getVectorNonConst(j);
           auto X_lcl = X_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
           auto ReorderedX_lcl = ReorderedX_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
           local_ordinal_type stream_begin = 0;
@@ -1268,29 +1278,28 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             stream_end = stream_begin + perm_i.extent(0);
             auto X_lcl_sub = Kokkos::subview (X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
             auto ReorderedX_lcl_sub = Kokkos::subview (ReorderedX_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
-            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(exec_space_instances_[i], 0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
               ReorderedX_lcl_sub(perm_i(ii)) = X_lcl_sub(ii);
             });
             stream_begin = stream_end;
           }
         }
-        Kokkos::fence(); // Make sure X is completely reordered
         if (mode == Teuchos::NO_TRANS) { // Solve L (U Y) = X for Y.
           // Solve L Y = X for Y.
-          L_solver_->apply (ReorderedX, Y, mode);
+          L_solver_->apply (*reordered_x_, Y, mode);
           // Solve U Y = Y for Y.
-          U_solver_->apply (Y, ReorderedY, mode);
+          U_solver_->apply (Y, *reordered_y_, mode);
         }
         else { // Solve U^P (L^P Y) = X for Y (where P is * or T).
           // Solve U^P Y = X for Y.
-          U_solver_->apply (ReorderedX, Y, mode);
+          U_solver_->apply (*reordered_x_, Y, mode);
           // Solve L^P Y = Y for Y.
-          L_solver_->apply (Y, ReorderedY, mode);
+          L_solver_->apply (Y, *reordered_y_, mode);
         }
 
         for (size_t j = 0; j < Y.getNumVectors(); j++) {
           auto Y_j = Y.getVectorNonConst(j);
-          auto ReorderedY_j = ReorderedY.getVector(j);
+          auto ReorderedY_j = reordered_y_->getVector(j);
           auto Y_lcl = Y_j->getLocalViewDevice(Tpetra::Access::ReadWrite);
           auto ReorderedY_lcl = ReorderedY_j->getLocalViewDevice(Tpetra::Access::ReadOnly);
           local_ordinal_type stream_begin = 0;
@@ -1300,12 +1309,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             stream_end = stream_begin + perm_i.extent(0);
             auto Y_lcl_sub = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
             auto ReorderedY_lcl_sub = Kokkos::subview (ReorderedY_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
-            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
+            Kokkos::parallel_for( Kokkos::RangePolicy<execution_space>(exec_space_instances_[i], 0, static_cast<int>(perm_i.extent(0))), KOKKOS_LAMBDA ( const int& ii ) {
               Y_lcl_sub(ii) = ReorderedY_lcl_sub(perm_i(ii));
             });
             stream_begin = stream_end;
           }
         }
+        Kokkos::fence();
       }
       else {
         if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
