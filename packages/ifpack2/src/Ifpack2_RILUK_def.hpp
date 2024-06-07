@@ -552,6 +552,8 @@ void RILUK<MatrixType>::initialize ()
     isAllocated_   = false;
     isComputed_    = false;
     Graph_ = Teuchos::null;
+    reordered_x_ = nullptr;
+    reordered_y_ = nullptr;
 
     if (isKokkosKernelsStream_) {
       Graph_v_ = std::vector< Teuchos::RCP<iluk_graph_type> >(num_streams_);

@@ -1034,6 +1034,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
     overlapping_Y_.reset (nullptr);
     R_.reset (nullptr);
     C_.reset (nullptr);
+    reduced_reordered_B_.reset (nullptr);
+    reduced_reordered_Y_.reset (nullptr);
+    reduced_B_.reset (nullptr);
+    reduced_Y_.reset (nullptr);
+    reordered_B_.reset (nullptr);
+    reordered_Y_.reset (nullptr);
 
     RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
     RCP<const map_type> rowMap = Matrix_->getRowMap ();
