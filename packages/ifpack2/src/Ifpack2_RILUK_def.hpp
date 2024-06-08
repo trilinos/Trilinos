@@ -552,6 +552,7 @@ void RILUK<MatrixType>::initialize ()
     isAllocated_   = false;
     isComputed_    = false;
     Graph_ = Teuchos::null;
+    Y_tmp_ = nullptr;
     reordered_x_ = nullptr;
     reordered_y_ = nullptr;
 
@@ -1325,18 +1326,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           //NOTE (Nov-15-2022):
           //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
           //since cusparseSpSV_solve() does not support in-place computation
-          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
 
           // Start by solving L Y_tmp = X for Y_tmp.
-          L_solver_->apply (X, Y_tmp, mode);
+          L_solver_->apply (X, *Y_tmp_, mode);
 
           if (!this->isKokkosKernelsSpiluk_) {
             // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
             // write "solve D Y = Y for Y."
-            Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+            Y_tmp_->elementWiseMultiply (one, *D_, *Y_tmp_, zero);
           }
 
-          U_solver_->apply (Y_tmp, Y, mode); // Solve U Y = Y_tmp.
+          U_solver_->apply (*Y_tmp_, Y, mode); // Solve U Y = Y_tmp.
 #else
           // Start by solving L Y = X for Y.
           L_solver_->apply (X, Y, mode);
@@ -1355,10 +1356,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           //NOTE (Nov-15-2022):
           //This is a workaround for Cuda >= 11.3 (using cusparseSpSV)
           //since cusparseSpSV_solve() does not support in-place computation
-          MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+          Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
 
           // Start by solving U^P Y_tmp = X for Y_tmp.
-          U_solver_->apply (X, Y_tmp, mode);
+          U_solver_->apply (X, *Y_tmp_, mode);
 
           if (!this->isKokkosKernelsSpiluk_) {
             // Solve D^P Y = Y.
@@ -1366,10 +1367,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             // FIXME (mfh 24 Jan 2014) If mode = Teuchos::CONJ_TRANS, we
             // need to do an elementwise multiply with the conjugate of
             // D_, not just with D_ itself.
-            Y_tmp.elementWiseMultiply (one, *D_, Y_tmp, zero);
+            Y_tmp_->elementWiseMultiply (one, *D_, *Y_tmp_, zero);
 	      }
 
-          L_solver_->apply (Y_tmp, Y, mode); // Solve L^P Y = Y_tmp.
+          L_solver_->apply (*Y_tmp_, Y, mode); // Solve L^P Y = Y_tmp.
 #else
           // Start by solving U^P Y = X for Y.
           U_solver_->apply (X, Y, mode);
@@ -1399,9 +1400,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           Y.scale (beta);
         }
       } else { // alpha != zero
-        MV Y_tmp (Y.getMap (), Y.getNumVectors ());
-        apply (X, Y_tmp, mode);
-        Y.update (alpha, Y_tmp, beta);
+        Impl::resetMultiVecIfNeeded(Y_tmp_, Y.getMap(), Y.getNumVectors(), false);
+        apply (X, *Y_tmp_, mode);
+        Y.update (alpha, *Y_tmp_, beta);
       }
     }
   }//end timing

@@ -661,6 +661,7 @@ protected:
   bool hasStreamReordered_;
   std::vector<typename lno_nonzero_view_t::non_const_type> perm_v_;
   std::vector<typename lno_nonzero_view_t::non_const_type> reverse_perm_v_;
+  mutable std::unique_ptr<MV> Y_tmp_;
   mutable std::unique_ptr<MV> reordered_x_;
   mutable std::unique_ptr<MV> reordered_y_;
 };
