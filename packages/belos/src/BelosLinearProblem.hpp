@@ -539,6 +539,9 @@ namespace Belos {
     //! Right preconditioning operator of linear system
     Teuchos::RCP<const OP> RP_;
     
+    //! Scratch vector for use in apply()
+    mutable Teuchos::RCP<MV> Y_temp_;
+
     //! Timers
     mutable Teuchos::RCP<Teuchos::Time> timerOp_, timerPrec_;
 
@@ -844,6 +847,8 @@ namespace Belos {
 #endif
     }
 
+    Y_temp_ = Teuchos::null;
+
     // Set the linear system using the arguments newX and newB
     if (newX != Teuchos::null)
       X_ = newX;
@@ -977,11 +982,12 @@ namespace Belos {
     const bool leftPrec = LP_ != null;
     const bool rightPrec = RP_ != null;
 
-    // We only need a temporary vector for intermediate results if
-    // there is a left or right preconditioner.  We really should just
-    // keep this temporary vector around instead of allocating it each
-    // time.
-    RCP<MV> ytemp = (leftPrec || rightPrec) ? MVT::Clone (y, MVT::GetNumberVecs (y)) : null;
+    if(leftPrec || rightPrec) {
+      const auto num_vecs_y = MVT::GetNumberVecs(y);
+      if(!Y_temp_ || MVT::GetNumberVecs(*Y_temp_) != num_vecs_y) {
+        Y_temp_ = MVT::Clone (y, num_vecs_y);
+      }
+    }
 
     //
     // No preconditioning.
@@ -995,24 +1001,24 @@ namespace Belos {
     else if( leftPrec && rightPrec ) 
     {
       applyRightPrec( x, y );
-      applyOp( y, *ytemp );
-      applyLeftPrec( *ytemp, y );
+      applyOp( y, *Y_temp_ );
+      applyLeftPrec( *Y_temp_, y );
     }
     //
     // Preconditioning is only being done on the left side
     //
     else if( leftPrec ) 
     {
-      applyOp( x, *ytemp );
-      applyLeftPrec( *ytemp, y );
+      applyOp( x, *Y_temp_ );
+      applyLeftPrec( *Y_temp_, y );
     }
     //
     // Preconditioning is only being done on the right side
     //
     else 
     {
-      applyRightPrec( x, *ytemp );
-      applyOp( *ytemp, y );
+      applyRightPrec( x, *Y_temp_ );
+      applyOp( *Y_temp_, y );
     }  
   }
   
