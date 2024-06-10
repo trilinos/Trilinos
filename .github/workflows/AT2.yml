@@ -248,4 +248,6 @@ jobs:
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake
+            --filename-packageenables ./packageEnables.cmake \
+            --max-cores-allowed=96 \
+            --num-concurrent-tests=96
