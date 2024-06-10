@@ -46,7 +46,6 @@
 #define MUELU_MAXWELL1_DEF_HPP
 
 #include <sstream>
-#include <strstream>
 #include "MueLu_SmootherBase.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
@@ -147,13 +146,6 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teuchos:
     newList.set("maxwell1: nodal smoother fix zero diagonal threshold", 1e-10);
     newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);
     newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals threshold", 1e-10);
-
-
-    // HAX
-    newList.sublist("maxwell1: 11list").set("repartition: print partition distribution",true);
-    newList.sublist("maxwell1: 22list").set("repartition: print partition distribution",true);
-    newList.sublist("maxwell1: 22list").set("repartition: max imbalance",1.5);
-    newList.sublist("maxwell1: 22list").set("verbosity","extreme");
     
     list = newList;
   }
@@ -359,8 +351,6 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
 
   } else
     precList11_.remove("repartition: enable", false);
-
-  precList22_.set("repartition: start level",1);
 
   ////////////////////////////////////////////////////////////////////////////////
   // Remove explicit zeros from matrices
@@ -584,46 +574,10 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     Hierarchy11_->setlib(SM_Matrix_->getDomainMap()->lib());
     Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
 
-    // Stick the non-serializible data on the hierarchy.
+    // Stick the non-serializible data on the hierarchy and do setup
     if(nonSerialList11.numParams() > 0) {
       HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *Hierarchy11_, nonSerialList11);
-    }
-
-#ifdef IS_BUSTED
-    // Attempt to sync the numDesiredLevel_    
-    int oldLevels = mueLuFactory->GetNumDesiredLevel(), newLevels;
-    Teuchos::reduceAll(*SM_Matrix_->getRowMap()->getComm(), Teuchos::REDUCE_MAX, 1, &oldLevels, &newLevels);
-    mueLuFactory->SetNumDesiredLevel(newLevels);
-
-
-
-    // Deubgging print of Hierarchy11_
-    {      
-      int rank = SM_Matrix_->getDomainMap()->getComm()->getRank();
-      SM_Matrix_->getDomainMap()->getComm()->barrier();
-      std::ostrstream oss;
-      for (int i=0; i<newLevels; i++) {
-        oss << "*** ["<<rank<<"] Level "<<i<<" ***\n";
-        if ( i < Hierarchy11_->LastLevelID()) {
-          Hierarchy11_->GetLevel(i)->print(oss,Debug);
-          oss<<"\n";
-        }
-        else {
-          oss<<"No Level\n";
-        }        
-        SM_Matrix_->getDomainMap()->getComm()->barrier();
-        
-      }
-      for(int r=0; r< SM_Matrix_->getDomainMap()->getComm()->getSize(); r++) {
-        if (rank == r) 
-          std::cout<<oss.str() <<std::endl;
-        SM_Matrix_->getDomainMap()->getComm()->barrier();
-        SM_Matrix_->getDomainMap()->getComm()->barrier();
-        SM_Matrix_->getDomainMap()->getComm()->barrier();
-      }
-    }
-#endif
-    
+    }    
     mueLuFactory->SetupHierarchy(*Hierarchy11_);
 
     
