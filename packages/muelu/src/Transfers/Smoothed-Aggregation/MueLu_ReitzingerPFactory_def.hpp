@@ -298,16 +298,16 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
       }
 
       // Exponential memory reallocation, if needed
-      if(current + 1 >= max_edges)  {
-        max_edges*=2;       
+      if (current + 1 >= max_edges) {
+        max_edges *= 2;
         D0_colind.resize(max_edges);
-        D0_values.resize(max_edges);        
+        D0_values.resize(max_edges);
       }
-      if(current / 2  + 1 >= D0_rowptr.size()) {
-        D0_rowptr.resize(2*D0_rowptr.size()+1);
+      if (current / 2 + 1 >= D0_rowptr.size()) {
+        D0_rowptr.resize(2 * D0_rowptr.size() + 1);
       }
 
-      // NOTE: "i" here might not be a valid local column id, so we read it from the map      
+      // NOTE: "i" here might not be a valid local column id, so we read it from the map
       D0_colind[current] = local_column_i;
       D0_values[current] = -1;
       current++;
@@ -325,7 +325,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   D0_values.resize(current);
 
   // Handle empty ranks gracefully
-  if(num_coarse_edges == 0) {
+  if (num_coarse_edges == 0) {
     D0_rowptr[0] = 0;
     D0_rowptr[1] = 0;
   }
@@ -430,7 +430,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     // TODO: Something like this *might* work.  But this specifically, doesn't
     // Pe = XMM::Multiply(*D0_Pn_nonghosted,false,*D0_coarse_m,true,dummy,out0,true,true,"(D0*Pn)*D0c'",mm_params);
   }
-  
+
   /* Weed out the +/- entries, shrinking the matrix as we go */
   {
     SubFactoryMonitor m2(*this, "Generate Pe (post-fix)", coarseLevel);

@@ -293,7 +293,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Generic data keeping (this keeps the data on all levels)
   if (paramList.isParameter("keep data"))
-    this->dataToKeep_ = Teuchos::getArrayFromStringParameter<std::string>(paramList, "keep data");  
+    this->dataToKeep_ = Teuchos::getArrayFromStringParameter<std::string>(paramList, "keep data");
 
   // Export level data
   if (paramList.isSublist("export data")) {

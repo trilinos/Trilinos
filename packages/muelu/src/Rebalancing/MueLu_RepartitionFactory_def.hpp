@@ -103,7 +103,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
   Input(currentLevel, "A");
   Input(currentLevel, "number of partitions");
-  Input(currentLevel, "Partition");  
+  Input(currentLevel, "Partition");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -405,10 +405,10 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
 
   // Importer saving
   bool save_importer = pL.get<bool>("repartition: save importer");
-  if(save_importer) {
-    currentLevel.Set("Importer",rowMapImporter,NoFactory::get());
+  if (save_importer) {
+    currentLevel.Set("Importer", rowMapImporter, NoFactory::get());
     currentLevel.AddKeepFlag("Importer", NoFactory::get(), MueLu::Final);
-    currentLevel.RemoveKeepFlag("Importer", NoFactory::get(), MueLu::UserData);//FIXME: This is a hack
+    currentLevel.RemoveKeepFlag("Importer", NoFactory::get(), MueLu::UserData);  // FIXME: This is a hack
   }
   // ======================================================================================================
   // Print some data

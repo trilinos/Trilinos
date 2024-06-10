@@ -171,8 +171,8 @@ class Hierarchy : public BaseClass {
   template <class S2, class LO2, class GO2, class N2>
   friend class Hierarchy;
 
-
   int LastLevelID() const { return Levels_.size() - 1; }
+
  private:
   void DumpCurrentGraph(int level) const;
 

@@ -213,7 +213,6 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     H.SetFuseProlongationAndUpdate(fuseProlongationAndUpdate_);
 
     H.Clear();
-    
 
     // There are few issues with using Keep in the interpreter:
     //   1. Hierarchy::Keep interface takes a name and a factory. If
@@ -246,7 +245,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
         H.AddLevel(newLevel);
       }
     }
-    
+
     // Matrices to print
     for (auto iter = matricesToPrint_.begin(); iter != matricesToPrint_.end(); iter++)
       ExportDataSetKeepFlags(H, iter->second, iter->first);
@@ -262,8 +261,8 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 
     // Data to keep only (these do not have a level, so we do all levels)
     for (int i = 0; i < dataToKeep_.size(); i++)
-      ExportDataSetKeepFlagsAll(H, dataToKeep_[i]);    
-    
+      ExportDataSetKeepFlagsAll(H, dataToKeep_[i]);
+
     int levelID      = 0;
     int lastLevelID  = numDesiredLevel_ - 1;
     bool isLastLevel = false;
@@ -279,7 +278,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
       isLastLevel = r || (levelID == lastLevelID);
       levelID++;
     }
-    
+
     if (!matvecParams_.is_null())
       H.SetMatvecParams(matvecParams_);
     H.AllocateLevelMultiVectors(sizeOfMultiVectors_);
@@ -318,10 +317,10 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
   }  // SetupHierarchy
 
   //! Set the number of desired levels.
-  void SetNumDesiredLevel(int numDesiredLevel){numDesiredLevel_ = numDesiredLevel;}
+  void SetNumDesiredLevel(int numDesiredLevel) { numDesiredLevel_ = numDesiredLevel; }
 
   //! Get the number of desired levels.
-  int GetNumDesiredLevel(){return numDesiredLevel_;}
+  int GetNumDesiredLevel() { return numDesiredLevel_; }
 
   //@}
 
