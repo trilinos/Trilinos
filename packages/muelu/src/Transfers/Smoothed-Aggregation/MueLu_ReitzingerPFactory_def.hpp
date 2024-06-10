@@ -353,17 +353,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     std::copy(D0_values.begin(), D0_values.end(), val.begin());
     D0_coarse->setAllValues(ia, ja, val);
 
-    {
-      int rank =  D0->getRowMap()->getComm()->getRank();
-      int fine_level = fineLevel.GetLevelID();
-      printf("[%d] Level %d D0_c #rows = %d #vals = %d\n",rank,fine_level,
-             ia.size()-1,
-             ja.size());
-      fflush(stdout);
-      D0->getRowMap()->getComm()->barrier();
-    }
-
-#if 1
+#if 0
       {
         char fname[80];
         int fine_level_id = fineLevel.GetLevelID();
@@ -404,21 +394,12 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   /* is almost Pe. If we make sure that P_n contains 1's and -1's, the*/
   /* matrix triple product will yield a matrix with +/- 1 and +/- 2's.*/
   /* If we remove all the 1's and divide the 2's by 2. we arrive at Pe*/
-  {
-      int rank =  D0->getRowMap()->getComm()->getRank();
-      int fine_level = fineLevel.GetLevelID();
-      printf("[%d] Level %d Checkpoint #1 pre-fix\n",rank,fine_level);
-      fflush(stdout);
-      D0->getRowMap()->getComm()->barrier();
-    }
-
-
   RCP<Matrix> Pe;
   {
     SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
-
-
+#if 0   
     {
+      // If you're concerned about processor / rank mismatches, this debugging code might help
       int rank =  D0->getRowMap()->getComm()->getRank();
       int fine_level = fineLevel.GetLevelID();
       printf("[%d] Level %d Checkpoint #2 Pn = %d/%d/%d/%d D0c = %d/%d/%d/%d D0 = %d/%d/%d/%d\n",rank,fine_level,
@@ -437,26 +418,10 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
       fflush(stdout);
       D0->getRowMap()->getComm()->barrier();
     }
-    
+#endif
     RCP<Matrix> dummy;
     RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn, false, *D0_coarse_m, true, dummy, out0, true, true, "Pn*D0c'", mm_params);
 
-  {
-    int rank =  D0->getRowMap()->getComm()->getRank();
-    int fine_level = fineLevel.GetLevelID();
-    printf("[%d] Level %d Checkpoint #3 \n",rank,fine_level);
-    fflush(stdout);
-    D0->getRowMap()->getComm()->barrier();
-    D0->getRowMap()->getComm()->barrier();
-    D0->getRowMap()->getComm()->barrier();
-    D0->getRowMap()->getComm()->barrier();
-    D0->getRowMap()->getComm()->barrier();
-    D0->getRowMap()->getComm()->barrier();
-    D0->getRowMap()->getComm()->barrier();
-            
-  }
-
-    
     // We don't want this guy getting accidently used later
     if (!mm_params.is_null()) mm_params->remove("importer", false);
 
@@ -464,14 +429,6 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
 
     // TODO: Something like this *might* work.  But this specifically, doesn't
     // Pe = XMM::Multiply(*D0_Pn_nonghosted,false,*D0_coarse_m,true,dummy,out0,true,true,"(D0*Pn)*D0c'",mm_params);
-  }
-
-  {
-    int rank =  D0->getRowMap()->getComm()->getRank();
-    int fine_level = fineLevel.GetLevelID();
-    printf("[%d] Level %d After pre-fix\n",rank,fine_level);
-    fflush(stdout);
-    D0->getRowMap()->getComm()->barrier();
   }
   
   /* Weed out the +/- entries, shrinking the matrix as we go */
@@ -556,14 +513,6 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     sprintf(fname,"D0f_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*D0);
   }
 #endif
-
-  {
-    int rank =  Pe->getRowMap()->getComm()->getRank();
-    int fine_level = fineLevel.GetLevelID();
-    printf("[%d] Level %d Finished ReitzingerPFactory\n",rank,fine_level);
-    fflush(stdout);
-  }
-  
 
 }  // end Build
 
