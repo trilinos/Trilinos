@@ -216,8 +216,8 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   size_t Nn = NodeMatrix->getLocalNumRows();
 
   // Upper bound on local number of coarse edges
-  //size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn + 1) / 2;
-  size_t max_edges = NodeMatrix->getLocalNumEntries();//FIXME: FOUL HAX
+  size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn + 1) / 2;
+  //size_t max_edges = 2*NodeMatrix->getLocalNumEntries();//FIXME: FOUL HAX
   ArrayRCP<size_t> D0_rowptr(Ne + 1);
   ArrayRCP<LO> D0_colind(max_edges);
   ArrayRCP<SC> D0_values(max_edges);
@@ -299,6 +299,15 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
       }
 
       // NOTE: "i" here might not be a valid local column id, so we read it from the map
+      if(current + 1 >= max_edges)  {
+        max_edges*=2;       
+        D0_colind.resize(max_edges);
+        D0_values.resize(max_edges);        
+      }
+      if(current / 2  + 1 >= D0_rowptr.size()) {
+        D0_rowptr.resize(2*D0_rowptr.size()+1);
+      }
+      
       D0_colind[current] = local_column_i;
       D0_values[current] = -1;
       current++;
@@ -314,6 +323,12 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   D0_rowptr.resize(num_coarse_edges + 1);
   D0_colind.resize(current);
   D0_values.resize(current);
+
+  // Handle empty ranks gracefully
+  if(num_coarse_edges == 0) {
+    D0_rowptr[0] = 0;
+    D0_rowptr[1] = 0;
+  }
 
   // Count the total number of edges
   // NOTE: Since we solve the ownership issue above, this should do what we want
@@ -338,28 +353,39 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     std::copy(D0_values.begin(), D0_values.end(), val.begin());
     D0_coarse->setAllValues(ia, ja, val);
 
-#if 0
+    {
+      int rank =  D0->getRowMap()->getComm()->getRank();
+      int fine_level = fineLevel.GetLevelID();
+      printf("[%d] Level %d D0_c #rows = %d #vals = %d\n",rank,fine_level,
+             ia.size()-1,
+             ja.size());
+      fflush(stdout);
+      D0->getRowMap()->getComm()->barrier();
+    }
+
+#if 1
       {
         char fname[80];
-        printf("[%d] D0: ia.size() = %d ja.size() = %d\n",MyPID,(int)ia.size(),(int)ja.size());
-        printf("[%d] D0: ia  :",MyPID);
+        int fine_level_id = fineLevel.GetLevelID();
+        printf("[%d] Level %d D0: ia.size() = %d ja.size() = %d\n",MyPID,fine_level_id,(int)ia.size(),(int)ja.size());
+        printf("[%d] Level %d D0: ia  :",MyPID,fine_level_id);
         for(int i=0; i<(int)ia.size(); i++)
           printf("%d ",(int)ia[i]);
-        printf("\n[%d] D0: global ja  :",MyPID);
+        printf("\n[%d] Level %d D0: global ja  :",MyPID,fine_level_id);
         for(int i=0; i<(int)ja.size(); i++)
           printf("%d ",(int)ownedPlusSharedCoarseNodeMap->getGlobalElement(ja[i]));
-        printf("\n[%d] D0: local ja  :",MyPID);
+        printf("\n[%d] Level %d D0: local ja  :",MyPID,fine_level_id);
         for(int i=0; i<(int)ja.size(); i++)
           printf("%d ",(int)ja[i]);
         printf("\n");
 
-        sprintf(fname,"D0_global_ja_%d_%d.dat",MyPID,fineLevel.GetLevelID());
+        sprintf(fname,"D0_global_ja_%d_%d.dat",MyPID,fine_level_id);
         FILE * f = fopen(fname,"w");
         for(int i=0; i<(int)ja.size(); i++)
           fprintf(f,"%d ",(int)ownedPlusSharedCoarseNodeMap->getGlobalElement(ja[i]));
         fclose(f);
 
-        sprintf(fname,"D0_local_ja_%d_%d.dat",MyPID,fineLevel.GetLevelID());
+        sprintf(fname,"D0_local_ja_%d_%d.dat",MyPID,fine_level_id);
         f = fopen(fname,"w");
         for(int i=0; i<(int)ja.size(); i++)
           fprintf(f,"%d ",(int)ja[i]);
@@ -378,13 +404,59 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   /* is almost Pe. If we make sure that P_n contains 1's and -1's, the*/
   /* matrix triple product will yield a matrix with +/- 1 and +/- 2's.*/
   /* If we remove all the 1's and divide the 2's by 2. we arrive at Pe*/
+  {
+      int rank =  D0->getRowMap()->getComm()->getRank();
+      int fine_level = fineLevel.GetLevelID();
+      printf("[%d] Level %d Checkpoint #1 pre-fix\n",rank,fine_level);
+      fflush(stdout);
+      D0->getRowMap()->getComm()->barrier();
+    }
+
+
   RCP<Matrix> Pe;
   {
     SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
 
+
+    {
+      int rank =  D0->getRowMap()->getComm()->getRank();
+      int fine_level = fineLevel.GetLevelID();
+      printf("[%d] Level %d Checkpoint #2 Pn = %d/%d/%d/%d D0c = %d/%d/%d/%d D0 = %d/%d/%d/%d\n",rank,fine_level,
+             Pn->getRangeMap()->getComm()->getSize(),
+             Pn->getRowMap()->getComm()->getSize(),
+             Pn->getColMap()->getComm()->getSize(),
+             Pn->getDomainMap()->getComm()->getSize(),
+             D0_coarse_m->getRangeMap()->getComm()->getSize(),
+             D0_coarse_m->getRowMap()->getComm()->getSize(),
+             D0_coarse_m->getColMap()->getComm()->getSize(),
+             D0_coarse_m->getDomainMap()->getComm()->getSize(),
+             D0->getRangeMap()->getComm()->getSize(),
+             D0->getRowMap()->getComm()->getSize(),
+             D0->getColMap()->getComm()->getSize(),
+             D0->getDomainMap()->getComm()->getSize());
+      fflush(stdout);
+      D0->getRowMap()->getComm()->barrier();
+    }
+    
     RCP<Matrix> dummy;
     RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn, false, *D0_coarse_m, true, dummy, out0, true, true, "Pn*D0c'", mm_params);
 
+  {
+    int rank =  D0->getRowMap()->getComm()->getRank();
+    int fine_level = fineLevel.GetLevelID();
+    printf("[%d] Level %d Checkpoint #3 \n",rank,fine_level);
+    fflush(stdout);
+    D0->getRowMap()->getComm()->barrier();
+    D0->getRowMap()->getComm()->barrier();
+    D0->getRowMap()->getComm()->barrier();
+    D0->getRowMap()->getComm()->barrier();
+    D0->getRowMap()->getComm()->barrier();
+    D0->getRowMap()->getComm()->barrier();
+    D0->getRowMap()->getComm()->barrier();
+            
+  }
+
+    
     // We don't want this guy getting accidently used later
     if (!mm_params.is_null()) mm_params->remove("importer", false);
 
@@ -394,6 +466,14 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     // Pe = XMM::Multiply(*D0_Pn_nonghosted,false,*D0_coarse_m,true,dummy,out0,true,true,"(D0*Pn)*D0c'",mm_params);
   }
 
+  {
+    int rank =  D0->getRowMap()->getComm()->getRank();
+    int fine_level = fineLevel.GetLevelID();
+    printf("[%d] Level %d After pre-fix\n",rank,fine_level);
+    fflush(stdout);
+    D0->getRowMap()->getComm()->barrier();
+  }
+  
   /* Weed out the +/- entries, shrinking the matrix as we go */
   {
     SubFactoryMonitor m2(*this, "Generate Pe (post-fix)", coarseLevel);
@@ -459,6 +539,8 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   Set(coarseLevel, "Ptent", Pe);
 
   Set(coarseLevel, "D0", D0_coarse_m);
+
+  /* This needs to be kept for the smoothers */
   coarseLevel.Set("D0", D0_coarse_m, NoFactory::get());
   coarseLevel.AddKeepFlag("D0", NoFactory::get(), MueLu::Final);
   coarseLevel.RemoveKeepFlag("D0", NoFactory::get(), MueLu::UserData);
@@ -474,6 +556,14 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     sprintf(fname,"D0f_%d_%d.mat",numProcs,fineLevel.GetLevelID());  Xpetra::IO<SC,LO,GO,NO>::Write(fname,*D0);
   }
 #endif
+
+  {
+    int rank =  Pe->getRowMap()->getComm()->getRank();
+    int fine_level = fineLevel.GetLevelID();
+    printf("[%d] Level %d Finished ReitzingerPFactory\n",rank,fine_level);
+    fflush(stdout);
+  }
+  
 
 }  // end Build
 
