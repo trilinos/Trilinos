@@ -215,9 +215,8 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   size_t Ne = EdgeMatrix->getLocalNumRows();
   size_t Nn = NodeMatrix->getLocalNumRows();
 
-  // Upper bound on local number of coarse edges
-  size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn + 1) / 2;
-  //size_t max_edges = 2*NodeMatrix->getLocalNumEntries();//FIXME: FOUL HAX
+  // Notinal upper bound on local number of coarse edges
+  size_t max_edges = PnT_D0T->getLocalNumEntries();
   ArrayRCP<size_t> D0_rowptr(Ne + 1);
   ArrayRCP<LO> D0_colind(max_edges);
   ArrayRCP<SC> D0_values(max_edges);
@@ -298,7 +297,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
         continue;
       }
 
-      // NOTE: "i" here might not be a valid local column id, so we read it from the map
+      // Exponential memory reallocation, if needed
       if(current + 1 >= max_edges)  {
         max_edges*=2;       
         D0_colind.resize(max_edges);
@@ -307,7 +306,8 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
       if(current / 2  + 1 >= D0_rowptr.size()) {
         D0_rowptr.resize(2*D0_rowptr.size()+1);
       }
-      
+
+      // NOTE: "i" here might not be a valid local column id, so we read it from the map      
       D0_colind[current] = local_column_i;
       D0_values[current] = -1;
       current++;
