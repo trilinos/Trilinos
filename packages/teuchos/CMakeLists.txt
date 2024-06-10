@@ -460,7 +460,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Teuchos_TIMER_KOKKOS_FENCE
   HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
   "Call Kokkos::fence() whenever a Teuchos timer starts or stops."
-  "${Teuchos_KOKKOS_PROFILING_DEFAULT}")
+  "${Teuchos_TIMER_KOKKOS_FENCE_DEFAULT}")
 IF (Teuchos_TIMER_KOKKOS_FENCE)
   # Enabling Kokkos::fence() in Teuchos timers requires that the Kokkos package be enabled
   IF(NOT(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos))
