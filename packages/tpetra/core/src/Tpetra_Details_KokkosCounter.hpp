@@ -38,6 +38,7 @@
 // ************************************************************************
 // @HEADER
 */
+// clang-format off
 #ifndef TPETRA_DETAILS_KOKKOS_COUNTER_HPP
 #define TPETRA_DETAILS_KOKKOS_COUNTER_HPP
 
@@ -46,6 +47,7 @@
 /// types using the Kokkos Profiling Library
 
 #include <string>
+#include <Teuchos_FancyOStream.hpp>
 
 namespace Tpetra {
 namespace Details {
@@ -86,6 +88,30 @@ namespace FenceCounter {
   /// \brief Query the fence counter for given device, for an Kokkos::fence()
   size_t get_count_global(const std::string & device);
 }
+
+// clang-format on
+
+/// \brief Counter for Kokkos regions representing third-party library usage
+namespace KokkosRegionCounter {
+/// \brief Start the counter
+void start();
+
+/// \brief Reset the counter
+void reset();
+
+/// \brief Stop the counter
+void stop();
+
+/// \brief How many regions containing `substr` have been seen
+size_t get_count_region_contains(const std::string &substr);
+
+/// \brief Print all observed region labels, separated by newline
+void dump_regions(std::ostream &os);
+void dump_regions(Teuchos::FancyOStream &os);
+} // namespace KokkosRegionCounter
+
+// clang-format off
+
 
 
 } // namespace Details

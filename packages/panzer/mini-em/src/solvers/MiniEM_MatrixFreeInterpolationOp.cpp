@@ -289,6 +289,12 @@ namespace mini_em {
     Kokkos::View<LocalOrdinal*,DeviceSpace> node_elementLidToConn_d("node_elementLidToConn_d", node_elementLidToConn_h.extent(0));
     Kokkos::deep_copy(node_elementLidToConn_d, node_elementLidToConn_h);
 
+    // HO dof coordinates and coefficients
+    ho_basis->getDofCoords(ho_dofCoords_d);
+
+    // compute values of op * (LO basis) at HO dof coords on reference element
+    lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
+
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
@@ -299,31 +305,39 @@ namespace mini_em {
       Kokkos::View<int*,DeviceSpace>::HostMirror elementIds_h(elementIds.data(), elementIds.size());
       Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
       Kokkos::deep_copy(elementIds_d, elementIds_h);
+
+      // get element orientations
+      typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  elementIds.size());
+      {
+        typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes_h("elemNodes_h", elementIds.size(), numElemVertices);
+        typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>             elemNodes_d("elemNodes_d", elementIds.size(), numElemVertices);
+
+        for (int cellNo = 0; cellNo < elementIds.size(); cellNo++) {
+          const GlobalOrdinal* node_ids = node_conn_->getConnectivity(elementIds[cellNo]);
+          for(int i = 0; i < numElemVertices; i++)
+            elemNodes_h(cellNo, i) = node_ids[i];
+        }
+        Kokkos::deep_copy(elemNodes_d, elemNodes_h);
+
+        ots::getOrientation(elemOrts_d, elemNodes_d, topology);
+      }
+
       for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {
 
-        // get element orientations
-        Kokkos::parallel_for("miniEM:MatrixFreeInterpolationOp::connectivity",
-                             range_type(0, std::min(numCells, elementIds_d.extent_int(0)-Teuchos::as<int>(elemIter))),
-                             KOKKOS_LAMBDA(const LocalOrdinal cellNo) {
-                               LocalOrdinal cellNo2 = elemIter+cellNo;
-                               LocalOrdinal elementID = elementIds_d(cellNo2);
-                               LocalOrdinal k = node_elementLidToConn_d(elementID);
-                               for(int i = 0; i < node_connectivitySize_d(elementID); i++)
-                                 elemNodes_d(cellNo, i) = node_connectivity_d(k+i);
-                             });
-        ots::getOrientation(elemOrts_d, elemNodes_d, topology);
+        int endCellRange =
+          std::min(numCells, Teuchos::as<int>(elementIds.size()) -
+                             Teuchos::as<int>(elemIter));
 
-        // HO dof coordinates
-        ho_basis->getDofCoords(ho_dofCoords_d);
-
-        // compute values of op * (LO basis) at HO dof coords on reference element
-        lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
+        // get subviews on workset
+        auto elemOrtsWorkset_d = Kokkos::subview(elemOrts_d, Kokkos::make_pair(elemIter, std::min(elemIter + numCells, elementIds.size())));
+        auto valuesAtDofCoordsOrientedWorkset_d = Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::make_pair(0, endCellRange), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto basisCoeffsLIOrientedWorkset_d = Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::make_pair(0, endCellRange), Kokkos::ALL(), Kokkos::ALL());
 
         // apply orientations for LO basis
         // shuffles things in the second dimension, i.e. wrt LO basis
-        ots::modifyBasisByOrientation(valuesAtDofCoordsOriented_d,
+        ots::modifyBasisByOrientation(valuesAtDofCoordsOrientedWorkset_d,
                                       valuesAtDofCoordsNonOriented_d,
-                                      elemOrts_d,
+                                      elemOrtsWorkset_d,
                                       lo_basis.get());
 
         Kokkos::deep_copy(reducedValuesAtDofCoordsOriented_d, 0.0);
@@ -346,10 +360,10 @@ namespace mini_em {
 
 
         for (size_t j = 0; j<numVectors; ++j)
-          li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), j),
-                             Kokkos::subview(reducedValuesAtDofCoordsOriented_d, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), j),
+          li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), j),
+                             Kokkos::subview(reducedValuesAtDofCoordsOriented_d, Kokkos::make_pair(0, endCellRange), Kokkos::ALL(), Kokkos::ALL(), j),
                              ho_basis.get(),
-                             elemOrts_d
+                             elemOrtsWorkset_d
                              );
 
         auto owner_d = owner_d_;
@@ -479,6 +493,12 @@ namespace mini_em {
     auto loLIDs_d = lo_ugi->getLIDs();
     Kokkos::fence();
 
+    // HO dof coordinates and coefficients
+    ho_basis->getDofCoords(ho_dofCoords_d);
+
+    // compute values of op * (LO basis) at HO dof coords on reference element
+    lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
+
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
@@ -490,46 +510,40 @@ namespace mini_em {
       Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
       Kokkos::deep_copy(elementIds_d, elementIds_h);
       Kokkos::fence();
+
+      // get element orientations
+      typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>     elemOrts_d ("elemOrts_d",  elementIds.size());
+      {
+        typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes_h("elemNodes_h", elementIds.size(), numElemVertices);
+        typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>             elemNodes_d("elemNodes_d", elementIds.size(), numElemVertices);
+
+        for (int cellNo = 0; cellNo < elementIds.size(); cellNo++) {
+          const GlobalOrdinal* node_ids = node_conn_->getConnectivity(elementIds[cellNo]);
+          for(int i = 0; i < numElemVertices; i++)
+            elemNodes_h(cellNo, i) = node_ids[i];
+        }
+        Kokkos::deep_copy(elemNodes_d, elemNodes_h);
+
+        ots::getOrientation(elemOrts_d, elemNodes_d, topology);
+      }
+
       for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {
 
-        // get element orientations
-        auto node_connectivity_h = node_conn_->getConnectivityView();
-        Kokkos::View<GlobalOrdinal*,DeviceSpace> node_connectivity_d("node_connectivity_d", node_connectivity_h.extent(0));
-        Kokkos::deep_copy(node_connectivity_d, node_connectivity_h);
-        auto node_connectivitySize_h = node_conn_->getConnectivitySizeView();
-        Kokkos::View<LocalOrdinal*,DeviceSpace> node_connectivitySize_d("node_connectivitySize_d", node_connectivitySize_h.extent(0));
-        Kokkos::deep_copy(node_connectivitySize_d, node_connectivitySize_h);
-        auto node_elementLidToConn_h = node_conn_->getElementLidToConnView();
-        Kokkos::View<LocalOrdinal*,DeviceSpace> node_elementLidToConn_d("node_elementLidToConn_d", node_elementLidToConn_h.extent(0));
-        Kokkos::deep_copy(node_elementLidToConn_d, node_elementLidToConn_h);
-        Kokkos::fence();
+        int endCellRange =
+          std::min(numCells, Teuchos::as<int>(elementIds.size()) -
+                             Teuchos::as<int>(elemIter));
 
-        Kokkos::parallel_for("miniEM:MatrixFreeInterpolationOp::connectivity",
-                             range_type(0, std::min(numCells, elementIds_d.extent_int(0)-Teuchos::as<int>(elemIter))),
-                             KOKKOS_LAMBDA(const LocalOrdinal cellNo) {
-                               LocalOrdinal cellNo2 = elemIter+cellNo;
-                               LocalOrdinal elementID = elementIds_d(cellNo2);
-                               LocalOrdinal k = node_elementLidToConn_d(elementID);
-                               for(int i = 0; i < node_connectivitySize_d(elementID); i++)
-                                 elemNodes_d(cellNo, i) = node_connectivity_d(k+i);
-                             });
-        Kokkos::fence();
-        ots::getOrientation(elemOrts_d, elemNodes_d, topology);
-        Kokkos::fence();
+        // get subviews on workset
+        auto elemOrtsWorkset_d = Kokkos::subview(elemOrts_d, Kokkos::make_pair(elemIter, std::min(elemIter + numCells, elementIds.size())));
+        auto valuesAtDofCoordsOrientedWorkset_d = Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::make_pair(0, endCellRange), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto basisCoeffsLIOrientedWorkset_d = Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::make_pair(0, endCellRange), Kokkos::ALL(), Kokkos::ALL());
 
-        // HO dof coordinates and coefficients
-        ho_basis->getDofCoords(ho_dofCoords_d);
-        Kokkos::fence();
-
-        // compute values of op * (LO basis) at HO dof coords on reference element
-        lo_basis->getValues(valuesAtDofCoordsNonOriented_d, ho_dofCoords_d, op);
-        Kokkos::fence();
 
         // apply orientations for LO basis
         // shuffles things in the second dimension, i.e. wrt LO basis
-        ots::modifyBasisByOrientation(valuesAtDofCoordsOriented_d,
+        ots::modifyBasisByOrientation(valuesAtDofCoordsOrientedWorkset_d,
                                       valuesAtDofCoordsNonOriented_d,
-                                      elemOrts_d,
+                                      elemOrtsWorkset_d,
                                       lo_basis.get());
         Kokkos::fence();
 
@@ -537,9 +551,9 @@ namespace mini_em {
         for(size_t loIter=0; loIter<loCardinality; loIter++)
           // Get basis coeffs wrt HO basis on reference element.
           // basisCoeffsLI has dimensions (numCells, numFields=hoCardinality, loCardinality)
-          li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOriented_d, Kokkos::ALL(), Kokkos::ALL(), loIter),
-                             Kokkos::subview(valuesAtDofCoordsOriented_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
-                             ho_basis.get(), elemOrts_d);
+          li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), loIter),
+                             Kokkos::subview(valuesAtDofCoordsOrientedWorkset_d, Kokkos::ALL(), loIter, Kokkos::ALL(), Kokkos::ALL()),
+                             ho_basis.get(), elemOrtsWorkset_d);
         Kokkos::fence();
 
         auto owner_d = owner_d_;

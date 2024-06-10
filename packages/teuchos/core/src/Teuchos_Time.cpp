@@ -87,6 +87,10 @@ extern void popRegion ();
 } // namespace Kokkos
 #endif
 
+#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+#include "Kokkos_Core.hpp"
+#endif
+
 namespace Teuchos {
 
 #ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
@@ -125,6 +129,9 @@ void Time::start(bool reset_in)
     }
 #endif
     startTime_ = wallTime();
+#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+    Kokkos::fence();
+#endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     ::Kokkos::Profiling::pushRegion (name_);
 #endif
@@ -147,6 +154,9 @@ double Time::stop()
         VALGRIND_MONITOR_COMMAND(cmd.data());
         numCallsMassifSnapshots_++;
       }
+#endif
+#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+      Kokkos::fence();
 #endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       ::Kokkos::Profiling::popRegion ();

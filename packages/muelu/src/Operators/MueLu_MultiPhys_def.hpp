@@ -142,7 +142,9 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   // Generate the (iii,iii) Hierarchy
 
   for (int iii = 0; iii < nBlks_; iii++) {
-    arrayOfParamLists_[iii]->sublist("user data").set("Coordinates", arrayOfCoords_[iii]);
+    if (arrayOfCoords_ != Teuchos::null) {
+      arrayOfParamLists_[iii]->sublist("user data").set("Coordinates", arrayOfCoords_[iii]);
+    }
 
     bool wantToRepartition = false;
     if (paramListMultiphysics_->isParameter("repartition: enable"))
@@ -311,6 +313,8 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     oss << "(" << Teuchos::toString(i) << ", " << Teuchos::toString(i) << ")" << std::setw(rowspacer) << numRows << std::setw(nnzspacer) << nnz << std::setw(9) << as<double>(nnz) / numRows << std::endl;
   }
   oss << std::endl;
+
+  out << oss.str();
 
   for (int i = 0; i < nBlks_; i++) {
     arrayOfHierarchies_[i]->describe(out, GetVerbLevel());

@@ -54,14 +54,21 @@ if(HAVE_STK_Trilinos)
   )
 else()
   find_package(Shards REQUIRED)
-  find_package(BLAS REQUIRED)
   add_library(stk_mesh_base ${SOURCES} ${SOURCES_IMPL} ${SOURCES_ELEMGRAPH})
   target_link_libraries(stk_mesh_base ${Shards_LIBRARIES})
-  target_link_libraries(stk_mesh_base BLAS::BLAS)
+  target_link_libraries(stk_mesh_base sierra_blas_lapack)
   target_link_libraries(stk_mesh_base stk_topology)
   target_link_libraries(stk_mesh_base stk_util_diag)
   target_link_libraries(stk_mesh_base stk_util_env)
   target_link_libraries(stk_mesh_base stk_util_parallel)
+
+  if(USE_SIERRA_BLAS_LAPACK)
+    target_link_libraries(stk_mesh_base sierra_blas_lapack)
+  else()
+    find_package(BLAS REQUIRED)
+    target_link_libraries(stk_mesh_base BLAS::BLAS)
+  endif()
+    
 endif()
 
 target_include_directories(stk_mesh_base PUBLIC
