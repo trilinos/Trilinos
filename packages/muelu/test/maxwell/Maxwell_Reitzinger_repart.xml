@@ -55,7 +55,7 @@
     <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
     <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
     <Parameter        name="repartition: start level"             type="int"      value="1"/>
-    <Parameter        name="repartition: min rows per proc"       type="int"      value="1000"/> <!-- 20 for 4 procs -->
+    <Parameter        name="repartition: min rows per proc"       type="int"      value="20"/> <!-- 20 for 4 procs -->
     <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
     <Parameter        name="repartition: remap parts"             type="bool"     value="true"/>
     
