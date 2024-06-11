@@ -953,9 +953,9 @@ void RBILUK<MatrixType>::compute ()
         "streams are not yet supported.");
 
       auto lclMtx = A_local_bcrs->getLocalMatrixDevice();
-      this->A_local_rowmap_  = lclMtx.graph.row_map;
-      this->A_local_entries_ = lclMtx.graph.entries;
-      this->A_local_values_  = lclMtx.values;
+      auto A_local_rowmap  = lclMtx.graph.row_map;
+      auto A_local_entries = lclMtx.graph.entries;
+      auto A_local_values  = lclMtx.values;
 
       // L_block_->resumeFill ();
       // U_block_->resumeFill ();
@@ -978,7 +978,7 @@ void RBILUK<MatrixType>::compute ()
       auto U_values  = lclU.values;
 
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
-                                                  this->A_local_rowmap_, this->A_local_entries_, this->A_local_values_,
+                                                  A_local_rowmap, A_local_entries, A_local_values,
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
     }
   } // Stop timing
