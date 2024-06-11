@@ -45,6 +45,7 @@
 
 #include <sstream>
 
+#include <Ifpack2_OverlappingRowMatrix_decl.hpp>
 #include <Ifpack2_Details_OverlappingRowGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Import.hpp>
@@ -179,9 +180,17 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   ExtImporter_ = rcp (new import_type (A_->getRowMap (), ExtMap_));
 
   {
-    ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
-    ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
-    ExtMatrix_->fillComplete (A_->getDomainMap (), RowMap_);
+    auto ExtMatrixDynGraph = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
+    ExtMatrixDynGraph->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
+    ExtMatrixDynGraph->fillComplete (A_->getDomainMap (), RowMap_);
+    auto ExtLclMatrix = ExtMatrixDynGraph->getLocalMatrixDevice();
+    auto ExtMatrixStaticGraph = rcp (new crs_graph_type(ExtLclMatrix.graph,
+      ExtMap_,
+      ColMap_,
+      ExtMatrixDynGraph->getDomainMap(),
+      ExtMatrixDynGraph->getRangeMap()));
+    ExtMatrix_ = rcp (new crs_matrix_type(ExtMatrixStaticGraph, ExtLclMatrix.values));
+    ExtMatrix_->fillComplete ();
   }
 
   // fix indices for overlapping matrix
@@ -846,11 +855,8 @@ OverlappingRowMatrix<MatrixType>::getExtHaloStartsHost() const
 template<class MatrixType>
 void OverlappingRowMatrix<MatrixType>::doExtImport()
 {
-  //TODO: CrsMatrix can't doImport after resumeFill (see #9720). Ideally, this import could
-  //happen using combine mode REPLACE without reconstructing the matrix.
-  //Maybe even without another fillComplete since this doesn't change structure - see #9655.
-  ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
-  ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
+  ExtMatrix_->resumeFill();
+  ExtMatrix_->doImport (*A_, *ExtImporter_, Tpetra::REPLACE);
   ExtMatrix_->fillComplete (A_->getDomainMap (), RowMap_);
 }
 

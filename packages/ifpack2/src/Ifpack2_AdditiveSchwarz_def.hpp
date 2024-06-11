@@ -55,6 +55,7 @@
 #ifndef IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 #define IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 
+#include "Ifpack2_AdditiveSchwarz_decl.hpp"
 #include "Trilinos_Details_LinearSolverFactory.hpp"
 // We need Ifpack2's implementation of LinearSolver, because we use it
 // to wrap the user-provided Ifpack2::Preconditioner in
