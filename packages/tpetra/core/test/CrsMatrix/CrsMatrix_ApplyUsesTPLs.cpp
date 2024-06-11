@@ -284,8 +284,17 @@ namespace {
       Tpetra::Details::KokkosRegionCounter::stop();
 
 #if defined(HAVE_TPETRA_CUDA) || defined(HAVE_TPETRACORE_CUDA)
+
+      // We don't use cuSPARSE SpMM for all versions.
+      // Below is the exact condition used to enable cuSPARSE for spmv_mv in KokkosKernels.
+      // (see KokkosSparse_spmv_mv_tpl_spec_avail.hpp for more details)
+      //
+      // - 10300 and below produced incorrect results and failed KK tests
+      // - 11702 also produced incorrect results for very small inputs, causing a Tpetra test to fail
+#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION) && (CUSPARSE_VERSION != 11702)
       if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>)
         TEST_COMPARE(Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_"), ==, 1);
+#endif
 #endif
 #if defined(HAVE_TPETRA_HIP) || defined(HAVE_TPETRACORE_HIP)
       // The multivector case is not yet hooked up in Kokkos Kernels.
