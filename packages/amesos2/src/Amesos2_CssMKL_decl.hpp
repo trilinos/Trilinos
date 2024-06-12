@@ -281,6 +281,7 @@ namespace Amesos2 {
 
     /// Stores the values of the nonzero entries for CssMKL
     host_value_type_array nzvals_view_;
+    host_value_type_array nzvals_temp_;
     /// Stores the location in \c Ai_ and Aval_ that starts row j
     host_ordinal_type_array colind_view_;
     /// Stores the row indices of the nonzero entries

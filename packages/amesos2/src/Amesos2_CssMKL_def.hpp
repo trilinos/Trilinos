@@ -197,7 +197,7 @@ namespace Amesos2 {
 #endif
 
       //int_t phase = 12; // Analysis, numerical factorization
-      int_t phase = 22; // Analysis, numerical factorization
+      int_t phase = 22; // Numerical factorization
       void *bdummy, *xdummy;
       const MPI_Fint CssComm = CssComm_;
       function_map::cluster_sparse_solver( pt_, const_cast<int_t*>(&maxfct_),
@@ -226,7 +226,7 @@ namespace Amesos2 {
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs_);
     xvals_.resize(val_store_size);
     bvals_.resize(val_store_size);
-    {                             // Get values from RHS B
+    {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mvConvTimer( this->timers_.vecConvTime_ );
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
@@ -266,7 +266,7 @@ namespace Amesos2 {
     }
     check_css_mkl_error(Amesos2::SOLVE, error);
 
-    /* Export X from root to the global space */
+    /* Get values to X */
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
@@ -462,19 +462,24 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
   if( current_phase == PREORDERING ) return( false );
 
   EDistribution dist_option = (iparm_[39] != 0 ? DISTRIBUTED_NO_OVERLAP : ((is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED));
-  if (dist_option == DISTRIBUTED_NO_OVERLAP) {
-    Kokkos::resize(nzvals_view_, this->matrixA_->getLocalNNZ());
-    Kokkos::resize(colind_view_, this->matrixA_->getLocalNNZ());
-    Kokkos::resize(rowptr_view_, this->matrixA_->getLocalNumRows() + 1);
-  } else {
-    if( this->root_ ) {
-      Kokkos::resize(nzvals_view_, this->matrixA_->getGlobalNNZ());
-      Kokkos::resize(colind_view_, this->matrixA_->getGlobalNNZ());
-      Kokkos::resize(rowptr_view_, this->matrixA_->getGlobalNumRows() + 1);
+  if (current_phase == SYMBFACT) {
+    if (dist_option == DISTRIBUTED_NO_OVERLAP) {
+      Kokkos::resize(nzvals_temp_, this->matrixA_->getLocalNNZ());
+      Kokkos::resize(nzvals_view_, this->matrixA_->getLocalNNZ());
+      Kokkos::resize(colind_view_, this->matrixA_->getLocalNNZ());
+      Kokkos::resize(rowptr_view_, this->matrixA_->getLocalNumRows() + 1);
     } else {
-      Kokkos::resize(nzvals_view_, 0);
-      Kokkos::resize(colind_view_, 0);
-      Kokkos::resize(rowptr_view_, 0);
+      if( this->root_ ) {
+        Kokkos::resize(nzvals_temp_, this->matrixA_->getGlobalNNZ());
+        Kokkos::resize(nzvals_view_, this->matrixA_->getGlobalNNZ());
+        Kokkos::resize(colind_view_, this->matrixA_->getGlobalNNZ());
+        Kokkos::resize(rowptr_view_, this->matrixA_->getGlobalNumRows() + 1);
+      } else {
+        Kokkos::resize(nzvals_temp_, 0);
+        Kokkos::resize(nzvals_view_, 0);
+        Kokkos::resize(colind_view_, 0);
+        Kokkos::resize(rowptr_view_, 0);
+      }
     }
   }
 
@@ -486,13 +491,13 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
       host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
                                        this->matrixA_.ptr(),
-                                       nzvals_view_, colind_view_, rowptr_view_,
+                                       nzvals_temp_, colind_view_, rowptr_view_,
                                        nnz_ret,
                                        Teuchos::ptrInArg(*css_rowmap_),
                                        dist_option,
                                        SORTED_INDICES);
+    Kokkos::deep_copy(nzvals_view_, nzvals_temp_);
   }
-
   return( true );
 }
 
@@ -592,7 +597,6 @@ CssMKL<Matrix,Vector>::set_css_mkl_default_parameters(void* pt[], int_t iparm[])
   iparm[0] = 1; /* No solver default */
   // Reset some of the default parameters
   iparm[1] = 10;  /* 2: Fill-in reordering from METIS, 3: thread dissection, 10: MPI version of the nested dissection and symbolic factorization*/
-  /* Numbers of processors, value of OMP_NUM_THREADS */
   iparm[7] = 0;   /* Max numbers of iterative refinement steps */
   iparm[9] = 13;  /* Perturb the pivot elements with 1E-13 */
   iparm[10] = 0;  /* Disable nonsymmetric permutation and scaling MPS */

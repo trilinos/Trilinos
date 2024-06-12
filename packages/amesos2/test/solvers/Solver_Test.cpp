@@ -248,49 +248,50 @@ int main(int argc, char*argv[])
     stackedTimer = rcp(new StackedTimer("Amesos2 Solve-Test"));
     Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
-  TimeMonitor TotalTimer(*total_timer);
-
-  // set up output streams based on command-line parameters
-  fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  if( !allprint ) fos->setOutputToRootOnly( root );
-
-  Teuchos::oblackholestream blackhole;
-  if( verbosity > 3 ){
-    compare_fos = fos;
-  } else {
-    compare_fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(blackhole));
-  }
-
-  //Read the contents of the xml file into a ParameterList.
-  if( verbosity > 0 ){
-    *fos << "Every proc reading parameters from xml_file: "
-         << xml_file << std::endl;
-  }
-  ParameterList test_params =
-    Teuchos::ParameterXMLFileReader(xml_file).getParameters();
-
-  // Check the parameterlist for the presence of any of the other params
-  if( test_params.isParameter("all-print") ){
-    allprint = test_params.get<bool>("all-print");
-  }
-  if( test_params.isParameter("filedir") ){
-    filedir = test_params.get<string>("filedir");
-  }
-  if( test_params.isParameter("verbosity") ){
-    verbosity = test_params.get<int>("verbosity");
-  }
-
-  // Go through the input parameters and execute tests accordingly.
   bool success = true;
-  ParameterList::ConstIterator mat_it;
-  for( mat_it = test_params.begin(); mat_it != test_params.end(); ++mat_it ){
-    if( test_params.entry(mat_it).isList() ){ // each matrix entry must be a list
-      success &= do_mat_test(Teuchos::getValue<ParameterList>(test_params.entry(mat_it)));
+  {
+    TimeMonitor TotalTimer(*total_timer);
+
+    // set up output streams based on command-line parameters
+    fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    if( !allprint ) fos->setOutputToRootOnly( root );
+
+    Teuchos::oblackholestream blackhole;
+    if( verbosity > 3 ){
+      compare_fos = fos;
     } else {
-      *fos << "unexpected non-list entry in xml input, ignoring..." << std::endl;
+      compare_fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(blackhole));
+    }
+
+    //Read the contents of the xml file into a ParameterList.
+    if( verbosity > 0 ){
+      *fos << "Every proc reading parameters from xml_file: "
+           << xml_file << std::endl;
+    }
+    ParameterList test_params =
+      Teuchos::ParameterXMLFileReader(xml_file).getParameters();
+
+    // Check the parameterlist for the presence of any of the other params
+    if( test_params.isParameter("all-print") ){
+      allprint = test_params.get<bool>("all-print");
+    }
+    if( test_params.isParameter("filedir") ){
+      filedir = test_params.get<string>("filedir");
+    }
+    if( test_params.isParameter("verbosity") ){
+      verbosity = test_params.get<int>("verbosity");
+    }
+
+    // Go through the input parameters and execute tests accordingly.
+    ParameterList::ConstIterator mat_it;
+    for( mat_it = test_params.begin(); mat_it != test_params.end(); ++mat_it ){
+      if( test_params.entry(mat_it).isList() ){ // each matrix entry must be a list
+        success &= do_mat_test(Teuchos::getValue<ParameterList>(test_params.entry(mat_it)));
+      } else {
+        *fos << "unexpected non-list entry in xml input, ignoring..." << std::endl;
+      }
     }
   }
-
   // The summary table is very verbose
   if( verbosity > 3 ){
     TimeMonitor::summarize();
@@ -985,7 +986,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
   typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   const size_t numVecs = 5;     // arbitrary number
-  const size_t numRHS = 5;        // also arbitrary
+  const size_t numRHS  = 5;     // also arbitrary
 
   bool transpose = solve_params.get<bool>("Transpose", false);
 
