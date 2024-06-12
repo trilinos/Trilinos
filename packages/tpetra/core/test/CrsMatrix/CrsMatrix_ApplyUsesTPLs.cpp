@@ -307,7 +307,13 @@ namespace {
         const size_t numTplCalls =
           Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_") +
           Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv_mv[TPL_"); // added in Kernels 4.3.1, okay to look for before
+#if (KOKKOSKERNELS_VERSION >= 40399)
+        // rocSparse spmv_mv has been added to KokkosKernels develop
+        // Delete the #else branch at the next release 
+        TEST_COMPARE(numTplCalls, ==, 1);
+#else
         TEST_COMPARE(numTplCalls, ==, 0);
+#endif
       }
 #endif // HIP
     }
