@@ -479,12 +479,14 @@ class TrilinosPRConfigurationBase(object):
         """
         Generate the build name string to report back to CDash.
         """
-        if "Pull Request" in self.arg_pullrequest_cdash_track:
-            output = f"PR-{self.arg_pullrequest_number}-test-{self.arg_pr_genconfig_job_name}-{self.arg_jenkins_job_number}"
-        elif self.arg_dashboard_build_name != "__UNKNOWN__":
+        if self.arg_dashboard_build_name != "__UNKNOWN__":
             output = self.arg_dashboard_build_name
         else:
-            output = self.arg_pr_genconfig_job_name            
+            output = self.arg_pr_genconfig_job_name
+
+        if "Pull Request" in self.arg_pullrequest_cdash_track:
+            output = f"PR-{self.arg_pullrequest_number}-test-{output}-{self.arg_jenkins_job_number}"
+
         return output
 
 

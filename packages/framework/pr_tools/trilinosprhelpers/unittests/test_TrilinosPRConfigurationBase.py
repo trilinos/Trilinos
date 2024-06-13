@@ -357,6 +357,16 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
+    def test_BuildNamePRPassedName(self):
+        """Test that a passed build name is formatted PR-style if the group is PR."""
+        args = self.dummy_args_gcc_720()
+        args.dashboard_build_name = "mySuperAwesomeBuildName"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.dashboard_build_name}-{args.jenkins_job_number}"
+        self.assertEqual(build_name, expected_build_name)
+
+
     def test_BuildNameNonPRTrack(self):
         args = self.dummy_args_non_pr_track()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
