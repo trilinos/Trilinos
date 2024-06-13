@@ -583,7 +583,7 @@ private:
 // Workaround Cuda limitation of KOKKOS_LAMBDA in private/protected member functions
 #ifdef KOKKOS_ENABLE_CUDA
 public:
-#endif KOKKOS_ENABLE_CUDA
+#endif
   void compute_kkspiluk_stream();
 #ifdef KOKKOS_ENABLE_CUDA
 private:
