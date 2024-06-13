@@ -297,9 +297,9 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         return output
 
 
-    def test_TrilinosPRConfigurationBase(self):
+    def test(self):
         """
-        Tests if we can instantiate a TrilinosPRConfiguration object.
+        Test if we can instantiate a TrilinosPRConfiguration object.
         """
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
@@ -323,7 +323,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(pr_config.concurrency_test, 3)
 
 
-    def test_TrilinosPRConfigurationCDashTrack(self):
+    def test_CDashTrack(self):
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         cdash_track = pr_config.arg_pullrequest_cdash_track
@@ -331,7 +331,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(cdash_track, "Pull Request")
 
 
-    def test_TrilinosPRConfigurationBuildNamePython2(self):
+    def test_BuildNamePython2(self):
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
@@ -339,7 +339,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
-    def test_TrilinosPRConfigurationBaseBuildNameGCC720(self):
+    def test_BuildNameGCC720(self):
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
@@ -347,7 +347,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
-    def test_TrilinosPRConfigurationBaseBuildNameContainsPullRequest(self):
+    def test_BuildNameContainsPullRequest(self):
         """Test that a group containing 'Pull Request' causes the build name to reflect a PR build."""
         args = self.dummy_args_gcc_720()
         args.pullrequest_cdash_track = "Pull Request (Non-blocking)"
@@ -357,7 +357,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
-    def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
+    def test_BuildNameNonPRTrack(self):
         args = self.dummy_args_non_pr_track()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
@@ -365,7 +365,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
-    def test_TrilinosPRConfigurationBaseBuildNameDefaultDashboardName(self):
+    def test_BuildNameDefaultDashboardName(self):
         """
         Test the build name output when dashboard_build_name contains
         the default Jenkins parameter value, '__UNKNOWN__'.
@@ -378,7 +378,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(expected_build_name, result_build_name)
 
 
-    def test_TrilinosPRConfigurationBaseDashboardModelPRTrack(self):
+    def test_DashboardModelPRTrack(self):
         args = self.dummy_args()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         dashboard_model = pr_config.dashboard_model
@@ -387,7 +387,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(dashboard_model, expected_dashboard_model)
 
 
-    def test_TrilinosPRConfigurationBaseDashboardModelNonPRTrack(self):
+    def test_DashboardModelNonPRTrack(self):
         args = self.dummy_args_non_pr_track()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         dashboard_model = pr_config.dashboard_model
@@ -396,7 +396,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(dashboard_model, expected_dashboard_model)
 
 
-    def test_TrilinosPRConfigurationBasePackageEnablesPython3(self):
+    def test_PackageEnablesPython3(self):
         print("")
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
@@ -413,7 +413,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
                 m_open.assert_has_calls(calls, any_order=True)
 
 
-    def test_TrilinosPRConfigurationBasePackageEnablesPython3_dryrun(self):
+    def test_PackageEnablesPython3_dryrun(self):
         """
         Test the PackageEnables generator in DryRun mode
         """
@@ -433,7 +433,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             print(".")
 
 
-    def test_TrilinosPRConfigurationBasePackageEnablesGCC720(self):
+    def test_PackageEnablesGCC720(self):
         print("")
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
@@ -448,7 +448,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
                 m_output.assert_called_once()
 
 
-    def test_TrilinosPRConfigurationBasePackageEnablesGCC720_dryrun(self):
+    def test_PackageEnablesGCC720_dryrun(self):
         """
         Test the PackageEnables generator in DryRun mode
         We can remove this when we take down the SCAFFOLDING from development.
@@ -462,7 +462,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         pr_config.create_package_enables_file(dryrun=True)
 
 
-    def test_TrilinosPRConfigurationBasePackageEnablesGCC720_ERROR(self):
+    def test_PackageEnablesGCC720_ERROR(self):
         """
         Test the call to create_package_enables_file() where there should
         be an error.
@@ -493,7 +493,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertTrue( expected_output in actual_output)
 
 
-    def test_TrilinosPRConfigurationBaseProperty_concurrency_test_err(self):
+    def test_Property_concurrency_test_err(self):
         """
         Test the condition where an incorrect type is passed into the config_data
         setter.
@@ -509,7 +509,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(concurrency_test, 4)
 
 
-    def test_TrilinosPRConfigurationBaseProperty_config_script(self):
+    def test_Property_config_script(self):
         """
         Validate that the property config_script loads properly.
         Since dummy args is loading the configuration for "Trilinos_pullrequest_gcc_7.2.0"
@@ -523,7 +523,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(pr_config.config_script, "generatedPRFragment.cmake")
 
 
-    def test_TrilinosPRConfigurationBaseProperty_get_property_from_config_PASS(self):
+    def test_Property_get_property_from_config_PASS(self):
         print("")
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
@@ -537,7 +537,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(package_enables, "TrilinosFrameworkTests")
 
 
-    def test_TrilinosPRConfigurationBaseProperty_get_property_from_config_FAIL(self):
+    def test_Property_get_property_from_config_FAIL(self):
         """
         Test the condition that the SECTION is missing from the .ini file.
         This should return the default value and print out a warning.
@@ -568,7 +568,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertIn("WARNING", fake_out.getvalue())
 
 
-    def test_TrilinosPRConfigurationBaseProperty_get_multi_property_from_config_PASS(self):
+    def test_Property_get_multi_property_from_config_PASS(self):
         print("")
         args = self.dummy_args()
         args.pullrequest_build_name = "Trilinos-pullrequest-gcc-8.3.0-installation-testing"
@@ -592,7 +592,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(package_enables, "Teuchos Tpetra")
 
 
-    def test_TrilinosPRConfigurationBaseProperty_get_multi_property_from_config_FAIL(self):
+    def test_Property_get_multi_property_from_config_FAIL(self):
         """
         Test a failure condition where the section does not exist.
         """
@@ -624,7 +624,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(package_enables, None)
 
 
-    def test_TrilinosPRConfigurationBaseProperty_subprojects_file(self):
+    def test_Property_subprojects_file(self):
         """
         Check property: filename_subprojects
         """
@@ -638,7 +638,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(filename_subprojects, "../package_subproject_list.cmake")
 
 
-    def test_TrilinosPRConfigurationBaseProperty_package_enables_file(self):
+    def test_Property_package_enables_file(self):
         """
         Check property: package_enables_file
         """
@@ -652,7 +652,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
 
 
     # wcmclen - does not appear useful, the current `arg_workspace_dir` is `.`
-    #def test_TrilinosPRConfigurationBaseProperty_working_directory_ctest(self):
+    #def test_Property_working_directory_ctest(self):
     #    """
     #    Check property: working_directory_ctest
     #
@@ -667,7 +667,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     #    self.assertIn("pr-ctest-framework/cmake", working_directory_ctest)
 
 
-    def test_TrilinosPRConfigurationBase_prepare_test(self):
+    def test__prepare_test(self):
         """
         Test the prepare_test method
         """
@@ -693,7 +693,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
                     self.assertEqual(ret, 0)
 
 
-    def test_TrilinosPRConfigurationBase_prepare_test_FAIL(self):
+    def test__prepare_test_FAIL(self):
         """
         Test the prepare_test method where it would fail due to
         mock_modulehelper_module_failodule loading problems in
@@ -727,7 +727,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
                 pr_config.prepare_test()
 
 
-    def test_TrilinosPRConfigurationBase_execute_test(self):
+    def test__execute_test(self):
         """
         Executes the test. This method should be considered 'virtual' and should
         be overridden.
