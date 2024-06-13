@@ -116,6 +116,7 @@ class BlockLowerTriInverseOp : public BlockImplicitLinearOp {
   // scratch space...so we don't have to reallocate
   mutable BlockedMultiVector srcScrap_;
   mutable BlockedMultiVector dstScrap_;
+  mutable bool allocated = false;
 
  private:
   // hide me!
