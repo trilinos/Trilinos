@@ -335,7 +335,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
+        expected_build_name = f"PR-{args.pullrequest_number}-{args.genconfig_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
 
 
@@ -343,7 +343,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
+        expected_build_name = f"PR-{args.pullrequest_number}-{args.genconfig_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
 
 
@@ -353,7 +353,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         args.pullrequest_cdash_track = "Pull Request (Non-blocking)"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
+        expected_build_name = f"PR-{args.pullrequest_number}-{args.genconfig_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
 
 
@@ -363,7 +363,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         args.dashboard_build_name = "mySuperAwesomeBuildName"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.dashboard_build_name}-{args.jenkins_job_number}"
+        expected_build_name = f"PR-{args.pullrequest_number}-{args.dashboard_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
 
 

@@ -485,7 +485,7 @@ class TrilinosPRConfigurationBase(object):
             output = self.arg_pr_genconfig_job_name
 
         if "Pull Request" in self.arg_pullrequest_cdash_track:
-            output = f"PR-{self.arg_pullrequest_number}-test-{output}-{self.arg_jenkins_job_number}"
+            output = f"PR-{self.arg_pullrequest_number}-{output}-{self.arg_jenkins_job_number}"
 
         return output
 
