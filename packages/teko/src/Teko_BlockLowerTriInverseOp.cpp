@@ -69,9 +69,6 @@ BlockLowerTriInverseOp::BlockLowerTriInverseOp(BlockedLinearOp& L,
   // just flip flop them!
   productRange_  = L_->productDomain();
   productDomain_ = L_->productRange();
-
-  srcScrap_ = toBlockedMultiVector(Thyra::createMember(*productDomain_));
-  dstScrap_ = toBlockedMultiVector(Thyra::createMember(*productRange_));
 }
 
 /** @brief Perform a matrix vector multiply with this operator.
@@ -92,6 +89,12 @@ void BlockLowerTriInverseOp::implicitApply(const BlockedMultiVector& src, Blocke
 
   TEUCHOS_ASSERT(blocks == blockRowCount(L_));
   TEUCHOS_ASSERT(blocks == blockCount(dst));
+
+  if (!allocated) {
+    srcScrap_ = deepcopy(src);
+    dstScrap_ = deepcopy(dst);
+    allocated = true;
+  }
 
   // build a scrap vector for storing work
   Thyra::assign<double>(srcScrap_.ptr(), *src);

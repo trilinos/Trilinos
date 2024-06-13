@@ -79,9 +79,6 @@ BlockUpperTriInverseOp::BlockUpperTriInverseOp(BlockedLinearOp& U,
   // just flip flop them!
   productRange_  = U->productDomain();
   productDomain_ = U->productRange();
-
-  srcScrap_ = toBlockedMultiVector(Thyra::createMember(*productDomain_));
-  dstScrap_ = toBlockedMultiVector(Thyra::createMember(*productRange_));
 }
 
 void BlockUpperTriInverseOp::implicitApply(const BlockedMultiVector& src, BlockedMultiVector& dst,
@@ -109,6 +106,12 @@ void BlockUpperTriInverseOp::implicitApply(const Thyra::EOpTransp M_trans,
 
   TEUCHOS_ASSERT(blocks == blockRowCount(U_));
   TEUCHOS_ASSERT(blocks == blockCount(dst));
+
+  if (!allocated) {
+    srcScrap_ = deepcopy(src);
+    dstScrap_ = deepcopy(dst);
+    allocated = true;
+  }
 
   // build a scrap vector for storing work
   Thyra::assign<double>(srcScrap_.ptr(), *src);
