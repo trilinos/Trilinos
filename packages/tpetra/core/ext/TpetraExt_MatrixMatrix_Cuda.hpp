@@ -214,7 +214,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
 
   // regardless of whether integer row ptrs are used, need to ultimately produce the row pointer, entries, and values of the expected types
-  lno_view_t row_mapC     (Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
+  lno_view_t      row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
   lno_nnz_view_t  entriesC;
   scalar_view_t   valuesC;
 
