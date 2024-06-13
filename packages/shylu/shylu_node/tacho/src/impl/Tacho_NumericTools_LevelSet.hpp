@@ -174,9 +174,11 @@ private:
   bool _is_cublas_created, _is_cusolver_dn_created;
   cublasHandle_t _handle_blas;
   cusolverDnHandle_t _handle_lapack;
+  #if defined(TACHO_HAVE_CUSPARSE)
   // workspace for SpMV
   cusparseDnMatDescr_t matT, matW;
   cusparseDnVecDescr_t vecT, vecW;
+  #endif
 
   using blas_handle_type = cublasHandle_t;
   using lapack_handle_type = cusolverDnHandle_t;
@@ -1534,6 +1536,9 @@ public:
   }
 
   inline void extractCRS(bool lu) {
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
+
     const ordinal_type nrhs = 1;
     const ordinal_type m = _m;
     const value_type one(1);
@@ -1924,6 +1929,7 @@ public:
     rocsparse_destroy_dnvec_descr(vecX);
     rocsparse_destroy_dnvec_descr(vecY);
 #endif
+#endif
   }
 
   ///
@@ -2182,6 +2188,8 @@ public:
   inline void solveGenericLowerOnDeviceVar2_SpMV(const ordinal_type lvl, const ordinal_type nlvls,
                                                  const ordinal_type pbeg, const ordinal_type pend,
                                                  const value_type_matrix &t) {
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -2372,7 +2380,7 @@ public:
 #endif
     if (lvl == 0) {
       // end : destroy vectors
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)
       if (nrhs > 1)
         cusparseDestroyDnMat(matT);
       else
@@ -2387,6 +2395,7 @@ public:
         Kokkos::deep_copy(t, _w_vec);
       }
     }
+#endif
   }
 
   inline void solveCholeskyLowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
@@ -2548,6 +2557,8 @@ public:
   inline void solveGenericUpperOnDeviceVar2_SpMV(const ordinal_type lvl, const ordinal_type nlvls,
                                                  const ordinal_type pbeg, const ordinal_type pend,
                                                  const value_type_matrix &t) {
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
 
@@ -2670,7 +2681,7 @@ public:
 #endif
     if (lvl == nlvls-1) {
       // end : destroy vectors
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)
       if (nrhs > 1)
         cusparseDestroyDnMat(matT);
       else
@@ -2685,6 +2696,7 @@ public:
         Kokkos::deep_copy(t, _w_vec);
       }
     }
+#endif
   }
 
   inline void solveCholeskyUpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,

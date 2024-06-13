@@ -34,6 +34,9 @@ Sandia National Laboratories, Albuquerque, NM, USA
 /* Define if want to build with BLAS enabled */
 #cmakedefine TACHO_HAVE_BLAS
 
+/* Define if want to build with CuSparse enabled */
+#cmakedefine TACHO_HAVE_CUSPARSE
+
 /* Define if want to build with METIS enabled */
 #cmakedefine TACHO_HAVE_METIS
 

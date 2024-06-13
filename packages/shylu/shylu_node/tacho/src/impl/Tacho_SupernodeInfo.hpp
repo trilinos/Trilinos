@@ -21,7 +21,7 @@ Sandia National Laboratories, Albuquerque, NM, USA
 
 #include "Tacho_Util.hpp"
 #if defined(KOKKOS_ENABLE_CUDA)
- #include <cusparse.h>
+ #include <cusparse_v2.h>
 #elif defined(KOKKOS_ENABLE_HIP)
  #include <rocm_version.h>
  #include <rocsparse.h>
