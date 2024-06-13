@@ -47,7 +47,7 @@
 
 #define OPTIMIZATION_PROBLEM_REFACTOR 
 
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 
 #include "ROL_RandomVector.hpp"
 #include "ROL_StdObjective.hpp"
@@ -107,6 +107,7 @@ int main(int argc, char *argv[]) {
 
   try {
     ROL::ParameterList parlist;
+    parlist.sublist("General").set("Output Level", 1);
     parlist.sublist("General").sublist("Secant").set("Use as Hessian",false);
     parlist.sublist("Step").set("Type","Trust Region");
     parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
@@ -118,10 +119,10 @@ int main(int argc, char *argv[]) {
 
     ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ObjectiveRosenbrock<RealT>>();
 
-    ROL::OptimizationProblem<RealT> problem( obj, x );
-    problem.check(*outStream);
+    ROL::Ptr<ROL::Problem<RealT> > problem = ROL::makePtr<ROL::Problem<RealT>>( obj, x );
+    problem->check(true, *outStream);
 
-    ROL::OptimizationSolver<RealT> solver( problem, parlist );
+    ROL::Solver<RealT> solver( problem, parlist );
     solver.solve(*outStream); 
 
     *outStream << "x_opt = [" << (*x_ptr)[0] << ", " << (*x_ptr)[1] << "]" << std::endl;
@@ -138,8 +139,6 @@ int main(int argc, char *argv[]) {
 
   return 0;
 
-
-  return 0;
 }
 
 
