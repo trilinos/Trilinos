@@ -79,7 +79,7 @@ int run(int argc, char *argv[])
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
     cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
     cmdp.setOption("use-single-red","use-standard-red",&use_single_red,"Use single-reduction CG iteration.");
-    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+    if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
     if (debug) {
