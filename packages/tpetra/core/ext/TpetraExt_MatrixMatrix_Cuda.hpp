@@ -188,7 +188,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
   const KCRS & Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
-
   c_lno_view_t Arowptr = Amat.graph.row_map,
                Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries,
