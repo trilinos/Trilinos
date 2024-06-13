@@ -296,8 +296,7 @@ class TrilinosPRConfigurationBase(object):
     @property
     def arg_pr_genconfig_job_name(self):
         """
-        The Jenkins job name that is executing this Pull Request test.
-        Default is to use the value in args.pullrequest_build_name.
+        The GenConfig configuration name for this Pull Request test.
         """
         return self.args.genconfig_build_name
 
@@ -479,11 +478,9 @@ class TrilinosPRConfigurationBase(object):
     def pullrequest_build_name(self):
         """
         Generate the build name string to report back to CDash.
-
-        PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
         """
         if "Pull Request" in self.arg_pullrequest_cdash_track:
-            output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
+            output = f"PR-{self.arg_pullrequest_number}-test-{self.arg_pr_genconfig_job_name}-{self.arg_jenkins_job_number}"
         elif self.arg_dashboard_build_name != "__UNKNOWN__":
             output = self.arg_dashboard_build_name
         else:
