@@ -42,6 +42,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   int device_solve_thres = 128;
   int variant = 0;
   int nstreams = 8;
+  bool no_warmup = false;
   int nfacts = 2;
   int nsolves = 10;
 
@@ -62,6 +63,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
+  opts.set_option<bool>("no-warmup", "Flag to turn off warmup", &no_warmup);
   opts.set_option<int>("nfacts", "# of factorizations to perform", &nfacts);
   opts.set_option<int>("nsolves", "# of solves to perform", &nsolves);
 
@@ -92,7 +94,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
   std::cout << "     Method Name:: " << method_name << std::endl;
   std::cout << "     Solver Type:: " << variant << std::endl;
-  std::cout << "       # Streams:: " << nstreams;
+  std::cout << "       # Streams:: " << nstreams << std::endl;
+  std::cout << "          # RHSs:: " << nrhs;
   std::cout << std::endl << "    --------------------- " << std::endl << std::endl;
 
   int r_val = 0;
@@ -192,6 +195,10 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     double initi_time = timer.seconds();
 
     /// symbolic structure can be reused
+    if (!no_warmup) {
+      // warm-up
+      solver.factorize(values_on_device);
+    }
     timer.reset();
     for (int i = 0; i < nfacts; ++i) {
       solver.factorize(values_on_device);
@@ -213,8 +220,18 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       }
     }
 
-    std::cout << std::endl;
     double solve_time = 0.0;
+    if (!no_warmup) {
+      // warm-up
+      timer.reset();
+      solver.solve(x, b, t);
+      solve_time = timer.seconds();
+      const double res = solver.computeRelativeResidual(values_on_device, x, b);
+      std::cout << "TachoSolver (warm-up): residual = " << res << " time " << solve_time << "\n";
+    }
+    std::cout << std::endl;
+
+    solve_time = 0.0;
     for (int i = 0; i < nsolves; ++i) {
       timer.reset();
       solver.solve(x, b, t);
@@ -229,7 +246,6 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
     std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
     std::cout << std::endl;
-
     solver.release();
   } catch (const std::exception &e) {
     std::cerr << "Error: exception is caught: \n" << e.what() << "\n";

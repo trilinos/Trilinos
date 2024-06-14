@@ -42,10 +42,15 @@ public:
   typedef typename supernode_info_type::value_type_array value_type_array;
   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
+  typedef typename supernode_info_type::rowptr_view rowptr_view;
+  typedef typename supernode_info_type::colind_view colind_view;
+  typedef typename supernode_info_type::nzvals_view nzvals_view;
+
 private:
   supernode_info_type _info;
   ordinal_type_array _compute_mode, _level_sids;
   ordinal_type _pbeg, _pend;
+  ordinal_type _m;
 
   size_type_array _buf_ptr;
   value_type_array _buf;
@@ -60,6 +65,10 @@ public:
   TeamFunctor_FactorizeChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                             const ordinal_type_array &level_sids, const value_type_array buf, int *rval)
       : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf), _rval(rval) {}
+
+  inline void setGlobalSize(const ordinal_type m) {
+    _m = m;
+  }
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
     _pbeg = pbeg;
@@ -339,6 +348,8 @@ public:
   struct UpdateTag {};
   struct DummyTag {};
 
+  // ---------------------------------------
+  // Functors to factorize
   template <typename MemberType, int Var>
   KOKKOS_INLINE_FUNCTION void operator()(const FactorizeTag<Var> &, const MemberType &member) const {
     const ordinal_type lid = member.league_rank();
@@ -358,7 +369,7 @@ public:
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
         factorize_var1(member, s, T, ABR);
-      } else if (factorize_tag_type::variant == 2) {
+      } else if (factorize_tag_type::variant == 2 || factorize_tag_type::variant == 3) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span(), m, m);
         factorize_var2(member, s, T, ABR);
