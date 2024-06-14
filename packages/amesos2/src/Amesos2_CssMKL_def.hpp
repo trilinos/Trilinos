@@ -43,15 +43,15 @@
 
 
 /**
-   \file   Amesos2_PardisoMKL_def.hpp
+   \file   Amesos2_CssMKL_def.hpp
    \author Eric Bavier <etbavie@sandia.gov>
    \date   Wed Jul 27 12:52:00 MDT 2011
 
-   \brief  Definitions for the Amesos2 PardisoMKL interface.
+   \brief  Definitions for the Amesos2 CssMKL interface.
 */
 
-#ifndef AMESOS2_PARDISOMKL_DEF_HPP
-#define AMESOS2_PARDISOMKL_DEF_HPP
+#ifndef AMESOS2_CSSMKL_DEF_HPP
+#define AMESOS2_CSSMKL_DEF_HPP
 
 #include <map>
 
@@ -60,7 +60,7 @@
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 
 #include "Amesos2_SolverCore_def.hpp"
-#include "Amesos2_PardisoMKL_decl.hpp"
+#include "Amesos2_CssMKL_decl.hpp"
 
 
 namespace Amesos2 {
@@ -71,101 +71,116 @@ namespace Amesos2 {
   }
 
   template <class Matrix, class Vector>
-  PardisoMKL<Matrix,Vector>::PardisoMKL(Teuchos::RCP<const Matrix> A,
+  CssMKL<Matrix,Vector>::CssMKL(Teuchos::RCP<const Matrix> A,
                                         Teuchos::RCP<Vector>       X,
                                         Teuchos::RCP<const Vector> B)
-    : SolverCore<Amesos2::PardisoMKL,Matrix,Vector>(A, X, B) // instantiate superclass
+    : SolverCore<Amesos2::CssMKL,Matrix,Vector>(A, X, B) // instantiate superclass
     , n_(Teuchos::as<int_t>(this->globalNumRows_))
     , perm_(this->globalNumRows_)
     , nrhs_(0)
+    , css_initialized_(false)
     , is_contiguous_(true)
   {
     // set the default matrix type
-    set_pardiso_mkl_matrix_type();
+    set_css_mkl_matrix_type();
+    set_css_mkl_default_parameters(pt_, iparm_);
 
-    PMKL::_INTEGER_t iparm_temp[64];
-    PMKL::_INTEGER_t mtype_temp = mtype_;
-    PMKL::pardisoinit(pt_, &mtype_temp, iparm_temp);
+    // index base
+    const global_ordinal_type indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
+    iparm_[34] = (indexBase == 0 ? 1 : 0);  /* Use one or zero-based indexing */
+    // 1D block-row distribution
+    auto frow  = this->matrixA_->getRowMap()->getMinGlobalIndex();
+    auto nrows = this->matrixA_->getLocalNumRows();
+    iparm_[39] = 2;  /* Matrix input format. */
+    iparm_[40] = frow;          /* > Beginning of input domain. */
+    iparm_[41] = frow+nrows-1;  /* > End of input domain. */
 
-    for( int i = 0; i < 64; ++i ){
-      iparm_[i] = iparm_temp[i];
-    }
+    // get MPI Comm
+    Teuchos::RCP<const Teuchos::Comm<int> > matComm = this->matrixA_->getComm ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        matComm.is_null (), std::logic_error, "Amesos2::CssMKL "
+        "constructor: The matrix's communicator is null!");
+    Teuchos::RCP<const Teuchos::MpiComm<int> > matMpiComm =
+      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> > (matComm);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matMpiComm.is_null (), std::logic_error, "Amesos2::CssMKL "
+      "constructor: The matrix's communicator is not an MpiComm!");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matMpiComm->getRawMpiComm ().is_null (), std::logic_error, "Amesos2::"
+      "CssMKL constructor: The matrix's communicator claims to be a "
+      "Teuchos::MpiComm<int>, but its getRawPtrComm() method returns "
+      "Teuchos::null!  This means that the underlying MPI_Comm doesn't even "
+      "exist, which likely implies that the Teuchos::MpiComm was constructed "
+      "incorrectly.  It means something different than if the MPI_Comm were "
+      "MPI_COMM_NULL.");
+    MPI_Comm CssComm = *(matMpiComm->getRawMpiComm ());
+    CssComm_ = MPI_Comm_c2f(CssComm);
 
-    // set single or double precision
-    if constexpr ( std::is_same_v<solver_magnitude_type, PMKL::_REAL_t> ) {
-      iparm_[27] = 1;           // single-precision
-    } else {
-      iparm_[27] = 0;           // double-precision
-    }
-
-    // Reset some of the default parameters
-    iparm_[34] = 1;             // Use zero-based indexing
-#ifdef HAVE_AMESOS2_DEBUG
-    iparm_[26] = 1;             // turn the Pardiso matrix checker on
-#endif
+    // rowmap for loadA (to have locally contiguous)
+    css_rowmap_ =
+      Teuchos::rcp (new map_type (this->globalNumRows_, nrows, indexBase, matComm));
   }
 
 
   template <class Matrix, class Vector>
-  PardisoMKL<Matrix,Vector>::~PardisoMKL( )
+  CssMKL<Matrix,Vector>::~CssMKL( )
   {
     /*
-     * Free any memory allocated by the PardisoMKL library functions
+     * Free any memory allocated by the CssMKL library functions
      */
     int_t error = 0;
-    void *bdummy, *xdummy;
-
-    if( this->root_ ){
+    if (css_initialized_)
+    {
       int_t phase = -1;         // release all internal solver memory
-      function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
+      void *bdummy, *xdummy;
+      const MPI_Fint CssComm = CssComm_;
+      function_map::cluster_sparse_solver( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &CssComm, &error );
+      css_initialized_ = false;
     }
-
-    check_pardiso_mkl_error(Amesos2::CLEAN, error);
+    check_css_mkl_error(Amesos2::CLEAN, error);
   }
 
 
   template<class Matrix, class Vector>
   int
-  PardisoMKL<Matrix,Vector>::preOrdering_impl()
+  CssMKL<Matrix,Vector>::preOrdering_impl()
   {
-    // preOrdering done in PardisoMKL during "Analysis" (aka symbolic
+    // preOrdering done during "Analysis" (aka symbolic
     // factorization) phase
-
     return(0);
   }
 
 
   template <class Matrix, class Vector>
   int
-  PardisoMKL<Matrix,Vector>::symbolicFactorization_impl()
+  CssMKL<Matrix,Vector>::symbolicFactorization_impl()
   {
     int_t error = 0;
-
-    if( this->root_ ){
+    {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor symbFactTimer( this->timers_.symFactTime_ );
 #endif
 
-      int_t phase = 11;
+      int_t phase = 11; // Analysis
       void *bdummy, *xdummy;
-
-      function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
+      const MPI_Fint CssComm = CssComm_;
+      function_map::cluster_sparse_solver( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &CssComm, &error );
     }
-
-    check_pardiso_mkl_error(Amesos2::SYMBFACT, error);
+    check_css_mkl_error(Amesos2::SYMBFACT, error);
 
     // Pardiso only lets you retrieve the total number of factor
     // non-zeros, not for each individually.  We should document how
     // such a situation is reported.
     this->setNnzLU(iparm_[17]);
+    css_initialized_ = true;
 
     return(0);
   }
@@ -173,26 +188,25 @@ namespace Amesos2 {
 
   template <class Matrix, class Vector>
   int
-  PardisoMKL<Matrix,Vector>::numericFactorization_impl()
+  CssMKL<Matrix,Vector>::numericFactorization_impl()
   {
     int_t error = 0;
-
-    if( this->root_ ){
+    {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor numFactTimer( this->timers_.numFactTime_ );
 #endif
 
-      int_t phase = 22;
+      //int_t phase = 12; // Analysis, numerical factorization
+      int_t phase = 22; // Numerical factorization
       void *bdummy, *xdummy;
-
-      function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
+      const MPI_Fint CssComm = CssComm_;
+      function_map::cluster_sparse_solver( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &CssComm, &error );
     }
-
-    check_pardiso_mkl_error(Amesos2::NUMFACT, error);
+    check_css_mkl_error(Amesos2::NUMFACT, error);
 
     return( 0 );
   }
@@ -200,22 +214,19 @@ namespace Amesos2 {
 
   template <class Matrix, class Vector>
   int
-  PardisoMKL<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
-                                        const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
+  CssMKL<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
+                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
     using Teuchos::as;
 
-    int_t error = 0;
-
     // Get B data
-    const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
+    const local_ordinal_type ld_rhs = this->matrixA_->getLocalNumRows();
     nrhs_ = as<int_t>(X->getGlobalNumVectors());
 
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs_);
     xvals_.resize(val_store_size);
     bvals_.resize(val_store_size);
-
-    {                             // Get values from RHS B
+    {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mvConvTimer( this->timers_.vecConvTime_ );
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
@@ -225,18 +236,19 @@ namespace Amesos2 {
         MultiVecAdapter<Vector>,
         solver_scalar_type>::do_get(B, bvals_(),
           as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          DISTRIBUTED_NO_OVERLAP,
           this->rowIndexBase_);
     }
 
-    if( this->root_ ){
+    int_t error = 0;
+    {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor solveTimer( this->timers_.solveTime_ );
 #endif
 
-      const int_t phase = 33;
-
-      function_map::pardiso( pt_,
+      const int_t phase = 33; // Solve, iterative refinement
+      const MPI_Fint CssComm = CssComm_;
+      function_map::cluster_sparse_solver( pt_,
                              const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_),
                              const_cast<int_t*>(&mtype_),
@@ -250,12 +262,11 @@ namespace Amesos2 {
                              const_cast<int_t*>(iparm_),
                              const_cast<int_t*>(&msglvl_),
                              as<void*>(bvals_.getRawPtr()),
-                             as<void*>(xvals_.getRawPtr()), &error );
+                             as<void*>(xvals_.getRawPtr()), &CssComm, &error );
     }
+    check_css_mkl_error(Amesos2::SOLVE, error);
 
-    check_pardiso_mkl_error(Amesos2::SOLVE, error);
-
-    /* Export X from root to the global space */
+    /* Get values to X */
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
@@ -265,8 +276,8 @@ namespace Amesos2 {
       MultiVecAdapter<Vector>,
         solver_scalar_type>::do_put(X, xvals_(),
           as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-  }
+          DISTRIBUTED_NO_OVERLAP);
+    }
 
     return( 0 );
 }
@@ -274,16 +285,16 @@ namespace Amesos2 {
 
   template <class Matrix, class Vector>
   bool
-  PardisoMKL<Matrix,Vector>::matrixShapeOK_impl() const
+  CssMKL<Matrix,Vector>::matrixShapeOK_impl() const
   {
-    // PardisoMKL supports square matrices
+    // CssMKL supports square matrices
     return( this->globalNumRows_ == this->globalNumCols_ );
   }
 
 
   template <class Matrix, class Vector>
   void
-  PardisoMKL<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
+  CssMKL<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
   {
     using Teuchos::RCP;
     using Teuchos::getIntegralValue;
@@ -299,14 +310,6 @@ namespace Amesos2 {
       iparm_[1] = getIntegralValue<int>(*parameterList, "IPARM(2)");
     }
 
-    // Iterative-direct algorithm
-    if( parameterList->isParameter("IPARM(4)") )
-    {
-      RCP<const ParameterEntryValidator> prec_validator = valid_params->getEntry("IPARM(4)").validator();
-      parameterList->getEntry("IPARM(4)").setValidator(prec_validator);
-      iparm_[3] = getIntegralValue<int>(*parameterList, "IPARM(4)");
-    }
-   
     // Max numbers of iterative refinement steps
     if( parameterList->isParameter("IPARM(8)") )
     {
@@ -326,7 +329,6 @@ namespace Amesos2 {
     // First check if the control object requests a transpose solve.
     // Then solver specific options can override this.
     iparm_[11] = this->control_.useTranspose_ ? 2 : 0;
-    
     // Normal solve (0), or a transpose solve (1)
     if( parameterList->isParameter("IPARM(12)") )
     {
@@ -351,30 +353,6 @@ namespace Amesos2 {
       iparm_[17] = getIntegralValue<int>(*parameterList, "IPARM(18)");
     }
    
-    // Scheduling method for the parallel numerical factorization
-    if( parameterList->isParameter("IPARM(24)") )
-    {
-      RCP<const ParameterEntryValidator> par_fact_validator = valid_params->getEntry("IPARM(24)").validator();
-      parameterList->getEntry("IPARM(24)").setValidator(par_fact_validator);
-      iparm_[23] = getIntegralValue<int>(*parameterList, "IPARM(24)");
-    }
-  
-    // Parallelization scheme for the forward and backward solv
-    if( parameterList->isParameter("IPARM(25)") )
-    {
-      RCP<const ParameterEntryValidator> par_fbsolve_validator = valid_params->getEntry("IPARM(25)").validator();
-      parameterList->getEntry("IPARM(25)").setValidator(par_fbsolve_validator);
-      iparm_[24] = getIntegralValue<int>(*parameterList, "IPARM(25)");
-    } 
-
-    // Graph compression scheme for METIS.
-    if( parameterList->isParameter("IPARM(60)") )
-    {
-      RCP<const ParameterEntryValidator> ooc_validator = valid_params->getEntry("IPARM(60)").validator();
-      parameterList->getEntry("IPARM(60)").setValidator(ooc_validator);
-      iparm_[59] = getIntegralValue<int>(*parameterList, "IPARM(60)");
-    } 
-    
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
@@ -403,7 +381,7 @@ namespace Amesos2 {
  */
 template <class Matrix, class Vector>
 Teuchos::RCP<const Teuchos::ParameterList>
-PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
+CssMKL<Matrix,Vector>::getValidParameters_impl() const
 {
   using std::string;
   using Teuchos::as;
@@ -419,29 +397,18 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
   if( is_null(valid_params) ){
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-    // Use pardisoinit to get some default values;
-    void *pt_dummy[64];
-    PMKL::_INTEGER_t mtype_temp = mtype_;
-    PMKL::_INTEGER_t iparm_temp[64];
-    PMKL::pardisoinit(pt_dummy,
-                      const_cast<PMKL::_INTEGER_t*>(&mtype_temp),
-                      const_cast<PMKL::_INTEGER_t*>(iparm_temp));
-
+    void* pt_temp[64];
+    int_t iparm_temp[64];
+    set_css_mkl_default_parameters(pt_temp, iparm_temp);
     setStringToIntegralParameter<int>("IPARM(2)", toString(iparm_temp[1]),
                                       "Fill-in reducing ordering for the input matrix",
-                                      tuple<string>("0", "2", "3"),
-                                      tuple<string>("The minimum degree algorithm",
-                                      "Nested dissection algorithm from METIS",
-                                      "OpenMP parallel nested dissection algorithm"),
-                                      tuple<int>(0, 2, 3),
+                                      tuple<string>("2", "3", "10"),
+                                      tuple<string>("Nested dissection algorithm from METIS",
+                                      "Parallel version of the nested dissection algorithm",
+                                      "MPI version of the nested dissection and symbolic factorization algorithms"),
+                                      tuple<int>(2, 3, 10),
                                       pl.getRawPtr());
     
-    Teuchos::RCP<EnhancedNumberValidator<int> > iparm_4_validator
-      = Teuchos::rcp( new EnhancedNumberValidator<int>() );
-    iparm_4_validator->setMin(0);
-    pl->set("IPARM(4)" , as<int>(iparm_temp[3]) , "Preconditioned CGS/CG",
-            iparm_4_validator);
-
     setStringToIntegralParameter<int>("IPARM(12)", toString(iparm_temp[11]),
                                       "Solve with transposed or conjugate transposed matrix A",
                                       tuple<string>("0", "1", "2"),
@@ -456,33 +423,6 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
                                       tuple<string>("0", "1"),
                                       tuple<string>("No matching", "Use matching"),
                                       tuple<int>(0, 1),
-                                      pl.getRawPtr());
-
-    setStringToIntegralParameter<int>("IPARM(24)", toString(iparm_temp[23]),
-                                      "Parallel factorization control",
-                                      tuple<string>("0", "1"),
-                                      tuple<string>("PARDISO uses the previous algorithm for factorization",
-                                      "PARDISO uses the new two-level factorization algorithm"),
-                                      tuple<int>(0, 1),
-                                      pl.getRawPtr());
-
-    setStringToIntegralParameter<int>("IPARM(25)", toString(iparm_temp[24]),
-                                      "Parallel forward/backward solve control",
-                                      tuple<string>("0", "1"),
-                                      tuple<string>("PARDISO uses the parallel algorithm for the solve step",
-                                      "PARDISO uses the sequential forward and backward solve"),
-                                      tuple<int>(0, 1),
-                                      pl.getRawPtr());
-
-    setStringToIntegralParameter<int>("IPARM(60)", toString(iparm_temp[59]),
-                                      "PARDISO mode (OOC mode)",
-                                      tuple<string>("0", "2"),
-                                      tuple<string>("In-core PARDISO",
-                                      "Out-of-core PARDISO.  The OOC PARDISO can solve very "
-                                      "large problems by holding the matrix factors in files "
-                                      "on the disk. Hence the amount of RAM required by OOC "
-                                      "PARDISO is significantly reduced."),
-                                      tuple<int>(0, 2),
                                       pl.getRawPtr());
 
     Teuchos::AnyNumberParameterEntryValidator::EPreferredType preferred_int =
@@ -512,44 +452,59 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
 
 template <class Matrix, class Vector>
 bool
-PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
+CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
 
-  // PardisoMKL does not need matrix data in the pre-ordering phase
+  // CssMKL does not need matrix data in the pre-ordering phase
   if( current_phase == PREORDERING ) return( false );
 
-  if( this->root_ ){
-    Kokkos::resize(nzvals_view_, this->globalNumNonZeros_);
-    Kokkos::resize(colind_view_, this->globalNumNonZeros_);
-    Kokkos::resize(rowptr_view_, this->globalNumRows_ + 1);
+  EDistribution dist_option = (iparm_[39] != 0 ? DISTRIBUTED_NO_OVERLAP : ((is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED));
+  if (current_phase == SYMBFACT) {
+    if (dist_option == DISTRIBUTED_NO_OVERLAP) {
+      Kokkos::resize(nzvals_temp_, this->matrixA_->getLocalNNZ());
+      Kokkos::resize(nzvals_view_, this->matrixA_->getLocalNNZ());
+      Kokkos::resize(colind_view_, this->matrixA_->getLocalNNZ());
+      Kokkos::resize(rowptr_view_, this->matrixA_->getLocalNumRows() + 1);
+    } else {
+      if( this->root_ ) {
+        Kokkos::resize(nzvals_temp_, this->matrixA_->getGlobalNNZ());
+        Kokkos::resize(nzvals_view_, this->matrixA_->getGlobalNNZ());
+        Kokkos::resize(colind_view_, this->matrixA_->getGlobalNNZ());
+        Kokkos::resize(rowptr_view_, this->matrixA_->getGlobalNumRows() + 1);
+      } else {
+        Kokkos::resize(nzvals_temp_, 0);
+        Kokkos::resize(nzvals_view_, 0);
+        Kokkos::resize(colind_view_, 0);
+        Kokkos::resize(rowptr_view_, 0);
+      }
+    }
   }
 
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
-
     int_t nnz_ret = 0;
-    Util::get_crs_helper_kokkos_view<
-      MatrixAdapter<Matrix>,
-      host_value_type_array, host_ordinal_type_array, host_size_type_array>::do_get(
-        this->matrixA_.ptr(),
-        nzvals_view_, colind_view_, rowptr_view_, nnz_ret, 
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        SORTED_INDICES,
-        this->rowIndexBase_);
+    Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
+      host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
+                                       this->matrixA_.ptr(),
+                                       nzvals_temp_, colind_view_, rowptr_view_,
+                                       nnz_ret,
+                                       Teuchos::ptrInArg(*css_rowmap_),
+                                       dist_option,
+                                       SORTED_INDICES);
+    Kokkos::deep_copy(nzvals_view_, nzvals_temp_);
   }
-
   return( true );
 }
 
 
 template <class Matrix, class Vector>
 void
-PardisoMKL<Matrix,Vector>::check_pardiso_mkl_error(EPhase phase,
+CssMKL<Matrix,Vector>::check_css_mkl_error(EPhase phase,
                                                    int_t error) const
 {
   int error_i = error;
@@ -560,41 +515,42 @@ PardisoMKL<Matrix,Vector>::check_pardiso_mkl_error(EPhase phase,
   std::string errmsg = "Other error";
   switch( error ){
   case -1:
-    errmsg = "PardisoMKL reported error: 'Input inconsistent'";
+    errmsg = "CssMKL reported error: 'Input inconsistent'";
     break;
   case -2:
-    errmsg = "PardisoMKL reported error: 'Not enough memory'";
+    errmsg = "CssMKL reported error: 'Not enough memory'";
     break;
   case -3:
-    errmsg = "PardisoMKL reported error: 'Reordering problem'";
+    errmsg = "CssMKL reported error: 'Reordering problem'";
     break;
   case -4:
     errmsg =
-      "PardisoMKL reported error: 'Zero pivot, numerical "
+      "CssMKL reported error: 'Zero pivot, numerical "
       "factorization or iterative refinement problem'";
     break;
   case -5:
-    errmsg = "PardisoMKL reported error: 'Unclassified (internal) error'";
+    errmsg = "CssMKL reported error: 'Unclassified (internal) error'";
     break;
   case -6:
-    errmsg = "PardisoMKL reported error: 'Reordering failed'";
+    errmsg = "CssMKL reported error: 'Reordering failed'";
     break;
   case -7:
-    errmsg = "PardisoMKL reported error: 'Diagonal matrix is singular'";
+    errmsg = "CssMKL reported error: 'Diagonal matrix is singular'";
     break;
   case -8:
-    errmsg = "PardisoMKL reported error: '32-bit integer overflow problem'";
+    errmsg = "CssMKL reported error: '32-bit integer overflow problem'";
     break;
   case -9:
-    errmsg = "PardisoMKL reported error: 'Not enough memory for OOC'";
+    errmsg = "CssMKL reported error: 'Not enough memory for OOC'";
     break;
   case -10:
-    errmsg = "PardisoMKL reported error: 'Problems with opening OOC temporary files'";
+    errmsg = "CssMKL reported error: 'Problems with opening OOC temporary files'";
     break;
   case -11:
-    errmsg = "PardisoMKL reported error: 'Read/write problem with OOC data file'";
+    errmsg = "CssMKL reported error: 'Read/write problem with OOC data file'";
     break;
   }
+  errmsg += (" at phase = "+std::to_string(phase));
 
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error, errmsg );
 }
@@ -602,7 +558,7 @@ PardisoMKL<Matrix,Vector>::check_pardiso_mkl_error(EPhase phase,
 
 template <class Matrix, class Vector>
 void
-PardisoMKL<Matrix,Vector>::set_pardiso_mkl_matrix_type(int_t mtype)
+CssMKL<Matrix,Vector>::set_css_mkl_matrix_type(int_t mtype)
 {
   if( mtype == 0 ){
     if( complex_ ){
@@ -630,23 +586,51 @@ PardisoMKL<Matrix,Vector>::set_pardiso_mkl_matrix_type(int_t mtype)
   }
 }
 
+template <class Matrix, class Vector>
+void
+CssMKL<Matrix,Vector>::set_css_mkl_default_parameters(void* pt[], int_t iparm[]) const
+{
+  for( int i = 0; i < 64; ++i ){
+    pt[i] = nullptr;
+    iparm[i] = 0;
+  }
+  iparm[0] = 1; /* No solver default */
+  // Reset some of the default parameters
+  iparm[1] = 10;  /* 2: Fill-in reordering from METIS, 3: thread dissection, 10: MPI version of the nested dissection and symbolic factorization*/
+  iparm[7] = 0;   /* Max numbers of iterative refinement steps */
+  iparm[9] = 13;  /* Perturb the pivot elements with 1E-13 */
+  iparm[10] = 0;  /* Disable nonsymmetric permutation and scaling MPS */
+  iparm[11] = 0;  /* Normal solve (0), or a transpose solve (1) */
+  iparm[12] = 0;  /* Do not use (non-)symmetric matchings */
+  iparm[17] = -1; /* Output: Number of nonzeros in the factor LU */
+  iparm[20] = -1; /* Pivoting for symmetric indefinite matrices */
+  iparm[26] = 1;  /* Check input matrix is sorted */
+
+  // set single or double precision
+  if constexpr ( std::is_same_v<solver_magnitude_type, PMKL::_REAL_t> ) {
+    iparm[27] = 1;           // single-precision
+  } else {
+    iparm[27] = 0;           // double-precision
+  }
+  iparm[34] = 1;  /* Use zero-based indexing */
+}
 
 template <class Matrix, class Vector>
-const char* PardisoMKL<Matrix,Vector>::name = "PARDISOMKL";
+const char* CssMKL<Matrix,Vector>::name = "CSSMKL";
 
 template <class Matrix, class Vector>
-const typename PardisoMKL<Matrix,Vector>::int_t
-PardisoMKL<Matrix,Vector>::msglvl_ = 0;
+const typename CssMKL<Matrix,Vector>::int_t
+CssMKL<Matrix,Vector>::msglvl_ = 0;  // set to be one, for more CSS messages
 
 template <class Matrix, class Vector>
-const typename PardisoMKL<Matrix,Vector>::int_t
-PardisoMKL<Matrix,Vector>::maxfct_ = 1;
+const typename CssMKL<Matrix,Vector>::int_t
+CssMKL<Matrix,Vector>::maxfct_ = 1;
 
 template <class Matrix, class Vector>
-const typename PardisoMKL<Matrix,Vector>::int_t
-PardisoMKL<Matrix,Vector>::mnum_ = 1;
+const typename CssMKL<Matrix,Vector>::int_t
+CssMKL<Matrix,Vector>::mnum_ = 1;
 
 
 } // end namespace Amesos
 
-#endif  // AMESOS2_PARDISOMKL_DEF_HPP
+#endif  // AMESOS2_CSSMKL_DEF_HPP
