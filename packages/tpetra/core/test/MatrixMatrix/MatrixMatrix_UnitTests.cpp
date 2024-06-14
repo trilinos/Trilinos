@@ -2849,7 +2849,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
 // FIXME_SYCL requires querying free device memory in KokkosKernels, see
 // https://github.com/kokkos/kokkos-kernels/issues/1062.
 // The SYCL specifications don't allow asking for that.
-#ifdef HAVE_TPETRA_SYCL
+#if defined(HAVE_TPETRA_SYCL) || 1
   #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )  \
     UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON( SC, LO, GO, NT )
 #else
