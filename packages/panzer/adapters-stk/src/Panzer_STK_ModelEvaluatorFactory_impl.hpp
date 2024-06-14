@@ -61,12 +61,9 @@
 #include "Panzer_BlockedDOFManagerFactory.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
-#include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -104,12 +101,18 @@
 #include <cstdlib> // for std::getenv
 
 // Piro solver objects
-#include "Thyra_EpetraModelEvaluator.hpp"
 #include "Piro_ConfigDefs.hpp"
 #include "Piro_NOXSolver.hpp"
 #include "Piro_LOCASolver.hpp"
 #ifdef PANZER_HAVE_TEMPUS
 #include "Piro_TempusSolverForwardOnly.hpp"
+#endif
+
+#ifdef PANZER_HAVE_EPETRA_STACK
+#include "Panzer_EpetraLinearObjContainer.hpp"
+#include "Thyra_EpetraModelEvaluator.hpp"
+#include "Panzer_ModelEvaluator_Epetra.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #endif
 
 #include <Panzer_NodeType.hpp>
@@ -245,6 +248,7 @@ namespace panzer_stk {
     }
   } // namespace
 
+#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   void  ModelEvaluatorFactory<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                                      const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -779,6 +783,7 @@ namespace panzer_stk {
 
     m_physics_me = thyra_me;
   }
+#endif // ifdef PANZER_HAVE_EPETRA_STACK
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::
@@ -1334,6 +1339,7 @@ namespace panzer_stk {
     return fmb;
   }
 
+#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<double> >
   ModelEvaluatorFactory<ScalarT>::
@@ -1468,7 +1474,9 @@ namespace panzer_stk {
       return thyra_me;
     }
   }
+#endif // ifdef PANZER_HAVE_EPETRA_STACK
 
+#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> >
   ModelEvaluatorFactory<ScalarT>::
@@ -1500,6 +1508,7 @@ namespace panzer_stk {
 
     return thyra_me;
   }
+#endif // ifdef PANZER_HAVE_EPETRA_STACK
 
   template<typename ScalarT>
   double ModelEvaluatorFactory<ScalarT>::
@@ -1602,6 +1611,7 @@ namespace panzer_stk {
                             );
   }
 
+#ifdef PANZER_HAVE_EPETRA_STACK
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::
   buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -1642,6 +1652,7 @@ namespace panzer_stk {
 
     TEUCHOS_ASSERT(false);
   }
+#endif // ifdef PANZER_HAVE_EPETRA_STACK
 }
 
 #endif
