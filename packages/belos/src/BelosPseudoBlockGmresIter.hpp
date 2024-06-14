@@ -387,6 +387,7 @@ namespace Belos {
                    DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
 
         DMT::SyncHostToDevice( *y ); 	
+        DMT::SyncHostToDevice( *H_[i] ); 	
 	Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
 	MVT::MvTimesMatAddMv( one, *Vjp1, *y, zero, *cur_block_copy_vec );
       }
