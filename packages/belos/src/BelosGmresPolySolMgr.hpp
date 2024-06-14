@@ -503,11 +503,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    OrthoManagerFactory<ScalarType, MV, OP> factory;
+    OrthoManagerFactory<ScalarType, MV, OP, dm_t> factory;
     // Ensure that the specified orthogonalization type is valid.
     if (! factory.isValidName (tempOrthoType)) {
       std::ostringstream os;
-      os << "Belos::GCRODRSolMgr: Invalid orthogonalization name \""
+      os << "Belos::GmresPolySolMgr: Invalid orthogonalization name \""
          << tempOrthoType << "\".  The following are valid options "
          << "for the \"Orthogonalization\" name parameter: ";
       factory.printValidNames (os);
