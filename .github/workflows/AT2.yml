@@ -60,6 +60,14 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
+          # Set up python-is-python3 hackery
+          mkdir bin
+          pushd bin
+          ln -s $(type -p python3) python
+          export PATH=$(pwd):${PATH}
+          popd
+
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
@@ -130,6 +138,14 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
+          # Set up python-is-python3 hackery
+          mkdir bin
+          pushd bin
+          ln -s $(type -p python3) python
+          export PATH=$(pwd):${PATH}
+          popd
+
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
 
@@ -156,3 +172,82 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --filename-packageenables ./packageEnables.cmake
+
+  cuda11-uvm-EXPERIMENTAL:
+    runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]
+    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
+    steps:
+      - name: env
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          env
+      - name: module list
+        shell: bash
+        run: |
+          bash -l -c "module list"
+          printenv PATH
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
+        with:
+          access_token: ${{ github.token }}
+      - name: make dirs
+        working-directory: /
+        run: |
+          mkdir -p /home/Trilinos/src/Trilinos
+          mkdir -p /home/Trilinos/build
+      - name: Clone trilinos
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          fetch-depth: 0
+      - name: Repo status
+        run: |
+          git fetch --all
+          pwd
+          ls -lhat
+          git status
+          git branch -vv
+          git branch -a
+      - name: get dependencies
+        working-directory: ./packages/framework
+        run: |
+          bash -l -c "./get_dependencies.sh --container"
+      - name: PullRequestLinuxDriverTest.py
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          mkdir bin
+          pushd bin
+          ln -s $(type -p python3) python
+          export PATH=$(pwd):${PATH}
+          popd
+
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
+          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+
+          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
+          printf "\n\n\n"
+
+          echo "image: ${AT2_IMAGE:-unknown}"
+          type python
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+            --source-repo-url ${GITHUB_WORKSPACE} \
+            --target-repo-url ${GITHUB_WORKSPACE} \
+            --target-branch-name ${{ github.event.pull_request.base.ref }} \
+            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
+            --genconfig-build-name rhel8_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
+            --jenkins-job-number 0 \
+            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
+            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
+            --workspace-dir /home/runner/_work/Trilinos \
+            --source-dir ${GITHUB_WORKSPACE} \
+            --build-dir /home/Trilinos/build \
+            --dashboard-build-name `cat /etc/hostname` \
+            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
+            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --filename-subprojects ./package_subproject_list.cmake \
+            --filename-packageenables ./packageEnables.cmake \
+            --max-cores-allowed=96 \
+            --num-concurrent-tests=96
