@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -94,7 +94,7 @@ C   --   Uses NDIM of /DBNUMS/
      &            STIM(2)(:LTIM), NUMMAX, ISTMAX
 10000           FORMAT (4X, A7, 1X, A, 3X, 2 (1X, A),
      &            4X, A, 3X, A4, 3X, A4)
-10010           FORMAT (4X, A7, 1X, A, 3X, 2 (1X, A), 4X, A, I7, I7)
+10010           FORMAT (4X, A7, 1X, A, 3X, 2 (1X, A), 4X, A, I11, I11)
             ELSE
                WRITE (*, 10020) 'Range: ', SVAL(0)(:LVAL),
      &            SXYZ0(1)(:LX), SXYZ0(2)(:LY), SXYZ0(3)(:LZ),

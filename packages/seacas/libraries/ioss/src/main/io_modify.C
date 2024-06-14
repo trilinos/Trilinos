@@ -118,17 +118,16 @@ namespace {
 
   Ioss::NameList get_name_list(const Ioss::Region &region, Ioss::EntityType type);
   void           handle_help(const std::string &topic);
-  bool           handle_delete(const std::vector<std::string> &tokens, Ioss::Region &region);
-  void           handle_list(const std::vector<std::string> &tokens, const Ioss::Region &region,
+  bool           handle_delete(const Ioss::NameList &tokens, Ioss::Region &region);
+  void           handle_list(const Ioss::NameList &tokens, const Ioss::Region &region,
                              bool show_attribute = false);
-  void           handle_graph(const std::vector<std::string> &tokens, const Ioss::Region &region);
-  bool           handle_assembly(const std::vector<std::string> &tokens, Ioss::Region &region,
-                                 bool allow_modify);
-  bool           handle_attribute(const std::vector<std::string> &tokens, Ioss::Region &region);
-  bool           handle_geometry(const std::vector<std::string> &tokens, Ioss::Region &region);
-  bool           handle_time(const std::vector<std::string> &tokens, Ioss::Region &region);
-  bool           handle_rename(const std::vector<std::string> &tokens, Ioss::Region &region);
-  void           update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace);
+  void           handle_graph(const Ioss::NameList &tokens, const Ioss::Region &region);
+  bool handle_assembly(const Ioss::NameList &tokens, Ioss::Region &region, bool allow_modify);
+  bool handle_attribute(const Ioss::NameList &tokens, Ioss::Region &region);
+  bool handle_geometry(const Ioss::NameList &tokens, Ioss::Region &region);
+  bool handle_time(const Ioss::NameList &tokens, Ioss::Region &region);
+  bool handle_rename(const Ioss::NameList &tokens, Ioss::Region &region);
+  void update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace);
 
   void modify_time(Ioss::Region &region, double scale, double offset);
 
@@ -153,7 +152,7 @@ namespace {
   void info_time(const Ioss::Region &region);
 
   template <typename T>
-  void info_entities(const std::vector<T *> &entities, const std::vector<std::string> &tokens,
+  void info_entities(const std::vector<T *> &entities, const Ioss::NameList &tokens,
                      const Ioss::Region &region, const std::string &type,
                      bool show_property = false)
   {
@@ -696,8 +695,7 @@ namespace {
     }
   }
 
-  void handle_list(const std::vector<std::string> &tokens, const Ioss::Region &region,
-                   bool show_attribute)
+  void handle_list(const Ioss::NameList &tokens, const Ioss::Region &region, bool show_attribute)
   {
     if (tokens.size() > 1) {
       if (Ioss::Utils::substr_equal(tokens[1], "summary")) {
@@ -764,9 +762,9 @@ namespace {
 
   class Graph
   {
-    std::map<std::string, int>    m_vertices;
-    std::vector<std::string>      m_vertex;
-    std::vector<std::vector<int>> m_adj; // Pointer to an array containing adjacency std::lists
+    std::map<std::string, int>   m_vertices;
+    Ioss::NameList               m_vertex;
+    std::vector<Ioss::IntVector> m_adj; // Pointer to an array containing adjacency std::lists
 
     bool is_cyclic_internal(int v, std::vector<bool> &visited, std::vector<bool> &recStack);
     int  vertex(const std::string &node);
@@ -854,7 +852,7 @@ namespace {
     return false;
   }
 
-  void handle_graph(const std::vector<std::string> &tokens, const Ioss::Region &region)
+  void handle_graph(const Ioss::NameList &tokens, const Ioss::Region &region)
   {
     if (tokens.size() == 1) {
       handle_help("graph");
@@ -915,7 +913,7 @@ namespace {
     }
   }
 
-  bool handle_delete(const std::vector<std::string> &tokens, Ioss::Region &region)
+  bool handle_delete(const Ioss::NameList &tokens, Ioss::Region &region)
   {
     // Returns true if requested assembly was deleted.
     // False if assembly does not exist, or was not deletable (not created during this run)
@@ -957,7 +955,7 @@ namespace {
     return false;
   }
 
-  bool handle_attribute(const std::vector<std::string> &tokens, Ioss::Region &region)
+  bool handle_attribute(const Ioss::NameList &tokens, Ioss::Region &region)
   {
     //     0          1        2       3         4       5...
     // ATTRIBUTE {{ent_name}} ADD {{att_name}} STRING {{values...}}
@@ -1023,7 +1021,7 @@ namespace {
         ge->property_add(Ioss::Property(att_name, values, Ioss::Property::ATTRIBUTE));
       }
       else if (Ioss::Utils::substr_equal(tokens[4], "integer")) {
-        std::vector<int> values(value_count);
+        Ioss::IntVector values(value_count);
         for (size_t i = 0; i < value_count; i++) {
           try {
             int val   = std::stoi(tokens[i + 5]);
@@ -1085,7 +1083,7 @@ namespace {
     return false;
   }
 
-  bool handle_rename(const std::vector<std::string> &tokens, Ioss::Region &region)
+  bool handle_rename(const Ioss::NameList &tokens, Ioss::Region &region)
   {
     //     0          1        2       3         4
     // RENAME   {{ent_name}}   TO   {{new_name}}
@@ -1193,14 +1191,14 @@ namespace {
     auto node_count = region.get_property("node_count").get_int();
     if (blocks.empty() ||
         blocks.size() == (size_t)region.get_property("element_block_count").get_int()) {
-      return std::vector<int>(node_count, 1);
+      return Ioss::IntVector(node_count, 1);
     }
     else {
-      std::vector<int> node_filter(node_count);
+      Ioss::IntVector node_filter(node_count);
       // Iterate all element blocks in 'blocks', get connectivity_raw
       // and set `node_filter` to 1 for nodes in connectivity list.
       if (region.get_database()->int_byte_size_api() == 4) {
-        std::vector<int> connect;
+        Ioss::IntVector connect;
         for (const auto *block : blocks) {
           block->get_field_data("connectivity_raw", connect);
           for (auto node : connect) {
@@ -1221,7 +1219,7 @@ namespace {
     }
   }
 
-  bool handle_time(const std::vector<std::string> &tokens, Ioss::Region &region)
+  bool handle_time(const Ioss::NameList &tokens, Ioss::Region &region)
   {
     //   0      1       2
     // TIME   SCALE  {{scale}}
@@ -1254,7 +1252,7 @@ namespace {
     return false;
   }
 
-  bool handle_geometry(const std::vector<std::string> &tokens, Ioss::Region &region)
+  bool handle_geometry(const Ioss::NameList &tokens, Ioss::Region &region)
   {
     //     0        1        2         3         4       5...
     // GEOMETRY   ROTATE {{X|Y|Z}} {{angle}} ...
@@ -1461,8 +1459,7 @@ namespace {
     return false;
   }
 
-  bool handle_assembly(const std::vector<std::string> &tokens, Ioss::Region &region,
-                       bool allow_modify)
+  bool handle_assembly(const Ioss::NameList &tokens, Ioss::Region &region, bool allow_modify)
   {
     bool            changed = false;
     Ioss::Assembly *assem   = nullptr;

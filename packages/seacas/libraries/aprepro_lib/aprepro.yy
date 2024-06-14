@@ -168,29 +168,43 @@ bool:     exp LT exp            { $$ = $1 < $3;                         }
         | exp LAND bool         { $$ = $1 && $3;                        }
         | LPAR bool RPAR        { $$ = $2;                              }
 
-        | UNDVAR LOR exp           { $$ = 0 || $3; undefined_error(aprepro, $1->name);   }
-        | UNDVAR LAND exp          { $$ = 0 && $3; undefined_error(aprepro, $1->name);   }
-        | exp LOR UNDVAR           { $$ = $1 || 0; undefined_error(aprepro, $3->name);   }
-        | exp LAND UNDVAR          { $$ = $1 && 0; undefined_error(aprepro, $3->name);   }
-        | bool LOR UNDVAR          { $$ = $1 || 0; undefined_error(aprepro, $3->name);   }
-        | bool LAND UNDVAR         { $$ = $1 && 0; undefined_error(aprepro, $3->name);   }
-        | UNDVAR LOR bool          { $$ = 0 || $3; undefined_error(aprepro, $1->name);   }
-        | UNDVAR LAND bool         { $$ = 0 && $3; undefined_error(aprepro, $1->name);   }
+        | UNDVAR LOR exp        { $$ = 0 || $3; undefined_error(aprepro, $1->name);   }
+        | UNDVAR LAND exp       { $$ = 0 && $3; undefined_error(aprepro, $1->name);   }
+        | exp LOR UNDVAR        { $$ = $1 || 0; undefined_error(aprepro, $3->name);   }
+        | exp LAND UNDVAR       { $$ = $1 && 0; undefined_error(aprepro, $3->name);   }
+        | bool LOR UNDVAR       { $$ = $1 || 0; undefined_error(aprepro, $3->name);   }
+        | bool LAND UNDVAR      { $$ = $1 && 0; undefined_error(aprepro, $3->name);   }
+        | UNDVAR LOR bool       { $$ = 0 || $3; undefined_error(aprepro, $1->name);   }
+        | UNDVAR LAND bool      { $$ = 0 && $3; undefined_error(aprepro, $1->name);   }
 ;
 
 bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);    }
         | sexp GT sexp          { $$ = (strcmp($1,$3) >  0 ? 1 : 0);    }
-        | sexp LE  sexp         { $$ = (strcmp($1,$3) <= 0 ? 1 : 0);    }
-        | sexp GE  sexp         { $$ = (strcmp($1,$3) >= 0 ? 1 : 0);    }
-        | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);    }
-        | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);    }
+        | sexp LE sexp          { $$ = (strcmp($1,$3) <= 0 ? 1 : 0);    }
+        | sexp GE sexp          { $$ = (strcmp($1,$3) >= 0 ? 1 : 0);    }
+        | sexp EQ sexp          { $$ = (strcmp($1,$3) == 0 ? 1 : 0);    }
+        | sexp NE sexp          { $$ = (strcmp($1,$3) != 0 ? 1 : 0);    }
+
+	| exp LT sexp           { $$ = false; yyerror(aprepro, "Comparison of arithmetic with string not defined"); yyerrok;}
+        | exp GT sexp           { $$ = false; yyerror(aprepro, "Comparison of arithmetic with string not defined"); yyerrok;}
+        | exp LE sexp           { $$ = false; yyerror(aprepro, "Comparison of arithmetic with string not defined"); yyerrok;}
+        | exp GE sexp           { $$ = false; yyerror(aprepro, "Comparison of arithmetic with string not defined"); yyerrok;}
+        | exp EQ sexp           { $$ = false; }
+        | exp NE sexp           { $$ = true;  }
+
+	| sexp LT exp           { $$ = false; yyerror(aprepro, "Comparison of string with arithmetic not defined"); yyerrok;}
+        | sexp GT exp           { $$ = false; yyerror(aprepro, "Comparison of string with arithmetic not defined"); yyerrok;}
+        | sexp LE exp           { $$ = false; yyerror(aprepro, "Comparison of string with arithmetic not defined"); yyerrok;}
+        | sexp GE exp           { $$ = false; yyerror(aprepro, "Comparison of string with arithmetic not defined"); yyerrok;}
+        | sexp EQ exp           { $$ = false; }
+        | sexp NE exp           { $$ = true; }
 
         | UNDVAR LT sexp        { $$ = (strcmp("",$3) <  0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
         | UNDVAR GT sexp        { $$ = (strcmp("",$3) >  0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
-        | UNDVAR LE  sexp       { $$ = (strcmp("",$3) <= 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
-        | UNDVAR GE  sexp       { $$ = (strcmp("",$3) >= 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
-        | UNDVAR EQ  sexp       { $$ = (strcmp("",$3) == 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
-        | UNDVAR NE  sexp       { $$ = (strcmp("",$3) != 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
+        | UNDVAR LE sexp        { $$ = (strcmp("",$3) <= 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
+        | UNDVAR GE sexp        { $$ = (strcmp("",$3) >= 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
+        | UNDVAR EQ sexp        { $$ = (strcmp("",$3) == 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
+        | UNDVAR NE sexp        { $$ = (strcmp("",$3) != 0 ? 1 : 0); undefined_error(aprepro, $1->name);          }
 
         | sexp LT UNDVAR        { $$ = (strcmp($1,"") <  0 ? 1 : 0); undefined_error(aprepro, $3->name);          }
         | sexp GT UNDVAR        { $$ = (strcmp($1,"") >  0 ? 1 : 0); undefined_error(aprepro, $3->name);          }
@@ -201,10 +215,10 @@ bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);    }
 
         | UNDVAR LT exp         { $$ = 0  < $3; undefined_error(aprepro, $1->name);          }
         | UNDVAR GT exp         { $$ = 0  > $3; undefined_error(aprepro, $1->name);          }
-        | UNDVAR LE  exp        { $$ = 0 <= $3; undefined_error(aprepro, $1->name);          }
-        | UNDVAR GE  exp        { $$ = 0 >= $3; undefined_error(aprepro, $1->name);          }
-        | UNDVAR EQ  exp        { $$ = 0 == $3; undefined_error(aprepro, $1->name);          }
-        | UNDVAR NE  exp        { $$ = 0 != $3; undefined_error(aprepro, $1->name);          }
+        | UNDVAR LE exp         { $$ = 0 <= $3; undefined_error(aprepro, $1->name);          }
+        | UNDVAR GE exp         { $$ = 0 >= $3; undefined_error(aprepro, $1->name);          }
+        | UNDVAR EQ exp         { $$ = 0 == $3; undefined_error(aprepro, $1->name);          }
+        | UNDVAR NE exp         { $$ = 0 != $3; undefined_error(aprepro, $1->name);          }
 
         | exp LT UNDVAR         { $$ = $1  < 0; undefined_error(aprepro, $3->name);          }
         | exp GT UNDVAR         { $$ = $1  > 0; undefined_error(aprepro, $3->name);          }
@@ -553,6 +567,7 @@ exp:      NUM                   { $$ = $1;                              }
         | exp TIM exp           { $$ = $1 * $3;                         }
         | exp DIV exp           { if ($3 == 0.)
                                     {
+				      $$ = std::numeric_limits<double>::infinity();
                                       yyerror(aprepro, "Zero divisor");
                                       yyerrok;
                                     }
@@ -560,6 +575,7 @@ exp:      NUM                   { $$ = $1;                              }
                                     $$ = $1 / $3;                       }
         | exp MOD exp           { if ($3 == 0.)
                                     {
+				      $$ = (int)$1;
                                       yyerror(aprepro, "Zero divisor");
                                       yyerrok;
                                     }

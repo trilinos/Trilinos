@@ -44,7 +44,6 @@ variables:
 // global attributes:
 		:file_size = 1 ;
 		:title = "This is a test" ;
-		:SOLID_MODEL = "STEP-X-43-1547836-Rev 0" ;
 data:
 
  time_whole = 0.01, 0.02, 0.03, 0.04 ;

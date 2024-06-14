@@ -1,6 +1,6 @@
 /*
 
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -87,6 +87,9 @@ extern "C" {
 /* Used to map between root (file id) and group ids when using groups */
 #define EX_FILE_ID_MASK (0xffff0000) /**< Must match FILE_ID_MASK in NetCDF nc4internal.h */
 #define EX_GRP_ID_MASK  (0x0000ffff) /**< Must match GRP_ID_MASK in NetCDF nc4internal.h */
+
+/* Utility function to find variable to store entity attribute on */
+int exi_get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id);
 
 void exi_reset_error_status(void);
 
