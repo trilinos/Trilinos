@@ -93,7 +93,7 @@ Amesos_CssMKL::Amesos_CssMKL(const Epetra_LinearProblem &prob) :
 
   // Get communicator
   const Epetra_MpiComm& EMpiComm = dynamic_cast<const Epetra_MpiComm&>(Comm());
-  const MPI_Comm CssComm = MPI_COMM_WORLD; //EMpiComm.Comm();
+  const MPI_Comm CssComm = EMpiComm.Comm();
   CssComm_ = MPI_Comm_c2f(CssComm);
 
   // Allocate perm
