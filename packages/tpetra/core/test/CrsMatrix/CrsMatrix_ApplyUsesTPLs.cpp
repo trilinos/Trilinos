@@ -231,7 +231,6 @@ namespace {
     //
     //
     //
-    const int numVecs  = 3;
     RCP<const map_type> rowmap (new map_type (INVALID, M, 0, comm));
     RCP<const map_type> lclmap = createLocalMapWithNode<LO,GO,Node> (P, comm);
 
@@ -243,24 +242,81 @@ namespace {
       }
     }
     // call fillComplete()
-    A.fillComplete(lclmap,rowmap);
-    // build the input multivector X
-    MV X(lclmap,numVecs);
-    for (GO i=0; i<static_cast<GO>(P); ++i) {
-      for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
-        X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
-      }
-    }
-    // allocate output multivec
-    MV Bout(rowmap,numVecs);
-    // test the action
-    Bout.randomize();
-    Tpetra::Details::KokkosRegionCounter::reset();
-    Tpetra::Details::KokkosRegionCounter::start();
-    A.apply(X,Bout);
-    Tpetra::Details::KokkosRegionCounter::stop();
+    A.fillComplete(lclmap, rowmap);
 
-    TEST_COMPARE(Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_"), ==, 1);
+    {
+      // build the input multivector X with 1 vector
+      const int numVecs  = 1;
+      MV X(lclmap,numVecs);
+      for (GO i=0; i<static_cast<GO>(P); ++i) {
+        for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
+          X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
+        }
+      }
+      // allocate output multivec
+      MV Bout(rowmap,numVecs);
+      // test the action
+      Bout.randomize();
+      Tpetra::Details::KokkosRegionCounter::reset();
+      Tpetra::Details::KokkosRegionCounter::start();
+      A.apply(X,Bout);
+      Tpetra::Details::KokkosRegionCounter::stop();
+
+      TEST_COMPARE(Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_"), ==, 1);
+    }
+
+    {
+      // build the input multivector X with 3 vectors
+      const int numVecs  = 3;
+      MV X(lclmap,numVecs);
+      for (GO i=0; i<static_cast<GO>(P); ++i) {
+        for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
+          X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
+        }
+      }
+      // allocate output multivec
+      MV Bout(rowmap,numVecs);
+      // test the action
+      Bout.randomize();
+      Tpetra::Details::KokkosRegionCounter::reset();
+      Tpetra::Details::KokkosRegionCounter::start();
+      A.apply(X,Bout);
+      Tpetra::Details::KokkosRegionCounter::stop();
+
+#if defined(HAVE_TPETRA_CUDA) || defined(HAVE_TPETRACORE_CUDA)
+
+      // We don't use cuSPARSE SpMM for all versions.
+      // Below is the exact condition used to enable cuSPARSE for spmv_mv in KokkosKernels.
+      // (see KokkosSparse_spmv_mv_tpl_spec_avail.hpp for more details)
+      //
+      // - 10300 and below produced incorrect results and failed KK tests
+      // - 11702 also produced incorrect results for very small inputs, causing a Tpetra test to fail
+#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION) && (CUSPARSE_VERSION != 11702)
+      if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>) {
+        const size_t numTplCalls =
+          Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_") +
+          Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv_mv[TPL_"); // added in Kernels 4.3.1, okay to look for before
+        TEST_COMPARE(numTplCalls, ==, 1);
+      }
+#endif // Specific cuSparse versions work
+#endif // CUDA
+
+#if defined(HAVE_TPETRA_HIP) || defined(HAVE_TPETRACORE_HIP)
+      // The multivector case is not yet hooked up in Kokkos Kernels.
+      if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>) {
+        const size_t numTplCalls =
+          Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv[TPL_") +
+          Tpetra::Details::KokkosRegionCounter::get_count_region_contains("spmv_mv[TPL_"); // added in Kernels 4.3.1, okay to look for before
+#if (KOKKOSKERNELS_VERSION >= 40399)
+        // rocSparse spmv_mv has been added to KokkosKernels develop
+        // Delete the #else branch at the next release 
+        TEST_COMPARE(numTplCalls, ==, 1);
+#else
+        TEST_COMPARE(numTplCalls, ==, 0);
+#endif
+      }
+#endif // HIP
+    }
 
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;

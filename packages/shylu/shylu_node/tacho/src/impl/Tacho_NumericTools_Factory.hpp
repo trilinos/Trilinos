@@ -135,6 +135,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -178,6 +179,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -247,6 +249,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -286,6 +289,14 @@ public:
     }
     case 2: {
       TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
+      break;
+    }
+    case 3: {
+      if (_method == 1 || _method == 3) {
+        TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
+      } else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
+      }
       break;
     }
     default: {
@@ -307,6 +318,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;
@@ -346,6 +358,14 @@ public:
     }
     case 2: {
       TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
+      break;
+    }
+    case 3: {
+      if (_method == 1 || _method == 3) {
+        TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
+      } else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
+      }
       break;
     }
     default: {
@@ -368,6 +388,7 @@ public:
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;
   using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type, device_type, 1>;
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
+  using numeric_tools_levelset_var3_type = NumericToolsLevelSet<value_type, device_type, 3>;
 
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_USING;
   TACHO_NUMERIC_TOOLS_FACTORY_BASE_MEMBER;

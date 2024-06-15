@@ -291,7 +291,7 @@ public:
         solve_var0(member, s, bptr);
       } else if (solve_tag_type::variant == 1) {
         solve_var1(member, s, bptr);
-      } else if (solve_tag_type::variant == 2) {
+      } else if (solve_tag_type::variant == 2 || solve_tag_type::variant == 3) {
         solve_var2(member, s, bptr);
       }
     } else if (mode == -1) {
@@ -315,7 +315,7 @@ public:
         update_var0(member, s, bptr);
       } else if (update_tag_type::variant == 1) {
         update_var1(member, s, bptr);
-      } else if (update_tag_type::variant == 2) {
+      } else if (update_tag_type::variant == 2 || update_tag_type::variant == 3) {
         update_var2(member, s, bptr);
       }
     } else {

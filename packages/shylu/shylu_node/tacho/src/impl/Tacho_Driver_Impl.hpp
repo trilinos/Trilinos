@@ -150,8 +150,13 @@ void Driver<VT, DT>::setLevelSetOptionDeviceFunctionThreshold(const ordinal_type
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
-  if (variant > 2 || variant < 0) {
-    std::logic_error("levelset algorithm variants range from 0 to 2");
+#if !defined(TACHO_HAVE_CUSPARSE) && !defined(KOKKOS_ENABLE_HIP)
+  if (variant == 3) {
+    TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "variant 3 requires CuSparse or rocSparce");
+  }
+#endif
+  if (variant > 3 || variant < 0) {
+   TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "levelset algorithm variants range from 0 to 3");
   }
   _variant = variant;
 }

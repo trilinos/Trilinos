@@ -73,8 +73,8 @@ cmake \
 -DTrilinos_ENABLE_TrilinosCouplings:BOOL=${not_cuda} \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
--DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
--DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
+-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF \
+-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan:BOOL=ON \

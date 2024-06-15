@@ -3,6 +3,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_IO.hpp>
+#include <Xpetra_Operator.hpp>
 
 namespace MueLu {
 

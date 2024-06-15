@@ -429,7 +429,7 @@ public:
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
         factorize_var1(member, s, P, T, ABR);
-      } else if (factorize_tag_type::variant == 2) {
+      } else if (factorize_tag_type::variant == 2 || factorize_tag_type::variant == 3) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span(), m, m);
         factorize_var2(member, s, P, T, ABR);

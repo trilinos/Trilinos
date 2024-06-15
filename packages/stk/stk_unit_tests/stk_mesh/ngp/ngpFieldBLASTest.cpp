@@ -100,7 +100,6 @@ public:
     stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
 
     EXPECT_FALSE(stkField1->need_sync_to_host());
-    EXPECT_FALSE(stkField1->need_sync_to_device());
   }
 
   const int numComponent1 = 8;

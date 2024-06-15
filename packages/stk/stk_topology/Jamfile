@@ -73,8 +73,8 @@ local installed-developer-files =
 #
 # SECTION 2: Development install
 #
-explicit install-serial-targets ;
-alias install-serial-targets ;
+
+
 
 # Dependencies listed in this target are installed in the developer's project.
 # This should include all executables and any other files needed for developer use.

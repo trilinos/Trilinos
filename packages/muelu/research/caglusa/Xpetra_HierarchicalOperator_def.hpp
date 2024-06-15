@@ -30,6 +30,7 @@ HierarchicalOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                      Teuchos::rcp_dynamic_cast<TpCrs>(Teuchos::rcp_dynamic_cast<CrsWrap>(basisMatrix)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
                      tTransferMatrices,
                      params));
+  this->setTpetra_RowMatrix(op_);
 }
 
 }  // namespace Xpetra

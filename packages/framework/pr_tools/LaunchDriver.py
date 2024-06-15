@@ -91,7 +91,7 @@ def main(argv):
 
   print("LaunchDriver> INFO: TRILINOS_DIR=\"" + os.environ["TRILINOS_DIR"] + "\"", flush=True)
 
-  ds = DetermineSystem(args.build_name, args.supported_systems)
+  ds = DetermineSystem(args.build_name, args.supported_systems, force_build_name=True)
 
   launch_env = get_launch_env(ds.system_name)
   launch_cmd = get_launch_cmd(ds.system_name)

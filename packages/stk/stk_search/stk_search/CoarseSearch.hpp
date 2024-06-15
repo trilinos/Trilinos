@@ -120,14 +120,14 @@ void coarse_search(Kokkos::View<BoxIdentProc<DomainBoxType, DomainIdentProcType>
                    SearchMethod method,
                    stk::ParallelMachine comm,
                    Kokkos::View<IdentProcIntersection<DomainIdentProcType, RangeIdentProcType>*, ExecutionSpace>& intersections,
-                   ExecutionSpace const& execSpace = Kokkos::DefaultExecutionSpace{},
+                   ExecutionSpace const& execSpace = ExecutionSpace{},
                    bool enforceSearchResultSymmetry = true,
                    bool autoSwapDomainAndRange = true)
 {
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX
-      coarse_search_arborx(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      coarse_search_arborx(domain, range, comm, intersections, execSpace, enforceSearchResultSymmetry);
 #else
       STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX enabled. Please use KDTREE or MORTON_LBVH.");
 #endif
@@ -138,7 +138,7 @@ void coarse_search(Kokkos::View<BoxIdentProc<DomainBoxType, DomainIdentProcType>
       break;
     }
     case MORTON_LBVH: {
-      coarse_search_morton_lbvh(domain, range, comm, intersections, enforceSearchResultSymmetry);
+      coarse_search_morton_lbvh(domain, range, comm, intersections, execSpace, enforceSearchResultSymmetry);
       break;
     }
     default: {

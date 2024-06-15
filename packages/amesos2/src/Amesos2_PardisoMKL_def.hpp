@@ -491,7 +491,7 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
     Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes accept_int( false );
     accept_int.allowInt( true );
 
-    pl->set("IPARM(8)" , as<int>(iparm_temp[8]) , "Iterative refinement step",
+    pl->set("IPARM(8)" , as<int>(iparm_temp[7]) , "Iterative refinement step",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     pl->set("IPARM(10)", as<int>(iparm_temp[9]) , "Pivoting perturbation",
@@ -527,12 +527,12 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Kokkos::resize(rowptr_view_, this->globalNumRows_ + 1);
   }
 
-  int_t nnz_ret = 0;
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
+    int_t nnz_ret = 0;
     Util::get_crs_helper_kokkos_view<
       MatrixAdapter<Matrix>,
       host_value_type_array, host_ordinal_type_array, host_size_type_array>::do_get(
