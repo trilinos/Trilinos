@@ -85,15 +85,14 @@ namespace std {
   }
 }
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
 using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
-std::string getElementBlock(const Triplet & element,
-                            const CartesianConnManager & connManager)
-                                    
-{
+std::string getElementBlock(
+  const Triplet & element,
+  const CartesianConnManager & connManager
+) {
   int localElmtId = connManager.computeLocalBrickElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
@@ -116,30 +115,30 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
   // build the topology
   using CCM = CartesianConnManager;
-  RCP<CCM> connManager = rcp(new CCM);
+  const auto connManager = Teuchos::make_rcp<CCM>();
   connManager->initialize(comm,nx,ny,nz,px,py,pz,bx,by,bz);
 
   // build the dof manager, and assocaite with the topology
   using DOFManager = panzer::DOFManager;
-  RCP<DOFManager> dofManager = rcp(new DOFManager);
+  const auto dofManager = Teuchos::make_rcp<DOFManager>();
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
   using Basis = Intrepid2::Basis<PHX::Device,double,double>;
   
-  RCP<Basis> bhgrad2 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(2));
-  RCP<const FieldPattern> hgrad2 = rcp(new Intrepid2FieldPattern(bhgrad2));
+  RCP<Basis> bhgrad2 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device, double, double>>(2);
+  RCP<const FieldPattern> hgrad2 = Teuchos::make_rcp<Intrepid2FieldPattern>(bhgrad2);
   out << "HGRAD2\n" << *hgrad2 << std::endl;
 
-  RCP<Basis> bhgrad1 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(1));
-  RCP<const FieldPattern> hgrad1 = rcp(new Intrepid2FieldPattern(bhgrad1));
+  RCP<Basis> bhgrad1 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device, double, double>>(1);
+  RCP<const FieldPattern> hgrad1 = Teuchos::make_rcp<Intrepid2FieldPattern>(bhgrad1);
   out << "HGRAD1\n" << *hgrad1 << std::endl;
   
-  RCP<Basis> bhcurl = rcp(new Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device,double,double>(1));
-  RCP<const FieldPattern> hcurl = rcp(new Intrepid2FieldPattern(bhcurl));
+  RCP<Basis> bhcurl = Teuchos::make_rcp<Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device, double, double>>(1);
+  RCP<const FieldPattern> hcurl = Teuchos::make_rcp<Intrepid2FieldPattern>(bhcurl);
   out << "HCURL2\n" << *hcurl << std::endl;
   
-  RCP<Basis> bhdiv = rcp(new Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device,double,double>(1));
-  RCP<const FieldPattern> hdiv = rcp(new Intrepid2FieldPattern(bhdiv));
+  RCP<Basis> bhdiv = Teuchos::make_rcp<Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device, double, double>>(1);
+  RCP<const FieldPattern> hdiv = Teuchos::make_rcp<Intrepid2FieldPattern>(bhdiv);
   out << "HDIV2\n" << *hdiv << std::endl;
 
   // Add fields. Use Hgrad2 for testing DG so that we have unknowns on
@@ -479,5 +478,4 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
   
 }
 
-} // end unit test
-} // end panzer
+} // namespace panzer::unit test
