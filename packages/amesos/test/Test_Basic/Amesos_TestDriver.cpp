@@ -600,7 +600,11 @@ int main(int argc, char **argv)
     options.output_fraction=true;
     options.output_minmax = true;
 
+#ifdef EPETRA_MPI
     auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Comm.Comm()));
+#else
+    auto comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
+#endif
     stackedTimer->report(std::cout, comm, options);
   }
   if ( summary )   summary_file.close() ; 
