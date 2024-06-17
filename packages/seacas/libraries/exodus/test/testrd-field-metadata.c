@@ -15,7 +15,7 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x)  STRINGIFY(x)
 
-char *my_strdup(const char *s)
+static char *my_strdup(const char *s)
 {
   size_t slen   = strlen(s);
   char  *result = malloc(slen + 1);
@@ -27,7 +27,7 @@ char *my_strdup(const char *s)
   return result;
 }
 
-char *my_strsep(char **stringp, const char *delim)
+static char *my_strsep(char **stringp, const char *delim)
 {
   assert(delim != NULL);
   char *rv = *stringp;

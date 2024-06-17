@@ -1272,6 +1272,10 @@ namespace {
     else {
     }
 
+#ifdef SEACAS_HAVE_KOKKOS
+    int basic_type = ige->get_field(field_name).get_type();
+#endif
+
     assert(pool.data.size() >= isize);
 
     switch (options.data_storage_type) {

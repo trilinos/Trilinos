@@ -15,7 +15,7 @@
 
 #define SIZE(X) sizeof(X) / sizeof(X[0])
 
-char *my_strsep(char **stringp, const char *delim)
+static char *my_strsep(char **stringp, const char *delim)
 {
   char *rv = *stringp;
   if (rv) {
@@ -27,7 +27,7 @@ char *my_strsep(char **stringp, const char *delim)
   }
   return rv;
 }
-size_t my_strlcat(char *restrict dst, const char *restrict src, size_t maxlen)
+static size_t my_strlcat(char *restrict dst, const char *restrict src, size_t maxlen)
 {
   const size_t srclen = strlen(src);
   const size_t dstlen = strlen(dst);
