@@ -5,6 +5,37 @@
 #                                                                             #
 ###############################################################################
 
+A large number of packages have been marked as deprecated in this release.
+We are planning to remove them in the fall of 2025. The list of packages is
+
+  - Amesos
+  - AztecOO
+  - Epetra
+  - EpetraExt
+  - Ifpack
+  - Intrepid
+  - Isorropia
+  - ML
+  - NewPackage
+  - Pliris
+  - PyTrilinos
+  - ShyLU_DDCore
+  - ThyraEpetraAdapters
+  - ThyraEpetraExtAdapters
+  - Triutils
+
+If you are a user of one of these packages, please transition to the newer
+software stack. If you need guidance with finding an adequate replacement
+or are missing a particular feature, please open an issue or a discussion
+on Github.
+
+
+Amesos2
+
+  - Add interface to MKL cluster sparse solver.
+    https://github.com/trilinos/Trilinos/pull/13073
+
+
 Framework
 
   - Marked all deprecated packages as 'Secondary Tested'.
@@ -19,8 +50,49 @@ Framework
   - Added deprecation warnings to all deprecated packages.  The warnings are able
     to be disabled via the `Trilinos_SHOW_DEPRECATED_WARNINGS` option (this is
     also available as a per-package option).  These warnings are intended to
-    notify users that pacakge capability they are using will be removed in upcoming
+    notify users that package capability they are using will be removed in upcoming
     releases.
+    https://github.com/trilinos/Trilinos/pull/12828
+
+
+Ifpack2
+
+  - RBILUK now supports Kokkos Kernels as a backend
+    https://github.com/trilinos/Trilinos/pull/12911
+
+
+Kokkos, Kokkos Kernels
+
+  - Inclusion of version 4.3.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/12995
+
+
+NOX
+
+  - Added preconditioner reuse across multiple nonlinear solves.
+    https://github.com/trilinos/Trilinos/pull/12986
+
+
+Teko
+
+  - Add Hierarchical Block Gauss-Seidel Capability
+    https://github.com/trilinos/Trilinos/pull/13040
+
+
+Tpetra
+
+  - Some Tpetra features can be toggled via environment variables.
+    When an unrecognized variable is found, Tpetra now throws to alert
+    to potentially misspelled variables.
+    https://github.com/trilinos/Trilinos/pull/12944
+
+  - Add a test that checks that vendor TPLs for sparse matrix-vector product
+    are called.
+    https://github.com/trilinos/Trilinos/pull/13018
+
+  - Add team parallelism to kernels associated with matrix equilibration.
+    https://github.com/trilinos/Trilinos/pull/13017
+
 
 ###############################################################################
 #                                                                             #
