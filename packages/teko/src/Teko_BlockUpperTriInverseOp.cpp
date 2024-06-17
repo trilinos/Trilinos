@@ -107,12 +107,18 @@ void BlockUpperTriInverseOp::implicitApply(const Thyra::EOpTransp M_trans,
   TEUCHOS_ASSERT(blocks == blockRowCount(U_));
   TEUCHOS_ASSERT(blocks == blockCount(dst));
 
+  if (!allocated) {
+    srcScrap_ = deepcopy(src);
+    dstScrap_ = deepcopy(dst);
+    allocated = true;
+  }
+
   // build a scrap vector for storing work
-  srcScrap_ = datacopy(src, srcScrap_);
+  Thyra::assign<double>(srcScrap_.ptr(), *src);
   BlockedMultiVector dstCopy;
   if (beta != 0.0) {
-    dstScrap_ = datacopy(dst, dstScrap_);
-    dstCopy   = dstScrap_;
+    Thyra::assign<double>(dstScrap_.ptr(), *dst);
+    dstCopy = dstScrap_;
   } else
     dstCopy = dst;  // shallow copy
 

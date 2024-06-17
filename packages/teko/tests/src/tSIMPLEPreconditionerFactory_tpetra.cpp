@@ -781,10 +781,12 @@ bool tSIMPLEPreconditionerFactory_tpetra::test_hierarchicalSolves(int verbosity,
   ifl.sublist("HBGS").set("Type", "Hierarchical Block Gauss-Seidel");
 
   ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Included Subblocks", "1,2");
-  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Inverse Type", "SIMPLE");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Inverse Type", "Belos");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 1").set("Preconditioner Type", "SIMPLE");
 
   ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Included Subblocks", "3");
-  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Inverse Type", "SINGLE_BGS");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Inverse Type", "Belos");
+  ifl.sublist("HBGS").sublist("Hierarchical Block 2").set("Preconditioner Type", "SINGLE_BGS");
 
   ifl.sublist("SIMPLE").set("Type", "NS SIMPLE");
   ifl.sublist("SIMPLE").set("Inverse Velocity Type", "Belos");
