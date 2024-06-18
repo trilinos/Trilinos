@@ -73,10 +73,10 @@ namespace { // (anonymous)
   // Proc 0: Global row index 0: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
   // Proc 1: Global row index 1: [0, 1, 2, 3, 4, 5]
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, UnpackMerge1, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, UnpackMerge1, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
-    using LO = Tpetra::Map<>::local_ordinal_type;
-    using GO = Tpetra::Map<>::global_ordinal_type;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
     using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
     using import_type = Tpetra::Import<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
@@ -419,12 +419,12 @@ namespace { // (anonymous)
 // INSTANTIATIONS
 //
 
-#define UNIT_TEST_GROUP( SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, UnpackMerge1, SCALAR, NODE )
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE )                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, UnpackMerge1, SCALAR, LO, GO, NODE )
   //TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, UnpackMerge2, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_SN( UNIT_TEST_GROUP )
+  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)
