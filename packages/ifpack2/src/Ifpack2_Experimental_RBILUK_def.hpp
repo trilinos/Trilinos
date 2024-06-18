@@ -233,39 +233,6 @@ void RBILUK<MatrixType>::allocate_L_and_U_blocks ()
 
 namespace
 {
-template<class MatrixType>
-Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>
-makeLocalFilter (const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matrix_type>& A)
-{
-  using row_matrix_type = typename RBILUK<MatrixType>::row_matrix_type;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcp_implicit_cast;
-
-  // If A_'s communicator only has one process, or if its column and
-  // row Maps are the same, then it is already local, so use it
-  // directly.
-  if (A->getRowMap ()->getComm ()->getSize () == 1 ||
-      A->getRowMap ()->isSameAs (* (A->getColMap ()))) {
-    return A;
-  }
-
-  // If A_ is already a LocalFilter, then use it directly.  This
-  // should be the case if RILUK is being used through
-  // AdditiveSchwarz, for example.
-  RCP<const LocalFilter<row_matrix_type> > A_lf_r =
-    rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
-  if (! A_lf_r.is_null ()) {
-    return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
-  }
-  else {
-    // A_'s communicator has more than one process, its row Map and
-    // its column Map differ, and A_ is not a LocalFilter.  Thus, we
-    // have to wrap it in a LocalFilter.
-    return rcp (new LocalFilter<row_matrix_type> (A));
-  }
-}
 
 template<class MatrixType>
 Teuchos::RCP<const typename RBILUK<MatrixType>::crs_graph_type>
@@ -281,7 +248,7 @@ getBlockCrsGraph(const Teuchos::RCP<const typename RBILUK<MatrixType>::row_matri
   using crs_graph_type = typename RBILUK<MatrixType>::crs_graph_type;
   using block_crs_matrix_type = typename RBILUK<MatrixType>::block_crs_matrix_type;
 
-  auto A_local = makeLocalFilter<MatrixType>(A);
+  auto A_local = RBILUK<MatrixType>::makeLocalFilter(A);
 
   {
     RCP<const LocalFilter<row_matrix_type> > filteredA =
@@ -363,7 +330,7 @@ void RBILUK<MatrixType>::initialize ()
      "underlying graph is fill complete.");
 
   blockSize_ = this->A_->getBlockSize();
-  this->A_local_ = makeLocalFilter<MatrixType>(this->A_);
+  this->A_local_ = this->makeLocalFilter(this->A_);
 
   Teuchos::Time timer ("RBILUK::initialize");
   double startTime = timer.wallTime();
