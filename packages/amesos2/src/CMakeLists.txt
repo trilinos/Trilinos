@@ -394,10 +394,11 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL AND HAVE_MPI)
+IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL AND TPL_ENABLE_MPI)
   APPEND_SET(HEADERS
     Amesos2_CssMKL.hpp
     Amesos2_CssMKL_FunctionMap.hpp
+    Amesos2_CssMKL_TypeMap.hpp
     Amesos2_CssMKL_decl.hpp
     Amesos2_CssMKL_def.hpp
     )
