@@ -23,8 +23,12 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #if defined(KOKKOS_ENABLE_CUDA)
  #include <cusparse_v2.h>
 #elif defined(KOKKOS_ENABLE_HIP)
- #include <rocm_version.h>
- #include <rocsparse.h>
+ #if __has_include(<rocm-core/rocm_version.h>)
+  #include <rocm-core/rocm_version.h>
+ #else
+  #include <rocm_version.h>
+ #endif
+ #include <rocsparse/rocsparse.h>
  #define ROCM_VERSION ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
 #endif
 
