@@ -584,7 +584,7 @@ namespace Tpetra {
    *   first N elements of the second array.
    */
   template<class IT1, class IT2>
-  void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2) {
+  void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2, const bool stableSort=false) {
     // Quicksort uses best-case N log N time whether or not the input
     // data is sorted.  However, the common case in Tpetra is that the
     // input data are sorted, so we first check whether this is the
@@ -592,7 +592,10 @@ namespace Tpetra {
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
-    SortDetails::std_sort2(first1, last1, first2, first2+(last1-first1));
+    if(stableSort)
+      SortDetails::std_sort2(first1, last1, first2, first2+(last1-first1));
+    else
+      SortDetails::sh_sort2(first1, last1, first2, first2+(last1-first1));
 #ifdef HAVE_TPETRA_DEBUG
     if(!SortDetails::isAlreadySorted(first1, last1)){
       std::cout << "Trouble: sort() did not sort !!" << std::endl;
@@ -684,7 +687,7 @@ namespace Tpetra {
    */
   template<class IT1, class IT2, class IT3>
   void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2,
-    const IT3 &first3)
+    const IT3 &first3, const bool stableSort=false)
   {
     // Quicksort uses best-case N log N time whether or not the input
     // data is sorted.  However, the common case in Tpetra is that the
@@ -693,9 +696,12 @@ namespace Tpetra {
     if(SortDetails::isAlreadySorted(first1, last1)){
       return;
     }
-    SortDetails::std_sort3(first1, last1, first2, first2+(last1-first1), first3,
-                    first3+(last1-first1));
-
+    if(stableSort)
+      SortDetails::std_sort3(first1, last1, first2, first2+(last1-first1), first3,
+                      first3+(last1-first1));
+    else
+      SortDetails::sh_sort3(first1, last1, first2, first2+(last1-first1), first3,
+                      first3+(last1-first1));
 #ifdef HAVE_TPETRA_DEBUG
     if(!SortDetails::isAlreadySorted(first1, last1)){
         std::cout << " Trouble sort did not actually sort... !!!!!!" <<
