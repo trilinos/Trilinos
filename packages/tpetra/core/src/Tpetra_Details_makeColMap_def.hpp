@@ -195,7 +195,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   // NOTE (mfh 02 Sep 2014) This needs to be a stable sort, so that
   // it respects either of the possible orderings of GIDs (sorted,
   // or original order) specified above.
-  sort2 (remotePIDs.begin (), remotePIDs.end (), remoteColGIDs.begin ());
+  sort2 (remotePIDs.begin (), remotePIDs.end (), remoteColGIDs.begin (), true);
 
   // Copy the local GIDs into myColumns. Two cases:
   // 1. If the number of Local column GIDs is the same as the number
