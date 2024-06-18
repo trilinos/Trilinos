@@ -104,11 +104,14 @@ class HierarchicalGaussSeidelPreconditionerFactory : public BlockPreconditionerF
   using BlockPreconditionerFactory::buildPreconditionerOperator;
 
  private:
-  LinearOp buildBlockInverse(const InverseFactory& invFact, const BlockedLinearOp& matrix,
-                             BlockPreconditionerState& state, int hierarchicalBlockNum) const;
+  LinearOp buildBlockInverse(const InverseFactory& invFact,
+                             const Teuchos::RCP<InverseFactory>& precFact,
+                             const BlockedLinearOp& matrix, BlockPreconditionerState& state,
+                             int hierarchicalBlockNum) const;
 
   std::map<int, std::vector<int>> blockToRow;
   std::map<int, Teuchos::RCP<InverseFactory>> blockToInverse;
+  std::map<int, Teuchos::RCP<InverseFactory>> blockToPreconditioner;
   mutable std::map<int, LinearOp> blockToInvOp;
 
   bool useLowerTriangle = false;

@@ -297,7 +297,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    SOURCE_FILES pardiso_mkl_test.xml
+    SOURCE_FILES pardiso_mkl_test.xml css_mkl_test.xml
     EXEDEPS Solver_Test
     )
 
@@ -307,6 +307,15 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
     ARGS "--xml-params=pardiso_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Css_MKL_Solver_Test
+    ARGS "--xml-params=css_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    COMM mpi
     )
 ENDIF()
 

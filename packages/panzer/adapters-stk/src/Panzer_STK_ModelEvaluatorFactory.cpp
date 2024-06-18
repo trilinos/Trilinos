@@ -42,8 +42,6 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory_impl.hpp"
 
@@ -52,5 +50,3 @@ namespace panzer_stk {
   template class ModelEvaluatorFactory<double>;
 
 }
-
-#endif // PANZER_HAVE_EPETRA_STACK

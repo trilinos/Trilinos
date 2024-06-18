@@ -196,6 +196,9 @@ public:
       else if (Amesos2::query ("pardiso_mkl")) {
         solverName_ = "pardiso_mkl";
       }
+      else if (Amesos2::query ("css_mkl")) {
+        solverName_ = "css_mkl";
+      }
       else if (Amesos2::query ("mumps")) {
         solverName_ = "mumps";
       }

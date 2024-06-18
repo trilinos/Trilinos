@@ -440,6 +440,8 @@ private:
                         const Teuchos::ETransp mode) const;
 
   void initializeState();
+
+  KokkosSparse::Experimental::SPTRSVAlgorithm kokkosKernelsAlgorithm() const;
 };
 
 } // namespace Ifpack2

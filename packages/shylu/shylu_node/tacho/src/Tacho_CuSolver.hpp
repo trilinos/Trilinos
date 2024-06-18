@@ -57,7 +57,9 @@ public:
 private:
   cusolverSpHandle_t _handle;
   csrcholInfo_t _chol_info;
+#if defined(TACHO_HAVE_CUSPARSE)
   cusparseMatDescr_t _desc;
+#endif
   int _status;
 
   ordinal_type _m;
@@ -81,12 +83,18 @@ public:
     checkStatus("cusolverSpCreate");
     _status = cusolverSpCreateCsrcholInfo(&_chol_info);
     checkStatus("cusolverSpCreateCsrcholInfo");
+#if defined(TACHO_HAVE_CUSPARSE)
     _status = cusparseCreateMatDescr(&_desc);
     checkStatus("cusparseCreateMatDescr");
+#else
+    std::logic_error("CuSparse is not enabled");
+#endif
   }
   virtual ~CuSolver() {
+#if defined(TACHO_HAVE_CUSPARSE)
     _status = cusparseDestroyMatDescr(_desc);
     checkStatus("cusparseDestroyMatDescr");
+#endif
     _status = cusolverSpDestroyCsrcholInfo(_chol_info);
     checkStatus("cusolverSpDestroyCsrcholInfo");
     _status = cusolverSpDestroy(_handle);
@@ -132,7 +140,9 @@ public:
     const double t_copy = timer.seconds();
 
     timer.reset();
+#if defined(TACHO_HAVE_CUSPARSE)
     _status = cusolverSpXcsrcholAnalysis(_handle, _m, _nnz, _desc, _ap_ordinal.data(), _aj.data(), _chol_info);
+#endif
     checkStatus("cusolverSpXcsrcholAnalysis");
     Kokkos::fence();
     const double t_analyze = timer.seconds();
@@ -160,9 +170,11 @@ public:
     Kokkos::Timer timer;
 
     timer.reset();
-    size_t internalDataInBytes, workspaceInBytes;
+    size_t internalDataInBytes = 0, workspaceInBytes = 0;
+#if defined(TACHO_HAVE_CUSPARSE)
     _status = cusolverSpDcsrcholBufferInfo(_handle, _m, _nnz, _desc, ax.data(), _ap_ordinal.data(), _aj.data(),
                                            _chol_info, &internalDataInBytes, &workspaceInBytes);
+#endif
     checkStatus("cusolverSpDcsrcholBufferInfo");
 
     const size_t bufsize = workspaceInBytes / sizeof(value_type);
@@ -172,8 +184,10 @@ public:
     const double t_alloc = timer.seconds();
 
     timer.reset();
+#if defined(TACHO_HAVE_CUSPARSE)
     _status = cusolverSpDcsrcholFactor(_handle, _m, _nnz, _desc, ax.data(), _ap_ordinal.data(), _aj.data(), _chol_info,
                                        _buf.data());
+#endif
     checkStatus("cusolverSpDcsrcholFactor");
     Kokkos::fence();
     const double t_factor = timer.seconds();

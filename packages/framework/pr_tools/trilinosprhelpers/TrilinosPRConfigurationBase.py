@@ -735,7 +735,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("+" + "-"*68 + "+")
         self.message("|   E N V I R O N M E N T   S E T   U P   S T A R T")
         self.message("+" + "-"*68 + "+")
-        tr_env = LoadEnv([self.arg_pr_genconfig_job_name],
+        tr_env = LoadEnv([self.arg_pr_genconfig_job_name, "--force"],
                          load_env_ini_file=Path(self.arg_pr_env_config_file))
         tr_env.load_set_environment()
 
