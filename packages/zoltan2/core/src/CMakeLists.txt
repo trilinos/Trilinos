@@ -25,7 +25,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_HyperGraph
 ASSERT_DEFINED(Trilinos_ENABLE_Tpetra)
 IF(Trilinos_ENABLE_TPETRA)
   IF(Tpetra_ENABLE_REDUCED_ETI AND Zoltan2_ENABLE_HyperGraph)
-    MESSAGE(FATAL_ERROR "Zoltan2: Cannot enable HyperGraph wwhen Tpetra_Reduced_ETI=ON")
+    MESSAGE(FATAL_ERROR "Zoltan2: Cannot enable HyperGraph when Tpetra_Reduced_ETI=ON")
   ENDIF()
   IF(NOT Zoltan2_ENABLE_HyperGraph)
     MESSAGE(STATUS "Zoltan2: Disabling HyperGraph support")
