@@ -64,8 +64,8 @@ struct MatrixApplyHelper : public IntRowPtrHelper<LocalMatrix, IntLocalMatrix>
   using SPMVHandle = KokkosSparse::SPMVHandle<typename LocalMatrix::device_type, LocalMatrix, XVectorType, YVectorType>;
   using SPMVHandleInt = KokkosSparse::SPMVHandle<typename LocalMatrix::device_type, IntLocalMatrix, XVectorType, YVectorType>;
 
-  MatrixApplyHelper(size_t nnz_, const typename LocalMatrix::row_map_type& rowptrs, KokkosSparse::SPMVAlgorithm algo = KokkosSparse::SPMV_DEFAULT)
-    : IntRowPtrHelper<LocalMatrix, IntLocalMatrix>(nnz_, rowptrs), handle_int(algo) {}
+  MatrixApplyHelper(size_t nnz, const typename LocalMatrix::row_map_type& rowptrs, KokkosSparse::SPMVAlgorithm algo = KokkosSparse::SPMV_DEFAULT)
+    : IntRowPtrHelper<LocalMatrix, IntLocalMatrix>(nnz, rowptrs), handle_int(algo) {}
   
 
   // SPMVHandles are lazily initialized by actual spmv calls.
