@@ -17,16 +17,16 @@
 namespace panzer {
 
   Teuchos::RCP<Thyra::LinearOpBase<double>> buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > &linObjFactory,
-                                                               const std::string &lo_basis_name, const std::string &ho_basis_name,
+                                                               const std::string &domain_basis_name, const std::string &range_basis_name,
                                                                Intrepid2::EOperator op = Intrepid2::OPERATOR_VALUE,
                                                                size_t worksetSize = 1000,
                                                                const bool matrixFree = false);
 
 
   Teuchos::RCP<Thyra::LinearOpBase<double>> buildInterpolation(const Teuchos::RCP<const panzer::ConnManager> &conn,
-                                                               const Teuchos::RCP<panzer::DOFManager> &lo_ugi,
-                                                               const Teuchos::RCP<panzer::DOFManager> &ho_ugi,
-                                                               const std::string &lo_basis_name, const std::string &ho_basis_name,
+                                                               const Teuchos::RCP<panzer::DOFManager> &domain_ugi,
+                                                               const Teuchos::RCP<panzer::DOFManager> &range_ugi,
+                                                               const std::string &domain_basis_name, const std::string &range_basis_name,
                                                                Intrepid2::EOperator op = Intrepid2::OPERATOR_VALUE,
                                                                size_t worksetSize = 1000, const bool forceVectorial = false,
                                                                const bool useTpetra = true,
@@ -44,10 +44,10 @@ namespace panzer {
     typedef PHX::Device DeviceSpace;
 
     MatrixFreeInterpolationOp(const Teuchos::RCP<const panzer::ConnManager> &conn,
-                              const Teuchos::RCP<panzer::DOFManager> &_lo_ugi,
-                              const Teuchos::RCP<panzer::DOFManager> &_ho_ugi,
-                              const std::string& _lo_basis_name,
-                              const std::string& _ho_basis_name,
+                              const Teuchos::RCP<panzer::DOFManager> &_domain_ugi,
+                              const Teuchos::RCP<panzer::DOFManager> &_range_ugi,
+                              const std::string& _domain_basis_name,
+                              const std::string& _range_basis_name,
                               Intrepid2::EOperator _op=Intrepid2::OPERATOR_VALUE,
                               size_t _worksetSize=1000);
 
@@ -106,13 +106,13 @@ namespace panzer {
     Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > import_;
     Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colmapMV_;
 
-    std::string lo_basis_name;
-    std::string ho_basis_name;
+    std::string domain_basis_name;
+    std::string range_basis_name;
     Intrepid2::EOperator op;
     size_t worksetSize;
 
-    Teuchos::RCP<panzer::DOFManager> lo_ugi;
-    Teuchos::RCP<panzer::DOFManager> ho_ugi;
+    Teuchos::RCP<panzer::DOFManager> domain_ugi;
+    Teuchos::RCP<panzer::DOFManager> range_ugi;
 
     Kokkos::View<LocalOrdinal*,DeviceSpace> owner_d_;
     std::map<std::string, Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> > orientations_;
