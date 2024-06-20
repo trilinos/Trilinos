@@ -216,6 +216,7 @@ namespace Anasazi {
     *********************************************************************/
     {
       Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
+      MVT::MvInit(*B);
       std::vector<MagType> norms(2*numvecs);
       bool ResizeWarning = false;
       if ( MVT::GetNumberVecs(*B) != numvecs ) {
