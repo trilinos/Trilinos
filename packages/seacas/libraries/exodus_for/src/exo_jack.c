@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -2039,7 +2039,7 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
 #if Build64
 void F2C(expvtt, EXPVTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
-  int *var_tab4 = i8i4(*num_entity * *num_var, var_tab);
+  int *var_tab4 = i8i4((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab);
   *ierr         = ex_put_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
   free(var_tab4);
 }
@@ -2057,7 +2057,7 @@ void F2C(expvtt, EXPVTT)(int *idexo, int *num_entity, int *num_var, int *var_tab
 #if Build64
 void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
-  int *var_tab4 = i8i4(*num_entity * *num_var, var_tab);
+  int *var_tab4 = i8i4((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab);
   *ierr         = ex_put_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
   free(var_tab4);
 }
@@ -2075,7 +2075,7 @@ void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
 #if Build64
 void F2C(expsstt, EXPSSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
-  int *var_tab4 = i8i4(*num_entity * *num_var, var_tab);
+  int *var_tab4 = i8i4((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab);
   *ierr         = ex_put_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
   free(var_tab4);
 }
@@ -2095,7 +2095,7 @@ void F2C(exgvtt, EXGVTT)(int *idexo, int *num_entity, int *num_var, int64_t *var
 {
   int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
   *ierr         = ex_get_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
-  i4i8(*num_entity * *num_var, var_tab4, var_tab);
+  i4i8((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab4, var_tab);
   free(var_tab4);
 #else
 void F2C(exgvtt, EXGVTT)(int *idexo, int *num_entity, int *num_var, int *var_tab, int *ierr)
@@ -2113,7 +2113,7 @@ void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int64_t *v
 {
   int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
   *ierr         = ex_get_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
-  i4i8(*num_entity * *num_var, var_tab4, var_tab);
+  i4i8((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab4, var_tab);
   free(var_tab4);
 }
 #else
@@ -2132,7 +2132,7 @@ void F2C(exgsstt, EXGSSTT)(int *idexo, int *num_entity, int *num_var, int64_t *v
 {
   int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
   *ierr         = ex_get_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
-  i4i8(*num_entity * *num_var, var_tab4, var_tab);
+  i4i8((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab4, var_tab);
   free(var_tab4);
 }
 #else

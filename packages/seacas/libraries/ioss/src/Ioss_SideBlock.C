@@ -143,7 +143,7 @@ Ioss::Property Ioss::SideBlock::get_implicit_property(const std::string &my_name
   return Ioss::EntityBlock::get_implicit_property(my_name);
 }
 
-void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)
+void Ioss::SideBlock::block_membership(Ioss::NameList &block_members)
 {
   // Simplest case.  If the surfaces are split by element block, then this will
   // return non-null

@@ -4,9 +4,9 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_DBUsage.h"                   // for DatabaseUsage
-#include "Ioss_IOFactory.h"                 // for IOFactory
-#include <catalyst/Iocatalyst_DatabaseIO.h> // for DatabaseIO
+#include "Ioss_DBUsage.h"   // for DatabaseUsage
+#include "Ioss_IOFactory.h" // for IOFactory
+#include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst/Iocatalyst_IOFactory.h>
 #include <cstddef> // for nullptr
 #include <string>  // for string

@@ -213,7 +213,7 @@ namespace Iogn {
     offZ = off_z;
   }
 
-  void GeneratedMesh::parse_options(const std::vector<std::string> &groups)
+  void GeneratedMesh::parse_options(const Ioss::NameList &groups)
   {
     for (size_t i = 1; i < groups.size(); i++) {
       auto option = Ioss::tokenize(groups[i], ":");
@@ -1661,9 +1661,9 @@ namespace Iogn {
     }
   }
 
-  std::vector<std::string> GeneratedMesh::sideset_touching_blocks(int64_t /*set_id*/) const
+  Ioss::NameList GeneratedMesh::sideset_touching_blocks(int64_t /*set_id*/) const
   {
-    std::vector<std::string> result(1, "block_1");
+    Ioss::NameList result(1, "block_1");
     return result;
   }
 

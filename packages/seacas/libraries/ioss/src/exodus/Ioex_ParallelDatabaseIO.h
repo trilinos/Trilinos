@@ -197,6 +197,8 @@ namespace Ioex {
     void write_entity_transient_field(const Ioss::Field &field, const Ioss::GroupingEntity *ge,
                                       int64_t count, void *variables) const;
     void write_meta_data(Ioss::IfDatabaseExistsBehavior behavior) override;
+    template <typename INT>
+      void output_processor_id_map(Ioss::Region *region, INT /*dummy*/);
 
     // Read related metadata and store it in the region...
     void read_region();

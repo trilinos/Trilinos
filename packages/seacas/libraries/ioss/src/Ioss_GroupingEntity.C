@@ -550,14 +550,12 @@ bool Ioss::GroupingEntity::equal_(const Ioss::GroupingEntity &rhs, bool quiet) c
     }
   }
 
-  if (rhs_fields.size() > lhs_fields.size()) {
-    // See which fields are missing from input #1...
-    // NOTE: `quiet` mode has already exited by this point.
-    for (auto &field : rhs_fields) {
-      if (!this->field_exists(field)) {
-        fmt::print(Ioss::OUTPUT(), "{}: FIELD ({}) not found in input #1\n", name(), field);
-        same = false;
-      }
+  // See which fields are missing from input #1...
+  // NOTE: `quiet` mode has already exited by this point.
+  for (auto &field : rhs_fields) {
+    if (!this->field_exists(field)) {
+      fmt::print(Ioss::OUTPUT(), "{}: FIELD ({}) not found in input #1\n", name(), field);
+      same = false;
     }
   }
   return same;

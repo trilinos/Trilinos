@@ -32,12 +32,17 @@ namespace Ioss {
     }
     NamedSuffixVariableType(const NamedSuffixVariableType &) = delete;
 
+    IOSS_NODISCARD VariableType::Type type() const override { return Type::NAMED_SUFFIX; }
+    IOSS_NODISCARD std::string type_string() const override { return "NamedSuffix"; }
+
     //! Define the suffix list for this field.
     //  'which' is 1-based to conform to the 'label' function usage.
     // If user doesn't add suffices, then 'label' will return "UNSET"
     void add_suffix(size_t which, const std::string &suffix) { suffixList[which - 1] = suffix; }
 
+    void print() const override final;
+
   private:
-    std::vector<std::string> suffixList{};
+    Ioss::NameList suffixList{};
   };
 } // namespace Ioss

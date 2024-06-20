@@ -21,12 +21,15 @@ namespace Ioss {
       return "";
     }
     IOSS_NODISCARD std::string label_name(const std::string &base, int /*which*/,
-                                          const char /*suffix_sep*/,
+                                          const char /*suffix_sep*/, const char /*suffix_sep*/,
                                           bool /* suffices_uppercase */) const override
     {
       return base;
     }
     IOSS_NODISCARD int suffix_count() const override { return 0; }
+
+    IOSS_NODISCARD VariableType::Type type() const override { return Type::ELEMENT; }
+    IOSS_NODISCARD std::string type_string() const override { return "Element"; }
 
   protected:
     ElementVariableType(const std::string &type, int comp_count);

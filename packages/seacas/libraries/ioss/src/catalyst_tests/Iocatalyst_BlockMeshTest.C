@@ -504,3 +504,21 @@ TEST_F(BlockMeshTest, GetGlobalIDForPointID)
   id     = bmOne.getIDfromCoords(coords, bmOne.getGlobalPointExtents());
   EXPECT_EQ(bmOne.getGlobalIDForPointID(27), id);
 }
+
+TEST_F(BlockMeshTest, AddTransientField)
+{
+  part.id     = 0;
+  part.size   = 1;
+  numBlocks.i = 2;
+  numBlocks.j = 2;
+  numBlocks.k = 2;
+  bmOne.init(part, numBlocks, origin);
+
+  bmOne.addTransientCellField("foo_x", 2);
+  bmOne.addTransientPointField("bar_x", 3);
+
+  auto cell_fields = bmOne.getTransientCellFieldMap();
+  EXPECT_EQ((*cell_fields)["foo_x"], 2);
+  auto point_fields = bmOne.getTransientPointFieldMap();
+  EXPECT_EQ((*point_fields)["bar_x"], 3);
+}

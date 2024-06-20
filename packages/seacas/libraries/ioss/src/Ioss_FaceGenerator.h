@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "Ioss_Region.h"
 #include "ioss_export.h"
 
 #define FG_USE_ROBIN
@@ -28,8 +29,7 @@
 #include <utility>
 
 namespace Ioss {
-  class Region;
-
+  class ElementBlock;
   class IOSS_EXPORT Face
   {
   public:
@@ -108,11 +108,11 @@ namespace Ioss {
 #if defined FG_USE_STD
   using FaceUnorderedSet = std::unordered_set<Face, FaceHash, FaceEqual>;
 #elif defined FG_USE_HOPSCOTCH
-  using FaceUnorderedSet = tsl::hopscotch_set<Face, FaceHash, FaceEqual>;
-  // using FaceUnorderedSet = tsl::hopscotch_pg_set<Face, FaceHash, FaceEqual>;
+  //using FaceUnorderedSet = tsl::hopscotch_set<Face, FaceHash, FaceEqual>;
+  using FaceUnorderedSet = tsl::hopscotch_pg_set<Face, FaceHash, FaceEqual>;
 #elif defined FG_USE_ROBIN
-  using FaceUnorderedSet = tsl::robin_set<Face, FaceHash, FaceEqual>;
-  // using FaceUnorderedSet = tsl::robin_pg_set<Face, FaceHash, FaceEqual>;
+  //  using FaceUnorderedSet = tsl::robin_set<Face, FaceHash, FaceEqual>;
+  using FaceUnorderedSet = tsl::robin_pg_set<Face, FaceHash, FaceEqual>;
 #endif
   class IOSS_EXPORT FaceGenerator
   {
@@ -123,14 +123,22 @@ namespace Ioss {
 
     template <typename INT>
     void generate_faces(INT /*dummy*/, bool block_by_block = false, bool local_ids = false);
+    template <typename INT>
+    void generate_block_faces(const ElementBlockContainer &ebs, INT /*dummy*/,
+                              bool                         local_ids = false);
+
     FaceUnorderedSet &faces(const std::string &name = "ALL") { return faces_[name]; }
+    FaceUnorderedSet &faces(const ElementBlock *block);
+
+    void clear(const std::string &name)  {faces_[name].clear();}
+    void clear(const ElementBlock *block);
 
     //! Given a local node id (0-based), return the hashed value.
     size_t node_id_hash(size_t local_node_id) const { return hashIds_[local_node_id]; }
 
   private:
     template <typename INT> void hash_node_ids(const std::vector<INT> &node_ids);
-    template <typename INT> void generate_block_faces(INT /*dummy*/, bool local_ids);
+    void hash_local_node_ids(size_t count);
     template <typename INT> void generate_model_faces(INT /*dummy*/, bool local_ids);
 
     Ioss::Region                           &region_;

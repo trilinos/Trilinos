@@ -82,6 +82,12 @@ namespace Iocatalyst {
     static Extent getCoordsForID(ID id, Extent bounds);
     static ID     getIDfromCoords(Extent coords, Extent bounds);
 
+    void          addTransientCellField(std::string f_name, double f_value);
+    void          addTransientPointField(std::string f_name, double f_value);
+
+    std::map<std::string, double>* getTransientCellFieldMap();
+    std::map<std::string, double>* getTransientPointFieldMap();
+
   private:
     Partition partition;
     Extent    origin;
@@ -98,6 +104,9 @@ namespace Iocatalyst {
     int       getNumInBlockMesh(unsigned int offset) const;
     ID        id;
     static ID _id;
+
+    std::map<std::string, double> transientCellFields;
+    std::map<std::string, double> transientPointFields;
   };
 
 } // namespace Iocatalyst
