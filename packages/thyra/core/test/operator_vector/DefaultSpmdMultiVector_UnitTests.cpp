@@ -97,9 +97,14 @@ createSpmdVectorSpace(const Teuchos_Ordinal localDim)
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, defaultConstruct,
   Scalar )
 {
-  RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
-  RCP<const MultiVectorBase<Scalar> > mv = createMembers(*vs, g_numCols);
+  const RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
+  const RCP<MultiVectorBase<Scalar> > mv = createMembers(*vs, g_numCols);
   Teuchos::Array<Scalar> mv_sums(g_numCols);
+
+#ifndef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
+  Thyra::assign<Scalar>(mv.ptr(), 1.0);   // Can't touch uninitialized memory!
+#endif
+
   Thyra::sums<Scalar>(*mv, mv_sums());
   out << "sums(mv) = " << mv_sums << "\n";
 

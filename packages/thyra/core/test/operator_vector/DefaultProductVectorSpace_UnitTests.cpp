@@ -396,6 +396,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
     createProductVectorSpace<Scalar>(g_localDim, numBlocks);
 
   const RCP<VectorBase<Scalar> > v = createMember(vs);
+  Thyra::put_scalar<Scalar>(0.0, v.ptr());
 
   const RCP<ProductVectorBase<Scalar> > prod_v =
     castOrCreateNonconstProductVectorBase(v);
@@ -422,6 +423,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
     createSpmdVectorSpace<Scalar>(g_localDim);
 
   const RCP<VectorBase<Scalar> > v = createMember(vs);
+  Thyra::put_scalar<Scalar>(0.0, v.ptr());
 
   const RCP<ProductVectorBase<Scalar> > prod_v =
     castOrCreateNonconstProductVectorBase(v);
@@ -444,10 +446,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
   const RCP<const VectorSpaceBase<Scalar> > vs =
     createProductVectorSpace<Scalar>(g_localDim, numBlocks);
 
-  const RCP<const VectorBase<Scalar> > v = createMember(vs);
+  const RCP<VectorBase<Scalar> > v = createMember(vs);
+  Thyra::put_scalar<Scalar>(0.0, v.ptr());
 
   const RCP<const ProductVectorBase<Scalar> > prod_v =
-    castOrCreateProductVectorBase(v);
+    castOrCreateProductVectorBase<Scalar>(v);
 
   out << "prod_v = " << *prod_v;
 
@@ -470,10 +473,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
   const RCP<const VectorSpaceBase<Scalar> > vs =
     createSpmdVectorSpace<Scalar>(g_localDim);
 
-  const RCP<const VectorBase<Scalar> > v = createMember(vs);
+  const RCP<VectorBase<Scalar> > v = createMember(vs);
+  Thyra::put_scalar<Scalar>(0.0, v.ptr());
 
   const RCP<const ProductVectorBase<Scalar> > prod_v =
-    castOrCreateProductVectorBase(v);
+    castOrCreateProductVectorBase<Scalar>(v);
 
   out << "prod_v = " << *prod_v;
 
