@@ -557,7 +557,6 @@ checkBlockConsistency(const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& map, s
     for (size_t lid2 = 1; lid2 < block_size; ++lid2) {
       auto lbid_n = floor(double(lid+lid2)/block_size);
       auto gbid_n = floor(double(map.getGlobalElement(lid+lid2))/block_size);
-      auto old_consistent_block = consistent_block;
       if (consistent_block)
         consistent_block = (lbid == lbid_n);
       if (consistent_block)
