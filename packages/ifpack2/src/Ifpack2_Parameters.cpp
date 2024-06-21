@@ -80,6 +80,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("chebyshev: min diagonal value", STS::eps());
   params.set("chebyshev: zero starting solution", true);
   params.set("chebyshev: use native spmv", false);
+  params.set("chebyshev: algorithm", "first");
 
   // Ifpack2_Amesos.cpp
   params.set("amesos: solver type", "Amesos_Klu");
@@ -155,10 +156,25 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", 0);
   params.set("schwarz: num iterations", 1);
+
   params.set("subdomain solver name", "");
+  params.set("inner solver name", "");
+  params.set("schwarz: subdomain solver name", "");
+  params.set("schwarz: inner solver name", "");
+
   Teuchos::ParameterList dummyListSubdomain;
-  params.set("subdomain solver parameters",dummyListSubdomain);
-  params.sublist("subdomain solver parameters").disableRecursiveValidation();
+
+  const std::vector<std::string> subdomainSolverParameterNames = {
+    "inner preconditioner parameters",
+    "subdomain solver parameters",
+    "schwarz: inner preconditioner parameters",
+    "schwarz: subdomain solver parameters"
+  };
+  for(auto & subdomainSolverParameterName : subdomainSolverParameterNames){
+    params.set(subdomainSolverParameterName,dummyListSubdomain);
+    params.sublist(subdomainSolverParameterName).disableRecursiveValidation();
+  }
+
   Teuchos::ParameterList dummyListReordering;
   params.set("schwarz: reordering list",dummyListReordering);
   // Ifpack2 doesn't attempt to validate options for Zoltan2
