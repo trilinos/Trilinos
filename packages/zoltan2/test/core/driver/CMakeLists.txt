@@ -230,6 +230,8 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+# Hypergraph Tests
+IF(Zoltan2_ENABLE_HyperGraph)
 TRIBITS_ADD_TEST(
     test_driver
     NAME zoltanWithGraphAdapterVwgt
@@ -248,7 +250,8 @@ TRIBITS_ADD_TEST(
     "./driverinputs/zoltanGraphAdapterEwgt.xml"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
-)
+    )
+ENDIF()
 
 TRIBITS_ADD_TEST(
     test_driver
