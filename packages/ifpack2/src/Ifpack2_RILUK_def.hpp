@@ -612,7 +612,7 @@ void RILUK<MatrixType>::initialize ()
         } else {
           perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
           reverse_perm_v_.resize(perm_v_.size());
-          for(int istream=0; istream < perm_v_.size(); ++istream) {
+          for(size_t istream=0; istream < perm_v_.size(); ++istream) {
             using perm_type = typename lno_nonzero_view_t::non_const_type;
             const auto perm = perm_v_[istream];
             const auto perm_length = perm.extent(0);

@@ -686,7 +686,7 @@ namespace Ifpack2 {
             memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
           } else {
             // y (temporary) := 0
-            memset(yy, 0, sizeof(impl_scalar_type)*blocksize);
+            memset((char*) yy, 0, sizeof(impl_scalar_type)*blocksize);
           }
 
           // y -= Rx
