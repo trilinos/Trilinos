@@ -195,7 +195,7 @@ packOffset(const DstViewType& dst,
            const size_t src_offset,
            const size_t size)
 {
-  memcpy(dst.data()+dst_offset, src.data()+src_offset, size*sizeof(typename DstViewType::value_type));
+  memcpy((char*) dst.data()+dst_offset, src.data()+src_offset, size*sizeof(typename DstViewType::value_type));
 }
 
 template <typename DstViewType, typename SrcViewType>
