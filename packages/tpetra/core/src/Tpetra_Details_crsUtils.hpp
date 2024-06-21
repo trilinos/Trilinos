@@ -344,7 +344,7 @@ pad_crs_arrays(
               auto oldVals = 
                   Kokkos::subview(values_old, oldRange);
               auto newVals = Kokkos::subview(values_new, newRange);
-              memcpy((char*) newVals.data(), (const char*) oldVals.data(),
+              memcpy((void*) newVals.data(), oldVals.data(),
                     numEnt * sizeof(vals_value_type));
             }
           }

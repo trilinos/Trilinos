@@ -201,7 +201,7 @@ struct PackTraits {
 
       // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
       // function.  It does what one would expect.
-      memcpy ((char*) outBuf, inBuf, numBytes);
+      memcpy ((void*) outBuf, inBuf, numBytes);
       return pair_type (errorCode, numBytes);
     }
   }
@@ -313,7 +313,7 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy ((char*) &outVal, inBuf, numBytes);
+    memcpy ((void*) &outVal, inBuf, numBytes);
     return numBytes;
   }
 }; // struct PackTraits

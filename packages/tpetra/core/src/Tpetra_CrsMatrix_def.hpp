@@ -1764,7 +1764,7 @@ namespace Tpetra {
     // details; look for GCC_WORKAROUND macro definition.
     if (numInserted > 0) {
       const size_t startOffset = oldNumEnt;
-      memcpy ((char*) &oldRowVals[startOffset], &newRowVals[0],
+      memcpy ((void*) &oldRowVals[startOffset], &newRowVals[0],
               numInserted * sizeof (impl_scalar_type));
     }
   }
