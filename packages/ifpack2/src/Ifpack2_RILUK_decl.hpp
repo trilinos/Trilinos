@@ -568,6 +568,14 @@ public:
   //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
   Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
 
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -588,14 +596,6 @@ public:
 #ifdef KOKKOS_ENABLE_CUDA
 private:
 #endif
-
-  /// \brief Return A, wrapped in a LocalFilter, if necessary.
-  ///
-  /// "If necessary" means that if A is already a LocalFilter, or if
-  /// its communicator only has one process, then we don't need to
-  /// wrap it, so we just return A.
-  static Teuchos::RCP<const row_matrix_type>
-  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
 
 protected:
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
