@@ -4,7 +4,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Exodus_for  libraries/exodus_for    PT  OPTIONAL
   ExoIIv2for32 libraries/exoIIv2for32 PT  OPTIONAL
   Nemesis     libraries/nemesis       PT  OPTIONAL
-  Ioss        libraries/ioss          PT  REQUIRED
+  Ioss        libraries/ioss          PT  OPTIONAL
   Chaco       libraries/chaco         PT  OPTIONAL
   Aprepro_lib libraries/aprepro_lib   PT  OPTIONAL
   Supes       libraries/supes         PT  OPTIONAL

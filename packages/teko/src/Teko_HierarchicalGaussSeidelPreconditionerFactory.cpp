@@ -271,24 +271,42 @@ LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildPreconditionerOperat
   for (auto [hierarchicalBlockNum, blocks] : blockToRow) {
     auto A_bb                          = extractSubblockMatrix(blo, blocks, blocks);
     blockToInvOp[hierarchicalBlockNum] = this->buildBlockInverse(
-        *blockToInverse.at(hierarchicalBlockNum), A_bb, state, hierarchicalBlockNum);
+        *blockToInverse.at(hierarchicalBlockNum), blockToPreconditioner.at(hierarchicalBlockNum),
+        A_bb, state, hierarchicalBlockNum);
   }
 
   return Teuchos::rcp(new NestedBlockGS(blockToRow, blockToInvOp, blo, useLowerTriangle));
 }
 
 LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildBlockInverse(
-    const InverseFactory& invFact, const BlockedLinearOp& matrix, BlockPreconditionerState& state,
+    const InverseFactory& invFact, const Teuchos::RCP<InverseFactory>& precFact,
+    const BlockedLinearOp& matrix, BlockPreconditionerState& state,
     int hierarchicalBlockNum) const {
   std::stringstream ss;
   ss << "hierarchical_block_" << hierarchicalBlockNum;
 
-  ModifiableLinearOp& invOp = state.getModifiableOp(ss.str());
+  ModifiableLinearOp& invOp  = state.getModifiableOp(ss.str());
+  ModifiableLinearOp& precOp = state.getModifiableOp("prec_" + ss.str());
 
-  if (invOp == Teuchos::null) {
-    invOp = buildInverse(invFact, matrix);
-  } else {
-    rebuildInverse(invFact, matrix, invOp);
+  if (precFact != Teuchos::null) {
+    if (precOp == Teuchos::null) {
+      precOp = precFact->buildInverse(matrix);
+      state.addModifiableOp("prec_" + ss.str(), precOp);
+    } else {
+      Teko::rebuildInverse(*precFact, matrix, precOp);
+    }
+  }
+
+  if (invOp == Teuchos::null)
+    if (precOp.is_null())
+      invOp = Teko::buildInverse(invFact, matrix);
+    else
+      invOp = Teko::buildInverse(invFact, matrix, precOp);
+  else {
+    if (precOp.is_null())
+      Teko::rebuildInverse(invFact, matrix, invOp);
+    else
+      Teko::rebuildInverse(invFact, matrix, precOp, invOp);
   }
 
   return invOp;
@@ -313,6 +331,12 @@ void HierarchicalGaussSeidelPreconditionerFactory::initializeFromParameterList(
                                ss.str());
     auto invStr                              = hierarchicalParams.get<std::string>("Inverse Type");
     blockToInverse[*hierarchicalBlockNumber] = invLib->getInverseFactory(invStr);
+
+    blockToPreconditioner[*hierarchicalBlockNumber] = Teuchos::null;
+    if (hierarchicalParams.isParameter("Preconditioner Type")) {
+      auto precStr = hierarchicalParams.get<std::string>("Preconditioner Type");
+      blockToPreconditioner[*hierarchicalBlockNumber] = invLib->getInverseFactory(precStr);
+    }
   }
 
   useLowerTriangle = false;

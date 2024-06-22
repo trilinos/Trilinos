@@ -275,7 +275,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
         if (i+1 < my_thread_stop && CSR_ip + std::min(n,(Arowptr(i+2)-Arowptr(i+1))*b_max_nnz_per_row) > CSR_alloc) {
           CSR_alloc *= 2;
           Ccolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type)realloc(Ccolind.data(),u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
-          Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc(Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
+          Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc((void*) Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
         }
         OLD_ip = CSR_ip;
       }
@@ -671,7 +671,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
         if (i+1 < my_thread_stop && CSR_ip + std::min(n,(Arowptr(i+2)-Arowptr(i+1)+1)*b_max_nnz_per_row) > CSR_alloc) {
           CSR_alloc *= 2;
           Ccolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type)realloc(Ccolind.data(),u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
-          Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc(Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
+          Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc((void*) Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
         }
         OLD_ip = CSR_ip;
       }
@@ -1243,7 +1243,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
             if (nnz + n > nnzAllocated) {
               nnzAllocated *= 2;
               Accolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type) realloc(Accolind.data(), u_lno_nnz_view_t::shmem_size(nnzAllocated)), nnzAllocated);
-              Acvals = u_scalar_view_t((typename u_scalar_view_t::data_type) realloc(Acvals.data(), u_scalar_view_t::shmem_size(nnzAllocated)), nnzAllocated);
+              Acvals = u_scalar_view_t((typename u_scalar_view_t::data_type) realloc((void*) Acvals.data(), u_scalar_view_t::shmem_size(nnzAllocated)), nnzAllocated);
             }
             nnz_old = nnz;
           }

@@ -126,7 +126,9 @@
 
 #ifdef HAVE_AMESOS2_PARDISO_MKL // MKL version of Pardiso
 #include "Amesos2_PardisoMKL.hpp"
+#ifdef HAVE_MPI
 #include "Amesos2_CssMKL.hpp"
+#endif
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK

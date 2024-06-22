@@ -11,7 +11,6 @@
 #include "Ioss_VariableType.h"
 #include "exodus/Ioex_Utils.h"
 #include <cstring>
-#include <exodusII_int.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -19,14 +18,18 @@
 #include <netcdf.h>
 #include <tokenize.h>
 
+#include "Ioss_BasisVariableType.h"
 #include "Ioss_CoordinateFrame.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_ElementBlock.h"
 #include "Ioss_Field.h"
 #include "Ioss_GroupingEntity.h"
+#include "Ioss_NamedSuffixVariableType.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
+#include "Ioss_QuadratureVariableType.h"
 #include "exodusII.h"
+#include "exodusII_int.h"
 
 namespace {
   size_t match(const std::string &name1, const std::string &name2)
@@ -97,7 +100,6 @@ namespace {
       }
     }
   }
-
 } // namespace
 
 namespace Ioex {
@@ -116,6 +118,128 @@ namespace Ioex {
         ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
       }
     }
+  }
+
+  std::string map_ioss_field_type(ex_field_type type)
+  {
+    if (type == EX_VECTOR_2D)
+      return "vector_2d";
+    if (type == EX_VECTOR_3D)
+      return "vector_3d";
+    if (type == EX_SCALAR)
+      return "scalar";
+    if (type == EX_VECTOR_1D)
+      return "vector_1d";
+    if (type == EX_QUATERNION_2D)
+      return "quaternion_2d";
+    if (type == EX_QUATERNION_3D)
+      return "quaternion_3d";
+    if (type == EX_FULL_TENSOR_36)
+      return "full_tensor_36";
+    if (type == EX_FULL_TENSOR_32)
+      return "full_tensor_32";
+    if (type == EX_FULL_TENSOR_22)
+      return "full_tensor_22";
+    if (type == EX_FULL_TENSOR_16)
+      return "full_tensor_16";
+    if (type == EX_FULL_TENSOR_12)
+      return "full_tensor_12";
+    if (type == EX_SYM_TENSOR_33)
+      return "sym_tensor_33";
+    if (type == EX_SYM_TENSOR_31)
+      return "sym_tensor_31";
+    if (type == EX_SYM_TENSOR_21)
+      return "sym_tensor_21";
+    if (type == EX_SYM_TENSOR_13)
+      return "sym_tensor_13";
+    if (type == EX_SYM_TENSOR_11)
+      return "sym_tensor_11";
+    if (type == EX_SYM_TENSOR_10)
+      return "sym_tensor_10";
+    if (type == EX_ASYM_TENSOR_03)
+      return "asym_tensor_03";
+    if (type == EX_ASYM_TENSOR_02)
+      return "asym_tensor_02";
+    if (type == EX_ASYM_TENSOR_01)
+      return "asym_tensor_01";
+    if (type == EX_MATRIX_2X2)
+      return "matrix_22";
+    if (type == EX_MATRIX_3X3)
+      return "matrix_33";
+    if (type == EX_FIELD_TYPE_SEQUENCE)
+      return "Real";
+    if (type == EX_BASIS)
+      return "Basis";
+    if (type == EX_QUADRATURE)
+      return "Quadrature";
+    return "invalid";
+  }
+
+  ex_field_type map_ioss_field_type(const Ioss::VariableType *type)
+  {
+    if (type->name() == "vector_2d")
+      return EX_VECTOR_2D;
+    if (type->name() == "vector_3d")
+      return EX_VECTOR_3D;
+    if (type->name() == "scalar")
+      return EX_SCALAR;
+    if (type->name() == "vector_1d")
+      return EX_VECTOR_1D;
+    if (type->name() == "quaternion_2d")
+      return EX_QUATERNION_2D;
+    if (type->name() == "quaternion_3d")
+      return EX_QUATERNION_3D;
+    if (type->name() == "full_tensor_36")
+      return EX_FULL_TENSOR_36;
+    if (type->name() == "full_tensor_32")
+      return EX_FULL_TENSOR_32;
+    if (type->name() == "full_tensor_22")
+      return EX_FULL_TENSOR_22;
+    if (type->name() == "full_tensor_16")
+      return EX_FULL_TENSOR_16;
+    if (type->name() == "full_tensor_12")
+      return EX_FULL_TENSOR_12;
+    if (type->name() == "sym_tensor_33")
+      return EX_SYM_TENSOR_33;
+    if (type->name() == "sym_tensor_31")
+      return EX_SYM_TENSOR_31;
+    if (type->name() == "sym_tensor_21")
+      return EX_SYM_TENSOR_21;
+    if (type->name() == "sym_tensor_13")
+      return EX_SYM_TENSOR_13;
+    if (type->name() == "sym_tensor_11")
+      return EX_SYM_TENSOR_11;
+    if (type->name() == "sym_tensor_10")
+      return EX_SYM_TENSOR_10;
+    if (type->name() == "asym_tensor_03")
+      return EX_ASYM_TENSOR_03;
+    if (type->name() == "asym_tensor_02")
+      return EX_ASYM_TENSOR_02;
+    if (type->name() == "asym_tensor_01")
+      return EX_ASYM_TENSOR_01;
+    if (type->name() == "matrix_22")
+      return EX_MATRIX_2X2;
+    if (type->name() == "matrix_33")
+      return EX_MATRIX_3X3;
+
+    if (Ioss::Utils::substr_equal("Real", type->name()))
+      return EX_FIELD_TYPE_SEQUENCE;
+
+    // This may be a basis, quadratur, or user type...
+    auto nsvt = dynamic_cast<const Ioss::NamedSuffixVariableType *>(type);
+    if (nsvt != nullptr) {
+      return EX_FIELD_TYPE_USER_DEFINED;
+    }
+    auto bvt = dynamic_cast<const Ioss::BasisVariableType *>(type);
+    if (bvt != nullptr) {
+      return EX_BASIS;
+    }
+    auto qvt = dynamic_cast<const Ioss::QuadratureVariableType *>(type);
+    if (qvt != nullptr) {
+      return EX_QUADRATURE;
+    }
+
+    return EX_FIELD_TYPE_INVALID;
   }
 
   Ioss::EntityType map_exodus_type(ex_entity_type type)
@@ -137,6 +261,62 @@ namespace Ioex {
     }
   }
 
+  int read_exodus_basis(int exoid)
+  {
+    auto bas_cnt = ex_get_basis_count(exoid);
+    if (bas_cnt == 0) {
+      return 0;
+    }
+    std::vector<ex_basis> exo_basis(bas_cnt);
+    auto                 *pbasis = Data(exo_basis);
+    ex_get_basis(exoid, &pbasis, &bas_cnt);
+
+    for (const auto &ebasis : exo_basis) {
+      Ioss::Basis basis;
+      for (int i = 0; i < ebasis.cardinality; i++) {
+        Ioss::BasisComponent bc{
+            ebasis.subc_dim[i],     ebasis.subc_ordinal[i], ebasis.subc_dof_ordinal[i],
+            ebasis.subc_num_dof[i], ebasis.xi[i],           ebasis.eta[i],
+            ebasis.zeta[i]};
+        basis.basies.push_back(bc);
+      }
+      Ioss::VariableType::create_basis_type(ebasis.name, basis);
+    }
+
+    // deallocate any memory allocated in the 'ex_basis' structs.
+    ex_initialize_basis_struct(Data(exo_basis), exo_basis.size(), -1);
+
+    return bas_cnt;
+  }
+
+  int read_exodus_quadrature(int exoid)
+  {
+    auto quad_cnt = ex_get_quadrature_count(exoid);
+    if (quad_cnt == 0) {
+      return quad_cnt;
+    }
+
+    std::vector<ex_quadrature> exo_quadrature(quad_cnt);
+    auto                      *pquad = Data(exo_quadrature);
+    ex_get_quadrature(exoid, &pquad, &quad_cnt);
+
+    for (const auto &equadrature : exo_quadrature) {
+      std::vector<Ioss::QuadraturePoint> quadrature;
+      quadrature.reserve(equadrature.cardinality);
+      for (int i = 0; i < equadrature.cardinality; i++) {
+        Ioss::QuadraturePoint q{equadrature.xi[i], equadrature.eta[i], equadrature.zeta[i],
+                                equadrature.weight[i]};
+        quadrature.push_back(q);
+      }
+      Ioss::VariableType::create_quadrature_type(equadrature.name, quadrature);
+    }
+
+    // deallocate any memory allocated in the 'ex_quadrature' structs.
+    ex_initialize_quadrature_struct(Data(exo_quadrature), exo_quadrature.size(), -1);
+
+    return quad_cnt;
+  }
+
   ex_entity_type map_exodus_type(Ioss::EntityType type)
   {
     switch (type) {
@@ -156,6 +336,59 @@ namespace Ioex {
     case Ioss::COMMSET: return static_cast<ex_entity_type>(0);
     default: return EX_INVALID;
     }
+  }
+
+  char **get_name_array(size_t count, int size)
+  {
+    auto *names = new char *[count];
+    for (size_t i = 0; i < count; i++) {
+      names[i] = new char[size + 1];
+      std::memset(names[i], '\0', size + 1);
+    }
+    return names;
+  }
+
+  void delete_name_array(char **names, int count)
+  {
+    for (int i = 0; i < count; i++) {
+      delete[] names[i];
+    }
+    delete[] names;
+  }
+
+  Ioss::NameList get_variable_names(int nvar, int maximumNameLength, int exoid, ex_entity_type type)
+  {
+    char **names = get_name_array(nvar, maximumNameLength);
+    int    ierr  = ex_get_variable_names(exoid, type, nvar, names);
+    if (ierr < 0) {
+      Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
+    }
+
+    Ioss::NameList name_str;
+    name_str.reserve(nvar);
+    for (int i = 0; i < nvar; i++) {
+      name_str.emplace_back(names[i]);
+    }
+    delete_name_array(names, nvar);
+    return name_str;
+  }
+
+  Ioss::NameList get_reduction_variable_names(int nvar, int maximumNameLength, int exoid,
+                                              ex_entity_type type)
+  {
+    char **names = get_name_array(nvar, maximumNameLength);
+    int    ierr  = ex_get_reduction_variable_names(exoid, type, nvar, names);
+    if (ierr < 0) {
+      Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
+    }
+
+    Ioss::NameList name_str;
+    name_str.reserve(nvar);
+    for (int i = 0; i < nvar; i++) {
+      name_str.emplace_back(names[i]);
+    }
+    delete_name_array(names, nvar);
+    return name_str;
   }
 
   bool read_last_time_attribute(int exodusFilePtr, double *value)
@@ -534,7 +767,7 @@ namespace Ioex {
     }
 
     // Get the names of the maps...
-    char **names = Ioss::Utils::get_name_array(map_count, name_length);
+    char **names = get_name_array(map_count, name_length);
     int    ierr  = ex_get_names(exoid, EX_ELEM_MAP, names);
     if (ierr < 0) {
       Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
@@ -584,7 +817,7 @@ namespace Ioex {
       i = ii - 1;
     }
 
-    Ioss::Utils::delete_name_array(names, map_count);
+    delete_name_array(names, map_count);
     return map_count;
   }
 

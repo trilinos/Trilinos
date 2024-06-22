@@ -8,6 +8,9 @@
 
 #include "Ioss_CodeTypes.h"
 #include <cstddef> // for size_t
+#if !defined BUILT_IN_SIERRA
+#include <fmt/ostream.h>
+#endif
 #include <stdint.h>
 #include <string> // for string
 #include <vector> // for vector
@@ -108,6 +111,9 @@ namespace Ioss {
     Field(std::string name, BasicType type, const std::string &storage, int copies, RoleType role,
           size_t value_count = 0, size_t index = 0);
 
+    Field(std::string name, BasicType type, const std::string &storage,
+          const std::string &secondary, RoleType role, size_t value_count = 0, size_t index = 0);
+
     Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
           size_t value_count = 0, size_t index = 0);
 
@@ -136,13 +142,17 @@ namespace Ioss {
                                                   char suffix = 1) const;
     IOSS_NODISCARD int         get_component_count(InOut in_out) const;
 
-    Field &set_suffix_separator(char suffix_separator)
+    Field &set_suffix_separator(char suffix_separator1, char suffix_separator2 = 2)
     {
-      suffixSeparator_ = suffix_separator;
+      suffixSeparator1_ = suffix_separator1;
+      suffixSeparator2_ = suffix_separator2 == 2 ? suffix_separator1 : suffix_separator2;
       return *this;
     }
-    IOSS_NODISCARD char get_suffix_separator() const { return suffixSeparator_; }
-    Field              &set_suffices_uppercase(bool true_false)
+    IOSS_NODISCARD char get_suffix_separator(int index = 0) const
+    {
+      return index == 0 ? suffixSeparator1_ : suffixSeparator2_;
+    }
+    Field &set_suffices_uppercase(bool true_false)
     {
       sufficesUppercase_ = true_false;
       return *this;
@@ -228,10 +238,22 @@ namespace Ioss {
     const VariableType *transStorage_{nullptr}; // Storage type after transformation
 
     std::vector<Transform *> transforms_{};
-    char                     suffixSeparator_{1}; // Value = 1 means unset; use database default.
+    char                     suffixSeparator1_{1}; // Value = 1 means unset; use database default.
+    char                     suffixSeparator2_{1}; // Value = 1 means unset; use database default.
     bool         sufficesUppercase_{false}; // True if the suffices are uppercase on database...
     mutable bool zeroCopyable_{false};      // True if the field is zero-copyable.
 
     bool equal_(const Ioss::Field &rhs, bool quiet) const;
   };
+  IOSS_EXPORT std::ostream &operator<<(std::ostream &os, const Field &fld);
 } // namespace Ioss
+
+#if !defined BUILT_IN_SIERRA
+#if FMT_VERSION >= 90000
+namespace fmt {
+  template <> struct formatter<Ioss::Field> : ostream_formatter
+  {
+  };
+} // namespace fmt
+#endif
+#endif

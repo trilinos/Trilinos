@@ -1098,7 +1098,8 @@ namespace Tpetra {
   template Teuchos::RCP<BlockCrsMatrix<S, LO, GO, NODE> > convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize, bool use_LID); \
   template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > fillLogicalBlocks(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize); \
   template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > unfillFormerBlockCrs(const CrsMatrix<S, LO, GO, NODE>& pointMatrix); \
-  template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > convertToCrsMatrix(const BlockCrsMatrix<S, LO, GO, NODE>& blockMatrix);
+  template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > convertToCrsMatrix(const BlockCrsMatrix<S, LO, GO, NODE>& blockMatrix); \
+  template Teuchos::RCP<CrsGraph<LO, GO, NODE>> getBlockCrsGraph(const Tpetra::CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize, bool use_local_ID);
 
 //
 // Explicit instantiation macro for createMeshMap / createPointMap

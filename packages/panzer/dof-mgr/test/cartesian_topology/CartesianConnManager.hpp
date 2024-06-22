@@ -53,8 +53,7 @@
 #include "Shards_BasicTopologies.hpp"
 
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
 /** This class is used to construct the topology of a mesh that is cartesian. The coordinates
   * and ordinals follow the right hand rule in both 2D and 3D. Thus the indices look like
@@ -82,7 +81,9 @@ namespace unit_test {
   */
 class CartesianConnManager : public virtual panzer::ConnManager {
 public:
+   using connectivity_entries_host_view_type = Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace>;
 
+public:
    // A utility structure for storing triplet indices
    template <typename T>
    struct Triplet {
@@ -93,7 +94,7 @@ public:
 
    CartesianConnManager() {isInitialized = false, areBoundarySidesBuilt = false;}
 
-   ~CartesianConnManager() {}
+   ~CartesianConnManager() = default;
 
    /** Initialize a 2D topology.
      *
@@ -203,7 +204,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const { return &connectivity_[localElmtId][0]; }
+   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const { return connectivity_.data() + localElmtId*numIds_; }
 
    /** How many mesh IDs are associated with this element?
      *
@@ -212,7 +213,7 @@ public:
      * \returns Number of mesh IDs that are associated with this element.
      */
    virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const
-   { return Teuchos::as<LocalOrdinal>(connectivity_[localElmtId].size()); }
+   { return numIds_; }
 
 
    /** Get the block ID for a particular element.
@@ -274,13 +275,13 @@ private:
    // here using the i,j,k index of the local element. Also, this is where the ordering
    // of a cell is embedded into the system.
    void updateConnectivity_2d(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
-                             std::vector<GlobalOrdinal> & conn) const;
+                              LocalOrdinal& offset) const;
 
    // Update the connectivity vector with the field pattern. The connectivity is specified
    // here using the i,j,k index of the local element. Also, this is where the ordering
    // of a cell is embedded into the system.
    void updateConnectivity_3d(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
-                             std::vector<GlobalOrdinal> & conn) const;
+                              LocalOrdinal& offset) const;
 
    int numProc_;
    int myRank_;
@@ -298,7 +299,8 @@ private:
    std::map<std::string,std::vector<LocalOrdinal> > localElements_;
 
    // element vector to connectivity
-   std::vector<std::vector<GlobalOrdinal> > connectivity_;
+   connectivity_entries_host_view_type connectivity_;
+   int numIds_;
 
    GlobalOrdinal totalNodes_;
    GlobalOrdinal totalEdges_;
@@ -331,7 +333,6 @@ private:
 
 };
 
-} // end unit test
-} // end panzer
+} // namespace panzer::unit_test
 
-#endif
+#endif // __CartesianConnManager_hpp__

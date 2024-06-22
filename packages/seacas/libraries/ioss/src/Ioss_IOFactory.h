@@ -24,7 +24,7 @@ namespace Ioss {
 
   class IOFactory;
 
-  using NameList     = std::vector<std::string>;
+  using NameList     = Ioss::NameList;
   using IOFactoryMap = std::map<std::string, IOFactory *, std::less<>>;
 
   class DatabaseIO;

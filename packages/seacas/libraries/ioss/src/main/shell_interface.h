@@ -59,6 +59,11 @@ namespace IOShell {
     //! If non-empty, then it is a list of times that should be transferred to the output file.
     std::vector<double> selected_times{};
 
+    //! If non-empty, then it is a list of element blocks, nodesets,
+    //! sidesets that should be omitted from the output file
+    std::vector<std::string> omitted_blocks{};
+    std::vector<std::string> omitted_sets{};
+
     //! If non-zero, then put `split_times` timesteps in each file. Then close file and start new
     //! file.
     // If `split_cyclic == 0`, then filenames will be
@@ -108,6 +113,7 @@ namespace IOShell {
     bool ignore_face_map{false};
     bool delete_qa{false};
     bool delete_info{false};
+    bool line_decomp{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

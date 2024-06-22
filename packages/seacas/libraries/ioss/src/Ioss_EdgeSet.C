@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -54,4 +54,4 @@ Ioss::Property Ioss::EdgeSet::get_implicit_property(const std::string &my_name) 
   return Ioss::EntitySet::get_implicit_property(my_name);
 }
 
-void Ioss::EdgeSet::block_membership(std::vector<std::string> & /*block_members*/) {}
+void Ioss::EdgeSet::block_membership(Ioss::NameList & /*block_members*/) {}

@@ -356,7 +356,7 @@ namespace Iogs {
      */
     virtual void sideset_elem_sides(int64_t id, Ioss::Int64Vector &elem_sides) const;
 
-    IOSS_NODISCARD virtual std::vector<std::string> sideset_touching_blocks(int64_t set_id) const;
+    IOSS_NODISCARD virtual Ioss::NameList sideset_touching_blocks(int64_t set_id) const;
 
     IOSS_NODISCARD int64_t get_num_x() const { return numX; }
     IOSS_NODISCARD int64_t get_num_y() const { return numY; }
@@ -376,7 +376,7 @@ namespace Iogs {
     GeneratedMesh &operator=(const GeneratedMesh &);
 
     void set_variable_count(const std::string &type, size_t count);
-    void parse_options(const std::vector<std::string> &groups);
+    void parse_options(const Ioss::NameList &groups);
     void show_parameters() const;
     void initialize();
 

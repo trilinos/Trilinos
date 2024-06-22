@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,11 +29,11 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
 static int  put_truth_table(int exoid, int varid, int *table, const char *label);
 static int  define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, int num_var,
                                int *var_tab, int *status_tab, void_int *ids, const char *label);
-static int  ex_define_vars(int exoid, ex_entity_type obj_type, const char *entity_name,
-                           const char *entity_blk_name, int numvar, const char *DNAME, int dimid1,
-                           int dimid2, int DVAL, void_int **entity_ids, const char *VNOV,
-                           const char *VTV, int **status_var, int *truth_table,
-                           int *truth_table_var);
+static int  exi_define_vars(int exoid, ex_entity_type obj_type, const char *entity_name,
+                            const char *entity_blk_name, int numvar, const char *DNAME, int dimid1,
+                            int dimid2, int DVAL, void_int **entity_ids, const char *VNOV,
+                            const char *VTV, int **status_var, int *truth_table,
+                            int *truth_table_var);
 
 #define EX_GET_IDS_STATUS(TNAME, NUMVAR, DNAME, DID, DVAL, VIDS, EIDS, VSTAT, VSTATVAL)            \
   if (NUMVAR > 0) {                                                                                \
@@ -200,52 +200,53 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
     }
   }
 
-  if (ex_define_vars(exoid, EX_EDGE_BLOCK, "edge", "edge block", vp->num_edge, DIM_NUM_EDG_VAR,
-                     numedblkdim, numedvardim, num_edge_blk, &edblk_ids, VAR_NAME_EDG_VAR,
-                     VAR_EBLK_TAB, &edblk_stat, vp->edge_var_tab, &edblk_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_EDGE_BLOCK, "edge", "edge block", vp->num_edge, DIM_NUM_EDG_VAR,
+                      numedblkdim, numedvardim, num_edge_blk, &edblk_ids, VAR_NAME_EDG_VAR,
+                      VAR_EBLK_TAB, &edblk_stat, vp->edge_var_tab, &edblk_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if (ex_define_vars(exoid, EX_FACE_BLOCK, "face", "face block", vp->num_face, DIM_NUM_FAC_VAR,
-                     numfablkdim, numfavardim, num_face_blk, &fablk_ids, VAR_NAME_FAC_VAR,
-                     VAR_FBLK_TAB, &fablk_stat, vp->face_var_tab, &fablk_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_FACE_BLOCK, "face", "face block", vp->num_face, DIM_NUM_FAC_VAR,
+                      numfablkdim, numfavardim, num_face_blk, &fablk_ids, VAR_NAME_FAC_VAR,
+                      VAR_FBLK_TAB, &fablk_stat, vp->face_var_tab, &fablk_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if (ex_define_vars(exoid, EX_ELEM_BLOCK, "element", "element block", vp->num_elem,
-                     DIM_NUM_ELE_VAR, numelblkdim, numelvardim, num_elem_blk, &eblk_ids,
-                     VAR_NAME_ELE_VAR, VAR_ELEM_TAB, &eblk_stat, vp->elem_var_tab,
-                     &eblk_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_ELEM_BLOCK, "element", "element block", vp->num_elem,
+                      DIM_NUM_ELE_VAR, numelblkdim, numelvardim, num_elem_blk, &eblk_ids,
+                      VAR_NAME_ELE_VAR, VAR_ELEM_TAB, &eblk_stat, vp->elem_var_tab,
+                      &eblk_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if (ex_define_vars(exoid, EX_NODE_SET, "nodeset", "node set", vp->num_nset, DIM_NUM_NSET_VAR,
-                     numnsetdim, nsetvardim, num_nset, &nset_ids, VAR_NAME_NSET_VAR, VAR_NSET_TAB,
-                     &nset_stat, vp->nset_var_tab, &nset_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_NODE_SET, "nodeset", "node set", vp->num_nset, DIM_NUM_NSET_VAR,
+                      numnsetdim, nsetvardim, num_nset, &nset_ids, VAR_NAME_NSET_VAR, VAR_NSET_TAB,
+                      &nset_stat, vp->nset_var_tab, &nset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if (ex_define_vars(exoid, EX_EDGE_SET, "edgeset", "edge set", vp->num_eset, DIM_NUM_ESET_VAR,
-                     numesetdim, esetvardim, num_eset, &eset_ids, VAR_NAME_ESET_VAR, VAR_ESET_TAB,
-                     &eset_stat, vp->eset_var_tab, &eset_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_EDGE_SET, "edgeset", "edge set", vp->num_eset, DIM_NUM_ESET_VAR,
+                      numesetdim, esetvardim, num_eset, &eset_ids, VAR_NAME_ESET_VAR, VAR_ESET_TAB,
+                      &eset_stat, vp->eset_var_tab, &eset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if (ex_define_vars(exoid, EX_FACE_SET, "faceset", "face set", vp->num_fset, DIM_NUM_FSET_VAR,
-                     numfsetdim, fsetvardim, num_fset, &fset_ids, VAR_NAME_FSET_VAR, VAR_FSET_TAB,
-                     &fset_stat, vp->fset_var_tab, &fset_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_FACE_SET, "faceset", "face set", vp->num_fset, DIM_NUM_FSET_VAR,
+                      numfsetdim, fsetvardim, num_fset, &fset_ids, VAR_NAME_FSET_VAR, VAR_FSET_TAB,
+                      &fset_stat, vp->fset_var_tab, &fset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if (ex_define_vars(exoid, EX_SIDE_SET, "sideset", "side set", vp->num_sset, DIM_NUM_SSET_VAR,
-                     numssetdim, ssetvardim, num_sset, &sset_ids, VAR_NAME_SSET_VAR, VAR_SSET_TAB,
-                     &sset_stat, vp->sset_var_tab, &sset_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_SIDE_SET, "sideset", "side set", vp->num_sset, DIM_NUM_SSET_VAR,
+                      numssetdim, ssetvardim, num_sset, &sset_ids, VAR_NAME_SSET_VAR, VAR_SSET_TAB,
+                      &sset_stat, vp->sset_var_tab, &sset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
-  if (ex_define_vars(exoid, EX_ELEM_SET, "elemset", "element set", vp->num_elset, DIM_NUM_ELSET_VAR,
-                     numelsetdim, elsetvardim, num_elset, &elset_ids, VAR_NAME_ELSET_VAR,
-                     VAR_ELSET_TAB, &elset_stat, vp->elset_var_tab, &elset_varid) != EX_NOERR) {
+  if (exi_define_vars(exoid, EX_ELEM_SET, "elemset", "element set", vp->num_elset,
+                      DIM_NUM_ELSET_VAR, numelsetdim, elsetvardim, num_elset, &elset_ids,
+                      VAR_NAME_ELSET_VAR, VAR_ELSET_TAB, &elset_stat, vp->elset_var_tab,
+                      &elset_varid) != EX_NOERR) {
     goto error_ret;
   }
 
@@ -517,10 +518,11 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
   return NC_NOERR;
 }
 
-static int ex_define_vars(int exoid, ex_entity_type obj_type, const char *entity_name,
-                          const char *entity_blk_name, int numvar, const char *DNAME, int dimid1,
-                          int dimid2, int DVAL, void_int **entity_ids, const char *VNOV,
-                          const char *VTV, int **status_var, int *truth_table, int *truth_table_var)
+static int exi_define_vars(int exoid, ex_entity_type obj_type, const char *entity_name,
+                           const char *entity_blk_name, int numvar, const char *DNAME, int dimid1,
+                           int dimid2, int DVAL, void_int **entity_ids, const char *VNOV,
+                           const char *VTV, int **status_var, int *truth_table,
+                           int *truth_table_var)
 {
   if (numvar > 0) {
     int status;

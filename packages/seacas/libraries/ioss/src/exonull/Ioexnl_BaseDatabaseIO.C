@@ -62,8 +62,6 @@ namespace {
                                             EX_NODE_SET, EX_EDGE_SET, EX_FACE_SET, EX_ELEM_SET,
                                             EX_SIDE_SET});
 
-  const size_t max_line_length = MAX_LINE_LENGTH;
-
   void check_variable_consistency(const ex_var_params &exo_params, int my_processor,
                                   const std::string &filename, const Ioss::ParallelUtils &util);
 
@@ -71,6 +69,25 @@ namespace {
 
   template <typename T>
   void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T *> &entities);
+
+  char **get_name_array(size_t count, int size)
+  {
+    auto *names = new char *[count];
+    for (size_t i = 0; i < count; i++) {
+      names[i] = new char[size + 1];
+      std::memset(names[i], '\0', size + 1);
+    }
+    return names;
+  }
+
+  void delete_name_array(char **names, int count)
+  {
+    for (int i = 0; i < count; i++) {
+      delete[] names[i];
+    }
+    delete[] names;
+  }
+
 } // namespace
 
 namespace Ioexnl {
@@ -266,67 +283,7 @@ namespace Ioexnl {
   }
 
   // common
-  void BaseDatabaseIO::put_info()
-  {
-    int    total_lines = 0;
-    char **info        = nullptr;
-
-    if (!using_parallel_io() || myProcessor == 0) {
-      // dump info records, include the product_registry
-      // See if the input file was specified as a property on the database...
-      std::vector<std::string> input_lines;
-      if (get_region()->property_exists("input_file_name")) {
-        std::string filename = get_region()->get_property("input_file_name").get_string();
-        // Determine size of input file so can embed it in info records...
-        Ioss::Utils::input_file(filename, &input_lines, max_line_length);
-      }
-
-      // Get configuration information for IOSS library.
-      // Split into strings and remove empty lines...
-      std::string config = Ioss::IOFactory::show_configuration();
-      std::replace(std::begin(config), std::end(config), '\t', ' ');
-      auto lines = Ioss::tokenize(config, "\n");
-      lines.erase(std::remove_if(lines.begin(), lines.end(),
-                                 [](const std::string &line) { return line.empty(); }),
-                  lines.end());
-
-      // See if the client added any "information_records"
-      size_t info_rec_size = informationRecords.size();
-      size_t in_lines      = input_lines.size();
-      size_t qa_lines      = 1; // Platform info
-      size_t config_lines  = lines.size();
-
-      total_lines = in_lines + qa_lines + info_rec_size + config_lines;
-
-      // 'total_lines' pointers to char buffers
-      info = Ioss::Utils::get_name_array(total_lines, max_line_length);
-
-      int i = 0;
-      Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information(), max_line_length + 1);
-
-      // Copy input file lines into 'info' array...
-      for (size_t j = 0; j < input_lines.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], input_lines[j], max_line_length + 1);
-      }
-
-      // Copy "information_records" property data ...
-      for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], informationRecords[j], max_line_length + 1);
-      }
-
-      for (size_t j = 0; j < lines.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], lines[j], max_line_length + 1);
-      }
-    }
-
-    if (using_parallel_io()) {
-      util().broadcast(total_lines);
-    }
-
-    if (!using_parallel_io() || myProcessor == 0) {
-      Ioss::Utils::delete_name_array(info, total_lines);
-    }
-  }
+  void BaseDatabaseIO::put_info() {}
 
   // common
   int BaseDatabaseIO::get_current_state() const
@@ -423,8 +380,8 @@ namespace Ioexnl {
   }
 
   // common
-  void BaseDatabaseIO::compute_block_membership_nl(Ioss::SideBlock          *efblock,
-                                                   std::vector<std::string> &block_membership) const
+  void BaseDatabaseIO::compute_block_membership_nl(Ioss::SideBlock *efblock,
+                                                   Ioss::NameList  &block_membership) const
   {
     const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
@@ -1046,7 +1003,7 @@ namespace Ioexnl {
 
   void BaseDatabaseIO::finalize_write(int, double) {}
 
-  void BaseDatabaseIO::common_write_meta_data(Ioss::IfDatabaseExistsBehavior behavior)
+  void BaseDatabaseIO::common_write_metadata(Ioss::IfDatabaseExistsBehavior behavior)
   {
     Ioss::Region *region = get_region();
 
@@ -1280,7 +1237,7 @@ namespace Ioexnl {
     }
   }
 
-  void BaseDatabaseIO::output_other_meta_data()
+  void BaseDatabaseIO::output_other_metadata()
   {
     // Write attribute names (if any)...
     write_attribute_names(get_file_pointer(), EX_NODE_SET, get_region()->get_nodesets());
@@ -1356,7 +1313,7 @@ namespace Ioexnl {
     }
 
     if (node_map_cnt > 0) {
-      char **names = Ioss::Utils::get_name_array(node_map_cnt, maximumNameLength);
+      char **names = get_name_array(node_map_cnt, maximumNameLength);
       auto  *node_block =
           get_region()->get_node_blocks()[0]; // If there are node_maps, then there is a node_block
       auto node_map_fields = node_block->field_describe(Ioss::Field::MAP);
@@ -1373,11 +1330,11 @@ namespace Ioexnl {
           }
         }
       }
-      Ioss::Utils::delete_name_array(names, node_map_cnt);
+      delete_name_array(names, node_map_cnt);
     }
 
     if (elem_map_cnt > 0) {
-      char **names = Ioss::Utils::get_name_array(elem_map_cnt, maximumNameLength);
+      char **names = get_name_array(elem_map_cnt, maximumNameLength);
       for (const auto &field_name : elem_map_fields) {
         // Now, we need to find an element block that has this field...
         for (const auto &block : blocks) {
@@ -1405,7 +1362,7 @@ namespace Ioexnl {
           }
         }
       }
-      Ioss::Utils::delete_name_array(names, elem_map_cnt);
+      delete_name_array(names, elem_map_cnt);
     }
 
     // Write coordinate frame data...
@@ -1428,8 +1385,8 @@ namespace {
 
         check_attribute_index_order(ge);
 
-        std::vector<char *>      names(attribute_count);
-        std::vector<std::string> names_str(attribute_count);
+        std::vector<char *> names(attribute_count);
+        Ioss::NameList      names_str(attribute_count);
 
         // Get the attribute fields...
         Ioss::NameList results_fields = ge->field_describe(Ioss::Field::ATTRIBUTE);

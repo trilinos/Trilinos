@@ -65,13 +65,13 @@ C      --Reset to none selected unless ADD
          IF (FFMATC (IFLD, INTYP, CFIELD, 'ADD', 3)) THEN
             CALL FFADDC ('ADD', INLINE)
          ELSE
+            NUMSEL = 0
             IF (.NOT. FFNUMB (IFLD, INTYP)) THEN
                ERRMSG =
      &            'Expected "OFF" or "ADD" or ' // SELMSG // ' range'
                CALL PRTERR ('CMDERR', ERRMSG(:LENSTR(ERRMSG)))
                GOTO 130
             END IF
-            NUMSEL = 0
          END IF
 
   110    CONTINUE
