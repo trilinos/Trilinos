@@ -43,3 +43,12 @@ very quickly, so this should not negatively impact the CI testing process.
 
 See more detailed comments in the file `./CMakeLists.txt` where the tests are
 defined.
+
+## Copyright and License
+See TrilinosInstallTests/COPYRIGHT, TrilinosInstallTests/LICENSE, https://trilinos.github.io/license.html and individual file headers for additional information.
+
+## Questions? 
+Contact lead developers:
+
+* Framework team   (GitHub handle: @trilinos/framework)
+* Sam Browne       (GitHub handle: [sebrowne](https://github.com/sebrowne) or sebrown@sandia.gov)
