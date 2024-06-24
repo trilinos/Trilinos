@@ -1,46 +1,11 @@
 /*
 //@HEADER
-// ************************************************************************
+// *****************************************************************************
+//                        Adelus
 //
-//                        Adelus v. 1.0
-//       Copyright (2020) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of NTESS nor the names of the contributors may be
-// used to endorse or promote products derived from this software without
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-// IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Vinh Dang (vqdang@sandia.gov)
-//                    Joseph Kotulski (jdkotul@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2020 NTESS and the Adelus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 //@HEADER
 */
 
@@ -59,7 +24,7 @@
 namespace Adelus {
 
   template<class HandleType, class PViewType>
-  inline 
+  inline
   void exchange_pivots(HandleType& ahandle, PViewType& lpiv_view, PViewType& permute) {
 
     using pival_type  = typename PViewType::value_type;
@@ -87,7 +52,7 @@ namespace Adelus {
           if (me == rank_row) {//I am the right process to do
             int j=k/nprocs_row;
             int i=k/nprocs_col;
-            permute(i) = lpiv_view(j); 
+            permute(i) = lpiv_view(j);
           }
         }
         else {//on different ranks
@@ -96,7 +61,7 @@ namespace Adelus {
             MPI_Send(reinterpret_cast<char*>(lpiv_view.data()+j),sizeof(pival_type),MPI_CHAR,rank_row,0,comm);
           }
           if (me == rank_row) {
-            int i=k/nprocs_col; 
+            int i=k/nprocs_col;
             MPI_Recv(reinterpret_cast<char*>(permute.data()+i),sizeof(pival_type),MPI_CHAR,pivot_col,0,comm,&msgstatus);
           }
         }
@@ -107,7 +72,7 @@ namespace Adelus {
     MPI_Bcast(reinterpret_cast<char*>(permute.data()),my_rows*sizeof(pival_type),MPI_CHAR,0,row_comm);
 
   }// End of function exchange_pivots
-  
+
   template<class HandleType, class ZViewType, class PViewType>
   inline
   void permute_mat(HandleType& ahandle, ZViewType& Z, PViewType& lpiv_view, PViewType& permute) {
@@ -290,7 +255,7 @@ namespace Adelus {
     showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Time to exchange pivot information", &exchpivtime);
     showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
-             "Time to permute matrix", &permutemattime);    
+             "Time to permute matrix", &permutemattime);
 #endif
   }// End of function permute_mat
 
