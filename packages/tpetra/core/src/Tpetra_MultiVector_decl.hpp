@@ -1466,13 +1466,31 @@ namespace Tpetra {
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev::const_type getLocalViewDevice(Access::ReadOnlyStruct) const;
 
+    /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
+    /// This requires that there are no live host-space views. 
+    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
+    /// can lead to errors.
+    typename dual_view_type::t_dev::const_type getLocalViewDevice(const execution_space & exec, Access::ReadOnlyStruct) const;
+    
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::ReadWriteStruct);
 
+    /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
+    /// This requires that there are no live host-space views.
+    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
+    /// can lead to errors.    
+    typename dual_view_type::t_dev getLocalViewDevice(const execution_space & exec,Access::ReadWriteStruct);
+    
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
+
+    /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
+    /// This requires that there are no live host-space views.
+    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
+    /// can lead to errors.    
+    typename dual_view_type::t_dev getLocalViewDevice(const execution_space & exec, Access::OverwriteAllStruct);    
 
     /// \brief Return the wrapped dual view holding this MultiVector's local data.
     ///
