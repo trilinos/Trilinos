@@ -65,6 +65,8 @@ namespace Teko {
   \code
        <Parameter name="Type" type="string" value="Diagnostic Inverse"/>
        <Parameter name="Inverse Factory" type="string" value="<Some Inverse Factory>"/>
+       <!-- Optional, use if Inverse Factory is an iterative solver, e.g. -->
+       <Parameter name="Preconditioner Factory" type="string" value="<Some Other Inverse Factory>"/>
        <Parameter name="Descriptive Label" type="string" value="<Some Label>"/>
        <Parameter name="Print Residual" type="bool" value="false"/>
   \endcode
@@ -81,6 +83,19 @@ class DiagnosticPreconditionerFactory : public virtual Teko::PreconditionerFacto
    * \param[in] label      Label to give to factory and operator
    */
   DiagnosticPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory>& invFactory,
+                                  const std::string& label,
+                                  const Teuchos::RCP<std::ostream>& os = Teuchos::null,
+                                  bool printResidual                   = false);
+
+  /** Construct a preconditioner factory that prints diagnostics about
+   * a particualar inverse operator.
+   *
+   * \param[in] invFactory  Factory and operator to use diagnostics
+   * \param[in] precFactory Preconditioner for invFactory, if applicable
+   * \param[in] label       Label to give to factory and operator
+   */
+  DiagnosticPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory>& invFactory,
+                                  const Teuchos::RCP<Teko::InverseFactory>& precFactory,
                                   const std::string& label,
                                   const Teuchos::RCP<std::ostream>& os = Teuchos::null,
                                   bool printResidual                   = false);
@@ -148,22 +163,26 @@ class DiagnosticPreconditionerFactory : public virtual Teko::PreconditionerFacto
   //@}
 
   int numInitialBuilds() const { return buildTimer_->numCalls(); }
-  double totalInitialBuildTime() const { return buildTimer_->totalElapsedTime(); }
+  double totalInitialBuildTime() const;
 
   int numRebuilds() const { return rebuildTimer_->numCalls(); }
-  double totalRebuildTime() const { return rebuildTimer_->totalElapsedTime(); }
+  double totalRebuildTime() const;
 
  private:
   void initTimers(const std::string& label);
 
   Teuchos::RCP<std::ostream> outputStream_;
   Teuchos::RCP<Teko::InverseFactory> invFactory_;
+  Teuchos::RCP<Teko::InverseFactory> precFactory_;
   std::string diagString_;
   bool printResidual_;
 
   mutable Teuchos::RCP<Teuchos::Time>
       buildTimer_;  // only first pass construction time (no rebuild)
+  mutable Teuchos::RCP<Teuchos::Time>
+      precBuildTimer_;  // only first pass construction time (no rebuild)
   mutable Teuchos::RCP<Teuchos::Time> rebuildTimer_;  // rebuild-construction timer (no build)
+  mutable Teuchos::RCP<Teuchos::Time> precRebuildTimer_;  // rebuild-construction timer (no build)
 };
 
 }  // end namespace Teko
