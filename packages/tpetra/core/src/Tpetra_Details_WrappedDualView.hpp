@@ -107,9 +107,9 @@ sync_host(DualViewType dualView) {
   dualView.sync_host();
 }
 
-template <typename ExecSpace, typename DualViewType>
+template <typename DualViewType>
 enableIfNonConstData<DualViewType>
-sync_host(const ExecSpace& exec, DualViewType dualView) {
+sync_host(const typename DualViewType::t_host::execution_space& exec, DualViewType dualView) {
   // This will sync, but only if needed
   dualView.sync_host();
 }
@@ -118,9 +118,9 @@ template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_host(DualViewType dualView) { }
 
-template <typename ExecSpace,typename DualViewType>
+template <typename DualViewType>
 enableIfConstData<DualViewType>
-sync_host(DualViewType dualView) { } 
+sync_host(const typename DualViewType::t_host::execution_space& exec, DualViewType dualView) { } 
   
 /* sync_device functions */
 
@@ -128,23 +128,23 @@ template <typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_device(DualViewType dualView) {
   // This will sync, but only if needed
-    dualView.sync_device();
+  dualView.sync_device();
 }
     
-template <typename ExecSpace, typename DualViewType>
+template <typename DualViewType>
 enableIfNonConstData<DualViewType>
-sync_device(const ExecSpace& exec, DualViewType dualView) {
+sync_device(const typename DualViewType::t_dev::execution_space& exec, DualViewType dualView) {
   // This will sync, but only if needed
-    dualView.sync_device(exec);
+  dualView.sync_device(exec);
 }
 
 template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_device(DualViewType dualView) { }
 
-template <typename ExecSpace, typename DualViewType>
+template <typename DualViewType>
 enableIfConstData<DualViewType>
-sync_device(const ExecSpace& exec, DualViewType dualView) { }
+sync_device(const typename DualViewType::t_dev::execution_space& exec, DualViewType dualView) { }
 
   
 }// end namespace Impl
@@ -348,9 +348,8 @@ public:
     return dualView.view_device();
   }
   
-  template <typename ExecSpace>
   typename t_dev::const_type
-  getDeviceView(const ExecSpace& exec, Access::ReadOnlyStruct
+  getDeviceView(const typename DualViewType::t_dev::execution_space& exec, Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) const
   {
@@ -378,9 +377,8 @@ public:
     return dualView.view_device();
   }
 
-  template <typename ExecSpace>
   t_dev
-  getDeviceView(const ExecSpace& exec, Access::ReadWriteStruct
+  getDeviceView(const typename DualViewType::t_dev::execution_space& exec, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   )
   {
@@ -417,9 +415,8 @@ public:
   }
 
 
-  template <typename ExecSpace>
   t_dev
-  getDeviceView(const ExecSpace& exec,Access::OverwriteAllStruct s
+  getDeviceView(const typename DualViewType::t_dev::execution_space& exec, Access::OverwriteAllStruct s
     DEBUG_UVM_REMOVAL_ARGUMENT
   )
   {
@@ -456,9 +453,9 @@ public:
     return dualView.template view<TargetDeviceType>();
   }
 
-  template<class ExecSpace, class TargetDeviceType>
+  template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type
-  getView (const ExecSpace & exec, Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+  getView (const typename TargetDeviceType::execution_space & exec, Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
     using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type;
     using ReturnDeviceType = typename ReturnViewType::device_type;
     constexpr bool returnDevice = std::is_same<ReturnDeviceType, DeviceType>::value;
@@ -513,9 +510,9 @@ public:
   }
 
 
-  template<class ExecSpace,class TargetDeviceType>
+  template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
-  getView (const ExecSpace & exec,Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+  getView (const typename TargetDeviceType::execution_space & exec,Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
     using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type;
     using ReturnDeviceType = typename ReturnViewType::device_type;
     constexpr bool returnDevice = std::is_same<ReturnDeviceType, DeviceType>::value;
@@ -582,9 +579,9 @@ public:
   }
 
 
-  template<class ExecSpace, class TargetDeviceType>
+  template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
-  getView (const ExecSpace & exec, Access::OverwriteAllStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+  getView (const typename TargetDeviceType::execution_space & exec, Access::OverwriteAllStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
     using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type;
     using ReturnDeviceType = typename ReturnViewType::device_type;
     // Since nothing syncs here, the ExecSpace is meaningless
@@ -650,9 +647,8 @@ public:
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
-  template <typename ExecSpace>
   typename t_dev::const_type
-  getDeviceSubview(const ExecSpace & exec, int offset, int numEntries, Access::ReadOnlyStruct
+  getDeviceSubview(const typename DualViewType::t_dev::execution_space& exec, int offset, int numEntries, Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) const
   {
@@ -681,9 +677,8 @@ public:
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
-  template <class ExecSpace>
   t_dev
-  getDeviceSubview(const ExecSpace & exec, int offset, int numEntries, Access::ReadWriteStruct
+  getDeviceSubview(const typename DualViewType::t_dev::execution_space& exec, int offset, int numEntries, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   )
   {
@@ -709,9 +704,8 @@ public:
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
   }
 
-  template<typename ExecSpace>
   t_dev
-  getDeviceSubview(const ExecSpace& exec, int offset, int numEntries, Access::OverwriteAllStruct
+  getDeviceSubview(const typename DualViewType::t_dev::execution_space& exec, int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   )
   {
