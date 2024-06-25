@@ -82,8 +82,7 @@ DiagnosticPreconditionerFactory::DiagnosticPreconditionerFactory(
  */
 DiagnosticPreconditionerFactory::DiagnosticPreconditionerFactory(
     const Teuchos::RCP<Teko::InverseFactory>& invFactory,
-    const Teuchos::RCP<Teko::InverseFactory>& precFactory,
-    const std::string& label,
+    const Teuchos::RCP<Teko::InverseFactory>& precFactory, const std::string& label,
     const Teuchos::RCP<std::ostream>& os, bool printResidual)
     : outputStream_(Teko::getOutputStream()),
       invFactory_(invFactory),
@@ -173,17 +172,16 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(
           << "\")");
 
   // build user specified preconditioner
-  ModifiableLinearOp& diagOp_ptr = state.getModifiableOp("diagnosticOp");
+  ModifiableLinearOp& diagOp_ptr      = state.getModifiableOp("diagnosticOp");
   ModifiableLinearOp& diagOp_prec_ptr = state.getModifiableOp("prec_diagnosticOp");
 
   if (precFactory_ != Teuchos::null) {
     if (diagOp_prec_ptr == Teuchos::null) {
-
       {
         // start timer on construction, end on destruction
         Teuchos::TimeMonitor monitor(*precBuildTimer_, false);
 
-        diagOp_prec_ptr  = precFactory_->buildInverse(lo);
+        diagOp_prec_ptr = precFactory_->buildInverse(lo);
       }
 
       state.addModifiableOp("prec_diagnosticOp", diagOp_prec_ptr);
@@ -244,17 +242,16 @@ void DiagnosticPreconditionerFactory::initializeFromParameterList(
       "Parameter \"Descriptive Label\" is required by a Teko::DiagnosticPreconditionerFactory");
 
   // grab library and preconditioner name
-  std::string invName = settings.get<std::string>("Inverse Factory");
+  std::string invName  = settings.get<std::string>("Inverse Factory");
   std::string precName = "";
   if (settings.hasParameter("Preconditioner Factory"))
     precName = settings.get<std::string>("Preconditioner Factory");
-  diagString_         = settings.get<std::string>("Descriptive Label");
+  diagString_ = settings.get<std::string>("Descriptive Label");
 
   // build preconditioner factory
   Teuchos::RCP<const InverseLibrary> il = getInverseLibrary();
   invFactory_                           = il->getInverseFactory(invName);
-  if(precName != "")
-    precFactory_                        = il->getInverseFactory(precName);
+  if (precName != "") precFactory_ = il->getInverseFactory(precName);
   TEUCHOS_TEST_FOR_EXCEPTION(invFactory_ == Teuchos::null, std::runtime_error,
                              "ERROR: \"Inverse Factory\" = " << invName << " could not be found");
 
@@ -287,15 +284,14 @@ bool DiagnosticPreconditionerFactory::updateRequestedParameters(const Teuchos::P
 
   bool success = true;
   sucess &= invFactory_->updateRequestedParameters(pl);
-  if(precFactory_)
-    sucess &= precFactory_->updateRequestedParameters(pl);
+  if (precFactory_) sucess &= precFactory_->updateRequestedParameters(pl);
 
   return success;
 }
 
 void DiagnosticPreconditionerFactory::initTimers(const std::string& str) {
-  buildTimer_   = Teuchos::rcp(new Teuchos::Time(str + " buildTimer"));
-  rebuildTimer_ = Teuchos::rcp(new Teuchos::Time(str + " rebuildTimer"));
+  buildTimer_       = Teuchos::rcp(new Teuchos::Time(str + " buildTimer"));
+  rebuildTimer_     = Teuchos::rcp(new Teuchos::Time(str + " rebuildTimer"));
   precBuildTimer_   = Teuchos::rcp(new Teuchos::Time(str + " precBuildTimer"));
   precBebuildTimer_ = Teuchos::rcp(new Teuchos::Time(str + " precRebuildTimer"));
 }

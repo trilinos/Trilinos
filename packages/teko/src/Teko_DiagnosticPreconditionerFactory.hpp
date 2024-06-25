@@ -181,7 +181,7 @@ class DiagnosticPreconditionerFactory : public virtual Teko::PreconditionerFacto
       buildTimer_;  // only first pass construction time (no rebuild)
   mutable Teuchos::RCP<Teuchos::Time>
       precBuildTimer_;  // only first pass construction time (no rebuild)
-  mutable Teuchos::RCP<Teuchos::Time> rebuildTimer_;  // rebuild-construction timer (no build)
+  mutable Teuchos::RCP<Teuchos::Time> rebuildTimer_;      // rebuild-construction timer (no build)
   mutable Teuchos::RCP<Teuchos::Time> precRebuildTimer_;  // rebuild-construction timer (no build)
 };
 
