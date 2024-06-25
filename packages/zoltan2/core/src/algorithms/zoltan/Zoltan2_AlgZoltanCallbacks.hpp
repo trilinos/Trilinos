@@ -51,7 +51,9 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
 
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH
 #include <Zoltan2_HyperGraphModel.hpp>
+#endif
 
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
@@ -551,6 +553,7 @@ static void zoltanHGCS_withMeshAdapter(
 /////////////////////////////////////////////////////////////////////////////
 // HYPERGRAPH CALLBACKS FROM A HYPERGRAPH MODEL
 /////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH
 
 ////////////////////
 // ZOLTAN_NUM_OBJ_FN
@@ -670,6 +673,8 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
     TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, pinIds_[i]);
   }
 }
+
+#endif // HAVE_ZOLTAN2_HYPERGRAPH
 
 }
 

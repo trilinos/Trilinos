@@ -61,6 +61,11 @@ namespace Tpetra {
   // It would be better to let CMake do the ETI generation,
   // as with CrsMatrix.
 
+  // NOTE: The Zoltan2 adaptation stuff only gets engaged for full ETI.
+  // If we're doing reduced ETI, we disable all of this
+
+#ifndef  HAVE_TPETRA_REDUCED_ETI
+
 #ifdef HAVE_TPETRA_INST_INT_LONG
 #ifdef HAVE_TPETRA_INST_LONG_DOUBLE
 #define TPETRA_MATRIXMATRIX_INSTANT_SC_LONG_DOUBLE_LO_INT_GO_LONG( NT ) \
@@ -117,6 +122,8 @@ namespace Tpetra {
 #endif //HAVE_TPETRA_INST_LONG_DOUBLE
 #endif // HAVE_TPETRA_INST_INT_UNSIGNED_LONG
 
+#endif // HAVE_TPETRA_REDUCED_ETI
+    
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

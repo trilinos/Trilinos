@@ -22,6 +22,12 @@
 #  define HAVE_ZOLTAN2_OMP
 #endif
 
+/* define if we want to use HYPERGRAPH */
+#cmakedefine HAVE_ZOLTAN2CORE_HYPERGRAPH
+#ifdef HAVE_ZOLTAN2CORE_HYPERGRAPH
+#  define HAVE_ZOLTAN2_HYPERGRAPH
+#endif
+
 /* define if we have the METIS library*/
 #cmakedefine HAVE_ZOLTAN2CORE_METIS
 #ifdef HAVE_ZOLTAN2CORE_METIS
