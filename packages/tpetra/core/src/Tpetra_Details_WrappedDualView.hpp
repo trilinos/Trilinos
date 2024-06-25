@@ -98,6 +98,8 @@ using enableIfConstData = std::enable_if_t<hasConstData<DualViewType>::value>;
 template <typename DualViewType>
 using enableIfNonConstData = std::enable_if_t<!hasConstData<DualViewType>::value>;
 
+/* sync_host functions */
+  
 template <typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_host(DualViewType dualView) {
@@ -109,6 +111,16 @@ template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_host(DualViewType dualView) { }
 
+
+/* sync_device functions */
+
+template <typename DualViewType>
+enableIfNonConstData<DualViewType>
+sync_device(DualViewType dualView) {
+  // This will sync, but only if needed
+    dualView.sync_device();
+}
+    
 template <typename ExecSpace, typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_device(const ExecSpace& exec, DualViewType dualView) {
@@ -630,6 +642,21 @@ public:
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
+  template <typename ExecSpace>
+  typename t_dev::const_type
+  getDeviceSubview(const ExecSpace & exec, int offset, int numEntries, Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadOnly");
+    if(needsSyncPath()) {
+      throwIfHostViewAlive();
+      impl::sync_device(exec,originalDualView);
+    }
+    return getSubview(dualView.view_device(), offset, numEntries);
+  }
+
+  
   t_dev
   getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
@@ -646,6 +673,23 @@ public:
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
+  template <class ExecSpace>
+  t_dev
+  getDeviceSubview(const ExecSpace & exec, int offset, int numEntries, Access::ReadWriteStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  )
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadWrite");
+    static_assert(dualViewHasNonConstData,
+        "ReadWrite views are not available for DualView with const data");
+    if(needsSyncPath()) {
+      throwIfHostViewAlive();
+      impl::sync_device(exec, originalDualView);
+      originalDualView.modify_device();
+    }
+    return getSubview(dualView.view_device(), offset, numEntries);
+  }
+
   t_dev
   getDeviceSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
@@ -657,6 +701,18 @@ public:
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
   }
 
+  template<typename ExecSpace>
+  t_dev
+  getDeviceSubview(const ExecSpace& exec, int offset, int numEntries, Access::OverwriteAllStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  )
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewOverwriteAll");
+    static_assert(dualViewHasNonConstData,
+        "OverwriteAll views are not available for DualView with const data");
+    return getDeviceSubview(exec,offset, numEntries, Access::ReadWrite);
+  }
+  
 
   // Debugging functions to get copies of the view state
   typename t_host::HostMirror getHostCopy() const {
