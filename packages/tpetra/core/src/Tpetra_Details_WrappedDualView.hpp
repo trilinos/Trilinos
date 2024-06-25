@@ -107,10 +107,6 @@ sync_host(DualViewType dualView) {
   dualView.sync_host();
 }
 
-template <typename DualViewType>
-enableIfConstData<DualViewType>
-sync_host(DualViewType dualView) { }
-
 template <typename ExecSpace, typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_host(const ExecSpace& exec, DualViewType dualView) {
@@ -122,6 +118,10 @@ template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_host(DualViewType dualView) { }
 
+template <typename ExecSpace,typename DualViewType>
+enableIfConstData<DualViewType>
+sync_host(DualViewType dualView) { } 
+  
 /* sync_device functions */
 
 template <typename DualViewType>
@@ -145,8 +145,6 @@ sync_device(DualViewType dualView) { }
 template <typename ExecSpace, typename DualViewType>
 enableIfConstData<DualViewType>
 sync_device(const ExecSpace& exec, DualViewType dualView) { }
-
-}
 
   
 }// end namespace Impl
@@ -421,15 +419,15 @@ public:
 
   template <typename ExecSpace>
   t_dev
-  getDeviceView(const ExecSpace& exec,Access::OverwriteAllStruct
+  getDeviceView(const ExecSpace& exec,Access::OverwriteAllStruct s
     DEBUG_UVM_REMOVAL_ARGUMENT
   )
   {
     // Since we're never syncing in this case, the execution_space is meaningless here
 #ifdef DEBUG_UVM_REMOVAL
-    return getDeviceView(Access::OverwriteAllStruct,callerstr,filestr,linnum);
+    return getDeviceView(s,callerstr,filestr,linnum);
 #else
-    return getDeviceView(Access::OverwriteAllStruct);
+    return getDeviceView(s);
 #endif
   }
   
@@ -591,9 +589,9 @@ public:
     using ReturnDeviceType = typename ReturnViewType::device_type;
     // Since nothing syncs here, the ExecSpace is meaningless
 #ifdef DEBUG_UVM_REMOVAL
-    return getView<TargetDeviceType>(Access::OverwriteAllStruct,callerstr,filestr,linnum);
+    return getView<TargetDeviceType>(s,callerstr,filestr,linnum);
 #else
-    return getView<TargetDeviceType>(Access::OverwriteAllStruct);
+    return getView<TargetDeviceType>(s);
 #endif
       
   }
