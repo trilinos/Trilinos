@@ -99,19 +99,6 @@ SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 # Some CMake and TriBiTS tweaks just for Trilinos
 include(TrilinosTweaks)
 
-
-SET(deprecated_packages Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris PyTrilinos ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
-
-SET(Trilinos_DISABLE_DEPRECATED_PACKAGES OFF CACHE BOOL "Flag to easily disable all deprecated packages")
-IF(Trilinos_DISABLE_DEPRECATED_PACKAGES)
-  FOREACH(package ${deprecated_packages})
-    IF(Trilinos_ENABLE_${package})
-      message(WARNING "Deprecated packages are disabled, but disabled package '${package}' was enabled; disabling it")
-    ENDIF()
-    set(Trilinos_ENABLE_${package} OFF)
-  ENDFOREACH()
-ENDIF()
-
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
 
@@ -124,7 +111,7 @@ IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
 
-
+set(deprecated_packages Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris PyTrilinos ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
 set(enabled_deprecated_packages "")
 FOREACH(package ${deprecated_packages})
   IF(Trilinos_ENABLE_${package})
