@@ -1733,6 +1733,7 @@ namespace Tpetra {
     scale (const Scalar& alpha,
            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
+    
     /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
     ///
     /// Update this MultiVector with scaled values of A.  If beta is
@@ -1740,19 +1741,26 @@ namespace Tpetra {
     /// NaN entries.  It is legal for the input A to alias this
     /// MultiVector.
     void
+    update (const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const Scalar& beta);
+
+    /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
+    ///
+    /// Update this MultiVector with scaled values of A.  If beta is
+    /// zero, overwrite \c *this unconditionally, even if it contains
+    /// NaN entries.  It is legal for the input A to alias this
+    /// MultiVector.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void
     update (const execution_space& exec,
             const Scalar& alpha,
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta);
 
-    //! @overload
-    void
-    update (const Scalar& alpha,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-            const Scalar& beta) {
-      this->update(execution_space{}, alpha, A, beta);
-    }
-
+    
     /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
     ///
     /// Update this MultiVector with scaled values of A and B.  If
