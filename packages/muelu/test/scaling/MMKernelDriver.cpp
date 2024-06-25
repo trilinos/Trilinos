@@ -69,10 +69,10 @@
 #include <Tpetra_Import_Util2.hpp>           // Import_Util::sortCrsEntries
 #include "Tpetra_Map_decl.hpp"               // for Map
 #include <Xpetra_IO.hpp>
-#include "Xpetra_BlockedMap.hpp"  // for LO, GO, NO
-#include "Xpetra_Map.hpp"         // for UnderlyingLib
-#include "Xpetra_Parameters.hpp"  // for Parameters
-#include "Xpetra_MatrixMatrix.hpp"//Xpetra SpGEMM
+#include "Xpetra_BlockedMap.hpp"    // for LO, GO, NO
+#include "Xpetra_Map.hpp"           // for UnderlyingLib
+#include "Xpetra_Parameters.hpp"    // for Parameters
+#include "Xpetra_MatrixMatrix.hpp"  //Xpetra SpGEMM
 namespace Teuchos {
 class ParameterList;
 }  // namespace Teuchos
@@ -227,7 +227,7 @@ enum class Experiments { ViennaCL = 0,
                          KK_DEFAULT,
                          LTG,
                          SERIAL,
-                         XPETRA};
+                         XPETRA };
 
 static inline std::string to_string(const Experiments &experiment_id) {
   switch (experiment_id) {
@@ -245,7 +245,7 @@ static inline std::string to_string(const Experiments &experiment_id) {
       return ("LTG");
     case Experiments::SERIAL:
       return ("SERIAL");
-  case Experiments::XPETRA:
+    case Experiments::XPETRA:
       return ("XPETRA");
     default:
       return ("UNDEFINED");
@@ -940,23 +940,19 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::Kokk
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Multiply_Xpetra(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B, Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &C, Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::null) {
 #ifdef USE_DESCRIPTIVE_STATS
-      xpetra_mult_start = std::chrono::steady_clock::now();
+  xpetra_mult_start = std::chrono::steady_clock::now();
 #endif
-      Teuchos::FancyOStream fos(Teuchos::rcpFromRef(std::cout));
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(A, false, B, false, C,fos,true,true, std::string(""),params);
+  Teuchos::FancyOStream fos(Teuchos::rcpFromRef(std::cout));
+  Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(A, false, B, false, C, fos, true, true, std::string(""), params);
 #ifdef USE_DESCRIPTIVE_STATS
-      xpetra_mult_stop = std::chrono::steady_clock::now();
-      {
-        std::chrono::duration<double> ds;
-        ds = ltg_mult_stop - ltg_mult_start;
-        my_experiment_timings["Xpetra: Call"].push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(ds).count());
-      }
+  xpetra_mult_stop = std::chrono::steady_clock::now();
+  {
+    std::chrono::duration<double> ds;
+    ds = ltg_mult_stop - ltg_mult_start;
+    my_experiment_timings["Xpetra: Call"].push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(ds).count());
+  }
 #endif
-
 }
-
-
-
 
 // =========================================================================
 // Utilities
@@ -1115,7 +1111,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     clp.setOption("trackRssHWM", "noTrackRssHWM", &trackRssHWM, "Track the RSS high water mark (assumes no HP usage)");
 
     // the kernels
-    bool is_serial = comm->getSize() == 1;
+    bool is_serial     = comm->getSize() == 1;
     bool do_viennaCL   = is_serial;
     bool do_mkl        = is_serial;
     bool do_kk_mem     = is_serial;
