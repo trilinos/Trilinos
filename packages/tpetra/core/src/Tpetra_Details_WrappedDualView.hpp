@@ -111,6 +111,16 @@ template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_host(DualViewType dualView) { }
 
+template <typename ExecSpace, typename DualViewType>
+enableIfNonConstData<DualViewType>
+sync_host(const ExecSpace& exec, DualViewType dualView) {
+  // This will sync, but only if needed
+  dualView.sync_host();
+}
+
+template <typename DualViewType>
+enableIfConstData<DualViewType>
+sync_host(DualViewType dualView) { }
 
 /* sync_device functions */
 
