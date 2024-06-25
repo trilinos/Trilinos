@@ -83,7 +83,7 @@
 #if defined(HAVE_AMESOS_PARDISO) || defined(HAVE_AMESOS_PARDISO_MKL)
 #include "Amesos_Pardiso.h"
 #endif
-#if defined(HAVE_AMESOS_PARDISO_MKL) && defined(HAVE_MPI)
+#ifdef HAVE_AMESOS_CSS_MKL
 #include "Amesos_CssMKL.h"
 #endif
 #ifdef HAVE_AMESOS_PARAKLETE
@@ -339,7 +339,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( A_pardiso.Solve(  ) ); 
 
 #endif
-#if defined(HAVE_AMESOS_PARDISO_MKL) && defined(HAVE_MPI)
+#ifdef HAVE_AMESOS_CSS_MKL
     } else if ( SparseSolver == CSS ) {
 
       Teuchos::ParameterList ParamList;

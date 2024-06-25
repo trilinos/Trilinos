@@ -56,7 +56,7 @@
 #ifdef HAVE_AMESOS_TAUCS
 #include "Amesos_Taucs.h"
 #endif
-#if defined(HAVE_AMESOS_PARDISO_MKL) && defined(HAVE_MPI)
+#ifdef HAVE_AMESOS_CSS_MKL
 #include "Amesos_CssMKL.h"
 #endif
 #ifdef HAVE_AMESOS_PARAKLETE
@@ -162,7 +162,7 @@ Amesos_BaseSolver* Amesos::Create(const std::string CT,
   } 
   
   if (CT == "Amesos_CssMKL") {
-#if defined(HAVE_AMESOS_PARDISO_MKL) && defined(HAVE_MPI)
+#ifdef HAVE_AMESOS_CSS_MKL
     return new Amesos_CssMKL(LinearProblem);
 #else
     if (verbose) std::cerr << "Amesos_CssMKL is not implemented" << std::endl ;
