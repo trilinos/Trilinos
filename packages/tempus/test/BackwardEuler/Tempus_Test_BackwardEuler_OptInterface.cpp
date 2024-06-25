@@ -12,6 +12,8 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_DefaultComm.hpp"
 
+#include "Thyra_MultiVectorStdOps.hpp"
+
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"

@@ -1,4 +1,4 @@
-# PyTrilinos2
+# PyTrilinos2: Automatic Python Interfaces to Trilinos Packages
 
 PyTrilinos2 requires both Pybind11 and Binder 
 
@@ -74,3 +74,13 @@ PyTrilinos2 relies on an automatic generation of the interface files.
 Although this automatic generation has been intensively tested, it is unfeasible to test every combinations of options of Trilinos.
 Therefore, if you face a configuration error or a compilation error, please submit an issue on https://github.com/trilinos/Trilinos 
 with the PyTrilinos2 tag, the used configuration script, the log of the outpupt of the configuration, and the log of the build process.
+
+## Copyright and License
+See PyTrilinos2/COPYRIGHT, PyTrilinos2/LICENSE, https://trilinos.github.io/license.html and individual file headers for additional information.
+
+## Questions? 
+Contact lead developers:
+
+* PyTrilinos2 team (GitHub handle: @trilinos/pytrilinos2)
+* Kim Liegeois     (GitHub handle: [kliegeois](https://github.com/kliegeois) or knliege@sandia.gov)
+* Christian Glusa  (GitHub handle: [cgcgcg](https://github.com/cgcgcg) or caglusa@sandia.gov)
