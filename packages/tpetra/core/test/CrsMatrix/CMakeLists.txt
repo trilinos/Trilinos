@@ -490,6 +490,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_MatvecFence
+  SOURCES
+    CrsMatrix_MatvecFence.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+
 if (
   # supported TPLs
   (
