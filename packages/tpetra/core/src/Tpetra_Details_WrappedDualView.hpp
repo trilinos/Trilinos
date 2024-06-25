@@ -120,6 +120,13 @@ template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_device(DualViewType dualView) { }
 
+template <typename ExecSpace, typename DualViewType>
+enableIfConstData<DualViewType>
+sync_device(const ExecSpace& exec, DualViewType dualView) { }
+
+}
+
+  
 }// end namespace Impl
 
 /// \brief Whether WrappedDualView reference count checking is enabled. Initially true.
@@ -308,6 +315,19 @@ public:
     return dualView.view_host();
   }
 
+  typename t_dev::const_type
+  getDeviceView(Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
+    if(needsSyncPath()) {
+      throwIfHostViewAlive();
+      impl::sync_device(originalDualView);
+    }
+    return dualView.view_device();
+  }
+  
   template <typename ExecSpace>
   typename t_dev::const_type
   getDeviceView(const ExecSpace& exec, Access::ReadOnlyStruct
