@@ -3155,9 +3155,9 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
-    auto Y_lcl_orig = this->getLocalViewDevice(Access::ReadWrite); // what about syncing with the 'exec' ?
+    auto Y_lcl_orig = this->getLocalViewDevice(exec, Access::ReadWrite); // what about syncing with the 'exec' ?
     auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
-    auto X_lcl_orig = A.getLocalViewDevice(Access::ReadOnly);
+    auto X_lcl_orig = A.getLocalViewDevice(exec, Access::ReadOnly);
     auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
 
     // The device memory of *this is about to be modified

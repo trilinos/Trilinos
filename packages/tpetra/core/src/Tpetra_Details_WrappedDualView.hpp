@@ -109,11 +109,11 @@ template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_host(DualViewType dualView) { }
 
-template <typename DualViewType>
+template <typename ExecSpace, typename DualViewType>
 enableIfNonConstData<DualViewType>
-sync_device(DualViewType dualView) {
+sync_device(const ExecSpace& exec, DualViewType dualView) {
   // This will sync, but only if needed
-    dualView.sync_device();
+    dualView.sync_device(exec);
 }
 
 template <typename DualViewType>
@@ -308,15 +308,16 @@ public:
     return dualView.view_host();
   }
 
+  template <typename ExecSpace>
   typename t_dev::const_type
-  getDeviceView(Access::ReadOnlyStruct
+  getDeviceView(const ExecSpace& exec, Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
     if(needsSyncPath()) {
       throwIfHostViewAlive();
-      impl::sync_device(originalDualView);
+      impl::sync_device(exec, originalDualView);
     }
     return dualView.view_device();
   }
