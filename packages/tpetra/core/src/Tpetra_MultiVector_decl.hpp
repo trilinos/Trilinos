@@ -1722,9 +1722,18 @@ namespace Tpetra {
     /// NaN entries.  It is legal for the input A to alias this
     /// MultiVector.
     void
-    update (const Scalar& alpha,
+    update (const execution_space& exec,
+            const Scalar& alpha,
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta);
+
+    //! @overload
+    void
+    update (const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const Scalar& beta) {
+      this->update(execution_space{}, alpha, A, beta);
+    }
 
     /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
     ///

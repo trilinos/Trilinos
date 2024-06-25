@@ -3125,7 +3125,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  update (const Scalar& alpha,
+  update (const execution_space& exec,
+          const Scalar& alpha,
           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           const Scalar& beta)
   {
@@ -3154,14 +3155,14 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
-    auto Y_lcl_orig = this->getLocalViewDevice(Access::ReadWrite);
+    auto Y_lcl_orig = this->getLocalViewDevice(Access::ReadWrite); // what about syncing with the 'exec' ?
     auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
     auto X_lcl_orig = A.getLocalViewDevice(Access::ReadOnly);
     auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
 
     // The device memory of *this is about to be modified
     if (isConstantStride () && A.isConstantStride ()) {
-      KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
+      KokkosBlas::axpby (exec, theAlpha, X_lcl, theBeta, Y_lcl);
     }
     else {
       // Make sure that Kokkos only uses the local length for add.
@@ -3171,7 +3172,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
         auto Y_k = subview (Y_lcl, ALL (), Y_col);
         auto X_k = subview (X_lcl, ALL (), X_col);
 
-        KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
+        KokkosBlas::axpby (exec, theAlpha, X_k, theBeta, Y_k);
       }
     }
   }
