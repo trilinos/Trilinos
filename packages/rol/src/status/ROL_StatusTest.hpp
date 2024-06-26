@@ -58,8 +58,8 @@ template <class Real>
 class StatusTest {
 private:
 
-  Real gtol_;
-  Real stol_;
+  Real gtol_, gtol0_;
+  Real stol_, stol0_;
   int  max_iter_;
   bool use_rel_;
 
@@ -67,23 +67,29 @@ public:
 
   virtual ~StatusTest() {}
 
-  StatusTest( ROL::ParameterList &parlist ) {
+  StatusTest( ParameterList &parlist ) {
     Real em6(1e-6);
     gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", em6);
     stol_     = parlist.sublist("Status Test").get("Step Tolerance", em6*gtol_);
     max_iter_ = parlist.sublist("Status Test").get("Iteration Limit", 100);
     use_rel_  = parlist.sublist("Status Test").get("Use Relative Tolerances", false);
+    gtol0_    = gtol_;
+    stol0_    = stol_;
   }
 
   StatusTest( Real gtol = 1.e-6, Real stol = 1.e-12, int max_iter = 100, bool use_rel = false ) :  
-    gtol_(gtol), stol_(stol), max_iter_(max_iter), use_rel_(use_rel) {}
+    gtol_(gtol), gtol0_(gtol), stol_(stol), stol0_(stol), max_iter_(max_iter), use_rel_(use_rel) {}
 
   /** \brief Check algorithm status.
+ 
+      If "Use Relative Tolerances" is set to "true" upon construction, the
+      gradient and step tolerances are scaled by the norm of the initial
+      gradient. 
   */
   virtual bool check( AlgorithmState<Real> &state ) {
     if (state.iter==0 && use_rel_) {
-      gtol_ *= state.gnorm;
-      stol_ *= state.gnorm;
+      gtol_ = gtol0_*state.gnorm;
+      stol_ = stol0_*state.gnorm;
     }
     if ( (state.gnorm > gtol_) &&
          (state.snorm > stol_) &&
