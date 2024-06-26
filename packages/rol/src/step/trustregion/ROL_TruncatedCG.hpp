@@ -113,7 +113,7 @@ public:
     model.precond(*v_,*g_,s,tol);
     // Initialize basis vector
     p_->set(*v_); p_->scale(-one);
-    Real pnorm2 = v_->dot(g_->dual());
+    Real pnorm2 = g_->apply(*v_);
     if ( pnorm2 <= zero ) {
       iflag = 4;
       iter  = 0;
@@ -122,65 +122,57 @@ public:
     // Initialize scalar storage
     iter = 0; iflag = 0;
     Real kappa(0), beta(0), sigma(0), alpha(0), tmp(0), sMp(0);
-    Real gv = v_->dot(g_->dual());
+    Real gv = g_->apply(*v_);
     pRed_ = zero;
     // Iterate CG
     for (iter = 0; iter < maxit_; iter++) {
       // Apply Hessian to direction p
       model.hessVec(*Hp_,*p_,s,tol);
       // Check positivity of Hessian
-      kappa = p_->dot(Hp_->dual());
+      kappa = Hp_->apply(*p_);
       if (kappa <= zero) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p_);
-        iflag = 2; 
+        iflag = 2;
         break;
       }
       // Update step
       alpha = gv/kappa;
-      s_->set(s); 
+      s_->set(s);
       s_->axpy(alpha,*p_);
       s1norm2 = snorm2 + two*alpha*sMp + alpha*alpha*pnorm2;
       // Check if step exceeds trust region radius
       if (s1norm2 >= del*del) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p_);
-        iflag = 3; 
+        iflag = 3;
         break;
       }
       // Update model predicted reduction
       pRed_ += half*alpha*gv;
       // Set step to temporary step and store norm
       s.set(*s_);
-      snorm2 = s1norm2;  
+      snorm2 = s1norm2;
       // Check for convergence
       g_->axpy(alpha,*Hp_);
       normg = g_->norm();
-      if (normg < gtol) {
-        break;
-      }
+      if (normg < gtol) break;
       // Preconditioned updated (projected) gradient vector
       model.precond(*v_,*g_,s,tol);
-      tmp   = gv; 
-      gv    = v_->dot(g_->dual());
-      beta  = gv/tmp;    
+      tmp   = gv;
+      gv    = g_->apply(*v_);
+      beta  = gv/tmp;
       // Update basis vector
       p_->scale(beta);
       p_->axpy(-one,*v_);
       sMp    = beta*(sMp+alpha*pnorm2);
-      pnorm2 = gv + beta*beta*pnorm2; 
+      pnorm2 = gv + beta*beta*pnorm2;
     }
     // Update model predicted reduction
-    if (iflag > 0) {
-      pRed_ += sigma*(gv-half*sigma*kappa);
-    }
+    if (iflag > 0)      pRed_ += sigma*(gv-half*sigma*kappa);
     // Check iteration count
-    if (iter == maxit_) {
-      iflag = 1;
-    }
-    if (iflag != 1) { 
-      iter++;
-    }
+    if (iter == maxit_) iflag = 1;
+    if (iflag != 1)     iter++;
     // Update norm of step and update model predicted reduction
     model.primalTransform(*s_,s);
     s.set(*s_);

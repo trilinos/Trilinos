@@ -183,13 +183,12 @@ public:
     val *= fscale_;
     // Compute penalty term
     const Real half(0.5);
-    primConVector_->set(multiplier_->dual());
-    primConVector_->axpy(half*cscale_*penaltyParameter_,*getConstraintVec(x,tol));
-    val += cscale_*getConstraintVec(x,tol)->dot(*primConVector_);
+    dualConVector_->set(*multiplier_);
+    dualConVector_->axpy(half*cscale_*penaltyParameter_,getConstraintVec(x,tol)->dual());
+    val += cscale_*dualConVector_->apply(*getConstraintVec(x,tol));
+    //val += cscale_*getConstraintVec(x,tol)->dot(*primConVector_);
     // Scale augmented Lagrangian
-    if (scaleLagrangian_) {
-      val /= penaltyParameter_;
-    }
+    if (scaleLagrangian_) val /= penaltyParameter_;
     return val;
   }
 
@@ -203,10 +202,7 @@ public:
     con_->applyAdjointJacobian(*dualOptVector_,*dualConVector_,x,tol);
     g.axpy(cscale_,*dualOptVector_);
     // Compute gradient of Augmented Lagrangian
-    if ( scaleLagrangian_ ) {
-      const Real one(1);
-      g.scale(one/penaltyParameter_);
-    }
+    if ( scaleLagrangian_ ) g.scale(static_cast<Real>(1)/penaltyParameter_);
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
@@ -234,9 +230,7 @@ public:
       hv.zero();
     }
     // Build hessVec of Augmented Lagrangian
-    if ( scaleLagrangian_ ) {
-      hv.scale(static_cast<Real>(1)/penaltyParameter_);
-    }
+    if ( scaleLagrangian_ ) hv.scale(static_cast<Real>(1)/penaltyParameter_);
   }
 
   // Return objective function value
