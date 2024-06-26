@@ -1,56 +1,10 @@
 // @HEADER
-// ***********************************************************************
-// 
-//         Trilinos: An Object-Oriented Solver Framework 
-//                Copyright (2014) Sandia Corporation
-// 
-// Copyright (2014) Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000, there is a non-exclusive license for use of this
-// work by or on behalf of the U.S. Government.  Export of this program
-// may require a license from the United States Government.
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// NOTICE:  The United States Government is granted for itself and others
-// acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-// license in this data to reproduce, prepare derivative works, and
-// perform publicly and display publicly.  Beginning five (5) years from
-// July 25, 2001, the United States Government is granted for itself and
-// others acting on its behalf a paid-up, nonexclusive, irrevocable
-// worldwide license in this data to reproduce, prepare derivative works,
-// distribute copies to the public, perform publicly and display
-// publicly, and to permit others to do so.
-//
-// NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-// OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-// ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-// RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-// INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-// THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-//
-// ************************************************************************
-// @HEADER
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************// @HEADER
 
 // Teuchos includes
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -97,7 +51,7 @@ int main(int argc, char* argv[])
     // Open an output file stream for writing our XML file
     //
     std::ofstream out;
-   
+
     //
     // We will print to the 'out' ofstream, and that output will be
     // valid XML describing the validated ParameterList.  For the
@@ -120,7 +74,7 @@ int main(int argc, char* argv[])
     clp.recogniseAllOptions(true);
     clp.setOption("add-xsl-header",
                   "suppress-xsl-header",
-                  &xsl_header_flag, 
+                  &xsl_header_flag,
                   "XSL header flag");
 
     //
@@ -147,7 +101,7 @@ int main(int argc, char* argv[])
 	{
 		RCP<ParameterList> nullParams = parameterList();
 		std::cout << "writing parameter list " << i+1 << " of 9." << std::endl;
-		if ( i == 0 ) 
+		if ( i == 0 )
 		{
 			solver = sFactory.create("Block GMRES", nullParams);
 			out.open("belos_BlockGmres.xml", std::ofstream::out);
@@ -157,7 +111,7 @@ int main(int argc, char* argv[])
 			Teuchos::writeParameterListToXmlOStream( *gmresParams, out);
 			out.close();
 		}
-		else if ( i == 1 ) 	
+		else if ( i == 1 )
 		{
 			solver = sFactory.create("Pseudo Block GMRES", nullParams);
 			out.open("belos_PseudoBlockGmres.xml", std::ofstream::out);
@@ -167,7 +121,7 @@ int main(int argc, char* argv[])
 			Teuchos::writeParameterListToXmlOStream( *pseudoGmresParams, out);
 			out.close();
 		}
-		else if ( i == 2 ) 
+		else if ( i == 2 )
 		{
 			solver = sFactory.create("Block CG", nullParams);
 			out.open("belos_BlockCG.xml", std::ofstream::out);
@@ -177,7 +131,7 @@ int main(int argc, char* argv[])
 			Teuchos::writeParameterListToXmlOStream( *blockCgParams, out);
 			out.close();
 		}
-		else if ( i == 3 ) 
+		else if ( i == 3 )
 		{
 			solver = sFactory.create("Pseudo Block CG", nullParams);
 			out.open("belos_PseudoBlockCG.xml", std::ofstream::out);
