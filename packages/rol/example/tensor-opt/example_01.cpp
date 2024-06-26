@@ -81,8 +81,8 @@
 #include "ROL_Vector.hpp"
 #include "ROL_CArrayVector.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_StatusTest.hpp"
+#include "ROL_Problem.hpp"
+#include "ROL_Solver.hpp"
 
 //#pragma GCC diagnostic pop
 
@@ -633,10 +633,10 @@ private:
   /******************************************************************************/
 
 private:
-  const std::string                                    _parfile;
-  const ROL::Ptr<ROL::ParameterList>           _parlist;
+  const std::string                                _parfile;
+  const ROL::Ptr<ROL::ParameterList>               _parlist;
 
-  const ROL::Ptr<VectorWrapper<DT_, dim_>>         _lower,  _upper;
+  const ROL::Ptr<VectorWrapper<DT_, dim_>>         _lower, _upper;
   const ROL::Ptr<VectorWrapper<DT_, dim_>>         _x;
 
   const ROL::Ptr<ROL::BoundConstraint<DT_>>        _bnd;
@@ -648,8 +648,8 @@ private:
   std::vector<ROL::Ptr<ROL::BoundConstraint<DT_>>> _ibnd;
 
   const ROL::Ptr<MyObjective<DT_, dim_>>           _obj;
-  ROL::Ptr<ROL::OptimizationProblem<DT_>>          _problem;
-  ROL::Ptr<ROL::OptimizationSolver<DT_>>           _solver;
+  ROL::Ptr<ROL::Problem<DT_>>                      _problem;
+  ROL::Ptr<ROL::Solver<DT_>>                       _solver;
 
   DT_ _A_i_up[6];
   DT_ _A_i_lo[6];
@@ -691,8 +691,15 @@ public:
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_A(_A_j_lo);
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_F(_F_n);
 
-    _problem = ROL::makePtr<ROL::OptimizationProblem<DT_>>(_obj, _x, _bnd, _icon, _imul, _ibnd);
-    _solver = ROL::makePtr<ROL::OptimizationSolver<DT_>>(* _problem, * _parlist);
+    _problem = ROL::makePtr<ROL::Problem<DT_>>(_obj, _x);
+    _problem->addBoundConstraint(_bnd);
+    _problem->addConstraint("Inequality Constraint 0", _icon[0], _imul[0], _ibnd[0]);
+    _problem->addConstraint("Inequality Constraint 1", _icon[1], _imul[1], _ibnd[1]);
+    _problem->addConstraint("Inequality Constraint 2", _icon[2], _imul[2], _ibnd[2]);
+    _problem->addConstraint("Inequality Constraint 3", _icon[3], _imul[3], _ibnd[3]);
+    _solver = ROL::makePtr<ROL::Solver<DT_>>(_problem, * _parlist);
+    //_problem = ROL::makePtr<ROL::OptimizationProblem<DT_>>(_obj, _x, _bnd, _icon, _imul, _ibnd);
+    //_solver = ROL::makePtr<ROL::OptimizationSolver<DT_>>(* _problem, * _parlist);
     _x->zero();
   }
 
