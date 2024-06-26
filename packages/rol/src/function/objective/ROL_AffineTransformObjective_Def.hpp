@@ -50,7 +50,7 @@ template<typename Real>
 AffineTransformObjective<Real>::AffineTransformObjective(const Ptr<Objective<Real>>        &obj,
                                                          const Ptr<Constraint<Real>>       &acon,
                                                          const Vector<Real>                &range,
-                                                         const Ptr<VectorController<Real>> &storage)
+							 const Ptr<VectorController<Real>> &storage)
   : obj_(obj), acon_(acon), storage_(storage) {
   primal_ = range.clone();
   Av_     = range.clone();
