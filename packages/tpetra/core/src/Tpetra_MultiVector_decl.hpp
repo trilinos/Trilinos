@@ -594,7 +594,7 @@ namespace Tpetra {
     /// around with multiple memory spaces.
     MultiVector (const Teuchos::RCP<const map_type>& map,
                  const typename dual_view_type::t_dev& d_view);
-   
+
     /// \brief Expert mode constructor, that takes a Kokkos::DualView
     ///   of the MultiVector's data and the "original"
     ///   Kokkos::DualView of the data, and returns a MultiVector that
@@ -1467,11 +1467,11 @@ namespace Tpetra {
     typename dual_view_type::t_dev::const_type getLocalViewDevice(Access::ReadOnlyStruct) const;
 
     /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
-    /// This requires that there are no live host-space views. 
+    /// This requires that there are no live host-space views.
     /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
     /// can lead to errors.
     typename dual_view_type::t_dev::const_type getLocalViewDevice(const execution_space & exec, Access::ReadOnlyStruct) const;
-    
+
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::ReadWriteStruct);
@@ -1479,9 +1479,9 @@ namespace Tpetra {
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
     /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
-    /// can lead to errors.    
+    /// can lead to errors.
     typename dual_view_type::t_dev getLocalViewDevice(const execution_space & exec,Access::ReadWriteStruct);
-    
+
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
@@ -1489,8 +1489,8 @@ namespace Tpetra {
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
     /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
-    /// can lead to errors.    
-    typename dual_view_type::t_dev getLocalViewDevice(const execution_space & exec, Access::OverwriteAllStruct);    
+    /// can lead to errors.
+    typename dual_view_type::t_dev getLocalViewDevice(const execution_space & exec, Access::OverwriteAllStruct);
 
     /// \brief Return the wrapped dual view holding this MultiVector's local data.
     ///
@@ -1689,8 +1689,22 @@ namespace Tpetra {
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
+    //\brief Put element-wise absolute values of input Multi-vector in target: A = abs(this)
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void abs (const execution_space& exec, const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+
+    //\brief Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void reciprocal (const execution_space& exec, const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+
+
 
     /// \brief Scale in place: <tt>this = alpha*this</tt>.
     ///
@@ -1733,7 +1747,7 @@ namespace Tpetra {
     scale (const Scalar& alpha,
            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
-    
+
     /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
     ///
     /// Update this MultiVector with scaled values of A.  If beta is
@@ -1760,7 +1774,7 @@ namespace Tpetra {
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta);
 
-    
+
     /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
     ///
     /// Update this MultiVector with scaled values of A and B.  If
@@ -1773,6 +1787,24 @@ namespace Tpetra {
             const Scalar& beta,
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             const Scalar& gamma);
+
+    /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
+    ///
+    /// Update this MultiVector with scaled values of A and B.  If
+    /// gamma is zero, overwrite \c *this unconditionally, even if it
+    /// contains NaN entries.  It is legal for the inputs A or B to
+    /// alias this MultiVector.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void
+    update (const execution_space& exec,
+            const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const Scalar& beta,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+            const Scalar& gamma);
+
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a host view.
