@@ -1704,8 +1704,6 @@ namespace Tpetra {
     /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
     void reciprocal (const execution_space& exec, const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
-
-
     /// \brief Scale in place: <tt>this = alpha*this</tt>.
     ///
     /// Replace this MultiVector with alpha times this MultiVector.
@@ -1714,6 +1712,18 @@ namespace Tpetra {
     /// before calling this method, the NaN entries will remain after
     /// this method finishes.
     void scale (const Scalar& alpha);
+
+    /// \brief Scale in place: <tt>this = alpha*this</tt>.
+    ///
+    /// Replace this MultiVector with alpha times this MultiVector.
+    /// This method will always multiply, even if alpha is zero.  That
+    /// means, for example, that if \c *this contains NaN entries
+    /// before calling this method, the NaN entries will remain after
+    /// this method finishes.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void scale (const execution_space& exec, const Scalar& alpha);
 
     /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
     ///
@@ -1735,6 +1745,19 @@ namespace Tpetra {
     /// the NaN entries will remain after this method finishes.
     void scale (const Kokkos::View<const impl_scalar_type*, device_type>& alpha);
 
+    /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
+    ///
+    /// Replace each column j of this MultiVector with
+    /// <tt>alpha[j]</tt> times the current column j of this
+    /// MultiVector.  This method will always multiply, even if all
+    /// the entries of alpha are zero.  That means, for example, that
+    /// if \c *this contains NaN entries before calling this method,
+    /// the NaN entries will remain after this method finishes.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void scale (const execution_space& exec, const Kokkos::View<const impl_scalar_type*, device_type>& alpha);
+
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
     /// Replace this MultiVector with scaled values of A.  This method
@@ -1747,6 +1770,20 @@ namespace Tpetra {
     scale (const Scalar& alpha,
            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
+    /// \brief Scale in place: <tt>this = alpha * A</tt>.
+    ///
+    /// Replace this MultiVector with scaled values of A.  This method
+    /// will always multiply, even if alpha is zero.  That means, for
+    /// example, that if \c *this contains NaN entries before calling
+    /// this method, the NaN entries will remain after this method
+    /// finishes.  It is legal for the input A to alias this
+    /// MultiVector.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void
+    scale (const execution_space& exec, const Scalar& alpha,
+           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
     /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
     ///

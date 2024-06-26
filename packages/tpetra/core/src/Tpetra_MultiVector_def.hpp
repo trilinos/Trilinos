@@ -2901,6 +2901,60 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  scale (const execution_space& exec, const Scalar& alpha)
+  {
+    using Kokkos::ALL;
+    using IST = impl_scalar_type;
+
+    const IST theAlpha = static_cast<IST> (alpha);
+    if (theAlpha == Kokkos::ArithTraits<IST>::one ()) {
+      return; // do nothing
+    }
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numVecs = getNumVectors ();
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    // We can't substitute putScalar(0.0) for scale(0.0), because the
+    // former will overwrite NaNs present in the MultiVector.  The
+    // semantics of this call require multiplying them by 0, which
+    // IEEE 754 requires to be NaN.
+
+    // If we need sync to device, then host has the most recent version.
+    const bool useHostVersion = need_sync_device ();
+    if (useHostVersion) {
+      auto Y_lcl = Kokkos::subview (getLocalViewHost(Access::ReadWrite), rowRng, ALL ());
+      if (isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
+      }
+      else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = whichVectors_[k];
+          auto Y_k = Kokkos::subview (Y_lcl, ALL (), Y_col);
+          KokkosBlas::scal (Y_k, theAlpha, Y_k);
+        }
+      }
+    }
+    else { // work on device
+      auto Y_lcl = Kokkos::subview (getLocalViewDevice(exec, Access::ReadWrite), rowRng, ALL ());
+      if (isConstantStride ()) {
+        KokkosBlas::scal (exec, Y_lcl, theAlpha, Y_lcl);
+      }
+      else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = isConstantStride () ? k : whichVectors_[k];
+          auto Y_k = Kokkos::subview (Y_lcl, ALL (), Y_col);
+          KokkosBlas::scal (exec, Y_k, theAlpha, Y_k);
+        }
+      }
+    }
+  }
+
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Teuchos::ArrayView<const Scalar>& alphas)
   {
     const size_t numVecs = this->getNumVectors ();
@@ -2998,6 +3052,81 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  scale (const execution_space& exec, const Kokkos::View<const impl_scalar_type*, device_type>& alphas)
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numVecs = this->getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (alphas.extent (0)) != numVecs,
+      std::invalid_argument, "Tpetra::MultiVector::scale(alphas): "
+      "alphas.extent(0) = " << alphas.extent (0)
+      << " != this->getNumVectors () = " << numVecs << ".");
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    // NOTE (mfh 08 Apr 2015) We prefer to let the compiler deduce the
+    // type of the return value of subview.  This is because if we
+    // switch the array layout from LayoutLeft to LayoutRight
+    // (preferred for performance of block operations), the types
+    // below won't be valid.  (A view of a column of a LayoutRight
+    // multivector has LayoutStride, not LayoutLeft.)
+
+    // If we need sync to device, then host has the most recent version.
+    const bool useHostVersion = this->need_sync_device ();
+    if (useHostVersion) {
+      // Work in host memory.  This means we need to create a host
+      // mirror of the input View of coefficients.
+      auto alphas_h = Kokkos::create_mirror_view (alphas);
+      // DEEP_COPY REVIEW - NOT TESTED
+      Kokkos::deep_copy (exec, alphas_h, alphas);
+      exec.fence();
+
+      auto Y_lcl = subview (this->getLocalViewHost(Access::ReadWrite), rowRng, ALL ());
+      if (isConstantStride ()) {
+        KokkosBlas::scal (Y_lcl, alphas_h, Y_lcl);
+      }
+      else {
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k :
+            this->whichVectors_[k];
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          // We don't have to use the entire 1-D View here; we can use
+          // the version that takes a scalar coefficient.
+          KokkosBlas::scal (Y_k, alphas_h(k), Y_k);
+        }
+      }
+    }
+    else { // Work in device memory, using the input View 'alphas' directly.
+      auto Y_lcl = subview (this->getLocalViewDevice(exec, Access::ReadWrite), rowRng, ALL ());
+      if (isConstantStride ()) {
+        KokkosBlas::scal (exec, Y_lcl, alphas, Y_lcl);
+      }
+      else {
+        // FIXME (mfh 15 Mar 2019) We need one coefficient at a time,
+        // as values on host, so copy them to host.  Another approach
+        // would be to fix scal() so that it takes a 0-D View as the
+        // second argument.
+        auto alphas_h = Kokkos::create_mirror_view (alphas);
+        // DEEP_COPY REVIEW - NOT TESTED
+        Kokkos::deep_copy (exec, alphas_h, alphas);
+
+        for (size_t k = 0; k < numVecs; ++k) {
+          const size_t Y_col = this->isConstantStride () ? k :
+            this->whichVectors_[k];
+          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          KokkosBlas::scal (exec, Y_k, alphas_h(k), Y_k);
+        }
+      }
+    }
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Scalar& alpha,
          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
@@ -3042,6 +3171,52 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  scale (const execution_space& exec, const Scalar& alpha,
+         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    const char tfecfFuncName[] = "scale: ";
+
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numVecs = getNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      lclNumRows != A.getLocalLength (), std::invalid_argument,
+      "this->getLocalLength() = " << lclNumRows << " != A.getLocalLength() = "
+      << A.getLocalLength () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      numVecs != A.getNumVectors (), std::invalid_argument,
+      "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
+      << A.getNumVectors () << ".");
+
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    auto Y_lcl_orig = this->getLocalViewDevice(exec, Access::ReadWrite);
+    auto X_lcl_orig = A.getLocalViewDevice(exec, Access::ReadOnly);
+    auto Y_lcl = subview (Y_lcl_orig, rowRng, ALL ());
+    auto X_lcl = subview (X_lcl_orig, rowRng, ALL ());
+
+    if (isConstantStride () && A.isConstantStride ()) {
+      KokkosBlas::scal (exec, Y_lcl, theAlpha, X_lcl);
+    }
+    else {
+      // Make sure that Kokkos only uses the local length for add.
+      for (size_t k = 0; k < numVecs; ++k) {
+        const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+        const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+        auto Y_k = subview (Y_lcl, ALL (), Y_col);
+          auto X_k = subview (X_lcl, ALL (), X_col);
+
+          KokkosBlas::scal (exec, Y_k, theAlpha, X_k);
+      }
+    }
+  }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
