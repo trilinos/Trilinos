@@ -106,8 +106,8 @@ void Timer<Real,Key>::summarize(std::ostream &stream,
   std::ios_base::fmtflags old(stream.flags());
   stream << std::setprecision(6);
   stream << "  " << name_ << std::endl;
-  stream << std::setw(50) << std::right << "Ave. Time (s)"
-         << std::setw(25) << std::right << "Ave. #Calls"
+  stream << std::setw(50) << std::right << "Avg. Time (s)"
+         << std::setw(25) << std::right << "Avg. #Calls"
          << std::endl;
   for (typename std::map<Key,int>::iterator it = count_.begin(); it != count_.end(); ++it) {
     stream << std::setw(30) << std::right << it->first
