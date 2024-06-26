@@ -87,7 +87,6 @@ DiagnosticPreconditionerFactory::DiagnosticPreconditionerFactory(
     : outputStream_(Teko::getOutputStream()),
       invFactory_(invFactory),
       precFactory_(precFactory),
-      precFactory_(Teuchos::null),
       diagString_(label),
       printResidual_(printResidual) {
   initTimers(diagString_);
@@ -219,7 +218,7 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(
       // start timer on construction, end on destruction
       Teuchos::TimeMonitor monitor(*rebuildTimer_, false);
 
-      if (precOp.is_null())
+      if (diagOp_prec_ptr.is_null())
         Teko::rebuildInverse(*invFactory_, lo, invOp);
       else
         Teko::rebuildInverse(*invFactory_, lo, diagOp_prec_ptr, invOp);
@@ -244,7 +243,7 @@ void DiagnosticPreconditionerFactory::initializeFromParameterList(
   // grab library and preconditioner name
   std::string invName  = settings.get<std::string>("Inverse Factory");
   std::string precName = "";
-  if (settings.hasParameter("Preconditioner Factory"))
+  if (settings.isParameter("Preconditioner Factory"))
     precName = settings.get<std::string>("Preconditioner Factory");
   diagString_ = settings.get<std::string>("Descriptive Label");
 
@@ -283,8 +282,8 @@ bool DiagnosticPreconditionerFactory::updateRequestedParameters(const Teuchos::P
           << "preconditioner factory has been set. Currently it is null!");
 
   bool success = true;
-  sucess &= invFactory_->updateRequestedParameters(pl);
-  if (precFactory_) sucess &= precFactory_->updateRequestedParameters(pl);
+  success &= invFactory_->updateRequestedParameters(pl);
+  if (precFactory_) success &= precFactory_->updateRequestedParameters(pl);
 
   return success;
 }
@@ -293,7 +292,7 @@ void DiagnosticPreconditionerFactory::initTimers(const std::string& str) {
   buildTimer_       = Teuchos::rcp(new Teuchos::Time(str + " buildTimer"));
   rebuildTimer_     = Teuchos::rcp(new Teuchos::Time(str + " rebuildTimer"));
   precBuildTimer_   = Teuchos::rcp(new Teuchos::Time(str + " precBuildTimer"));
-  precBebuildTimer_ = Teuchos::rcp(new Teuchos::Time(str + " precRebuildTimer"));
+  precRebuildTimer_ = Teuchos::rcp(new Teuchos::Time(str + " precRebuildTimer"));
 }
 
 }  // end namespace Teko
