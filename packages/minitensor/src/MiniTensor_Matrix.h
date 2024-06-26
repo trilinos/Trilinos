@@ -47,8 +47,7 @@
 #include <iostream>
 #include <vector>
 
-#include <boost/tuple/tuple.hpp>
-#include<Kokkos_Core.hpp>
+#include <Kokkos_Core.hpp>
 #include "MiniTensor_Vector.h"
 
 namespace minitensor {
