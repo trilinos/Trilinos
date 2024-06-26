@@ -45,7 +45,7 @@
 /// of Tpetra
 
 #include <string>
-#include "KokkosCore.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Tpetra {
 

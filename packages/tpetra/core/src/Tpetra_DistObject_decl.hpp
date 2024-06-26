@@ -45,6 +45,7 @@
 /// \brief Declaration of the Tpetra::DistObject class
 
 #include "Tpetra_Details_DistributorActor.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -850,7 +851,7 @@ namespace Tpetra {
     /// \param permuteFromLIDs [in] List of the elements that are
     ///   permuted.  They are listed by their local index (LID) in the
     ///   source object.
-    /// \param CM [in] CombineMode to be used during copyAndPermute; 
+    /// \param CM [in] CombineMode to be used during copyAndPermute;
     ///   may or may not be used by the particular object being called;
     ///   behavior with respect to CombineMode may differ by object.
     virtual void
