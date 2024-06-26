@@ -71,11 +71,8 @@ namespace Details {
   }
 
 
-} // namespace Details
-
-
   void fence() {
-    if(Details::areRelaxedSyncsEnabled()) {
+    if(areRelaxedSyncsEnabled()) {
       Kokkos::DefaultExecutionSpace().fence();
     }
     else {
@@ -85,13 +82,15 @@ namespace Details {
   }
 
   void fence(const std::string& label) {
-    if(Details::areRelaxedSyncsEnabled()) {
+    if(areRelaxedSyncsEnabled()) {
       Kokkos::DefaultExecutionSpace().fence(label);
     }
     else {
       Kokkos::fence(label);
     }
   }
+
+} // namespace Details
 
 
 } // namespace Tpetra

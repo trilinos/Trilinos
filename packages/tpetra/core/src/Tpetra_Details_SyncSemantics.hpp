@@ -67,67 +67,64 @@ namespace Tpetra {
     /// WARNING: This is not intended for use outside of Trilinos.
     bool areRelaxedSyncsEnabled();
 
-  } // namespace Details
-
-
-  // Tpetra wrapper of Kokkos::fence();
-  void fence();
-  void fence(const std::string& label);
+    // Tpetra wrapper of Kokkos::fence();
+    void fence();
+    void fence(const std::string& label);
 
 #ifdef ENABLE_DEEP_COPY
-  // Tpetra wrappers ofKokkos::deep_copy();
-  template<class ExecSpace, class ViewDest, class ViewSrc>
-  void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const ViewSrc &src) {
-    Kokkos::deep_copy(exec_space,dest,src);
-  }
-
-  template<class ExecSpace, class ViewDest>
-  void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const typename ViewDest::value_type &src) {
-    Kokkos::deep_copy(exec_space,dest,src);
-  }
-
-  template<class ExecSpace, class ViewSrc>
-  void deep_copy(const ExecSpace &exec_space, typename ViewSrc::value_type &dest, const ViewSrc &src) {
-    Kokkos::deep_copy(exec_space,dest,src);
-  }
-
-  template<class ViewDest, class ViewSrc>
-  void deep_copy(const ViewDest &dest, const ViewSrc &src) {
-    if(Details::areRelaxedSyncsEnabled()) {
-      auto exec_space = Kokkos::DefaultExecutionSpace();
+    // Tpetra wrappers ofKokkos::deep_copy();
+    template<class ExecSpace, class ViewDest, class ViewSrc>
+    void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const ViewSrc &src) {
       Kokkos::deep_copy(exec_space,dest,src);
-      exec_space.fence();
     }
-    else {
-      Kokkos::deep_copy(dest,src);
-    }
-  }
 
-  template<class ViewDest>
-  void deep_copy(const ViewDest &dest, const typename ViewDest::value_type &src) {
-    if(Details::areRelaxedSyncsEnabled()) {
-      auto exec_space = Kokkos::DefaultExecutionSpace();
+    template<class ExecSpace, class ViewDest>
+    void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const typename ViewDest::value_type &src) {
       Kokkos::deep_copy(exec_space,dest,src);
-      exec_space.fence();
     }
-    else {
-      Kokkos::deep_copy(dest,src);
-    }
-  }
 
-  template<class ViewSrc>
-  void deep_copy(typename ViewSrc::value_type &dest, const ViewSrc &src) {
-    if(Details::areRelaxedSyncsEnabled()) {
-      auto exec_space = Kokkos::DefaultExecutionSpace();
+    template<class ExecSpace, class ViewSrc>
+    void deep_copy(const ExecSpace &exec_space, typename ViewSrc::value_type &dest, const ViewSrc &src) {
       Kokkos::deep_copy(exec_space,dest,src);
-      exec_space.fence();
     }
-    else {
-      Kokkos::deep_copy(dest,src);
+
+    template<class ViewDest, class ViewSrc>
+    void deep_copy(const ViewDest &dest, const ViewSrc &src) {
+      if(Details::areRelaxedSyncsEnabled()) {
+        auto exec_space = Kokkos::DefaultExecutionSpace();
+        Kokkos::deep_copy(exec_space,dest,src);
+        exec_space.fence();
+      }
+      else {
+        Kokkos::deep_copy(dest,src);
+      }
     }
-  }
+
+    template<class ViewDest>
+    void deep_copy(const ViewDest &dest, const typename ViewDest::value_type &src) {
+      if(Details::areRelaxedSyncsEnabled()) {
+        auto exec_space = Kokkos::DefaultExecutionSpace();
+        Kokkos::deep_copy(exec_space,dest,src);
+        exec_space.fence();
+      }
+      else {
+        Kokkos::deep_copy(dest,src);
+      }
+    }
+
+    template<class ViewSrc>
+    void deep_copy(typename ViewSrc::value_type &dest, const ViewSrc &src) {
+      if(Details::areRelaxedSyncsEnabled()) {
+        auto exec_space = Kokkos::DefaultExecutionSpace();
+        Kokkos::deep_copy(exec_space,dest,src);
+        exec_space.fence();
+      }
+      else {
+        Kokkos::deep_copy(dest,src);
+      }
+    }
 #endif
-
+  } //namepace Details
 } // namespace Tpetra
 
 #endif // TPETRA_DETAILS_SYNC_SEMANTICS_HPP
