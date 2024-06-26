@@ -54,6 +54,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_checkGlobalError.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Tpetra_Util.hpp" // Details::createPrefix
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -860,7 +861,7 @@ namespace Tpetra {
            "target Map must be locally fitted (in the sense of "
            "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
       }
-      else { // if (restrictedMode && revOp == DoReverse) 
+      else { // if (restrictedMode && revOp == DoReverse)
         const bool myMapLocallyFittedTransferSrcMap =
           this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -1218,7 +1219,7 @@ namespace Tpetra {
            "target Map must be locally fitted (in the sense of "
            "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
       }
-      else { // if (restrictedMode && revOp == DoReverse) 
+      else { // if (restrictedMode && revOp == DoReverse)
         const bool myMapLocallyFittedTransferSrcMap =
           this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -1433,7 +1434,7 @@ namespace Tpetra {
 
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Count totalImportPackets" << std::endl; 
+          os << *prefix << "Count totalImportPackets" << std::endl;
           std::cerr << os.str ();
         }
         using the_dev_type = typename decltype (numImp_d)::device_type;
@@ -1496,7 +1497,7 @@ namespace Tpetra {
            numImportPacketsPerLID_av);
       }
       else { // pack on device
-        Kokkos::fence("DistObject::doPosts-1"); // for UVM
+        Tpetra::fence("DistObject::doPosts-1"); // for UVM
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
@@ -1541,7 +1542,7 @@ namespace Tpetra {
            this->imports_.view_host ());
       }
       else { // pack on device
-        Kokkos::fence("DistObject::doPosts-2"); // for UVM
+        Tpetra::fence("DistObject::doPosts-2"); // for UVM
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,

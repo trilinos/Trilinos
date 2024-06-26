@@ -45,6 +45,7 @@
 #include <Kokkos_DualView.hpp>
 #include "Teuchos_TestForException.hpp"
 #include "Tpetra_Details_ExecutionSpaces.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include <sstream>
 
 //#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
@@ -173,7 +174,7 @@ public:
     : originalDualView(src.originalDualView),
       dualView(src.dualView)
   { }
-  
+
   //! Conversion assignment operator.
   template <class SrcDualViewType>
   WrappedDualView& operator=(const WrappedDualView<SrcDualViewType>& src) {
@@ -263,7 +264,7 @@ public:
   ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
-    
+
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
@@ -301,7 +302,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence("WrappedDualView::getHostView");
+      if (deviceMemoryIsHostAccessible) Tpetra::fence("WrappedDualView::getHostView");
       dualView.clear_sync_state();
       dualView.modify_host();
     }
@@ -350,7 +351,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfHostViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence("WrappedDualView::getDeviceView");
+      if (deviceMemoryIsHostAccessible) Tpetra::fence("WrappedDualView::getDeviceView");
       dualView.clear_sync_state();
       dualView.modify_device();
     }
@@ -658,10 +659,10 @@ private:
   }
 
 
-  void throwIfViewsAreDifferentSizes() const {    
+  void throwIfViewsAreDifferentSizes() const {
     // Here we check *size* (the product of extents) rather than each extent individually.
     // This is mostly designed to catch people resizing one view, but not the other.
-    if(dualView.d_view.size() != dualView.h_view.size()) {    
+    if(dualView.d_view.size() != dualView.h_view.size()) {
         std::ostringstream msg;
         msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
             << "; host and device views are different sizes: "
@@ -693,7 +694,7 @@ private:
       throw std::runtime_error(msg.str());
     }
   }
- 
+
   bool iAmASubview() {
     return originalDualView.h_view != dualView.h_view;
   }

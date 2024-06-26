@@ -45,7 +45,6 @@
 /// \brief Declaration of the Tpetra::DistObject class
 
 #include "Tpetra_Details_DistributorActor.hpp"
-#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"

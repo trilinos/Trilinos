@@ -55,6 +55,7 @@
 
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Teuchos_Array.hpp"
 #include "Kokkos_Bitset.hpp"
 #include <set>
@@ -72,7 +73,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
             size_t numRemoteColGIDs,
             std::set<GO>& RemoteGIDSet,
             std::vector<GO>& RemoteGIDUnorderedVector,
-            std::vector<bool>& GIDisLocal, 
+            std::vector<bool>& GIDisLocal,
             const bool sortEachProcsGids,
             std::ostream* errStrm)
 {
@@ -641,7 +642,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   Kokkos::deep_copy(exec_space(), remotesHost, remoteGIDView);
   // CAG: This fence was found to be required on Cuda with UVM=on.
-  Kokkos::fence("Tpetra::makeColMap");
+  Tpetra::fence("Tpetra::makeColMap");
   //Finally, populate the STL structures which hold the index lists
   std::set<GO> RemoteGIDSet;
   std::vector<GO> RemoteGIDUnorderedVector;
@@ -671,7 +672,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
             static_cast<size_t>(numRemoteColGIDs),
             RemoteGIDSet,
             RemoteGIDUnorderedVector,
-            GIDisLocal, 
+            GIDisLocal,
             true, //always sort remotes
             errStrm);
 }

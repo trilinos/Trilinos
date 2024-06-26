@@ -52,6 +52,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp" // need this here for sort2
 #include "Tpetra_Details_WrappedDualView.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
@@ -269,7 +270,7 @@ protected:
     // Types used for CrsGraph's storage of local column indices
     using local_inds_dualv_type =
           Kokkos::DualView<local_ordinal_type*, device_type>;
-    using local_inds_wdv_type = 
+    using local_inds_wdv_type =
           Details::WrappedDualView<local_inds_dualv_type>;
 
     // Types used for CrsGraph's storage of global column indices
@@ -1511,7 +1512,7 @@ public:
     removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap) override;
     //@}
 
-    template<class DestViewType, class SrcViewType, 
+    template<class DestViewType, class SrcViewType,
              class DestOffsetViewType, class SrcOffsetViewType >
     struct pack_functor {
       typedef typename DestViewType::execution_space execution_space;
@@ -1521,9 +1522,9 @@ public:
       DestOffsetViewType dest_offset;
       typedef typename DestOffsetViewType::non_const_value_type ScalarIndx;
 
-      pack_functor(DestViewType dest_, 
+      pack_functor(DestViewType dest_,
                    const SrcViewType src_,
-                   DestOffsetViewType dest_offset_, 
+                   DestOffsetViewType dest_offset_,
                    const SrcOffsetViewType src_offset_):
         src(src_),dest(dest_),
         src_offset(src_offset_),dest_offset(dest_offset_) {};
@@ -2131,7 +2132,7 @@ public:
 
   private:
     // Replacement for device view k_rowPtrs_
-    // Device view rowPtrsUnpacked_dev_ takes place of k_rowPtrs_ 
+    // Device view rowPtrsUnpacked_dev_ takes place of k_rowPtrs_
     // Host view rowPtrsUnpacked_host_ takes place of copies and use of getEntryOnHost
     // Wish this could be a WrappedDualView, but deep_copies in DualView
     // don't work with const data views (e.g., StaticCrsGraph::row_map)
@@ -2252,13 +2253,13 @@ public:
       rowPtrsUnpacked_host_ = row_ptrs_host_view_type();
       rowPtrsPacked_host_ = row_ptrs_host_view_type();
     }
-    
+
     //TODO:  Make private -- matrix shouldn't access directly the guts of graph
-  
+
     /// \brief Local ordinals of column indices for all rows
     /// Valid when isLocallyIndexed is true
     /// If OptimizedStorage, storage is PACKED after fillComplete
-    /// If not OptimizedStorate, storage is UNPACKED after fillComplete; 
+    /// If not OptimizedStorate, storage is UNPACKED after fillComplete;
     /// that is, the views have storage equal to sizes provided in CrsGraph
     /// constructor.
     ///
@@ -2281,7 +2282,7 @@ public:
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
-    /// 
+    ///
     /// UVM Removal Note:   Device view takes place of lclGraph_.entries
     mutable local_inds_wdv_type lclIndsPacked_wdv;
 
@@ -2294,7 +2295,7 @@ public:
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is globally indexed
-    /// 
+    ///
     /// UVM Removal Note:   Device view takes place of k_gblInds1D_
 
     // TODO: Make private -- matrix shouldn't access directly
@@ -2512,7 +2513,7 @@ public:
     //! Fence if necessary and set flag so we don't duplicate.
     void execute_sync_host_uvm_access() const {
       if(need_sync_host_uvm_access) {
-        Kokkos::fence("CrsGraph::execute_sync_host_uvm_access");
+        Tpetra::fence("CrsGraph::execute_sync_host_uvm_access");
         need_sync_host_uvm_access = false;
       }
     }

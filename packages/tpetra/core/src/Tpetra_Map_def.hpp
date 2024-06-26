@@ -65,6 +65,7 @@
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 
 namespace { // (anonymous)
 
@@ -128,14 +129,14 @@ namespace { // (anonymous)
     // ride, rather than the other way around
     typedef typename Kokkos::MinLoc<LO,GO>::value_type minloc_type;
     minloc_type myMinLoc;
-    
+
     // Find the initial sequence of parallel gids
     // To find the lastContiguousGID_, we find the first guy where entryList[i] - entryList[0] != i-0.  That's the first non-contiguous guy.
     // We want the one *before* that guy.
     Kokkos::parallel_reduce(range_policy(0,numLocalElements),KOKKOS_LAMBDA(const LO & i, GO &l_myMin, GO&l_myMax, GO& l_firstCont, minloc_type & l_lastCont){
         GO entry_0 = entryList[0];
         GO entry_i = entryList[i];
-        
+
         // Easy stuff
         l_myMin = (l_myMin < entry_i) ? l_myMin : entry_i;
         l_myMax = (l_myMax > entry_i) ? l_myMax : entry_i;
@@ -153,10 +154,10 @@ namespace { // (anonymous)
         }
 
       },Kokkos::Min<GO>(minMyGID),Kokkos::Max<GO>(maxMyGID),Kokkos::Min<GO>(firstContiguousGID),Kokkos::MinLoc<LO,GO>(myMinLoc));
-    
+
     // This switch is intentional, since we're using MinLoc backwards
     lastContiguousGID_val = myMinLoc.loc;
-    lastContiguousGID_loc = myMinLoc.val; 
+    lastContiguousGID_loc = myMinLoc.val;
   }
 
 
@@ -736,7 +737,7 @@ namespace Tpetra {
       // initial sequence of contiguous GIDs.
       LO firstNonContiguous_loc=i;
       {
-        
+
         const std::pair<size_t, size_t> ncRange (i, entryList_host.extent (0));
         auto nonContigGids_host = subview (entryList_host, ncRange);
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -759,7 +760,7 @@ namespace Tpetra {
 
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
         Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
-        Kokkos::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
+        Tpetra::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
                                             firstNonContiguous_loc);
@@ -1112,7 +1113,7 @@ namespace Tpetra {
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
-     
+
     }
     else {
       minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
@@ -1705,7 +1706,7 @@ namespace Tpetra {
         os << *prefix << "Copy lgMap to lgMapHost" << endl;
         std::cerr << os.str();
       }
-      
+
       auto lgMapHost = Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
       auto exec_instance = execution_space();
@@ -1714,7 +1715,7 @@ namespace Tpetra {
       // There's a non-trivial chance we'll grab this on the host,
       // so let's make sure the copy finishes
       exec_instance.fence();
-      
+
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       lgMapHost_ = lgMapHost;
@@ -1790,7 +1791,7 @@ namespace Tpetra {
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
     }
-    
+
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -2372,7 +2373,7 @@ namespace Tpetra {
        // be somewhat error prone for contiguous maps
 
        // create_mirror_view preserves const-ness.  create_mirror does not
-       auto lgMap_host = Kokkos::create_mirror(Kokkos::HostSpace (), lgMap_);       
+       auto lgMap_host = Kokkos::create_mirror(Kokkos::HostSpace (), lgMap_);
 
        // Since this was computed on the default stream, we can copy on the stream and then fence
        // the stream
