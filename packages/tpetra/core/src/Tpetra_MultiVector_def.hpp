@@ -4706,6 +4706,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     }
   }
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4750,6 +4751,61 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
         const size_t C_col = isConstantStride () ? j : whichVectors_[j];
         const size_t B_col = B.isConstantStride () ? j : B.whichVectors_[j];
         KokkosBlas::mult (scalarThis,
+                          subview (this_view, ALL (), C_col),
+                          scalarAB,
+                          subview (A_view, ALL (), 0),
+                          subview (B_view, ALL (), B_col));
+      }
+    }
+  }
+
+
+   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  elementWiseMultiply (const execution_space& exec, Scalar scalarAB,
+                       const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                       const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+                       Scalar scalarThis)
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    const char tfecfFuncName[] = "elementWiseMultiply: ";
+
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numVecs = this->getNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclNumRows != A.getLocalLength () || lclNumRows != B.getLocalLength (),
+       std::runtime_error, "MultiVectors do not have the same local length.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      numVecs != B.getNumVectors (), std::runtime_error, "this->getNumVectors"
+      "() = " << numVecs << " != B.getNumVectors() = " << B.getNumVectors ()
+      << ".");
+
+    auto this_view = this->getLocalViewDevice(exec,Access::ReadWrite);
+    auto A_view = A.getLocalViewDevice(exec, Access::ReadOnly);
+    auto B_view = B.getLocalViewDevice(exec, Access::ReadOnly);
+
+    if (isConstantStride () && B.isConstantStride ()) {
+      // A is just a Vector; it only has one column, so it always has
+      // constant stride.
+      //
+      // If both *this and B have constant stride, we can do an
+      // element-wise multiply on all columns at once.
+      KokkosBlas::mult (exec,
+                        scalarThis,
+                        this_view,
+                        scalarAB,
+                        subview (A_view, ALL (), 0),
+                        B_view);
+    }
+    else {
+      for (size_t j = 0; j < numVecs; ++j) {
+        const size_t C_col = isConstantStride () ? j : whichVectors_[j];
+        const size_t B_col = B.isConstantStride () ? j : B.whichVectors_[j];
+        KokkosBlas::mult (exec,
+                          scalarThis,
                           subview (this_view, ALL (), C_col),
                           scalarAB,
                           subview (A_view, ALL (), 0),

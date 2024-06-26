@@ -2174,6 +2174,35 @@ namespace Tpetra {
                          const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                          Scalar scalarThis);
+
+    /// \brief Multiply a Vector A elementwise by a MultiVector B.
+    ///
+    /// Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
+    /// where <tt>@</tt> denotes element-wise multiplication.  In
+    /// pseudocode, if C denotes <tt>*this</tt> MultiVector:
+    /// \code
+    /// C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
+    /// \endcode
+    /// for all rows i and columns j of C.
+    ///
+    /// B must have the same dimensions as <tt>*this</tt>, while A
+    /// must have the same number of rows but a single column.
+    ///
+    /// We do not require that A, B, and <tt>*this</tt> have
+    /// compatible Maps, as long as the number of rows in A, B, and
+    /// <tt>*this</tt> on each process is the same.  For example, one
+    /// or more of these vectors might have a locally replicated Map,
+    /// or a Map with a local communicator (<tt>MPI_COMM_SELF</tt>).
+    /// This case may occur in block relaxation algorithms when
+    /// applying a diagonal scaling.
+    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
+    /// can lead to errors.
+    void
+    elementWiseMultiply (const execution_space& exec, Scalar scalarAB,
+                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+                         Scalar scalarThis);
+
     //@}
     //! @name Attribute access functions
     //@{
