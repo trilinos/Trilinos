@@ -96,6 +96,7 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
+    bool ENABLE_DEBUG_OUTPUT = false;
 
   #ifdef HAVE_MPI
      Teuchos::RCP<const Teuchos::MpiComm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
@@ -256,7 +257,7 @@ namespace panzer {
     coords["eblock-1_0"] = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<panzer::Traits::Residual> >(resp10,true)->getCoords();;
 
     // Debugging
-    if (true) {
+    if (ENABLE_DEBUG_OUTPUT) {
       Teuchos::RCP<Teuchos::FancyOStream> out2 = Teuchos::getFancyOStream(Teuchos::rcp(&out,false));
       out2->setOutputToRootOnly(-1);
       *out2 << "\nPrinting IP coordinates for block: eblock-0_0" << std::endl;
