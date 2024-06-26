@@ -86,7 +86,7 @@ namespace Tpetra {
   }
 
   template<class ExecSpace, class ViewSrc>
-  void deep_copy(const ExecSpace &exec_space, ViewSrc::value_type &dest, const ViewSrc &src) {
+  void deep_copy(const ExecSpace &exec_space, typename ViewSrc::value_type &dest, const ViewSrc &src) {
     Kokkos::deep_copy(exec_space,dest,src);
   }
 
@@ -112,11 +112,10 @@ namespace Tpetra {
     else {
       Kokkos::deep_copy(dest,src);
     }
-
   }
 
   template<class ViewSrc>
-  void deep_copy(ViewSrc::value_type &dest, const ViewSrc &src) {
+  void deep_copy(typename ViewSrc::value_type &dest, const ViewSrc &src) {
     if(Details::areRelaxedSyncsEnabled()) {
       auto exec_space = Kokkos::DefaultExecutionSpace();
       Kokkos::deep_copy(exec_space,dest,src);
