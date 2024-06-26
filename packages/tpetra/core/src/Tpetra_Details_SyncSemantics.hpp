@@ -67,7 +67,7 @@ namespace Tpetra {
     /// WARNING: This is not intended for use outside of Trilinos.
     bool areRelaxedSyncsEnabled();
 
-  };
+  } // namespace Details
 
 
   // Tpetra wrapper of Kokkos::fence();
@@ -127,8 +127,6 @@ namespace Tpetra {
   }
 
 
-
-} // namespace Details
 } // namespace Tpetra
 
 #endif // TPETRA_DETAILS_SYNC_SEMANTICS_HPP
