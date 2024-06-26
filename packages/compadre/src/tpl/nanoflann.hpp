@@ -1,34 +1,16 @@
-/***********************************************************************
- * Software License Agreement (BSD License)
- *
- * Copyright 2008-2009  Marius Muja (mariusm@cs.ubc.ca). All rights reserved.
- * Copyright 2008-2009  David G. Lowe (lowe@cs.ubc.ca). All rights reserved.
- * Copyright 2011-2016  Jose Luis Blanco (joseluisblancoc@gmail.com).
- *   All rights reserved.
- *
- * THE BSD LICENSE
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *************************************************************************/
+// @HEADER
+// *****************************************************************************
+//     Compadre: COMpatible PArticle Discretization and REmap Toolkit
+//
+// Copyright 2001       Nicolai M. Josuttis
+// Copyright 2008-2009  Marius Muja (mariusm@cs.ubc.ca). All rights reserved.
+// Copyright 2008-2009  David G. Lowe (lowe@cs.ubc.ca). All rights reserved.
+// Copyright 2011-2016  Jose Luis Blanco (joseluisblancoc@gmail.com).
+//                      All rights reserved.
+// Copyright 2018 NTESS and the Compadre contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 
 /** \mainpage nanoflann C++ API documentation
   *  nanoflann is a C++ header-only library for building KD-Trees, mostly
@@ -457,7 +439,7 @@ namespace nanoflann
 		};
 	};
 	/** Metaprogramming helper traits class for the L2 (Euclidean) metric */
-	struct metric_L2 : public Metric 
+	struct metric_L2 : public Metric
 	{
 		template<class T, class DataSource>
 		struct traits {
@@ -473,7 +455,7 @@ namespace nanoflann
 		};
 	};
 	/** Metaprogramming helper traits class for the SO3_InnerProdQuat metric */
-	struct metric_SO2 : public Metric 
+	struct metric_SO2 : public Metric
 	{
 		template<class T, class DataSource>
 		struct traits {
@@ -790,7 +772,7 @@ namespace nanoflann
 	struct array_or_vector_selector<-1, T> {
 		typedef std::vector<T> container_t;
 	};
-	
+
 	/** @} */
 
 	/** kd-tree base-class
@@ -837,7 +819,7 @@ namespace nanoflann
 			} node_type;
 			Node *child1, *child2;  //!< Child nodes (both=NULL mean its a leaf node)
 		};
-		
+
 		typedef Node* NodePtr;
 
 		struct Interval
@@ -865,7 +847,7 @@ namespace nanoflann
 		typedef typename array_or_vector_selector<DIM, DistanceType>::container_t distance_vector_t;
 
 		/** The KD-tree used to find neighbours */
-		
+
 		BoundingBox root_bbox;
 
 		/**
@@ -1163,7 +1145,7 @@ namespace nanoflann
 		/** Hidden copy constructor, to disallow copying indices (Not implemented) */
 		KDTreeSingleIndexAdaptor(const KDTreeSingleIndexAdaptor<Distance, DatasetAdaptor, DIM, IndexType>&);
 	public:
-		
+
 		/**
 		 * The dataset used by this index
 		 */
@@ -1466,7 +1448,7 @@ namespace nanoflann
 	 * \tparam Distance The distance metric to use: nanoflann::metric_L1, nanoflann::metric_L2, nanoflann::metric_L2_Simple, etc.
 	 * \tparam DIM Dimensionality of data points (e.g. 3 for 3D points)
 	 * \tparam IndexType Will be typically size_t or int
-	 */	 
+	 */
 	template <typename Distance, class DatasetAdaptor, int DIM = -1, typename IndexType = size_t>
 	class KDTreeSingleIndexDynamicAdaptor_ : public KDTreeBaseClass<KDTreeSingleIndexDynamicAdaptor_<Distance, DatasetAdaptor, DIM, IndexType>, Distance, DatasetAdaptor, DIM, IndexType>
 	{
@@ -1588,7 +1570,7 @@ namespace nanoflann
 		 * the result object.
 		 *  \sa radiusSearch, findNeighbors
 		 * \note nChecks_IGNORED is ignored but kept for compatibility with the original FLANN interface.
-		 * \return Number `N` of valid points in the result set. Only the first `N` entries in `out_indices` and `out_distances_sq` will be valid. 
+		 * \return Number `N` of valid points in the result set. Only the first `N` entries in `out_indices` and `out_distances_sq` will be valid.
 		 *         Return may be less than `num_closest` only if the number of elements in the tree is less than `num_closest`.
 		 */
 		size_t knnSearch(const ElementType *query_point, const size_t num_closest, IndexType *out_indices, DistanceType *out_distances_sq, const int /* nChecks_IGNORED */ = 10) const
@@ -1742,7 +1724,7 @@ namespace nanoflann
 	/** kd-tree dynaimic index
 	 *
 	 * class to create multiple static index and merge their results to behave as single dynamic index as proposed in Logarithmic Approach.
-	 *  
+	 *
 	 *  Example of usage:
 	 *  examples/dynamic_pointcloud_example.cpp
 	 *
@@ -1778,7 +1760,7 @@ namespace nanoflann
 		std::vector<index_container_t> index;
 
 	public:
-		/** Get a const ref to the internal list of indices; the number of indices is adapted dynamically as 
+		/** Get a const ref to the internal list of indices; the number of indices is adapted dynamically as
 		  * the dataset grows in size. */
 		const std::vector<index_container_t> & getAllIndices() const {
 			return index;
@@ -1889,7 +1871,7 @@ namespace nanoflann
 			return result.full();
 		}
 
-	}; 
+	};
 
 	/** An L2-metric KD-tree adaptor for working with data directly stored in an Eigen Matrix, without duplicating the data storage.
 	  *  Each row in the matrix represents a point in the state space.
