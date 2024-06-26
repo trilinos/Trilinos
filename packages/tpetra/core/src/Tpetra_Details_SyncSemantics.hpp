@@ -74,6 +74,7 @@ namespace Tpetra {
   void fence();
   void fence(const std::string& label);
 
+#ifdef ENABLE_DEEP_COPY
   // Tpetra wrappers ofKokkos::deep_copy();
   template<class ExecSpace, class ViewDest, class ViewSrc>
   void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const ViewSrc &src) {
@@ -125,7 +126,7 @@ namespace Tpetra {
       Kokkos::deep_copy(dest,src);
     }
   }
-
+#endif
 
 } // namespace Tpetra
 
