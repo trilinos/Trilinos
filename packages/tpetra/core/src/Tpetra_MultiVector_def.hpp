@@ -4374,7 +4374,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       // NOTE (mfh 17 Mar 2019) If we ever get rid of UVM, then device
       // and host will be separate allocations.  In that case, it may
       // pay to do the all-reduce from device to host.
-      Tpetra::fence("MultiVector::reduce"); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
+      Tpetra::Details::fence("MultiVector::reduce"); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
       auto X_lcl = this->getLocalViewDevice(Access::ReadWrite);
       allReduceView (X_lcl, X_lcl, *comm);
     }

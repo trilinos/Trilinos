@@ -1297,7 +1297,7 @@ namespace Tpetra {
       num_row_entries_type numRowEnt (ViewAllocateWithoutInitializing (label), numRows);
       // DEEP_COPY REVIEW - VALUE-TO-HOSTMIRROR
       Kokkos::deep_copy (execution_space(), numRowEnt, static_cast<size_t> (0)); // fill w/ 0s
-      Tpetra::fence("CrsGraph::allocateIndices"); // TODO: Need to understand downstream failure points and move this fence.
+      Tpetra::Details::fence("CrsGraph::allocateIndices"); // TODO: Need to understand downstream failure points and move this fence.
       this->k_numRowEntries_ = numRowEnt; // "commit" our allocation
     }
 

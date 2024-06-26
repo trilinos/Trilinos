@@ -2513,7 +2513,7 @@ public:
     //! Fence if necessary and set flag so we don't duplicate.
     void execute_sync_host_uvm_access() const {
       if(need_sync_host_uvm_access) {
-        Tpetra::fence("CrsGraph::execute_sync_host_uvm_access");
+        Tpetra::Details::fence("CrsGraph::execute_sync_host_uvm_access");
         need_sync_host_uvm_access = false;
       }
     }

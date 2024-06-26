@@ -302,7 +302,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
-      if (deviceMemoryIsHostAccessible) Tpetra::fence("WrappedDualView::getHostView");
+      if (deviceMemoryIsHostAccessible) Tpetra::Details::fence("WrappedDualView::getHostView");
       dualView.clear_sync_state();
       dualView.modify_host();
     }
@@ -351,7 +351,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfHostViewAlive();
-      if (deviceMemoryIsHostAccessible) Tpetra::fence("WrappedDualView::getDeviceView");
+      if (deviceMemoryIsHostAccessible) Tpetra::Details::fence("WrappedDualView::getDeviceView");
       dualView.clear_sync_state();
       dualView.modify_device();
     }

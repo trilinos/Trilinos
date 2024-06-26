@@ -760,7 +760,7 @@ namespace Tpetra {
 
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
         Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
-        Tpetra::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
+        Tpetra::Details::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
                                             firstNonContiguous_loc);
