@@ -644,72 +644,72 @@ if(useCustomDotProduct) {
     }
   }
 
-  // Run Algorithm
-  Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;
-  bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
+  int return_status = 0;
+  if(rolParams.get<bool>("Perform Optimization", true)) {
+    // Run Algorithm
+    Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;
+    bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
 
-  if(boundConstrained) {
-    Teuchos::RCP<Thyra::VectorBase<double>> p_lo = model->getLowerBounds().get_p(0)->clone_v();
-    Teuchos::RCP<Thyra::VectorBase<double>> p_up = model->getUpperBounds().get_p(0)->clone_v();
+    if(boundConstrained) {
+      Teuchos::RCP<Thyra::VectorBase<double>> p_lo = model->getLowerBounds().get_p(0)->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<double>> p_up = model->getUpperBounds().get_p(0)->clone_v();
 
-    //ROL::Thyra_BoundConstraint<double> boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
-    boundConstraint = rcp( new ROL::Bounds<double>(ROL::makePtr<ROL::ThyraVector<double> >(p_lo), ROL::makePtr<ROL::ThyraVector<double> >(p_up)));
-  }
-
-    int return_status = 0;
-
-    RolOutputBuffer<char> rolOutputBuffer;
-    std::ostream rolOutputStream(&rolOutputBuffer);
-    Teuchos::RCP<Teuchos::FancyOStream> rolOutput = Teuchos::getFancyOStream(Teuchos::rcpFromRef(rolOutputStream));
-    rolOutput->setOutputToRootOnly(0);
-
-    
-
-    if ( useFullSpace ) {
-      //using default dot product for x
-      ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),rol_p_primal);
-      auto r_ptr = rol_x.clone();
-      double tol = 1e-5;
-      constr.solve(*r_ptr,rol_x,rol_p,tol);
-      if(boundConstrained) {
-        *out << "Piro::PerformROLSteadyAnalysis: Solving Full Space Bound Constrained Optimization Problem" << std::endl;
-        ROL::BoundConstraint<double> u_bnd(rol_x);
-        ROL::Ptr<ROL::BoundConstraint<double> > bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<double> >(ROL::makePtrFromRef(u_bnd),boundConstraint);
-        ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));
-        prob.addBoundConstraint(bnd);
-        prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
-        bool lumpConstraints(false), printToStream(true);
-        prob.finalize(lumpConstraints, printToStream, *rolOutput);
-        ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
-        optSolver.solve(*out);
-        return_status = optSolver.getAlgorithmState()->statusFlag;
-      } else {
-        *out << "Piro::PerformROLSteadyAnalysis: Solving Full Space Unconstrained Optimization Problem" << std::endl;
-        ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));//, ROL::makePtrFromRef(constr), r_ptr);
-        prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
-        bool lumpConstraints(false), printToStream(true);
-        prob.finalize(lumpConstraints, printToStream, *rolOutput);
-        ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
-        optSolver.solve(*out);
-        return_status = optSolver.getAlgorithmState()->statusFlag;
-      }
-    } else {
-      Teuchos::RCP<CustomLBFGSSecant<double>> customSecant = useCustomSecant ? Teuchos::rcp(new CustomLBFGSSecant<double> (H_sec, invH_sec, secantMaxStorage, secantScaling)) : Teuchos::null;
-      if(boundConstrained) {
-        *out << "Piro::PerformROLSteadyAnalysis: Solving Reduced Space Bound Constrained Optimization Problem" << std::endl;
-        auto algo = ROL::TypeB::AlgorithmFactory<double>(rolParams.sublist("ROL Options"),customSecant);
-        algo->run(*rol_p_primal, reduced_obj, *boundConstraint, *rolOutput); 
-        return_status = algo->getState()->statusFlag;
-      }  else {
-        *out << "Piro::PerformROLSteadyAnalysis: Solving Reduced Space Unconstrained Optimization Problem" << std::endl;
-        auto algo = ROL::TypeU::AlgorithmFactory<double>(rolParams.sublist("ROL Options"),customSecant);
-        algo->run(*rol_p_primal, reduced_obj, *rolOutput);
-        return_status = algo->getState()->statusFlag;
-      }
+      //ROL::Thyra_BoundConstraint<double> boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
+      boundConstraint = rcp( new ROL::Bounds<double>(ROL::makePtr<ROL::ThyraVector<double> >(p_lo), ROL::makePtr<ROL::ThyraVector<double> >(p_up)));
     }
-    if(analysisVerbosity > 1)  //write recap of optimization convergence
-      *out << rolOutputBuffer.getStringStream().str();
 
+      RolOutputBuffer<char> rolOutputBuffer;
+      std::ostream rolOutputStream(&rolOutputBuffer);
+      Teuchos::RCP<Teuchos::FancyOStream> rolOutput = Teuchos::getFancyOStream(Teuchos::rcpFromRef(rolOutputStream));
+      rolOutput->setOutputToRootOnly(0);
+
+      
+
+      if ( useFullSpace ) {
+        //using default dot product for x
+        ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),rol_p_primal);
+        auto r_ptr = rol_x.clone();
+        double tol = 1e-5;
+        constr.solve(*r_ptr,rol_x,rol_p,tol);
+        if(boundConstrained) {
+          *out << "Piro::PerformROLSteadyAnalysis: Solving Full Space Bound Constrained Optimization Problem" << std::endl;
+          ROL::BoundConstraint<double> u_bnd(rol_x);
+          ROL::Ptr<ROL::BoundConstraint<double> > bnd = ROL::makePtr<ROL::BoundConstraint_SimOpt<double> >(ROL::makePtrFromRef(u_bnd),boundConstraint);
+          ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));
+          prob.addBoundConstraint(bnd);
+          prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
+          bool lumpConstraints(false), printToStream(true);
+          prob.finalize(lumpConstraints, printToStream, *rolOutput);
+          ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
+          optSolver.solve(*out);
+          return_status = optSolver.getAlgorithmState()->statusFlag;
+        } else {
+          *out << "Piro::PerformROLSteadyAnalysis: Solving Full Space Unconstrained Optimization Problem" << std::endl;
+          ROL::Problem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec));//, ROL::makePtrFromRef(constr), r_ptr);
+          prob.addConstraint("Constraint", ROL::makePtrFromRef(constr),r_ptr);
+          bool lumpConstraints(false), printToStream(true);
+          prob.finalize(lumpConstraints, printToStream, *rolOutput);
+          ROL::Solver<double> optSolver(ROL::makePtrFromRef(prob), rolParams.sublist("ROL Options"));
+          optSolver.solve(*out);
+          return_status = optSolver.getAlgorithmState()->statusFlag;
+        }
+      } else {
+        Teuchos::RCP<CustomLBFGSSecant<double>> customSecant = useCustomSecant ? Teuchos::rcp(new CustomLBFGSSecant<double> (H_sec, invH_sec, secantMaxStorage, secantScaling)) : Teuchos::null;
+        if(boundConstrained) {
+          *out << "Piro::PerformROLSteadyAnalysis: Solving Reduced Space Bound Constrained Optimization Problem" << std::endl;
+          auto algo = ROL::TypeB::AlgorithmFactory<double>(rolParams.sublist("ROL Options"),customSecant);
+          algo->run(*rol_p_primal, reduced_obj, *boundConstraint, *rolOutput); 
+          return_status = algo->getState()->statusFlag;
+        }  else {
+          *out << "Piro::PerformROLSteadyAnalysis: Solving Reduced Space Unconstrained Optimization Problem" << std::endl;
+          auto algo = ROL::TypeU::AlgorithmFactory<double>(rolParams.sublist("ROL Options"),customSecant);
+          algo->run(*rol_p_primal, reduced_obj, *rolOutput);
+          return_status = algo->getState()->statusFlag;
+        }
+      }
+      if(analysisVerbosity > 1)  //write recap of optimization convergence
+        *out << rolOutputBuffer.getStringStream().str();
+  }
   return return_status;
 #else
   (void)piroModel;
@@ -937,15 +937,39 @@ Piro::PerformROLTransientAnalysis(
       if(boundConstrained) {
         *out << "Piro::PerformROLTransientAnalysis: Solving Reduced Space Bound Constrained Optimization Problem" << std::endl;
         auto algo = ROL::TypeB::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
-        algo->run(rol_p_primal, *obj_ptr, *boundConstraint, *rolOutput); 
+
+        std::streambuf *coutbuf;
+        if(rolParams.get<bool>("Redirect Tempus Output", true)) {
+          std::ofstream out_file(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
+          coutbuf = std::cout.rdbuf();
+          std::cout.rdbuf(out_file.rdbuf());
+        }
+        algo->run(rol_p_primal, *obj_ptr, *boundConstraint, *rolOutput);
+        if(rolParams.get<bool>("Redirect Tempus Output", true)) {
+          std::cout.rdbuf(coutbuf);
+        }
+
         return_status = algo->getState()->statusFlag;
       }  else {
         *out << "Piro::PerformROLTransientAnalysis: Solving Reduced Space Unconstrained Optimization Problem" << std::endl;
         auto algo = ROL::TypeU::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
+        
+        std::streambuf *coutbuf;
+        if(rolParams.get<bool>("Redirect Tempus Output", true)) {
+          std::ofstream out_file(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
+          coutbuf = std::cout.rdbuf();
+          std::cout.rdbuf(out_file.rdbuf());
+        }
         algo->run(rol_p_primal, *obj_ptr, *rolOutput);
+        if(rolParams.get<bool>("Redirect Tempus Output", true)) {
+          std::cout.rdbuf(coutbuf);
+        }
+
         return_status = algo->getState()->statusFlag;
       }
       if (return_status == ROL::EExitStatus::EXITSTATUS_STEPTOL) return_status = 0;
+      if(analysisVerbosity > 1)  //write recap of optimization convergence
+        *out << rolOutputBuffer.getStringStream().str();
     }
 
     //! check correctness of Gradient prvided by Model Evaluator
@@ -1007,21 +1031,31 @@ Piro::PerformROLTransientAnalysis(
         ROL::Vector_SimOpt<double> sopt_vec_direction2_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction2));
 
         *out << "Piro::PerformROLTransientAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
-        ROL::Ptr<ROL::PartitionedVector<double>>  rol_p_direction1_transient = ROL::PartitionedVector<double>::create(rol_p_direction1, nt);
 
-        Thyra::DetachedVectorView<double> rol_p_primal_view(rol_p_primal.getVector());
-        Thyra::DetachedVectorView<double> rol_p_direction1_view(rol_p_direction1.getVector());
-
-        *out << "rol_p_primal = [ " << rol_p_primal_view(0) << " " << rol_p_primal_view(1) << " ] " << std::endl;
-        *out << "rol_p_direction1 = [ " << rol_p_direction1_view(0) << " " << rol_p_direction1_view(1) << " ] " << std::endl;
-        *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
+        RolOutputBuffer<char> rolOutputBuffer;
+        std::ostream rolOutputStream(&rolOutputBuffer);
+        Teuchos::RCP<Teuchos::FancyOStream> rolOutput = Teuchos::getFancyOStream(Teuchos::rcpFromRef(rolOutputStream));
+        rolOutput->setOutputToRootOnly(0);
 
         const double ten(10);
         std::vector<double> steps(ROL_NUM_CHECKDERIV_STEPS);
         for(int i=0;i<ROL_NUM_CHECKDERIV_STEPS;++i) {
           steps[i] = pow(ten,static_cast<double>(-i-1));
         }
-        obj_ptr->checkGradient(rol_p_primal, rol_p_primal.dual(), rol_p_direction1, steps, true, *out, 1);
+
+        std::streambuf *coutbuf;
+        if(rolParams.get<bool>("Redirect Tempus Output", true)) {
+          std::ofstream out_file(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
+          coutbuf = std::cout.rdbuf();
+          std::cout.rdbuf(out_file.rdbuf());
+        }
+        obj_ptr->checkGradient(rol_p_primal, rol_p_primal.dual(), rol_p_direction1, steps, true, *rolOutput, 1);
+        if(rolParams.get<bool>("Redirect Tempus Output", true)) {
+          std::cout.rdbuf(coutbuf);
+        }
+
+        if(analysisVerbosity > 1)  //write recap of optimization convergence
+          *out << rolOutputBuffer.getStringStream().str();
       }
     }
 
@@ -1061,6 +1095,8 @@ Piro::PerformROLTransientAnalysis(
           return_status = algo->getState()->statusFlag;
         }
         if (return_status == ROL::EExitStatus::EXITSTATUS_STEPTOL) return_status = 0;
+        if(analysisVerbosity > 1)  //write recap of optimization convergence
+          *out << rolOutputBuffer.getStringStream().str();
       }
 
       //! check correctness of Gradient prvided by Model Evaluator
@@ -1122,21 +1158,21 @@ Piro::PerformROLTransientAnalysis(
           ROL::Vector_SimOpt<double> sopt_vec_direction2_p(rol_x_zero,ROL::makePtrFromRef(rol_p_direction2));
 
           *out << "Piro::PerformROLTransientAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
-          ROL::Ptr<ROL::PartitionedVector<double>>  rol_p_direction1_transient = ROL::PartitionedVector<double>::create(rol_p_direction1, nt);
 
-          Thyra::DetachedVectorView<double> rol_p_primal_view(rol_p_primal.getVector());
-          Thyra::DetachedVectorView<double> rol_p_direction1_view(rol_p_direction1.getVector());
-
-          *out << "rol_p_primal = [ " << rol_p_primal_view(0) << " " << rol_p_primal_view(1) << " ] " << std::endl;
-          *out << "rol_p_direction1 = [ " << rol_p_direction1_view(0) << " " << rol_p_direction1_view(1) << " ] " << std::endl;
-          *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
+          RolOutputBuffer<char> rolOutputBuffer;
+          std::ostream rolOutputStream(&rolOutputBuffer);
+          Teuchos::RCP<Teuchos::FancyOStream> rolOutput = Teuchos::getFancyOStream(Teuchos::rcpFromRef(rolOutputStream));
+          rolOutput->setOutputToRootOnly(0);
 
           const double ten(10);
           std::vector<double> steps(ROL_NUM_CHECKDERIV_STEPS);
           for(int i=0;i<ROL_NUM_CHECKDERIV_STEPS;++i) {
             steps[i] = pow(ten,static_cast<double>(-i-1));
           }
-          reduced_stationarycontrols_obj.checkGradient(rol_p_primal, rol_p_primal.dual(), rol_p_direction1, steps, true, *out, 1);
+          reduced_stationarycontrols_obj.checkGradient(rol_p_primal, rol_p_primal.dual(), rol_p_direction1, steps, true, *rolOutput, 1);
+
+          if(analysisVerbosity > 1)  //write recap of optimization convergence
+            *out << rolOutputBuffer.getStringStream().str();
         }
       }
     }
@@ -1214,6 +1250,8 @@ Piro::getValidPiroAnalysisROLParameters(int num_parameters)
   validPL->set<bool>("Bound Constrained", true, "Whether to enforce bounds to the parameters during the optimization");
   validPL->set<bool>("Full Space", true, "Whether to use a full-space or a reduced-space optimization approach");
   validPL->set<bool>("Tempus Driver", false, "Whether to use Tempus to compute the derivative");
+  validPL->set<bool>("Redirect Tempus Output", true, "Whether to redirect Tempus output to file");
+  validPL->set<string>("Tempus Output Filename", "log_tempus.txt", "Filename for the Tempus output");
   validPL->set<bool>("Response Depends Only On Final Time", true, "Whether the response depends only on the solution and parameters at the final time");
   validPL->set<bool>("Use NOX Solver", true, "Whether to use NOX for solving the state equation or the native ROL solver");
 
