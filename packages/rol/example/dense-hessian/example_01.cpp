@@ -49,7 +49,8 @@
 #define USE_HESSVEC 1
 
 #include "ROL_Rosenbrock.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Problem.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Stream.hpp"
 #include "ROL_HelperFunctions.hpp"
@@ -82,6 +83,7 @@ int main(int argc, char *argv[]) {
 
     // Set algorithm parameters.
     ROL::ParameterList parlist;
+    parlist.sublist("General").set("Output Level", 1);
     parlist.sublist("Step").set("Type", "Line Search");
     parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Newton-Krylov");
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
@@ -101,9 +103,10 @@ int main(int argc, char *argv[]) {
     ROL::PrimalScaledStdVector<RealT> x(x_ptr, scale_ptr);
 
     // Define problem.
-    ROL::OptimizationProblem<RealT> problem(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(x));
-    ROL::OptimizationSolver<RealT> solver(problem, parlist);
+    ROL::Ptr<ROL::Problem<RealT>> problem = ROL::makePtr<ROL::Problem<RealT>>(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(x));
+    problem->finalize(false, true, *outStream);
     // Solve problem.
+    ROL::Solver<RealT> solver(problem, parlist);
     solver.solve(*outStream);
 
     // Set true solution.
