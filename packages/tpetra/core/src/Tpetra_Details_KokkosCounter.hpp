@@ -52,7 +52,7 @@
 namespace Tpetra {
 namespace Details {
 
-/// \brief Counter for Kokkos::deep_copy calls
+/// \brief Counter for Tpetra::Details::deep_copy calls
 namespace DeepCopyCounter {
   /// \brief Start the deep_copy counter
   void start();

@@ -46,6 +46,7 @@
 /// \brief Declaration of Tpetra::Details::EquilibrationInfo
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_Core.hpp"
 
@@ -140,18 +141,18 @@ struct EquilibrationInfo {
   {
     using execution_space = typename device_type::execution_space;
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-    Kokkos::deep_copy (execution_space(), rowNorms, src.rowNorms);
+    Tpetra::Details::deep_copy (execution_space(), rowNorms, src.rowNorms);
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-    Kokkos::deep_copy (execution_space(), rowDiagonalEntries, src.rowDiagonalEntries);
+    Tpetra::Details::deep_copy (execution_space(), rowDiagonalEntries, src.rowDiagonalEntries);
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-    Kokkos::deep_copy (execution_space(), colNorms, src.colNorms);
+    Tpetra::Details::deep_copy (execution_space(), colNorms, src.colNorms);
     if (src.colDiagonalEntries.extent (0) == 0) {
       colDiagonalEntries =
         Kokkos::View<val_type*, device_type> ("colDiagonalEntries", 0);
     }
     else {
       // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), colDiagonalEntries, src.colDiagonalEntries);
+      Tpetra::Details::deep_copy (execution_space(), colDiagonalEntries, src.colDiagonalEntries);
     }
     if (src.rowScaledColNorms.extent (0) == 0) {
       rowScaledColNorms =
@@ -159,7 +160,7 @@ struct EquilibrationInfo {
     }
     else {
       // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), rowScaledColNorms, src.rowScaledColNorms);
+      Tpetra::Details::deep_copy (execution_space(), rowScaledColNorms, src.rowScaledColNorms);
     }
 
     assumeSymmetric = src.assumeSymmetric;

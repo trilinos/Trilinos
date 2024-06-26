@@ -698,7 +698,7 @@ namespace Tpetra {
       // don't need to take a host view of it.
       // auto entryList_host =
       //   Kokkos::create_mirror_view (Kokkos::HostSpace (), entryList);
-      // Kokkos::deep_copy (entryList_host, entryList);
+      // Tpetra::Details::deep_copy (entryList_host, entryList);
 
       firstContiguousGID_ = entryList_host[0];
       lastContiguousGID_ = firstContiguousGID_+1;
@@ -759,7 +759,7 @@ namespace Tpetra {
 
 
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
-        Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
+        Tpetra::Details::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
         Tpetra::Details::fence("Map::initWithNonownedHostIndexList"); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         glMap_ = global_to_local_table_type(nonContigGids,
@@ -790,7 +790,7 @@ namespace Tpetra {
 
       // We filled lgMap on host above; now sync back to device.
       // DEEP_COPY REVIEW - HOST-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), lgMap, lgMap_host);
+      Tpetra::Details::deep_copy (execution_space(), lgMap, lgMap_host);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
@@ -1101,7 +1101,7 @@ namespace Tpetra {
 
       // Because you can't use lambdas in constructors on CUDA.  Or using private/protected data.
       // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-      Kokkos::deep_copy(typename device_type::execution_space(),lgMap,entryList);
+      Tpetra::Details::deep_copy(typename device_type::execution_space(),lgMap,entryList);
       LO lastContiguousGID_loc;
       computeConstantsOnDevice(entryList,minMyGID_,maxMyGID_,firstContiguousGID_,lastContiguousGID_,lastContiguousGID_loc);
       LO firstNonContiguous_loc = lastContiguousGID_loc+1;
@@ -1710,7 +1710,7 @@ namespace Tpetra {
       auto lgMapHost = Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
       auto exec_instance = execution_space();
-      Kokkos::deep_copy (exec_instance, lgMapHost, lgMap);
+      Tpetra::Details::deep_copy (exec_instance, lgMapHost, lgMap);
 
       // There's a non-trivial chance we'll grab this on the host,
       // so let's make sure the copy finishes
@@ -2377,7 +2377,7 @@ namespace Tpetra {
 
        // Since this was computed on the default stream, we can copy on the stream and then fence
        // the stream
-       Kokkos::deep_copy(exec_space(),lgMap_host,lgMap_);
+       Tpetra::Details::deep_copy(exec_space(),lgMap_host,lgMap_);
        exec_space().fence();
        lgMapHost_ = lgMap_host;
 

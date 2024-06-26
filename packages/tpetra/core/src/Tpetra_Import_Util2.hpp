@@ -1023,8 +1023,8 @@ lowCommunicationMakeColMapAndReindex (
   typename decltype(colind_LID_view)::HostMirror colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
   typename decltype(colind_GID_view)::HostMirror colind_GID_host(colind_GID.getRawPtr(), colind_GID.size());
 
-  Kokkos::deep_copy(colind_LID_view, colind_LID_host);
-  Kokkos::deep_copy(colind_GID_view, colind_GID_host);
+  Tpetra::Details::deep_copy(colind_LID_view, colind_LID_host);
+  Tpetra::Details::deep_copy(colind_GID_view, colind_GID_host);
 
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
@@ -1115,7 +1115,7 @@ lowCommunicationMakeColMapAndReindex (
       Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, colind_GID.size()), KOKKOS_LAMBDA(const int i) {
         colind_LID_view[i] = localColMap.getLocalElement(colind_GID_view[i]);
       });
-      Kokkos::deep_copy(execution_space(), colind_LID_host, colind_LID_view);
+      Tpetra::Details::deep_copy(execution_space(), colind_LID_host, colind_LID_view);
       return;
     }
   }
@@ -1157,7 +1157,7 @@ lowCommunicationMakeColMapAndReindex (
     bin_sort2.sort(exec, ColIndices_subview);
   
     // Deep copy back from device to host
-    Kokkos::deep_copy(execution_space(), PIDList_host, PIDList_view);
+    Tpetra::Details::deep_copy(execution_space(), PIDList_host, PIDList_view);
   
     // Stash the RemotePIDs. Once remotePIDs is changed to become a Kokkos view, we can remove this and copy directly.
     // Note: If Teuchos::Array had a shrink_to_fit like std::vector,
@@ -1243,7 +1243,7 @@ lowCommunicationMakeColMapAndReindex (
 
   // For now, we copy back into colind_LID_host (which also overwrites the colind_LID Tuechos array)
   // When colind_LID becomes a Kokkos View we can delete this
-  Kokkos::deep_copy(exec, colind_LID_host, colind_LID_view);        
+  Tpetra::Details::deep_copy(exec, colind_LID_host, colind_LID_view);        
 }
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -1402,7 +1402,7 @@ lowCommunicationMakeColMapAndReindex (
     // Stash the RemotePIDs. Once remotePIDs is changed to become a Kokkos view, we can remove this and copy directly.
     Teuchos::Array<int> PIDList(NumRemoteColGIDs);
     Kokkos::View<int*, Kokkos::HostSpace> PIDList_host(PIDList.data(), PIDList.size());
-    Kokkos::deep_copy(exec, PIDList_host, PIDList_view);
+    Tpetra::Details::deep_copy(exec, PIDList_host, PIDList_view);
     exec.fence();
   
     remotePIDs = PIDList;

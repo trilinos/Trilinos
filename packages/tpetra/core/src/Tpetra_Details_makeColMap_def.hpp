@@ -631,16 +631,16 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   GO numLocalColGIDs = 0;
   GO numRemoteColGIDs = 0;
   // DEEP_COPY REVIEW - DEVICE-TO-VALUE
-  Kokkos::deep_copy(exec_space(), numLocalColGIDs, numLocals);
+  Tpetra::Details::deep_copy(exec_space(), numLocalColGIDs, numLocals);
   // DEEP_COPY REVIEW - DEVICE-TO-numLocalColGIDs
-  Kokkos::deep_copy(exec_space(), numRemoteColGIDs, numRemotes);
+  Tpetra::Details::deep_copy(exec_space(), numRemoteColGIDs, numRemotes);
   //Pull down the remote lists
   auto localsHost = Kokkos::create_mirror_view(localGIDView);
   auto remotesHost = Kokkos::create_mirror_view(remoteGIDView);
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  Kokkos::deep_copy(exec_space(), localsHost, localGIDView);
+  Tpetra::Details::deep_copy(exec_space(), localsHost, localGIDView);
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  Kokkos::deep_copy(exec_space(), remotesHost, remoteGIDView);
+  Tpetra::Details::deep_copy(exec_space(), remotesHost, remoteGIDView);
   // CAG: This fence was found to be required on Cuda with UVM=on.
   Tpetra::Details::fence("Tpetra::makeColMap");
   //Finally, populate the STL structures which hold the index lists

@@ -66,6 +66,7 @@
 #endif // HAVE_TPETRACORE_MPI
 #include "Tpetra_Details_temporaryViewUtils.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_Core.hpp"
 #include <memory>
 #include <stdexcept>
@@ -147,7 +148,7 @@ struct MpiRequest : public CommRequest
       // success.  We'll do it here just to be conservative.
       req = MPI_REQUEST_NULL;
       //Since recvBuf contains the result, copy it to the user's resultBuf.
-      Kokkos::deep_copy(resultBuf, recvBuf);
+      Tpetra::Details::deep_copy(resultBuf, recvBuf);
     }
   }
 
@@ -199,7 +200,7 @@ iallreduceImpl (const InputViewType& sendbuf,
   using Packet = typename InputViewType::non_const_value_type;
   if(comm.getSize() == 1)
   {
-    Kokkos::deep_copy(recvbuf, sendbuf);
+    Tpetra::Details::deep_copy(recvbuf, sendbuf);
     return emptyCommRequest();
   }
   Packet examplePacket;
@@ -229,7 +230,7 @@ iallreduceImpl (const InputViewType& sendbuf,
 #else
     //Older MPI: Iallreduce not available. Instead do blocking all-reduce and return empty request.
     allreduceRaw((const void*) sendMPI.data(), (void*) recvMPI.data(), sendMPI.extent(0), mpiDatatype, op, rawComm);
-    Kokkos::deep_copy(recvbuf, recvMPI);
+    Tpetra::Details::deep_copy(recvbuf, recvMPI);
     req = emptyCommRequest();
 #endif
   }
@@ -242,7 +243,7 @@ iallreduceImpl (const InputViewType& sendbuf,
 #else
     //Older MPI: Iallreduce not available. Instead do blocking all-reduce and return empty request.
     allreduceRaw((const void*) sendMPI.data(), (void*) recvMPI.data(), sendMPI.extent(0), mpiDatatype, op, rawComm);
-    Kokkos::deep_copy(recvbuf, recvMPI);
+    Tpetra::Details::deep_copy(recvbuf, recvMPI);
     req = emptyCommRequest();
 #endif
   }
@@ -261,7 +262,7 @@ iallreduceImpl (const InputViewType& sendbuf,
             const ::Teuchos::EReductionType,
             const ::Teuchos::Comm<int>&)
 {
-  Kokkos::deep_copy(recvbuf, sendbuf);
+  Tpetra::Details::deep_copy(recvbuf, sendbuf);
   return emptyCommRequest();
 }
 

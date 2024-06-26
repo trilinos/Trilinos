@@ -1221,7 +1221,7 @@ namespace Tpetra {
     /// global indices explicitly), or that the Map really does
     /// contain zero indices on the calling process.
     ///
-    /// This has LayoutLeft so that we can call Kokkos::deep_copy to
+    /// This has LayoutLeft so that we can call Tpetra::Details::deep_copy to
     /// copy this between any two Kokkos Devices.  Otherwise, the
     /// Devices might have different default layouts, thus forbidding
     /// a deep_copy.  We use LayoutLeft instead of LayoutRight because

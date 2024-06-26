@@ -1633,7 +1633,7 @@ namespace Tpetra {
       const Kokkos::View<dot_type*, Kokkos::HostSpace> h_dots("Tpetra::Dots",dots.extent(0));
       this->dot (A, h_dots);
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy(dots,h_dots);
+      Tpetra::Details::deep_copy(dots,h_dots);
     }
 
     /// \brief Compute the dot product of each corresponding pair of
@@ -1665,7 +1665,7 @@ namespace Tpetra {
       // should generally be bitwise compatible.
       // CT: no this can't possible work .....
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (dots, dts);
+      Tpetra::Details::deep_copy (dots, dts);
     }
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
@@ -1764,7 +1764,7 @@ namespace Tpetra {
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->norm1 (h_norms);
       // DEEP_COPY REVIEW - HOST-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), norms, h_norms);
+      Tpetra::Details::deep_copy (execution_space(), norms, h_norms);
     }
 
     /// \brief Compute the one-norm of each vector (column), storing
@@ -1796,7 +1796,7 @@ namespace Tpetra {
       // case.  It could also come up with Kokkos::complex ->
       // std::complex conversion.
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (norms, tmpNorms);
+      Tpetra::Details::deep_copy (norms, tmpNorms);
     }
 
     /// \brief Compute the one-norm of each vector (column).
@@ -1858,7 +1858,7 @@ namespace Tpetra {
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->norm2 (h_norms);
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (norms, h_norms);
+      Tpetra::Details::deep_copy (norms, h_norms);
     }
 
     /// \brief Compute the two-norm of each vector (column), storing
@@ -1888,7 +1888,7 @@ namespace Tpetra {
       // case.  This could also come up with Kokkos::complex ->
       // std::complex conversion.
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (norms, theNorms);
+      Tpetra::Details::deep_copy (norms, theNorms);
     }
 
     /// \brief Compute the two-norm of each vector (column).
@@ -1943,7 +1943,7 @@ namespace Tpetra {
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->normInf (h_norms);
       // DEEP_COPY REVIEW - HOST-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), norms, h_norms);
+      Tpetra::Details::deep_copy (execution_space(), norms, h_norms);
     }
 
     /// \brief Compute the infinity-norm of each vector (column),
@@ -1973,7 +1973,7 @@ namespace Tpetra {
       // case.  This could also come up with Kokkos::complex ->
       // std::complex conversion.
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (norms, theNorms);
+      Tpetra::Details::deep_copy (norms, theNorms);
     }
 
     /// \brief Compute the infinity-norm of each vector (column),

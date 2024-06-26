@@ -50,6 +50,7 @@
 ///   FixedHashTable, CrsGraph, and CrsMatrix).
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <sstream>
@@ -193,7 +194,7 @@ namespace { // (anonymous)
     }
   };
 
-  //! Whether copyConvert can just use Kokkos::deep_copy.
+  //! Whether copyConvert can just use Tpetra::Details::deep_copy.
   template<class OutputViewType, class InputViewType>
   class CanUseKokkosDeepCopy {
   private:
@@ -216,14 +217,14 @@ namespace { // (anonymous)
   ///
   /// We specialize copyConvert on two different conditions:
   ///
-  /// 1. Can we just Kokkos::deep_copy from the input View to the
+  /// 1. Can we just Tpetra::Details::deep_copy from the input View to the
   ///    output View?  (That is, are the two Views' layouts the same,
   ///    and do the input and output Views have the same value type?)
   /// 2. Can the output View's execution space access the input View's
   ///    memory space?
   ///
   /// If (1) is true, that makes the implementation simple: just call
-  /// Kokkos::deep_copy.  Otherwise, we need a custom copy functor
+  /// Tpetra::Details::deep_copy.  Otherwise, we need a custom copy functor
   /// (see CopyConvertFunctor above).
   ///
   /// Otherwise, if (2) is true, then we can use CopyConvertFunctor
@@ -269,7 +270,7 @@ namespace { // (anonymous)
 
       if (dst_end > src_beg && src_end > dst_beg) {
         // dst and src alias each other, so we can't call
-        // Kokkos::deep_copy(dst,src) directly (Kokkos detects this
+        // Tpetra::Details::deep_copy(dst,src) directly (Kokkos detects this
         // and throws, at least in debug mode).  Instead, we make
         // temporary host storage (create_mirror always makes a new
         // allocation, unlike create_mirror_view).  Use host because
@@ -277,14 +278,14 @@ namespace { // (anonymous)
         // aliased copies in a tight loop.
         auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (src_copy, src);
+        Tpetra::Details::deep_copy (src_copy, src);
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (dst, src_copy);
+        Tpetra::Details::deep_copy (dst, src_copy);
       }
       else { // no aliasing
         // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
         using execution_space = typename OutputViewType::execution_space;
-        Kokkos::deep_copy (execution_space(), dst, src);
+        Tpetra::Details::deep_copy (execution_space(), dst, src);
       }
     }
   };
@@ -331,7 +332,7 @@ namespace { // (anonymous)
       auto src_outputSpaceCopy =
         Kokkos::create_mirror_view (output_memory_space (), src);
       // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-      Kokkos::deep_copy (output_execution_space(), src_outputSpaceCopy, src);
+      Tpetra::Details::deep_copy (output_execution_space(), src_outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.

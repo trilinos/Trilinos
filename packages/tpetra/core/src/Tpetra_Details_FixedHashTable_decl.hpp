@@ -48,6 +48,7 @@
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -102,7 +103,7 @@ private:
   /// We specify LayoutLeft explicitly so that the layout is the same
   /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
   /// LayoutRight mean the same thing, but specifying the layout
-  /// explicitly makes Kokkos::deep_copy work.
+  /// explicitly makes Tpetra::Details::deep_copy work.
   typedef typename Kokkos::View<const offset_type*, Kokkos::LayoutLeft,
                                 device_type> ptr_type;
   /// \brief Type of the array of (key, value) pairs in the hash table.
@@ -110,7 +111,7 @@ private:
   /// We specify LayoutLeft explicitly so that the layout is the same
   /// on all Kokkos devices.  It's a 1-D View so LayoutLeft and
   /// LayoutRight mean the same thing, but specifying the layout
-  /// explicitly makes Kokkos::deep_copy work.
+  /// explicitly makes Tpetra::Details::deep_copy work.
   typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*,
                                 Kokkos::LayoutLeft, device_type> val_type;
 
@@ -262,16 +263,16 @@ public:
     // Different Devices may have different offset_type, because
     // offset_type comes from the memory space's size_type typedef.
     // That's why we use a specialized deep copy function here instead
-    // of Kokkos::deep_copy.
+    // of Tpetra::Details::deep_copy.
     nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::ptr"),
                            src.ptr_.extent (0));
     ::Tpetra::Details::copyOffsets (ptr, src.ptr_);
     nonconst_val_type val (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::val"),
                            src.val_.extent (0));
     // val and src.val_ have the same entry types, unlike (possibly)
-    // ptr and src.ptr_.  Thus, we can use Kokkos::deep_copy here.
+    // ptr and src.ptr_.  Thus, we can use Tpetra::Details::deep_copy here.
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-    Kokkos::deep_copy (execution_space(), val, src.val_);
+    Tpetra::Details::deep_copy (execution_space(), val, src.val_);
 
     this->ptr_ = ptr;
     this->val_ = val;

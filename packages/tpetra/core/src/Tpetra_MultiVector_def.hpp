@@ -962,7 +962,7 @@ namespace Tpetra {
     auto X_in = Kokkos::subview (X_in_orig, rowRng, Kokkos::ALL ());
 
     // If LDA != X_out's column stride, then we need to copy one
-    // column at a time; Kokkos::deep_copy refuses to work in that
+    // column at a time; Tpetra::Details::deep_copy refuses to work in that
     // case.
     const size_t outStride =
       X_out.extent (1) == 0 ? size_t (1) : X_out.stride (1);
@@ -970,7 +970,7 @@ namespace Tpetra {
       // This only works because MultiVector uses LayoutLeft.
       // We would need a custom copy functor otherwise.
       // DEEP_COPY REVIEW - HOST-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), X_out, X_in);
+      Tpetra::Details::deep_copy (execution_space(), X_out, X_in);
     }
     else { // strides differ; copy one column at a time
       typedef decltype (Kokkos::subview (X_out, Kokkos::ALL (), 0))
@@ -981,7 +981,7 @@ namespace Tpetra {
         out_col_view_type X_out_j = Kokkos::subview (X_out, Kokkos::ALL (), j);
         in_col_view_type X_in_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
-        Kokkos::deep_copy (execution_space(), X_out_j, X_in_j);
+        Tpetra::Details::deep_copy (execution_space(), X_out_j, X_in_j);
       }
     }
   }
@@ -1032,7 +1032,7 @@ namespace Tpetra {
       input_col_view_type X_j_in (X_j_av.getRawPtr (), lclNumRows);
       auto X_j_out = Kokkos::subview (X_out, rowRng, j);
       // DEEP_COPY REVIEW - HOST-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), X_j_out, X_j_in);
+      Tpetra::Details::deep_copy (execution_space(), X_j_out, X_j_in);
     }
   }
 
@@ -1232,7 +1232,7 @@ namespace Tpetra {
           else {
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
-            Kokkos::deep_copy (space, tgt_j, src_j);
+            Tpetra::Details::deep_copy (space, tgt_j, src_j);
             space.fence();
           }
         }
@@ -1260,7 +1260,7 @@ namespace Tpetra {
           else {
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-            Kokkos::deep_copy (space, tgt_j, src_j);
+            Tpetra::Details::deep_copy (space, tgt_j, src_j);
             space.fence();
           }
         }
@@ -2024,12 +2024,12 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       if (unpackOnHost) {
         whichVecs.modify_host ();
         // DEEP_COPY REVIEW - NOT TESTED FOR CUDA BUILD
-        Kokkos::deep_copy (whichVecs.view_host (), whichVecsIn);
+        Tpetra::Details::deep_copy (whichVecs.view_host (), whichVecsIn);
       }
       else {
         whichVecs.modify_device ();
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
-        Kokkos::deep_copy (whichVecs.view_device (), whichVecsIn);
+        Tpetra::Details::deep_copy (whichVecs.view_device (), whichVecsIn);
       }
     }
     auto whichVecs_d = whichVecs.view_device ();
@@ -2283,7 +2283,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
           // sum.
           typename RV::non_const_type lclDots (Kokkos::ViewAllocateWithoutInitializing ("tmp"), numVecs);
           // DEEP_COPY REVIEW - NOT TESTED
-          Kokkos::deep_copy (lclDots, dotsOut);
+          Tpetra::Details::deep_copy (lclDots, dotsOut);
           const dot_type* const lclSum = lclDots.data ();
           dot_type* const gblSum = dotsOut.data ();
           reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
@@ -2617,7 +2617,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       }
       else {
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (meansOut, lclSums);
+        Tpetra::Details::deep_copy (meansOut, lclSums);
       }
     }
     else {
@@ -2655,7 +2655,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       }
       else {
         // DEEP_COPY REVIEW - HOST-TO-HOST - NOT TESTED FOR MPI BUILD
-        Kokkos::deep_copy (meansOut, lclSums);
+        Tpetra::Details::deep_copy (meansOut, lclSums);
       }
     }
 
@@ -2955,7 +2955,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       // mirror of the input View of coefficients.
       auto alphas_h = Kokkos::create_mirror_view (alphas);
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (alphas_h, alphas);
+      Tpetra::Details::deep_copy (alphas_h, alphas);
 
       auto Y_lcl = subview (this->getLocalViewHost(Access::ReadWrite), rowRng, ALL ());
       if (isConstantStride ()) {
@@ -2984,7 +2984,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
         // second argument.
         auto alphas_h = Kokkos::create_mirror_view (alphas);
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (alphas_h, alphas);
+        Tpetra::Details::deep_copy (alphas_h, alphas);
 
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k :
@@ -3837,11 +3837,11 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
         if (useHostView) {
           auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
           // DEEP_COPY REVIEW - NOT TESTED
-          Kokkos::deep_copy (A_view, srcView_host);
+          Tpetra::Details::deep_copy (A_view, srcView_host);
         } else {
           auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
            // DEEP_COPY REVIEW - NOT TESTED
-          Kokkos::deep_copy (A_view, srcView_device);
+          Tpetra::Details::deep_copy (A_view, srcView_device);
         }
       }
       else {
@@ -3853,12 +3853,12 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
             auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
             auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
              // DEEP_COPY REVIEW - NOT TESTED
-            Kokkos::deep_copy (dstColView, srcColView_host);
+            Tpetra::Details::deep_copy (dstColView, srcColView_host);
           } else {
             auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
             auto srcColView_device = Kokkos::subview (srcView_device, rowRange, srcCol);
              // DEEP_COPY REVIEW - NOT TESTED
-            Kokkos::deep_copy (dstColView, srcColView_device);
+            Tpetra::Details::deep_copy (dstColView, srcColView_device);
           }
         }
       }

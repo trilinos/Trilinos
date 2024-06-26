@@ -44,6 +44,7 @@
 
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 
 namespace Tpetra
 {
@@ -100,7 +101,7 @@ toLayout(const SrcView& src)
       "TempView::toLayout: Layout must be contiguous (not LayoutStride)");
   Layout layout(src.extent(0), src.extent(1));
   Kokkos::View<typename SrcView::non_const_data_type, Layout, typename SrcView::device_type> dst(Kokkos::ViewAllocateWithoutInitializing(src.label()), layout);
-  Kokkos::deep_copy(dst, src);
+  Tpetra::Details::deep_copy(dst, src);
   return dst;
 }
 
@@ -118,7 +119,7 @@ toLayout(const SrcView& src)
     Layout layout(src.extent(0), src.extent(1));
     Kokkos::View<typename SrcView::non_const_data_type, Layout, typename SrcView::device_type>
       result(Kokkos::ViewAllocateWithoutInitializing(src.label()), layout);
-    Kokkos::deep_copy(result, src);
+    Tpetra::Details::deep_copy(result, src);
     return result;
   }
 }
@@ -148,4 +149,3 @@ toMPISafe(const SrcView& src)
 }}} //namespace Tpetra::Details::TempView
 
 #endif
-

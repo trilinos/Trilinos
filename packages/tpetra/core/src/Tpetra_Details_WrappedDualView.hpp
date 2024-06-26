@@ -537,13 +537,13 @@ public:
     auto X_dev = dualView.view_host();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);
-      Kokkos::deep_copy(mirror,X_dev);
+      Tpetra::Details::deep_copy(mirror,X_dev);
       return mirror;
     }
     else {
       auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
       auto mirror = Kokkos::create_mirror_view(X_contig);
-      Kokkos::deep_copy(mirror,X_contig);
+      Tpetra::Details::deep_copy(mirror,X_contig);
       return mirror;
     }
   }
@@ -552,13 +552,13 @@ public:
     auto X_dev = dualView.view_device();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);
-      Kokkos::deep_copy(mirror,X_dev);
+      Tpetra::Details::deep_copy(mirror,X_dev);
       return mirror;
     }
     else {
       auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
       auto mirror = Kokkos::create_mirror_view(X_contig);
-      Kokkos::deep_copy(mirror,X_contig);
+      Tpetra::Details::deep_copy(mirror,X_contig);
       return mirror;
     }
   }
@@ -640,7 +640,7 @@ private:
   /// 2. For non-GPU architectures where the host/device pointers are aliased
   ///    we don't need the "sync path."
   /// 3. For GPUs, we always need the "sync path."  For shared host/device memory (e.g. CudaUVM)
-  ///    the Kokkos::deep_copy in the sync is a no-op, but the fence associated with it matters.
+  ///    the Tpetra::Details::deep_copy in the sync is a no-op, but the fence associated with it matters.
   ///
   ///
   /// Avoiding the "sync path" speeds up calculations on architectures where we can

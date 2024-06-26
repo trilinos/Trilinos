@@ -43,6 +43,7 @@
 #define TPETRA_DETAILS_DUALVIEWUTIL_HPP
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include <ostream>
@@ -84,7 +85,7 @@ makeDualViewFromOwningHostView
   else {
     auto devView = Kokkos::create_mirror_view (DeviceType (), hostView);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy (execution_space(), devView, hostView);
+    Tpetra::Details::deep_copy (execution_space(), devView, hostView);
     dv = dual_view_type (devView, hostView);
   }
 }
@@ -105,7 +106,7 @@ makeDualViewFromArrayView (Kokkos::DualView<ElementType*, DeviceType>& dv,
   const_host_view_type inView (ptr, size);
   host_view_type hostView (view_alloc_no_init (label), size);
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  Kokkos::deep_copy (execution_space(), hostView, inView);
+  Tpetra::Details::deep_copy (execution_space(), hostView, inView);
 
   makeDualViewFromOwningHostView (dv, hostView);
 }
@@ -126,7 +127,7 @@ makeDualViewFromVector (Kokkos::DualView<ElementType*, DeviceType>& dv,
   const_host_view_type inView (ptr, size);
   host_view_type hostView (view_alloc_no_init (label), size);
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  Kokkos::deep_copy (execution_space(), hostView, inView);
+  Tpetra::Details::deep_copy (execution_space(), hostView, inView);
 
   makeDualViewFromOwningHostView (dv, hostView);
 }

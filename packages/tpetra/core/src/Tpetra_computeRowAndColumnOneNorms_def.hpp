@@ -137,7 +137,7 @@ computeLocalRowScaledColumnNorms_RowMatrix (EquilibrationInfo<typename Kokkos::A
   auto rowNorms_h = Kokkos::create_mirror_view (result.rowNorms);
 
   // DEEP_COPY REVIEW - NOT TESTED
-  Kokkos::deep_copy (rowNorms_h, result.rowNorms);
+  Tpetra::Details::deep_copy (rowNorms_h, result.rowNorms);
   auto rowScaledColNorms_h = Kokkos::create_mirror_view (result.rowScaledColNorms);
 
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
@@ -155,7 +155,7 @@ computeLocalRowScaledColumnNorms_RowMatrix (EquilibrationInfo<typename Kokkos::A
     });
 
   // DEEP_COPY REVIEW - NOT TESTED
-  Kokkos::deep_copy (result.rowScaledColNorms, rowScaledColNorms_h);
+  Tpetra::Details::deep_copy (result.rowScaledColNorms, rowScaledColNorms_h);
 }
 
 /// \brief Implementation of computeLocalRowOneNorms for a
@@ -341,7 +341,7 @@ public:
        const Kokkos::View<const mag_type*, device_type>& rowNorms,
        const crs_matrix_type& A)
   {
-    using execution_space = typename device_type::execution_space;
+    //using execution_space = typename device_type::execution_space;
     using functor_type = ComputeLocalRowScaledColumnNorms<SC, LO, GO, NT>;
 
     functor_type functor (rowScaledColNorms, rowNorms, A);
@@ -750,7 +750,7 @@ auto getLocalView_1d_readOnly (
                             Kokkos::ALL (), 0);
   }
 }
- 
+
 template<class SC, class LO, class GO, class NT>
 auto getLocalView_1d_writeOnly (
   Tpetra::MultiVector<SC, LO, GO, NT>& X,
@@ -768,7 +768,7 @@ auto getLocalView_1d_writeOnly (
                            Kokkos::ALL (), 0);
   }
 }
- 
+
 template<class SC, class LO, class GO, class NT, class ViewValueType>
 void
 copy1DViewIntoMultiVectorColumn (

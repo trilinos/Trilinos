@@ -424,7 +424,7 @@ unpackAndCombineWithOwningPIDsCount(
         KOKKOS_LAMBDA(const int& i, size_t& lsum) {
           lsum += num_packets_per_lid(i) / 2;
         }, Kokkos::Sum<size_t>(tot_num_ent));
-    count += tot_num_ent; 
+    count += tot_num_ent;
   }
 
   return count;
@@ -941,7 +941,6 @@ unpackAndCombineIntoCrsArrays(
     Teuchos::Array<int>& TargetPids)
 {
   using Kokkos::View;
-  using Kokkos::deep_copy;
   using Teuchos::outArg;
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
@@ -1043,15 +1042,15 @@ unpackAndCombineIntoCrsArrays(
   // Copy outputs back to host
   typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
-  deep_copy(crs_rowptr_h, crs_rowptr_d);
+  Tpetra::Details::deep_copy(crs_rowptr_h, crs_rowptr_d);
 
   typename decltype(crs_colind_d)::HostMirror crs_colind_h(
       CRS_colind.getRawPtr(), CRS_colind.size());
-  deep_copy(crs_colind_h, crs_colind_d);
+  Tpetra::Details::deep_copy(crs_colind_h, crs_colind_d);
 
   typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
       TargetPids.getRawPtr(), TargetPids.size());
-  deep_copy(tgt_pids_h, tgt_pids_d);
+  Tpetra::Details::deep_copy(tgt_pids_h, tgt_pids_d);
 
 }
 

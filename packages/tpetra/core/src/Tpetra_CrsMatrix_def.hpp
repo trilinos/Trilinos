@@ -768,7 +768,7 @@ namespace Tpetra {
       values_type newvals (view_alloc ("val", WithoutInitializing),
                            vals.extent (0));
           // DEEP_COPY REVIEW - DEVICE-TO_DEVICE
-      Kokkos::deep_copy (newvals, vals);
+      Tpetra::Details::deep_copy (newvals, vals);
       valuesPacked_wdv = values_wdv_type(newvals);
       valuesUnpacked_wdv = valuesPacked_wdv;
       fillComplete (source.getDomainMap (), source.getRangeMap ());
@@ -3438,7 +3438,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     else {
       // DEEP_COPY REVIEW - VALUE-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
+      Tpetra::Details::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
       // CAG: This fence was found to be required on Cuda with UVM=on.
       Tpetra::Details::fence("CrsMatrix::setAllToScalar");
@@ -3588,7 +3588,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                            Kokkos::MemoryUnmanaged> output_type;
       output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
-      Kokkos::deep_copy (execution_space(), offsetsOut, offsetsTmp);
+      Tpetra::Details::deep_copy (execution_space(), offsetsOut, offsetsTmp);
     }
   }
 
@@ -5200,7 +5200,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<output_matrix_type> newMatrix
       (new output_matrix_type (this->getCrsGraph ()));
     // Copy old values into new values.  impl_scalar_type and T may
-    // differ, so we can't use Kokkos::deep_copy.
+    // differ, so we can't use Tpetra::Details::deep_copy.
     using ::Tpetra::Details::copyConvert;
     copyConvert (newMatrix->getLocalMatrixDevice ().values,
                  this->getLocalMatrixDevice ().values);
@@ -5599,7 +5599,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     row_ptrs_type row_ptr_beg(view_alloc("row_ptr_beg", WithoutInitializing),
                               myGraph_->rowPtrsUnpacked_dev_.extent(0));
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-    Kokkos::deep_copy(execution_space(),row_ptr_beg, myGraph_->rowPtrsUnpacked_dev_);
+    Tpetra::Details::deep_copy(execution_space(),row_ptr_beg, myGraph_->rowPtrsUnpacked_dev_);
     
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptr_beg.extent(0) - 1);
@@ -5669,7 +5669,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          KOKKOS_LAMBDA (const size_t i) {
           num_row_entries_d(i) = row_ptr_end(i) - row_ptr_beg(i);
         });
-      Kokkos::deep_copy(myGraph_->k_numRowEntries_, num_row_entries_d);
+      Tpetra::Details::deep_copy(myGraph_->k_numRowEntries_, num_row_entries_d);
     }
 
     if (verbose) {
@@ -6311,14 +6311,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       auto exports_h = exports.view_host ();
       auto exports_h_sub = subview (exports_h, range_type (0, newAllocSize));
 
-      // Kokkos::deep_copy needs a Kokkos::View input, so turn
+      // Tpetra::Details::deep_copy needs a Kokkos::View input, so turn
       // exports_a into a nonowning Kokkos::View first before copying.
       typedef typename exports_type::t_host::execution_space HES;
       typedef Kokkos::Device<HES, HostSpace> host_device_type;
       Kokkos::View<const char*, host_device_type>
         exports_a_kv (exports_a.getRawPtr (), newAllocSize);
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (exports_h_sub, exports_a_kv);
+      Tpetra::Details::deep_copy (exports_h_sub, exports_a_kv);
     }
 
     if (debug) {

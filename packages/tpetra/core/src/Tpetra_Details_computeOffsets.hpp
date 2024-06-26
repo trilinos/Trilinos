@@ -311,7 +311,7 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
       using Kokkos::WithoutInitializing;
       counts_copy = counts_copy_type
         (view_alloc ("counts_copy", WithoutInitializing), numCounts);
-      Kokkos::deep_copy (execSpace, counts_copy, counts);
+      Tpetra::Details::deep_copy (execSpace, counts_copy, counts);
       counts_a = counts_copy;
     }
 

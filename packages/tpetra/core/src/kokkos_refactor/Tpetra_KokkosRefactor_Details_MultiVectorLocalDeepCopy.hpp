@@ -77,7 +77,7 @@ copyConvertResolvingPossibleAliasing (const DstViewType& dst,
   }
   else {
     // dst and src alias each other, so we can't call
-    // Kokkos::deep_copy(dst,src) directly (Kokkos detects this and
+    // Tpetra::Details::deep_copy(dst,src) directly (Kokkos detects this and
     // throws, at least in debug mode).  Instead, we make temporary
     // host storage (create_mirror always makes a new allocation,
     // unlike create_mirror_view).  Use host because it's cheaper to
@@ -86,7 +86,7 @@ copyConvertResolvingPossibleAliasing (const DstViewType& dst,
     auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
 
     // DEEP_COPY REVIEW - NOT TESTED
-    Kokkos::deep_copy (src_copy, src);
+    Tpetra::Details::deep_copy (src_copy, src);
     ::Tpetra::Details::copyConvert (dst, src_copy);
   }
 }

@@ -181,14 +181,14 @@ pad_crs_arrays(
     auto row_ptr_beg_h =
       Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
     // DEEP_COPY REVIEW - NOT TESTED
-    Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
+    Tpetra::Details::deep_copy(row_ptr_beg_h, row_ptr_beg);
     verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg before scan",
                       maxNumToPrint);
     os << ", ";
     auto row_ptr_end_h =
       Kokkos::create_mirror_view(hostSpace, row_ptr_end);
     // DEEP_COPY REVIEW - NOT TESTED
-    Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
+    Tpetra::Details::deep_copy(row_ptr_end_h, row_ptr_end);
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end before scan",
                       maxNumToPrint);
     os << ", indices.extent(0): " << indices_wdv.extent(0)
@@ -224,11 +224,11 @@ pad_crs_arrays(
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(exec_space_instance, row_ptr_end_h, row_ptr_end);
+    Tpetra::Details::deep_copy(exec_space_instance, row_ptr_end_h, row_ptr_end);
     auto row_ptr_beg_h = create_mirror_view(
       hostSpace, row_ptr_beg, verbose, prefix.get());
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(exec_space_instance, row_ptr_beg_h, row_ptr_beg);
+    Tpetra::Details::deep_copy(exec_space_instance, row_ptr_beg_h, row_ptr_beg);
 
     // lbv 03/15/23: The execution space deep_copy does an asynchronous
     // copy so we really want to fence that space before touching the
@@ -282,7 +282,7 @@ pad_crs_arrays(
       return;
     }
     // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
-    Kokkos::deep_copy(execution_space(), newAllocPerRow, newAllocPerRow_h);
+    Tpetra::Details::deep_copy(execution_space(), newAllocPerRow, newAllocPerRow_h);
   }
 
   using inds_value_type = 
@@ -365,7 +365,7 @@ pad_crs_arrays(
       auto row_ptr_beg_h =
         Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
+      Tpetra::Details::deep_copy(row_ptr_beg_h, row_ptr_beg);
       verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg after scan",
                         maxNumToPrint);
       os << endl;
@@ -374,7 +374,7 @@ pad_crs_arrays(
       auto row_ptr_end_h =
         Kokkos::create_mirror_view(hostSpace, row_ptr_end);
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
+      Tpetra::Details::deep_copy(row_ptr_end_h, row_ptr_end);
       verbosePrintArray(os, row_ptr_end_h, "row_ptr_end after scan",
                         maxNumToPrint);
       os << endl;

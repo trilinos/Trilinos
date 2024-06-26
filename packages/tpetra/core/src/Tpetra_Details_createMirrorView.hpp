@@ -47,6 +47,7 @@
 #include "Teuchos_ArrayView.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_Core.hpp"
 #include <memory>
 #include <string>
@@ -150,7 +151,7 @@ public:
       outView_nc = nc_output_view_type (view_alloc (std::string (label), WithoutInitializing), inSize);
       // DEEP_COPY REVIEW - HOST-TO-DEVICE
       using execution_space = typename nc_output_view_type::execution_space;
-      Kokkos::deep_copy (execution_space(), outView_nc, inView);
+      Tpetra::Details::deep_copy (execution_space(), outView_nc, inView);
     }
     return outView_nc; // this casts back to const
   }
@@ -185,7 +186,7 @@ public:
       Kokkos::create_mirror_view (out_mem_space (), inView);
     if (copy) {
       // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-      Kokkos::deep_copy (out_exec_space(), outView, inView);
+      Tpetra::Details::deep_copy (out_exec_space(), outView, inView);
     }
     return outView;
   }

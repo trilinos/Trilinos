@@ -366,7 +366,7 @@ void localRowsToColumns(const typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::exec
     auto lclRowMap = A.getRowMap()->getLocalMap();
     auto lclColMap = A.getColMap()->getLocalMap();
 
-    Kokkos::deep_copy(execSpace,dirichletColFlags,false);
+    Tpetra::Details::deep_copy(execSpace,dirichletColFlags,false);
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
     Kokkos::parallel_for
         ("Tpetra::CrsMatrix flag Dirichlet cols",

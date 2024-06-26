@@ -50,6 +50,7 @@
 */
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_DualView.hpp"
 #include "KokkosCompat_View.hpp"
 #include "Teuchos_Assert.hpp"
@@ -477,7 +478,7 @@ namespace Tpetra {
    }
 
   /**
-   * \brief Compute the permutation of the ordering that 
+   * \brief Compute the permutation of the ordering that
    * sorts the array using a stable sort.
    */
   template<typename IT1>
@@ -629,7 +630,7 @@ namespace Tpetra {
     Teuchos::ArrayRCP<typename View1::non_const_value_type> view1_rcp =  Kokkos::Compat::persistingView(view1, 0, size);
     Teuchos::ArrayRCP<typename View2::non_const_value_type> view2_rcp =  Kokkos::Compat::persistingView(view2, 0, size);
 
-    sort2(view1_rcp.begin(),view1_rcp.end(),view2_rcp.begin());    
+    sort2(view1_rcp.begin(),view1_rcp.end(),view2_rcp.begin());
   }
 
 /**
@@ -647,7 +648,7 @@ namespace Tpetra {
     // Wrap the view as rcps (this happens to preserve the reference counting, but that doesn't really matter here)
     Teuchos::ArrayRCP<typename View::non_const_value_type> view_rcp =  Kokkos::Compat::persistingView(view, 0, size);
 
-    std::sort(view_rcp.begin(),view_rcp.end());    
+    std::sort(view_rcp.begin(),view_rcp.end());
   }
 
   /**
@@ -664,9 +665,9 @@ namespace Tpetra {
     // Wrap the view as rcps (this happens to preserve the reference counting, but that doesn't really matter here)
     Teuchos::ArrayRCP<typename View::non_const_value_type> view_rcp =  Kokkos::Compat::persistingView(view, 0, size);
 
-    std::sort(view_rcp.rbegin(),view_rcp.rend());    
+    std::sort(view_rcp.rbegin(),view_rcp.rend());
   }
-  
+
 
 
 
@@ -1054,12 +1055,12 @@ namespace Tpetra {
       if (leaveOnHost) {
         x_out.modify_host ();
         // DEEP_COPY REVIEW - NOT TESTED FOR CUDA BUILD
-        Kokkos::deep_copy (x_out.view_host (), x_in);
+        Tpetra::Details::deep_copy (x_out.view_host (), x_in);
       }
       else {
         x_out.template modify<DMS> ();
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
-        Kokkos::deep_copy (execution_space(), x_out.template view<DMS> (), x_in);
+        Tpetra::Details::deep_copy (execution_space(), x_out.template view<DMS> (), x_in);
       }
       return x_out;
     }

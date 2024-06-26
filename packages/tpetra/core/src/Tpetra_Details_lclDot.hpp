@@ -48,7 +48,7 @@
 ///
 /// \warning This file, and its contents, are implementation details
 ///   of Tpetra, and may change or disappear at any time.
-
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosBlas1_dot.hpp"
@@ -146,7 +146,7 @@ lclDot (const RV& dotsOut,
   if (lclNumRows == 0) {
     const dot_type zero = Kokkos::ArithTraits<dot_type>::zero ();
     // DEEP_COPY REVIEW - NOT TESTED
-    Kokkos::deep_copy (theDots, zero);
+    Tpetra::Details::deep_copy (theDots, zero);
   }
   else { // lclNumRows != 0
     if (constantStrideX && constantStrideY) {
@@ -154,7 +154,7 @@ lclDot (const RV& dotsOut,
         typename RV::non_const_value_type result =
           KokkosBlas::dot (subview (X, ALL (), 0), subview (Y, ALL (), 0));
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (theDots, result);
+        Tpetra::Details::deep_copy (theDots, result);
       }
       else {
         KokkosBlas::dot (theDots, X, Y);

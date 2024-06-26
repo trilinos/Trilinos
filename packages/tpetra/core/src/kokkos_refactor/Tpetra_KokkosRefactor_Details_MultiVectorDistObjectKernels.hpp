@@ -253,7 +253,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         auto idx_h = Kokkos::create_mirror_view (idx);
 
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (idx_h, idx);
+        Tpetra::Details::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
         const size_type numInds = idx_h.extent (0);
@@ -459,7 +459,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         auto idx_h = Kokkos::create_mirror_view (idx);
 
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (idx_h, idx);
+        Tpetra::Details::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
         const size_type numInds = idx_h.extent (0);
@@ -690,7 +690,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         auto idx_h = Kokkos::create_mirror_view (idx);
 
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (idx_h, idx);
+        Tpetra::Details::deep_copy (idx_h, idx);
 
         std::vector<row_index_type> badRows;
         const size_type numRowInds = idx_h.extent (0);
@@ -726,7 +726,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         auto col_h = Kokkos::create_mirror_view (col);
 
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (col_h, col);
+        Tpetra::Details::deep_copy (col_h, col);
 
         std::vector<col_index_type> badCols;
         const size_type numColInds = col_h.extent (0);
@@ -1129,7 +1129,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         auto idx_h = Kokkos::create_mirror_view (idx);
 
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (idx_h, idx);
+        Tpetra::Details::deep_copy (idx_h, idx);
 
         std::vector<index_type> badIndices;
         const size_type numInds = idx_h.extent (0);
@@ -1460,7 +1460,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         auto idx_h = Kokkos::create_mirror_view (idx);
 
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (idx_h, idx);
+        Tpetra::Details::deep_copy (idx_h, idx);
 
         std::vector<row_index_type> badRows;
         const size_type numRowInds = idx_h.extent (0);
@@ -1497,7 +1497,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
         auto col_h = Kokkos::create_mirror_view (col);
 
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (col_h, col);
+        Tpetra::Details::deep_copy (col_h, col);
 
         std::vector<col_index_type> badCols;
         const size_type numColInds = col_h.extent (0);

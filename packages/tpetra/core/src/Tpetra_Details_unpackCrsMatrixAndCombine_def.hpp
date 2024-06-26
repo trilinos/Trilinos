@@ -422,7 +422,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     return error_code_h();
   }
 
-}; //UnpackCrsMatrixAndCombineFunctor 
+}; //UnpackCrsMatrixAndCombineFunctor
 
 struct MaxNumEntTag {};
 struct TotNumEntTag {};
@@ -492,7 +492,7 @@ public:
       tot_num_ent += static_cast<size_t> (num_ent_LO);
     }
   }
-}; //NumEntriesFunctor 
+}; //NumEntriesFunctor
 
 /// \brief Maximum number of entries in any row of the packed matrix.
 ///
@@ -691,13 +691,13 @@ unpackAndCombineIntoCrsMatrix(
   Kokkos::HostSpace host_space;
   auto batches_per_lid_h = Kokkos::create_mirror_view(host_space, batches_per_lid);
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  Kokkos::deep_copy(XS(), batches_per_lid_h, batches_per_lid);
+  Tpetra::Details::deep_copy(XS(), batches_per_lid_h, batches_per_lid);
 
   auto batch_info_h = Kokkos::create_mirror_view(host_space, batch_info);
 
   (void) compute_batch_info(batches_per_lid_h, batch_info_h);
   // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
-  Kokkos::deep_copy(XS(), batch_info, batch_info_h);
+  Tpetra::Details::deep_copy(XS(), batch_info, batch_info_h);
 
   // FIXME (TJF SEP 2017)
   // The scalar type is not necessarily default constructible
@@ -1429,24 +1429,24 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Kokkos::View<LocalOrdinal const *, 
+    const Kokkos::View<LocalOrdinal const *,
           Kokkos::Device<typename Node::device_type::execution_space,
                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > import_lids_d,
-    const Kokkos::View<const char*, 
+    const Kokkos::View<const char*,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > imports_d,
-    const Kokkos::View<const size_t*, 
+    const Kokkos::View<const size_t*,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > num_packets_per_lid_d,
     const size_t numSameIDs,
-    const Kokkos::View<LocalOrdinal const *, 
+    const Kokkos::View<LocalOrdinal const *,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > permute_to_lids_d,
-    const Kokkos::View<LocalOrdinal const *, 
+    const Kokkos::View<LocalOrdinal const *,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > permute_from_lids_d,
@@ -1462,7 +1462,7 @@ unpackAndCombineIntoCrsArrays (
   using Tpetra::Details::PackTraits;
 
   using Kokkos::View;
-  using Kokkos::deep_copy;
+  using Tpetra::Details::deep_copy;
 
   using Teuchos::ArrayView;
   using Teuchos::outArg;
@@ -1529,7 +1529,7 @@ unpackAndCombineIntoCrsArrays (
   if (static_cast<size_t> (TargetPids.size ()) != TargetNumNonzeros) {
     Kokkos::resize(TargetPids,TargetNumNonzeros);
   }
-  Kokkos::deep_copy(execution_space(), TargetPids, -1);
+  Tpetra::Details::deep_copy(execution_space(), TargetPids, -1);
 
   // Grab pointers for sourceMatrix
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
@@ -1604,24 +1604,24 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void
 unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Kokkos::View<LocalOrdinal const *, 
+    const Kokkos::View<LocalOrdinal const *,
           Kokkos::Device<typename Node::device_type::execution_space,
                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > import_lids_d,
-    const Kokkos::View<const char*, 
+    const Kokkos::View<const char*,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > imports_d,
-    const Kokkos::View<const size_t*, 
+    const Kokkos::View<const size_t*,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > num_packets_per_lid_d,
     const size_t numSameIDs,
-    const Kokkos::View<LocalOrdinal const *, 
+    const Kokkos::View<LocalOrdinal const *,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > permute_to_lids_d,
-    const Kokkos::View<LocalOrdinal const *, 
+    const Kokkos::View<LocalOrdinal const *,
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
           void, void > permute_from_lids_d,
@@ -1637,7 +1637,7 @@ unpackAndCombineIntoCrsArrays (
   using Tpetra::Details::PackTraits;
 
   using Kokkos::View;
-  using Kokkos::deep_copy;
+  using Tpetra::Details::deep_copy;
 
   using Teuchos::ArrayView;
   using Teuchos::outArg;
@@ -1816,22 +1816,22 @@ unpackAndCombineIntoCrsArrays (
   typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), crs_rowptr_h, crs_rowptr_d);
+  Tpetra::Details::deep_copy(execution_space(), crs_rowptr_h, crs_rowptr_d);
 
   typename decltype(crs_colind_d)::HostMirror crs_colind_h(
       CRS_colind.getRawPtr(), CRS_colind.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), crs_colind_h, crs_colind_d);
+  Tpetra::Details::deep_copy(execution_space(), crs_colind_h, crs_colind_d);
 
   typename decltype(crs_vals_d)::HostMirror crs_vals_h(
       CRS_vals_impl_scalar_type.getRawPtr(), CRS_vals_impl_scalar_type.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), crs_vals_h, crs_vals_d);
+  Tpetra::Details::deep_copy(execution_space(), crs_vals_h, crs_vals_d);
 
   typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
       TargetPids.getRawPtr(), TargetPids.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);
+  Tpetra::Details::deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);
 
 } //unpackAndCombineIntoCrsArrays
 

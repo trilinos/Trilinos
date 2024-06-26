@@ -226,7 +226,7 @@ public:
     auto error_h = Kokkos::create_mirror_view (error_);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
     using execution_space = typename device_type::execution_space;
-    Kokkos::deep_copy (execution_space(), error_h, error_);
+    Tpetra::Details::deep_copy (execution_space(), error_h, error_);
     return error_h ();
   }
 
@@ -833,7 +833,7 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
   using execution_space = typename BDT::execution_space;
-  Kokkos::deep_copy (execution_space(), num_packets_per_lid_h, num_packets_per_lid_d);
+  Tpetra::Details::deep_copy (execution_space(), num_packets_per_lid_h, num_packets_per_lid_d);
 
   // FIXME (mfh 23 Aug 2017) If we're forced to use a DualView for
   // exports_dv above, then we have two host copies for exports_h.
@@ -847,7 +847,7 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
   View<packet_type*, HostSpace, MemoryUnmanaged>
     exports_h (exports.getRawPtr (), exports.size ());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
-  Kokkos::deep_copy (execution_space(), exports_h, exports_dv.d_view);
+  Tpetra::Details::deep_copy (execution_space(), exports_h, exports_dv.d_view);
   execution_space().fence();
 }
 
@@ -1004,7 +1004,7 @@ packCrsGraphWithOwningPIDs
     (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
   using execution_space = typename buffer_device_type::execution_space;
-  Kokkos::deep_copy (execution_space(),
+  Tpetra::Details::deep_copy (execution_space(),
     num_packets_per_lid_h, num_packets_per_lid_d);
   execution_space().fence();
 }

@@ -43,7 +43,7 @@
 
 /// \file Tpetra_Details_KokkosTeuchosTimerInjection.hpp
 /// \brief Declaration functions that use Kokkos' profiling library to add deep copies between memory spaces, 
-/// and Kokkos fences to the Teuchos::TimeMonitor system. This does have the side effect of making Kokkos::deep_copy()
+/// and Kokkos fences to the Teuchos::TimeMonitor system. This does have the side effect of making Tpetra::Details::deep_copy()
 ///  calls on the host also call Kokkos::fence()
 
 

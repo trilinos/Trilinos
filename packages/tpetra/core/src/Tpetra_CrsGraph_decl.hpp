@@ -2186,7 +2186,7 @@ public:
           //Have to make this temporary because rowptrs are const-valued
           typename row_ptrs_host_view_type::non_const_type rowPtrsTemp(
               Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowPtrsUnpacked_host_"), rowPtrsUnpacked_dev_.extent(0));
-          Kokkos::deep_copy(rowPtrsTemp, rowPtrsUnpacked_dev_);
+          Tpetra::Details::deep_copy(rowPtrsTemp, rowPtrsUnpacked_dev_);
           rowPtrsUnpacked_host_= rowPtrsTemp;
         }
         //Also keep packed/unpacked views in sync, if they are known to have the same contents
@@ -2229,7 +2229,7 @@ public:
           //Have to make this temporary because rowptrs are const-valued
           typename row_ptrs_host_view_type::non_const_type rowPtrsTemp(
               Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowPtrsPacked_host_"), rowPtrsPacked_dev_.extent(0));
-          Kokkos::deep_copy(rowPtrsTemp, rowPtrsPacked_dev_);
+          Tpetra::Details::deep_copy(rowPtrsTemp, rowPtrsPacked_dev_);
           rowPtrsPacked_host_= rowPtrsTemp;
         }
         //Also keep packed/unpacked views in sync, if they are known to have the same contents

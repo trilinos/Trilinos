@@ -577,7 +577,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
   // DEEP_COPY REVIEW - NOT TESTED
-  Kokkos::deep_copy (keys_d, keys_k);
+  Tpetra::Details::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
   this->init (keys_d, startingValue, initMinKey, initMaxKey,
@@ -605,7 +605,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
   // DEEP_COPY REVIEW - HOST-TO_DEVICE
-  Kokkos::deep_copy (execution_space(), keys_d, keys_k);
+  Tpetra::Details::deep_copy (execution_space(), keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::ArithTraits<KeyType>::max ();
   // min() for a floating-point type returns the minimum _positive_
@@ -687,7 +687,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
   // DEEP_COPY REVIEW - NOT TESTED
-  Kokkos::deep_copy (keys_d, keys_k);
+  Tpetra::Details::deep_copy (keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::ArithTraits<KeyType>::max ();
   // min() for a floating-point type returns the minimum _positive_
@@ -930,7 +930,7 @@ init (const keys_type& keys,
     Kokkos::HostSpace hostMemSpace;
     theKeysHost = Kokkos::create_mirror_view(theKeys);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy(execution_space(), theKeysHost, theKeys);
+    Tpetra::Details::deep_copy(execution_space(), theKeysHost, theKeys);
     auto countsHost = Kokkos::create_mirror_view (hostMemSpace, counts);
 
     for (offset_type k = 0; k < theNumKeys; ++k) {
@@ -949,7 +949,7 @@ init (const keys_type& keys,
       ++countsHost[hashVal];
     }
     // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
-    Kokkos::deep_copy (execution_space(), counts, countsHost);
+    Tpetra::Details::deep_copy (execution_space(), counts, countsHost);
   }
 
   // KJ: This fence is not required for the 2-argument deep_copy which calls
@@ -991,7 +991,7 @@ init (const keys_type& keys,
 
     computeOffsetsFromCounts (hostExecSpace, ptr_h, counts_h);
     // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
-    Kokkos::deep_copy (execution_space(), ptr, ptr_h);
+    Tpetra::Details::deep_copy (execution_space(), ptr, ptr_h);
 
     if (debug) {
       bool bad = false;
@@ -1060,8 +1060,8 @@ init (const keys_type& keys,
         val_h[curPos].second = theVal;
       }
     }
-    Kokkos::deep_copy(counts, counts_h); // restore
-    Kokkos::deep_copy(val, val_h); // restore
+    Tpetra::Details::deep_copy(counts, counts_h); // restore
+    Tpetra::Details::deep_copy(val, val_h); // restore
   }
 
   // FIXME (mfh 01 Jun 2015) Temporarily commented out because of
@@ -1197,8 +1197,8 @@ init (const host_input_keys_type& keys,
      "Tpetra developers.");
 
   // "Commit" the computed arrays and other computed quantities.
-  Kokkos::deep_copy(ptr, ptr_h);
-  Kokkos::deep_copy(val, val_h);
+  Tpetra::Details::deep_copy(ptr, ptr_h);
+  Tpetra::Details::deep_copy(val, val_h);
 
   ptr_ = ptr;
   val_ = val;

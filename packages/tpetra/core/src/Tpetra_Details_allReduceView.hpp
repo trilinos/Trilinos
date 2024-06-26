@@ -77,7 +77,7 @@ allReduceRawContiguous (const OutputViewType& output,
       tempInput(Kokkos::ViewAllocateWithoutInitializing("tempInput"), layout);
     // DEEP_COPY REVIEW - This could be either DEVICE-TO-DEVICE or HOST-TO-HOST
     // Either way, MPI is called right afterwards, meaning we'd need a sync on device
-    Kokkos::deep_copy(tempInput, input);
+    Tpetra::Details::deep_copy(tempInput, input);
     reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
         tempInput.data(), output.data());
   }
@@ -103,7 +103,7 @@ allReduceView (const OutputViewType& output,
       // InputViewType and OutputViewType can't be AnonymousSpace
       // Views, because deep_copy needs to know their memory spaces.
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (output, input);
+      Tpetra::Details::deep_copy (output, input);
     }
     return;
   }
@@ -126,10 +126,10 @@ allReduceView (const OutputViewType& output,
     auto outputMPI = TempView::toMPISafe<decltype(outputContig), false>(outputContig);
     allReduceRawContiguous(outputMPI, inputMPI, comm);
     // DEEP_COPY REVIEW - Could be either
-    Kokkos::deep_copy(outputContig, outputMPI);
+    Tpetra::Details::deep_copy(outputContig, outputMPI);
   }
     // DEEP_COPY REVIEW - Could be either
-  Kokkos::deep_copy(output, outputContig);
+  Tpetra::Details::deep_copy(output, outputContig);
 }
 
 } // namespace Details

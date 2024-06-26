@@ -49,6 +49,7 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_Core.hpp"
 #include <limits>
 #include <type_traits>
@@ -173,9 +174,9 @@ namespace { // (anonymous)
         auto dst_h = Kokkos::create_mirror_view (dst);
         auto src_h = Kokkos::create_mirror_view (src);
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (src_h, src);
+        Tpetra::Details::deep_copy (src_h, src);
         // DEEP_COPY REVIEW - NOT TESTED
-        Kokkos::deep_copy (dst_h, dst);
+        Tpetra::Details::deep_copy (dst_h, dst);
 
         os << "  src: [";
         for (size_t k = 0; k < srcLen; ++k) {
@@ -330,7 +331,7 @@ namespace { // (anonymous)
   //    memory space?
   //
   // If (1) is true, that makes the implementation simple: just call
-  // Kokkos::deep_copy (FixedHashTable always uses the same layout, no
+  // Tpetra::Details::deep_copy (FixedHashTable always uses the same layout, no
   // matter the device type).  Otherwise, we need a custom copy
   // functor.  If (2) is true, then we can use CopyOffsetsFunctor
   // directly.  Otherwise, we have to copy the input View into the
@@ -355,9 +356,9 @@ namespace { // (anonymous)
   //
   // If both input and output Views have the same layout, and both
   // input and output use the same type for offsets, then we don't
-  // need to check for overflow, and we can use Kokkos::deep_copy
+  // need to check for overflow, and we can use Tpetra::Details::deep_copy
   // directly.  It doesn't matter whether the output execution space
-  // can access the input memory space: Kokkos::deep_copy takes care
+  // can access the input memory space: Tpetra::Details::deep_copy takes care
   // of the details.
   template<class OutputViewType,
            class InputViewType,
@@ -382,14 +383,14 @@ namespace { // (anonymous)
                      "the same array_layout.");
       // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
       using execution_space = typename OutputViewType::execution_space;
-      Kokkos::deep_copy (execution_space(), dst, src);
+      Tpetra::Details::deep_copy (execution_space(), dst, src);
     }
   };
 
   // Specializations for sameLayoutsSameOffsetTypes = false:
   //
   // If input and output don't have the same layout, or use different
-  // types for offsets, then we can't use Kokkos::deep_copy directly,
+  // types for offsets, then we can't use Tpetra::Details::deep_copy directly,
   // and we may have to check for overflow.
 
   // Specialization for sameLayoutsSameOffsetTypes = false and
@@ -452,7 +453,7 @@ namespace { // (anonymous)
   // space, then we can't use CopyOffsetsFunctor directly.  Instead,
   // tell Kokkos to copy the input View's data into the output View's
   // memory space _first_.  Since the offset types are different for
-  // this specialization, we can't just call Kokkos::deep_copy
+  // this specialization, we can't just call Tpetra::Details::deep_copy
   // directly between the input and output Views of offsets; that
   // wouldn't compile.
   //
@@ -492,7 +493,7 @@ namespace { // (anonymous)
         outputSpaceCopy (view_alloc ("outputSpace", WithoutInitializing),
                          src.extent (0));
       // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-      Kokkos::deep_copy (execution_space(), outputSpaceCopy, src);
+      Tpetra::Details::deep_copy (execution_space(), outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.

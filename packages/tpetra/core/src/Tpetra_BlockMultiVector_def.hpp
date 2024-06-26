@@ -295,7 +295,7 @@ replaceLocalValuesImpl (const LO localRowIndex,
                                                                 getBlockSize ());
   // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
   using exec_space = typename device_type::execution_space;
-  Kokkos::deep_copy (exec_space(), X_dst, X_src);
+  Tpetra::Details::deep_copy (exec_space(), X_dst, X_src);
 }
 
 

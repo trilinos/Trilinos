@@ -99,7 +99,7 @@ struct Get1DConstViewOfUnmanagedHostArray<ST, DT, false> {
       // constructor we're calling.
       Kokkos::View<ST*, DT> x_out (std::string (label), x_len);
       // DEEP_COPY REVIEW - NOT TESTED
-      Kokkos::deep_copy (x_out, x_in);
+      Tpetra::Details::deep_copy (x_out, x_in);
       return x_out;
     }
 };

@@ -71,59 +71,77 @@ namespace Tpetra {
     void fence();
     void fence(const std::string& label);
 
-#ifdef ENABLE_DEEP_COPY
-    // Tpetra wrappers ofKokkos::deep_copy();
-    template<class ExecSpace, class ViewDest, class ViewSrc>
-    void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const ViewSrc &src) {
-      Kokkos::deep_copy(exec_space,dest,src);
-    }
-
-    template<class ExecSpace, class ViewDest>
-    void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const typename ViewDest::value_type &src) {
-      Kokkos::deep_copy(exec_space,dest,src);
-    }
-
-    template<class ExecSpace, class ViewSrc>
-    void deep_copy(const ExecSpace &exec_space, typename ViewSrc::value_type &dest, const ViewSrc &src) {
-      Kokkos::deep_copy(exec_space,dest,src);
-    }
-
-    template<class ViewDest, class ViewSrc>
-    void deep_copy(const ViewDest &dest, const ViewSrc &src) {
+    /// Tpetra wrappers of Kokkos::deep_copy();
+    /** \brief  Deep copy a value from Host memory into a view.  */
+    template <class DT, class... DP>
+    inline void deep_copy(const Kokkos::View<DT, DP...>& dst,
+                          typename Kokkos::ViewTraits<DT, DP...>::const_value_type& value,
+                          std::enable_if_t<std::is_same<typename Kokkos::ViewTraits<DT, DP...>::specialize,
+                          void>::value>* = nullptr) {
       if(Details::areRelaxedSyncsEnabled()) {
         auto exec_space = Kokkos::DefaultExecutionSpace();
-        Kokkos::deep_copy(exec_space,dest,src);
+        Kokkos::deep_copy(exec_space,dst,value);
         exec_space.fence();
       }
       else {
-        Kokkos::deep_copy(dest,src);
+        Kokkos::deep_copy(dst,value);
       }
     }
 
-    template<class ViewDest>
-    void deep_copy(const ViewDest &dest, const typename ViewDest::value_type &src) {
+
+    /** \brief  Deep copy into a value in Host memory from a view.  */
+    template <class ST, class... SP>
+    inline void deep_copy(typename Kokkos::ViewTraits<ST, SP...>::non_const_value_type& dst,
+                          const Kokkos::View<ST, SP...>& src,
+                          std::enable_if_t<std::is_same<typename Kokkos::ViewTraits<ST, SP...>::specialize,
+                          void>::value>* = nullptr) {
       if(Details::areRelaxedSyncsEnabled()) {
         auto exec_space = Kokkos::DefaultExecutionSpace();
-        Kokkos::deep_copy(exec_space,dest,src);
+        Kokkos::deep_copy(exec_space,dst,src);
         exec_space.fence();
       }
       else {
-        Kokkos::deep_copy(dest,src);
+        Kokkos::deep_copy(dst,src);
       }
     }
 
-    template<class ViewSrc>
-    void deep_copy(typename ViewSrc::value_type &dest, const ViewSrc &src) {
+    //----------------------------------------------------------------------------
+    /** \brief  A deep copy between views of compatible type */
+    template <class DT, class... DP, class ST, class... SP>
+    inline void deep_copy(const Kokkos::View<DT, DP...>& dst, const Kokkos::View<ST, SP...>& src) {
       if(Details::areRelaxedSyncsEnabled()) {
         auto exec_space = Kokkos::DefaultExecutionSpace();
-        Kokkos::deep_copy(exec_space,dest,src);
+        Kokkos::deep_copy(exec_space,dst,src);
         exec_space.fence();
       }
       else {
-        Kokkos::deep_copy(dest,src);
+        Kokkos::deep_copy(dst,src);
       }
     }
-#endif
+
+
+    /** \brief  Deep copy a value from Host memory into a view. */
+    template <class ExecSpace, class DT, class... DP>
+    inline void deep_copy(const ExecSpace& exec_space, const Kokkos::View<DT, DP...>& dst,
+                          typename Kokkos::ViewTraits<DT, DP...>::const_value_type& value) {
+      Kokkos::deep_copy(exec_space,dst,value);
+    }
+
+    /** \brief  Deep copy into a value in Host memory from a view.  */
+    template <class ExecSpace, class ST, class... SP>
+    inline void deep_copy(const ExecSpace& exec_space,
+                          typename Kokkos::ViewTraits<ST, SP...>::non_const_value_type& dst,
+                          const Kokkos::View<ST, SP...>& src) {
+      Kokkos::deep_copy(exec_space,dst,src);
+    }
+
+
+    template <class ExecSpace, class DT, class... DP, class ST, class... SP>
+    inline void deep_copy(const ExecSpace& exec_space, const Kokkos::View<DT, DP...>& dst,
+                          const Kokkos::View<ST, SP...>& src) {
+    Kokkos::deep_copy(exec_space,dst,src);
+  }
+
   } //namepace Details
 } // namespace Tpetra
 

@@ -242,7 +242,7 @@ public:
     typedef typename device_type::execution_space execution_space;
     auto error_h = Kokkos::create_mirror_view (error_);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-    Kokkos::deep_copy (execution_space(), error_h, error_);
+    Tpetra::Details::deep_copy (execution_space(), error_h, error_);
     return error_h ();
   }
 
@@ -903,7 +903,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     (numPacketsPerLID.getRawPtr (),
      numPacketsPerLID.size ());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
-  Kokkos::deep_copy (device_exec_space(), num_packets_per_lid_h, num_packets_per_lid_d);
+  Tpetra::Details::deep_copy (device_exec_space(), num_packets_per_lid_h, num_packets_per_lid_d);
 
   // FIXME (mfh 23 Aug 2017) If we're forced to use a DualView for
   // exports_dv above, then we have two host copies for exports_h.
@@ -917,7 +917,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   Kokkos::View<char*, host_dev_type> exports_h (exports.getRawPtr (),
                                                 exports.size ());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
-  Kokkos::deep_copy (device_exec_space(), exports_h, exports_dv.d_view);
+  Tpetra::Details::deep_copy (device_exec_space(), exports_h, exports_dv.d_view);
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
@@ -1052,12 +1052,12 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
       Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
         (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
-      Kokkos::deep_copy (execution_space(), num_packets_per_lid_h, num_packets_per_lid_d);
+      Tpetra::Details::deep_copy (execution_space(), num_packets_per_lid_h, num_packets_per_lid_d);
     }
     catch (std::exception& e) {
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "Kokkos::deep_copy threw: " << e.what () << std::endl;
+        os << *prefix << "Tpetra::Details::deep_copy threw: " << e.what () << std::endl;
         std::cerr << os.str ();
       }
       throw;
@@ -1065,7 +1065,7 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     catch (...) {
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "Kokkos::deep_copy threw an exception not a subclass "
+        os << *prefix << "Tpetra::Details::deep_copy threw an exception not a subclass "
           "of std::exception" << std::endl;
         std::cerr << os.str ();
       }

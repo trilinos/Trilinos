@@ -52,6 +52,7 @@
 ///   any time.
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_Core.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -149,7 +150,7 @@ lclNormImpl (const RV& normsOut,
     const mag_type zeroMag = Kokkos::ArithTraits<mag_type>::zero ();
     // DEEP_COPY REVIEW - VALUE-TO-DEVICE
     using execution_space = typename RV::execution_space;
-    Kokkos::deep_copy (execution_space(), normsOut, zeroMag);
+    Tpetra::Details::deep_copy (execution_space(), normsOut, zeroMag);
   }
   else { // lclNumRows != 0
     if (constantStride) {
@@ -258,7 +259,7 @@ gblNormImpl (const RV& normsOut,
       RV lclNorms (Kokkos::ViewAllocateWithoutInitializing ("MV::normImpl lcl"), numVecs);
       // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
       using execution_space = typename RV::execution_space;
-      Kokkos::deep_copy (execution_space(), lclNorms, normsOut);
+      Tpetra::Details::deep_copy (execution_space(), lclNorms, normsOut);
       const mag_type* const lclSum = lclNorms.data ();
       mag_type* const gblSum = normsOut.data ();
 

@@ -52,6 +52,7 @@
 ///
 
 #include "Tpetra_Details_Blas.hpp"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include <type_traits>
 
 namespace Tpetra {
@@ -79,7 +80,7 @@ fill (const ExecutionSpace& execSpace,
   static_assert (std::is_integral<IndexType>::value,
                  "IndexType must be a built-in integer type.");
     auto X_j = Kokkos::subview (X, Kokkos::make_pair(IndexType(0), numRows), Kokkos::make_pair(IndexType(0), numCols));
-    Kokkos::deep_copy(execSpace, X_j, alpha);
+    Tpetra::Details::deep_copy(execSpace, X_j, alpha);
 }
 
 template<class ViewType,
@@ -102,7 +103,7 @@ fill (const ExecutionSpace& execSpace,
   for (IndexType k = 0; k < numCols; ++k) {
     const IndexType j = whichVectors[k];
     auto X_j = Kokkos::subview (X, Kokkos::make_pair(IndexType(0), numRows), j);
-    Kokkos::deep_copy(execSpace, X_j, alpha);
+    Tpetra::Details::deep_copy(execSpace, X_j, alpha);
   }
 }
 

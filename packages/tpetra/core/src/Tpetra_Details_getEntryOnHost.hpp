@@ -49,6 +49,7 @@
 ///   Tpetra.  We make no promises of backwards compatibility.
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Tpetra {
@@ -65,7 +66,7 @@ getEntryOnHost (const ViewType& x,
   // Get a 0-D subview of the entry of the array, and copy to host scalar.
   typename ViewType::non_const_value_type val;
   // DEEP_COPY REVIEW - DEVICE-TO-VALUE
-  Kokkos::deep_copy(execution_space(), val, Kokkos::subview(x, ind));
+  Tpetra::Details::deep_copy(execution_space(), val, Kokkos::subview(x, ind));
   return val;
 }
 
