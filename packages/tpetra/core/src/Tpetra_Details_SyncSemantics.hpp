@@ -77,12 +77,12 @@ namespace Tpetra {
   // Tpetra wrappers ofKokkos::deep_copy();
   template<class ExecSpace, class ViewDest, class ViewSrc>
   void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const ViewSrc &src) {
-    Kokkos::deep_Copy(exec_space,dest,src);
+    Kokkos::deep_copy(exec_space,dest,src);
   }
 
   template<class ExecSpace, class ViewDest>
   void deep_copy(const ExecSpace &exec_space, const ViewDest &dest, const typename ViewDest::value_type &src) {
-    Kokkos::deep_Copy(exec_space,dest,src);
+    Kokkos::deep_copy(exec_space,dest,src);
   }
 
   template<class ExecSpace, class ViewSrc>
