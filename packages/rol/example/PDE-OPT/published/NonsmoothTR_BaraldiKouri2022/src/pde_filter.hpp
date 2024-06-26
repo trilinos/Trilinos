@@ -88,7 +88,7 @@ public:
     int basisOrderDens = parlist.sublist("Problem").get("Density Basis Order",0);
     int cubDegree      = parlist.sublist("Problem").get("Cubature Degree",4);
 //    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
-    int probDim        = parlist.sublist("Problem").get("Problem Dimension",2);
+    int probDim        = parlist.sublist("Problem").get("Problem Dimension",3);
     TEUCHOS_TEST_FOR_EXCEPTION(probDim>3||probDim<2, std::invalid_argument,
       ">>> PDE-OPT/poisson/pde_poisson.hpp: Problem dimension is not 2 or 3!");
     TEUCHOS_TEST_FOR_EXCEPTION(basisOrder>2||basisOrder<1, std::invalid_argument,

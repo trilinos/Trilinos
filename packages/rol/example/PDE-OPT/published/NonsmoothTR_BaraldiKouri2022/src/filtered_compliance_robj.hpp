@@ -114,20 +114,12 @@ public:
       // Reject:   flag = false, iter > -1
       // Accept:   flag = true,  iter > -1
       if (flag) {
-        if (iter > -1) {
-          update_accept(z,iter);
-        }
-        else {
-          update_temp(z,iter);
-        }
+        if (iter > -1) update_accept(z,iter);
+        else           update_temp(z,iter);
       }
       else {
-        if (iter > -1) {
-          update_revert(z,iter);
-        }
-        else {
-          update_trial(z,iter);
-        }
+        if (iter > -1) update_revert(z,iter);
+        else           update_trial(z,iter);
       }
     }
     comp_->update(*Fz_,flag,iter);

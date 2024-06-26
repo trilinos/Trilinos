@@ -117,42 +117,30 @@ public:
     int basisOrderDens = parlist.sublist("Problem").get("Density Basis Order",0);
     int cubDegree      = parlist.sublist("Problem").get("Cubature Degree",4);
     int bdryCubDegree  = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
-    int probDim        = parlist.sublist("Problem").get("Problem Dimension",2);
-    if (probDim > 3 || probDim < 2) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> PDE-OPT/poisson/pde_poisson.hpp: Problem dimension is not 2 or 3!");
-    }
-    if (basisOrder > 2 || basisOrder < 1) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> PDE-OPT/poisson/pde_poisson.hpp: Basis order is not 1 or 2!");
-    }
+    int probDim        = parlist.sublist("Problem").get("Problem Dimension",3);
+    TEUCHOS_TEST_FOR_EXCEPTION(probDim > 3 || probDim < 2, std::invalid_argument,
+      ">>> PDE-OPT/published/NonsmoothTR_BaraldiKouri2022/src/pde_elasticity.hpp: Problem dimension is not 2 or 3!");
+    TEUCHOS_TEST_FOR_EXCEPTION(basisOrder > 2 || basisOrder < 1, std::invalid_argument,
+      ">>> PDE-OPT/published/NonsmoothTR_BaraldiKouri2022/src/pde_elasticity.hpp: Basis order is not 1 or 2!");
     if (probDim == 2) {
-      if (basisOrder == 1) {
+      if (basisOrder == 1)
         basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-      else if (basisOrder == 2) {
+      else if (basisOrder == 2)
         basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-      if (basisOrderDens == 1) {
+      if (basisOrderDens == 1)
         basisPtrDens_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-      else {
+      else
         basisPtrDens_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
     }
     else if (probDim == 3) {
-      if (basisOrder == 1) {
+      if (basisOrder == 1)
         basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-      else if (basisOrder == 2) {
+      else if (basisOrder == 2)
         basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
       basisPtrDens_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
     }
     basisPtrs_.clear(); basisPtrsDens_.clear();
-    for (int i=0; i<probDim; ++i) {
-      basisPtrs_.push_back(basisPtr_);  // Displacement component
-    }
+    for (int i=0; i<probDim; ++i) basisPtrs_.push_back(basisPtr_);  // Displacement component
     basisPtrsDens_.push_back(basisPtrDens_); // Density component
 
     // Quadrature rules.
@@ -598,7 +586,7 @@ public:
   void setDensityFields(const std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> &basisPtrs) {
     if (getFields2called_) {
       TEUCHOS_TEST_FOR_EXCEPTION(getFields2called_, std::invalid_argument,
-        ">>> PDE-OPT/topo-opt/elasticity/src/pde_elasticity.hpp: Must call before getFields2!");
+        ">>> PDE-OPT/published/NonsmoothTR_BaraldiKouri2022/src/pde_elasticity.hpp: Must call before getFields2!");
     }
     else {
       basisPtrDens_  = basisPtrs[0];
