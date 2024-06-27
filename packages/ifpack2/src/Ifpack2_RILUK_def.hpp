@@ -1269,6 +1269,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       if (isKokkosKernelsSpiluk_ && isKokkosKernelsStream_ && hasStreamReordered_) {
         Impl::resetMultiVecIfNeeded(reordered_x_, X.getMap(), X.getNumVectors(), false);
         Impl::resetMultiVecIfNeeded(reordered_y_, Y.getMap(), Y.getNumVectors(), false);
+        Kokkos::fence();
         for (size_t j = 0; j < X.getNumVectors(); j++) {
           auto X_j = X.getVector(j);
           auto ReorderedX_j = reordered_x_->getVectorNonConst(j);
@@ -1287,6 +1288,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             stream_begin = stream_end;
           }
         }
+        Kokkos::fence();
         if (mode == Teuchos::NO_TRANS) { // Solve L (U Y) = X for Y.
           // Solve L Y = X for Y.
           L_solver_->apply (*reordered_x_, Y, mode);
