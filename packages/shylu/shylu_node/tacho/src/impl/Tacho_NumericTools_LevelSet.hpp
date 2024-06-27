@@ -1768,13 +1768,24 @@ public:
                         s0.rowptrU.data(), s0.colindU.data(), s0.nzvalsU.data(),
                         CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
                         CUSPARSE_INDEX_BASE_ZERO, computeType);
+
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
+      #if (12000 >= CUDA_VERSION)
+      cusparseSpMMAlg_t spmm_algo = CUSPARSE_SPMM_ALG_DEFAULT;
+      #else
+      cusparseSpMMAlg_t spmm_algo = CUSPARSE_MM_ALG_DEFAULT;
+      #endif
       cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                               &alpha, s0.U_cusparse, vecX, &beta, vecY,
-                              computeType, CUSPARSE_MM_ALG_DEFAULT, &buffer_size_U);
+                              computeType, spmm_algo, &buffer_size_U);
 #else
+      #if (12000 >= CUDA_VERSION)
+      cusparseSpMVAlg_t spmv_algo = CUSPARSE_SPMV_ALG_DEFAULT;
+      #else
+      cusparseSpMVAlg_t spmv_algo = CUSPARSE_MV_ALG_DEFAULT;
+      #endif
       cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.U_cusparse, vecX, &beta, vecY,
-                              computeType, CUSPARSE_MV_ALG_DEFAULT, &buffer_size_U);
+                              computeType, spmv_algo, &buffer_size_U);
 #endif
       if (s0.spmv_explicit_transpose) {
         // create matrix (transpose or L)
@@ -1787,10 +1798,10 @@ public:
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
         cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                 &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MM_ALG_DEFAULT, &buffer_size_L);
+                                computeType, spmm_algo, &buffer_size_L);
 #else
         cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MV_ALG_DEFAULT, &buffer_size_L);
+                                computeType, spmv_algo, &buffer_size_L);
 #endif
       } else {
         // create matrix (L_cusparse stores the same ptrs as descrU, but optimized for trans)
@@ -1802,10 +1813,10 @@ public:
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
         cusparseSpMM_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                 &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MM_ALG_DEFAULT, &buffer_size_L);
+                                computeType, spmm_algo, &buffer_size_L);
 #else
         cusparseSpMV_bufferSize(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, &alpha, s0.L_cusparse, vecX, &beta, vecY,
-                                computeType, CUSPARSE_MV_ALG_DEFAULT, &buffer_size_L);
+                                computeType, spmv_algo, &buffer_size_L);
 #endif
       }
       // allocate workspace
@@ -2235,6 +2246,11 @@ public:
 #if defined(KOKKOS_ENABLE_CUDA)
     cusparseStatus_t status;
     if (nrhs > 1) {
+      #if (12000 >= CUDA_VERSION)
+      cusparseSpMMAlg_t spmm_algo = CUSPARSE_SPMM_ALG_DEFAULT;
+      #else
+      cusparseSpMMAlg_t spmm_algo = CUSPARSE_MM_ALG_DEFAULT;
+      #endif
       if (lvl == nlvls-1) {
         // start : create DnMat for T
         cusparseCreateDnMat(&matT, m, nrhs, ldt, (void*)(t.data()), computeType, CUSPARSE_ORDER_COL);
@@ -2248,15 +2264,20 @@ public:
                               &alpha, s0.L_cusparse, 
                                       matX,
                               &beta,  matY,
-                              computeType, CUSPARSE_MM_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, spmm_algo, (void*)buffer_L.data());
       } else {
         status = cusparseSpMM(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
                               &alpha, s0.L_cusparse,  // L_cusparse stores the same ptrs as descrU, but optimized for trans
                                       matX,
                               &beta,  matY,
-                              computeType, CUSPARSE_MM_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, spmm_algo, (void*)buffer_L.data());
       }
     } else {
+      #if (12000 >= CUDA_VERSION)
+      cusparseSpMVAlg_t spmv_algo = CUSPARSE_SPMV_ALG_DEFAULT;
+      #else
+      cusparseSpMVAlg_t spmv_algo = CUSPARSE_MV_ALG_DEFAULT;
+      #endif
       if (lvl == nlvls-1) {
         // start : create DnMat for T
         cusparseCreateDnVec(&vecT, m, (void*)(t.data()), computeType);
@@ -2270,13 +2291,13 @@ public:
                               &alpha, s0.L_cusparse, 
                                       vecX,
                               &beta,  vecY,
-                              computeType, CUSPARSE_MV_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, spmv_algo, (void*)buffer_L.data());
       } else {
         status = cusparseSpMV(s0.cusparseHandle, CUSPARSE_OPERATION_TRANSPOSE,
                               &alpha, s0.L_cusparse, // L_cusparse stores the same ptrs as descrU, but optimized for trans
                                       vecX,
                               &beta,  vecY,
-                              computeType, CUSPARSE_MV_ALG_DEFAULT, (void*)buffer_L.data());
+                              computeType, spmv_algo, (void*)buffer_L.data());
       }
     }
     if (CUSPARSE_STATUS_SUCCESS != status) {
@@ -2585,6 +2606,11 @@ public:
 
     cusparseStatus_t status;
     if (nrhs > 1) {
+      #if (12000 >= CUDA_VERSION)
+      cusparseSpMMAlg_t spmm_algo = CUSPARSE_SPMM_ALG_DEFAULT;
+      #else
+      cusparseSpMMAlg_t spmm_algo = CUSPARSE_MM_ALG_DEFAULT;
+      #endif
       if (lvl == 0) {
         // start : create DnMat for T
         cusparseCreateDnMat(&matT, m, nrhs, ldt, (void*)(t.data()), computeType, CUSPARSE_ORDER_COL);
@@ -2596,8 +2622,13 @@ public:
                             &alpha, s0.U_cusparse, 
                                     vecX,
                             &beta,  vecY,
-                            computeType, CUSPARSE_MM_ALG_DEFAULT, (void*)buffer_U.data());
+                            computeType, spmm_algo, (void*)buffer_U.data());
     } else {
+      #if (12000 >= CUDA_VERSION)
+      cusparseSpMVAlg_t spmv_algo = CUSPARSE_SPMV_ALG_DEFAULT;
+      #else
+      cusparseSpMVAlg_t spmv_algo = CUSPARSE_MV_ALG_DEFAULT;
+      #endif
       if (lvl == 0) {
         // start : create DnMat for T
         cusparseCreateDnVec(&vecT, m, (void*)(t.data()), computeType);
@@ -2609,7 +2640,7 @@ public:
                             &alpha, s0.U_cusparse, 
                                     vecX,
                             &beta,  vecY,
-                            computeType, CUSPARSE_MV_ALG_DEFAULT, (void*)buffer_U.data());
+                            computeType, spmv_algo, (void*)buffer_U.data());
     }
     if (CUSPARSE_STATUS_SUCCESS != status) {
        printf( " Failed cusparseSpMV for SpMV\n" );
