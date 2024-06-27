@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 #ifndef THYRA_IFPACK2_PRECONDITIONERFACTORY_DECL_HPP
 #define THYRA_IFPACK2_PRECONDITIONERFACTORY_DECL_HPP
 

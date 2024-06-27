@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #ifndef IFPACK2_CONTAINERFACTORY_DECL_H
 #define IFPACK2_CONTAINERFACTORY_DECL_H

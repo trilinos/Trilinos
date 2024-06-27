@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 /// \file Ifpack2_Details_LinearSolver_decl_hpp
 /// \brief Declaration of Ifpack2::Details::LinearSolver, an

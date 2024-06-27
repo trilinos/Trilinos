@@ -7,7 +7,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #ifndef IFPACK2_ADDITIVE_SCHWARZ_FILTER_DECL_HPP
 #define IFPACK2_ADDITIVE_SCHWARZ_FILTER_DECL_HPP

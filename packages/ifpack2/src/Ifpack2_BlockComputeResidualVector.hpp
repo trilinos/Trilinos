@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #ifndef IFPACK2_BLOCKCOMPUTERES_IMPL_HPP
 #define IFPACK2_BLOCKCOMPUTERES_IMPL_HPP

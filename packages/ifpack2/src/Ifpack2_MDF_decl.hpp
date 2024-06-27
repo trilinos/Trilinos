@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 /// \file Ifpack2_RILUK_decl.hpp
 /// \brief Declaration of MDF interface

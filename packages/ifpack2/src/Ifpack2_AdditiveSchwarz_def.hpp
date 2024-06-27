@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 /// \file Ifpack2_AdditiveSchwarz_def.hpp
 /// \brief Definition of Ifpack2::AdditiveSchwarz, which implements

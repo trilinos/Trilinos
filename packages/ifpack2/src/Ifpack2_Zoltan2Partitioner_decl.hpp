@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #ifndef IFPACK2_ZOLTAN2PARTITIONER_DECL_HPP
 #define IFPACK2_ZOLTAN2PARTITIONER_DECL_HPP

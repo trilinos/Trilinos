@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #ifndef IFPACK2_OVERLAPPINGROWGRAPH_DEF_HPP
 #define IFPACK2_OVERLAPPINGROWGRAPH_DEF_HPP

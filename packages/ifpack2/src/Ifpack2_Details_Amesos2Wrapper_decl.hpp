@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 /// \file Ifpack2_Details_Amesos2Wrapper_decl.hpp
 /// \brief Declaration of wrapper for Amesos2 solvers

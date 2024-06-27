@@ -1,3 +1,5 @@
+#!/bin/env python
+
 # @HEADER
 # *****************************************************************************
 #       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
@@ -6,7 +8,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # *****************************************************************************
 # @HEADER
-#!/bin/env python
 
 # Script to parse the Hypre headers:
 # Usage:

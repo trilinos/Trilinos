@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 //-----------------------------------------------------
 // Ifpack2::BorderedOperator is a translation of the

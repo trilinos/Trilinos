@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 /// \file Ifpack2_Hiptmair_decl.hpp
 /// \brief Declaration of Ifpack2::Hiptmair class.

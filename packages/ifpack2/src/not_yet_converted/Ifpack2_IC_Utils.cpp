@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_IC_Utils.hpp"

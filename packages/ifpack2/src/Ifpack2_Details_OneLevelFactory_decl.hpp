@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #ifndef IFPACK2_DETAILS_ONELEVELFACTORY_DECL_HPP
 #define IFPACK2_DETAILS_ONELEVELFACTORY_DECL_HPP

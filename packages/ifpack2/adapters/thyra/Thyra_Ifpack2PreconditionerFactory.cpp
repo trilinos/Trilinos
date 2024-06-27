@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 #include "Thyra_Ifpack2PreconditionerFactory_decl.hpp"
 

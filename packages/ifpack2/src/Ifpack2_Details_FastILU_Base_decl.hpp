@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 /// \file Ifpack2_Details_FastILU_Base_decl.hpp
 /// \brief Defines Ifpack2::Details::FastILU_Base,

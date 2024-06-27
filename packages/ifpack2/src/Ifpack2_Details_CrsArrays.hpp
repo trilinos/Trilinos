@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-*/
 
 /// \file Ifpack2_Details_CrsArrays.hpp
 /// \brief Provides functions for retrieving local CRS arrays
