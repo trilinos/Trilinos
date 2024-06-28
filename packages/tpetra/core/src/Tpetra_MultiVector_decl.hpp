@@ -1468,8 +1468,7 @@ namespace Tpetra {
 
     /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
-    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
-    /// can lead to errors.
+    /// @warning This function will only synchronize the provided @c execution_space instance, which if not used correctly can lead to errors.
     typename dual_view_type::t_dev::const_type getLocalViewDevice(const execution_space & exec, Access::ReadOnlyStruct) const;
 
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
