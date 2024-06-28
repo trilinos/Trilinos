@@ -1045,24 +1045,24 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   auto boundaryNodes = boundary_nodes_type("boundaryNodes", lclA.numRows());  // initialized to false
   {
     SubFactoryMonitor mBoundary(*this, "Boundary detection", currentLevel);
+
+#define runBoundaryFunctor(...)                                                 \
+  {                                                                             \
+    auto criteria   = std::make_tuple(__VA_ARGS__);                             \
+    auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, criteria);       \
+    Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries); \
+  }
+
     auto dirichlet_detection = BoundaryDetection::DirichletFunctor(lclA, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
 
     if (rowSumTol <= 0.) {
-      auto criteria = std::make_tuple(
-          dirichlet_detection);
-
-      auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, criteria);
-      Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries);
+      runBoundaryFunctor(dirichlet_detection);
     } else {
       auto apply_rowsum = BoundaryDetection::RowSumFunctor(lclA, boundaryNodes, rowSumTol);
-
-      auto criteria = std::make_tuple(
-          dirichlet_detection,
-          apply_rowsum);
-
-      auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, criteria);
-      Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries);
+      runBoundaryFunctor(dirichlet_detection,
+                         apply_rowsum);
     }
+#undef runBoundaryFunctor
   }
   // In what follows, boundaryNodes can still still get modified if aggregationMayCreateDirichlet == true.
   // Otherwise we're now done with it now.
@@ -1093,11 +1093,17 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     std::string functorLabel = "MueLu::CoalesceDrop::CountEntries";
 
-    auto drop_boundary_nodes = Misc::DropBoundaryFunctor(lclA, boundaryNodes, results);
-
-    auto preserve_diagonals = Misc::KeepDiagonalFunctor(lclA, results);
+#define runCountingFunctor(...)                                                                           \
+  {                                                                                                       \
+    auto criteria        = std::make_tuple(__VA_ARGS__);                                                  \
+    auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria); \
+    Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);                            \
+  }
 
     if (threshold != zero) {
+      auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
+      auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
+
       if (algo == "classical") {
         // Construct ghosted matrix diagonal
         auto diag      = Utilities::GetMatrixOverlappedDiagonal(*A);
@@ -1107,24 +1113,12 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         auto classical_dropping = ClassicalDropping::AbsDropFunctor(lclA, threshold, lclDiag1d, boundaryNodes, results);
 
         if (aggregationMayCreateDirichlet) {
-          auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
-
-          auto criteria = std::make_tuple(
-              // drop_boundary_nodes,
-              classical_dropping,
-              preserve_diagonals,
-              mark_singletons_as_boundary);
-
-          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
-          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+          runCountingFunctor(classical_dropping,
+                             preserve_diagonals,
+                             mark_singletons_as_boundary);
         } else {
-          auto criteria = std::make_tuple(
-              // drop_boundary_nodes,
-              classical_dropping,
-              preserve_diagonals);
-
-          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
-          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+          runCountingFunctor(classical_dropping,
+                             preserve_diagonals);
         }
       } else if (algo == "signed classical sa") {
         // Construct ghosted matrix diagonal
@@ -1135,24 +1129,15 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         auto signed_classical_sa_dropping = ClassicalDropping::SignedClassicalSADropFunctor(lclA, threshold, lclDiag1d, boundaryNodes, results);
 
         if (aggregationMayCreateDirichlet) {
-          auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
-
-          auto criteria = std::make_tuple(
-              // drop_boundary_nodes,
+          runCountingFunctor(
               signed_classical_sa_dropping,
               preserve_diagonals,
               mark_singletons_as_boundary);
 
-          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
-          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
         } else {
-          auto criteria = std::make_tuple(
-              // drop_boundary_nodes,
+          runCountingFunctor(
               signed_classical_sa_dropping,
               preserve_diagonals);
-
-          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
-          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
         }
       } else if (algo == "distanceLaplacian") {
         using doubleMultiVector = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>;
@@ -1167,35 +1152,21 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         auto dist_laplacian_dropping = DistanceLaplacian::DropFunctor(lclA, threshold, lclDiag1d, dist2, boundaryNodes, results);
 
         if (aggregationMayCreateDirichlet) {
-          auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
-
-          auto criteria = std::make_tuple(
-              // drop_boundary_nodes,
+          runCountingFunctor(
               dist_laplacian_dropping,
               preserve_diagonals,
               mark_singletons_as_boundary);
-
-          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
-          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
         } else {
-          auto criteria = std::make_tuple(
-              // drop_boundary_nodes,
+          runCountingFunctor(
               dist_laplacian_dropping,
               preserve_diagonals);
-
-          auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
-          Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
         }
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
-      // auto criteria = std::make_tuple(
-      //     drop_boundary_nodes);
-      auto criteria = std::make_tuple();
-
-      auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, rowptr, criteria);
-      Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);
+      runCountingFunctor();
     }
+#undef runCountingFunctor
   }
   GO numTotal   = lclA.nnz();
   GO numDropped = numTotal - nnz_filtered;
