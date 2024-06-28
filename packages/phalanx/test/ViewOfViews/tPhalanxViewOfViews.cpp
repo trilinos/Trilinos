@@ -590,6 +590,9 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
       TEST_FLOATING_EQUALITY(vov_host(2)(cell),4.0,tol);
       TEST_FLOATING_EQUALITY(vov_host(3)(cell),10.0,tol);
     }
+
+    // NOTE: you must call this on the host-host version to avoid deadlock!
+    PHX::freeInnerViewsOfHostHostViewOfViews(vov_host);
   }
 
   // Rank 2 outer view
@@ -616,6 +619,9 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
       TEST_FLOATING_EQUALITY(vov_host(1,0)(cell),4.0,tol);
       TEST_FLOATING_EQUALITY(vov_host(1,1)(cell),11.0,tol);
     }
+
+    // NOTE: you must call this on the host-host version to avoid deadlock!
+    PHX::freeInnerViewsOfHostHostViewOfViews(vov_host);
   }
 
   // Rank 3 outer view
@@ -642,6 +648,9 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
       TEST_FLOATING_EQUALITY(vov_host(2,2,2)(cell),4.0,tol);
       TEST_FLOATING_EQUALITY(vov_host(0,1,2)(cell),12.0,tol);
     }
+
+    // NOTE: you must call this on the host-host version to avoid deadlock!
+    PHX::freeInnerViewsOfHostHostViewOfViews(vov_host);
   }
 
 }

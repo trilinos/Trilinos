@@ -211,7 +211,7 @@ namespace PHX {
       is_initialized_ = true;
     }
 
-    /// Set an inner device view on the outer view. Indices are the outer view indices. 
+    /// Set an inner device view on the outer view. Indices are the outer view indices.
     template<typename... Indices>
     void setView(InnerViewType v,Indices... i)
     {
@@ -488,7 +488,16 @@ namespace PHX {
     }
   };
 
-  // Rank 1 outer view
+  /** \brief Returns a rank-1 view of views where both the outer and inner views are on host. Values are deep_copied from input v_of_v.
+
+      IMPORTANT: The user must manually call free on the inner views
+      of the returned object with the
+      PHX::freeInnerViewsOfHostHostViewOfViews() before deleting the
+      host-host view of view. Failure to do so will result in
+      deadlock. The outer view dtor calls a parallel_for and the inner
+      view dtor calls another parallel_for. Nested parallel_fors are
+      blocked by a mutex even on Serial backend now!
+  */
   template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
   auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>*,OuterProps...>& v_of_v) {
     // Host outer view pointing to device inner views
@@ -510,7 +519,16 @@ namespace PHX {
     return host_host;
   }
 
-  // Rank 2 outer view
+  /** \brief Returns a rank-2 view of views where both the outer and inner views are on host. Values are deep_copied from input v_of_v.
+
+      IMPORTANT: The user must manually call free on the inner views
+      of the returned object with the
+      PHX::freeInnerViewsOfHostHostViewOfViews() before deleting the
+      host-host view of view. Failure to do so will result in
+      deadlock. The outer view dtor calls a parallel_for and the inner
+      view dtor calls another parallel_for. Nested parallel_fors are
+      blocked by a mutex even on Serial backend now!
+  */
   template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
   auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>**,OuterProps...>& v_of_v) {
     // Host outer view pointing to device inner views
@@ -534,7 +552,16 @@ namespace PHX {
     return host_host;
   }
 
-  // Rank 3 outer view
+  /** \brief Returns a rank-3 view of views where both the outer and inner views are on host. Values are deep_copied from input v_of_v.
+
+      IMPORTANT: The user must manually call free on the inner views
+      of the returned object with the
+      PHX::freeInnerViewsOfHostHostViewOfViews() before deleting the
+      host-host view of view. Failure to do so will result in
+      deadlock. The outer view dtor calls a parallel_for and the inner
+      view dtor calls another parallel_for. Nested parallel_fors are
+      blocked by a mutex even on Serial backend now!
+  */
   template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
   auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>***,OuterProps...>& v_of_v) {
     // Host outer view pointing to device inner views
@@ -559,6 +586,33 @@ namespace PHX {
       }
     }
     return host_host;
+  }
+
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto freeInnerViewsOfHostHostViewOfViews(Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>*,OuterProps...>& v_of_v) {
+    for (std::size_t i=0; i < v_of_v.extent(0); ++i) {
+      v_of_v(i) = Kokkos::View<InnerViewDataType,InnerProps...>();
+    }
+  }
+
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto freeInnerViewsOfHostHostViewOfViews(Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>**,OuterProps...>& v_of_v) {
+    for (std::size_t i=0; i < v_of_v.extent(0); ++i) {
+      for (std::size_t j=0; j < v_of_v.extent(1); ++j) {
+        v_of_v(i,j) = Kokkos::View<InnerViewDataType,InnerProps...>();
+      }
+    }
+  }
+
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto freeInnerViewsOfHostHostViewOfViews(Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>***,OuterProps...>& v_of_v) {
+    for (std::size_t i=0; i < v_of_v.extent(0); ++i) {
+      for (std::size_t j=0; j < v_of_v.extent(1); ++j) {
+        for (std::size_t k=0; k < v_of_v.extent(2); ++k) {
+          v_of_v(i,j,k) = Kokkos::View<InnerViewDataType,InnerProps...>();
+        }
+      }
+    }
   }
 
 } // namespace PHX
