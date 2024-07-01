@@ -79,7 +79,7 @@ struct IOhelpers {
       ghosted_clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted cluster map"), lib, comm, readBinary);
 
       // blocked cluster map
-      clusterSizes      = Xpetra::IO<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::ReadMultiVector(hierarchicalParams.get<std::string>("gid_cluster_to_gid_coeff"), clusterMap)->getVectorNonConst(0);
+      clusterSizes      = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadMultiVectorLO(hierarchicalParams.get<std::string>("gid_cluster_to_gid_coeff"), clusterMap)->getVectorNonConst(0);
       blockedClusterMap = rcp(new blocked_map_type(clusterCoeffMap, clusterSizes));
     }
 
