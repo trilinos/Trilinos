@@ -4371,7 +4371,7 @@ namespace Ifpack2 {
         (void) npacks;
 
         internal_vector_scratch_type_3d_view
-          WW(member.team_scratch(0), blocksize, num_vectors, vector_loop_size);
+          WW(member.team_scratch(0), blocksize, 1, vector_loop_size);
 
         Kokkos::parallel_for
           (Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {

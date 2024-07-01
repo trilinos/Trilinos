@@ -18,7 +18,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),numRepeats(1),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),sublinesPerLineSchur(1),useStackedTimer(false),usePointMatrix(false),overlapCommAndComp(false){}
+  CmdLineArgs ():blockSize(-1),numIters(10),numRepeats(1),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),sublinesPerLineSchur(1),useStackedTimer(false),usePointMatrix(false),overlapCommAndComp(false),useSingleFile(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -39,6 +39,7 @@ struct CmdLineArgs {
   bool useStackedTimer;
   bool usePointMatrix;
   bool overlapCommAndComp;
+  bool useSingleFile;
   std::string problemName;
   std::string matrixType;
 };
@@ -72,7 +73,9 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("withPointMatrix", "withoutPointMatrix", &args.usePointMatrix,
       "Whether to run with a point matrix");
   cmdp.setOption ("withOverlapCommAndComp", "withoutOverlapCommAndComp", &args.overlapCommAndComp,
-		  "Whether to run with overlapCommAndComp)");
+		  "Whether to run with overlapCommAndComp");
+  cmdp.setOption ("useSingeFile", "useOneFilePerRank", &args.useSingleFile,
+		  "Whether to read the matrix from one file or one file per rank");
   cmdp.setOption("problemName", &args.problemName, "Human-readable problem name for Watchr plot");
   cmdp.setOption("matrixType", &args.matrixType, "matrixType");
   cmdp.setOption("sublinesPerLineSchur", &args.sublinesPerLineSchur, "sublinesPerLineSchur");
@@ -473,7 +476,7 @@ main (int argc, char* argv[])
       // Read matrix
       if(rank0) std::cout<<"Reading matrix (as point)..."<<std::endl;
       RCP<const map_type> dummy_col_map;
-      if (comm->getSize() == 1)
+      if (args.useSingleFile || comm->getSize() == 1)
         A = reader_type::readSparseFile(args.matrixFilename, point_map, dummy_col_map, point_map, point_map);
       else {
         if(rank0) std::cout<<"Using per-rank reader..."<<std::endl;
