@@ -4364,14 +4364,13 @@ namespace Ifpack2 {
         const local_ordinal_type r0 = part2packrowidx0_sub(partidx,local_subpartidx);
         const local_ordinal_type nrows = partptr_sub(subpartidx,1) - partptr_sub(subpartidx,0);
         const local_ordinal_type blocksize = e_internal_vector_values.extent(2);
-        const local_ordinal_type num_vectors = blocksize;
 
         //(void) i0;
         //(void) nrows;
         (void) npacks;
 
         internal_vector_scratch_type_3d_view
-          WW(member.team_scratch(0), blocksize, num_vectors, vector_loop_size);
+          WW(member.team_scratch(0), blocksize, 1, vector_loop_size);
 
         Kokkos::parallel_for
           (Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
