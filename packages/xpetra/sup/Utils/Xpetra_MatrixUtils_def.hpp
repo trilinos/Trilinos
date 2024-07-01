@@ -60,8 +60,6 @@
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 
-#include "Xpetra_IO.hpp"
-
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMultiVector.hpp"
 #include <Tpetra_RowMatrixTransposer.hpp>
