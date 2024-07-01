@@ -473,7 +473,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
         v[i] = colMap.getGlobalElement(fcont(i, j));
     }
 
-    Xpetra::IO<GO, LO, GO, NO>::Write(fileName, *vec);
+    Xpetra::IO<SC, LO, GO, NO>::WriteGOMV(fileName, *vec);
   }
 
   // Levels
