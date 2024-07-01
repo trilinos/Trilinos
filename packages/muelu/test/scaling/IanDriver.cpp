@@ -89,116 +89,106 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
   bool success = false;
   bool verbose = true;
-    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    int numProc                         = comm->getSize();
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int numProc                         = comm->getSize();
 
-    // =========================================================================
-    // Convenient definitions
-    // =========================================================================
-    //    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+  // Instead of checking each time for rank, create a rank 0 stream
+  RCP<Teuchos::FancyOStream> pOut = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::FancyOStream& out      = *pOut;
+  out.setOutputToRootOnly(0);
 
-    // Instead of checking each time for rank, create a rank 0 stream
-    RCP<Teuchos::FancyOStream> pOut = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Teuchos::FancyOStream& out      = *pOut;
-    out.setOutputToRootOnly(0);
+  // =========================================================================
+  // Parameters initialization
+  // =========================================================================
+  GO nx = 5, ny = 5, nz = 50;
+  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                                       // manage parameters of Xpetra
 
-    // =========================================================================
-    // Parameters initialization
-    // =========================================================================
-    GO nx = 5, ny = 5, nz = 50;
-    Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");  // manage parameters of the test case
-    Xpetra::Parameters xpetraParameters(clp);                                       // manage parameters of Xpetra
+  bool binaryFormat = false;
+  clp.setOption("binary", "ascii", &binaryFormat, "print timings to screen");
+  std::string matrixFile;
+  clp.setOption("matrixfile", &matrixFile, "matrix market file containing matrix");
+  std::string rowMapFile;
+  clp.setOption("rowmap", &rowMapFile, "map data file");
+  std::string colMapFile;
+  clp.setOption("colmap", &colMapFile, "colmap data file");
+  std::string domainMapFile;
+  clp.setOption("domainmap", &domainMapFile, "domainmap data file");
+  std::string rangeMapFile;
+  clp.setOption("rangemap", &rangeMapFile, "rangemap data file");
 
-    bool binaryFormat = false;
-    clp.setOption("binary", "ascii", &binaryFormat, "print timings to screen");
-    std::string matrixFile;
-    clp.setOption("matrixfile", &matrixFile, "matrix market file containing matrix");
-    std::string rowMapFile;
-    clp.setOption("rowmap", &rowMapFile, "map data file");
-    std::string colMapFile;
-    clp.setOption("colmap", &colMapFile, "colmap data file");
-    std::string domainMapFile;
-    clp.setOption("domainmap", &domainMapFile, "domainmap data file");
-    std::string rangeMapFile;
-    clp.setOption("rangemap", &rangeMapFile, "rangemap data file");
+  bool printTimings = true;
+  clp.setOption("timings", "notimings", &printTimings, "print timings to screen");
+  int nrepeat = 1;
+  clp.setOption("nrepeat", &nrepeat, "repeat the experiment N times");
 
-    bool printTimings = true;
-    clp.setOption("timings", "notimings", &printTimings, "print timings to screen");
-    int nrepeat = 1;
-    clp.setOption("nrepeat", &nrepeat, "repeat the experiment N times");
-
-    bool describeMatrix = true;
-    clp.setOption("showmatrix", "noshowmatrix", &describeMatrix, "describe matrix");
-    bool useStackedTimer = false;
-    clp.setOption("stackedtimer", "nostackedtimer", &useStackedTimer, "use stacked timer");
-    bool verboseModel = false;
-    clp.setOption("verbosemodel", "noverbosemodel", &verboseModel, "use stacked verbose performance model");
+  bool describeMatrix = true;
+  clp.setOption("showmatrix", "noshowmatrix", &describeMatrix, "describe matrix");
+  bool useStackedTimer = false;
+  clp.setOption("stackedtimer", "nostackedtimer", &useStackedTimer, "use stacked timer");
+  bool verboseModel = false;
+  clp.setOption("verbosemodel", "noverbosemodel", &verboseModel, "use stacked verbose performance model");
 
 
 
-    std::ostringstream galeriStream;
-    std::string rhsFile, coordFile, coordMapFile, nullFile, materialFile;  // unused
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
-    RCP<RealValuedMultiVector> coordinates;
-    RCP<MultiVector> nullspace, material, x, b;
-    RCP<Matrix> A;
-    RCP<const Map> map;
+  std::ostringstream galeriStream;
+  std::string rhsFile, coordFile, coordMapFile, nullFile, materialFile;  // unused
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
+  RCP<RealValuedMultiVector> coordinates;
+  RCP<MultiVector> nullspace, material, x, b;
+  RCP<Matrix> A;
+  RCP<const Map> map;
 
-    switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
-    }
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
+  }
 
-    // Load the matrix off disk (or generate it via Galeri), assuming only one right hand side is loaded.
-    MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile,
-                               domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile,
-                               map, A, coordinates, nullspace, material, x, b, 1,
-                               galeriParameters, xpetraParameters, galeriStream);
+  // Load the matrix off disk (or generate it via Galeri), assuming only one right hand side is loaded.
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile,
+                             domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile,
+                             map, A, coordinates, nullspace, material, x, b, 1,
+                             galeriParameters, xpetraParameters, galeriStream);
 
 
-    out << "========================================================" << endl
-        << xpetraParameters
-        // << matrixParameters
-        << "========================================================" << endl
-        << "Template Types:" << endl
-        << "  Scalar:        " << Teuchos::demangleName(typeid(SC).name()) << endl
-        << "  LocalOrdinal:  " << Teuchos::demangleName(typeid(LO).name()) << endl
-        << "  GlobalOrdinal: " << Teuchos::demangleName(typeid(GO).name()) << endl
-        << "  Node:          " << Teuchos::demangleName(typeid(NO).name()) << endl
-        << "Sizes:" << endl
-        << "  Scalar:        " << sizeof(SC) << endl
-        << "  LocalOrdinal:  " << sizeof(LO) << endl
-        << "  GlobalOrdinal: " << sizeof(GO) << endl
-        << "========================================================" << endl
-        << "Matrix:        " << Teuchos::demangleName(typeid(Matrix).name()) << endl
-        << "Vector:        " << Teuchos::demangleName(typeid(MultiVector).name()) << endl
-        << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
-        << "========================================================" << endl
-        << " MPI Ranks:    " << numProc << endl
-        << "========================================================" << endl;
+  out << "========================================================" << endl
+      << xpetraParameters
+      // << matrixParameters
+      << "========================================================" << endl
+      << "Template Types:" << endl
+      << "  Scalar:        " << Teuchos::demangleName(typeid(SC).name()) << endl
+      << "  LocalOrdinal:  " << Teuchos::demangleName(typeid(LO).name()) << endl
+      << "  GlobalOrdinal: " << Teuchos::demangleName(typeid(GO).name()) << endl
+      << "  Node:          " << Teuchos::demangleName(typeid(NO).name()) << endl
+      << "Sizes:" << endl
+      << "  Scalar:        " << sizeof(SC) << endl
+      << "  LocalOrdinal:  " << sizeof(LO) << endl
+      << "  GlobalOrdinal: " << sizeof(GO) << endl
+      << "========================================================" << endl
+      << "Matrix:        " << Teuchos::demangleName(typeid(Matrix).name()) << endl
+      << "Vector:        " << Teuchos::demangleName(typeid(MultiVector).name()) << endl
+      << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
+      << "========================================================" << endl
+      << " MPI Ranks:    " << numProc << endl
+      << "========================================================" << endl;
 
-#if defined(HAVE_TPETRA_INST_OPENMP)
-    out << "Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() = " << Tpetra::KokkosCompat::KokkosOpenMPWrapperNode::execution_space().concurrency() << endl
-        << "========================================================" << endl;
-#endif
+  // =========================================================================
+  // Problem construction
+  // =========================================================================
 
-    // =========================================================================
-    // Problem construction
-    // =========================================================================
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vector_type;
+  RCP<const crs_matrix_type> At;
+  vector_type xt;
+  vector_type yt;
 
-    typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vector_type;
-    RCP<const crs_matrix_type> At;
-    vector_type xt;
-    vector_type yt;
+  std::cout << "just before Op2TpetraCrs" << std::endl;
 
-    std::cout << "just before Op2TpetraCrs" << std::endl;
-
-    A->describe(*pOut, Teuchos::VERB_EXTREME);
-    //At                         = Utilities::Op2TpetraCrs(A);
+  A->describe(*pOut, Teuchos::VERB_EXTREME);
+  //At                         = Utilities::Op2TpetraCrs(A);
 
 }  // main
 
