@@ -192,9 +192,9 @@ class CrsMatrixFactory {
   static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Build(
       const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& sourceMatrix,
       const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-      const RCP<Map<LocalOrdinal, GlobalOrdinal, Scalar>>& domainMap = Teuchos::null,
-      const RCP<Map<LocalOrdinal, GlobalOrdinal, Scalar>>& rangeMap  = Teuchos::null,
-      const Teuchos::RCP<Teuchos::ParameterList>& params             = Teuchos::null) {
+      const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap = Teuchos::null,
+      const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& rangeMap  = Teuchos::null,
+      const Teuchos::RCP<Teuchos::ParameterList>& params                 = Teuchos::null) {
     XPETRA_MONITOR("CrsMatrixFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -228,8 +228,8 @@ class CrsMatrixFactory {
       const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& sourceMatrix,
       const Export<LocalOrdinal, GlobalOrdinal, Node>& RowExporter,
       const RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>> DomainExporter,
-      const RCP<Map<LocalOrdinal, GlobalOrdinal, Scalar>>& domainMap,
-      const RCP<Map<LocalOrdinal, GlobalOrdinal, Scalar>>& rangeMap,
+      const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
+      const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& rangeMap,
       const Teuchos::RCP<Teuchos::ParameterList>& params) {
     XPETRA_MONITOR("CrsMatrixFactory::Build");
 
