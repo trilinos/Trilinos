@@ -4364,7 +4364,6 @@ namespace Ifpack2 {
         const local_ordinal_type r0 = part2packrowidx0_sub(partidx,local_subpartidx);
         const local_ordinal_type nrows = partptr_sub(subpartidx,1) - partptr_sub(subpartidx,0);
         const local_ordinal_type blocksize = e_internal_vector_values.extent(2);
-        const local_ordinal_type num_vectors = blocksize;
 
         //(void) i0;
         //(void) nrows;
