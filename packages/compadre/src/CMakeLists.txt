@@ -36,8 +36,10 @@ elseif (KOKKOS_IN_TRILINOS) # Kokkos found in Trilinos installation
   target_include_directories(compadre PUBLIC ${Trilinos_INCLUDE_DIRS})
   if(Trilinos_VERSION VERSION_LESS "13.5")
     target_link_libraries(compadre PUBLIC kokkoscore)
-  else()
+  elseif(Trilinos_VERSION VERSION_LESS "14.1")
     target_link_libraries(compadre PUBLIC KokkosCore::all_libs)
+  else()
+    target_link_libraries(compadre PUBLIC Kokkos::all_libs)
   endif()
 elseif (KOKKOS_BUILT_FOR_USER) # Kokkos built for user by this project
   target_link_libraries(compadre PUBLIC Kokkos::kokkoscore)
