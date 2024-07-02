@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//     Compadre: COMpatible PArticle Discretization and REmap Toolkit
+//
+// Copyright 2018 NTESS and the Compadre contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // this file picks up at the beginning of the computeTargetFunctionals function
 #ifndef _USER_STANDARD_TARGET_FUNCTIONALS_HPP_
 #define _USER_STANDARD_TARGET_FUNCTIONALS_HPP_

@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//     Compadre: COMpatible PArticle Discretization and REmap Toolkit
+//
+// Copyright 2018 NTESS and the Compadre contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 #ifndef _GMLS_MANIFOLD_HPP_
 #define _GMLS_MANIFOLD_HPP_
 

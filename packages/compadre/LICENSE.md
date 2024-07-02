@@ -1,9 +1,7 @@
 License {#bsdlicense}
 =============
 
-Copyright 2018 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525, the U.S. Government retains certain rights 
-in this software.
+Copyright (c) 2018 NTESS and the Compadre contributors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -24,13 +22,3 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-The views and conclusions contained in the software and documentation are those
-of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of NTESS or the U.S. Government.
-
-
-   Questions? Contact Paul Kuberry  (pakuber@sandia.gov),
-                      Peter Bosler  (pabosle@sandia.gov), or
-                      Nat Trask     (natrask@sandia.gov)
-

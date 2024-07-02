@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//     Compadre: COMpatible PArticle Discretization and REmap Toolkit
+//
+// Copyright 2018 NTESS and the Compadre contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 #ifndef __KOKKOSBATCHED_SOLVE_UTV_TEAMVECTOR_IMPL_COMPADRE_HPP__
 #define __KOKKOSBATCHED_SOLVE_UTV_TEAMVECTOR_IMPL_COMPADRE_HPP__
 
