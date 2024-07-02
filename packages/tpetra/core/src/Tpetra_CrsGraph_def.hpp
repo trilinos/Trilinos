@@ -5792,7 +5792,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "packFillActiveNew: ";
     const bool verbose = verbose_;
 
-    const auto numExportLIDs = exportLIDs.extent (0);
+    const LO numExportLIDs = exportLIDs.extent (0);
     std::unique_ptr<std::string> prefix;
     if (verbose) {
       prefix = this->createPrefix("CrsGraph", "packFillActiveNew");
@@ -5802,8 +5802,9 @@ namespace Tpetra {
          << numPacketsPerLID.extent(0) << endl;
       std::cerr << os.str();
     }
+    const LO numPacketsPerLID_extent = numPacketsPerLID.extent (0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (numExportLIDs != numPacketsPerLID.extent (0), std::runtime_error,
+      (numExportLIDs !=  numPacketsPerLID_extent, std::runtime_error,
        "exportLIDs.extent(0) = " << numExportLIDs
        << " != numPacketsPerLID.extent(0) = "
        << numPacketsPerLID.extent (0) << ".");
