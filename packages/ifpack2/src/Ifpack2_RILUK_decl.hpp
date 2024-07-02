@@ -55,6 +55,7 @@
 #include "Ifpack2_IlukGraph.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 
+#include <memory>
 #include <type_traits>
 
 namespace Teuchos {
@@ -660,6 +661,9 @@ protected:
   bool hasStreamReordered_;
   std::vector<typename lno_nonzero_view_t::non_const_type> perm_v_;
   std::vector<typename lno_nonzero_view_t::non_const_type> reverse_perm_v_;
+  mutable std::unique_ptr<MV> Y_tmp_;
+  mutable std::unique_ptr<MV> reordered_x_;
+  mutable std::unique_ptr<MV> reordered_y_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with

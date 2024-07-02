@@ -993,11 +993,10 @@ localTriangularSolve (const MV& Y,
         KernelHandle_rawptr_v_[i] = kh_v_[i].getRawPtr();
         stream_begin = stream_end;
       }
+      Kokkos::fence();
       KokkosSparse::Experimental::sptrsv_solve_streams( exec_space_instances_, KernelHandle_rawptr_v_,
                                                         ptr_v, ind_v, val_v, y_v, x_v );
-      for (int i = 0; i < num_streams_; i++) {
-        exec_space_instances_[i].fence();
-      }
+      Kokkos::fence();
     }
   } // End using stream interface of Kokkos Kernels Sptrsv
   else

@@ -856,6 +856,18 @@ private:
   mutable std::unique_ptr<MV> overlapping_B_;
   //! Cached local (possibly) overlapping output (multi)vector.
   mutable std::unique_ptr<MV> overlapping_Y_;
+  //! Cached local (possibly) reordered input (multi)vector.
+  mutable std::unique_ptr<MV> reduced_reordered_B_;
+  //! Cached local (possibly) reordered output (multi)vector.
+  mutable std::unique_ptr<MV> reduced_reordered_Y_;
+  //! Cached local (possibly) reduced input (multi)vector.
+  mutable std::unique_ptr<MV> reduced_B_;
+  //! Cached local (possibly) reduced output (multi)vector.
+  mutable std::unique_ptr<MV> reduced_Y_;
+  //! Cached local (possibly) reordered input (multi)vector.
+  mutable std::unique_ptr<MV> reordered_B_;
+  //! Cached local (possibly) reduced output (multi)vector.
+  mutable std::unique_ptr<MV> reordered_Y_;
   //! Cached local (possibly) vector that indicates how many copies of a dof exist due to overlap
   mutable std::unique_ptr<MV> num_overlap_copies_;
   //! Cached residual (multi)vector.
