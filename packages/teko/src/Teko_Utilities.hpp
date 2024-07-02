@@ -947,6 +947,9 @@ Teuchos::RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > getPhysicallyB
 //! Construct filename string for writing blocks to matrix-market format
 std::string formatBlockName(const std::string &prefix, int i, int j, int nrow);
 
+//! Write a matrix to file
+void writeMatrix(const std::string &filename, const Teko::LinearOp &op);
+
 }  // end namespace Teko
 
 #ifdef _MSC_VER

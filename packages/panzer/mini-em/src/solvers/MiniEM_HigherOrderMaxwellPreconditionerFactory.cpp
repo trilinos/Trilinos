@@ -298,6 +298,9 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
      lvlList.set("Coordinates", S_E_prec_pl.get<RCP<TpMV> >("Coordinates"));
      lvlList.set("invMk_1_invBeta",M0inv);
 
+     // make sure we build all levels
+     muelulist.set("coarse: max size", Teuchos::as<int>(S_E_prec_pl.get<RCP<TpMV> >("Coordinates")->getMap()->getGlobalNumElements()-1));
+
      Teko::InverseLibrary myInvLib = invLib;
 
      muelulist.set("Type",S_E_prec_type_);

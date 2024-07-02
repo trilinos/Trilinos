@@ -5846,10 +5846,8 @@ namespace Tpetra {
     }
 
     execute_sync_host_uvm_access(); // protect host UVM access
-    Kokkos::parallel_reduce
-      ("Tpetra::CrsGraph::pack: totalNumPackets",
-       inputRange,
-       [=, &prefix] (const LO i, size_t& curTotalNumPackets) {
+    totalNumPackets = 0;
+    for (LO i=0; i<numExportLIDs; ++i) {
          const LO lclRow = exportLIDs_h[i];
          const GO gblRow = rowMap.getGlobalElement (lclRow);
          if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
@@ -5865,10 +5863,9 @@ namespace Tpetra {
          else {
            const size_t numEnt = this->getNumEntriesInGlobalRow (gblRow);
            numPacketsPerLID_h(i) = numEnt;
-           curTotalNumPackets += numEnt;
+           totalNumPackets += numEnt;
          }
-      },
-      totalNumPackets);
+      }
 
     if (verbose) {
       std::ostringstream os;

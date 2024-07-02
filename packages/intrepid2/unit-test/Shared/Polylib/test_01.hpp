@@ -1,4 +1,11 @@
 // @HEADER
+// *****************************************************************************
+//                           Intrepid2 Package
+//
+// Copyright 2007 NTESS and the Intrepid2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 ///////////////////////////////////////////////////////////////////////////////
 //
 // For more information, please see: http://www.nektar.info

@@ -171,6 +171,9 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
         if (!_orthonormal_tangent_space_provided) {
             _T = Kokkos::View<double*>("tangent approximation",_pc._target_coordinates.extent(0)*_dimensions*_dimensions);
             Kokkos::deep_copy(_T, 0.0);
+        } else {
+            compadre_assert_release(_T.extent(0)/(_dimensions*_dimensions)==_pc._target_coordinates.extent(0) &&
+                    "Provided tangent_directions has number of targets different than target_coordinates");
         }
         _manifold_curvature_coefficients = Kokkos::View<double*>("manifold curvature coefficients",
                 _pc._target_coordinates.extent(0)*manifold_NP);

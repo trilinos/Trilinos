@@ -80,7 +80,7 @@ inline void seconds_initialize() {
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
 namespace Kokkos {
-namespace Profiling {
+namespace Tools {
 extern void pushRegion (const std::string&);
 extern void popRegion ();
 } // namespace Profiling
@@ -133,7 +133,7 @@ void Time::start(bool reset_in)
     Kokkos::fence();
 #endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-    ::Kokkos::Profiling::pushRegion (name_);
+    ::Kokkos::Tools::pushRegion (name_);
 #endif
   }
 }
@@ -159,7 +159,7 @@ double Time::stop()
       Kokkos::fence();
 #endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-      ::Kokkos::Profiling::popRegion ();
+      ::Kokkos::Tools::popRegion ();
 #endif
     }
   }

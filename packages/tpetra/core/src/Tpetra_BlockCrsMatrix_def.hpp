@@ -604,11 +604,9 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const
   {
-    Kokkos::View<ptrdiff_t*,Kokkos::HostSpace> 
-      offsets_host_view(Kokkos::ViewAllocateWithoutInitializing("offsets"), numColInds);
-    ptrdiff_t * offsets = offsets_host_view.data();
-    const LO numOffsets = this->getLocalRowOffsets(localRowInd, offsets, colInds, numColInds);
-    const LO validCount = this->replaceLocalValuesByOffsets(localRowInd, offsets, vals, numOffsets);
+    std::vector<ptrdiff_t> offsets(numColInds);
+    const LO numOffsets = this->getLocalRowOffsets(localRowInd, offsets.data(), colInds, numColInds);
+    const LO validCount = this->replaceLocalValuesByOffsets(localRowInd, offsets.data(), vals, numOffsets);
     return validCount;
   }
 
@@ -666,11 +664,9 @@ public:
                      const Scalar vals[],
                      const LO numColInds) const
   {
-    Kokkos::View<ptrdiff_t*,Kokkos::HostSpace> 
-      offsets_host_view(Kokkos::ViewAllocateWithoutInitializing("offsets"), numColInds);
-    ptrdiff_t * offsets = offsets_host_view.data();
-    const LO numOffsets = this->getLocalRowOffsets(localRowInd, offsets, colInds, numColInds);
-    const LO validCount = this->absMaxLocalValuesByOffsets(localRowInd, offsets, vals, numOffsets);
+    std::vector<ptrdiff_t> offsets(numColInds);
+    const LO numOffsets = this->getLocalRowOffsets(localRowInd, offsets.data(), colInds, numColInds);
+    const LO validCount = this->absMaxLocalValuesByOffsets(localRowInd, offsets.data(), vals, numOffsets);
     return validCount;
   }
 
@@ -683,11 +679,9 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const
   {
-    Kokkos::View<ptrdiff_t*,Kokkos::HostSpace> 
-      offsets_host_view(Kokkos::ViewAllocateWithoutInitializing("offsets"), numColInds);
-    ptrdiff_t * offsets = offsets_host_view.data();
-    const LO numOffsets = this->getLocalRowOffsets(localRowInd, offsets, colInds, numColInds);
-    const LO validCount = this->sumIntoLocalValuesByOffsets(localRowInd, offsets, vals, numOffsets);
+    std::vector<ptrdiff_t> offsets(numColInds);
+    const LO numOffsets = this->getLocalRowOffsets(localRowInd, offsets.data(), colInds, numColInds);
+    const LO validCount = this->sumIntoLocalValuesByOffsets(localRowInd, offsets.data(), vals, numOffsets);
     return validCount;
   }
   template<class Scalar, class LO, class GO, class Node>
@@ -2076,11 +2070,8 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
     auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this.
     numPacketsPerLID.modify_host ();
     {
-      using reducer_type = Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec>;
-      const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs);
-      Kokkos::parallel_reduce
-        (policy,
-         [=](const size_t &i, typename reducer_type::value_type &update) {
+      rowReducerStruct = Impl::BlockCrsRowStruct<size_t>();
+      for (size_t i = 0; i < numExportLIDs; ++i) {
           const LO lclRow = exportLIDsHost(i);
           size_t numEnt = srcGraph.getNumEntriesInLocalRow (lclRow);
           numEnt = (numEnt == Teuchos::OrdinalTraits<size_t>::invalid () ? 0 : numEnt);
@@ -2088,8 +2079,8 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
           const size_t numBytes =
             packRowCount<LO, GO> (numEnt, numBytesPerValue, blockSize);
           numPacketsPerLIDHost(i) = numBytes;
-          update += typename reducer_type::value_type(numEnt, numBytes, numEnt);
-        }, rowReducerStruct);
+          rowReducerStruct += Impl::BlockCrsRowStruct<size_t>(numEnt, numBytes, numEnt);
+        }
     }
 
     // Compute the number of bytes ("packets") per row to pack.  While

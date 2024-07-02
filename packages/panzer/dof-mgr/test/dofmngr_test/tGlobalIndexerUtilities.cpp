@@ -42,7 +42,7 @@
 
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_RCP.hpp>
+#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
@@ -57,13 +57,6 @@
 
 #include "UnitTest_GlobalIndexer.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-   #include "mpi.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 using Teuchos::rcp;
@@ -77,18 +70,14 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,GhostedFieldVector)
 {
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::GlobalIndexer> globalIndexer 
+   RCP<panzer::GlobalIndexer> globalIndexer
          = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    std::vector<int> ghostedFields;
@@ -101,7 +90,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,GhostedFieldVector)
 
    std::stringstream ss;
    ss << "Field Numbers = ";
-   for(std::size_t i=0;i<ghostedFields.size();i++) 
+   for(std::size_t i=0;i<ghostedFields.size();i++)
       ss << ghostedIndices[i] << ":" << ghostedFields[i] << " ";
    out << std::endl;
    out << ss.str() << std::endl;
@@ -136,7 +125,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,GhostedFieldVector)
       TEST_EQUALITY(ghostedFields[10],0);
       TEST_EQUALITY(ghostedFields[11],0);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -183,24 +172,21 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   // build global (or serial communicator)
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::GlobalIndexer> globalIndexer 
+   RCP<panzer::GlobalIndexer> globalIndexer
          = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    int uFieldNum = globalIndexer->getFieldNum("U");
    int tFieldNum = globalIndexer->getFieldNum("T");
 
-   Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal> > reducedFieldVector 
+   Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal> > reducedFieldVector
          = panzer::buildGhostedFieldReducedVector(*globalIndexer);
 
    Tpetra::Vector<int,int,panzer::GlobalOrdinal> reducedUDataVector(getFieldMap(uFieldNum,*reducedFieldVector));
@@ -209,11 +195,11 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
    TEST_EQUALITY(reducedUDataVector.getLocalLength(),8);
    TEST_EQUALITY(reducedTDataVector.getLocalLength(),4);
 
-   IntFieldContainer dataU_b0, dataU_b1; 
+   IntFieldContainer dataU_b0, dataU_b1;
    fillFieldContainer(uFieldNum,"block_0",*globalIndexer,dataU_b0);
    fillFieldContainer(uFieldNum,"block_1",*globalIndexer,dataU_b1);
 
-   IntFieldContainer dataT_b0; 
+   IntFieldContainer dataT_b0;
    fillFieldContainer(tFieldNum,"block_0",*globalIndexer,dataT_b0);
 
    updateGhostedDataReducedVector("U","block_0",*globalIndexer,dataU_b0,reducedUDataVector);
@@ -257,7 +243,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
       TEST_EQUALITY(ghostedFields_t[2],11);
       TEST_EQUALITY(ghostedFields_t[3], 5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -267,18 +253,14 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::GlobalIndexer> globalIndexer 
+   RCP<panzer::GlobalIndexer> globalIndexer
          = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector atfv(globalIndexer);
@@ -296,7 +278,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
    reducedUDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_u));
    reducedTDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_t));
-   
+
    if(myRank==0) {
       TEST_EQUALITY(reducedUDataVector->getLocalLength(),8);
       TEST_EQUALITY(reducedTDataVector->getLocalLength(),6);
@@ -335,7 +317,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
       TEST_EQUALITY(ghostedFields_t[2],11);
       TEST_EQUALITY(ghostedFields_t[3], 5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -345,18 +327,14 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::GlobalIndexer> globalIndexer 
+   RCP<panzer::GlobalIndexer> globalIndexer
          = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector atfv(globalIndexer);
@@ -374,7 +352,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
 
    reducedUDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(fields_u));
    reducedTDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(fields_t));
-   
+
    if(myRank==0) {
       TEST_EQUALITY(reducedUDataVector->getLocalLength(),6);
       TEST_EQUALITY(reducedTDataVector->getLocalLength(),5);
@@ -403,7 +381,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
 
       TEST_EQUALITY(fields_t[0], 5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -413,18 +391,14 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      RCP<Epetra_Comm> eComm = rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-   int myRank = eComm->MyPID();
-   int numProcs = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProcs = comm->getSize();
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::GlobalIndexer> globalIndexer 
+   RCP<panzer::GlobalIndexer> globalIndexer
          = rcp(new panzer::unit_test::GlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector atfv(globalIndexer);
@@ -447,21 +421,21 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
    for(std::size_t c=0;c<numCols;c++) {
       std::vector<int> fields_u(reducedUDataVector->getLocalLength());
       std::vector<int> fields_t(reducedTDataVector->getLocalLength());
-   
+
       reducedUDataVector->getVector(c)->get1dCopy(Teuchos::arrayViewFromVector(fields_u));
       reducedTDataVector->getVector(c)->get1dCopy(Teuchos::arrayViewFromVector(fields_t));
-      
+
       if(myRank==0) {
          TEST_EQUALITY(reducedUDataVector->getLocalLength(),6);
          TEST_EQUALITY(reducedTDataVector->getLocalLength(),5);
-   
+
          TEST_EQUALITY(fields_u[0], 6+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[1], 0+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[2], 2+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[3], 8+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[4],10+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[5],13+Teuchos::as<int>(c));
-   
+
          TEST_EQUALITY(fields_t[0], 7+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_t[1], 1+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_t[2], 3+Teuchos::as<int>(c));
@@ -471,15 +445,15 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
       else if(myRank==1) {
          TEST_EQUALITY(reducedUDataVector->getLocalLength(),4);
          TEST_EQUALITY(reducedTDataVector->getLocalLength(),1);
-   
+
          TEST_EQUALITY(fields_u[0], 4+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[1],12+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[2],15+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[3],14+Teuchos::as<int>(c));
-   
+
          TEST_EQUALITY(fields_t[0], 5+Teuchos::as<int>(c));
       }
-      else 
+      else
          TEUCHOS_ASSERT(false);
    }
 
@@ -513,7 +487,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 
       TEST_EQUALITY(tMap->getGlobalElement(0),5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 

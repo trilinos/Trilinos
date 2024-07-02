@@ -1,29 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                 Belos: Block Linear Solvers Package
-//                 Copyright (2010) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004-2016 NTESS and the Belos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef __Belos_StubTsqrAdapter_hpp
@@ -48,7 +29,7 @@ namespace details {
   /// TSQR (Tall Skinny QR factorization) is an orthogonalization
   /// kernel that is as accurate as Householder QR, yet requires only
   /// \f$2 \log P\f$ messages between $P$ MPI processes, independently
-  /// of the number of columns in the multivector.  
+  /// of the number of columns in the multivector.
   ///
   /// TSQR works independently of the particular multivector
   /// implementation, and interfaces to the latter via an adapter
@@ -83,10 +64,10 @@ namespace details {
     ///   The specific parameter keys that are read depend on the TSQR
     ///   implementation.  For details, call \c getValidParameters()
     ///   and examine the documentation embedded therein.
-    StubTsqrAdapter (const Teuchos::RCP<Teuchos::ParameterList>& plist) 
+    StubTsqrAdapter (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TSQR adapter for "
-        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name() 
+        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name()
         << " is not yet implemented.");
     }
 
@@ -94,7 +75,7 @@ namespace details {
     StubTsqrAdapter ()
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TSQR adapter for "
-        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name() 
+        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name()
         << " is not yet implemented.");
     }
 
@@ -103,7 +84,7 @@ namespace details {
     {
       (void) rhs;
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TSQR adapter for "
-        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name() 
+        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name()
         << " is not yet implemented.");
     }
 
@@ -112,16 +93,16 @@ namespace details {
     getValidParameters () const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TSQR adapter for "
-        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name() 
+        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name()
         << " is not yet implemented.");
     }
 
     //! Set parameters (stub; throws std::logic_error).
-    void 
+    void
     setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TSQR adapter for "
-        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name() 
+        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name()
         << " is not yet implemented.");
     }
 
@@ -133,7 +114,7 @@ namespace details {
 		    const bool forceNonnegativeDiagonal=false)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TSQR adapter for "
-        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name() 
+        "multivector type \"" << Teuchos::TypeNameTraits<MV>::name()
         << " is not yet implemented.");
     }
 
@@ -148,7 +129,7 @@ namespace details {
       // never execute anyway, since it is in an instance method and
       // all of the constructors throw exceptions.  (We've overridden
       // the default and copy constructors to throw exceptions.)
-      return 0; 
+      return 0;
     }
   };
 

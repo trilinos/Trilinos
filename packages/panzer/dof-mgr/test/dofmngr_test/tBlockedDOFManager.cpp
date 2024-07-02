@@ -43,6 +43,7 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 #include <string>
@@ -57,13 +58,10 @@
 #include "UnitTest_ConnManager.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 #include "Kokkos_DynRankView.hpp"
-
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -88,11 +86,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 {
 
    // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
    // panzer::pauseToAttach();
 
@@ -100,11 +94,11 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = comm->getRank();
+   int numProc = comm->getSize();
 
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager dofManager; 
+   BlockedDOFManager dofManager;
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManager,MPI_COMM_WORLD);
 
@@ -129,7 +123,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    dofManager.setFieldOrder(fieldOrder);
    dofManager.getFieldOrder(fo_ut);
    TEST_ASSERT(fieldOrder==fo_ut);
-   TEST_EQUALITY(dofManager.getNumFieldBlocks(),3); // 
+   TEST_EQUALITY(dofManager.getNumFieldBlocks(),3); //
 
    TEST_ASSERT(dofManager.getElementBlock("block_0")==connManager->getElementBlock("block_0"));
    TEST_ASSERT(dofManager.getElementBlock("block_1")==connManager->getElementBlock("block_1"));
@@ -140,28 +134,24 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 {
 
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
-
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   // build global (or serial communicator)
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+   int myRank = comm->getRank();
+   int numProc = comm->getSize();
 
    RCP<ConnManager> connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager dofManager; 
+   BlockedDOFManager dofManager;
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
@@ -205,7 +195,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    dofManager.registerFields(true);
    TEST_ASSERT(dofManager.fieldsRegistered());
-   const std::vector<RCP<panzer::GlobalIndexer>> & subManagers = 
+   const std::vector<RCP<panzer::GlobalIndexer>> & subManagers =
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
@@ -240,10 +230,10 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    TEST_EQUALITY(subManagers[2]->getFieldNum("T")+2*2,   dofManager.getFieldNum("T"));
 
    // check field order of sub managers
-   for(int i=0;i<3;i++) { 
-      std::vector<std::string> subFieldOrder; 
-      subManagers[i]->getFieldOrder(subFieldOrder); 
-      TEST_ASSERT(subFieldOrder==fieldOrder[i]); 
+   for(int i=0;i<3;i++) {
+      std::vector<std::string> subFieldOrder;
+      subManagers[i]->getFieldOrder(subFieldOrder);
+      TEST_ASSERT(subFieldOrder==fieldOrder[i]);
    }
 
    // check field blocks, notice we are copying here
@@ -272,30 +262,26 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
 
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
-
    // panzer::pauseToAttach();
 
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   // build global (or serial communicator)
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+   int myRank = comm->getRank();
+   int numProc = comm->getSize();
 
    RCP<ConnManager> connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager dofManager; 
+   BlockedDOFManager dofManager;
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
@@ -342,7 +328,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    dofManager.ownedIndices(ownedAndGhosted,ownedAndGhosted_bool);
 
    bool ownedCheck = true;
-   for(std::size_t i=0;i<owned_bool.size();i++) 
+   for(std::size_t i=0;i<owned_bool.size();i++)
       ownedCheck &= owned_bool[i];
    TEST_ASSERT(ownedCheck);
 
@@ -390,30 +376,26 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 {
 
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
-
    // panzer::pauseToAttach();
 
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   // build global (or serial communicator)
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+   int myRank = comm->getRank();
+   int numProc = comm->getSize();
 
    RCP<ConnManager> connManger = rcp(new unit_test::ConnManager(myRank,numProc));
-   BlockedDOFManager dofManager; 
+   BlockedDOFManager dofManager;
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
 
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
@@ -456,7 +438,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       for(std::size_t i=12;i<16;i++) TEST_EQUALITY(gids[i].first,2);
    }
 
-   // check from element block 1 
+   // check from element block 1
    if(myRank==0) {
       // std::vector<std::pair<int,int> > gids;
       dofManager.getElementGIDs(4,gids);
@@ -474,7 +456,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
          TEST_EQUALITY(gids[i+0].first,2);
    }
 
-   // check from element block 2 
+   // check from element block 2
    if(myRank==0) {
       // std::vector<std::pair<int,int> > gids;
       dofManager.getElementGIDs(3,gids);
@@ -503,7 +485,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    // test getGIDFieldOffsets
    {
       const std::vector<int> * vec = 0;
-   
+
       // block 0
       vec = &dofManager.getGIDFieldOffsets("block_0",dofManager.getFieldNum("Ux"));
       TEST_EQUALITY(vec->size(),4);
@@ -514,12 +496,12 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       vec = &dofManager.getGIDFieldOffsets("block_0",dofManager.getFieldNum("T"));
       TEST_EQUALITY(vec->size(),4);
       TEST_EQUALITY((*vec)[0],12+0); TEST_EQUALITY((*vec)[1],12+1); TEST_EQUALITY((*vec)[2],12+2); TEST_EQUALITY((*vec)[3],12+3);
-   
+
       // block 1
       vec = &dofManager.getGIDFieldOffsets("block_1",dofManager.getFieldNum("T"));
       TEST_EQUALITY(vec->size(),4);
       TEST_EQUALITY((*vec)[0],0); TEST_EQUALITY((*vec)[1],1); TEST_EQUALITY((*vec)[2],2); TEST_EQUALITY((*vec)[3],3);
-   
+
       // block 2
       vec = &dofManager.getGIDFieldOffsets("block_2",dofManager.getFieldNum("rho"));
       TEST_EQUALITY(vec->size(),4);
@@ -546,21 +528,21 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       TEST_EQUALITY(p1,p2);
    }
 
-   { 
+   {
       const std::pair<std::vector<int>,std::vector<int> > * vec = 0;
       const std::pair<std::vector<int>,std::vector<int> > * sub_vec = 0;
 
       Teuchos::RCP<const GlobalIndexer> subManager;
-   
+
       // block 0
       subManager = dofManager.getFieldDOFManagers()[2];
       vec = &dofManager.getGIDFieldOffsets_closure("block_2",dofManager.getFieldNum("T"),1,0);
       sub_vec = &subManager->getGIDFieldOffsets_closure("block_2",subManager->getFieldNum("T"),1,0);
       TEST_EQUALITY(vec->first.size(),sub_vec->first.size());
       TEST_EQUALITY(vec->second.size(),sub_vec->second.size());
-      for(std::size_t i=0;i<vec->second.size();i++) 
+      for(std::size_t i=0;i<vec->second.size();i++)
          TEST_EQUALITY(vec->second[i],sub_vec->second[i]);
-      for(std::size_t i=0;i<vec->first.size();i++) 
+      for(std::size_t i=0;i<vec->first.size();i++)
          TEST_EQUALITY(vec->first[i],dofManager.getBlockGIDOffset("block_2",2)+sub_vec->first[i]);
    }
    */
@@ -569,7 +551,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 {
 
-   BlockedDOFManager dofManager; 
+   BlockedDOFManager dofManager;
    dofManager.setUseDOFManagerFEI(false);
 
    std::set<std::string> validFields;
@@ -577,14 +559,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
    validFields.insert("cat");
    validFields.insert("monkey");
    validFields.insert("dog");
-    
+
    {
       std::vector<std::vector<std::string> > order(1);
       order[0].push_back("cat");
       order[0].push_back("dog");
       order[0].push_back("horse");
       order[0].push_back("monkey");
-   
+
       dofManager.validFieldOrder(order,validFields);
       TEST_ASSERT(dofManager.validFieldOrder(order,validFields));
    }
@@ -594,7 +576,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
       order[0].push_back("cat");
       order[0].push_back("horse");
       order[0].push_back("monkey");
- 
+
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 
@@ -605,7 +587,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
       order[0].push_back("horse");
       order[0].push_back("monkey");
       order[0].push_back("monkey");
- 
+
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 
@@ -615,7 +597,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
       order[0].push_back("dog");
       order[0].push_back("horse");
       order[0].push_back("tank");
- 
+
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 
@@ -625,7 +607,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
       order[0].push_back("dog");
       order[0].push_back("horse");
       order[1].push_back("monkey");
- 
+
       TEST_ASSERT(dofManager.validFieldOrder(order,validFields));
    }
 
@@ -636,7 +618,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
       order[0].push_back("horse");
       order[1].push_back("cat");
       order[1].push_back("monkey");
- 
+
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 
@@ -645,7 +627,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
       order[0].push_back("dog");
       order[0].push_back("horse");
       order[1].push_back("monkey");
- 
+
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 
@@ -655,7 +637,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
       order[0].push_back("horse");
       order[1].push_back("monkey");
       order[1].push_back("Zebra");
- 
+
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 
@@ -664,29 +646,25 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
 {
 
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
-
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   // build global (or serial communicator)
+   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+   int myRank = comm->getRank();
+   int numProc = comm->getSize();
 
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   // Setup two DOF managers that will correspond to the blocks of the 
+   // Setup two DOF managers that will correspond to the blocks of the
    // system.
    /////////////////////////////////////////////////////////////////////////
-   DOFManager dofManager[2]; 
+   DOFManager dofManager[2];
 
    dofManager[0].setConnManager(connManager,MPI_COMM_WORLD);
    dofManager[0].addField("T",patternC1); // add it to all three blocks
@@ -711,7 +689,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    // Setup the BlockedDOFManager using the previously constructed
    // DOF managers
    ////////////////////////////////////////////////////////
-   BlockedDOFManager blkDofManager; 
+   BlockedDOFManager blkDofManager;
    blkDofManager.setUseDOFManagerFEI(false);
    blkDofManager.setConnManager(connManager,MPI_COMM_WORLD);
    blkDofManager.setFieldOrder(fieldOrder);
@@ -760,12 +738,12 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
      const std::vector<int> & blk_elements = blkDofManager.getElementBlock(block_name);
      const std::vector<int> & elements_0   = dofManager[0].getElementBlock(block_name);
      const std::vector<int> & elements_1   = dofManager[1].getElementBlock(block_name);
-     
+
      // test the size for equality
      TEST_EQUALITY(blk_elements.size(),elements_0.size());
      TEST_EQUALITY(blk_elements.size(),elements_1.size());
 
-     // test each element value (a future change could break this, you might want to sort them 
+     // test each element value (a future change could break this, you might want to sort them
      // all instead)
      for(std::size_t i=0;i<blk_elements.size();i++) {
        TEST_EQUALITY(blk_elements[i],elements_0[i]);
@@ -778,7 +756,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
 
    for(std::size_t eb=0;eb<eBlocks.size();eb++) {
      std::string block_name = eBlocks[eb];
- 
+
      const std::vector<int> & offsets_blk_T = blkDofManager.getGIDFieldOffsets(block_name,blkDofManager.getFieldNum("T"));
      const std::vector<int> & offsets_0_T   = dofManager[0].getGIDFieldOffsets(block_name,dofManager[0].getFieldNum("T"));
 

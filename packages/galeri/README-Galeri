@@ -13,3 +13,15 @@ Galeri contains:
 The Galeri documentation is maintained on the web page of the package; see
 
 http://trilinos.sandia.gov/packages/galeri.
+
+
+Copyright and License
+
+See galeri/COPYRIGHT, galeri/LICENSE, https://trilinos.github.io/license.html and individual file headers for additional information.
+
+
+Questions? 
+Contact lead developers:
+
+* Galeri team     (GitHub handle: @trilinos/galeri)
+* Jonathan Hu     (GitHub handle: [jhux2](https://github.com/jhux2) or jhu@sandia.gov)
