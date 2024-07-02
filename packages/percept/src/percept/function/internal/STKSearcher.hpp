@@ -17,7 +17,7 @@
 
 
 
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 
 #include <Shards_CellTopology.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
