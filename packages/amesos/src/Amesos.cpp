@@ -161,7 +161,7 @@ Amesos_BaseSolver* Amesos::Create(const std::string CT,
 #endif
   } 
   
-  if (CT == "Amesos_CssMKL") {
+  if ((CT == "Amesos_CssMKL") || (CT == "Amesos_CssMKL")) {
 #ifdef HAVE_AMESOS_CSS_MKL
     return new Amesos_CssMKL(LinearProblem);
 #else
@@ -284,6 +284,14 @@ bool Amesos::Query(const std::string CT)
 #endif
   } 
   
+  if ((CT == "Amesos_CssMKL") || (CT == "Css_MKL")) {
+#ifdef HAVE_AMESOS_CSS_MKL
+    return true;
+#else
+    return false;
+#endif
+  }
+
   if ((CT == "Amesos_Taucs") || (CT == "Taucs")) { 
 #ifdef HAVE_AMESOS_TAUCS
     return true;
@@ -299,7 +307,7 @@ bool Amesos::Query(const std::string CT)
     return false;
 #endif
   } 
-  
+
   if ((CT == "Amesos_CSparse") || (CT == "CSparse")) {
 #ifdef HAVE_AMESOS_CSPARSE
     return true;

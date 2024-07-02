@@ -147,9 +147,7 @@ private:
   int PerformSymbolicFactorization();
   int PerformNumericFactorization(); 
 
-  Teuchos::RCP<Epetra_Import> Importer_;
 
-  const Epetra_Map* Map_;
   const Epetra_RowMatrix* Matrix_;
 
   //! If \c true, the transpose of A is used.
