@@ -56,6 +56,8 @@
 
 #include <Tpetra_Details_KokkosCounter.hpp>
 
+#include <KokkosKernels_config.h>
+
 namespace MueLuTests {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -103,17 +105,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
   // confirm that we did get a hierarchy with two levels -- a sanity check for this test
   TEST_EQUALITY(2, H->GetGlobalNumLevels());
 
+  // When Kokkos Kernels uses TPLs, some Kokkos::deep_copy in the Kokkos Kernels native implementations are not called.
+#if  defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) \
+  || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) \
+  || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  constexpr int kkNativeDeepCopies = 0;
+#else
+  constexpr int kkNativeDeepCopies = 8;
+#endif
+
   if (Node::is_cpu) {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 0);
   }
 #ifdef KOKKOS_HAS_SHARED_SPACE
   else {
-    size_t targetNumDeepCopies = std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 20 : 37;
+    size_t targetNumDeepCopies = kkNativeDeepCopies + std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 12 : 29;
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), targetNumDeepCopies);
   }
 #else
   else {
-    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 37);
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), kkNativeDeepCopies + 29 );
   }
 #endif
 
