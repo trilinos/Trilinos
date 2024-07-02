@@ -1,13 +1,22 @@
+// @HEADER
+// *****************************************************************************
+//                   Basker: A Direct Linear Solver package
+//
+// Copyright 2011 NTESS and the Basker contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 /*======================== basker ==============================================*/
 /* Finds the LU factorization of a sparse A such that A=L*U.
- * Requires 2 workspaces. The integer workspace of size ancol+2*anrow and a 
+ * Requires 2 workspaces. The integer workspace of size ancol+2*anrow and a
  * double workspace of size 2*anrow. A is expected in compressed column form.
- * 
+ *
  * The output L and U are also in compressed column form. The pointers for both
  * L and U should be preallocated. The size of expected L and U should be passed
- * to the method as lnnz and unnz. basker will return an error as the size of 
+ * to the method as lnnz and unnz. basker will return an error as the size of
  * computed L and U exceeds the expected L and U.
- * 
+ *
  */
 
 #include <stdio.h>
@@ -17,23 +26,23 @@
 
 
 /* ==================== dfs function ============== */
-/* Does a depth first search of a trapezoidal L that is partly computed and 
+/* Does a depth first search of a trapezoidal L that is partly computed and
  * partly equal to the identity. The result of the dfs is in the pattern.
  */
 
 void BASKER(dfs)
-( 
-   Int j, 
-   Int Li [], 
-   Int Lp [], 
-   Int color [], 
-   Int pattern [], 
+(
+   Int j,
+   Int Li [],
+   Int Lp [],
+   Int color [],
+   Int pattern [],
    Int *top,
    Int k,
    Int pinv []
 )
 {
-   Int i, t, i1 ; 
+   Int i, t, i1 ;
    Int start, end ;
 
    PRINT(("DFS : %d ***********************\n", j));
@@ -50,7 +59,7 @@ void BASKER(dfs)
            if ( color[i] == 0 )
            {
                BASKER(dfs)(i, Li, Lp, color, pattern, top, k, pinv) ;
-           }    
+           }
        }
    }
    pattern[--*top] = j ;
@@ -58,20 +67,20 @@ void BASKER(dfs)
 }
 
 void BASKER(dfs_iter)
-( 
+(
    Int n,
-   Int j, 
-   Int Li [], 
-   Int Lp [], 
-   Int color [], 
+   Int j,
+   Int Li [],
+   Int Lp [],
+   Int color [],
    Int pattern [], /* o/p */
-   Int *top,       /* o/p */ 
+   Int *top,       /* o/p */
    Int k,
    Int pinv [],
    Int stack []
 )
 {
-   Int i, t, head, i1 ; 
+   Int i, t, head, i1 ;
    Int start, end, done, *store ;
 
    store = stack + n ;
@@ -134,7 +143,7 @@ Int BASKER(basker)
    Int ancol,
    Int ws [],
    double X [],
-   Int *Lp, 
+   Int *Lp,
    Int **Li_p,
    double **Lx_p,
    Int *Up,
@@ -143,7 +152,7 @@ Int BASKER(basker)
    Int *llnnz_p,
    Int *uunnz_p,
    Int *pinv
-)   
+)
 {
     Int i, j, k;
     Int *tptr, *color, *pattern, *stack ;
@@ -192,7 +201,7 @@ Int BASKER(basker)
     {
         PRINT(("k = %d ****************** \n", k));
         value = 0.0 ;
-        pivot = 0.0 ; 
+        pivot = 0.0 ;
         maxindex = -1 ;
         j1 = 0 ;
         j2 = 0 ;
@@ -224,7 +233,7 @@ Int BASKER(basker)
                 /*BASKER(dfs) (j, Li, Lp, color, pattern, &top, k, pinv) ;*/
                 BASKER(dfs_iter) (anrow, j, Li, Lp, color, pattern, &top, k,
                         pinv, stack) ;
-            }    
+            }
         }
 
 
@@ -251,7 +260,7 @@ Int BASKER(basker)
         }
 
         /* get the pivot */
-        maxv = 0.0 ; 
+        maxv = 0.0 ;
         for ( i = top ; i < anrow ;i++)
         {
             j = pattern[i] ;
@@ -347,7 +356,7 @@ Int BASKER(basker)
                 {
                     if ( unnz >= uunnz )
                     {
-                        printf ("basker : Insufficient memory for U %d %d \n", unnz, uunnz); 
+                        printf ("basker : Insufficient memory for U %d %d \n", unnz, uunnz);
                         return 1;
                     }
                     /* BASKERASSERT(unnz < uunnz ) ; */
@@ -359,7 +368,7 @@ Int BASKER(basker)
                 {
                     if ( lnnz >= llnnz )
                     {
-                        printf ("basker : Insufficient memory for L \n"); 
+                        printf ("basker : Insufficient memory for L \n");
                         return 1;
                     }
                     BASKERASSERT(lnnz < llnnz ) ;

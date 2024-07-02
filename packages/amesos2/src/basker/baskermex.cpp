@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                   Basker: A Direct Linear Solver package
+//
+// Copyright 2011 NTESS and the Basker contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #include <mex.h>
 #include <matrix.h>
 #include <cstdlib>
@@ -10,9 +19,9 @@
 #define Int mwIndex
 //#define mwIndex long
 /*
- * 
+ *
  * Finds the L and U such that A=L*U.
- * 
+ *
  */
 
 void mexFunction
@@ -33,8 +42,8 @@ void mexFunction
 
     mwIndex anrow ;
     mwIndex ancol ;
-    mwIndex lnnz ;                       
-    mwIndex unnz ;                       
+    mwIndex lnnz ;
+    mwIndex unnz ;
     mwIndex i ;
     mwIndex j ;
     mwIndex app_xnnz ;
@@ -64,13 +73,13 @@ void mexFunction
     unnz = (mwIndex)*t2 ;
     /*printf("lnnz=%d unnz=%d\n", lnnz, unnz);*/
 
-   
+
     BaskerClassicNS::BaskerClassic <mwIndex, double> mybasker;
     mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
     mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
     mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);
     mybasker.returnP(&pp);
-    
+
 
     plhs[0] = mxCreateSparse (anrow, ancol, lnnz+1, mxREAL) ;
     Lp1 = mxGetJc (plhs[0]) ;
@@ -82,15 +91,15 @@ void mexFunction
     Ui1 = mxGetIr (plhs[1]) ;
     Ux1 = mxGetPr (plhs[1]) ;
 
-    
+
     mwIndex *pp1, *pp2;
     double *ppx;
     plhs[2] = mxCreateSparse (ancol, ancol, ancol, mxREAL);
     pp1 = mxGetJc (plhs[2]);
     pp2 = mxGetIr (plhs[2]);
     ppx = mxGetPr (plhs[2]);
-    
-    
+
+
     Lp1[0] = Lp[0];
     for ( i = 0 ; i < ancol ; i++)
     {
@@ -100,7 +109,7 @@ void mexFunction
             Li1[j] = Li[j];
             Lx1[j] = Lx[j];
         }
-    } 
+    }
 
     Up1[0] = Up[0];
     for ( i = 0 ; i < ancol ; i++)
@@ -111,9 +120,9 @@ void mexFunction
             Ui1[j] = Ui[j];
             Ux1[j] = Ux[j];
         }
-    } 
-  
-    
+    }
+
+
     //mexPrintf("Perm \n");
     for ( i = 0; i < ancol; i++)
       {
@@ -126,8 +135,8 @@ void mexFunction
       }
     pp1[ancol] = ancol;
 
-   
-    
+
+
     mxFree (pp) ;
     mxFree (Lp) ;
     mxFree (Li) ;
@@ -135,5 +144,5 @@ void mexFunction
     mxFree (Up) ;
     mxFree (Ui) ;
     mxFree (Ux) ;
-    
+
 }

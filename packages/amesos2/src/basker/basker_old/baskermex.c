@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                   Basker: A Direct Linear Solver package
+//
+// Copyright 2011 NTESS and the Basker contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #include <mex.h>
 #include <matrix.h>
 #include <stdlib.h>
@@ -8,9 +17,9 @@
 #define Int long
 
 /*
- * 
+ *
  * Finds the L and U such that A=L*U.
- * 
+ *
  */
 
 void mexFunction
@@ -31,8 +40,8 @@ void mexFunction
 
     mwIndex anrow ;
     mwIndex ancol ;
-    mwIndex lnnz ;                       
-    mwIndex unnz ;                       
+    mwIndex lnnz ;
+    mwIndex unnz ;
     mwIndex i ;
     mwIndex j ;
     mwIndex app_xnnz ;
@@ -76,10 +85,10 @@ void mexFunction
     Ux = (double *) mxCalloc ( unnz, sizeof(double)) ;
 
     PRINT(("Calling basker \n"));
-    result = basker_basker_l(Ap, Ai, Ax, anrow, ancol, ws , X, 
+    result = basker_basker_l(Ap, Ai, Ax, anrow, ancol, ws , X,
                 Lp, &Li, &Lx, Up, &Ui, &Ux, &lnnz, &unnz, pinv) ;
     PRINT(("Back in mex function %d \n",Lp[ancol]));
-    
+
     if (result)
     {
         mxFree (X) ;
@@ -117,7 +126,7 @@ void mexFunction
             Li1[j] = Li[j];
             Lx1[j] = Lx[j];
         }
-    } 
+    }
 
     Up1[0] = Up[0];
     for ( i = 0 ; i < ancol ; i++)
@@ -128,14 +137,14 @@ void mexFunction
             Ui1[j] = Ui[j];
             Ux1[j] = Ux[j];
         }
-    } 
+    }
 
     for ( i = 0 ; i < ancol ; i++)
     {
       pp[i] = i ;
       pi[ pinv[i] ] = i ;
       px[i] = 1 ;
-    }  
+    }
     pp[anrow] = ancol ;
 
     /*for ( i = 0 ; i < ancol ; i++)
