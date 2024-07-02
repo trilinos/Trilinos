@@ -293,6 +293,14 @@ private:
   mutable std::shared_ptr<ApplyHelper> applyHelper;
 
 public:
+    std::shared_ptr<ApplyHelper> getApplyHelper() const {
+      if (!applyHelper) {
+        auto A_lcl = getLocalMatrixDevice();
+        applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
+      }
+      return applyHelper;
+    }
+
 #endif
 
   using local_matrix_host_type =

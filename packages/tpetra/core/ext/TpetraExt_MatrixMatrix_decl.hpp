@@ -474,10 +474,10 @@ void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
-  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
-  bool userAssertsThereAreNoRemotes = false,
-  const std::string& label = std::string(),
-  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter,
+  bool userAssertsThereAreNoRemotes,
+  const std::string& label,
+  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 template<class Scalar,
          class LocalOrdinal,
@@ -487,8 +487,8 @@ void import_and_extract_views(
   const BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
   BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
-  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
-  bool userAssertsThereAreNoRemotes = false);
+  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter,
+  bool userAssertsThereAreNoRemotes);
 
 template<class Scalar,
          class LocalOrdinal,
