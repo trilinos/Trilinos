@@ -116,8 +116,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
 // oneMKL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
-#if defined(KOKKOS_ENABLE_SYCL) && \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+#if defined(KOKKOS_ENABLE_SYCL)
 
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_MKL_SYCL(SCALAR, LAYOUT, MEMSPACE)     \
   template <class ExecSpace>                                                   \

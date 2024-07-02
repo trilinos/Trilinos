@@ -47,6 +47,10 @@
 #ifndef TEUCHOS_BLAS_TYPES_HPP
 #define TEUCHOS_BLAS_TYPES_HPP
 
+#ifdef HAVE_TEUCHOSNUMERICS_MKL
+#include "mkl.h"
+#endif
+
 /*! \file Teuchos_BLAS_types.hpp
 	\brief Enumerated types for BLAS input characters.
 */
@@ -117,5 +121,15 @@ namespace Teuchos {
     BAND        /*!< General band */
   };
 }
+
+// Determine the correct internal integer type for passing dimensions
+// and strides to BLAS and LAPACK libraries.
+// Users do not interact with this type directly (they only use
+// OrdinalType, which is usually int).
+#ifdef HAVE_TEUCHOSNUMERICS_MKL
+using TeuchosNumerics_Int = MKL_INT;
+#else
+using TeuchosNumerics_Int = int;
+#endif
 
 #endif // TEUCHOS_BLAS_TYPES_HPP

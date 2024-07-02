@@ -161,8 +161,7 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
-#if defined(KOKKOS_ENABLE_SYCL) && \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE)
+#if defined(KOKKOS_ENABLE_SYCL)
 
 #define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, LAYOUT)               \
   template <class ExecSpace>                                                 \

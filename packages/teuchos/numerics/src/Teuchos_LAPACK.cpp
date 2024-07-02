@@ -81,6 +81,60 @@ namespace {
         unsigned int one=1;
 #endif
 
+// Helper structs to pass TeuchosNumerics_Int* to LAPACK functions,
+// when the user passes in int*.
+// - For input parameters (e.g. dimensions, strides), IntWrapIn takes an int*, converts to
+//   a TeuchosNumerics_Int internally, and provides an implicit conversion operator to const TeuchosNumerics_Int*.
+// - For output parameters (e.g. info), IntWrapOut is constructed with pointer to int*, and also stores a TeuchosNumerics_Int
+//   internally. This is exposed through operator TeuchosNumerics_Int*. On destruction, the value of this is copied to the int*. 
+// - Both input and output wrapper constructors take optional num argument, which is the size of the array. Defaults to 1.
+struct IntWrapIn
+{
+  IntWrapIn(const int* i) : tn_i(*i) {}
+  operator const TeuchosNumerics_Int*() const {return &tn_i;}
+  TeuchosNumerics_Int tn_i;
+};
+
+struct IntWrapOut
+{
+  IntWrapOut(int* i_) : i(i_), tn_i(*i_) {}
+  ~IntWrapOut() {*i = tn_i;}
+  operator TeuchosNumerics_Int*() {return &tn_i;}
+  int* i;
+  TeuchosNumerics_Int tn_i;
+};
+
+struct IntArrayWrapIn
+{
+  IntArrayWrapIn(const int* arr, int num)
+  {
+    tn_arr = new TeuchosNumerics_Int[num];
+    for(int i = 0; i < num; i++)
+      tn_arr[i] = arr[i];
+  }
+  ~IntArrayWrapIn() { delete[] tn_arr; }
+  operator const TeuchosNumerics_Int*() const {return tn_arr;}
+  TeuchosNumerics_Int* tn_arr;
+};
+
+struct IntArrayWrapOut
+{
+  IntArrayWrapOut(int* arr_, int num_) : arr(arr_), num(num_)
+  {
+    tn_arr = new TeuchosNumerics_Int[num];
+  }
+  ~IntArrayWrapOut()
+  {
+    for(int i = 0; i < num; i++)
+      arr[i] = tn_arr[i];
+    delete[] tn_arr;
+  }
+  operator TeuchosNumerics_Int*() {return tn_arr;}
+  int* arr;
+  int num;
+  TeuchosNumerics_Int* tn_arr;
+};
+
 // Use a wrapper function to handle calling ILAENV().  This removes
 // duplicaiton and avoid name lookup problems with member functions called
 // ILAENV() trying to call nonmember functions called ILAENV() (which does not
@@ -100,8 +154,6 @@ int ilaenv_wrapper(
 
 } // namespace
 
-
-
 extern "C" {
 
 
@@ -109,6 +161,7 @@ typedef int (*gees_nullfptr_t)(double*,double*);
 
 
 } // extern "C"
+
 
 
 namespace Teuchos
