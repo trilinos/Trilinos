@@ -40,6 +40,13 @@
     <Parameter name="smoother: type" type="string" value="none"/>
     <Parameter name="coarse: type" type="string" value="none"/>
 
+    <Parameter name="aggregation: match ML phase1" type="bool" value="true"/>
+    <Parameter name="aggregation: match ML phase2a" type="bool" value="true"/>
+    <Parameter name="aggregation: match ML phase2b" type="bool" value="true"/>
+    <Parameter name="aggregation: use ml scaling of drop tol" type="bool" value="true"/>
+    <Parameter name="rap: fix zero diagonals" type="bool" value="true"/>
+    <Parameter name="rap: fix zero diagonals threshold" type="double" value="1e-10"/>
+    
     <!-- Currently needed but we should fix this -->
     <Parameter name="tentative: constant column sums" type="bool" value="false"/>
     <Parameter name="tentative: calculate qr" type="bool" value="false"/>
@@ -59,7 +66,6 @@
     <Parameter name="repartition: rebalance P and R"          type="bool"     value="true"/>
 
     <ParameterList name="repartition: params">
-       <Parameter name="algorithm" type="string" value="multijagged"/>
     </ParameterList>
     <!-- end of default values -->
 

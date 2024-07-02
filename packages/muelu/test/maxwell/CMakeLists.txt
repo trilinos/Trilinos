@@ -39,6 +39,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
       ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml --ensure-kn"
       COMM serial mpi
       NUM_MPI_PROCS 4
       )

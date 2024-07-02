@@ -1053,21 +1053,11 @@
       <type>string</type>
       <default>"{}"</default>
       <description>Keep a subset of the hierarchy data after the
-      hierarchy is constructed.  Use comma-separated array in braces</description>
+      hierarchy is constructed.  This could be for disk I/O, or for
+      use in other preconditioners. Use comma-separated array in braces</description>
       <visible>false</visible>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
-
-    <parameter>
-      <name>save data</name>
-      <type>string</type>
-      <default>"{}"</default>
-      <description>Data to dump to disk after the
-      hierarchy is constructed.  Use comma-separated array in braces</description>
-      <visible>false</visible>
-      <comment-ML>not supported by ML</comment-ML>
-    </parameter>
-
 
     <parameter>
       <name>print initial parameters</name>
@@ -1786,6 +1776,16 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>repartition: save importer</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Mark Importer as 'Final' to keep it on the hierarchy after setup is complete.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    
   </rebalancing>
 
   <rap>
