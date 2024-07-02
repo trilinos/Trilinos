@@ -53,16 +53,12 @@
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_IO.hpp>
 
 #include "MueLu_RAPFactory_decl.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-//#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

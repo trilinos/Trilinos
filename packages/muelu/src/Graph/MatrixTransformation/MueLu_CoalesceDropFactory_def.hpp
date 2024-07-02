@@ -1902,7 +1902,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagon
     auto boundaryNodesVector = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(inputGraph->GetDomainMap());
     for (size_t i = 0; i < inputGraph->GetNodeNumVertices(); i++)
       boundaryNodesVector->getDataNonConst(0)[i] = boundaryNodes[i];
-    // Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Write("boundary",*boundaryNodesVector);
+    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::WriteLOMV("boundary",*boundaryNodesVector);
     auto boundaryColumnVector = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(inputGraph->GetImportMap());
     boundaryColumnVector->doImport(*boundaryNodesVector, *importer, Xpetra::INSERT);
     auto boundaryColumn = boundaryColumnVector->getData(0);

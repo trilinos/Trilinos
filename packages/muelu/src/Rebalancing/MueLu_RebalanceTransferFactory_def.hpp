@@ -154,7 +154,7 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
     std::string fileName                    = "BlockNumber_level_0.m";
     RCP<LocalOrdinalVector> fineBlockNumber = fineLevel.Get<RCP<LocalOrdinalVector> >("BlockNumber");
     if (fineBlockNumber != Teuchos::null)
-      Xpetra::IO<LO, LO, GO, NO>::Write(fileName, *fineBlockNumber);
+      Xpetra::IO<SC, LO, GO, NO>::WriteLOMV(fileName, *fineBlockNumber);
   }
 
   RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");
@@ -349,7 +349,7 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
 
       std::string fileName = "rebalanced_BlockNumber_level_" + toString(coarseLevel.GetLevelID()) + ".m";
       if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedBlockNumber->getMap() != Teuchos::null)
-        Xpetra::IO<LO, LO, GO, NO>::Write(fileName, *permutedBlockNumber);
+        Xpetra::IO<SC, LO, GO, NO>::WriteLOMV(fileName, *permutedBlockNumber);
     }
 
     if (IsAvailable(coarseLevel, "Nullspace")) {

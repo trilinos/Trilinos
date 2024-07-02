@@ -471,7 +471,7 @@ void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
 
   if (pL.get<bool>("aggregate qualities: file output")) {
     std::string filename = pL.get<std::string>("aggregate qualities: file base") + ".sizes." + std::to_string(level.GetLevelID());
-    Xpetra::IO<LO, LO, GO, Node>::Write(filename, *agg_sizes);
+    Xpetra::IO<SC, LO, GO, Node>::WriteLOMV(filename, *agg_sizes);
   }
 
   {
