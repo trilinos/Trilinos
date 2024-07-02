@@ -66,7 +66,7 @@ int Constraint_Partitioned<Real>::getNumberConstraintEvaluations(void) const {
 
 template<typename Real>
 Ptr<Constraint<Real>> Constraint_Partitioned<Real>::get(int ind) const {
-  if (ind < 0 || ind > static_cast<int>(cvec_.size())) {
+  if (ind < 0 || ind >= static_cast<int>(cvec_.size())) {
     throw Exception::NotImplemented(">>> Constraint_Partitioned::get : Index out of bounds!");
   }
   return cvec_[ind];
