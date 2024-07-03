@@ -221,7 +221,7 @@ public:
    *  @param[in] blockID - The element block id
    *  @param[in] fieldNum - A vector field numbers
    */
-  const PHX::ViewOfViews3<1,PHX::View<const int*>> getGIDFieldOffsetsKokkos(const std::string & blockID, const std::vector<int> & fieldNum) const;
+  const PHX::ViewOfViews<1,PHX::View<const int*>> getGIDFieldOffsetsKokkos(const std::string & blockID, const std::vector<int> & fieldNum) const;
 
   //! get associated GIDs for a given local element
   void getElementGIDs(panzer::LocalOrdinal localElementID, std::vector<panzer::GlobalOrdinal> & gids, const std::string & blockIdHint="") const;

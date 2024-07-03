@@ -114,7 +114,7 @@ private:
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
-  PHX::ViewOfViews3<1,PHX::View<ScalarT**>> gatherFieldsVoV_;
+  PHX::ViewOfViews<1,PHX::View<ScalarT**>> gatherFieldsVoV_;
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
