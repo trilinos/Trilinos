@@ -117,17 +117,47 @@ int Amesos_CssMKL::ConvertToCssMKL()
 {
   ResetTimer();
 
+  // =========================================================== //
+  // Load Matrix from Problem                                    //
+  // =========================================================== //
+  OriginalMatrix_ = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+  if  ( Reindex_ ) {
+#ifdef HAVE_AMESOS_EPETRAEXT
+    auto CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
+    if(!CrsMatrix) {
+      std::cerr << "Amesos_CssMKL requires CsrMatrix to reindex matrices." << std::endl;
+      AMESOS_CHK_ERR(-8);
+    }
+    const Epetra_Map& OriginalMap = CrsMatrix->RowMap();
+    StdIndex_ = rcp( new Amesos_StandardIndex( OriginalMap  ) );
+    Matrix_ = StdIndex_->StandardizeIndex( CrsMatrix );
+    if(!Matrix_) {
+      std::cerr << "Amesos_CssMKL reindexing failed" << std::endl;
+      AMESOS_CHK_ERR(-8);
+    }
+#else
+    std::cerr << "Amesos_CssMKL requires EpetraExt to reindex matrices." << std::endl;
+    AMESOS_CHK_ERR(-8);
+#endif
+  } else {
+    Matrix_ = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+  }
+
+  // =========================================================== //
+  // Read Matrix into Crs (with Linear/Uniform index)            //
+  // =========================================================== //
   int ierr;
-  int MaxNumEntries_ = Matrix().MaxNumEntries();
-  int NumMyElements = Matrix().NumMyRows(); 
-  int nnz_loc = Matrix().NumMyNonzeros();
+  int MaxNumEntries_ = Matrix_->MaxNumEntries();
+  int NumMyElements = Matrix_->NumMyRows(); 
+  int nnz_loc = Matrix_->NumMyNonzeros();
   ia_.resize( NumMyElements+1 );
   ja_.resize( EPETRA_MAX( NumMyElements, nnz_loc) ); 
   aa_.resize( EPETRA_MAX( NumMyElements, nnz_loc) ); 
 
   std::vector<int> ColIndicesV_(MaxNumEntries_);
   std::vector<double> RowValuesV_(MaxNumEntries_);
-  int *Global_Columns_ = Matrix().RowMatrixColMap().MyGlobalElements();
+
+  int *Global_Columns_ = Matrix_->RowMatrixColMap().MyGlobalElements();
 
   // for sorting column indexes
   typedef std::pair<int, double> Data;
@@ -138,7 +168,7 @@ int Amesos_CssMKL::ConvertToCssMKL()
   int Ai_index = 0;
   for (int MyRow = 0; MyRow < NumMyElements ; MyRow++) 
   {
-    ierr = Matrix().ExtractMyRowCopy(MyRow, MaxNumEntries_, NzThisRow,
+    ierr = Matrix_->ExtractMyRowCopy(MyRow, MaxNumEntries_, NzThisRow,
                                             &RowValuesV_[0], &ColIndicesV_[0]);
     AMESOS_CHK_ERR(ierr);
 
@@ -209,7 +239,7 @@ int Amesos_CssMKL::PerformSymbolicFactorization()
     CssComm_ = MPI_Comm_c2f(CssEComm);
 
     // Set matrix 1D block distribution
-    auto rangeMap = GetProblem()->GetOperator()->OperatorRangeMap();
+    auto rangeMap = Matrix_->RowMatrixRowMap();
     int n = Matrix_->NumGlobalRows();
     int first_row = rangeMap.MinMyGID();
     int last_row  = rangeMap.MaxMyGID();
@@ -286,11 +316,6 @@ int Amesos_CssMKL::SymbolicFactorization()
   ++NumSymbolicFact_;
 
   // =========================================================== //
-  // Load Matrix from Problem                                    //
-  // =========================================================== //
-  Matrix_ = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
-
-  // =========================================================== //
   // Convert the matrix into CSR format,                         //
   // =========================================================== //
   ConvertToCssMKL();
@@ -314,11 +339,6 @@ int Amesos_CssMKL::NumericFactorization()
     AMESOS_CHK_ERR(SymbolicFactorization());
 
   ++NumNumericFact_;
-
-  // =========================================================== //
-  // (Re)Load Matrix from Problem                                //
-  // =========================================================== //
-  Matrix_ = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
 
   // =========================================================== //
   // (Re)Convert the matrix into CSR format,                     //
