@@ -32,7 +32,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamInitialize) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v;
+    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v;
 
     TEST_ASSERT(!v_of_v.isInitialized());
     v_of_v.initialize("outer host",2,2);
@@ -70,7 +70,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamInitialize) {
 
     // Test the const versions of accessors
     {
-      const PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t>& const_v_of_v = v_of_v;
+      const PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>& const_v_of_v = v_of_v;
       const_v_of_v.getViewHost();
       const_v_of_v.getViewDevice();
     }
@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamCtor) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v("outer host",2,2);
+    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v("outer host",2,2);
 
     TEST_ASSERT(v_of_v.isInitialized());
 
@@ -176,7 +176,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v(streams[3],"outer host",2,2);
+    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v(streams[3],"outer host",2,2);
 
     TEST_ASSERT(v_of_v.isInitialized());
 
@@ -258,7 +258,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v;
+    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v;
 
     TEST_ASSERT(!v_of_v.isInitialized());
     v_of_v.initialize(streams[3],"outer host",2,2);
@@ -325,7 +325,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
 // constructed and destoryed. Happens in application unit tests.
 struct MeshEvaluationTestStruct {
     using InnerView = Kokkos::View<double***,mem_t>;
-    PHX::ViewOfViews3<2,InnerView,mem_t> v_of_v_;
+    PHX::ViewOfViews<2,InnerView,mem_t> v_of_v_;
 };
 
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultCtorDtor) {
@@ -456,7 +456,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
   // Rank 1 outer view
   {
-    PHX::ViewOfViews3<1,InnerView,mem_t> pvov("vov1",4);
+    PHX::ViewOfViews<1,InnerView,mem_t> pvov("vov1",4);
     pvov.addView(a,0);
     pvov.addView(b,1);
     pvov.addView(c,2);
@@ -485,7 +485,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
   // Rank 2 outer view
   {
-    PHX::ViewOfViews3<2,InnerView,mem_t> pvov("vov1",2,2);
+    PHX::ViewOfViews<2,InnerView,mem_t> pvov("vov1",2,2);
     pvov.addView(a,0,0);
     pvov.addView(b,0,1);
     pvov.addView(c,1,0);
@@ -514,7 +514,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
   // Rank 3 outer view
   {
-    PHX::ViewOfViews3<3,InnerView,mem_t> pvov("vov1",3,3,3);
+    PHX::ViewOfViews<3,InnerView,mem_t> pvov("vov1",3,3,3);
     pvov.addView(a,0,0,0);
     pvov.addView(b,1,1,1);
     pvov.addView(c,2,2,2);
@@ -545,9 +545,9 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
 using ScalarType = Sacado::Fad::DFad<double>;
 
-PHX::ViewOfViews3<2,PHX::View<ScalarType**>,PHX::Device> createVoV()
+PHX::ViewOfViews<2,PHX::View<ScalarType**>,PHX::Device> createVoV()
 {
-  PHX::ViewOfViews3<2,PHX::View<ScalarType**>,PHX::Device> tmp;
+  PHX::ViewOfViews<2,PHX::View<ScalarType**>,PHX::Device> tmp;
 
   tmp.initialize("tmp from createVoV()",2,2);
   const int num_cells = 10;
@@ -570,7 +570,7 @@ PHX::ViewOfViews3<2,PHX::View<ScalarType**>,PHX::Device> createVoV()
 // Simulates panzer DOFManager use case where the DOFManager creates a
 // VoV and returns it to an evaluator in the evalauteFields method.
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
-  PHX::ViewOfViews3<2,PHX::View<ScalarType**>,PHX::Device> vov;
+  PHX::ViewOfViews<2,PHX::View<ScalarType**>,PHX::Device> vov;
 
   for (int i=0; i < 2; ++i) {
     vov = createVoV();

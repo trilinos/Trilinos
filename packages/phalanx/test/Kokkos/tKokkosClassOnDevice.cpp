@@ -33,7 +33,7 @@ class MyClass {
   Vector<double,3> d_;
   // To test for cuda warnings when MyClass is lambda captured to
   // device
-  PHX::ViewOfViews3<1,Kokkos::View<double*>> e_;
+  PHX::ViewOfViews<1,Kokkos::View<double*>> e_;
 
 public:
   MyClass() :

@@ -80,7 +80,7 @@ namespace PHX {
       implementation does that here.
   */
   template<int OuterViewRank,typename InnerViewType,typename... OuterViewProps>
-  class ViewOfViews3 {
+  class ViewOfViews {
 
   public:
     // Layout of the outer view doesn't matter for performance so we
@@ -110,7 +110,7 @@ namespace PHX {
   public:
     /// Ctor that uses the default execution space instance.
     template<typename... Extents>
-    ViewOfViews3(const std::string name,Extents... extents)
+    ViewOfViews(const std::string name,Extents... extents)
       : view_host_(name,extents...),
         view_device_(name,extents...),
         device_view_is_synced_(false),
@@ -127,7 +127,7 @@ namespace PHX {
     /// execution space instance, the function does not internally
     /// fence. Be sure to manually fence as needed.
     template<typename ExecSpace,typename... Extents>
-    ViewOfViews3(const ExecSpace& e_space,const std::string name,Extents... extents)
+    ViewOfViews(const ExecSpace& e_space,const std::string name,Extents... extents)
       : view_host_(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...),
         view_device_(Kokkos::view_alloc(e_space,name),extents...),
         device_view_is_synced_(false),
@@ -139,22 +139,22 @@ namespace PHX {
       use_count_ = view_device_.impl_track().use_count();
     }
 
-    ViewOfViews3()
+    ViewOfViews()
       : device_view_is_synced_(false),
         is_initialized_(false),
         use_count_(0),
         check_use_count_(true)
     {}
 
-    ViewOfViews3(const ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
-    ViewOfViews3& operator=(const ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
-    ViewOfViews3(ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>&& src) = default;
-    ViewOfViews3& operator=(ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>&& ) = default;
+    ViewOfViews(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
+    ViewOfViews& operator=(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
+    ViewOfViews(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& src) = default;
+    ViewOfViews& operator=(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& ) = default;
 
     // Making this a kokkos function eliminates cuda compiler warnings
-    // in objects that contain ViewOfViews3 that are copied to device.
+    // in objects that contain ViewOfViews that are copied to device.
     KOKKOS_INLINE_FUNCTION
-    ~ViewOfViews3()
+    ~ViewOfViews()
     {
       // Make sure there is not another object pointing to the device
       // view if the host view is about to be deleted. The host view
@@ -223,7 +223,7 @@ namespace PHX {
     void addView(InnerViewType v,Indices... i)
     {
       static_assert(sizeof...(Indices)==OuterViewRank,
-        "Error: PHX::ViewOfViews3::addView() - the number of indices must match the outer view rank!");
+        "Error: PHX::ViewOfViews::addView() - the number of indices must match the outer view rank!");
 
       TEUCHOS_ASSERT(is_initialized_);
 
@@ -304,12 +304,12 @@ namespace PHX {
 
   /// Returns a rank-1 view of views where both the outer and inner views are on host. Values are deep_copied from input v_of_v.
   template<typename InnerViewType,typename... OuterViewProps>
-  auto createHostHostViewOfViews(const PHX::ViewOfViews3<1,InnerViewType,OuterViewProps...>& vov)
+  auto createHostHostViewOfViews(const PHX::ViewOfViews<1,InnerViewType,OuterViewProps...>& vov)
   {
     auto outer_host_inner_device_vov = vov.getViewHost();
     using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),outer_host_inner_device_vov(0)));
-    PHX::ViewOfViews3<1,HostInnerViewType,OuterViewProps...> host_host_vov("OuterHostInnerHost VOV: "+vov.getViewHost().label(),
-                                                                           vov.getViewHost().extent(0));
+    PHX::ViewOfViews<1,HostInnerViewType,OuterViewProps...> host_host_vov("OuterHostInnerHost VOV: "+vov.getViewHost().label(),
+                                                                          vov.getViewHost().extent(0));
     for (size_t i=0; i < outer_host_inner_device_vov.extent(0); ++i) {
       host_host_vov.addView(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),outer_host_inner_device_vov(i)),i);
     }
@@ -318,13 +318,13 @@ namespace PHX {
 
   /// Returns a rank-2 view of views where both the outer and inner views are on host. Values are deep_copied from input v_of_v.
   template<typename InnerViewType,typename... OuterViewProps>
-  auto createHostHostViewOfViews(const PHX::ViewOfViews3<2,InnerViewType,OuterViewProps...>& vov)
+  auto createHostHostViewOfViews(const PHX::ViewOfViews<2,InnerViewType,OuterViewProps...>& vov)
   {
     auto outer_host_inner_device_vov = vov.getViewHost();
     using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),outer_host_inner_device_vov(0,0)));
-    PHX::ViewOfViews3<2,HostInnerViewType,OuterViewProps...> host_host_vov("OuterHostInnerHost VOV: "+vov.getViewHost().label(),
-                                                                           vov.getViewHost().extent(0),
-                                                                           vov.getViewHost().extent(1));
+    PHX::ViewOfViews<2,HostInnerViewType,OuterViewProps...> host_host_vov("OuterHostInnerHost VOV: "+vov.getViewHost().label(),
+                                                                          vov.getViewHost().extent(0),
+                                                                          vov.getViewHost().extent(1));
     for (size_t i=0; i < outer_host_inner_device_vov.extent(0); ++i) {
       for (size_t j=0; j < outer_host_inner_device_vov.extent(1); ++j) {
         host_host_vov.addView(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),outer_host_inner_device_vov(i,j)),i,j);
@@ -335,14 +335,14 @@ namespace PHX {
 
   /// Returns a rank-3 view of views where both the outer and inner views are on host. Values are deep_copied from input v_of_v.
   template<typename InnerViewType,typename... OuterViewProps>
-  auto createHostHostViewOfViews(const PHX::ViewOfViews3<3,InnerViewType,OuterViewProps...>& vov)
+  auto createHostHostViewOfViews(const PHX::ViewOfViews<3,InnerViewType,OuterViewProps...>& vov)
   {
     auto outer_host_inner_device_vov = vov.getViewHost();
     using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),outer_host_inner_device_vov(0,0,0)));
-    PHX::ViewOfViews3<3,HostInnerViewType,OuterViewProps...> host_host_vov("OuterHostInnerHost VOV: "+vov.getViewHost().label(),
-                                                                           vov.getViewHost().extent(0),
-                                                                           vov.getViewHost().extent(1),
-                                                                           vov.getViewHost().extent(2));
+    PHX::ViewOfViews<3,HostInnerViewType,OuterViewProps...> host_host_vov("OuterHostInnerHost VOV: "+vov.getViewHost().label(),
+                                                                          vov.getViewHost().extent(0),
+                                                                          vov.getViewHost().extent(1),
+                                                                          vov.getViewHost().extent(2));
     for (size_t i=0; i < outer_host_inner_device_vov.extent(0); ++i) {
       for (size_t j=0; j < outer_host_inner_device_vov.extent(1); ++j) {
         for (size_t k=0; k < outer_host_inner_device_vov.extent(2); ++k) {
@@ -355,7 +355,7 @@ namespace PHX {
 
   // Old declaration for backwards compatibility
   template<int OuterViewRank,typename InnerViewType,typename... OuterViewProps>
-  using ViewOfViews = ViewOfViews3<OuterViewRank,InnerViewType,OuterViewProps...>;
+  using ViewOfViews3 = ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>;
 
 } // namespace PHX
 
