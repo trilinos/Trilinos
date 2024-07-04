@@ -1208,6 +1208,13 @@ TEUCHOS_UNIT_TEST( ParameterList, print ) {
   }
 }
 
+TEUCHOS_UNIT_TEST( ParameterList, NonPrintableParameterEntries){
+    enum class Shape : int { CIRCLE, SQUARE, TRIANGLE };
+    ParameterList paramList = ParameterList("MyParameters");
+    paramList.set("test enum class", Shape::SQUARE);
+    paramList.print();
+  }
+
 } // namespace Teuchos
 
 
