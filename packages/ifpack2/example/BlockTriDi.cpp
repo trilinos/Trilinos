@@ -18,7 +18,7 @@ namespace { // (anonymous)
 
 // Values of command-line arguments.
 struct CmdLineArgs {
-  CmdLineArgs ():blockSize(-1),numIters(10),numRepeats(1),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),sublinesPerLineSchur(1),useStackedTimer(false),usePointMatrix(false),overlapCommAndComp(false),useSingleFile(false){}
+  CmdLineArgs ():blockSize(-1),numIters(10),numRepeats(1),tol(1e-12),nx(172),ny(-1),nz(-1),mx(1),my(1),mz(1),sublinesPerLine(1),sublinesPerLineSchur(1),useStackedTimer(false),usePointMatrix(false),overlapCommAndComp(false),useSingleFile(false),skipLineFile(false){}
 
   std::string mapFilename;
   std::string matrixFilename;
@@ -40,6 +40,7 @@ struct CmdLineArgs {
   bool usePointMatrix;
   bool overlapCommAndComp;
   bool useSingleFile;
+  bool skipLineFile;
   std::string problemName;
   std::string matrixType;
 };
@@ -76,6 +77,8 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
 		  "Whether to run with overlapCommAndComp");
   cmdp.setOption ("useSingeFile", "useOneFilePerRank", &args.useSingleFile,
 		  "Whether to read the matrix from one file or one file per rank");
+  cmdp.setOption ("skipLineFile", "readLineFile", &args.skipLineFile,
+		  "Whether to skip the lineFile and use a block Jacobi");
   cmdp.setOption("problemName", &args.problemName, "Human-readable problem name for Watchr plot");
   cmdp.setOption("matrixType", &args.matrixType, "matrixType");
   cmdp.setOption("sublinesPerLineSchur", &args.sublinesPerLineSchur, "sublinesPerLineSchur");
@@ -353,7 +356,7 @@ main (int argc, char* argv[])
       if (rank0) cerr << "Must specify filename for loading right-hand side(s)!" << endl;
       return EXIT_FAILURE;
     }
-    if (args.lineFilename == "") {
+    if (!args.skipLineFile && args.lineFilename == "") {
       if (rank0) cerr << "Must specify filename for loading line information!" << endl;
       return EXIT_FAILURE;    
     }
@@ -512,17 +515,26 @@ main (int argc, char* argv[])
       }
 
 
-      // Read line information vector
-      // We assume the vector contains the local line ids for each node
-      if(rank0) std::cout<<"Reading line info file..."<<std::endl;
-      RCP<const map_type> block_map = Ablock->getRowMap();
-      line_info = LO_reader_type::readVectorFile(args.lineFilename, comm, block_map);
-      if (line_info.is_null ()) {
-        if (rank0) {
-          cerr << "Failed to load line_info from file \""
-               << args.lineFilename << "\"!" << endl;
+      if(args.skipLineFile) {
+        line_info = rcp(new IV(Ablock->getRowMap()));
+        auto line_ids = line_info->get1dViewNonConst();
+        for(LO i=0; i<(LO)line_ids.size(); i++) {
+          line_ids[i] = i;
         }
-        return EXIT_FAILURE;
+      }
+      else {
+        // Read line information vector
+        // We assume the vector contains the local line ids for each node
+        if(rank0) std::cout<<"Reading line info file..."<<std::endl;
+        RCP<const map_type> block_map = Ablock->getRowMap();
+        line_info = LO_reader_type::readVectorFile(args.lineFilename, comm, block_map);
+        if (line_info.is_null ()) {
+          if (rank0) {
+            cerr << "Failed to load line_info from file \""
+                << args.lineFilename << "\"!" << endl;
+          }
+          return EXIT_FAILURE;
+        }
       }
 
     }
