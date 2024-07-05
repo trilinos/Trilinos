@@ -106,7 +106,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     RCP<const StridedMap> stridedRowMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
     TEUCHOS_TEST_FOR_EXCEPTION(stridedRowMap == Teuchos::null, Exceptions::BadCast, "MueLu::CoalesceFactory::Build: cast to strided row map failed.");
     fullblocksize = stridedRowMap->getFixedBlockSize();
-    offset        = GidOffset(stridedRowMap);
+    offset        = DOFGidOffset(stridedRowMap);
     blockid       = stridedRowMap->getStridedBlockId();
 
     if (blockid > -1) {
@@ -195,7 +195,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateM
     Teuchos::RCP<const Map> myMap         = A.getRowMap("stridedMaps");
     Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
     TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
-    offset = GidOffset(strMap);
+    offset  = DOFGidOffset(strMap);
     blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
   }
 
@@ -233,8 +233,7 @@ const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GidOffset(RCP<const StridedMap> stridedRowMap) {
-
+const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DOFGidOffset(RCP<const StridedMap> stridedRowMap) {
   GlobalOrdinal offset = stridedRowMap->getMinAllGlobalIndex();
 
   size_t nStridedOffset = 0;

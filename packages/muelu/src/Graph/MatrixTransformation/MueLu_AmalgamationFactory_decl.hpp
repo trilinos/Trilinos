@@ -118,7 +118,7 @@ class AmalgamationFactory : public SingleLevelFactoryBase {
    *
    * @param stridedMap (const StridedMap&): strided map of operator A (matrix)
    */
-  static const GlobalOrdinal GidOffset(RCP<const StridedMap> stridedMap);
+  static const GlobalOrdinal DOFGidOffset(RCP<const StridedMap> stridedMap);
 
   /*! @brief Method to create merged  map for systems of PDEs.
    *
