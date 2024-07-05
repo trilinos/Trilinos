@@ -114,6 +114,12 @@ class AmalgamationFactory : public SingleLevelFactoryBase {
   static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/,
                                            const GlobalOrdinal indexBase /* = 0*/);
 
+  /*! @brief Method to calculate the global (row) id offset from scratch.
+   *
+   * @param stridedMap (const StridedMap&): strided map of operator A (matrix)
+   */
+  static const GlobalOrdinal DOFGidOffset(RCP<const StridedMap> stridedMap);
+
   /*! @brief Method to create merged  map for systems of PDEs.
    *
    * @param sourceMap (const Map&): source map with dofs which shall be amalgamated to a node map
