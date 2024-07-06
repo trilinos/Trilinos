@@ -235,6 +235,7 @@ namespace Compadre {
         Power,
         Gaussian,
         CubicSpline,
+        CardinalCubicBSpline,
         Cosine,
         Sigmoid
     };

@@ -688,10 +688,19 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(FEMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "FEMultiVector" "FEMULTIVECTOR" "${MultiVector_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${FEMULTIVECTOR_OUTPUT_FILES})
 
-  # Zoltan2 wants Scalar = int for CrsMatrix (Bug 6298), and thus
-  # indirectly for RowMatrix as well.
-  SET (CrsMatrix_ETI_SCALARS ${MultiVector_ETI_SCALARS})
-
+  # Tpetra::CrsMatrix ETI Support
+  ASSERT_DEFINED(Tpetra_ENABLE_Reduced_ETI)
+  IF(Tpetra_ENABLE_Reduced_ETI)
+    # For Reduced_ETI we don't include int
+    MESSAGE(STATUS "Tpetra: Using Reduced ETI")
+    SET (CrsMatrix_ETI_SCALARS  ${TpetraCore_ETI_SCALARS})
+  ELSE()
+    # Zoltan2 wants Scalar = int for CrsMatrix (Bug 6298), and thus
+    # indirectly for RowMatrix as well.
+    MESSAGE(STATUS "Tpetra: Using Full ETI")
+    SET (CrsMatrix_ETI_SCALARS ${MultiVector_ETI_SCALARS})
+  ENDIF()
+    
   # Generate ETI .cpp files for Tpetra::CrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "CrsMatrix" "CRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${CRSMATRIX_OUTPUT_FILES})

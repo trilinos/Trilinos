@@ -124,19 +124,23 @@ struct compare {
   }
 };
 
+#ifdef HAVE_TPETRA_INST_INT_INT
 template<class LO, class GO, class Node>
 struct compare<int,LO,GO,Node> {
   static bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<int,LO,GO,Node> & g1, Tpetra::CrsMatrix<int,LO,GO,Node> & g2) {
     return compare_final_matrix_structure_impl(out,g1,g2,0);
   }
 };
+#endif
 
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG  
 template<class LO, class GO, class Node>
 struct compare<long long,LO,GO,Node> {
   static bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<long long,LO,GO,Node> & g1, Tpetra::CrsMatrix<long long,LO,GO,Node> & g2) {
     return compare_final_matrix_structure_impl(out,g1,g2,0);
   }
 };
+#endif
 
 template<class LO, class GO, class Node>
 class GraphPack {

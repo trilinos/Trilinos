@@ -132,10 +132,47 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMap, Scalar, Lo
 
 }  // AmalgamateMap
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, DOFGidOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+  // Test static method AmalgamationFactory::DOFGidOffset().
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "Test static method AmalgamationFactory::DOFGidOffset()." << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
+
+  const GO n         = 32;
+  const LO blkSize   = 2;
+  const GO indexBase = 3;
+  const GO offset    = 101;
+
+  std::vector<size_t> stridedInfo;
+  stridedInfo.push_back(blkSize);
+
+  // Case 1: Zero starting GIDs with offset set
+  RCP<StridedMap> correct_strided_map = RCP(new StridedMap(lib, n, indexBase, stridedInfo, comm, 0, offset));
+  TEST_EQUALITY(offset, AmalgamationFactory::DOFGidOffset(correct_strided_map));  // -> offset = 101
+  TEST_EQUALITY(offset, correct_strided_map->getOffset());                        // -> offset = 101
+
+  // Case 2: Non-zero starting GIDs shifted by offset and variable correctly set
+  RCP<StridedMap> still_correct_strided_map = RCP(new StridedMap(correct_strided_map->getMap(), stridedInfo, indexBase, 0, offset));
+  TEST_EQUALITY(offset, AmalgamationFactory::DOFGidOffset(still_correct_strided_map));  // -> offset = 101
+  TEST_EQUALITY(offset, still_correct_strided_map->getOffset());                        // -> offset = 101
+
+  // Case 3: Non-zero starting GIDs shifted by offset, but offset variable information not correctly available
+  // (this can happen if a Xpetra::BlockedCrsMatrix with offset is converted to Thyra -> offset information is lost, but GIDs preserved)
+  RCP<StridedMap> faulty_strided_map = RCP(new StridedMap(correct_strided_map->getMap(), stridedInfo, indexBase));
+  TEST_EQUALITY(offset, AmalgamationFactory::DOFGidOffset(faulty_strided_map));  // -> offset = 101
+  TEST_INEQUALITY(offset, faulty_strided_map->getOffset());                      // -> offset = 0
+
+}  // AmalgamateMap
+
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, Constructor, Scalar, LO, GO, Node)   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGid2NodeId, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMap, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMap, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGidOffset, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

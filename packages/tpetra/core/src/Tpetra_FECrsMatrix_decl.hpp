@@ -52,9 +52,9 @@ namespace Tpetra {
 
 
 
-// \class FECrsMatrix
-// \brief Sparse matrix that presents a row-oriented interface that lets
-//        users read or modify entries.
+/// \class FECrsMatrix
+/// \brief Sparse matrix that presents a row-oriented interface that lets
+///        users read or modify entries.
 template<class Scalar        = ::Tpetra::Details::DefaultTypes::scalar_type,
          class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
@@ -231,13 +231,20 @@ public:
     //! Migrates data to the owned mode
     void endAssembly();
 
-    //! Activates the owned+shared mode for assembly
+    /// \brief Activates the owned+shared mode for assembly
+    ///
+    /// This routine begins the finite element assembly in owned+shared mode.
     void beginAssembly();
 
     //! Closes modification phase
     void endModify();
 
-    //! Activates the owned mode for modifying local values
+    /// \brief Activates the owned mode for modifying local values
+    ///
+    /// This is for use in modifying local values *only*, not information
+    /// which needs to be migrated across ranks.  Applying Dirichlet boundary
+    /// conditions to owned degrees-of-freedom is the architypical example
+    /// of a use-case for beginModify()
     void beginModify();
 
   private:

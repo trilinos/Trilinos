@@ -128,14 +128,14 @@ namespace Amesos2 {
         solverName == "pardisomkl") {
       return true;
     }
-#ifdef HAVE_MPI
+#endif
+#ifdef HAVE_AMESOS2_CSS_MKL
     if (solverName == "amesos2_css_mkl" ||
         solverName == "css_mkl" ||
         solverName == "amesos2_cssmkl"  ||
         solverName == "cssmkl") {
       return true;
     }
-#endif
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK

@@ -158,6 +158,7 @@ private:
     // TODO
   }
 
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH
   void setCallbacksHypergraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
@@ -234,6 +235,7 @@ private:
     // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMeshAdapter<Adapter>,
     //                         (void *) &(*adp));
   }
+  #endif
   
   //! \brief  rcb is always binary
   virtual bool isPartitioningTreeBinary() const
@@ -557,7 +559,9 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH
     setCallbacksHypergraph(adapter);
+#endif
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -573,7 +577,9 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH
     setCallbacksHypergraph(adapter);
+#endif
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -592,7 +598,9 @@ public:
     //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
     //       if we don't have to and we shouldn't as it can take a decent amount of time if the
     //       primary entity is copied
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH
     setCallbacksHypergraph(adapter);
+#endif
     setCallbacksGeom(&(*adapter));
   }
 
@@ -730,6 +738,7 @@ void AlgZoltan<Adapter>::partition(
     (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
   int numObjects=nObj;
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH  
   // The number of objects may be larger than zoltan knows due to copies that 
   // were removed by the hypergraph model
   if (model!=RCP<const Model<Adapter> >() &&
@@ -737,7 +746,8 @@ void AlgZoltan<Adapter>::partition(
       !(dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique())) {
     numObjects=model->getLocalNumObjects();
   }
-
+#endif
+  
   // Load answer into the solution.
   ArrayRCP<part_t> partList(new part_t[numObjects], 0, numObjects, true);
   for (int i = 0; i < nObj; i++) {
@@ -745,7 +755,7 @@ void AlgZoltan<Adapter>::partition(
     TPL_Traits<lno_t, ZOLTAN_ID_PTR>::ASSIGN(tmp, &(oLids[i*nLidEnt]));
     partList[tmp] = oParts[i];
   }
-  
+#ifdef HAVE_ZOLTAN2_HYPERGRAPH  
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
       !(dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique())) {
@@ -778,6 +788,7 @@ void AlgZoltan<Adapter>::partition(
     for (lno_t i = 0; i < nlocal; i++)
       partList[i] = vecWithCopies.getData()[i];
   }
+#endif
   
   solution->setParts(partList);
 
