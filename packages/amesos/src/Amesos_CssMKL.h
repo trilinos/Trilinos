@@ -35,6 +35,7 @@
 #include "Amesos_Utils.h"
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
+#include "Amesos_Support.h"
 #include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
@@ -147,9 +148,9 @@ private:
   int PerformSymbolicFactorization();
   int PerformNumericFactorization(); 
 
-  Teuchos::RCP<Epetra_Import> Importer_;
 
-  const Epetra_Map* Map_;
+  Teuchos::RCP<Amesos_StandardIndex> StdIndex_;
+  const Epetra_RowMatrix* OriginalMatrix_;
   const Epetra_RowMatrix* Matrix_;
 
   //! If \c true, the transpose of A is used.
