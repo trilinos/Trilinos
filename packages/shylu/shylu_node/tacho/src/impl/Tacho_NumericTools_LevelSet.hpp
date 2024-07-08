@@ -2249,6 +2249,21 @@ public:
     exit(0);
     #endif
 #if defined(KOKKOS_ENABLE_CUDA)
+    // Re-create CuSparse CSR
+    if (s0.spmv_explicit_transpose) {
+      size_t nnz = s0.nzvalsL.extent(0);
+      cusparseCreateCsr(&s0.L_cusparse, m, m, nnz,
+                        s0.rowptrL.data(), s0.colindL.data(), s0.nzvalsL.data(),
+                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                        CUSPARSE_INDEX_BASE_ZERO, computeType);
+    } else {
+      size_t nnz = s0.nzvalsU.extent(0);
+      cusparseCreateCsr(&s0.L_cusparse, m, m, nnz,
+                        s0.rowptrU.data(), s0.colindU.data(), s0.nzvalsU.data(),
+                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                        CUSPARSE_INDEX_BASE_ZERO, computeType);
+    }
+    // Call SpMV/SPMM
     cusparseStatus_t status;
     if (nrhs > 1) {
       if (lvl == nlvls-1) {
@@ -2600,6 +2615,13 @@ public:
     }
 
     cusparseStatus_t status;
+    // Re-create CuSparse CSR
+    size_t nnz = s0.nzvalsU.extent(0);
+    cusparseCreateCsr(&s0.U_cusparse, m, m, nnz,
+                      s0.rowptrU.data(), s0.colindU.data(), s0.nzvalsU.data(),
+                      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                      CUSPARSE_INDEX_BASE_ZERO, computeType);
+    // Call SpMV/SPMM
     if (nrhs > 1) {
       if (lvl == 0) {
         // start : create DnMat for T
@@ -3590,7 +3612,6 @@ public:
           }
         }
       } // end of lower tri solve
-
       {
         typedef TeamFunctor_SolveUpperChol<supernode_info_type> functor_type;
 #if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
