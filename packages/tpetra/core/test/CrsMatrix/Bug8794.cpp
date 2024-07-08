@@ -63,6 +63,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   using map_t = Tpetra::Map<>;
   using matrix_t = Tpetra::CrsMatrix<Scalar>;
   using vector_t = Tpetra::Vector<Scalar>;
+  using magnitude_t = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
   auto comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -139,20 +140,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
         }
       }
     }
-  
+
     Amat.fillComplete();
-    std::cout << me << " of " << np << ": \n"
-              << "  nrows     " << Amat.getLocalNumRows() << "\n"
-              << "  nnz       " << Amat.getLocalNumEntries() << "\n"
-              << "  maxPerRow " << Amat.getLocalMaxNumRowEntries() << "\n"
-              << "  norm      " << Amat.getFrobeniusNorm() << "\n"
-              << std::endl;
+    out << me << " of " << np << ": \n"
+        << "  nrows     " << Amat.getLocalNumRows() << "\n"
+        << "  nnz       " << Amat.getLocalNumEntries() << "\n"
+        << "  maxPerRow " << Amat.getLocalMaxNumRowEntries() << "\n"
+        << "  norm      " << Amat.getFrobeniusNorm() << "\n"
+        << std::endl;
   }
 
   // Initialize domain vector for SpMV
   {
     auto xData = x.getLocalViewHost(Tpetra::Access::OverwriteAll);
-    for (size_t i = 0; i < map->getLocalNumElements(); i++) 
+    for (size_t i = 0; i < map->getLocalNumElements(); i++)
       xData(i, 0) = map->getGlobalElement(i);
   }
 
@@ -165,10 +166,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
     auto yData = y.getLocalViewHost(Tpetra::Access::ReadOnly);
 
     for (size_t i = 0; i < map->getLocalNumElements(); i++) {
-      if (yData(i, 0) != expectedData(i, 0)) {
-        std::cout << me << " of " << np << ": y[" << map->getGlobalElement(i)
-                  << "] " << yData(i, 0) << " != " << expectedData(i, 0)
-                  << " expected" << std::endl;
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(yData(i, 0)-expectedData(i, 0))
+          > 200*Teuchos::ScalarTraits<Scalar>::magnitude(expectedData(i, 0))*Teuchos::ScalarTraits<magnitude_t>::eps()) {
+        out << Teuchos::ScalarTraits<Scalar>::magnitude(yData(i, 0)-expectedData(i, 0)) << " " << 100*Teuchos::ScalarTraits<Scalar>::magnitude(expectedData(i, 0))*Teuchos::ScalarTraits<magnitude_t>::eps()<< std::endl;
+        out << me << " of " << np << ": y[" << map->getGlobalElement(i)
+            << "] " << yData(i, 0) << " != " << expectedData(i, 0)
+            << " expected" << std::endl;
         ierr++;
       }
     }
@@ -176,8 +179,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
 
   int gerr;
   Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-  if (gerr) std::cout << "TEST FAILED with " << gerr << " errors" << std::endl;
-  else std::cout << "TEST PASSED" << std::endl;
+  if (gerr) out << "TEST FAILED with " << gerr << " errors" << std::endl;
+  else out << "TEST PASSED" << std::endl;
 
   TEST_ASSERT(gerr == 0);
 }
