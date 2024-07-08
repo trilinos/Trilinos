@@ -1,7 +1,7 @@
 The design directory contains some ideas and tests we should keep for
 informational purposes.
 
-The ViewOfView files show three different designs. The firsst two were
+The ViewOfView files show three different designs. The first two were
 too restrictive due to added template parameters for the inner view to
 force it to be unmanaged. If codes wanted to grab an inner view and
 pass through functions, then they needed to have an exact match on the
