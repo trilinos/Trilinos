@@ -10,3 +10,4 @@ Contact lead developers:
 
 * Intrepid2 team     (GitHub handle: @trilinos/intrepid2)
 * Mauro Perego       (GitHub handle: [mperego](https://github.com/mperego) or mperego@sandia.gov)
+* Nathan Roberts     (GitHub handle: [CamelliaDPG](https://github.com/CamelliaDPG) or nvrober@sandia.gov)
