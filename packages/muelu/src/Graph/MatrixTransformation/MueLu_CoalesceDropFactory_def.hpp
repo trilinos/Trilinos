@@ -443,11 +443,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         // RS style needs the max negative off-diagonal, SA style needs the diagonal
         if (useSignedClassicalRS) {
           if (ghostedBlockNumber.is_null()) {
-            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A);
+            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A)->getData(0);
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Calculated max point off-diagonal" << std::endl;
           } else {
-            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A, *ghostedBlockNumber);
+            negMaxOffDiagonal = MueLu::Utilities<SC, LO, GO, NO>::GetMatrixMaxMinusOffDiagonal(*A, *ghostedBlockNumber)->getData(0);
             if (GetVerbLevel() & Statistics1)
               GetOStream(Statistics1) << "Calculating max block off-diagonal" << std::endl;
           }
