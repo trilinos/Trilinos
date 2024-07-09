@@ -988,20 +988,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FilteredA, RootStencil, Scalar, LocalOrdinal, 
   aggFact = rcp(new UncoupledAggregationFactory());
   aggFact->SetFactory("Graph", dropFact);
 
-  RCP<FilteredAFactory> filterFact = rcp(new FilteredAFactory);
-  filterFact->SetFactory("UnAmalgamationInfo", amalgFact);
-  filterFact->SetFactory("Aggregates", aggFact);
-  filterFact->SetFactory("Graph", dropFact);
-  filterFact->SetFactory("Filtering", dropFact);
+  // RCP<FilteredAFactory> filterFact = rcp(new FilteredAFactory);
+  // filterFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  // filterFact->SetFactory("Aggregates", aggFact);
+  // filterFact->SetFactory("Graph", dropFact);
+  // filterFact->SetFactory("Filtering", dropFact);
 
   Teuchos::ParameterList params;
   params.set("filtered matrix: use lumping", true);
   params.set("filtered matrix: use root stencil", true);
-  filterFact->SetParameterList(params);
-  level.Request("A", filterFact.get());
+  dropFact->SetParameterList(params);
+  level.Request("A", dropFact.get());
 
-  filterFact->Build(level);
-  RCP<Matrix> Afiltered = level.Get<RCP<Matrix>>("A", filterFact.get());
+  dropFact->Build(level);
+  RCP<Matrix> Afiltered = level.Get<RCP<Matrix>>("A", dropFact.get());
 
   // Now check stuff
   //    print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
@@ -1294,7 +1294,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, AllowDroppingToCreateAdditionalDir
   level.Request(*aggFact);
   aggFact->Build(level);
   RCP<Aggregates> aggregates = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
-  RCP<LWGraph> graph         = level.Get<RCP<LWGraph>>("Graph", dropFact.get());
+  RCP<LWGraph> graph         = level.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get())->copyToHost();
   auto dirichletBoundaryMap  = graph->GetBoundaryNodeMap();
   int numDirichletRows       = 0;
   LO numRows                 = graph->GetNodeNumVertices();
@@ -1327,7 +1327,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, AllowDroppingToCreateAdditionalDir
   level.Request(*aggFact);
   aggFact->Build(level);
   aggregates           = level.Get<RCP<Aggregates>>("Aggregates", aggFact.get());
-  graph                = level.Get<RCP<LWGraph>>("Graph", dropFact.get());
+  graph                = level.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get())->copyToHost();
   dirichletBoundaryMap = graph->GetBoundaryNodeMap();
   numDirichletRows     = 0;
   for (LO i = 0; i < numRows; i++)

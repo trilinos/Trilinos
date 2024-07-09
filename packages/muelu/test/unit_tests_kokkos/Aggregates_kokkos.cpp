@@ -33,7 +33,7 @@
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 
@@ -52,8 +52,8 @@ void gimmeUncoupledAggregates(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrd
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   level.Request("Graph", dropFact.get());
@@ -257,8 +257,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustDist2UncoupledAggregati
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // Setup aggregation factory (use default factory for graph)
@@ -299,8 +299,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustDist2PreserveUncoupledA
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // Setup aggregation factory (use default factory for graph)
@@ -340,8 +340,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustOnePt2UncoupledAggregat
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // Setup aggregation factory (use default factory for graph)
@@ -382,8 +382,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustDist2DeterUncoupledAggr
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   // Setup aggregation factory (use default factory for graph)
@@ -434,8 +434,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, DiscontiguousAggregates, Sc
   RCP<Aggregates> aggregates;
   RCP<LWGraph_kokkos> graph;
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   level.Request("Graph", dropFact.get());
@@ -611,7 +611,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, AllowDroppingToCreateAdditi
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
   dropFact->SetParameter("aggregation: dropping may create Dirichlet", Teuchos::ParameterEntry(false));
   dropFact->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(Teuchos::as<double>(-100 * TST::eps())));
   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
@@ -652,7 +652,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, AllowDroppingToCreateAdditi
   // dropping connections may lead to the creation of new Dirichlet rows.
   // The second row should be flagged as Dirichlet because all off-diagonal entries are dropped.
   amalgFact = rcp(new AmalgamationFactory());
-  dropFact  = rcp(new CoalesceDropFactory_kokkos());
+  dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetParameter("aggregation: dropping may create Dirichlet", Teuchos::ParameterEntry(true));
   dropFact->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(Teuchos::as<double>(-100 * TST::eps())));
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -736,12 +736,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<CoalesceDropFactory_kokkos> dropFact;
+  RCP<CoalesceDropFactory> dropFact;
   RCP<AmalgamationFactory> amalgFact;
   RCP<UncoupledAggregationFactory> aggFact;
 
   amalgFact = rcp(new AmalgamationFactory());
-  dropFact  = rcp(new CoalesceDropFactory_kokkos());
+  dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetParameter("aggregation: greedy Dirichlet", Teuchos::ParameterEntry(false));
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -771,7 +771,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(levelGreedyAndNoPreserve);
   levelGreedyAndNoPreserve.Set("A", A);
   amalgFact = rcp(new AmalgamationFactory());
-  dropFact  = rcp(new CoalesceDropFactory_kokkos());
+  dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetParameter("aggregation: greedy Dirichlet", Teuchos::ParameterEntry(true));
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
@@ -802,7 +802,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
   levelGreedyAndPreserve.Set("A", A);
 
   amalgFact = rcp(new AmalgamationFactory());
-  dropFact  = rcp(new CoalesceDropFactory_kokkos());
+  dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetParameter("aggregation: greedy Dirichlet", Teuchos::ParameterEntry(true));
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 

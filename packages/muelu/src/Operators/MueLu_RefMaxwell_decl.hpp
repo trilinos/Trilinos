@@ -29,7 +29,6 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 
-#include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 
 #include "MueLu_ZoltanInterface_fwd.hpp"

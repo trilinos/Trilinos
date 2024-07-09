@@ -15,7 +15,7 @@
 
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 
@@ -27,7 +27,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, Constructor, Scala
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
   out << "version: " << MueLu::Version() << std::endl;
 
-  RCP<CoalesceDropFactory_kokkos> coalesceDropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<CoalesceDropFactory> coalesceDropFact = rcp(new CoalesceDropFactory());
   TEST_EQUALITY(coalesceDropFact != Teuchos::null, true);
 
   out << *coalesceDropFact << std::endl;
@@ -48,7 +48,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWitho
   fineLevel.Set("A", A);
 
   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
-  CoalesceDropFactory_kokkos dropFact;
+  CoalesceDropFactory dropFact;
   dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
 
   fineLevel.Request("Graph", &dropFact);
@@ -122,8 +122,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithF
   mtx->SetFixedBlockSize(1, 0);
   fineLevel.Set("A", mtx);
 
-  RCP<AmalgamationFactory> amalgFact  = rcp(new AmalgamationFactory);
-  CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
+  CoalesceDropFactory dropFact       = CoalesceDropFactory();
   dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
   dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.5));
 
@@ -202,8 +202,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithou
   mtx->SetFixedBlockSize(blockSize, 0);
   fineLevel.Set("A", mtx);
 
-  RCP<AmalgamationFactory> amalgFact  = rcp(new AmalgamationFactory);
-  CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
+  CoalesceDropFactory dropFact       = CoalesceDropFactory();
   dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
 
   fineLevel.Request("Graph", &dropFact);
@@ -294,8 +294,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithFi
   mtx->SetFixedBlockSize(3, 0);
   fineLevel.Set("A", mtx);
 
-  RCP<AmalgamationFactory> amalgFact  = rcp(new AmalgamationFactory);
-  CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
+  CoalesceDropFactory dropFact       = CoalesceDropFactory();
   dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
   dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.0));
 
@@ -354,7 +354,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithFi
     fineLevel.Set("A", A);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
-    CoalesceDropFactory_kokkos dropFact;
+    CoalesceDropFactory dropFact;
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     dropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
 
@@ -730,8 +730,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingI
     mtx->SetFixedBlockSize(1);
     fineLevel.Set("A", mtx);
 
-    CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
-    RCP<AmalgamationFactory> amalgFact  = rcp(new AmalgamationFactory());
+    CoalesceDropFactory dropFact       = CoalesceDropFactory();
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     dropFact.SetFactory("UnAmalgamationInfo", amalgFact);
     dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(4.1));
     fineLevel.Request("Graph", &dropFact);
@@ -757,7 +757,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingI
   //   mtx->SetFixedBlockSize(2);
   //   fineLevel.Set("A", mtx);
 
-  //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+  //   CoalesceDropFactory dropFact = CoalesceDropFactory();
   //   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
   //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
   //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
@@ -782,7 +782,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingI
   //   mtx->SetFixedBlockSize(3);
   //   fineLevel.Set("A", mtx);
 
-  //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+  //   CoalesceDropFactory dropFact = CoalesceDropFactory();
   //   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
   //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
   //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
@@ -940,7 +940,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, Local
       if (useKokkos) {
         out << "\nKokkos code path\nparams:\n"
             << param << "\n";
-        dropFact = rcp(new CoalesceDropFactory_kokkos());
+        dropFact = rcp(new CoalesceDropFactory());
         dropFact->SetParameterList(param);
         filteredAFact = dropFact;
       } else {

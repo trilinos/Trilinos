@@ -17,7 +17,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 
 namespace MueLuTests {
 
@@ -33,8 +33,8 @@ gimmeLWGraph(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdin
   TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
   level.Set("A", A);
 
-  RCP<AmalgamationFactory> amalgFact       = rcp(new AmalgamationFactory());
-  RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
   level.Request("Graph", dropFact.get());

@@ -21,7 +21,7 @@ ClassicalMapFactory
 ClassicalPFactory
 CloneRepartitionInterface
 CoalesceDropFactory
-CoalesceDropFactory_kokkos
+CoalesceDropFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 CoarseMapFactory
 CoarseningVisualizationFactory
 CombinePFactory

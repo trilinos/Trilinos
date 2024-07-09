@@ -10,29 +10,19 @@
 #ifndef MUELU_COALESCEDROPFACTORY_DECL_HPP
 #define MUELU_COALESCEDROPFACTORY_DECL_HPP
 
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_ImportFactory_fwd.hpp>
-#include <Xpetra_CrsGraph_fwd.hpp>
-#include <Xpetra_CrsGraphFactory_fwd.hpp>  //TODO
-#include <Xpetra_StridedMap_fwd.hpp>
-#include <Xpetra_Map_fwd.hpp>
-
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
+
+#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
+#include "Xpetra_Matrix_fwd.hpp"
+
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_LWGraph.hpp"
-
-#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
-#include "MueLu_PreDropFunctionConstVal_fwd.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_LWGraph_kokkos_decl.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -41,19 +31,23 @@ namespace MueLu {
   @brief Factory for creating a graph based on a given matrix.
 
   Factory for creating graphs from matrices with entries selectively dropped.
+  This factory combines the functionality of CoalesceDropFactory and FilteredAFactory from the non-Kokkos
+  code path.
+
+  For an in-depth discussion, see https://github.com/trilinos/Trilinos/issues/1676.
 
   ## Code paths ##
 
-  Both the classic dropping strategy as well as a coordinate-based distance laplacian method
-  is implemented. For performance reasons there are four distinctive code paths for the
-  classical method:
+  Both the classic dropping strategy as well as a coordinate-based distance
+  laplacian method is implemented. For performance reasons there are four
+  distinctive code paths for the classical method:
 
   - one DOF per node without dropping (i.e. "aggregation: drop tol" = 0.0)
   - one DOF per node with dropping (i.e. "aggregation: drop tol" > 0.0)
-  - number of DOFs per node > 1 withouth dropping
-  - number of DOFs per node > 1 with dropping
+  - DOFs per node > 1 withouth dropping
+  - DOFs per node > 1 with dropping
 
-  Additionally, there is a code path for the distance-laplacian mode.
+  Additionally there is a code path for the distance-laplacian mode.
 
   ## Input/output of CoalesceDropFactory ##
 
@@ -83,19 +77,34 @@ namespace MueLu {
 
   ## Amalgamation process ##
 
-  The CoalesceDropFactory is internally using the AmalgamationFactory for amalgamating the dof-based maps to node-based maps. The AmalgamationFactory creates the "UnAmalgamationInfo" container
-  which basically stores all the necessary information for translating dof based data to node based data and vice versa. The container is used, since this way the amalgamation is only done once
-  and later reused by other factories.
+  The CoalesceDropFactory is internally using the AmalgamationFactory
+  for amalgamating the dof-based maps to node-based maps. The
+  AmalgamationFactory creates the "UnAmalgamationInfo" container which
+  basically stores all the necessary information for translating dof based
+  data to node based data and vice versa. The container is used, since this
+  way the amalgamation is only done once and later reused by other factories.
 
-  Of course, often one does not need the information from the "UnAmalgamationInfo" container since the same information could be extracted of the "Graph" or the map from the "Coordinates" vector.
-  However, there are also some situations (e.g. when doing rebalancing based on HyperGraph partitioning without coordinate information) where one has not access to a "Graph" or "Coordinates" variable.
+  Of course, often one does not need the information from the
+  "UnAmalgamationInfo" container since the same information could be
+  extracted of the "Graph" or the map from the "Coordinates" vector.
+  However, there are also some situations (e.g. when doing rebalancing based
+  on HyperGraph partitioning without coordinate information) where one has
+  not access to a "Graph" or "Coordinates" variable.
 */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class CoalesceDropFactory
+  : public SingleLevelFactoryBase {
+ public:
+  using local_ordinal_type  = LocalOrdinal;
+  using global_ordinal_type = GlobalOrdinal;
+  using execution_space     = typename Node::execution_space;
+  using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
+  using node_type           = Node;
 
-template <class Scalar        = DefaultScalar,
-          class LocalOrdinal  = DefaultLocalOrdinal,
-          class GlobalOrdinal = DefaultGlobalOrdinal,
-          class Node          = DefaultNode>
-class CoalesceDropFactory : public SingleLevelFactoryBase {
+ private:
+  using boundary_nodes_type = typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type;
+
+  // For compatibility
 #undef MUELU_COALESCEDROPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -104,7 +113,7 @@ class CoalesceDropFactory : public SingleLevelFactoryBase {
   //@{
 
   //! Constructor
-  CoalesceDropFactory();
+  CoalesceDropFactory() {}
 
   //! Destructor
   virtual ~CoalesceDropFactory() {}
@@ -118,28 +127,16 @@ class CoalesceDropFactory : public SingleLevelFactoryBase {
 
   void DeclareInput(Level& currentLevel) const;
 
-  /// set predrop function
-  void SetPreDropFunction(const RCP<MueLu::PreDropFunctionBaseClass<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& predrop) { predrop_ = predrop; }
-
   //@}
 
-  void Build(Level& currentLevel) const;  // Build
+  void Build(Level& currentLevel) const;
 
- private:
-  // pre-drop function
-  mutable RCP<PreDropFunctionBaseClass> predrop_;
+  std::tuple<RCP<LocalOrdinalVector>, RCP<LocalOrdinalVector> > GetBlockNumberMVs(Level& currentLevel) const;
 
-  //! Method to merge rows of matrix for systems of PDEs.
-  void MergeRows(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
-  void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
+  std::tuple<GlobalOrdinal, boundary_nodes_type> BuildScalar(Level& currentLevel) const;
 
-  // When we want to decouple a block diagonal system (returns Teuchos::null if generate_matrix is false)
-  Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BlockDiagonalize(Level& currentLevel, const RCP<Matrix>& A, bool generate_matrix) const;
-
-  // When we want to decouple a block diagonal system via a *graph*
-  void BlockDiagonalizeGraph(const RCP<LWGraph>& inputGraph, const RCP<LocalOrdinalVector>& ghostedBlockNumber, RCP<LWGraph>& outputGraph, RCP<const Import>& importer) const;
-
-};  // class CoalesceDropFactory
+  std::tuple<GlobalOrdinal, boundary_nodes_type> BuildVector(Level& currentLevel) const;
+};
 
 }  // namespace MueLu
 
