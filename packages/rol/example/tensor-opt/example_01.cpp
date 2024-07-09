@@ -724,7 +724,7 @@ public:
     _x->wrap(x);
     for (auto& it : _imul) it->zero();
     _solver->reset();
-    _problem->reset();
+    //_problem->reset();
     _solver->solve(outStream);
 
     return _x->data();
@@ -753,7 +753,7 @@ public:
     set_node<Node::j>(A_j, lambda_j_lo, lambda_j_up);
     set_flux(F);
 
-    _problem->check(outStream);
+    _problem->check(true,outStream);
   }
 
   void checkConstraints(DT_ sol[3])
