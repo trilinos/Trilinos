@@ -60,7 +60,7 @@ class Constraint_SimOpt;
 #include "ROL_SimConstraint.hpp"
 #include "ROL_Objective_FSsolver.hpp"
 #include "ROL_TypeU_TrustRegionAlgorithm.hpp"
-#include "ROL_TypeE_AugmentedLagrangianAlgorithm.hpp"
+#include "ROL_TypeE_CompositeStepAlgorithm.hpp"
 
 /** @ingroup func_group
     \class ROL::Constraint_SimOpt
@@ -304,7 +304,7 @@ public:
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      Ptr<TypeE::Algorithm<Real>> algo = makePtr<TypeE::AugmentedLagrangianAlgorithm<Real>>(parlist);
+      Ptr<TypeE::Algorithm<Real>> algo = makePtr<TypeE::CompositeStepAlgorithm<Real>>(parlist);
       algo->run(u,*obj,*con,*l,*stream);
       value(c,u,z,tol);
     }
