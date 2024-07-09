@@ -408,7 +408,7 @@ DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-const PHX::ViewOfViews3<1,PHX::View<const int*>>
+const PHX::ViewOfViews<1,PHX::View<const int*>>
 DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, const std::vector<int> & fieldNums) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before "
@@ -418,7 +418,7 @@ DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, const std::vec
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
   }
 
-  PHX::ViewOfViews3<1,PHX::View<const int*>> vov("panzer::getGIDFieldOffsetsKokkos vector version",fieldNums.size());
+  PHX::ViewOfViews<1,PHX::View<const int*>> vov("panzer::getGIDFieldOffsetsKokkos vector version",fieldNums.size());
   vov.disableSafetyCheck(); // Its going to be moved/copied
 
   int bid=bitr->second;

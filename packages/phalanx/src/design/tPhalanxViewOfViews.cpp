@@ -14,6 +14,119 @@
 using exec_t = Kokkos::DefaultExecutionSpace;
 using mem_t = Kokkos::DefaultExecutionSpace::memory_space;
 
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,OldImpl) {
+
+  const int num_cells = 10;
+  const int num_pts = 8;
+  const int num_equations = 32;
+
+  Kokkos::View<double***,mem_t> a("a",num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> b("b",num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> c("c",num_cells,num_pts,num_equations);
+  Kokkos::View<double***,mem_t> d("d",num_cells,num_pts,num_equations);
+
+  Kokkos::deep_copy(a,2.0);
+  Kokkos::deep_copy(b,3.0);
+  Kokkos::deep_copy(c,4.0);
+
+  {
+    using InnerView = Kokkos::View<double***,mem_t,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    constexpr int OuterViewRank = 2;
+    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v("outer host",2,2);
+
+    v_of_v.addView(a,0,0);
+    v_of_v.addView(b,0,1);
+    v_of_v.addView(c,1,0);
+    v_of_v.addView(d,1,1);
+
+    v_of_v.syncHostToDevice();
+
+    {
+      auto v_dev = v_of_v.getViewDevice();
+      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+      Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
+        v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
+      });
+    }
+
+    // Uncomment the line below to prove the ViewOfViews prevents
+    // device views from outliving host view. This line will cause a
+    // Kokkos::abort() and error message since v_dev above is still in
+    // scope when the ViewOfViews is destoryed.
+    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
+  }
+
+  auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
+
+  const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+  for (int cell=0; cell < num_cells; ++cell)
+    for (int pt=0; pt < num_pts; ++pt)
+      for (int eq=0; eq < num_equations; ++eq) {
+        TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
+      }
+}
+
+// ********************************
+// New implementation (automatically adds the unmanaged memory trait to inner view)
+// ********************************
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,NewImpl) {
+
+  const int num_cells = 10;
+  const int num_pts = 8;
+  const int num_equations = 32;
+
+  using InnerView = Kokkos::View<double***,mem_t>;
+  constexpr int OuterViewRank = 2;
+  PHX::ViewOfViews2<OuterViewRank,InnerView,mem_t> v_of_v("outer host",2,2);
+
+  {
+
+    // Let originals go out of scope to check correct memory management
+    {
+      Kokkos::View<double***,mem_t> a("a",num_cells,num_pts,num_equations);
+      Kokkos::View<double***,mem_t> b("b",num_cells,num_pts,num_equations);
+      Kokkos::View<double***,mem_t> c("c",num_cells,num_pts,num_equations);
+      Kokkos::View<double***,mem_t> d("d",num_cells,num_pts,num_equations);
+
+      Kokkos::deep_copy(a,2.0);
+      Kokkos::deep_copy(b,3.0);
+      Kokkos::deep_copy(c,4.0);
+
+      v_of_v.setView(a,0,0);
+      v_of_v.setView(b,0,1);
+      v_of_v.setView(c,1,0);
+      v_of_v.setView(d,1,1);
+    }
+
+    v_of_v.syncHostToDevice();
+
+    {
+      auto v_dev = v_of_v.getViewDevice();
+      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+      Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
+        v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
+      });
+    }
+
+    // Uncomment the line below to prove the ViewOfViews prevents
+    // device views from outliving host view. This line will cause a
+    // Kokkos::abort() and error message since v_dev above is still in
+    // scope when the ViewOfViews is destoryed.
+    // v_of_v = PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>("outer host",2,2);
+  }
+
+  auto d = v_of_v.getViewHost()(1,1);
+  auto d_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),d);
+
+  const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+  for (int cell=0; cell < num_cells; ++cell)
+    for (int pt=0; pt < num_pts; ++pt)
+      for (int eq=0; eq < num_equations; ++eq) {
+        TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
+      }
+
+}
+
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamInitialize) {
 
   const int num_cells = 10;
@@ -32,7 +145,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamInitialize) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v;
+    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v;
 
     TEST_ASSERT(!v_of_v.isInitialized());
     v_of_v.initialize("outer host",2,2);
@@ -70,7 +183,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamInitialize) {
 
     // Test the const versions of accessors
     {
-      const PHX::ViewOfViews<OuterViewRank,InnerView,mem_t>& const_v_of_v = v_of_v;
+      const PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t>& const_v_of_v = v_of_v;
       const_v_of_v.getViewHost();
       const_v_of_v.getViewDevice();
     }
@@ -104,7 +217,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultStreamCtor) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v("outer host",2,2);
+    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v("outer host",2,2);
 
     TEST_ASSERT(v_of_v.isInitialized());
 
@@ -176,7 +289,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v(streams[3],"outer host",2,2);
+    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v(streams[3],"outer host",2,2);
 
     TEST_ASSERT(v_of_v.isInitialized());
 
@@ -221,7 +334,6 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
         TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
       }
 }
-
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
 
   const int num_cells = 10;
@@ -258,7 +370,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
   {
     using InnerView = Kokkos::View<double***,mem_t>;
     constexpr int OuterViewRank = 2;
-    PHX::ViewOfViews<OuterViewRank,InnerView,mem_t> v_of_v;
+    PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v;
 
     TEST_ASSERT(!v_of_v.isInitialized());
     v_of_v.initialize(streams[3],"outer host",2,2);
@@ -325,7 +437,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
 // constructed and destoryed. Happens in application unit tests.
 struct MeshEvaluationTestStruct {
     using InnerView = Kokkos::View<double***,mem_t>;
-    PHX::ViewOfViews<2,InnerView,mem_t> v_of_v_;
+    PHX::ViewOfViews3<2,InnerView,mem_t> v_of_v_;
 };
 
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultCtorDtor) {
@@ -456,7 +568,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
   // Rank 1 outer view
   {
-    PHX::ViewOfViews<1,InnerView,mem_t> pvov("vov1",4);
+    PHX::ViewOfViews3<1,InnerView,mem_t> pvov("vov1",4);
     pvov.addView(a,0);
     pvov.addView(b,1);
     pvov.addView(c,2);
@@ -469,23 +581,23 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
       vov(3)(cell) = vov(0)(cell) * vov(1)(cell) + vov(2)(cell);
     });
 
-    auto pvov_host = PHX::createHostHostViewOfViews(pvov);
-    {
-      auto vov_host = pvov_host.getViewHost();
+    auto vov_host = PHX::createHostHostViewOfViews(vov);
 
-      const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
-      for (int cell=0; cell < num_cells; ++cell) {
-        TEST_FLOATING_EQUALITY(vov_host(0)(cell),2.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(1)(cell),3.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(2)(cell),4.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(3)(cell),10.0,tol);
-      }
+    const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+    for (int cell=0; cell < num_cells; ++cell) {
+      TEST_FLOATING_EQUALITY(vov_host(0)(cell),2.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1)(cell),3.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(2)(cell),4.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(3)(cell),10.0,tol);
     }
+
+    // NOTE: you must call this on the host-host version to avoid deadlock!
+    PHX::freeInnerViewsOfHostHostViewOfViews(vov_host);
   }
 
   // Rank 2 outer view
   {
-    PHX::ViewOfViews<2,InnerView,mem_t> pvov("vov1",2,2);
+    PHX::ViewOfViews3<2,InnerView,mem_t> pvov("vov1",2,2);
     pvov.addView(a,0,0);
     pvov.addView(b,0,1);
     pvov.addView(c,1,0);
@@ -498,23 +610,23 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
       vov(1,1)(cell) = vov(0,0)(cell) * vov(0,1)(cell) + vov(1,0)(cell) + 1.0;
     });
 
-    auto pvov_host = PHX::createHostHostViewOfViews(pvov);
-    {
-      auto vov_host = pvov_host.getViewHost();
+    auto vov_host = PHX::createHostHostViewOfViews(vov);
 
-      const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
-      for (int cell=0; cell < num_cells; ++cell) {
-        TEST_FLOATING_EQUALITY(vov_host(0,0)(cell),2.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(0,1)(cell),3.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(1,0)(cell),4.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(1,1)(cell),11.0,tol);
-      }
+    const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+    for (int cell=0; cell < num_cells; ++cell) {
+      TEST_FLOATING_EQUALITY(vov_host(0,0)(cell),2.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(0,1)(cell),3.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1,0)(cell),4.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1,1)(cell),11.0,tol);
     }
+
+    // NOTE: you must call this on the host-host version to avoid deadlock!
+    PHX::freeInnerViewsOfHostHostViewOfViews(vov_host);
   }
 
   // Rank 3 outer view
   {
-    PHX::ViewOfViews<3,InnerView,mem_t> pvov("vov1",3,3,3);
+    PHX::ViewOfViews3<3,InnerView,mem_t> pvov("vov1",3,3,3);
     pvov.addView(a,0,0,0);
     pvov.addView(b,1,1,1);
     pvov.addView(c,2,2,2);
@@ -527,29 +639,29 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
         vov(0,1,2)(cell) = vov(0,0,0)(cell) * vov(1,1,1)(cell) + vov(2,2,2)(cell) + 2.0;
     });
 
-    auto pvov_host = PHX::createHostHostViewOfViews(pvov);
-    {
-      auto vov_host = pvov_host.getViewHost();
+    auto vov_host = PHX::createHostHostViewOfViews(vov);
 
-      const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
-      for (int cell=0; cell < num_cells; ++cell) {
-        TEST_FLOATING_EQUALITY(vov_host(0,0,0)(cell),2.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(1,1,1)(cell),3.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(2,2,2)(cell),4.0,tol);
-        TEST_FLOATING_EQUALITY(vov_host(0,1,2)(cell),12.0,tol);
-      }
+    const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+    for (int cell=0; cell < num_cells; ++cell) {
+      TEST_FLOATING_EQUALITY(vov_host(0,0,0)(cell),2.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1,1,1)(cell),3.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(2,2,2)(cell),4.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(0,1,2)(cell),12.0,tol);
     }
+
+    // NOTE: you must call this on the host-host version to avoid deadlock!
+    PHX::freeInnerViewsOfHostHostViewOfViews(vov_host);
   }
 
 }
 
 using ScalarType = Sacado::Fad::DFad<double>;
 
-PHX::ViewOfViews<2,PHX::View<ScalarType**>,PHX::Device> createVoV()
+PHX::ViewOfViews3<2,PHX::View<ScalarType**>,PHX::Device> createVoV()
 {
-  PHX::ViewOfViews<2,PHX::View<ScalarType**>,PHX::Device> tmp;
+  PHX::ViewOfViews3<2,PHX::View<ScalarType**>,PHX::Device> tmp;
 
-  tmp.initialize("tmp from createVoV()",2,2);
+  tmp.initialize("tmp",2,2);
   const int num_cells = 10;
   const int num_pts = 5;
   const int num_deriv = 2;
@@ -570,7 +682,7 @@ PHX::ViewOfViews<2,PHX::View<ScalarType**>,PHX::Device> createVoV()
 // Simulates panzer DOFManager use case where the DOFManager creates a
 // VoV and returns it to an evaluator in the evalauteFields method.
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
-  PHX::ViewOfViews<2,PHX::View<ScalarType**>,PHX::Device> vov;
+  PHX::ViewOfViews3<2,PHX::View<ScalarType**>,PHX::Device> vov;
 
   for (int i=0; i < 2; ++i) {
     vov = createVoV();
