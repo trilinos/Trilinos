@@ -5847,7 +5847,7 @@ namespace Tpetra {
 
     execute_sync_host_uvm_access(); // protect host UVM access
     totalNumPackets = 0;
-    for (LO i=0; i<numExportLIDs; ++i) {
+    for (size_t i=0; i<numExportLIDs; ++i) {
          const LO lclRow = exportLIDs_h[i];
          const GO gblRow = rowMap.getGlobalElement (lclRow);
          if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {

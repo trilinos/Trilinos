@@ -514,12 +514,12 @@ namespace Tpetra {
 
     Kokkos::parallel_for("apply_permutation_1",
                         Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, n),
-                        KOKKOS_LAMBDA(const int j) {
+                        [=](const int j) {
                             tmp(j) = first[indices[j]];
     });
     Kokkos::parallel_for("apply_permutation_2",
                         Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, n),
-                        KOKKOS_LAMBDA(const int j) {
+                        [=](const int j) {
                             first[j] = tmp(j);
     });
   }
