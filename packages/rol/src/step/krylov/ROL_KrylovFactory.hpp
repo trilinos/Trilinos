@@ -17,6 +17,7 @@
 #include "ROL_ConjugateResiduals.hpp"
 #include "ROL_GMRES.hpp"
 #include "ROL_MINRES.hpp"
+#include "ROL_BiCGSTAB.hpp"
 
 namespace ROL {
   /** \enum   ROL::EKrylov
@@ -26,6 +27,7 @@ namespace ROL {
       \arg    CR          Conjugate Residual Method
       \arg    GMRES       Generalized Minimum Residual Method
       \arg    MINRES      Minimum Residual Method
+      \arg    BICGSTAB    Stablized Bi-Conjugate Gradient Method
       \arg    USERDEFINED User defined Krylov method
       \arg    LAST        Dummy type
    */
@@ -34,6 +36,7 @@ namespace ROL {
     KRYLOV_CR,
     KRYLOV_GMRES,
     KRYLOV_MINRES,
+    KRYLOV_BICGSTAB,
     KRYLOV_USERDEFINED,
     KRYLOV_LAST
   };
@@ -45,6 +48,7 @@ namespace ROL {
       case KRYLOV_CR:          retString = "Conjugate Residuals"; break;
       case KRYLOV_GMRES:       retString = "GMRES";               break;
       case KRYLOV_MINRES:      retString = "MINRES";              break;
+      case KRYLOV_BICGSTAB:    retString = "BiCGSTAB";            break;
       case KRYLOV_USERDEFINED: retString = "User Defined";        break;
       case KRYLOV_LAST:        retString = "Last Type (Dummy)";   break;
       default:                 retString = "INVALID EKrylov";
@@ -58,9 +62,11 @@ namespace ROL {
       \return 1 if the argument is a valid Secant; 0 otherwise.
     */
   inline int isValidKrylov(EKrylov type){
-    return( (type == KRYLOV_CG)      ||
-            (type == KRYLOV_CR)      ||
-            (type == KRYLOV_GMRES)   ||
+    return( (type == KRYLOV_CG)       ||
+            (type == KRYLOV_CR)       ||
+            (type == KRYLOV_GMRES)    ||
+	    (type == KRYLOV_MINRES)   ||
+	    (type == KRYLOV_BICGSTAB) ||
             (type == KRYLOV_USERDEFINED) );
   }
 
@@ -101,17 +107,19 @@ namespace ROL {
                    parlist.sublist("General").sublist("Krylov").get("Type","GMRES"));
     Real absTol  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance", em4);
     Real relTol  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance", em2);
-    int maxit    = parlist.sublist("General").sublist("Krylov").get("Iteration Limit", 20);
+    int  maxit   = parlist.sublist("General").sublist("Krylov").get("Iteration Limit", 20);
     bool inexact = parlist.sublist("General").get("Inexact Hessian-Times-A-Vector",false);
     switch(ekv) {
       case KRYLOV_CR: 
         return makePtr<ConjugateResiduals<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_CG: 
         return makePtr<ConjugateGradients<Real>>(absTol,relTol,maxit,inexact);
-      case KRYLOV_MINRES:
-        return makePtr<MINRES<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_GMRES:
         return makePtr<GMRES<Real>>(parlist);
+      case KRYLOV_MINRES:
+        return makePtr<MINRES<Real>>(absTol,relTol,maxit,inexact);
+      case KRYLOV_BICGSTAB:
+        return makePtr<BiCGSTAB<Real>>(absTol,relTol,maxit,inexact);
       default:
         return nullPtr;
     }
