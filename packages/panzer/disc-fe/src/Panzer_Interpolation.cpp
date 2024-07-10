@@ -562,9 +562,11 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                                          // Check that there is no entry yet or that we are overwriting it with the same value
                                          auto row = lcl_tp_interp_matrix.rowConst(range_row);
                                          for(size_t kk = 0; kk<row.length; ++kk)
-                                           if (row.colidx(kk) == loLIDs_d(loOffsets_d(domainIter)))
+                                           if (row.colidx(kk) == domainLIDs_d(domainOffsets_d(domainIter)))
                                              if (!(KAT::magnitude(row.value(kk)-val) < entryFilterTol || KAT::magnitude(row.value(kk)) < entryFilterTol)) {
+#ifdef PANZER_INTERPOLATION_DEBUG_OUTPUT
                                                std::cout << "Replacing (" << range_row << "," << row.colidx(kk) << ") = " << row.value(kk) << " with " << val << std::endl;
+#endif
 #ifdef PANZER_DEBUG
                                                TEUCHOS_ASSERT(false);
 #endif
@@ -572,7 +574,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                                        }
 #endif
 #ifdef PANZER_INTERPOLATION_DEBUG_OUTPUT
-                                       std::cout << "Setting (" << range_row << "," << loLIDs_d(loOffsets_d(domainIter)) << ") = " << val << std::endl;
+                                       std::cout << "Setting (" << range_row << "," << domainLIDs_d(domainOffsets_d(domainIter)) << ") = " << val << std::endl;
 #endif
 				       lcl_tp_interp_matrix.replaceValues(range_row, &(domainLIDs_d(domainOffsets_d(domainIter))), 1, &val, /*is_sorted=*/false, /*force_atomic=*/true);
                                      }
