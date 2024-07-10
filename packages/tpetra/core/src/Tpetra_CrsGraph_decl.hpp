@@ -265,7 +265,7 @@ namespace Tpetra {
     //! The Export specialization used by this class.
     using export_type = ::Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>;
 
-protected:
+public:
     // Types used for CrsGraph's storage of local column indices
     using local_inds_dualv_type =
           Kokkos::DualView<local_ordinal_type*, device_type>;
@@ -553,6 +553,58 @@ public:
     ///   local graph must be sorted on input,
     ///   but if it isn't sorted, "sorted" must be set to false in params.
     CrsGraph (const local_graph_device_type& lclGraph,
+              const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap,
+              const Teuchos::RCP<const map_type>& domainMap,
+              const Teuchos::RCP<const map_type>& rangeMap,
+              const Teuchos::RCP<const import_type>& importer,
+              const Teuchos::RCP<const export_type>& exporter,
+              const Teuchos::RCP<Teuchos::ParameterList>& params =
+                Teuchos::null);
+
+    /// \brief Constructor specifying the local row pointer and column indices arrays of the
+    ///   local graph; the row, column, domain, and range maps; and the importer and exporter.
+    ///   In almost all cases, the local graph must be sorted on input, but if it isn't sorted,
+    ///   "sorted" must be set to false in params.
+    ///
+    /// Unlike most other CrsGraph constructors, successful completion
+    /// of this constructor will result in a fill-complete graph.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the graph,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the graph.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the graph.
+    ///   Entries in each row must be sorted (by local index).
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param domainMap [in] The graph's domain Map. MUST be one to
+    ///   one!
+    ///
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    ///
+    /// \param importer [in] Import from the graph's domain Map to its
+    ///   column Map.  If no Import is necessary (i.e., if the domain
+    ///   and column Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    ///
+    /// \param exporter [in] Export from the graph's row Map to its
+    ///   range Map.  If no Export is necessary (i.e., if the row and
+    ///   range Maps are the same, in the sense of
+    ///   Tpetra::Map::isSameAs), then this may be Teuchos::null.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const row_ptrs_device_view_type& rowPointers,
+              const local_inds_wdv_type& columnIndices,
               const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::RCP<const map_type>& domainMap,
