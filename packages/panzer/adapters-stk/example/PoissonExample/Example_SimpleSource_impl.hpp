@@ -56,7 +56,7 @@ template <typename EvalT,typename Traits>
 SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
                                          const panzer::IntegrationRule & ir,
                                          const bool curvilinear)
-  : curvilinear(curvilinear)
+  : curvilinear_(curvilinear)
 {
   using Teuchos::RCP;
 
@@ -87,7 +87,7 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
   auto ip_coordinates = workset.int_rules[ir_index]->ip_coordinates.get_static_view();
   auto source_v = source.get_static_view();
 
-  const bool curv = this->curvilinear;
+  const bool curv = this->curvilinear_;
 
   Kokkos::parallel_for ("SimpleSource", workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
       for (int point = 0; point < source_v.extent_int(1); ++point) {
