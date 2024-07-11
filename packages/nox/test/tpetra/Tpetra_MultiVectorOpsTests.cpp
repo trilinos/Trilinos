@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//
+// Copyright 2002 NTESS and the NOX contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Comm.hpp"
