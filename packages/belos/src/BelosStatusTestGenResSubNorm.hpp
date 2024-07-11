@@ -254,7 +254,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     \f$\|r^{(0)}\|\f$ is the corresponding norm of the initial residual.
     The used norm can be specified by defineResForm and defineScaleForm.
 
-    @param Tolerance: Specifies tolerance \f$\tau\f
+    @param Tolerance: Specifies tolerance \f$\tau\f$
     @param subIdx: index of block row in the n x n block system we want to check the residual of
     @param quorum: Number of residual (sub-)vectors which are needed to be within the tolerance before check is considered to be passed
     @param showMaxResNormOnly: for output only
