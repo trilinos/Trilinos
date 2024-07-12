@@ -1238,7 +1238,6 @@ TEUCHOS_UNIT_TEST( ParameterList, NonPrintableParameterEntries){
     }
     catch (const NonprintableParameterEntryException &except) {
       std::string actualMessage = except.what();
-      std::cout << "\n\nactual Message: \n" << actualMessage << std::endl;
       std::string expectedMessage =
               "Trying to print type "
               "Teuchos::ParameterList_NonPrintableParameterEntries_UnitTest::runUnitTestImpl(Teuchos::basic_FancyOStream<char, std::char_traits<char> >&, bool&) const::Shape "
