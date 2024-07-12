@@ -38,10 +38,6 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
 // ************************************************************************
 //@HEADER
 
@@ -919,10 +915,6 @@ the file <code>NOX_Abstract_Group.H</code>.
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
 // ************************************************************************
 //@HEADER
 </pre>
@@ -931,10 +923,6 @@ Once the file is committed to the CVS repository, the CVS Information lines
 will look something like the following:
 
 <pre>
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
 </pre>
 
 The header information is automatically filled in between the two
