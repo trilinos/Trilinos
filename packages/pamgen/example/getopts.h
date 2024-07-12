@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 /*
  * Copyright (c) 2001 to 2004 Steve Mertz <steve@dragon-ware.com>
  * All rights reserved.
