@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 
   if (U > 8) {
     printf("U must be 1-8\n");
-    printf("New Chamnge");
+    printf("New Change");
     return 0;
   }
   if ((D != 1) && (D != 2) && (D != 4) && (D != 8) && (D != 16) && (D != 32)) {
