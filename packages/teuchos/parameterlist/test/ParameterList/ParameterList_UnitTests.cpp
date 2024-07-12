@@ -1209,11 +1209,47 @@ TEUCHOS_UNIT_TEST( ParameterList, print ) {
 }
 
 TEUCHOS_UNIT_TEST( ParameterList, NonPrintableParameterEntries){
-    enum class Shape : int { CIRCLE, SQUARE, TRIANGLE };
-    ParameterList paramList = ParameterList("MyParameters");
-    paramList.set("test enum class", Shape::SQUARE);
-    paramList.print();
+  // test printing std::vector<int> from a parameter list
+  {
+    ParameterList paramList = ParameterList("std::vector test");
+    std::vector<int> testVec = {1};
+    paramList.set("My std::vector<int>", testVec);
+
+    try {
+      paramList.print();  // Should throw!
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "If you get here then the test failed!");
+    }
+    catch (const NonprintableParameterEntryException &except) {
+      std::string actualMessage = except.what();
+      std::string expectedMessage = "Trying to print type std::vector<int, std::allocator<int> > which is not printable (i.e. does not have operator<<() defined)!";
+      TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
+    }
   }
+
+  // test printing enum class from a parameter list
+  {
+    ParameterList paramList = ParameterList("enum class test");
+    enum class Shape : int { CIRCLE, SQUARE, TRIANGLE };
+    paramList.set("My enum class", Shape::SQUARE);
+
+    try {
+      paramList.print();  // Should throw!
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "If you get here then the test failed!" );
+    }
+    catch (const NonprintableParameterEntryException &except) {
+      std::string actualMessage = except.what();
+      std::cout << "\n\nactual Message: \n" << actualMessage << std::endl;
+      std::string expectedMessage =
+              "Trying to print type "
+              "Teuchos::ParameterList_NonPrintableParameterEntries_UnitTest::runUnitTestImpl(Teuchos::basic_FancyOStream<char, std::char_traits<char> >&, bool&) const::Shape "
+              "which is not printable (i.e. does not have operator<<() defined)!";
+      TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
+    }
+  }
+}
+
+
+
 
 } // namespace Teuchos
 

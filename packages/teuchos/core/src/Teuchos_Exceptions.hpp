@@ -163,6 +163,24 @@ public:
 
 };
 
+/**
+ * @brief Exception class for non-printable parameter entries,
+ * such as enum class/std::vector and many more
+ * which don't define an operator<<.
+ * Thrown during runtime when trying to print a parameter list
+ * with a non-printable parameter entry.
+ *
+ * \relates ParameterEntry
+ */
+class NonprintableParameterEntryException : public ExceptionBase {
+
+public:
+    NonprintableParameterEntryException(const std::string& what_arg) :
+            ExceptionBase(what_arg) {}
+
+};
+
+
 
 } // end namespace Teuchos
 
