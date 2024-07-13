@@ -42,7 +42,6 @@
 #ifndef THYRA_DESCRIBE_LINEAR_OP_HPP
 #define THYRA_DESCRIBE_LINEAR_OP_HPP
 
-#include "Thyra_describeLinearOp_def.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
