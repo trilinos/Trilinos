@@ -47,7 +47,6 @@
 
 
 #include "Teuchos_ParameterEntryValidator.hpp"
-#include "Teuchos_ValidatorMaps.hpp"
 
 
 namespace Teuchos {
