@@ -46,8 +46,8 @@
 
 // WARNING: This code is experimental. Backwards compatibility should not be expected.
 
-#ifndef XPETRA_MATRIX_HPP
-#define XPETRA_MATRIX_HPP
+#ifndef XPETRA_MATRIX_DECL_HPP
+#define XPETRA_MATRIX_DECL_HPP
 
 #include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
@@ -114,100 +114,34 @@ class Matrix : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node
   //! @name Constructor/Destructor Methods
   //@{
 
-  Matrix() {}
+  Matrix();
 
   //! Destructor
-  virtual ~Matrix() {}
+  virtual ~Matrix();
 
   //@}
 
   //! @name View management methods
   //@{
-  void CreateView(viewLabel_t viewLabel, const RCP<const Map> &rowMap, const RCP<const Map> &colMap) {
-    TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == true, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.CreateView(): a view labeled '" + viewLabel + "' already exist.");
-    RCP<MatrixView> view = rcp(new MatrixView(rowMap, colMap));
-    operatorViewTable_.put(viewLabel, view);
-  }
+  void CreateView(viewLabel_t viewLabel, const RCP<const Map> &rowMap, const RCP<const Map> &colMap);
 
   // JG TODO: why this is a member function??
-  void CreateView(const viewLabel_t viewLabel, const RCP<const Matrix> &A, bool transposeA = false, const RCP<const Matrix> &B = Teuchos::null, bool transposeB = false) {
-    RCP<const Map> domainMap = Teuchos::null;
-    RCP<const Map> rangeMap  = Teuchos::null;
-
-    const size_t blkSize = 1;
-    std::vector<size_t> stridingInfo(1, blkSize);
-    LocalOrdinal stridedBlockId = -1;
-
-    if (A->IsView(viewLabel)) {
-      rangeMap  = transposeA ? A->getColMap(viewLabel) : A->getRowMap(viewLabel);
-      domainMap = transposeA ? A->getRowMap(viewLabel) : A->getColMap(viewLabel);  // will be overwritten if B != Teuchos::null
-
-    } else {
-      rangeMap  = transposeA ? A->getDomainMap() : A->getRangeMap();
-      domainMap = transposeA ? A->getRangeMap() : A->getDomainMap();
-
-      if (viewLabel == "stridedMaps") {
-        rangeMap  = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(rangeMap, stridingInfo, stridedBlockId);
-        domainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(domainMap, stridingInfo, stridedBlockId);
-      }
-    }
-
-    if (B != Teuchos::null) {
-      // B has strided Maps
-
-      if (B->IsView(viewLabel)) {
-        domainMap = transposeB ? B->getRowMap(viewLabel) : B->getColMap(viewLabel);
-
-      } else {
-        domainMap = transposeB ? B->getRangeMap() : B->getDomainMap();
-
-        if (viewLabel == "stridedMaps")
-          domainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(domainMap, stridingInfo, stridedBlockId);
-      }
-    }
-
-    if (IsView(viewLabel))
-      RemoveView(viewLabel);
-
-    CreateView(viewLabel, rangeMap, domainMap);
-  }
+  void CreateView(const viewLabel_t viewLabel, const RCP<const Matrix> &A, bool transposeA = false, const RCP<const Matrix> &B = Teuchos::null, bool transposeB = false);
 
   //! Print all of the views associated with the Matrix.
-  void PrintViews(Teuchos::FancyOStream &out) const {
-    int last = out.getOutputToRootOnly();
-    Teuchos::OSTab tab(out);
-    out.setOutputToRootOnly(0);
-    Teuchos::Array<viewLabel_t> viewLabels;
-    Teuchos::Array<RCP<MatrixView> > viewList;
-    operatorViewTable_.arrayify(viewLabels, viewList);
-    out << "views associated with this operator" << std::endl;
-    for (int i = 0; i < viewLabels.size(); ++i)
-      out << viewLabels[i] << std::endl;
-    out.setOutputToRootOnly(last);
-  }
+  void PrintViews(Teuchos::FancyOStream &out) const;
 
-  void RemoveView(const viewLabel_t viewLabel) {
-    TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.RemoveView(): view '" + viewLabel + "' does not exist.");
-    TEUCHOS_TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
-    operatorViewTable_.remove(viewLabel);
-  }
+  void RemoveView(const viewLabel_t viewLabel);
 
-  const viewLabel_t SwitchToView(const viewLabel_t viewLabel) {
-    TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.SwitchToView(): view '" + viewLabel + "' does not exist.");
-    viewLabel_t oldViewLabel = GetCurrentViewLabel();
-    currentViewLabel_        = viewLabel;
-    return oldViewLabel;
-  }
+  const viewLabel_t SwitchToView(const viewLabel_t viewLabel);
 
-  bool IsView(const viewLabel_t viewLabel) const {
-    return operatorViewTable_.containsKey(viewLabel);
-  }
+  bool IsView(const viewLabel_t viewLabel) const;
 
-  const viewLabel_t SwitchToDefaultView() { return SwitchToView(GetDefaultViewLabel()); }
+  const viewLabel_t SwitchToDefaultView();
 
-  const viewLabel_t &GetDefaultViewLabel() const { return defaultViewLabel_; }
+  const viewLabel_t &GetDefaultViewLabel() const;
 
-  const viewLabel_t &GetCurrentViewLabel() const { return currentViewLabel_; }
+  const viewLabel_t &GetCurrentViewLabel() const;
 
   //@}
 
@@ -312,23 +246,17 @@ class Matrix : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node
   //@{
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const RCP<const Map> &getRowMap() const { return getRowMap(GetCurrentViewLabel()); }
+  virtual const RCP<const Map> &getRowMap() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual const RCP<const Map> &getRowMap(viewLabel_t viewLabel) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetRowMap(): view '" + viewLabel + "' does not exist.");
-    return operatorViewTable_.get(viewLabel)->GetRowMap();
-  }
+  virtual const RCP<const Map> &getRowMap(viewLabel_t viewLabel) const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
   //! This might be <tt>null</tt> until fillComplete() is called.
-  virtual const RCP<const Map> &getColMap() const { return getColMap(GetCurrentViewLabel()); }
+  virtual const RCP<const Map> &getColMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual const RCP<const Map> &getColMap(viewLabel_t viewLabel) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Matrix.GetColMap(): view '" + viewLabel + "' does not exist.");
-    return operatorViewTable_.get(viewLabel)->GetColMap();
-  }
+  virtual const RCP<const Map> &getColMap(viewLabel_t viewLabel) const;
 
   //! Returns the number of global rows in this matrix.
   /** Undefined if isFillActive().
@@ -510,62 +438,25 @@ class Matrix : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node
    * @param blksize: block size denoting how many DOFs per node are used (LocalOrdinal)
    * @param offset:  global offset allows to define operators with global indices starting from a given value "offset" instead of 0. (GlobalOrdinal, default = 0)
    * */
-  void SetFixedBlockSize(LocalOrdinal blksize, GlobalOrdinal offset = 0) {
-    TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Matrix::SetFixedBlockSize(): operator is not filled and completed.");  // TODO: do we need this? we just wanna "copy" the domain and range map
-
-    std::vector<size_t> stridingInfo;
-    stridingInfo.push_back(Teuchos::as<size_t>(blksize));
-    LocalOrdinal stridedBlockId = -1;
-
-    RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
-        this->getRangeMap(),
-        stridingInfo,
-        stridedBlockId,
-        offset);
-    RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
-        this->getDomainMap(),
-        stridingInfo,
-        stridedBlockId,
-        offset);
-
-    if (IsFixedBlockSizeSet()) RemoveView("stridedMaps");
-    CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
-  }
+  void SetFixedBlockSize(LocalOrdinal blksize, GlobalOrdinal offset = 0);
 
   //==========================================================================
 
-  LocalOrdinal GetFixedBlockSize() const {
-    if (IsFixedBlockSizeSet()) {
-      Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > rangeMap  = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getRowMap("stridedMaps"));
-      Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > domainMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getColMap("stridedMaps"));
-      TEUCHOS_TEST_FOR_EXCEPTION(rangeMap == Teuchos::null, Exceptions::BadCast, "Xpetra::Matrix::GetFixedBlockSize(): rangeMap is not of type StridedMap");
-      TEUCHOS_TEST_FOR_EXCEPTION(domainMap == Teuchos::null, Exceptions::BadCast, "Xpetra::Matrix::GetFixedBlockSize(): domainMap is not of type StridedMap");
-      TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != rangeMap->getFixedBlockSize(), Exceptions::RuntimeError, "Xpetra::Matrix::GetFixedBlockSize(): block size of rangeMap and domainMap are different.");
-      return Teuchos::as<LocalOrdinal>(domainMap->getFixedBlockSize());  // TODO: why LocalOrdinal?
-    } else
-      // TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Matrix::GetFixedBlockSize(): no strided maps available."); // TODO remove this
-      return 1;
-  };  // TODO: why LocalOrdinal?
+  LocalOrdinal GetFixedBlockSize() const;  // TODO: why LocalOrdinal?
 
   //! Returns true, if `SetFixedBlockSize` has been called before.
-  bool IsFixedBlockSizeSet() const {
-    return IsView("stridedMaps");
-  };
+  bool IsFixedBlockSizeSet() const;
 
   //! Returns the block size of the storage mechanism, which is usually 1, except for Tpetra::BlockCrsMatrix
   virtual LocalOrdinal GetStorageBlockSize() const = 0;
 
   // ----------------------------------------------------------------------------------
 
-  virtual void SetMaxEigenvalueEstimate(Scalar const &sigma) {
-    operatorViewTable_.get(GetCurrentViewLabel())->SetMaxEigenvalueEstimate(sigma);
-  }
+  virtual void SetMaxEigenvalueEstimate(Scalar const &sigma);
 
   // ----------------------------------------------------------------------------------
 
-  virtual Scalar GetMaxEigenvalueEstimate() const {
-    return operatorViewTable_.get(GetCurrentViewLabel())->GetMaxEigenvalueEstimate();
-  }
+  virtual Scalar GetMaxEigenvalueEstimate() const;
 
   // ----------------------------------------------------------------------------------
 #ifdef HAVE_XPETRA_TPETRA
