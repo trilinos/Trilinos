@@ -33,6 +33,8 @@ class XpetraLinearOp
   /** \brief Construct to uninitialized. */
   XpetraLinearOp();
 
+  ~XpetraLinearOp();
+
   /** \brief Initialize. */
   void initialize(
       const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,

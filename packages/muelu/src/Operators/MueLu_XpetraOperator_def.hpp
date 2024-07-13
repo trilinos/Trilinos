@@ -15,6 +15,15 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    XpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H)
+  : Hierarchy_(H) {}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    ~XpetraOperator() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getDomainMap() const {
@@ -66,6 +75,12 @@ void XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    hasTransposeApply() const {
+  return false;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     residual(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
              const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
@@ -73,6 +88,12 @@ void XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using STS = Teuchos::ScalarTraits<Scalar>;
   R.update(STS::one(), B, STS::zero());
   this->apply(X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetHierarchy() const {
+  return Hierarchy_;
 }
 
 }  // namespace MueLu

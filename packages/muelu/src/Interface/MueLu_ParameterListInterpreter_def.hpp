@@ -135,6 +135,9 @@ ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterLi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~ParameterListInterpreter() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const ParameterList& paramList) {
   Cycle_            = Hierarchy::GetDefaultCycle();
   WCycleStartLevel_ = Hierarchy::GetDefaultCycleStartLevel();
