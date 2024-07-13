@@ -98,16 +98,16 @@ namespace Amesos2 {
 #ifdef HAVE_TEUCHOS_COMPLEX
 
   template <>
-  struct FunctionMap<Umfpack,std::complex<double>>
+  struct FunctionMap<Umfpack,Kokkos::complex<double>>
   {
-    typedef TypeMap<Umfpack,std::complex<double>> type_map;
+    typedef TypeMap<Umfpack,Kokkos::complex<double>> type_map;
 
     /**
      * \brief Binds to the appropriate Umfpack solver driver based on data type
      */
 
     static double * stdComplexToUmfpackDoubleConversion(
-    const std::complex<double> v [ ])
+    const Kokkos::complex<double> v [ ])
     {
       return (double*)(&v[0]);
     }
@@ -116,9 +116,9 @@ namespace Amesos2 {
     int sys,
     const int Ap [ ],
     const int Ai [ ],
-    const std::complex<double> Ax [ ],
-    std::complex<double> X [ ],
-    const std::complex<double> B [ ],
+    const Kokkos::complex<double> Ax [ ],
+    Kokkos::complex<double> X [ ],
+    const Kokkos::complex<double> B [ ],
     void *Numeric,
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
@@ -133,7 +133,7 @@ namespace Amesos2 {
     static int umfpack_numeric(
     const int Ap [ ],
     const int Ai [ ],
-    const std::complex<double> Ax [ ],
+    const Kokkos::complex<double> Ax [ ],
     void *Symbolic,
     void **Numeric,
     const double Control[UMFPACK_CONTROL],
@@ -147,7 +147,7 @@ namespace Amesos2 {
     int n_col,
     const int Ap [ ],
     const int Ai [ ],
-    const std::complex<double> Ax [ ],
+    const Kokkos::complex<double> Ax [ ],
     void **Symbolic,
     const double Control [UMFPACK_CONTROL],
     double Info [UMFPACK_INFO])
