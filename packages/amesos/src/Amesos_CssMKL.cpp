@@ -53,7 +53,7 @@ Amesos_CssMKL::Amesos_CssMKL(const Epetra_LinearProblem &prob) :
   mtype_(11), 
   maxfct_(1),
   mnum_(1),
-  msglvl_(1),
+  msglvl_(0),
   nrhs_(1)
 {
   for( int i = 0; i < 64; ++i ){
@@ -75,14 +75,6 @@ Amesos_CssMKL::Amesos_CssMKL(const Epetra_LinearProblem &prob) :
   iparm_[27] = 0;  /* double-precision */
   iparm_[34] = 1;  /* Use zero-based indexing */
 
-  auto rangeMap = GetProblem()->GetOperator()->OperatorRangeMap();
-  int n = rangeMap.NumGlobalPoints();
-  int first_row = rangeMap.MinMyGID();
-  int last_row  = rangeMap.MaxMyGID();
-  iparm_[39] = 2;  /* Matrix input format. */
-  iparm_[40] = first_row;  /* > Beginning of input domain. */
-  iparm_[41] = last_row;   /* > End of input domain. */
-
   /* -------------------------------------------------------------------- */
   /* .. Initialize the internal solver memory pointer. This is only       */
   /*    necessary for the FIRST call of the CSS solver.                   */
@@ -90,14 +82,6 @@ Amesos_CssMKL::Amesos_CssMKL(const Epetra_LinearProblem &prob) :
   for (int i = 0; i < 64; i++) {
     pt_[i] = 0;
   }
-
-  // Get communicator
-  const Epetra_MpiComm& EMpiComm = dynamic_cast<const Epetra_MpiComm&>(Comm());
-  const MPI_Comm CssComm = EMpiComm.Comm();
-  CssComm_ = MPI_Comm_c2f(CssComm);
-
-  // Allocate perm
-  perm_.resize(n);
 }
 
 //=============================================================================
@@ -128,38 +112,68 @@ Amesos_CssMKL::~Amesos_CssMKL()
   if ((verbose_ && PrintStatus_) || verbose_ == 2) PrintStatus();
 }
 
-
 //=============================================================================
 int Amesos_CssMKL::ConvertToCssMKL()
 {
   ResetTimer();
 
+  // =========================================================== //
+  // Load Matrix from Problem                                    //
+  // =========================================================== //
+  OriginalMatrix_ = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+  if  ( Reindex_ ) {
+#ifdef HAVE_AMESOS_EPETRAEXT
+    auto CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
+    if(!CrsMatrix) {
+      std::cerr << "Amesos_CssMKL requires CsrMatrix to reindex matrices." << std::endl;
+      AMESOS_CHK_ERR(-8);
+    }
+    const Epetra_Map& OriginalMap = CrsMatrix->RowMap();
+    StdIndex_ = rcp( new Amesos_StandardIndex( OriginalMap  ) );
+    Matrix_ = StdIndex_->StandardizeIndex( CrsMatrix );
+    if(!Matrix_) {
+      std::cerr << "Amesos_CssMKL reindexing failed" << std::endl;
+      AMESOS_CHK_ERR(-8);
+    }
+#else
+    std::cerr << "Amesos_CssMKL requires EpetraExt to reindex matrices." << std::endl;
+    AMESOS_CHK_ERR(-8);
+#endif
+  } else {
+    Matrix_ = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+  }
+
+  // =========================================================== //
+  // Read Matrix into Crs (with Linear/Uniform index)            //
+  // =========================================================== //
   int ierr;
-  int MaxNumEntries_ = Matrix().MaxNumEntries();
-  int NumMyElements = Matrix().NumMyRows(); 
-  int nnz_loc = Matrix().NumMyNonzeros();
+  int MaxNumEntries_ = Matrix_->MaxNumEntries();
+  int NumMyElements = Matrix_->NumMyRows(); 
+  int nnz_loc = Matrix_->NumMyNonzeros();
   ia_.resize( NumMyElements+1 );
   ja_.resize( EPETRA_MAX( NumMyElements, nnz_loc) ); 
   aa_.resize( EPETRA_MAX( NumMyElements, nnz_loc) ); 
 
   std::vector<int> ColIndicesV_(MaxNumEntries_);
   std::vector<double> RowValuesV_(MaxNumEntries_);
-  int *Global_Columns_ = Matrix().RowMatrixColMap().MyGlobalElements();
+
+  int *Global_Columns_ = Matrix_->RowMatrixColMap().MyGlobalElements();
 
   // for sorting column indexes
   typedef std::pair<int, double> Data;
   std::vector<Data> sort_array(MaxNumEntries_);
 
+  // NOTE : Assumes input is distributed in contiguous 1D Block
   int NzThisRow;
   int Ai_index = 0;
   for (int MyRow = 0; MyRow < NumMyElements ; MyRow++) 
   {
-    ierr = Matrix().ExtractMyRowCopy(MyRow, MaxNumEntries_, NzThisRow,
+    ierr = Matrix_->ExtractMyRowCopy(MyRow, MaxNumEntries_, NzThisRow,
                                             &RowValuesV_[0], &ColIndicesV_[0]);
     AMESOS_CHK_ERR(ierr);
 
     double *RowValues =  &RowValuesV_[0];
-    int   *ColIndices = &ColIndicesV_[0];
+    int    *ColIndices = &ColIndicesV_[0];
 
     // sort column indexes (default std::sort by first elements of pair)
     for ( int j = 0; j < NzThisRow; j++ ) { 
@@ -195,10 +209,10 @@ int Amesos_CssMKL::SetParameters( Teuchos::ParameterList &ParameterList)
   // We fill iparm_ using named parameters
   if (ParameterList.isSublist("CssMKL"))
   {
-	param_ = ParameterList.sublist("CssMKL");
+    param_ = ParameterList.sublist("CssMKL");
   }
 
-  msglvl_ = param_.get<int>("Message level", 1 /*static_cast<int>(debug_)*/);
+  msglvl_ = param_.get<int>("Message level", 0);
   iparm_[0] = param_.get<int>("No default parameters", 1);
   iparm_[1] = param_.get<int>("Use METIS reordering" , 10);
   iparm_[7] = param_.get<int>("Max num of iterative refinement steps", 0);
@@ -219,10 +233,28 @@ int Amesos_CssMKL::PerformSymbolicFactorization()
 
   int error = 0;
   {
-    int phase = 11; // Analysis
+    // Get communicator
+    const Epetra_MpiComm& EMpiComm = dynamic_cast<const Epetra_MpiComm&>(Comm());
+    const MPI_Comm CssEComm = EMpiComm.Comm();
+    CssComm_ = MPI_Comm_c2f(CssEComm);
+
+    // Set matrix 1D block distribution
+    auto rangeMap = Matrix_->RowMatrixRowMap();
     int n = Matrix_->NumGlobalRows();
+    int first_row = rangeMap.MinMyGID();
+    int last_row  = rangeMap.MaxMyGID();
+    iparm_[39] = 2;  /* Matrix input format. */
+    iparm_[40] = first_row;  /* > Beginning of input domain. */
+    iparm_[41] = last_row;   /* > End of input domain. */
+
+    // Allocate perm
+    perm_.resize(n);
+
+    // Perform Symbolic Analysis
+    int phase = 11; // Analysis
     void *bdummy, *xdummy;
     const MPI_Fint CssComm = CssComm_;
+
     cluster_sparse_solver( pt_, const_cast<int*>(&maxfct_),
                            const_cast<int*>(&mnum_), &mtype_, &phase, &n,
                            &aa_[0], &ia_[0], &ja_[0],
@@ -283,14 +315,14 @@ int Amesos_CssMKL::SymbolicFactorization()
 
   ++NumSymbolicFact_;
 
-  Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(Problem_->GetOperator());
-  Map_ = &(Matrix_->RowMatrixRowMap());
-
   // =========================================================== //
   // Convert the matrix into CSR format,                         //
   // =========================================================== //
   ConvertToCssMKL();
 
+  // =========================================================== //
+  // Perform Symbolic                                            //
+  // =========================================================== //
   PerformSymbolicFactorization();
 
   IsSymbolicFactorizationOK_ = true;
@@ -308,9 +340,15 @@ int Amesos_CssMKL::NumericFactorization()
 
   ++NumNumericFact_;
 
+  // =========================================================== //
+  // (Re)Convert the matrix into CSR format,                     //
+  // =========================================================== //
   // FIXME: this must be checked, now all the matrix is shipped twice here
   ConvertToCssMKL();
 
+  // =========================================================== //
+  // Perform Numeric                                             //
+  // =========================================================== //
   PerformNumericFactorization();
 
   IsNumericFactorizationOK_ = true;
@@ -334,39 +372,34 @@ int Amesos_CssMKL::Solve()
   if (NumVectors != B->NumVectors())
     AMESOS_CHK_ERR(-1); 
 
-  // vectors with SerialMap_
-  Epetra_MultiVector* SerialB;
-  Epetra_MultiVector* SerialX;
-
   ResetTimer();
-  SerialB = B;
-  SerialX = X;
   VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
 
   ResetTimer();
   int error = 0;
   {
-    double* SerialXValues;
-    double* SerialBValues;
+    double* XValues;
+    double* BValues;
     int LDA;
 
-    AMESOS_CHK_ERR(SerialX->ExtractView(&SerialXValues,&LDA));
-
     // FIXME: check LDA
-    AMESOS_CHK_ERR(SerialB->ExtractView(&SerialBValues,&LDA));
+    AMESOS_CHK_ERR(X->ExtractView(&XValues,&LDA));
+    AMESOS_CHK_ERR(B->ExtractView(&BValues,&LDA));
 
     int idum = 0;
     int n = Matrix().NumGlobalRows();
     int phase = 33;
 
     const MPI_Fint CssComm = CssComm_;
+
+    nrhs_ = NumVectors;
     cluster_sparse_solver( pt_, const_cast<int*>(&maxfct_),
                            const_cast<int*>(&mnum_), &mtype_, &phase, &n,
                            &aa_[0], &ia_[0], &ja_[0],
                            &perm_[0], &nrhs_, iparm_,
                            const_cast<int*>(&msglvl_), 
-                           SerialBValues,
-                           SerialXValues,
+                           BValues,
+                           XValues,
                            &CssComm, &error );
   }
   SolveTime_ = AddTime("Total solve time", SolveTime_);

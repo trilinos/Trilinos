@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                 Anasazi: Block Eigensolvers Package
+//
+// Copyright 2004 NTESS and the Anasazi contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // This example computes the eigenvalues of smallest magnitude of a
 // generalized eigenvalue problem $K x = \lambda M x$, using Anasazi's
 // implementation of the block Krylov-Schur method.  It implements

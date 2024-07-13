@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//
+// Copyright 2002 NTESS and the NOX contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 #include "NOX_Observer_ReusePreconditionerFactory.hpp"
 #include "NOX_Observer_ReusePreconditioner.hpp"
 #include "Teuchos_ParameterList.hpp"

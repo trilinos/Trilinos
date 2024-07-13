@@ -186,7 +186,7 @@ private:
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
-  PHX::ViewOfViews3<1,PHX::View<ScalarT**>> gatherFieldsVoV_;
+  PHX::ViewOfViews<1,PHX::View<ScalarT**>> gatherFieldsVoV_;
 
   std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
@@ -197,7 +197,7 @@ private:
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
   std::vector< std::vector< PHX::MDField<const RealT,Cell,NODE> > > tangentFields_;
-  PHX::ViewOfViews3<2,PHX::View<const RealT**>> tangentFieldsVoV_;
+  PHX::ViewOfViews<2,PHX::View<const RealT**>> tangentFieldsVoV_;
   PHX::View<size_t*> tangentInnerVectorSizes_;
 
   GatherSolution_Tpetra();

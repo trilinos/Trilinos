@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                 Anasazi: Block Eigensolvers Package
+//
+// Copyright 2004 NTESS and the Anasazi contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /// \example LOBPCGEpetraFile.cpp
 /// \brief Use LOBPCG with Epetra test problem loaded from file.
 ///
@@ -34,14 +43,14 @@ int main(int argc, char *argv[]) {
   //
   bool haveM = false;
 
-#ifdef EPETRA_MPI  
-  // Initialize MPI  
-  MPI_Init(&argc,&argv);   
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );  
-#else  
-  Epetra_SerialComm Comm;  
+#ifdef EPETRA_MPI
+  // Initialize MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
 #endif
-  
+
   int MyPID = Comm.MyPID();
 
   //************************************
@@ -133,8 +142,8 @@ int main(int argc, char *argv[]) {
 
   //
   //************************************
-  // Start the block Davidson iteration 
-  //***********************************         
+  // Start the block Davidson iteration
+  //***********************************
   //
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
@@ -162,24 +171,24 @@ int main(int argc, char *argv[]) {
   //
   Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(*Map, blockSize) );
   ivec->Random();
-  
+
   Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem;
   if (haveM) {
     MyProblem = Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>( K, M, ivec ) );
-  } 
+  }
   else {
     MyProblem = Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>( K, ivec ) );
-  } 
- 
+  }
+
   // Inform the eigenproblem that (K,M) is Hermitian
   MyProblem->setHermitian(true);
-  
+
   // Pass the preconditioner to the eigenproblem
   if (usePrec) {
     MyProblem->setPrec(PrecOp);
   }
 
-  // Set the number of eigenvalues requested 
+  // Set the number of eigenvalues requested
   MyProblem->setNEV( nev );
 
   // Inform the eigenproblem that you are finished passing it information
@@ -196,13 +205,13 @@ int main(int argc, char *argv[]) {
 
   // Initialize the LOBPCG solver
   Anasazi::LOBPCGSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
-    
+
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
     std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
   }
-  
+
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<double> > evals = sol.Evals;
@@ -214,13 +223,13 @@ int main(int argc, char *argv[]) {
     // Compute residuals.
     Teuchos::LAPACK<int,double> lapack;
     std::vector<double> normR(numev);
-    
+
     // Get storage
     Teuchos::RCP<Epetra_MultiVector> Kevecs, Mevecs;
     Teuchos::SerialDenseMatrix<int,double> B(numev,numev);
-    B.putScalar(0.0); 
+    B.putScalar(0.0);
     for (int i=0; i<numev; i++) {B(i,i) = evals[i].realpart;}
-    
+
     // Compute K*evecs
     Kevecs = Teuchos::rcp(new Epetra_MultiVector(*Map,numev) );
     OPT::Apply( *K, *evecs, *Kevecs );
@@ -237,12 +246,12 @@ int main(int argc, char *argv[]) {
     // Compute K*evecs - lambda*M*evecs and its norm
     MVT::MvTimesMatAddMv( -1.0, *Mevecs, B, 1.0, *Kevecs );
     MVT::MvNorm( *Kevecs, normR );
-    
+
     // Scale the norms by the eigenvalue
     for (int i=0; i<numev; i++) {
       normR[i] /= Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
     }
-    
+
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
       std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
@@ -251,16 +260,16 @@ int main(int argc, char *argv[]) {
         << std::setw(20) << "Direct Residual"<< std::endl;
       std::cout<<"-----------------------------------------------------------"<<std::endl;
       for (int i=0; i<numev; i++) {
-        std::cout<< std::setw(16) << evals[i].realpart 
+        std::cout<< std::setw(16) << evals[i].realpart
           << std::setw(20) << normR[i] << std::endl;
-      }  
+      }
       std::cout<<"-----------------------------------------------------------"<<std::endl;
     }
   }
-  
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
   return 0;
-  
+
 } // end BlockDavidsonEpetraExFile.cpp

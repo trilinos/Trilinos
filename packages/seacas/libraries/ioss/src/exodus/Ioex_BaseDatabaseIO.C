@@ -1991,7 +1991,11 @@ namespace Ioex {
       }
 
       // Output field metadata
-      output_field_metadata();
+      bool do_metadata = true;
+      Ioss::Utils::check_set_bool_property(properties, "OUTPUT_FIELD_METADATA", do_metadata);
+      if (do_metadata) {
+         output_field_metadata();
+      }
     }
   }
 

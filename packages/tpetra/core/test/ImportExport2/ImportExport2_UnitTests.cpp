@@ -202,8 +202,9 @@ namespace {
     first_gid  = 0;
   }
 
+  template<>
   void
-  getFirstGID(long long &first_gid) {
+  getFirstGID<long long>(long long &first_gid) {
     first_gid  = 3000000000L;
   }
 

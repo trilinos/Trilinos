@@ -56,7 +56,7 @@ template <typename EvalT,typename Traits>
 SimpleSolution<EvalT,Traits>::SimpleSolution(const std::string & name,
                                              const panzer::IntegrationRule & ir,
                                              const bool curvilinear)
-  : curvilinear(curvilinear)
+  : curvilinear_(curvilinear)
 {
   using Teuchos::RCP;
 
@@ -91,7 +91,7 @@ void SimpleSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData work
   auto solution_v = solution.get_static_view();
   auto solution_grad_v = solution_grad.get_static_view();
 
-  const bool curv = this->curvilinear;
+  const bool curv = this->curvilinear_;
 
   Kokkos::parallel_for (workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
       for (int point = 0; point < solution_v.extent_int(1); ++point) {

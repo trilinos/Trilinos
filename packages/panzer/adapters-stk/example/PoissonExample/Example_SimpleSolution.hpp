@@ -87,7 +87,7 @@ private:
   PHX::MDField<ScalarT,Cell,Point,Dim> solution_grad;
   int ir_degree, ir_index;
 
-  const bool curvilinear;
+  const bool curvilinear_;
 };
 
 }

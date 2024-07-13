@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//     Compadre: COMpatible PArticle Discretization and REmap Toolkit
+//
+// Copyright 2018 NTESS and the Compadre contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 #include <gtest/gtest.h>
 #include <Compadre_KokkosParser.hpp>
 #include "unittests/test_XYZ.hpp"
