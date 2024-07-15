@@ -16,6 +16,7 @@ MatrixMatrix
 #MultiVectorFactory
 #Operator
 #ReorderedBlockedCrsMatrix
+ThyraUtils - #if defined(HAVE_XPETRA_THYRA)
 TpetraBlockCrsMatrix
 TpetraCrsMatrix
 #TpetraHalfPrecisionOperator
