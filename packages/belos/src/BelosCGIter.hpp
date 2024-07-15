@@ -46,6 +46,7 @@
     \brief Belos concrete class for performing the conjugate-gradient (CG) iteration.
 */
 
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosCGIteration.hpp"
@@ -481,6 +482,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     } else
       MVT::MvDot( *R_, *Z_, rHz );
 
+    Tpetra::Details::enableRelaxedSyncs();
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
@@ -559,6 +561,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       }
  
     } // end while (sTest_->checkStatus(this) != Passed)
+    Tpetra::Details::disableRelaxedSyncs();
   }
 
 } // end Belos namespace

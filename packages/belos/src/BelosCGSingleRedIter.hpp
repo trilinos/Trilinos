@@ -45,7 +45,7 @@
 /*! \file BelosCGSingleRedIter.hpp
     \brief Belos concrete class for performing a single-reduction conjugate-gradient (CG) iteration.
 */
-
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosCGIteration.hpp"
@@ -504,7 +504,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     // Check that alpha is a positive number!
     TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGPositiveDefiniteFailure,
       "Belos::CGSingleRedIter::iterate(): non-positive value for p^H*A*p encountered!" );
- 
+
+    Tpetra::Details::enableRelaxedSyncs();
+
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
@@ -640,6 +642,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
       } // end while (1)
     }
+    Tpetra::Details::disableRelaxedSyncs();
   }
 
 } // end Belos namespace

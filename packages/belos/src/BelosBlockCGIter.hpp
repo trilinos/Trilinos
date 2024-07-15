@@ -46,6 +46,7 @@
     \brief Belos concrete class for performing the block conjugate-gradient (CG) iteration.
 */
 
+#include "Tpetra_Details_SyncSemantics.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosCGIteration.hpp"
@@ -542,6 +543,7 @@ public:
       (rank != blockSize_, CGIterationOrthoFailure,
        prefix << "Failed to compute initial block of orthonormal direction vectors.");
 
+    Tpetra::Details::enableRelaxedSyncs();
     //
     // Iterate until the status test tells us to stop.
     //
@@ -625,6 +627,7 @@ public:
          prefix << "Failed to compute block of orthonormal direction vectors.");
 
     } // end while (sTest_->checkStatus(this) != Passed)
+    Tpetra::Details::disableRelaxedSyncs();
   }
 
 } // namespace Belos

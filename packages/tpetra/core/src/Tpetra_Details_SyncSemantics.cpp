@@ -63,7 +63,7 @@ namespace Details {
       throw std::runtime_error("ERROR: Tpetra::Details::disableRelaxedSyncs(): Cannot call twice in a row");
 
     SyncSematicsDetails::useRelaxedSyncs = false;
-    Kokkos::fence("Tpetra::disableRelaxedSyncs");
+    // Kokkos::fence("Tpetra::disableRelaxedSyncs");
   }
 
   bool areRelaxedSyncsEnabled() {

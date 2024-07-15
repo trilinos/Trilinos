@@ -296,7 +296,7 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   // Apply the operator
 
   tpetraOperator_->apply(*tX, *tY, tTransp, alpha, beta);
-  Kokkos::fence();
+  // Kokkos::fence();
 }
 
 // Protected member functions overridden from ScaledLinearOpBase
