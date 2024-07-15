@@ -1241,7 +1241,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     RCP<Matrix> B;
 
     if (matrixFileNameB == "dupe") {
-      *B = *A;
+      B = A;
 
       if (verbose) out << "duplicating A" << endl;
     } else if (matrixFileNameB == "alias") {
