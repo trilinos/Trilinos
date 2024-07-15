@@ -134,7 +134,7 @@ struct print;
 template <class T>
 struct print<T, std::false_type> {
   std::ostream& operator()(std::ostream& s, T const&) const {
-    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, NonprintableParameterEntryException,
+    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, NonprintableTypeException,
         "Trying to print type " << Teuchos::demangleName(typeid(T).name()) <<
         " which is not printable (i.e. does not have operator<<() defined)!");
 #ifndef __CUDACC__

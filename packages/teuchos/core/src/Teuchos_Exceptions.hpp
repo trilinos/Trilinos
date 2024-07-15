@@ -164,7 +164,7 @@ public:
 };
 
 /**
- * @brief Exception class for non-printable parameter entries,
+ * @brief Exception class for non-printable parameter types,
  * such as enum class/std::vector and many more
  * which don't define an operator<<.
  * Thrown during runtime when trying to print a parameter list
@@ -172,10 +172,10 @@ public:
  *
  * \relates ParameterEntry
  */
-class NonprintableParameterEntryException : public ExceptionBase {
+class NonprintableTypeException : public ExceptionBase {
 
 public:
-    NonprintableParameterEntryException(const std::string& what_arg) :
+    NonprintableTypeException(const std::string& what_arg) :
             ExceptionBase(what_arg) {}
 
 };
