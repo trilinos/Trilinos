@@ -748,6 +748,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("showmatrix", "noshowmatrix", &describeMatrix, "describe matrix");
     bool useStackedTimer = false;
     clp.setOption("stackedtimer", "nostackedtimer", &useStackedTimer, "use stacked timer");
+    std::string watchrProblemName = std::string("MueLu Matvec ") + std::to_string(comm->getSize()) + " ranks";
+    clp.setOption("watchr-problem-name", &watchrProblemName, "Problem name for Watchr plot headers");
     bool verboseModel = false;
     clp.setOption("verbosemodel", "noverbosemodel", &verboseModel, "use stacked verbose performance model");
 
@@ -922,9 +924,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     // Problem construction
     // =========================================================================
-    if (useStackedTimer)
+    if (useStackedTimer) {
       stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_MatvecKernelDriver"));
-    else
+      Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+    } else
       globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatrixRead: S - Global Time")));
 
     comm->barrier();
@@ -1173,6 +1176,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       Teuchos::StackedTimer::OutputOptions options;
       options.output_fraction = options.output_histogram = options.output_minmax = true;
       stacked_timer->report(out, comm, options);
+      auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
+      if (xmlOut.length())
+        std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
     } else {
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
     }
