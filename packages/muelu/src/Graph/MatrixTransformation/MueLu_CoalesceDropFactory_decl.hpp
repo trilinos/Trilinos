@@ -124,6 +124,7 @@ class CoalesceDropFactory : public SingleLevelFactoryBase {
   //@}
 
   void Build(Level& currentLevel) const;  // Build
+  void BuildKokkos(Level& currentLevel) const;
 
  private:
   // pre-drop function
