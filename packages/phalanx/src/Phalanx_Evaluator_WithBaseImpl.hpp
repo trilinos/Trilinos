@@ -135,7 +135,7 @@ namespace PHX {
     
     virtual const std::string& getName() const override;
 
-    virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) override;
+    virtual void bindField(const PHX::FieldTag& ft, const std::any& f) override;
 
     virtual PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
 
@@ -162,7 +162,7 @@ namespace PHX {
      *  a single evaluator. For this reason we use
      *  std::unordered_multimap instead of std::unordered_map.
      */
-    std::unordered_multimap<std::string,std::function<void(const PHX::any& f)>> field_binders_;
+    std::unordered_multimap<std::string,std::function<void(const std::any& f)>> field_binders_;
 
 #ifdef PHX_DEBUG
     /** \brief Functors that print evaluator fields. Note

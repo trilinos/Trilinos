@@ -15,8 +15,8 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_DataLayout.hpp"
-#include "Phalanx_any.hpp"
 #include "Sacado.hpp"
+#include <any>
 #include <vector>
 
 namespace PHX {

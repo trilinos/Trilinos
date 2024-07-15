@@ -1,6 +1,6 @@
 // @HEADER
 // *****************************************************************************
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //
 // Copyright 2008 NTESS and the Phalanx contributors.
@@ -37,26 +37,26 @@ namespace PHX {
     // Use SFINAE to select this for non-Kokkos::View (i.e. Field and MDField).
     template<typename T=FieldType>
     typename std::enable_if<!Kokkos::is_view<T>::value,void>::type
-    operator()(const PHX::any& f) { ptr_->setFieldData(f); }
+    operator()(const std::any& f) { ptr_->setFieldData(f); }
 
     // Use SFINAE to select this for Kokkos::View.
     template<typename T=FieldType>
     typename std::enable_if<Kokkos::is_view<T>::value,void>::type
-    operator()(const PHX::any& f) 
+    operator()(const std::any& f)
     {
-      // PHX::any object is always the non-const data type.  To
+      // std::any object is always the non-const data type.  To
       // correctly cast the any object to the Kokkos::View, need to
       // pull the const off the scalar type if this MDField has a
       // const scalar type.
       using non_const_view = Kokkos::View<typename FieldType::non_const_data_type,typename FieldType::array_layout,PHX::Device>;
       try {
-        non_const_view tmp = PHX::any_cast<non_const_view>(f);
+        non_const_view tmp = std::any_cast<non_const_view>(f);
         *ptr_ = tmp;
       }
       catch (std::exception& ) {
-        std::cout << "\n\nERROR in MemoryBinder using PHX::any_cast. Tried to cast a field "
+        std::cout << "\n\nERROR in MemoryBinder using std::any_cast. Tried to cast a field "
                   << "to the type:\n  \"" << Teuchos::demangleName(typeid(non_const_view).name())
-                  << "\"\nfrom a PHX::any object containing a field of type:\n  \""
+                  << "\"\nfrom a std::any object containing a field of type:\n  \""
                   << Teuchos::demangleName(f.type().name()) << "\"." << std::endl;
         throw;
       }
@@ -71,7 +71,7 @@ namespace PHX {
     DummyMemoryBinder& operator=(const DummyMemoryBinder& ) = default;
     DummyMemoryBinder(DummyMemoryBinder&& ) = default;
     DummyMemoryBinder& operator=(DummyMemoryBinder&& ) = default;
-    void operator()(const PHX::any& /* f */) { /* DO NOTHING! */ }
+    void operator()(const std::any& /* f */) { /* DO NOTHING! */ }
   };
 
 #ifdef PHX_DEBUG
@@ -145,11 +145,11 @@ PHX::EvaluatorWithBaseImpl<Traits>::~EvaluatorWithBaseImpl()
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::FieldTag& ft)
-{ 
+{
   PHX::FTPredRef pred(ft);
-  std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+  std::vector< Teuchos::RCP<FieldTag> >::iterator test =
     std::find_if(evaluated_.begin(), evaluated_.end(), pred);
-  
+
   if ( test == evaluated_.end() )
     evaluated_.push_back(ft.clone());
 
@@ -165,7 +165,7 @@ template<typename Traits>
 template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::MDField<DataT,Props...>& f)
-{ 
+{
   this->addEvaluatedField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT,Props...>;
@@ -183,7 +183,7 @@ template<typename Traits>
 template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::Field<DataT,Rank,Layout>& f)
-{ 
+{
   this->addEvaluatedField(f.fieldTag());
 
   using NCF = PHX::Field<DataT,Rank,Layout>;
@@ -202,7 +202,7 @@ template<class DataT,class... Properties>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::FieldTag& ft,
                   const Kokkos::View<DataT,Properties...>& f)
-{ 
+{
   this->addEvaluatedField(ft);
 
   using NCF = Kokkos::View<DataT,Properties...>;
@@ -219,11 +219,11 @@ addEvaluatedField(const PHX::FieldTag& ft,
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::FieldTag& ft)
-{ 
+{
   PHX::FTPredRef pred(ft);
-  std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+  std::vector< Teuchos::RCP<FieldTag> >::iterator test =
     std::find_if(contributed_.begin(), contributed_.end(), pred);
-  
+
   if ( test == contributed_.end() )
     contributed_.push_back(ft.clone());
 
@@ -239,7 +239,7 @@ template<typename Traits>
 template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::MDField<DataT,Props...>& f)
-{ 
+{
   this->addContributedField(f.fieldTag());
 
   using NCF = PHX::MDField<DataT,Props...>;
@@ -256,7 +256,7 @@ template<typename Traits>
 template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::Field<DataT,Rank,Layout>& f)
-{ 
+{
   this->addContributedField(f.fieldTag());
 
   using NCF = PHX::Field<DataT,Rank,Layout>;
@@ -274,7 +274,7 @@ template<class DataT,class... Properties>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::FieldTag& ft,
                     const Kokkos::View<DataT,Properties...>& f)
-{ 
+{
   this->addContributedField(ft);
 
   using NCF = Kokkos::View<DataT,Properties...>;
@@ -292,9 +292,9 @@ void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::FieldTag& ft)
 {
   PHX::FTPredRef pred(ft);
-  std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+  std::vector< Teuchos::RCP<FieldTag> >::iterator test =
     std::find_if(required_.begin(), required_.end(), pred);
-  
+
   if ( test == required_.end() )
     required_.push_back(ft.clone());
 
@@ -359,7 +359,7 @@ addDependentField(const PHX::Field<const DataT,Rank,Layout>& f)
 //**********************************************************************
 // needed for function below
 // namespace PHX {
-//   template<typename T> 
+//   template<typename T>
 //   struct remove_all_pointers {
 //     typedef T type;
 //   };
@@ -452,7 +452,7 @@ createTask(Kokkos::TaskScheduler<PHX::exec_space>& ,
 //**********************************************************************
 #ifdef PHX_ENABLE_KOKKOS_AMT
 template<typename Traits>
-unsigned 
+unsigned
 PHX::EvaluatorWithBaseImpl<Traits>::
 taskSize() const
 {
@@ -482,7 +482,7 @@ getName() const
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-bindField(const PHX::FieldTag& ft, const PHX::any& f)
+bindField(const PHX::FieldTag& ft, const std::any& f)
 {
   const auto& range = field_binders_.equal_range(ft.identifier());
   for (auto it = range.first; it != range.second; ++it)

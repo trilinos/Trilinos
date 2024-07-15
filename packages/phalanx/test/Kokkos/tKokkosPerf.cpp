@@ -12,7 +12,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include <Phalanx_any.hpp>
 #include "Phalanx_Print.hpp"
 #include <unordered_map>
 #include <map>
