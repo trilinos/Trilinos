@@ -29,7 +29,10 @@
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_String_Utilities.hpp"
+
+#ifdef PANZER_HAVE_EPETRA_STACK
 #include "Panzer_EpetraLinearObjContainer.hpp"
+#endif
 
 #ifdef Panzer_BUILD_PAPI_SUPPORT
 #include "Panzer_PAPI_Counter.hpp"
@@ -240,6 +243,8 @@ int main(int argc, char *argv[])
   
       // build high-order flux response
       {
+#ifdef PANZER_HAVE_EPETRA_STACK
+
         user_app::HOFluxResponse_Builder builder;
         builder.comm = MPI_COMM_WORLD;
         builder.cubatureDegree = 2;
@@ -268,6 +273,7 @@ int main(int argc, char *argv[])
         // allocate a vector
         Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp(new Epetra_Vector(*resp->getMap()));
         resp->setVector(vec);
+#endif
       }
     }
     
@@ -323,6 +329,7 @@ int main(int argc, char *argv[])
       }
 
       if(fluxCalculation) {
+#ifdef PANZER_HAVE_EPETRA_STACK
         // initialize the assembly container
         panzer::AssemblyEngineInArgs ae_inargs;
         ae_inargs.container_ = linObjFactory->buildLinearObjContainer();
@@ -352,6 +359,7 @@ int main(int argc, char *argv[])
 
           *out << "   " << currentRespName << " = " << resp->value << std::endl;
         }
+#endif
       }
     }
 
