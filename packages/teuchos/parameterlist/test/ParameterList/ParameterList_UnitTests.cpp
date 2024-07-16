@@ -1208,6 +1208,53 @@ TEUCHOS_UNIT_TEST( ParameterList, print ) {
   }
 }
 
+// define enum class Shape in anonymous namespace outside of unittest
+// "NonPrintableParameterEntries" to avoid polution of class type in string comparison
+namespace {
+    enum class Shape : int { CIRCLE, SQUARE, TRIANGLE };
+}
+
+TEUCHOS_UNIT_TEST( ParameterList, NonPrintableParameterEntries){
+  // test printing std::vector<int> from a parameter list
+  {
+    std::vector<int> testVec = {1};
+    ParameterList paramList = ParameterList("std::vector test");
+    paramList.set("My std::vector<int>", testVec);
+
+    try {
+      paramList.print();  // Should throw!
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "If you get here then the test failed!");
+    }
+    catch (const NonprintableTypeException &except) {
+      std::string actualMessage = except.what();
+      std::string expectedMessage = "Trying to print type std::vector<int, std::allocator<int> > "
+                                    "which is not printable (i.e. does not have operator<<() defined)!";
+      TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
+    }
+  }
+
+  // test printing enum class from a parameter list
+  {
+    ParameterList paramList = ParameterList("enum class test");
+    paramList.set("My enum class", Shape::SQUARE);
+
+    try {
+      paramList.print();  // Should throw!
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "If you get here then the test failed!" );
+    }
+    catch (const NonprintableTypeException &except) {
+      std::string actualMessage = except.what();
+      std::string expectedMessage =
+              "Trying to print type Teuchos::(anonymous namespace)::Shape which is not printable "
+              "(i.e. does not have operator<<() defined)!";
+      TEST_ASSERT(actualMessage.find(expectedMessage) != std::string::npos);
+    }
+  }
+}
+
+
+
+
 } // namespace Teuchos
 
 

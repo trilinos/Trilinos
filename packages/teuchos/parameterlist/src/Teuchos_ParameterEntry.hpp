@@ -331,9 +331,6 @@ ParameterEntry::ParameterEntry(
     docString_(docString_in),
     validator_(validator_in)
 {
-  static_assert(std::is_same<typename Teuchos::is_comparable<T>::type, std::true_type>::value &&
-                std::is_same<typename Teuchos::is_printable<T>::type, std::true_type>::value,
-                "ParameterList values must be comparable and printable!");
 }
 
 // Set Methods
@@ -345,9 +342,6 @@ void ParameterEntry::setValue(
   RCP<const ParameterEntryValidator> const& validator_in
   )
 {
-  static_assert(std::is_same<typename Teuchos::is_comparable<T>::type, std::true_type>::value &&
-                std::is_same<typename Teuchos::is_printable<T>::type, std::true_type>::value,
-                "ParameterList values must be comparable and printable!");
   val_ = value_in;
   isDefault_ = isDefault_in;
   if(docString_in.length())
