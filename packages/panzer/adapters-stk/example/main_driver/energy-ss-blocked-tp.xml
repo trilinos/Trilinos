@@ -409,11 +409,21 @@
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-            <Parameter name="Preconditioner Type" type="string" value="None"/>
+            <Parameter name="Preconditioner Type" type="string" value="Teko"/>
             <ParameterList name="Preconditioner Types">
+              <ParameterList name="Teko">
+                <Parameter name="Inverse Type" type="string" value="My Block Diagonal Prec"/>
+                <Parameter name="Write Block Operator" type="bool" value="false"/>
+                <ParameterList name="Inverse Factory Library">
+                  <ParameterList name="My Block Diagonal Prec">
+                    <Parameter name="Type" type="string" value="Block Jacobi"/>
+                    <Parameter name="Inverse Type" type="string" value="Ifpack2"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
               <ParameterList name="Ifpack2">
                 <Parameter name="Overlap" type="int" value="1"/>
-                <Parameter name="Prec Type" type="string" value="ILU"/>
+                <Parameter name="Prec Type" type="string" value="ILUT"/>
                 <ParameterList name="Ifpack2 Settings">
                   <Parameter name="fact: drop tolerance" type="double" value="0"/>
                   <Parameter name="fact: ilut level-of-fill" type="double" value="1"/>
