@@ -12,7 +12,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_Print.hpp"
-#include <Phalanx_any.hpp>
+#include <any>
 #include <unordered_map>
 #include <map>
 
@@ -79,11 +79,11 @@ namespace phalanx_test {
     Kokkos::View<double**,PHX::Device>::HostMirror host_P = Kokkos::create_mirror_view(P);
     Kokkos::View<double**,PHX::Device>::HostMirror host_T = Kokkos::create_mirror_view(T);
 
-    std::unordered_map<std::string,PHX::any> data_container;
+    std::unordered_map<std::string,std::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<double**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
+      std::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
 
     Kokkos::View<double**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 
@@ -177,11 +177,11 @@ namespace phalanx_test {
     host_T = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_T",num_cells,num_ip,deriv_dim);
     host_k = Kokkos::View<FadType*,PHX::Device>::HostMirror("host_k",1,deriv_dim);
 
-    std::unordered_map<std::string,PHX::any> data_container;
+    std::unordered_map<std::string,std::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<FadType**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
+      std::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
 
     Kokkos::View<FadType**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 

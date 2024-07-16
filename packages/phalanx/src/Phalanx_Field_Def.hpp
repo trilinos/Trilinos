@@ -191,7 +191,7 @@ setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t)
 
 // **********************************************************************
 template<typename DataT,int Rank,typename Layout>
-void PHX::Field<DataT,Rank,Layout>::setFieldData(const PHX::any& a)
+void PHX::Field<DataT,Rank,Layout>::setFieldData(const std::any& a)
 {
 #if defined( PHX_DEBUG)
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
@@ -203,14 +203,14 @@ void PHX::Field<DataT,Rank,Layout>::setFieldData(const PHX::any& a)
   // the scalar type if this Field has a const scalar type.
   typedef Kokkos::View<typename array_type::non_const_data_type,Layout,PHX::Device> non_const_view;
   try {
-    non_const_view tmp = PHX::any_cast<non_const_view>(a);
+    non_const_view tmp = std::any_cast<non_const_view>(a);
     m_field_data = tmp;
   }
   catch (std::exception& ) {
-    std::cout << "\n\nError in compiletime PHX::Field::setFieldData() in PHX::any_cast. Tried to cast the field \""
+    std::cout << "\n\nError in compiletime PHX::Field::setFieldData() in std::any_cast. Tried to cast the field \""
 	      << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier()
 	      << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
-	      << "\" from a PHX::any object containing a type of \""
+	      << "\" from a std::any object containing a type of \""
 	      << Teuchos::demangleName(a.type().name()) << "\"." << std::endl;
     throw;
   }

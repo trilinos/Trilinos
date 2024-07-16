@@ -16,8 +16,8 @@
 #include "Phalanx_KokkosView_HiddenDimensionForSFINAE.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_DataLayout.hpp"
-#include "Phalanx_any.hpp"
 #include "Sacado.hpp"
+#include <any>
 #include <vector>
 
 namespace PHX {
@@ -46,12 +46,12 @@ namespace PHX {
    *  https://github.com/kokkos/kokkos/issues/2182
    */
   template<typename ScalarT,typename Layout,typename Device>
-  typename std::enable_if<PHX::requires_dynamic_hidden_dimension<ScalarT>::value,PHX::any>::type
+  typename std::enable_if<PHX::requires_dynamic_hidden_dimension<ScalarT>::value,std::any>::type
   createView(const PHX::ViewCreationMode& mode,
              const PHX::FieldTag& t,
              const std::vector<PHX::index_size_type>& derivative_dimensions,
              Kokkos::Impl::SharedAllocationTracker& tracker) {
-    PHX::any a;
+    std::any a;
 
     const PHX::DataLayout& dl = t.dataLayout();
     // DFad type contains a hidden dimension of the size of the number
@@ -234,12 +234,12 @@ namespace PHX {
    *  https://github.com/kokkos/kokkos/issues/2182
    */
   template<typename ScalarT,typename Layout,typename Device>
-  typename std::enable_if<!PHX::requires_dynamic_hidden_dimension<ScalarT>::value,PHX::any>::type
+  typename std::enable_if<!PHX::requires_dynamic_hidden_dimension<ScalarT>::value,std::any>::type
   createView(const PHX::ViewCreationMode& mode,
              const PHX::FieldTag& t,
              const std::vector<PHX::index_size_type>& ,
              Kokkos::Impl::SharedAllocationTracker& tracker) {
-    PHX::any a;
+    std::any a;
     const PHX::DataLayout& dl = t.dataLayout();
 
     using MemoryType = typename Sacado::ValueType<ScalarT>::type;

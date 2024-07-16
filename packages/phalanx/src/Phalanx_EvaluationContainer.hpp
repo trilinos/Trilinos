@@ -18,7 +18,7 @@
 #include "Phalanx_EvaluationContainer_Base.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_Evaluator.hpp"
-#include "Phalanx_any.hpp"
+#include <any>
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -49,7 +49,7 @@ namespace PHX {
     void
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
-    PHX::any getFieldData(const PHX::FieldTag& f);
+    std::any getFieldData(const PHX::FieldTag& f);
 
     /** \brief Set the memory for an unmanaged field
      *
@@ -64,11 +64,11 @@ namespace PHX {
      * always be correct.
     */
     void setUnmanagedField(const PHX::FieldTag& f,
-                           const PHX::any& a,
+                           const std::any& a,
                            const bool cleanup_output = true);
 
     //! Bind the memory pointer for a field in all evaluators
-    void bindField(const PHX::FieldTag& f, const PHX::any& a);
+    void bindField(const PHX::FieldTag& f, const std::any& a);
 
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& fm,
@@ -147,9 +147,9 @@ namespace PHX {
 
     bool post_registration_setup_called_;
 
-    std::unordered_map<std::string,PHX::any> fields_;
+    std::unordered_map<std::string,std::any> fields_;
 
-    std::unordered_map<std::string,PHX::any> unmanaged_fields_;
+    std::unordered_map<std::string,std::any> unmanaged_fields_;
 
     std::unordered_map<std::string,std::string> aliased_fields_;
 

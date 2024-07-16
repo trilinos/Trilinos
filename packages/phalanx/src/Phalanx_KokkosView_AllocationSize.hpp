@@ -16,8 +16,8 @@
 #include "Phalanx_KokkosView_HiddenDimensionForSFINAE.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_DataLayout.hpp"
-#include "Phalanx_any.hpp"
 #include "Sacado.hpp"
+#include <any>
 #include <vector>
 
 namespace PHX {

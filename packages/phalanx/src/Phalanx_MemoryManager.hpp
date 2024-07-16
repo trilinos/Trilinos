@@ -59,14 +59,14 @@ namespace PHX {
     const PHX::ViewCreationMode& mode_;
     const PHX::FieldTag& tag_;
     const std::vector<PHX::index_size_type>& extended_dimensions_;
-    PHX::any& field_;
+    std::any& field_;
     Kokkos::Impl::SharedAllocationTracker& tracker_;
   public:
     
     KokkosViewCreateFunctor(const PHX::ViewCreationMode& mode,
                             const PHX::FieldTag& tag,
                             const std::vector<PHX::index_size_type>& extended_dimensions,
-                            PHX::any& field,
+                            std::any& field,
                             Kokkos::Impl::SharedAllocationTracker& tracker) :
       mode_(mode),
       tag_(tag),
@@ -183,7 +183,7 @@ namespace PHX {
         \param[in]  extended_dimensions Size of any hidden dimensions for the scalar type. This can be empty for types that don't have hidden dimensions.
      */
     template<class EvaluationType>
-    void createView(PHX::any& field,
+    void createView(std::any& field,
                     Kokkos::Impl::SharedAllocationTracker& tracker,
                     const std::size_t& allocation_size_in_bytes,
                     const PHX::FieldTag& tag,
@@ -196,7 +196,7 @@ namespace PHX {
       Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::AllocateMemory,
                                                                                   tag,extended_dimensions,field,tracker));
 
-      TEUCHOS_TEST_FOR_EXCEPTION(field.empty(),std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(!field.has_value(),std::runtime_error,
                                  "Error: PHX::MemoryManager::createView(): could not build a Kokkos::View for field named \""
                                  << tag.identifier() << "\" of type \"" << tag.dataTypeInfo().name()
                                  << "\" for the evaluation type \"" << PHX::print<EvaluationType>() << "\".");
@@ -216,15 +216,15 @@ namespace PHX {
         \returns Newly created view wrapped in an any object.
      */
     template<class EvaluationType>
-    PHX::any createViewFromAllocationTracker(const PHX::FieldTag& tag,
+    std::any createViewFromAllocationTracker(const PHX::FieldTag& tag,
                                              const std::vector<PHX::index_size_type>& extended_dimensions,
                                              Kokkos::Impl::SharedAllocationTracker& tracker)
     {
-      PHX::any field;
+      std::any field;
       using EvalDataTypes = typename PHX::eval_scalar_types<EvaluationType>::type;
       Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::UseTracker,
                                                                                   tag,extended_dimensions,field,tracker));
-      TEUCHOS_TEST_FOR_EXCEPTION(field.empty(),std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(!field.has_value(),std::runtime_error,
                                  "Error: PHX::MemoryManager::createViewUsingTracker(): could not build a Kokkos::View for field named \""
                                  << tag.identifier() << "\" of type \"" << tag.dataTypeInfo().name()
                                  << "\" for the evaluation type \"" << PHX::print<EvaluationType>() << "\".");

@@ -14,8 +14,8 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include <any>
 #include "Phalanx_config.hpp"
-#include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
@@ -145,7 +145,7 @@ namespace PHX {
 
     void setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t);
 
-    void setFieldData(const PHX::any& a);
+    void setFieldData(const std::any& a);
 
     void releaseFieldData();
 

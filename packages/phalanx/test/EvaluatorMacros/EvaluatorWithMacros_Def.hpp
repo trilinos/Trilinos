@@ -58,7 +58,7 @@ namespace PHX {
 
   template<typename EvalT,typename Traits>
   void EvaluatorWithMacros1<EvalT,Traits>::
-  bindField(const PHX::FieldTag& , const PHX::any& )
+  bindField(const PHX::FieldTag& , const std::any& )
   {
     // DO NOTHING! This overrides the requirement for a pointer to
     // fields for unit testing.
@@ -118,7 +118,7 @@ namespace PHX {
 
   template<typename EvalT,typename Traits>
   void EvaluatorWithMacros2<EvalT,Traits>::
-  bindField(const PHX::FieldTag& , const PHX::any& )
+  bindField(const PHX::FieldTag& , const std::any& )
   {
     // DO NOTHING! This overrides the requirement for a pointer to
     // fields for unit testing.

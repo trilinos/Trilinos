@@ -14,8 +14,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
-#include "Phalanx_any.hpp"
 #include "Phalanx_EvaluationContainer_TemplateBuilder.hpp"
+#include <any>
 #include <sstream>
 
 #include "Phalanx_MDField.hpp"
@@ -46,7 +46,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<DataT,Props...>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -59,7 +59,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<const DataT,Props...>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -72,7 +72,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<DataT,Rank,Layout>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -85,7 +85,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<const DataT,Rank,Layout>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -98,22 +98,22 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(ft);
 
-  // PHX::any object is always the non-const data type.  To
+  // std::any object is always the non-const data type.  To
   // correctly cast the any object to the Kokkos::View, need to
   // pull the const off the scalar type if this MDField has a
   // const scalar type.
   typedef PHX::View<typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_data_type> non_const_view;
   try {
-    non_const_view tmp = PHX::any_cast<non_const_view>(a);
+    non_const_view tmp = std::any_cast<non_const_view>(a);
     f = tmp;
   }
   catch (std::exception& ) {
-    std::cout << "\n\nError in FieldManager::getFieldData()  using PHX::any_cast. Tried to cast a field "
+    std::cout << "\n\nError in FieldManager::getFieldData()  using std::any_cast. Tried to cast a field "
               << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
-              << "\" from a PHX::any object containing a type of \""
+              << "\" from a std::any object containing a type of \""
               << Teuchos::demangleName(a.type().name()) << "\"." << std::endl;
     throw;
   }
@@ -137,7 +137,7 @@ inline
 void PHX::FieldManager<Traits>::
 setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f, const bool cleanup_output)
 {
-  PHX::any any_f(f.get_static_view());
+  std::any any_f(f.get_static_view());
   m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f,
                                                                      cleanup_output);
 }
@@ -157,7 +157,7 @@ setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device
   typedef typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_value_type non_const_value_type;
   static_assert(std::is_same<value_type,non_const_value_type>::value, "FieldManager::setUnmanagedField(FieldTag, View) - DataT must be non-const!");
 
-  PHX::any any_f(f);
+  std::any any_f(f);
   m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(ft,any_f,cleanup_output);
 }
 

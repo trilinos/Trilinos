@@ -138,7 +138,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   std::unordered_map<std::string,Kokkos::Impl::SharedAllocationTracker> field_allocation_trackers;
   if (minimize_dag_memory_use_) {
     for (const auto& f : fields_to_allocate_) {
-      PHX::any field;
+      std::any field;
       Kokkos::Impl::SharedAllocationTracker tracker;
       memory_manager_->createView<EvalT>(field,tracker,f.first,*(f.second),kokkos_extended_data_type_dimensions_);
       fields_[f.second->identifier()] = field;
@@ -503,7 +503,7 @@ getKokkosExtendedDataTypeDimensions() const
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
-PHX::any
+std::any
 PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
   //return fields_[f.identifier()];
@@ -517,7 +517,7 @@ PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 // *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
-setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a,
+setUnmanagedField(const PHX::FieldTag& f, const std::any& a,
                   const bool cleanup_output)
 {
   // An unmanaged field is a MDField where the user has manually
@@ -564,7 +564,7 @@ setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a,
 // *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
-bindField(const PHX::FieldTag& f, const PHX::any& a)
+bindField(const PHX::FieldTag& f, const std::any& a)
 {
   auto s = fields_.find(f.identifier());
 
@@ -614,7 +614,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->dag_manager_ << std::endl;
   os << "Fields:" << std::endl;
-  for (std::unordered_map<std::string,PHX::any>::const_iterator i =
+  for (std::unordered_map<std::string,std::any>::const_iterator i =
 	 fields_.begin(); i != fields_.end(); ++i)
     os << "  " << i->first << std::endl;
 
