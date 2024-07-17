@@ -291,7 +291,7 @@ namespace Ioex {
             "exodus", filename, Ioss::READ_RESTART, Ioss::ParallelUtils::comm_self(), properties);
         Ioss::Region region(dbi, "line_decomp_region");
 
-        int status = Ioss::DecompUtils::line_decompose(
+        Ioss::DecompUtils::line_decompose(
             region, m_processorCount, m_decomposition.m_method, m_decomposition.m_decompExtra,
             element_to_proc_global, INT(0));
 
