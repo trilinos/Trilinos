@@ -11,6 +11,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_CopyDatabase.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_DecompositionUtils.h>
 #include <Ioss_FileInfo.h>
 #include <Ioss_MemoryUtils.h>
 #include <Ioss_MeshCopyOptions.h>
@@ -387,12 +388,11 @@ int main(int argc, char *argv[])
   dbi->set_surface_split_type(Ioss::SPLIT_BY_DONT_SPLIT);
   dbi->set_field_separator(0);
 
-  // NOTE: 'region' owns 'db' pointer at this time...
-  Ioss::Region region(dbi, "region_1");
-
-  region.output_summary(std::cerr, true);
-
   try {
+    // NOTE: 'region' owns 'db' pointer at this time...
+    Ioss::Region region(dbi, "region_1");
+    region.output_summary(std::cerr, true);
+
     if (dbi->int_byte_size_api() == 4) {
       progress("4-byte slice");
       slice(region, nem_file, interFace, 1);
@@ -1374,7 +1374,7 @@ namespace {
     Ioss::PropertyManager properties = set_properties(interFace);
 
     Ioss::chain_t<INT> element_chains;
-    std::vector<int>   weights;
+    std::vector<float> weights;
     if (interFace.lineDecomp_) {
       element_chains =
           Ioss::generate_element_chains(region, interFace.lineSurfaceList_, debug_level, dummy);
@@ -1382,8 +1382,8 @@ namespace {
 
       if (interFace.decomposition_method() == "rcb" || interFace.decomposition_method() == "rib" ||
           interFace.decomposition_method() == "hsfc") {
-        weights =
-            line_decomp_weights(element_chains, region.get_property("element_count").get_int());
+        weights = Ioss::DecompUtils::line_decomp_weights(
+            element_chains, region.get_property("element_count").get_int());
         progress("generate_element_weights");
       }
     }
@@ -1400,12 +1400,12 @@ namespace {
 
     if (interFace.lineDecomp_) {
       // Make sure all elements on a chain are on the same processor rank...
-      line_decomp_modify(element_chains, elem_to_proc, interFace.processor_count());
+      Ioss::DecompUtils::line_decomp_modify(element_chains, elem_to_proc,
+                                            interFace.processor_count());
     }
 
     if (debug_level & 32) {
-      output_decomposition_statistics(elem_to_proc, interFace.processor_count(),
-                                      elem_to_proc.size());
+      Ioss::DecompUtils::output_decomposition_statistics(elem_to_proc, interFace.processor_count());
     }
 
     if (!create_split_files) {
@@ -1428,7 +1428,7 @@ namespace {
       Ioss::MeshCopyOptions options{};
       options.ints_64_bit       = sizeof(INT) == 64;
       options.delete_timesteps  = true;
-      options.data_storage_type = 2;
+      options.data_storage_type = 1;
       options.verbose           = true;
 
       // Copy mesh portion of input region to the output region

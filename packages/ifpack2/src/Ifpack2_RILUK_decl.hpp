@@ -55,6 +55,7 @@
 #include "Ifpack2_IlukGraph.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
 
+#include <memory>
 #include <type_traits>
 
 namespace Teuchos {
@@ -568,6 +569,14 @@ public:
   //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
   Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
 
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -578,13 +587,16 @@ private:
   static void checkOrderingConsistency (const row_matrix_type& A);
   void initAllValues (const row_matrix_type& A);
 
-  /// \brief Return A, wrapped in a LocalFilter, if necessary.
-  ///
-  /// "If necessary" means that if A is already a LocalFilter, or if
-  /// its communicator only has one process, then we don't need to
-  /// wrap it, so we just return A.
-  static Teuchos::RCP<const row_matrix_type>
-  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+  void compute_serial();
+  void compute_kkspiluk();
+// Workaround Cuda limitation of KOKKOS_LAMBDA in private/protected member functions
+#ifdef KOKKOS_ENABLE_CUDA
+public:
+#endif
+  void compute_kkspiluk_stream();
+#ifdef KOKKOS_ENABLE_CUDA
+private:
+#endif
 
 protected:
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
@@ -599,9 +611,8 @@ protected:
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
-  lno_row_view_t A_local_rowmap_;
-  lno_nonzero_view_t A_local_entries_;
-  scalar_nonzero_view_t A_local_values_;
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
+  Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
   std::vector<local_matrix_device_type> A_local_diagblks;
   std::vector< lno_row_view_t > A_local_diagblks_rowmap_v_;
   std::vector< lno_nonzero_view_t > A_local_diagblks_entries_v_;
@@ -649,6 +660,10 @@ protected:
   std::vector<execution_space> exec_space_instances_;
   bool hasStreamReordered_;
   std::vector<typename lno_nonzero_view_t::non_const_type> perm_v_;
+  std::vector<typename lno_nonzero_view_t::non_const_type> reverse_perm_v_;
+  mutable std::unique_ptr<MV> Y_tmp_;
+  mutable std::unique_ptr<MV> reordered_x_;
+  mutable std::unique_ptr<MV> reordered_y_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with

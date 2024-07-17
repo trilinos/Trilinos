@@ -58,7 +58,7 @@
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
 namespace Kokkos {
-namespace Profiling {
+namespace Tools {
 extern void pushRegion (const std::string&);
 extern void popRegion ();
 } // namespace Profiling
@@ -492,7 +492,7 @@ public:
   void startBaseTimer() {
     timer_.BaseTimer::start();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-    ::Kokkos::Profiling::pushRegion(timer_.get_full_name());
+    ::Kokkos::Tools::pushRegion(timer_.get_full_name());
 #endif
   }
 
@@ -502,7 +502,7 @@ public:
   void stopBaseTimer() {
     timer_.BaseTimer::stop();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-    ::Kokkos::Profiling::popRegion();
+    ::Kokkos::Tools::popRegion();
 #endif
   }
 
@@ -520,7 +520,7 @@ public:
         top_ = top_->start(name.c_str());
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (push_kokkos_profiling_region) {
-        ::Kokkos::Profiling::pushRegion(name);
+        ::Kokkos::Tools::pushRegion(name);
       }
 #endif
     }
@@ -559,7 +559,7 @@ public:
         timer_.BaseTimer::stop();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (pop_kokkos_profiling_region) {
-        ::Kokkos::Profiling::popRegion();
+        ::Kokkos::Tools::popRegion();
       }
 #endif
     }

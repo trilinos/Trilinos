@@ -22,5 +22,8 @@
     <Parameter name="3" type="string" value="1d-mm/transfer3"/>
           </ParameterList>
 
+          <ParameterList name="params">
+            <Parameter name="keepTransfers" type="int" value="-1"/>
+          </ParameterList>
+
         </ParameterList>
-        

@@ -1094,6 +1094,16 @@ namespace { // (anonymous)
     out << "Got to the end!" << endl;
   }
 
+//! @test Check that a default-initialized @ref FixedHashTable claims 0 pairs. This test was proposed in issue #13034.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnDefaultInit, ValueType, KeyType, DeviceType)
+  {
+    using fixed_hash_table_t = Tpetra::Details::FixedHashTable<KeyType,ValueType,DeviceType>;
+    
+    fixed_hash_table_t table {};
+    
+    TEST_EQUALITY_CONST(table.numPairs(), 0);
+  }
+  
   //
   // Instantiations of the templated unit test(s) above.
   //
@@ -1116,7 +1126,8 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, NoncontigKeysAndVals, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, DuplicateKeys, LO, GO, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, CopyCtorNoDupKeys, LO, GO, DEVICE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, CopyCtorDupKeys, LO, GO, DEVICE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, CopyCtorDupKeys, LO, GO, DEVICE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FixedHashTable_T, ZeroPairsOnDefaultInit, LO, GO, DEVICE )
 
   // The typedefs below are there because macros don't like arguments
   // with commas in them.

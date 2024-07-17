@@ -274,7 +274,7 @@ namespace Details {
         out << os.str ();
       }
       using Tpetra::sort2;
-      sort2 (remotePids.begin (), remotePids.end (), remoteGids.begin ());
+      sort2 (remotePids.begin (), remotePids.end (), remoteGids.begin (), true);
       if (verbose) {
         std::ostringstream os;
         os << *verboseHeader << "- After sort2:" << endl

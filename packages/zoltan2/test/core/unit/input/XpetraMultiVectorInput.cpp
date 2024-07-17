@@ -168,7 +168,6 @@ void readChacoGraphHeaderInfo(
   std::ifstream &fp, 
   size_t &nIDs, 
   size_t &nEdges, 
-  char *code, 
   int &nWgts)
 {
   // Read the header info from a Chaco .graph file
@@ -176,8 +175,9 @@ void readChacoGraphHeaderInfo(
   std::getline(fp, line);
   while (line[0]=='#') std::getline(fp, line); // skip comments
   std::istringstream issHeader(line);
-  issHeader >> nIDs >> nEdges >> code;
-  if (!strcmp(code, "010") || !strcmp(code, "011")) {
+  std::string s_code;
+  issHeader >> nIDs >> nEdges >> s_code;
+  if (!strcmp(s_code.c_str(), "010") || !strcmp(s_code.c_str(), "011")) {
     if (!(issHeader >> nWgts)) nWgts = 1;
   }
 }
@@ -205,7 +205,6 @@ int verifyGenerateFiles(
 
     size_t nIDsGen, nIDsInp;
     size_t nEdgesGen, nEdgesInp;
-    char codeGen[4], codeInp[4];
     int nWgtsGen = 0, nWgtsInp = 0;
     std::string lineGen, lineInp;
 
@@ -217,11 +216,11 @@ int verifyGenerateFiles(
 
     // Read header info from generated file
     fpGen.open(graphFilenameGen.c_str(), std::ios::in);
-    readChacoGraphHeaderInfo(fpGen, nIDsGen, nEdgesGen, codeGen, nWgtsGen);
+    readChacoGraphHeaderInfo(fpGen, nIDsGen, nEdgesGen, nWgtsGen);
 
     // Read header info from input file
     fpInp.open(graphFilenameInp.c_str(), std::ios::in);
-    readChacoGraphHeaderInfo(fpInp, nIDsInp, nEdgesInp, codeInp, nWgtsInp);
+    readChacoGraphHeaderInfo(fpInp, nIDsInp, nEdgesInp, nWgtsInp);
 
     // input file and generated file should have same number of IDs
     if (nIDsGen != nIDsInp) {

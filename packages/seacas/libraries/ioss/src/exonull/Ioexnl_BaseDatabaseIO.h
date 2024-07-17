@@ -121,8 +121,8 @@ namespace Ioexnl {
                             Ioss::Map &entity_map, void *ids, size_t num_to_get,
                             size_t offset) const;
 
-    void compute_block_membership_nl(Ioss::SideBlock          *efblock,
-                                     std::vector<std::string> &block_membership) const override;
+    void compute_block_membership_nl(Ioss::SideBlock *efblock,
+                                     Ioss::NameList  &block_membership) const override;
 
     IOSS_NODISCARD int int_byte_size_db() const override;
     void               set_int_byte_size_api(Ioss::DataSize size) const override;
@@ -216,8 +216,8 @@ namespace Ioexnl {
     void add_attribute_fields(Ioss::GroupingEntity *block, int attribute_count,
                               const std::string &type);
 
-    void common_write_meta_data(Ioss::IfDatabaseExistsBehavior behavior);
-    void output_other_meta_data();
+    void common_write_metadata(Ioss::IfDatabaseExistsBehavior behavior);
+    void output_other_metadata();
 
     int64_t internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,
                                         int64_t position, int64_t block_count,

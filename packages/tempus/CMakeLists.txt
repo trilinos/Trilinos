@@ -21,7 +21,7 @@ COMBINED_OPTION( TEMPUS_ENABLE_EPETRA_STACK
     " Defaults to ON if the Epetra, Stratimikos, and Belos are all enabled,"
     " otherwise defaults to OFF."
   )
-MESSAGE(STATUS "Epetra Stack: ${TEMPUS_ENABLE_EPETRA_STACK}")
+MESSAGE(STATUS "Tempus: Epetra Stack: ${TEMPUS_ENABLE_EPETRA_STACK}")
 
 COMBINED_OPTION( TEMPUS_ENABLE_TPETRA_STACK
   DEP_OPTIONS_NAMES Tempus_ENABLE_Tpetra
@@ -33,7 +33,7 @@ COMBINED_OPTION( TEMPUS_ENABLE_TPETRA_STACK
     " Defaults to ON if the Tpetra, Stratimikos, and Belos are all enabled,"
     " otherwise defaults to OFF."
   )
-MESSAGE(STATUS "Tpetra Stack: ${TEMPUS_ENABLE_TPETRA_STACK}")
+MESSAGE(STATUS "Tempus: Tpetra Stack: ${TEMPUS_ENABLE_TPETRA_STACK}")
 
 # For use by Tempus unit tests
 GLOBAL_SET(TEMPUS_UNIT_TEST_MAIN

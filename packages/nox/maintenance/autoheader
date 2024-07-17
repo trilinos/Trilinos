@@ -1,6 +1,4 @@
 #!/usr/bin/perl
-# $Id$
-# $Source$
 
 ########################################################################
 ### Automatically insert header text into given file

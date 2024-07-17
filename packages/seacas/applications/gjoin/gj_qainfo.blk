@@ -6,8 +6,8 @@ C    See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'GJoin2  '
-      QAINFO(2) = '2024/03/19                      '
-      QAINFO(3) = ' 1.41                           '
+      QAINFO(2) = '2024/05/29                      '
+      QAINFO(3) = ' 1.42                           '
 
 C - Added EXPXYZ - By material matching
 C - Fixes in expxyz, matxyz, comand, irennp
@@ -78,3 +78,4 @@ c - remove warning about expxyz material matching routine
 c - fix name length issues
 c - fix parsing if no nodesets on models
 c - handle mirroring of tet10 models
+c - correct handling of nset and sset names

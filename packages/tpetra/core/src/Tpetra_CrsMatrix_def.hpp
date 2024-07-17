@@ -1764,7 +1764,7 @@ namespace Tpetra {
     // details; look for GCC_WORKAROUND macro definition.
     if (numInserted > 0) {
       const size_t startOffset = oldNumEnt;
-      memcpy (&oldRowVals[startOffset], &newRowVals[0],
+      memcpy ((void*) &oldRowVals[startOffset], &newRowVals[0],
               numInserted * sizeof (impl_scalar_type));
     }
   }
@@ -5092,17 +5092,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // The apply helper does not exist, so create it.
       // Decide now whether to use the imbalanced row path, or the default.
       bool useMergePath = false;
-      LocalOrdinal nrows = getLocalNumRows();
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      LocalOrdinal maxRowImbalance = 0;
-      if(nrows != 0)
-        maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
       //TODO: when https://github.com/kokkos/kokkos-kernels/issues/2166 is fixed and,
       //we can use SPMV_MERGE_PATH for the native spmv as well.
       //Take out this ifdef to enable that.
+      //
+      //Until then, only use SPMV_MERGE_PATH when calling cuSPARSE.
+      if constexpr(std::is_same_v<execution_space, Kokkos::Cuda>) {
+        LocalOrdinal nrows = getLocalNumRows();
+        LocalOrdinal maxRowImbalance = 0;
+        if(nrows != 0)
+          maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
 
-      if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-        useMergePath = true;
+        if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+          useMergePath = true;
+      }
 #endif
       applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map,
           useMergePath ? KokkosSparse::SPMV_MERGE_PATH : KokkosSparse::SPMV_DEFAULT);

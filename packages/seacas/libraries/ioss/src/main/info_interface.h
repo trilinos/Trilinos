@@ -32,6 +32,7 @@ namespace Info {
     bool list_groups() const { return listGroups_; }
     bool show_config() const { return showConfig_; }
     bool query_timesteps_only() const { return queryTimeOnly_; }
+    bool field_details() const { return fieldDetails_; }
 
     int         surface_split_scheme() const { return surfaceSplitScheme_; }
     char        field_suffix_separator() const { return fieldSuffixSeparator_; }
@@ -66,6 +67,7 @@ namespace Info {
     bool showConfig_{false};
     bool summary_{false};
     bool queryTimeOnly_{false};
+    bool fieldDetails_{false};
 
     char fieldSuffixSeparator_{'_'};
 

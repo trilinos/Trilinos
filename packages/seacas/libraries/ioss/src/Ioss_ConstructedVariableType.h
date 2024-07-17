@@ -16,6 +16,10 @@ namespace Ioss {
   {
   public:
     IOSS_NODISCARD std::string label(int which, char suffix_sep = '_') const override;
+
+    IOSS_NODISCARD VariableType::Type type() const override { return Type::CONSTRUCTED; }
+    IOSS_NODISCARD std::string type_string() const override { return "Constructed"; }
+
     ConstructedVariableType(const std::string &my_name, int number_components, bool delete_me);
     explicit ConstructedVariableType(int number_components, bool delete_me);
     ConstructedVariableType(const ConstructedVariableType &) = delete;

@@ -20,6 +20,17 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #define __TACHO_SUPERNODE_INFO_HPP__
 
 #include "Tacho_Util.hpp"
+#if defined(KOKKOS_ENABLE_CUDA)
+ #include <cusparse_v2.h>
+#elif defined(KOKKOS_ENABLE_HIP)
+ #if __has_include(<rocm-core/rocm_version.h>)
+  #include <rocm-core/rocm_version.h>
+ #else
+  #include <rocm_version.h>
+ #endif
+ #include <rocsparse/rocsparse.h>
+ #define ROCM_VERSION ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
+#endif
 
 /// \file Tacho_SupernodeInfo.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -99,6 +110,9 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using ordinal_pair_type_array = Kokkos::View<ordinal_pair_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
 
+  using rowptr_view = Kokkos::View<int *, device_type>;
+  using colind_view = Kokkos::View<int *, device_type>;
+  using nzvals_view = Kokkos::View<value_type *, device_type>;
   using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
 
   struct Supernode {
@@ -117,6 +131,26 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     value_type *l_buf, *u_buf;
 
     bool do_not_apply_pivots;
+
+    // for using SpMV
+    rowptr_view rowptrU;
+    colind_view colindU;
+    nzvals_view nzvalsU;
+
+    rowptr_view rowptrL;
+    colind_view colindL;
+    nzvals_view nzvalsL;
+
+    bool spmv_explicit_transpose;
+#if defined(KOKKOS_ENABLE_CUDA)
+    cusparseHandle_t cusparseHandle;
+    cusparseSpMatDescr_t U_cusparse;
+    cusparseSpMatDescr_t L_cusparse;
+#elif defined(KOKKOS_ENABLE_HIP)
+    rocsparse_handle rocsparseHandle;
+    rocsparse_spmat_descr descrU;
+    rocsparse_spmat_descr descrL;
+#endif
 
     KOKKOS_INLINE_FUNCTION
     Supernode()

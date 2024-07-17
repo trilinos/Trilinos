@@ -323,6 +323,8 @@ main (int argc, char* argv[])
     Epetra_SerialComm epetraComm;
     tpetraComm = rcp (new Teuchos::SerialComm<int>);
 #  endif // EPETRA_MPI
+#else
+    tpetraComm = Tpetra::getDefaultComm ();
 #endif // HAVE_TPETRACORE_EPETRA
 
     //const int numProcs = tpetraComm->getSize (); // unused

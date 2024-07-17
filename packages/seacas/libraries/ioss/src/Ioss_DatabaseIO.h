@@ -344,11 +344,11 @@ namespace Ioss {
      *
      *  \returns The informative strings.
      */
-    IOSS_NODISCARD const std::vector<std::string> &get_information_records() const
+    IOSS_NODISCARD const Ioss::NameList &get_information_records() const
     {
       return informationRecords;
     }
-    void add_information_records(const std::vector<std::string> &info);
+    void add_information_records(const Ioss::NameList &info);
     void add_information_record(const std::string &info);
 
     // QA Records:
@@ -368,7 +368,7 @@ namespace Ioss {
      *  \returns All QA records in a single vector. Every 4 consecutive elements of the
      *           vector make up a single QA record.
      */
-    IOSS_NODISCARD const std::vector<std::string> &get_qa_records() const { return qaRecords; }
+    IOSS_NODISCARD const Ioss::NameList &get_qa_records() const { return qaRecords; }
     void add_qa_record(const std::string &code, const std::string &code_qa, const std::string &date,
                        const std::string &time);
 
@@ -480,19 +480,17 @@ namespace Ioss {
     void set_surface_split_type(Ioss::SurfaceSplitType split_type) { splitType = split_type; }
     IOSS_NODISCARD Ioss::SurfaceSplitType get_surface_split_type() const { return splitType; }
 
-    void set_block_omissions(const std::vector<std::string> &omissions,
-                             const std::vector<std::string> &inclusions = {});
+    void set_block_omissions(const Ioss::NameList &omissions,
+                             const Ioss::NameList &inclusions = {});
 
-    void set_assembly_omissions(const std::vector<std::string> &omissions,
-                                const std::vector<std::string> &inclusions = {});
+    void set_assembly_omissions(const Ioss::NameList &omissions,
+                                const Ioss::NameList &inclusions = {});
 
-    void get_block_adjacencies(const Ioss::ElementBlock *eb,
-                               std::vector<std::string> &block_adjacency) const
+    void get_block_adjacencies(const Ioss::ElementBlock *eb, Ioss::NameList &block_adjacency) const
     {
       return get_block_adjacencies_nl(eb, block_adjacency);
     }
-    void compute_block_membership(Ioss::SideBlock          *efblock,
-                                  std::vector<std::string> &block_membership) const
+    void compute_block_membership(Ioss::SideBlock *efblock, Ioss::NameList &block_membership) const
     {
       return compute_block_membership_nl(efblock, block_membership);
     }
@@ -625,7 +623,7 @@ namespace Ioss {
                        const std::string &type_name, const T *set_type);
     template <typename T>
     void create_group(EntityType type, const std::string &type_name,
-                      const std::vector<std::string> &group_spec, const T *set_type);
+                      const Ioss::NameList &group_spec, const T *set_type);
 
     // Create new sets as groups of existing exodus sets...
     void handle_groups();
@@ -718,13 +716,13 @@ namespace Ioss {
     // element ids and offsets are still calculated assuming that the
     // blocks exist in the model...
     // Only one of these can have values and the other must be empty.
-    std::vector<std::string> blockOmissions{};
-    std::vector<std::string> blockInclusions{};
-    std::vector<std::string> assemblyOmissions{};
-    std::vector<std::string> assemblyInclusions{};
+    Ioss::NameList blockOmissions{};
+    Ioss::NameList blockInclusions{};
+    Ioss::NameList assemblyOmissions{};
+    Ioss::NameList assemblyInclusions{};
 
-    std::vector<std::string> informationRecords{};
-    std::vector<std::string> qaRecords{};
+    Ioss::NameList informationRecords{};
+    Ioss::NameList qaRecords{};
 
     //---Node Map -- Maps internal (1..NUMNP) ids to global ids used on the
     //               application side.   global = nodeMap[local]
@@ -780,11 +778,10 @@ namespace Ioss {
     virtual bool end_state_nl(int state, double time);
 
     void get_block_adjacencies_nl(const Ioss::ElementBlock *eb,
-                                  std::vector<std::string> &block_adjacency) const;
+                                  Ioss::NameList           &block_adjacency) const;
 
-    virtual void
-    compute_block_membership_nl(Ioss::SideBlock * /* efblock */,
-                                std::vector<std::string> & /* block_membership */) const
+    virtual void compute_block_membership_nl(Ioss::SideBlock * /* efblock */,
+                                             Ioss::NameList & /* block_membership */) const
     {
     }
 

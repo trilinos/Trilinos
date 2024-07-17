@@ -32,3 +32,19 @@ TEST_F(Iocatalyst_DatabaseIOTest, GetNumLocalPointsInMeshSet)
   addBlockMesh(bmFour);
   EXPECT_EQ(bmSet.getNumLocalPointsInMeshSet(), 189);
 }
+
+TEST_F(Iocatalyst_DatabaseIOTest, AddTransientFieldToBlockMesh)
+{
+  Iocatalyst::BlockMesh bmOne;
+  setBlockMeshSize(2, 2, 2);
+
+  bmOne.addTransientCellField("foo_x", 2);
+  bmOne.addTransientPointField("bar_x", 3);
+
+  addBlockMesh(bmOne);
+
+  std::string exodusFileName =
+      "AddTransientFieldToBlockMesh" + CATALYST_TEST_FILE_NP + std::to_string(part.size) + EXODUS_FILE_EXTENSION;
+  Iocatalyst::BlockMeshSet::IOSSparams iop(exodusFileName, EXODUS_DATABASE_TYPE);
+  bmSet.writeIOSSFile(iop);
+}

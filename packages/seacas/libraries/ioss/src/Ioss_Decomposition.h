@@ -39,7 +39,7 @@
 #endif
 
 namespace Ioss {
-  IOSS_EXPORT const std::vector<std::string> &valid_decomp_methods();
+  IOSS_EXPORT const Ioss::NameList &valid_decomp_methods();
 
   class IOSS_EXPORT BlockDecompositionData
   {
@@ -277,6 +277,7 @@ namespace Ioss {
     void simple_decompose();
     void simple_node_decompose();
     void guided_decompose();
+    void line_decompose();
 
     void calculate_element_centroids(const std::vector<double> &x, const std::vector<double> &y,
                                      const std::vector<double> &z);
@@ -801,11 +802,13 @@ namespace Ioss {
     size_t m_importPreLocalNodeIndex{0};
 
     bool m_retainFreeNodes{true};
+    bool m_lineDecomp{false};
     bool m_showProgress{false};
     bool m_showHWM{false};
 
-    std::vector<INT>    m_elementToProc; // Used by "MAP" scheme...
+    std::vector<int>    m_elementToProc; // Used by "MAP" scheme...
     std::vector<double> m_centroids;
+    std::vector<float>  m_weights;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
     std::vector<INT>    m_adjacency; // Size is sum of element connectivity sizes
 

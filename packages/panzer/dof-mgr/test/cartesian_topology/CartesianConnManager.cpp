@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "CartesianConnManager.hpp"
@@ -49,8 +17,7 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-namespace panzer {
-namespace unit_test {
+namespace panzer::unit_test {
 
 void CartesianConnManager::
 initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny,
@@ -113,7 +80,7 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   {
     totalEdges_ = totalEdges_ + totalFaces_;
     totalFaces_ *= 2;
-    totalElements_ *= totalFaces_;
+    totalElements_ *= 2;
     numSubElemsPerBrickElement_ = 2;
     numSubSidesPerBrickSide_.assign(4,1);
 
@@ -296,10 +263,12 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
 void CartesianConnManager::buildConnectivity(const panzer::FieldPattern & fp)
 {
   TEUCHOS_ASSERT(isInitialized);
-  int numIds = fp.numberIds();
+  numIds_ = fp.numberIds();
 
-  connectivity_.clear();
-  connectivity_.resize(totalElements_);
+  connectivity_ = connectivity_entries_host_view_type(
+    Kokkos::view_alloc("CartesianConnManager: connectivity - entries - host", Kokkos::WithoutInitializing),
+    totalElements_ * numIds_
+  );
 
   std::vector<std::string> elementBlockIds;
   getElementBlockIds(elementBlockIds);
@@ -311,20 +280,20 @@ void CartesianConnManager::buildConnectivity(const panzer::FieldPattern & fp)
     const std::vector<LocalOrdinal> & elmts = getElementBlock(elementBlockIds[i]);
     for(std::size_t e=0;e<elmts.size();e++) {
       LocalOrdinal element = elmts[e];
-      std::vector<GlobalOrdinal> & conn = connectivity_[element];
+      LocalOrdinal offset = 0;
 
       int ordered_dim[4] = { 0, 1, 2, 3 }; // this is the order of creation
       for(int d=0;d<4;d++) {
         int od = ordered_dim[d];
         if(dim_==2) {
           if(od!=3) // ordered dimension in 2D is incorrect
-            updateConnectivity_2d(fp,od,element,conn);
+            updateConnectivity_2d(fp,od,element,offset);
         }
         else
-          updateConnectivity_3d(fp,od,element,conn);
+          updateConnectivity_3d(fp,od,element,offset);
       }
 
-      TEUCHOS_ASSERT_EQUALITY(numIds,Teuchos::as<int>(conn.size()));
+      TEUCHOS_ASSERT_EQUALITY(offset, static_cast<LocalOrdinal>(numIds_));
     }
   }
 }
@@ -336,7 +305,7 @@ CartesianConnManager::noConnectivityClone() const
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  RCP<CartesianConnManager> clone = rcp(new CartesianConnManager);
+  auto clone = Teuchos::make_rcp<CartesianConnManager>();
 
   clone->numProc_ = numProc_;
   clone->myRank_ = myRank_;
@@ -696,7 +665,7 @@ void
 CartesianConnManager::updateConnectivity_2d(const panzer::FieldPattern & fp,
                                             int subcellDim,
                                             int localCellId,
-                                            std::vector<GlobalOrdinal> & conn) const
+                                            LocalOrdinal& offset) const
 {
   int localElementId = localCellId/numSubElemsPerBrickElement_;
   int subElementId = localCellId%numSubElemsPerBrickElement_;
@@ -716,7 +685,8 @@ CartesianConnManager::updateConnectivity_2d(const panzer::FieldPattern & fp,
       GlobalOrdinal node =  (totalBrickElements_.x+1)*index.y + index.x
                            + (n==1 || n==2) * 1                    // shift for i+1
                            + (n==3 || n==2) * (totalBrickElements_.x+1); // shift for j+1
-      conn.push_back(node);
+      connectivity_(localCellId * numIds_ + offset) = node;
+      offset++;
     }
     else if(subcellDim==1) {
       int e = subElemToBrickElementEdgesMap_[subElementId][c];
@@ -729,10 +699,13 @@ CartesianConnManager::updateConnectivity_2d(const panzer::FieldPattern & fp,
       if((elemTopology_.getKey()==shards::Triangle<3>::key) && (e == 4)) {
         edge = totalNodes_ + totalEdges_ - (totalBrickElements_.x * totalBrickElements_.y) + computeGlobalBrickElementIndex(index);
       }
-      conn.push_back(edge);
+      connectivity_(localCellId * numIds_ + offset) = edge;
+      offset++;
     }
-    else if(subcellDim==2)
-      conn.push_back(totalNodes_+totalEdges_+numSubElemsPerBrickElement_*computeGlobalBrickElementIndex(index)+subElementId);
+    else if(subcellDim==2) {
+      connectivity_(localCellId * numIds_ + offset) = totalNodes_+totalEdges_+numSubElemsPerBrickElement_*computeGlobalBrickElementIndex(index)+subElementId;
+      offset++;
+    }
 
     else {
       TEUCHOS_ASSERT(false);
@@ -744,7 +717,7 @@ void
 CartesianConnManager::updateConnectivity_3d(const panzer::FieldPattern & fp,
                                             int subcellDim,
                                             int localCellId,
-                                            std::vector<GlobalOrdinal> & conn) const
+                                            LocalOrdinal& offset) const
 {
   int localElementId = localCellId/numSubElemsPerBrickElement_;
   int subElementId = localCellId%numSubElemsPerBrickElement_;
@@ -766,7 +739,8 @@ CartesianConnManager::updateConnectivity_3d(const panzer::FieldPattern & fp,
                            + (n==3 || n==2 || n==6 || n==7) * (totalBrickElements_.x+1)                       // shift for j+1
                            + (n==4 || n==5 || n==6 || n==7) * (totalBrickElements_.y+1)*(totalBrickElements_.x+1); // shift for k+1
 
-      conn.push_back(node);
+      connectivity_(localCellId * numIds_ + offset) = node;
+      offset++;
     }
     else if(subcellDim==1) {
       int e = subElemToBrickElementEdgesMap_[subElementId][c];
@@ -827,7 +801,8 @@ CartesianConnManager::updateConnectivity_3d(const panzer::FieldPattern & fp,
         if(e == 18)
           edge = totalNodes_ +  totalEdges_ - totalBrickElements_.x * totalBrickElements_.y * totalBrickElements_.z + computeGlobalBrickElementIndex(index);
       }
-      conn.push_back(edge);
+      connectivity_(localCellId * numIds_ + offset) = edge;
+      offset++;
     }
     else if(subcellDim==2) {
       int f = subElemToBrickElementFacesMap_[subElementId][c];
@@ -880,10 +855,12 @@ CartesianConnManager::updateConnectivity_3d(const panzer::FieldPattern & fp,
           face += 6*computeGlobalBrickElementIndex(index)+(f-12);
         }
       }
-      conn.push_back(face);
+      connectivity_(localCellId * numIds_ + offset) = face;
+      offset++;
     }
     else if(subcellDim==3) {
-      conn.push_back(totalNodes_+totalEdges_+totalFaces_+numSubElemsPerBrickElement_*computeGlobalBrickElementIndex(index)+subElementId);
+      connectivity_(localCellId * numIds_ + offset) = totalNodes_+totalEdges_+totalFaces_+numSubElemsPerBrickElement_*computeGlobalBrickElementIndex(index)+subElementId;
+      offset++;
     }
     else {
       TEUCHOS_ASSERT(false);
@@ -891,5 +868,4 @@ CartesianConnManager::updateConnectivity_3d(const panzer::FieldPattern & fp,
   }
 }
 
-} // end unit test
-} // end panzer
+} // namespace panzer::unit_test

@@ -1,12 +1,15 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
+#include "Ioss_BasisVariableType.h"
+#include "Ioss_ComposedVariableType.h"
 #include "Ioss_CompositeVariableType.h"
 #include "Ioss_ConstructedVariableType.h"
 #include "Ioss_NamedSuffixVariableType.h"
+#include "Ioss_QuadratureVariableType.h"
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 #include <cassert>
@@ -43,19 +46,62 @@ namespace Ioss {
   {
     std::string low_type = Utils::lowercase(type);
     registry().insert(VTM_ValuePair(low_type, this), delete_me);
+  }
 
-    // Register uppercase version also
-    std::string up_type = Utils::uppercase(type);
-    registry().insert(VTM_ValuePair(up_type, this), false);
+  VariableType::Type VariableType::type() const { return Type::UNKNOWN; }
+  std::string        VariableType::type_string() const { return "Unknown"; }
+  std::string        CompositeVariableType::type_string() const
+  {
+    return fmt::format("Composite: {}*{}", baseType->type_string(), copies_);
+  }
+  std::string ComposedVariableType::type_string() const
+  {
+    return fmt::format("Composed: {}*{}", baseType->type_string(), secondaryType->type_string());
+  }
+
+  void VariableType::print() const
+  {
+    fmt::print("\tVariableType '{}' of type '{}' with {} components.\n\n", name(), type_string(),
+               component_count());
+  }
+
+  void BasisVariableType::print() const
+  {
+    fmt::print("\tVariableType '{}' of type '{}' with {} components\n\t\tordinal  subc: _dim, "
+               "_ordinal, _dof_ordinal, _num_dof\t    xi     eta    zeta\n",
+               name(), type_string(), component_count());
+    for (int i = 0; i < component_count(); i++) {
+      auto basis = get_basis_component(i + 1);
+      fmt::print("\t\t {:6}\t\t{:6}\t{:6}\t{:6}\t{:6}\t\t{:6.3}\t{:6.3}\t{:6.3}\n", i + 1,
+                 basis.subc_dim, basis.subc_ordinal, basis.subc_dof_ordinal, basis.subc_num_dof,
+                 basis.xi, basis.eta, basis.zeta);
+    }
+    fmt::print("\n");
+  }
+
+  void QuadratureVariableType::print() const
+  {
+    fmt::print("\tVariableType '{}' of type '{}' with {} components\n\t\t\t    xi     eta    zeta  "
+               "weight\n",
+               name(), type_string(), component_count());
+    for (int i = 0; i < component_count(); i++) {
+      auto quad = get_quadrature_component(i + 1);
+      fmt::print("\t\t{}\t{:6.3}\t{:6.3}\t{:6.3}\t{:6.3}\n", i + 1, quad.xi, quad.eta, quad.zeta,
+                 quad.weight);
+    }
+    fmt::print("\n");
+  }
+
+  void NamedSuffixVariableType::print() const
+  {
+    fmt::print("\tVariableType '{}' of type '{}' with {} components\n\t\tSuffices: {}\n\n", name(),
+               type_string(), component_count(), fmt::join(suffixList, ", "));
   }
 
   void VariableType::alias(const std::string &base, const std::string &syn)
   {
     registry().insert(
         VTM_ValuePair(Utils::lowercase(syn), const_cast<VariableType *>(factory(base))), false);
-    // Register uppercase version also
-    std::string up_type = Utils::uppercase(syn);
-    registry().insert(VTM_ValuePair(up_type, const_cast<VariableType *>(factory(base))), false);
   }
 
   Registry &VariableType::registry()
@@ -90,6 +136,24 @@ namespace Ioss {
     return names;
   }
 
+  std::vector<Ioss::VariableType *> VariableType::external_types(Ioss::VariableType::Type type)
+  {
+    auto vars = registry().m_deleteThese;
+
+    std::vector<Ioss::VariableType *> user_vars;
+    if (type == Ioss::VariableType::Type::UNKNOWN) {
+      user_vars = vars;
+    }
+    else {
+      for (auto *var : vars) {
+        if (var->type() == type) {
+          user_vars.push_back(var);
+        }
+      }
+    }
+    return user_vars;
+  }
+
   bool VariableType::add_field_type_mapping(const std::string &raw_field,
                                             const std::string &raw_type)
   {
@@ -104,8 +168,8 @@ namespace Ioss {
     return registry().customFieldTypes.insert(std::make_pair(field, type)).second;
   }
 
-  bool VariableType::create_named_suffix_field_type(const std::string              &type_name,
-                                                    const std::vector<std::string> &suffices)
+  bool VariableType::create_named_suffix_type(const std::string    &type_name,
+                                              const Ioss::NameList &suffices)
   {
     size_t count = suffices.size();
     if (count < 1) {
@@ -126,6 +190,40 @@ namespace Ioss {
       var_type->add_suffix(i + 1, suffices[i]);
     }
     return true;
+  }
+
+  bool VariableType::create_basis_type(const std::string &type_name, const Ioss::Basis &basis)
+  {
+    // See if the variable already exists...
+    std::string basis_name = Utils::lowercase(type_name);
+    if (registry().find(basis_name) != registry().end()) {
+      return false;
+    }
+
+    // Create the variable.  Note that the 'true' argument means Ioss will delete
+    // the pointer.
+    new BasisVariableType(type_name, basis, true);
+    return true;
+  }
+
+  bool VariableType::create_quadrature_type(const std::string                        &type_name,
+                                            const std::vector<Ioss::QuadraturePoint> &quad_points)
+  {
+    size_t count = quad_points.size();
+    if (count < 1) {
+      return false;
+    }
+
+    // See if the variable already exists...
+    std::string quad_name = Utils::lowercase(type_name);
+    if (registry().find(quad_name) != registry().end()) {
+      return false;
+    }
+
+    // Create the variable.  Note that the 'true' argument means Ioss will delete
+    // the pointer.
+    auto *var_type = new QuadratureVariableType(type_name, quad_points, true);
+    return (var_type != nullptr);
   }
 
   bool VariableType::get_field_type_mapping(const std::string &field, std::string *type)
@@ -166,6 +264,39 @@ namespace Ioss {
 
     if (copies != 1) {
       inst = CompositeVariableType::composite_variable_type(inst, copies);
+    }
+    assert(inst != nullptr);
+    return inst;
+  }
+
+  const VariableType *VariableType::factory(const std::string &raw_name,
+                                            const std::string &secondary)
+  {
+    VariableType *inst    = nullptr;
+    std::string   lc_name = Utils::lowercase(raw_name);
+    auto          iter    = registry().find(lc_name);
+    if (iter == registry().end()) {
+      bool can_construct = build_variable_type(lc_name);
+      if (can_construct) {
+        iter = registry().find(lc_name);
+        assert(iter != registry().end());
+        inst = (*iter).second;
+      }
+      else {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: The variable type '{}' is not supported.\n", raw_name);
+        IOSS_ERROR(errmsg);
+      }
+    }
+    else {
+      inst = (*iter).second;
+    }
+
+    if (!secondary.empty()) {
+      auto *sec_type = factory(secondary);
+      if (sec_type != nullptr) {
+        inst = ComposedVariableType::composed_variable_type(inst, sec_type);
+      }
     }
     assert(inst != nullptr);
     return inst;
@@ -238,14 +369,14 @@ namespace Ioss {
     return result;
   }
 
-  std::string VariableType::label_name(const std::string &base, int which, const char suffix_sep,
-                                       bool suffices_uppercase) const
+  std::string VariableType::label_name(const std::string &base, int which, const char suffix_sep1,
+                                       const char suffix_sep2, bool suffices_uppercase) const
   {
     std::string my_name = base;
-    std::string suffix  = label(which, suffix_sep);
+    std::string suffix  = label(which, suffix_sep2);
     if (!suffix.empty()) {
-      if (suffix_sep != 0) {
-        my_name += suffix_sep;
+      if (suffix_sep1 != 0) {
+        my_name += suffix_sep1;
       }
       if (suffices_uppercase) {
         my_name += Ioss::Utils::uppercase(suffix);

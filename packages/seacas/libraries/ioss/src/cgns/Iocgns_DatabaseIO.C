@@ -1058,8 +1058,8 @@ namespace Iocgns {
       int tot_names = util().gather(num_bc, CGNS_MAX_NAME_LENGTH + 1, bc_names, all_bc_names);
 
       if (myProcessor == 0) {
-        int                      off_name = 0;
-        std::vector<std::string> bc;
+        int            off_name = 0;
+        Ioss::NameList bc;
         for (int ibc = 0; ibc < tot_names; ibc++) {
           bc.emplace_back(&all_bc_names[off_name]);
           off_name += CGNS_MAX_NAME_LENGTH + 1;
@@ -1079,8 +1079,8 @@ namespace Iocgns {
       bc_names.resize(tot_names * (CGNS_MAX_NAME_LENGTH + 1));
       util().broadcast(bc_names);
 
-      std::vector<std::string> bc;
-      int                      off_name = 0;
+      Ioss::NameList bc;
+      int            off_name = 0;
       for (int ibc = 0; ibc < tot_names; ibc++) {
         bc.emplace_back(&bc_names[off_name]);
         off_name += CGNS_MAX_NAME_LENGTH + 1;
@@ -1631,7 +1631,7 @@ namespace Iocgns {
     m_zoneOffset.resize(num_zones + 1); // use 1-based zones...
 
     elementCount =
-        Utils::common_write_meta_data(get_file_pointer(), *get_region(), m_zoneOffset, false);
+        Utils::common_write_metadata(get_file_pointer(), *get_region(), m_zoneOffset, false);
   }
 
   void DatabaseIO::get_step_times_nl()

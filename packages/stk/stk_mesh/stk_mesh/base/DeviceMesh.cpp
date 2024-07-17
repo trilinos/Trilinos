@@ -150,7 +150,6 @@ void DeviceMesh::update_mesh()
   require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
 
   Kokkos::Profiling::pushRegion("DeviceMesh::update_mesh");
-
   const bool anyChanges = fill_buckets(*bulk);
 
   if (anyChanges) {
@@ -294,6 +293,7 @@ void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
 
   unsigned totalNumConnectedEntities[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
   unsigned totalNumPermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
+
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
   {
     const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
@@ -327,6 +327,7 @@ void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
       reallocate_views(sparsePermutations[rank][connectedRank], hostSparsePermutations[rank][connectedRank],
                        totalNumPermutations[rank][connectedRank], RESIZE_FACTOR);
     }
+
     int entriesOffsets[stk::topology::NUM_RANKS] = {0};
     unsigned myOffset = 0;
     for(unsigned iBucket=0; iBucket<stkBuckets.size(); ++iBucket)
@@ -340,21 +341,26 @@ void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
         {
           myOffset = bucketEntityOffset + iEntity;
           unsigned numConnected = stkBucket.num_connectivity(iEntity, connectedRank);
-          const stk::mesh::Entity* connectedEntities = stkBucket.begin(iEntity, connectedRank);
-          const stk::mesh::ConnectivityOrdinal* connectedOrdinals = stkBucket.begin_ordinals(iEntity, connectedRank);
-          const stk::mesh::Permutation* permutations = hasPermutation ? stkBucket.begin_permutations(iEntity, connectedRank) : nullptr;
 
           int entriesOffset = entriesOffsets[connectedRank];
           hostEntityConnectivityOffset[rank][connectedRank](myOffset) = entriesOffset;
-          for(unsigned i=0; i<numConnected; ++i)
-          {
-            hostSparseConnectivity[rank][connectedRank](entriesOffset+i) = connectedEntities[i];
-            hostSparseConnectivityOrdinals[rank][connectedRank](entriesOffset+i) = connectedOrdinals[i];
-            if (hasPermutation) {
-              hostSparsePermutations[rank][connectedRank](entriesOffset+i) = permutations[i];
+
+          if (numConnected > 0) {
+
+            const stk::mesh::Entity* connectedEntities = stkBucket.begin(iEntity, connectedRank);
+            const stk::mesh::ConnectivityOrdinal* connectedOrdinals = stkBucket.begin_ordinals(iEntity, connectedRank);
+            const stk::mesh::Permutation* permutations = hasPermutation ? stkBucket.begin_permutations(iEntity, connectedRank) : nullptr;
+            for(unsigned i=0; i<numConnected; ++i)
+            {
+              hostSparseConnectivity[rank][connectedRank](entriesOffset+i) = connectedEntities[i];
+              hostSparseConnectivityOrdinals[rank][connectedRank](entriesOffset+i) = connectedOrdinals[i];
+              if (hasPermutation) {
+                hostSparsePermutations[rank][connectedRank](entriesOffset+i) = permutations[i];
+              }
             }
+
+            entriesOffsets[connectedRank] = entriesOffset + numConnected;
           }
-          entriesOffsets[connectedRank] = entriesOffset + numConnected;
         }
       }
     }

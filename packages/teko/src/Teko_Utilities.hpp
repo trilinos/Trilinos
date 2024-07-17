@@ -343,6 +343,10 @@ typedef Teuchos::RCP<Thyra::LinearOpBase<ST> > ModifiableLinearOp;
 //! Build a square zero operator from a single vector space
 inline LinearOp zero(const VectorSpace &vs) { return Thyra::zero<ST>(vs, vs); }
 
+inline LinearOp zero(const VectorSpace &range, const VectorSpace &domain) {
+  return Thyra::zero<ST>(range, domain);
+}
+
 //! Replace nonzeros with a scalar value, used to zero out an operator
 #ifdef TEKO_HAVE_EPETRA
 void putScalar(const ModifiableLinearOp &op, double scalar);
@@ -942,6 +946,9 @@ Teuchos::RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > getPhysicallyB
 
 //! Construct filename string for writing blocks to matrix-market format
 std::string formatBlockName(const std::string &prefix, int i, int j, int nrow);
+
+//! Write a matrix to file
+void writeMatrix(const std::string &filename, const Teko::LinearOp &op);
 
 }  // end namespace Teko
 

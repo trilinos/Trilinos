@@ -1,7 +1,7 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -53,10 +53,7 @@ if sys.version_info[0] >= 3:
 
 # import exodus module
 # (exodus.py should be in the same directory as this file)
-try:
-    import exodus
-except:
-    import exodus2 as exodus
+import exodus2 as exodus
 
 # informal version number of this module
 __version__ = 8.6

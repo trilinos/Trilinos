@@ -100,8 +100,8 @@ DomainViewType create_elem_spheres(const stk::mesh::BulkData& mesh, double radiu
     KOKKOS_LAMBDA(const unsigned& i) {
       stk::mesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elemIndices(i));
       stk::search::Point<double> center(0,0,0);
-      for(unsigned i=0; i<nodes.size(); ++i) {
-        stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
+      for(unsigned j=0; j<nodes.size(); ++j) {
+        stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[j]);
         stk::mesh::EntityFieldData<double> coords = ngpCoords(nodeIndex);
         center[0] += coords[0];
         center[1] += coords[1];

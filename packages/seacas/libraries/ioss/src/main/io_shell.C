@@ -42,7 +42,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "6.7 (2024/05/01)";
+  std::string version = "6.8 (2024/05/31)";
 
   bool mem_stats = false;
 
@@ -73,6 +73,13 @@ namespace {
     options.add_proc_id       = interFace.add_processor_id_field;
     options.boundary_sideset  = interFace.boundary_sideset;
     options.ignore_qa_info    = interFace.ignore_qa_info;
+    options.omitted_blocks    = !interFace.omitted_blocks.empty();
+
+    options.omitted_sets = interFace.omitted_sets;
+    Ioss::sort(options.omitted_sets);
+    for (auto &name : options.omitted_sets) {
+      name = Ioss::Utils::lowercase(name);
+    }
     return options;
   }
 
@@ -121,7 +128,7 @@ int main(int argc, char *argv[])
   if (!interFace.customField.empty()) {
     auto suffices = Ioss::tokenize(interFace.customField, ",");
     if (suffices.size() > 1) {
-      Ioss::VariableType::create_named_suffix_field_type("UserDefined", suffices);
+      Ioss::VariableType::create_named_suffix_type("UserDefined", suffices);
     }
   }
   std::string in_file  = interFace.inputFile[0];
@@ -261,6 +268,11 @@ namespace {
           }
           return;
         }
+      }
+
+      if (!interFace.omitted_blocks.empty()) {
+        std::vector<std::string> inclusions{};
+        dbi->set_block_omissions(interFace.omitted_blocks, inclusions);
       }
 
       // NOTE: 'region' owns 'db' pointer at this time...
@@ -702,6 +714,9 @@ namespace {
       properties.add(Ioss::Property("DECOMPOSITION_METHOD", interFace.decomp_method));
       if (interFace.decomp_method == "MAP" || interFace.decomp_method == "VARIABLE") {
         properties.add(Ioss::Property("DECOMPOSITION_EXTRA", interFace.decomp_extra));
+      }
+      if (interFace.line_decomp) {
+        properties.add(Ioss::Property("LINE_DECOMPOSITION", interFace.decomp_extra));
       }
     }
 

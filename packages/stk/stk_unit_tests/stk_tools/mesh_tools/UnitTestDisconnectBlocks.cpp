@@ -14,6 +14,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SkinBoundary.hpp>
+#include <stk_mesh/base/DumpMeshInfo.hpp>
 #include <stk_tools/mesh_tools/DetectHingesImpl.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
@@ -2043,8 +2044,6 @@ TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_3blocks_4quad_custom_o
 
   BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("vl","lateral",0), BlockConnection("radax","lateral",0)};
   test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
-
-  stk::io::write_mesh("custom_ordinal_unit_test_mesh.g", get_bulk());
 }
 
 
@@ -2150,3 +2149,493 @@ TEST(TestNGSDisconnect, jtd_sub_mesh)
   stk::tools::BlockPairVector disconnectPairs{{block1, block3}, {block2, block3}};
   EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(bulk, disconnectPairs, disconnectOption));
 }
+
+void create_2_tet10s_in_2_blocks_sharing_6_nodes(stk::mesh::BulkData &bulk)
+{
+  std::string meshDesc;
+
+  auto meshDescNp1
+  {
+    "0,1,TET_10,1,2,3,4,6,7,8, 9,10,11,block_1\n" 
+    "0,2,TET_10,3,2,1,5,7,6,8,12,13,14,block_2"
+  };
+
+  auto meshDescNp2
+  {
+    "0,1,TET_10,1,2,3,4,6,7,8, 9,10,11,block_1\n"
+    "1,2,TET_10,3,2,1,5,7,6,8,12,13,14,block_2"
+  };
+
+  meshDesc = (bulk.parallel_size() == 2) ? meshDescNp2 : meshDescNp1;
+
+  const std::vector<double> coordinates
+  {
+    0, 0, 0,
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 1,
+    0, 0, -1,
+    0.5, 0, 0,
+    0.5, 0.5, 0,
+    0, 0.5, 0,
+    0, 0, 0.5,
+    0.5, 0, 0.5,
+    0, 0.5, 0.5,
+    0, 0.5, -0.5,
+    0.5, 0, -0.5,
+    0, 0, -0.5,
+  };
+
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
+}
+
+void create_4_hex8s_in_2_blocks_sharing_4_nodes(stk::mesh::BulkData &bulk)
+{
+  stk::io::fill_mesh("generated:4x1x1", bulk);
+  stk::mesh::Part* block1 = bulk.mesh_meta_data().get_part("block_1");
+  stk::mesh::Part* block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
+
+  stk::mesh::EntityVector elems;
+  for(stk::mesh::EntityId elemId : std::vector<stk::mesh::EntityId>{2,3}) {
+    stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+    if (bulk.is_valid(elem) && bulk.bucket(elem).owned()) {
+      elems.push_back(elem);
+    }
+  }
+
+  bulk.batch_change_entity_parts(elems, stk::mesh::PartVector{block2}, stk::mesh::PartVector{block1});
+}
+
+stk::mesh::Part & create_sideset_part(stk::mesh::MetaData &meta, const size_t sidesetId)
+{
+  stk::mesh::Part &sidesetPart = meta.declare_part("Sideset"+std::to_string(sidesetId), meta.side_rank());
+  meta.set_part_id(sidesetPart, sidesetId);
+  stk::io::put_io_part_attribute(sidesetPart);
+  return sidesetPart;
+}
+
+stk::mesh::Part & create_sideset_part_with_topology(stk::mesh::MetaData &meta, const size_t sidesetId, stk::topology::topology_t topo)
+{
+  stk::mesh::Part &sidesetPart = meta.declare_part_with_topology("Sideset"+std::to_string(sidesetId), topo);
+  meta.set_part_id(sidesetPart, sidesetId);
+  stk::io::put_io_part_attribute(sidesetPart);
+  return sidesetPart;
+}
+
+void expect_num_nodes_faces_elems(
+                        const stk::mesh::BulkData &bulk,
+                        const size_t goldNumNodes,
+                        const size_t goldNumFaces,
+                        const size_t goldNumElems)
+{
+  const stk::mesh::Selector s(bulk.mesh_meta_data().universal_part());
+  EXPECT_EQ(goldNumNodes, stk::mesh::count_selected_entities(s, bulk.buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(goldNumFaces, stk::mesh::count_selected_entities(s, bulk.buckets(stk::topology::FACE_RANK)));
+  EXPECT_EQ(goldNumElems, stk::mesh::count_selected_entities(s, bulk.buckets(stk::topology::ELEM_RANK)));
+}
+
+void expect_one_face_in_sideset_with_adjacent_blocks(
+                        const stk::mesh::BulkData &bulk,
+                        const stk::mesh::Part &sidesetPart,
+                        const stk::mesh::ConstPartVector &goldAdjacentElemBlockParts,
+                        const size_t goldNumAdjElems)
+{
+  stk::mesh::EntityVector faces;
+  stk::mesh::get_selected_entities(sidesetPart, bulk.buckets(stk::topology::FACE_RANK), faces);
+  ASSERT_EQ(1u, faces.size()) << " for sideset " << sidesetPart.name();
+
+  const size_t numAdjElems = bulk.num_elements(faces[0]);
+  ASSERT_EQ(goldNumAdjElems, numAdjElems) << " for sideset " << sidesetPart.name();
+  const stk::mesh::Entity *elems = bulk.begin_elements(faces[0]);
+  for(size_t i{0}; i<numAdjElems; i++)
+    if (bulk.bucket(elems[i]).owned()) {
+      EXPECT_TRUE(bulk.bucket(elems[i]).member(*goldAdjacentElemBlockParts[i])) << " for sideset " << sidesetPart.name();
+    }
+}
+
+class TestDisconnectWithSidesets : public stk::unit_test_util::simple_fields::MeshFixture
+{
+protected:
+  TestDisconnectWithSidesets() : stk::unit_test_util::simple_fields::MeshFixture(3)
+  {
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  }
+};
+
+TEST_F(TestDisconnectWithSidesets, twoTetsSharingFaceWith2InternalSidesets_disconnect_2facesWith1SidesetEach)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+  auto& meta = get_meta();
+
+  create_2_tet10s_in_2_blocks_sharing_6_nodes(bulk);
+  stk::mesh::Part &elemPart1 = *meta.get_part("block_1");
+  stk::mesh::Part &elemPart2 = *meta.get_part("block_2");
+
+  stk::mesh::Part &facePart1 = create_sideset_part_with_topology(meta, 1, stk::topology::TRI_6);
+  stk::mesh::Part &facePart2 = create_sideset_part_with_topology(meta, 2, stk::topology::TRI_6);
+  meta.set_surface_to_block_mapping(&facePart1, {&elemPart1});
+  meta.set_surface_to_block_mapping(&facePart2, {&elemPart2});
+  stk::mesh::create_interior_block_boundary_sides(bulk, meta.universal_part(), {&facePart1, &facePart2});
+
+  expect_num_nodes_faces_elems(bulk, 14, 1, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1, &elemPart2}, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart1, &elemPart2}, 2);
+
+  stk::tools::disconnect_all_blocks(bulk);
+
+  expect_num_nodes_faces_elems(bulk, 20, 2, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1}, 1);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart2}, 1);
+
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoTetsSharingFaceWith3InternalSidesets_disconnect_blocksWith3Sidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+  auto& meta = get_meta();
+
+  create_2_tet10s_in_2_blocks_sharing_6_nodes(bulk);
+  stk::mesh::Part &elemPart1 = *meta.get_part("block_1");
+  stk::mesh::Part &elemPart2 = *meta.get_part("block_2");
+
+  stk::mesh::Part &facePart1 = create_sideset_part_with_topology(meta, 1, stk::topology::TRI_6);
+  stk::mesh::Part &facePart2 = create_sideset_part_with_topology(meta, 2, stk::topology::TRI_6);
+  stk::mesh::Part &facePart3 = create_sideset_part_with_topology(meta, 3, stk::topology::TRI_6);
+  meta.set_surface_to_block_mapping(&facePart1, {&elemPart1});
+  meta.set_surface_to_block_mapping(&facePart2, {&elemPart1});
+  meta.set_surface_to_block_mapping(&facePart3, {&elemPart2});
+  stk::mesh::create_interior_block_boundary_sides(bulk, meta.universal_part(), {&facePart1, &facePart2, &facePart3});
+
+  expect_num_nodes_faces_elems(bulk, 14, 1, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1, &elemPart2}, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart1, &elemPart2}, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart3, {&elemPart1, &elemPart2}, 2);
+
+  stk::tools::disconnect_all_blocks(bulk);
+
+  expect_num_nodes_faces_elems(bulk, 20, 2, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1}, 1);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart1}, 1);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart3, {&elemPart2}, 1);
+
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoTetsSharingFaceWith3InternalSidesets_disconnect_blocksWith3Sidesets_reverse)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+  auto& meta = get_meta();
+
+  create_2_tet10s_in_2_blocks_sharing_6_nodes(bulk);
+  stk::mesh::Part &elemPart1 = *meta.get_part("block_1");
+  stk::mesh::Part &elemPart2 = *meta.get_part("block_2");
+
+  stk::mesh::Part &facePart1 = create_sideset_part_with_topology(meta, 1, stk::topology::TRI_6);
+  stk::mesh::Part &facePart2 = create_sideset_part_with_topology(meta, 2, stk::topology::TRI_6);
+  stk::mesh::Part &facePart3 = create_sideset_part_with_topology(meta, 3, stk::topology::TRI_6);
+  meta.set_surface_to_block_mapping(&facePart1, {&elemPart1});
+  meta.set_surface_to_block_mapping(&facePart2, {&elemPart2});
+  meta.set_surface_to_block_mapping(&facePart3, {&elemPart2});
+  stk::mesh::create_interior_block_boundary_sides(bulk, meta.universal_part(), {&facePart1, &facePart2, &facePart3});
+
+  expect_num_nodes_faces_elems(bulk, 14, 1, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1, &elemPart2}, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart1, &elemPart2}, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart3, {&elemPart1, &elemPart2}, 2);
+
+  stk::tools::disconnect_all_blocks(bulk);
+
+  expect_num_nodes_faces_elems(bulk, 20, 2, 2);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1}, 1);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart2}, 1);
+  expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart3, {&elemPart2}, 1);
+
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoTetsSharingFaceWith2InternalSidesets_two_procs)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+  auto& meta = get_meta();
+  auto rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  create_2_tet10s_in_2_blocks_sharing_6_nodes(bulk);
+  stk::mesh::Part &elemPart1 = *meta.get_part("block_1");
+  stk::mesh::Part &elemPart2 = *meta.get_part("block_2");
+
+  stk::mesh::Part &facePart1 = create_sideset_part_with_topology(meta, 1, stk::topology::TRI_6);
+  stk::mesh::Part &facePart2 = create_sideset_part_with_topology(meta, 2, stk::topology::TRI_6);
+  meta.set_surface_to_block_mapping(&facePart1, {&elemPart1});
+  meta.set_surface_to_block_mapping(&facePart2, {&elemPart2});
+  stk::mesh::create_interior_block_boundary_sides(bulk, meta.universal_part(), {&facePart1, &facePart2});
+
+  expect_num_nodes_faces_elems(bulk, 14, 1, 2);
+  if (rank == 0)
+    expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1}, 2);
+  if (rank == 1)
+    expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart2}, 2);
+
+  stk::tools::disconnect_all_blocks(bulk);
+
+  expect_num_nodes_faces_elems(bulk, 10, 1, 1);
+  if (rank == 0)
+    expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart1, {&elemPart1}, 1);
+  if (rank == 1)
+    expect_one_face_in_sideset_with_adjacent_blocks(bulk, facePart2, {&elemPart2}, 1);
+
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_internalSidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+
+  auto blocks = setup_mesh_2block_2hex_with_internal_sides(bulk);
+  auto block1 = blocks[0];
+  auto block2 = blocks[1];
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(16u, get_num_total_nodes(bulk));
+  EXPECT_EQ(1u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, fourHexesInThreeBlocks_with_internalSidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+  auto blocks = setup_mesh_3block_4hex_with_internal_sides(bulk);
+
+  auto block1 = blocks[0];
+  auto block2 = blocks[1];
+  auto block3 = blocks[2];
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2},
+                                            stk::tools::BlockPair{block1, block3},
+                                            stk::tools::BlockPair{block2, block3}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block2, block3}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(28u, get_num_total_nodes(bulk));
+  EXPECT_EQ(3u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoTet4InTwoBlocks_with_internalSidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+  auto blocks = setup_mesh_2block_2cubeOfTet_with_internal_sides(bulk);
+  auto block1 = blocks[0];
+  auto block2 = blocks[1];
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(16u, get_num_total_nodes(bulk));
+  EXPECT_EQ(2u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, threeTet4InFourBlocks_with_internalSidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+  auto blocks = setup_mesh_3block_4cubeOfTet_with_internal_sides(bulk);
+  auto block1 = blocks[0];
+  auto block2 = blocks[1];
+  auto block3 = blocks[2];
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2},
+                                            stk::tools::BlockPair{block1, block3},
+                                            stk::tools::BlockPair{block2, block3}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block2, block3}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(28u, get_num_total_nodes(bulk));
+  EXPECT_EQ(6u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_internalAndExternalSidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+
+  auto blocks = setup_mesh_2block_2hex_with_internal_and_external_sides(bulk);
+  auto block1 = blocks[0];
+  auto block2 = blocks[1];
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(16u, get_num_total_nodes(bulk));
+  EXPECT_EQ(11u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_dualInternalAndExternalSidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+
+  auto blocks = setup_mesh_2block_2hex_with_dual_internal_and_external_sides(bulk);
+  auto block1 = blocks[0];
+  auto block2 = blocks[1];
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(16u, get_num_total_nodes(bulk));
+  EXPECT_EQ(12u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+}
+
+TEST_F(TestDisconnectWithSidesets, twoHexesInTwoBlocks_with_internalSidesetAndEmptySidesets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+
+  stk::mesh::Part * surface2 = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_2", 2);
+  stk::mesh::Part * surface3 = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_3", 3);
+
+  bool loadMeshFirst = true;
+  auto blocks = setup_mesh_2block_2hex_with_internal_sides(bulk, loadMeshFirst);
+  auto block1 = blocks[0];
+  auto block2 = blocks[1];
+
+  create_sideset(bulk, "surface_2", {"block_1"});
+  create_sideset(bulk, "surface_3", {"block_1"});
+
+  unsigned numFacesInSurface2 = stk::mesh::count_selected_entities(*surface2, get_bulk().buckets(stk::topology::FACE_RANK));
+  unsigned numFacesInSurface3 = stk::mesh::count_selected_entities(*surface3, get_bulk().buckets(stk::topology::FACE_RANK));
+  EXPECT_EQ(0u, numFacesInSurface2);
+  EXPECT_EQ(0u, numFacesInSurface3);
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(16u, get_num_total_nodes(bulk));
+  EXPECT_EQ(1u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+
+  numFacesInSurface2 = stk::mesh::count_selected_entities(*surface2, get_bulk().buckets(stk::topology::FACE_RANK));
+  numFacesInSurface3 = stk::mesh::count_selected_entities(*surface3, get_bulk().buckets(stk::topology::FACE_RANK));
+
+  EXPECT_EQ(0u, numFacesInSurface2);
+  EXPECT_EQ(0u, numFacesInSurface3);
+}
+
+TEST_F(TestDisconnectWithSidesets, ALRBC)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 3) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+
+  std::string meshDesc =
+      "0,1,HEX_8, 1, 2, 3, 4, 5, 6, 7, 8,block_1\n"
+      "1,2,HEX_8, 5, 6, 7, 8, 9,10,11,12,block_2\n"
+      "2,3,HEX_8, 9,10,11,12,13,14,15,16,block_3\n"
+      "|coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1, 0,0,2, 1,0,2, 1,1,2, 0,1,2, 0,0,3, 1,0,3, 1,1,3, 0,1,3"
+      "|sideset:name=surface_1; data=1,6, 2,5";
+
+  stk::io::fill_mesh("textmesh:" + meshDesc, bulk);
+
+  auto block1 = bulk.mesh_meta_data().get_part("block_1");
+  auto block2 = bulk.mesh_meta_data().get_part("block_2");
+  auto block3 = bulk.mesh_meta_data().get_part("block_3");
+
+  auto surface1 = bulk.mesh_meta_data().get_part("surface_1");
+
+  unsigned numFacesInSurface1 = stk::mesh::count_selected_entities(*surface1, get_bulk().buckets(stk::topology::FACE_RANK));
+  EXPECT_EQ(1u, numFacesInSurface1);
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}, stk::tools::BlockPair{block2, block3}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block2, block3}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(24u, get_num_total_nodes(bulk));
+  EXPECT_EQ(2u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+
+  numFacesInSurface1 = stk::mesh::count_selected_entities(*surface1, get_bulk().buckets(stk::topology::FACE_RANK));
+
+  int myProc = bulk.parallel_rank();
+  if(myProc == 0 || myProc == 1) {
+    EXPECT_EQ(1u, numFacesInSurface1);
+  } else {
+    EXPECT_EQ(0u, numFacesInSurface1);
+  }
+}
+
+TEST_F(TestDisconnectWithSidesets, ALRB)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  auto& bulk = get_bulk();
+
+  std::string meshDesc =
+      "1,1,HEX_8, 1, 2, 3, 4, 5, 6, 7, 8,block_1\n"
+      "0,2,HEX_8, 5, 6, 7, 8, 9,10,11,12,block_2\n"
+      "|coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1, 0,0,2, 1,0,2, 1,1,2, 0,1,2"
+      "|sideset:name=surface_1; data=1,6, 2,5";
+
+  stk::io::fill_mesh("textmesh:" + meshDesc, bulk);
+
+  auto block1 = bulk.mesh_meta_data().get_part("block_1");
+  auto block2 = bulk.mesh_meta_data().get_part("block_2");
+
+  auto surface1 = bulk.mesh_meta_data().get_part("surface_1");
+
+  unsigned numFacesInSurface1 = stk::mesh::count_selected_entities(*surface1, get_bulk().buckets(stk::topology::FACE_RANK));
+  EXPECT_EQ(1u, numFacesInSurface1);
+
+  stk::tools::disconnect_user_blocks(bulk, {stk::tools::BlockPair{block1, block2}});
+
+  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
+  EXPECT_EQ(0u, get_num_common_sides(bulk, {block1, block2}));
+  EXPECT_EQ(16u, get_num_total_nodes(bulk));
+  EXPECT_EQ(2u, get_num_total_sides(bulk));
+  EXPECT_FALSE(check_orphaned_nodes(bulk));
+  EXPECT_TRUE(verify_attached_faces(bulk));
+
+  numFacesInSurface1 = stk::mesh::count_selected_entities(*surface1, get_bulk().buckets(stk::topology::FACE_RANK));
+
+  EXPECT_EQ(1u, numFacesInSurface1);
+}
+

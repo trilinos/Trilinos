@@ -118,6 +118,7 @@ EXAMPLE_PATH           = ../epetra/example \
                          ../epetra/example/PCPG/PCPGEpetraExFile.cpp \
                          ../epetra/example/TFQMR/TFQMREpetraExFile.cpp \
                          ../epetra/example/TFQMR/PseudoBlockTFQMREpetraExFile.cpp \
+                         ../epetra/example/SolverFactory/SolverFactoryEpetraGaleriEx.cpp \
                          ../tpetra/example \
                          ../tpetra/example/BlockCG/BlockCGTpetraExFile.cpp \
                          ../tpetra/example/BlockCG/PseudoBlockCGTpetraExFile.cpp \
@@ -128,7 +129,8 @@ EXAMPLE_PATH           = ../epetra/example \
                          ../tpetra/example/PCPG/PCPGTpetraExFile.cpp \
                          ../tpetra/example/GCRODR/GCRODRTpetraExFile.cpp \
                          ../tpetra/example/TFQMR/TFQMRTpetraExFile.cpp \ 
-                         ../tpetra/example/TFQMR/PseudoBlockTFQMREpetraExFile.cpp
+                         ../tpetra/example/TFQMR/PseudoBlockTFQMREpetraExFile.cpp \
+                         ../tpetra/example/SolverFactory/SolverFactoryTpetraGaleriEx.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             =
 INPUT_FILTER           = 

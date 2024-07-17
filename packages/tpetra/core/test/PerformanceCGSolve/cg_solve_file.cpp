@@ -267,6 +267,11 @@ int run()
   // On output, it is the approximate solution.
   RCP<vec_type> x (new vec_type (A->getDomainMap ()));
 
+  // Untimed warm-up apply
+  A->apply(*b, *x);
+  // Zero out x again
+  x->putScalar(0);
+
   // Solve the linear system Ax=b using CG.
   RCP<StackedTimer> timer = rcp(new StackedTimer("CG: global"));
   TimeMonitor::setStackedTimer(timer);
