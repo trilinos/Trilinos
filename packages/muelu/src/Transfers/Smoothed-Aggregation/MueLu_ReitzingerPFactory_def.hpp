@@ -291,7 +291,6 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   // Handle empty ranks gracefully
   if (num_coarse_edges == 0) {
     D0_rowptr[0] = 0;
-    D0_rowptr[1] = 0;
   }
 
   // Count the total number of edges
@@ -344,7 +343,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
         for(int i=0; i<(int)ja.size(); i++)
           fprintf(f,"%d ",(int)ja[i]);
         fclose(f);
-        
+
       }
 #endif
     D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap, ownedCoarseEdgeMap);
@@ -361,7 +360,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   RCP<Matrix> Pe;
   {
     SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
-#if 0   
+#if 0
     {
       // If you're concerned about processor / rank mismatches, this debugging code might help
       int rank =  D0->getRowMap()->getComm()->getRank();
