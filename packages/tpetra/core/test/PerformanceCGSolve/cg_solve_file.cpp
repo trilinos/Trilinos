@@ -304,6 +304,12 @@ int main(int argc, char *argv[]) {
   using default_exec = Tpetra::Details::DefaultTypes::execution_space;
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  
+  int myRank = 0;
+#ifdef HAVE_MPI
+  (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
+#endif // HAVE_MPI
+
   //
   // Get example parameters from command-line processor
   //
@@ -358,57 +364,53 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  //If no node type was explicitly requested, use Tpetra's default node
+  //If no node type was explicitly requested, use Tpetra's default node.
+  
   if(!useSYCL && !useHIP && !useCuda && !useOpenMP && !useThreads && !useSerial)
   {
 #ifdef HAVE_TPETRA_INST_SYCL
     if(std::is_same<default_exec, Kokkos::Experimental::SYCL>::value)
     {
-      std::cout << "No node specified in command-line args, so using default (SYCL)\n";
+      if(myRank==0) std::cout << "No node specified in command-line args, so using default (SYCL)\n";
       useSYCL = true;
     }
 #endif
 #ifdef HAVE_TPETRA_INST_HIP
     if(std::is_same<default_exec, Kokkos::HIP>::value)
     {
-      std::cout << "No node specified in command-line args, so using default (HIP)\n";
+      if(myRank==0) std::cout << "No node specified in command-line args, so using default (HIP)\n";
       useHIP = true;
     }
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
     if(std::is_same<default_exec, Kokkos::Cuda>::value)
     {
-      std::cout << "No node specified in command-line args, so using default (Cuda)\n";
+      if(myRank==0) std::cout << "No node specified in command-line args, so using default (Cuda)\n";
       useCuda = true;
     }
 #endif
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<default_exec, Kokkos::OpenMP>::value)
     {
-      std::cout << "No node specified in command-line args, so using default (OpenMP)\n";
+      if(myRank==0) std::cout << "No node specified in command-line args, so using default (OpenMP)\n";
       useOpenMP = true;
     }
 #endif
 #ifdef HAVE_TPETRA_INST_PTHREAD
     if(std::is_same<default_exec, Kokkos::Threads>::value)
     {
-      std::cout << "No node specified in command-line args, so using default (Pthreads)\n";
+      if(myRank==0) std::cout << "No node specified in command-line args, so using default (Pthreads)\n";
       useThreads = true;
     }
 #endif
 #ifdef HAVE_TPETRA_INST_SERIAL
     if(std::is_same<default_exec, Kokkos::Serial>::value)
     {
-      std::cout << "No node specified in command-line args, so using default (Serial)\n";
+      if(myRank==0) std::cout << "No node specified in command-line args, so using default (Serial)\n";
       useSerial = true;
     }
 #endif
   }
-
-  int myRank = 0;
-#ifdef HAVE_MPI
-  (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
-#endif // HAVE_MPI
 
   Kokkos::InitializationSettings kokkosArgs;
   kokkosArgs.set_num_threads(numthreads);
