@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                           Stokhos Package
+//
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_integral_c.hpp"
 
