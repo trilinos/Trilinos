@@ -1,3 +1,5 @@
+# Tpetra: Templated Linear Algebra Services Package
+
 Tpetra implements parallel sparse linear algebra and data
 redistribution.
 
@@ -18,3 +20,13 @@ vectors.
 
 For more details, please refer to the Frequently Asked Questions
 document, ./doc/FAQ.txt, or to Tpetra's Doxygen documentation online.
+
+
+## Copyright and License
+See tpetra/COPYRIGHT, tpetra/LICENSE, https://trilinos.github.io/license.html and individual file headers for additional information.
+
+
+## Questions? 
+Contact lead developers:
+
+* Tpetra team     (GitHub handle: @trilinos/tpetra)
