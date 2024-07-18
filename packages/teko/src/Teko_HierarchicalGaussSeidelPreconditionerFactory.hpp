@@ -108,6 +108,40 @@ class HierarchicalGaussSeidelPreconditionerFactory : public BlockPreconditionerF
                              const Teuchos::RCP<InverseFactory>& precFact,
                              const BlockedLinearOp& matrix, BlockPreconditionerState& state,
                              int hierarchicalBlockNum) const;
+  template <typename LinearOpType>
+  LinearOp buildInverseImpl(const InverseFactory& invFact,
+                            const Teuchos::RCP<InverseFactory>& precFact,
+                            const LinearOpType& matrix, BlockPreconditionerState& state,
+                            int hierarchicalBlockNum) const {
+    std::stringstream ss;
+    ss << "hierarchical_block_" << hierarchicalBlockNum;
+
+    ModifiableLinearOp& invOp  = state.getModifiableOp(ss.str());
+    ModifiableLinearOp& precOp = state.getModifiableOp("prec_" + ss.str());
+
+    if (precFact != Teuchos::null) {
+      if (precOp == Teuchos::null) {
+        precOp = precFact->buildInverse(matrix);
+        state.addModifiableOp("prec_" + ss.str(), precOp);
+      } else {
+        Teko::rebuildInverse(*precFact, matrix, precOp);
+      }
+    }
+
+    if (invOp == Teuchos::null)
+      if (precOp.is_null())
+        invOp = Teko::buildInverse(invFact, matrix);
+      else
+        invOp = Teko::buildInverse(invFact, matrix, precOp);
+    else {
+      if (precOp.is_null())
+        Teko::rebuildInverse(invFact, matrix, invOp);
+      else
+        Teko::rebuildInverse(invFact, matrix, precOp, invOp);
+    }
+
+    return invOp;
+  }
 
   std::map<int, std::vector<int>> blockToRow;
   std::map<int, Teuchos::RCP<InverseFactory>> blockToInverse;
