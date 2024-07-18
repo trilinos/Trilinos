@@ -53,6 +53,7 @@ RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal,
   SET_VALID_ENTRY("repartition: remap num values");
   SET_VALID_ENTRY("repartition: remap accept partition");
   SET_VALID_ENTRY("repartition: node repartition level");
+  SET_VALID_ENTRY("repartition: save importer");
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
@@ -366,6 +367,13 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
 
   Set(currentLevel, "Importer", rowMapImporter);
 
+  // Importer saving
+  bool save_importer = pL.get<bool>("repartition: save importer");
+  if (save_importer) {
+    currentLevel.Set("Importer", rowMapImporter, NoFactory::get());
+    currentLevel.AddKeepFlag("Importer", NoFactory::get(), MueLu::Final);
+    currentLevel.RemoveKeepFlag("Importer", NoFactory::get(), MueLu::UserData);  // FIXME: This is a hack
+  }
   // ======================================================================================================
   // Print some data
   // ======================================================================================================

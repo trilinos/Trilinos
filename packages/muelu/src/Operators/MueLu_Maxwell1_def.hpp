@@ -27,6 +27,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
@@ -111,6 +112,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teuchos:
 
     list = newList;
   }
+
   std::string mode_string = list.get("maxwell1: mode", MasterList::getDefault<std::string>("maxwell1: mode"));
   applyBCsTo22_           = list.get("maxwell1: apply BCs to 22", false);
   dump_matrices_          = list.get("maxwell1: dump matrices", MasterList::getDefault<bool>("maxwell1: dump matrices"));
@@ -273,16 +275,20 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   if (!Coords_.is_null())
     precList22_.sublist("user data").set("Coordinates", Coords_);
 
-  /* Repartitioning *must* be in sync between hierarchies, but the
-   only thing we need to watch here is the subcomms, since ReitzingerPFactory
-   won't look at all the other stuff */
+  /* Repartitioning *must* be in sync between hierarchies, which means
+     that we need to keep the importers in sync too */
   if (precList22_.isParameter("repartition: enable")) {
     bool repartition = precList22_.get<bool>("repartition: enable");
     precList11_.set("repartition: enable", repartition);
 
-    // If we're repartitioning (2,2), we need to rebalance for (1,1) to do the right thing
-    if (repartition)
+    // If we're repartitioning (2,2), we need to rebalance for (1,1) to do the right thing,
+    // as well as keep the importers
+    if (repartition) {
+      // FIXME: We should probably update rather than clobber
+      precList22_.set("repartition: save importer", true);
+      // precList22_.set("repartition: rebalance P and R", false);
       precList22_.set("repartition: rebalance P and R", true);
+    }
 
     if (precList22_.isParameter("repartition: use subcommunicators")) {
       precList11_.set("repartition: use subcommunicators", precList22_.get<bool>("repartition: use subcommunicators"));
@@ -407,8 +413,8 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     Hierarchy11_->AddNewLevel();
     RCP<Level> NodeL          = Hierarchy22_->GetLevel(i);
     RCP<Level> EdgeL          = Hierarchy11_->GetLevel(i);
-    RCP<Operator> NodeOp      = NodeL->Get<RCP<Operator> >("A");
-    RCP<Matrix> NodeAggMatrix = rcp_dynamic_cast<Matrix>(NodeOp);
+    RCP<Operator> NodeAggOp   = NodeL->Get<RCP<Operator> >("A");
+    RCP<Matrix> NodeAggMatrix = rcp_dynamic_cast<Matrix>(NodeAggOp);
     std::string labelstr      = FormattingHelper::getColonLabel(EdgeL->getObjectLabel());
 
     if (i == 0) {
@@ -429,9 +435,16 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
       TEUCHOS_TEST_FOR_EXCEPTION(NodalP_ones.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");
       EdgeL->Set("Pnodal", NodalP_ones);
 
+      // Get the importer if we have one (for repartitioning)
+      RCP<const Import> importer;
+      if (NodeL->IsAvailable("Importer")) {
+        importer = NodeL->Get<RCP<const Import> >("Importer");
+        EdgeL->Set("NodeImporter", importer);
+      }
+
       // If we repartition a processor away, a RCP<Operator> is stuck
       // on the level instead of an RCP<Matrix>
-      if (!NodeAggMatrix.is_null()) {
+      if (!OldSmootherMatrix.is_null() && !NodalP_ones.is_null()) {
         EdgeL->Set("NodeAggMatrix", NodeAggMatrix);
         if (!have_generated_Kn) {
           // The user gave us a Kn on the fine level, so we're using a seperate aggregation
@@ -446,12 +459,33 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
           Teuchos::ParameterList RAPlist;
           RAPlist.set("rap: fix zero diagonals", false);
           RCP<Matrix> NewKn = Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(OldSmootherMatrix, NodalP_ones, RAPlist, labelstr);
-          EdgeL->Set("NodeMatrix", NewKn);
+
+          // If there's an importer, we need to Rebalance the NewKn
+          if (!importer.is_null()) {
+            ParameterList rebAcParams;
+            rebAcParams.set("repartition: use subcommunicators", true);
+            rebAcParams.set("repartition: use subcommunicators in place", true);
+            auto newAfact = rcp(new RebalanceAcFactory());
+            newAfact->SetParameterList(rebAcParams);
+            RCP<const Map> InPlaceMap = NodeAggMatrix.is_null() ? Teuchos::null : NodeAggMatrix->getRowMap();
+
+            Level fLevel, cLevel;
+            cLevel.SetPreviousLevel(Teuchos::rcpFromRef(fLevel));
+            cLevel.Set("InPlaceMap", InPlaceMap);
+            cLevel.Set("A", NewKn);
+            cLevel.Request("A", newAfact.get());
+            newAfact->Build(fLevel, cLevel);
+
+            NewKn = cLevel.Get<RCP<Matrix> >("A", newAfact.get());
+            EdgeL->Set("NodeMatrix", NewKn);
+          } else {
+            EdgeL->Set("NodeMatrix", NewKn);
+          }
 
           // Fix the old one
           double thresh = parameterList_.get("maxwell1: nodal smoother fix zero diagonal threshold", 1e-10);
           if (thresh > 0.0) {
-            printf("CMS: Reparing diagonal after next level generation\n");
+            GetOStream(Runtime0) << "Maxwell1::compute(): Fixing zero diagonal for nodal smoother matrix" << std::endl;
             Scalar replacement = Teuchos::ScalarTraits<Scalar>::one();
             Xpetra::MatrixUtils<SC, LO, GO, NO>::CheckRepairMainDiagonal(OldSmootherMatrix, true, GetOStream(Warnings1), thresh, replacement);
           }
@@ -464,19 +498,13 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
         }
       } else {
         // We've partitioned things away.
-        EdgeL->Set("NodeMatrix", NodeOp);
-        EdgeL->Set("NodeAggMatrix", NodeOp);
+        EdgeL->Set("NodeMatrix", NodeAggOp);
+        EdgeL->Set("NodeAggMatrix", NodeAggOp);
       }
 
       OldEdgeLevel = EdgeL;
     }
 
-    // Get the importer if we have one (for repartitioning)
-    // This will get used in ReitzingerPFactory
-    if (NodeL->IsAvailable("Importer")) {
-      auto importer = NodeL->Get<RCP<const Import> >("Importer");
-      EdgeL->Set("NodeImporter", importer);
-    }
   }  // end Hierarchy22 loop
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -500,8 +528,11 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     RCP<HierarchyManager<SC, LO, GO, NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC, LO, GO, NO>(processedPrecList11, SM_Matrix_->getDomainMap()->getComm()));
     Hierarchy11_->setlib(SM_Matrix_->getDomainMap()->lib());
     Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
-    // Stick the non-serializible data on the hierarchy.
-    HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *Hierarchy11_, nonSerialList11);
+
+    // Stick the non-serializible data on the hierarchy and do setup
+    if (nonSerialList11.numParams() > 0) {
+      HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *Hierarchy11_, nonSerialList11);
+    }
     mueLuFactory->SetupHierarchy(*Hierarchy11_);
 
     if (refmaxwellCoarseSolve) {
