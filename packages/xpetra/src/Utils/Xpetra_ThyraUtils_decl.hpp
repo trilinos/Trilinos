@@ -112,9 +112,6 @@
 
 namespace Xpetra {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class BlockedCrsMatrix;
-
 template <class Scalar,
           class LocalOrdinal  = int,
           class GlobalOrdinal = LocalOrdinal,

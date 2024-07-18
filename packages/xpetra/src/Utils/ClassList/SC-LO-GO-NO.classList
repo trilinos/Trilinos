@@ -24,4 +24,4 @@ TpetraCrsMatrix
 TripleMatrixMultiply
 ##VbrMatrix
 #Vector
-VectorFactory
+#VectorFactory
