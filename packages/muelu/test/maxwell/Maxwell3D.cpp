@@ -29,6 +29,7 @@
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
 #include <MueLu_Maxwell1.hpp>
+#include <MueLu_Maxwell_Utils.hpp>
 #include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
@@ -512,6 +513,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   bool use_stacked_timer = false;
   clp.setOption("stacked-timer",
                 "no-stacked-timer", &use_stacked_timer, "use stacked timer");
+  bool ensure_kn = false;
+  clp.setOption("ensure-kn",
+                "no-ensure-kn", &ensure_kn, "generate a kn matrix if the user doesn't provide one");
 
   std::string S_file, D0_file, M1_file, M0_file;
   if (!Teuchos::ScalarTraits<Scalar>::isComplex) {
@@ -645,8 +649,17 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     Ms_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Ms_file, edge_map);
   else
     Ms_Matrix = M1_Matrix;
-  if (Kn_file != "")
+  if (Kn_file != "") {
+    *out << "User provided Kn matrix" << std::endl;
     Kn_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Kn_file, node_map);
+  } else if (ensure_kn) {
+    // The user requested we generate Kn_Matrix with an SpGEMM
+    Teuchos::ParameterList params;
+    *out << "Making Kn Matrix as requested by yser" << std::endl;
+    Kn_Matrix = MueLu::Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(SM_Matrix, D0_Matrix, params, "User Kn");
+  } else {
+    *out << "NOT using a Kn matrix" << std::endl;
+  }
 
   if ((M0inv_file == "") && (M0_file != "")) {
     // nodal mass matrix

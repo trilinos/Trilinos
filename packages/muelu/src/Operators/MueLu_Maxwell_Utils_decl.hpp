@@ -97,7 +97,7 @@ class Maxwell_Utils : public VerboseObject {
 
   //! Performs an P^T AP
   static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  PtAPWrapper(const RCP<Matrix>& A, const RCP<Matrix>& P, Teuchos::ParameterList& params, std::string& label);
+  PtAPWrapper(const RCP<Matrix>& A, const RCP<Matrix>& P, Teuchos::ParameterList& params, const std::string& label);
 };
 
 }  // namespace MueLu

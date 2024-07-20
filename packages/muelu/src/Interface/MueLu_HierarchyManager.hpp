@@ -171,6 +171,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     }
 
     H.SetPRrebalance(doPRrebalance_);
+
     H.SetPRViaCopyrebalance(doPRViaCopyrebalance_);
     H.SetImplicitTranspose(implicitTranspose_);
     H.SetFuseProlongationAndUpdate(fuseProlongationAndUpdate_);
@@ -194,6 +195,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     //   2. Interpreter constructs keep_ array with names and factories for
     //      that level
     //   3. For each level, we call Keep(name, factory) for each keep_
+
     for (int i = 0; i < numDesiredLevel_; i++) {
       std::map<int, std::vector<keep_pair>>::const_iterator it = keep_.find(i);
       if (it != keep_.end()) {
@@ -221,9 +223,9 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
     ExportDataSetKeepFlags(H, elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
 
-    // Data to save only (these do not have a level, so we do all levels)
-    for (int i = 0; i < dataToSave_.size(); i++)
-      ExportDataSetKeepFlagsAll(H, dataToSave_[i]);
+    // Data to keep only (these do not have a level, so we do all levels)
+    for (int i = 0; i < dataToKeep_.size(); i++)
+      ExportDataSetKeepFlagsAll(H, dataToKeep_[i]);
 
     int levelID      = 0;
     int lastLevelID  = numDesiredLevel_ - 1;
@@ -240,6 +242,7 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
       isLastLevel = r || (levelID == lastLevelID);
       levelID++;
     }
+
     if (!matvecParams_.is_null())
       H.SetMatvecParams(matvecParams_);
     H.AllocateLevelMultiVectors(sizeOfMultiVectors_);
@@ -277,6 +280,12 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 
   }  // SetupHierarchy
 
+  //! Set the number of desired levels.
+  void SetNumDesiredLevel(int numDesiredLevel) { numDesiredLevel_ = numDesiredLevel; }
+
+  //! Get the number of desired levels.
+  int GetNumDesiredLevel() { return numDesiredLevel_; }
+
   //@}
 
   typedef std::map<std::string, RCP<const FactoryBase>> FactoryMap;
@@ -311,7 +320,6 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
 
   //! @group Hierarchy parameters
   //! @{
-
   mutable int numDesiredLevel_;
   Xpetra::global_size_t maxCoarseSize_;
   MsgType verbosity_;
@@ -341,8 +349,8 @@ class HierarchyManager : public HierarchyFactory<Scalar, LocalOrdinal, GlobalOrd
   Teuchos::Array<int> aggregatesToPrint_;
   Teuchos::Array<int> elementToNodeMapsToPrint_;
 
-  // Data we'll need to save, not necessarily print
-  Teuchos::Array<std::string> dataToSave_;
+  // Data we'll need to keep, either to dump to disk or to use post-setup
+  Teuchos::Array<std::string> dataToKeep_;
 
   // Matrices we'll need to print
   std::map<std::string, Teuchos::Array<int>> matricesToPrint_;

@@ -57,54 +57,7 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
   SolverType_(PCG),
   PrecondType_(Euclid),
   UsePreconditioner_(false),
-  Dump_(false)
-{
-  MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A->getRowMap()->getComm())->getRawMpiComm());
-
-  // Check that RowMap and RangeMap are the same.  While this could handle the
-  // case where RowMap and RangeMap are permutations, other Ifpack PCs don't
-  // handle this either.
-  if (!A_->getRowMap()->isSameAs(*A_->getRangeMap())) {
-    IFPACK2_CHK_ERRV(-1);
-  }
-  // Hypre expects the RowMap to be Linear.
-  if (A_->getRowMap()->isContiguous()) {
-    GloballyContiguousRowMap_ = A_->getRowMap();
-    GloballyContiguousColMap_ = A_->getColMap();
-  } else {  
-    // Must create GloballyContiguous Maps for Hypre
-    if(A_->getDomainMap()->isSameAs(*A_->getRowMap())) {
-      Teuchos::RCP<const crs_matrix_type> Aconst = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
-      GloballyContiguousColMap_ = MakeContiguousColumnMap(Aconst);
-      GloballyContiguousRowMap_ = rcp(new map_type(A_->getRowMap()->getGlobalNumElements(),
-                                                   A_->getRowMap()->getLocalNumElements(), 0, A_->getRowMap()->getComm()));
-    }
-    else {
-      throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
-    }
-  }
-  // Next create vectors that will be used when ApplyInverse() is called
-  HYPRE_Int ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
-  HYPRE_Int iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
-  // X in AX = Y
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
-  XVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_)),false);
-
-  // Y in AX = Y
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(YHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
-  YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
-
-  // Cache
-  VectorCache_.resize(A->getRowMap()->getLocalNumElements());
-} //Constructor
+  Dump_(false) { }
 
 //==============================================================================
 template<class LocalOrdinal, class Node>
@@ -117,9 +70,9 @@ template<class LocalOrdinal, class Node>
 void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::Destroy(){
   if(isInitialized()){
     IFPACK2_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
   }
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
-  IFPACK2_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
   if(IsSolverCreated_){
     IFPACK2_CHK_ERRV(SolverDestroyPtr_(Solver_));
   }
@@ -149,11 +102,57 @@ void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> >::initi
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
 
-  if(IsInitialized_) return;  
+  if(IsInitialized_) return;
   double startTime = timer->wallTime();
   {
     Teuchos::TimeMonitor timeMon (*timer);
-    
+
+    MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A_->getRowMap()->getComm())->getRawMpiComm());
+
+    // Check that RowMap and RangeMap are the same.  While this could handle the
+    // case where RowMap and RangeMap are permutations, other Ifpack PCs don't
+    // handle this either.
+    if (!A_->getRowMap()->isSameAs(*A_->getRangeMap())) {
+      IFPACK2_CHK_ERRV(-1);
+    }
+    // Hypre expects the RowMap to be Linear.
+    if (A_->getRowMap()->isContiguous()) {
+      GloballyContiguousRowMap_ = A_->getRowMap();
+      GloballyContiguousColMap_ = A_->getColMap();
+    } else {
+      // Must create GloballyContiguous Maps for Hypre
+      if(A_->getDomainMap()->isSameAs(*A_->getRowMap())) {
+        Teuchos::RCP<const crs_matrix_type> Aconst = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
+        GloballyContiguousColMap_ = MakeContiguousColumnMap(Aconst);
+        GloballyContiguousRowMap_ = rcp(new map_type(A_->getRowMap()->getGlobalNumElements(),
+                                                     A_->getRowMap()->getLocalNumElements(), 0, A_->getRowMap()->getComm()));
+      }
+      else {
+        throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
+      }
+    }
+    // Next create vectors that will be used when ApplyInverse() is called
+    HYPRE_Int ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+    HYPRE_Int iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+    // X in AX = Y
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
+    XVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_)),false);
+
+    // Y in AX = Y
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorInitialize(YHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
+    IFPACK2_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
+    YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
+
+    // Cache
+    VectorCache_.resize(A_->getRowMap()->getLocalNumElements());
+
     // set flags
     IsInitialized_=true;
     NumInitialize_++;

@@ -1,5 +1,0 @@
-This directory stores deperecated code.
-
-Currently we are saving the old implementation of the dynamic rank
-MDField. It has been replaced by Kokkos implementaiton, but we are
-keeping around for performance comparisons.
