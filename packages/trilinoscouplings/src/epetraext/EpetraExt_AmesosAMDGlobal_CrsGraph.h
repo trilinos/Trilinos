@@ -25,7 +25,7 @@
 // 
 // ***********************************************************************
 //@HEADER
-//                                                                                                    
+
 #ifndef EpetraExt_AMESOS_AMD_CRSGRAPH_H
 #define EpetraExt_AMESOS_AMD_CRSGRAPH_H
 
